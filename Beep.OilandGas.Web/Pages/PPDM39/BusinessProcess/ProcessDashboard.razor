@@ -5,6 +5,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Process
 
@@ -269,7 +270,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the dashboard still loads; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the business process dashboard", "The field name could not be loaded"), Severity.Warning);
+        }
 
         try
         {
@@ -331,9 +337,9 @@
 
             _obligationsDue = obligationsTask.Result.Count;
         }
-        catch
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load dashboard data.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the business process dashboard", "Could not load dashboard data"), Severity.Warning);
         }
     }
 

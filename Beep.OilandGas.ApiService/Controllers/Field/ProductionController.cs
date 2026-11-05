@@ -14,6 +14,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using Microsoft.Extensions.Logging;
 using TheTechIdeaWeb.Diagnostics;
 
@@ -29,6 +30,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         private readonly IWorkOrderService _workOrderService;
         private readonly WorkOrderAccountingService _workOrderAccountingService;
         private readonly DecommissioningProcessService _decommissioningProcessService;
+        private readonly WellServices _wells;
         private readonly ILogger<ProductionController> _logger;
         private readonly IFailureReporter _failures;
 
@@ -38,6 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             IWorkOrderService workOrderService,
             WorkOrderAccountingService workOrderAccountingService,
             DecommissioningProcessService decommissioningProcessService,
+            WellServices wells,
             ILogger<ProductionController> logger,
             IFailureReporter failures)
         {
@@ -47,6 +50,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             _workOrderService = workOrderService ?? throw new ArgumentNullException(nameof(workOrderService));
             _workOrderAccountingService = workOrderAccountingService ?? throw new ArgumentNullException(nameof(workOrderAccountingService));
             _decommissioningProcessService = decommissioningProcessService ?? throw new ArgumentNullException(nameof(decommissioningProcessService));
+            _wells = wells ?? throw new ArgumentNullException(nameof(wells));
             _logger = logger;
         }
 
@@ -122,10 +126,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         {
             if (string.IsNullOrWhiteSpace(period)) return BadRequest(new { error = "Period is required." });
             if (string.IsNullOrWhiteSpace(wellId)) return BadRequest(new { error = "Well ID is required." });
-            // Allocation adjustments are persisted through PDEN_VOL_SUMMARY.
-            // Accept the patch and return 204 — full PDEN persistence is done by the data-management layer.
-            _logger.LogInformation("Allocation patch accepted for well {WellId} period {Period}", wellId, period);
-            return NoContent();
+            // Not yet stored: nothing in the data-management layer writes a well's allocated volumes for a period (PPDM's
+            // PDEN_VOL_SUMMARY), so this answers that it is not available. It answered 204 and logged "accepted", and every
+            // adjustment made on the allocation workbench was thrown away while the page believed it saved (2026-10-10).
+            return Problem(
+                statusCode: StatusCodes.Status501NotImplemented,
+                title: "Not available",
+                detail: "Saving a well's allocation adjustment is not available yet.");
         }
 
         /// <summary>GET /api/field/current/production/intervention-candidates</summary>
@@ -135,42 +142,50 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
             var activities = await _productionService.GetWellActivitiesForFieldAsync(fieldId);
+            // A well's name is its WELL row's; the candidate had shown its UWI as its name.
+            var wellNames = (await _wells.GetWellsByFieldAsync(fieldId))
+                .Where(w => !string.IsNullOrWhiteSpace(w.UWI))
+                .GroupBy(w => w.UWI, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(w => w.WELL_NAME?.Trim()).FirstOrDefault(name => !string.IsNullOrEmpty(name)),
+                    StringComparer.OrdinalIgnoreCase);
 
             // Group by UWI and take the most recent activity per well as the candidate record
-            var candidates = activities
-                .GroupBy(a => a.UWI)
-                .Select(g =>
-                {
-                    var latest = g.OrderByDescending(a => a.ACTIVITY_OBS_NO).First();
-                    var source = g
-                        .Where(a => !IsDecisionActivity(a.ACTIVITY_TYPE_ID))
-                        .OrderByDescending(a => a.ACTIVITY_OBS_NO)
-                        .FirstOrDefault() ?? latest;
+            var candidates = new List<InterventionCandidateDto>();
+            foreach (var g in activities.Where(a => !string.IsNullOrWhiteSpace(a.UWI)).GroupBy(a => a.UWI, StringComparer.OrdinalIgnoreCase))
+            {
+                var latest = g.OrderByDescending(a => a.ACTIVITY_OBS_NO).First();
+                var source = g
+                    .Where(a => !IsDecisionActivity(a.ACTIVITY_TYPE_ID))
+                    .OrderByDescending(a => a.ACTIVITY_OBS_NO)
+                    .FirstOrDefault() ?? latest;
 
-                    var linkedWorkOrderId = ExtractWorkflowMarker(latest.REMARK, "WORK_ORDER_ID");
-                    var linkedAfeId = ExtractWorkflowMarker(latest.REMARK, "AFE_ID");
-                    var linkedAfeNumber = ExtractWorkflowMarker(latest.REMARK, "AFE_NUMBER");
-                    var linkedAbandonmentId = ExtractWorkflowMarker(latest.REMARK, "ABANDONMENT_ID");
-                    var linkedProcessInstanceId = ExtractWorkflowMarker(latest.REMARK, "PROCESS_INSTANCE_ID");
-                    return new InterventionCandidateDto
-                    {
-                        WellId           = latest.UWI ?? string.Empty,
-                        WellName         = latest.UWI ?? string.Empty,
-                        InterventionType = source.ACTIVITY_TYPE_ID ?? "WORKOVER",
-                        Problem          = RemoveWorkflowMarkers(source.REMARK ?? string.Empty),
-                        DeferredBopd     = 0,
-                        EstDaysSinceOnset= 0,
-                        Priority         = "MEDIUM",
-                        Status           = MapInterventionStatus(latest.ACTIVITY_TYPE_ID),
-                        EstCostUsd       = 0,
-                        WorkOrderId      = linkedWorkOrderId,
-                        AfeId            = linkedAfeId,
-                        AfeNumber        = linkedAfeNumber,
-                        AbandonmentId    = linkedAbandonmentId,
-                        ProcessInstanceId = linkedProcessInstanceId,
-                    };
-                })
-                .ToList();
+                var linkedWorkOrderId = ExtractWorkflowMarker(latest.REMARK, "WORK_ORDER_ID");
+                var linkedAfeId = ExtractWorkflowMarker(latest.REMARK, "AFE_ID");
+                var linkedAfeNumber = ExtractWorkflowMarker(latest.REMARK, "AFE_NUMBER");
+                var linkedAbandonmentId = ExtractWorkflowMarker(latest.REMARK, "ABANDONMENT_ID");
+                var linkedProcessInstanceId = ExtractWorkflowMarker(latest.REMARK, "PROCESS_INSTANCE_ID");
+                candidates.Add(new InterventionCandidateDto
+                {
+                    WellId           = g.Key,
+                    WellName         = wellNames.GetValueOrDefault(g.Key),
+                    InterventionType = source.ACTIVITY_TYPE_ID ?? "WORKOVER",
+                    Problem          = RemoveWorkflowMarkers(source.REMARK ?? string.Empty),
+                    DeferredBopd     = await DeferredOilRateAsync(fieldId, g.Key),
+                    // Not yet recorded: nothing stores when a well's problem began, what an intervention would cost or how
+                    // urgent it is, so these stay empty (they were 0 days, $0 and "MEDIUM" for every candidate).
+                    EstDaysSinceOnset = null,
+                    Priority         = null,
+                    EstCostUsd       = null,
+                    Status           = MapInterventionStatus(latest.ACTIVITY_TYPE_ID),
+                    WorkOrderId      = linkedWorkOrderId,
+                    AfeId            = linkedAfeId,
+                    AfeNumber        = linkedAfeNumber,
+                    AbandonmentId    = linkedAbandonmentId,
+                    ProcessInstanceId = linkedProcessInstanceId,
+                });
+            }
 
             return Ok(candidates);
         }
@@ -375,6 +390,26 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 ?? DateTime.MinValue;
         }
 
+        /// <summary>
+        /// The oil rate a well is deferring, from its tests, by the rule its performance summary states
+        /// (<see cref="GetWellPerformanceAsync"/>): its potential is its best tested oil rate, and the deferral is how far
+        /// its latest tested oil rate is below that. Only tests that record an oil rate count; null when none does.
+        /// </summary>
+        private async Task<double?> DeferredOilRateAsync(string fieldId, string uwi)
+        {
+            var rated = (await _productionService.GetWellTestsForWellAsync(fieldId, uwi) ?? new List<WellTestResponse>())
+                .Where(t => t.OilFlowAmount.HasValue)
+                .ToList();
+            if (rated.Count == 0)
+            {
+                return null;
+            }
+
+            var latest = rated.OrderByDescending(ResolveTestDate).First().OilFlowAmount!.Value;
+            var potential = rated.Max(t => t.OilFlowAmount!.Value);
+            return (double)Math.Max(0m, potential - latest);
+        }
+
         private static double ToDouble(decimal? value)
         {
             return value.HasValue ? (double)value.Value : 0;
@@ -492,17 +527,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         public double AllocatedWaterBopd  { get; set; }
     }
 
+    /// <summary>A well with intervention activity. A null figure is one nothing records.</summary>
     public class InterventionCandidateDto
     {
         public string WellId           { get; set; } = string.Empty;
-        public string WellName         { get; set; } = string.Empty;
+        /// <summary>The well's name from its WELL row; null when the row records none.</summary>
+        public string? WellName        { get; set; }
         public string InterventionType { get; set; } = string.Empty;
         public string Problem          { get; set; } = string.Empty;
-        public double DeferredBopd     { get; set; }
-        public int    EstDaysSinceOnset{ get; set; }
-        public string Priority         { get; set; } = "MEDIUM";
+        /// <summary>Best tested oil rate less the latest tested oil rate; null when no test records an oil rate.</summary>
+        public double? DeferredBopd    { get; set; }
+        public int?   EstDaysSinceOnset{ get; set; }
+        public string? Priority        { get; set; }
         public string Status           { get; set; } = "REVIEW";
-        public double EstCostUsd       { get; set; }
+        public double? EstCostUsd      { get; set; }
         public string? WorkOrderId     { get; set; }
         public string? AfeId           { get; set; }
         public string? AfeNumber       { get; set; }

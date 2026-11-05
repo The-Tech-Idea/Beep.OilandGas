@@ -325,19 +325,11 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
             if (updateDto.Status != null)
             {
-                var normalizedStatus = NormalizeOperationStatus(updateDto.Status);
-                well.CURRENT_STATUS = normalizedStatus;
+                // The operation's status is the well's current status. ACTIVE_IND is the row's soft-delete flag, and an
+                // operation that completes or stops leaves its well in place: completing a drilling operation does not
+                // delete the well (it set ACTIVE_IND = 'N' here, so the well vanished from every list).
+                well.CURRENT_STATUS = NormalizeOperationStatus(updateDto.Status);
                 well.CURRENT_STATUS_DATE = updateDto.CompletionDate ?? DateTime.UtcNow;
-
-                if (normalizedStatus.Equals("Inactive", StringComparison.OrdinalIgnoreCase)
-                    || normalizedStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
-                {
-                    well.ACTIVE_IND = "N";
-                }
-                else if (normalizedStatus.Equals("Active", StringComparison.OrdinalIgnoreCase))
-                {
-                    well.ACTIVE_IND = "Y";
-                }
             }
 
             if (updateDto.CurrentDepth.HasValue)

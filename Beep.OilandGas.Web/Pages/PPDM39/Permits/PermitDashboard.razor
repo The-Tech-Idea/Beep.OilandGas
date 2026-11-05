@@ -3,6 +3,7 @@
 @inject IPermitServiceClient PermitClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Permit Applications</PageTitle>
 
@@ -33,7 +34,7 @@ else
             </MudButton>
         </MudStack>
 
-        <MudDataGrid T="PermitApplicationSummary" Items="@_applications" Filterable="true" Sortable="true"
+        <MudDataGrid T="PermitApplicationSummary" Items="@_applications" Filterable="true" SortMode="SortMode.Multiple"
                      Hover="true" Dense="true" RowClick="@OnRowClick">
             <Columns>
                 <PropertyColumn Property="x => x.PermitApplicationId" Title="ID" />
@@ -90,9 +91,9 @@ else
             var statusFilter = string.IsNullOrWhiteSpace(_selectedStatus) ? null : _selectedStatus;
             _applications = await PermitClient.GetAllAsync(status: statusFilter);
         }
-        catch (Exception ex)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add($"Failed to load permits: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading permit applications", "The permit applications could not be loaded"), Severity.Error);
         }
         finally
         {

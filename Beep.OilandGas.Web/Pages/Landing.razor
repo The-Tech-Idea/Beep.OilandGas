@@ -6,7 +6,7 @@
 @inject PersonaClient IdentityClient
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
-@inject ILogger<Landing> Logger
+@inject OilGasCallFailures Calls
 
 @if (_isLoading)
 {
@@ -84,11 +84,11 @@ else if (_errorMessage != null)
                 Nav.NavigateTo("/dashboard");
             }
         }
-        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or InvalidOperationException)
+        // Handled: the persona settings could not be read from the API (PersonaClient refuses an empty answer with
+        // InvalidOperationException); the page says so with its reference and offers the dashboard.
+        catch (Exception exception) when (OilGasCallFailures.IsCallFailure(exception) || exception is InvalidOperationException)
         {
-            // Handled: the persona settings could not be read from the API; the page says so and offers the dashboard.
-            Logger.LogWarning(exception, "The signed-in person's persona settings could not be loaded.");
-            _errorMessage = "Persona settings could not be loaded.";
+            _errorMessage = Calls.Explain(exception, "loading the signed-in person's persona settings", "Persona settings could not be loaded");
         }
         finally
         {

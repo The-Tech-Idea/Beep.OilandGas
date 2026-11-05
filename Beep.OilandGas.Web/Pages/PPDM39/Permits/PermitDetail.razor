@@ -3,6 +3,7 @@
 @inject IPermitServiceClient PermitClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Permit Application Detail</PageTitle>
 
@@ -180,9 +181,9 @@ else if (_detail != null)
         {
             _detail = await PermitClient.GetByIdAsync(applicationId);
         }
-        catch (Exception ex)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add($"Failed to load permit: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading a permit application", "The permit application could not be loaded"), Severity.Error);
         }
         finally
         {
@@ -199,9 +200,9 @@ else if (_detail != null)
             Snackbar.Add("Application submitted for review.", Severity.Success);
             await LoadAsync();
         }
-        catch (Exception ex)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add($"Failed to submit: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "submitting a permit application for review", "The application was not submitted"), Severity.Error);
         }
         finally
         {
@@ -217,14 +218,14 @@ else if (_detail != null)
             var result = await PermitClient.ProcessDecisionAsync(applicationId, new PermitDecisionRequest
             {
                 Decision = decision,
-                Remarks = $"Decision: {decision} by {Environment.UserName}"
+                Remarks = $"Decision: {decision}"
             });
             Snackbar.Add($"Application {decision.ToLower()}.", Severity.Success);
             await LoadAsync();
         }
-        catch (Exception ex)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add($"Failed to process decision: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "recording a decision on a permit application", "The decision was not recorded"), Severity.Error);
         }
         finally
         {
@@ -247,9 +248,9 @@ else if (_detail != null)
                 await LoadAsync();
             }
         }
-        catch (Exception ex)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add($"Compliance check failed: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "checking a permit application's compliance", "The compliance check did not run"), Severity.Error);
         }
         finally
         {

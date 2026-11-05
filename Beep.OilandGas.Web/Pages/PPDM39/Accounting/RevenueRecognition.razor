@@ -1,8 +1,11 @@
 @page "/ppdm39/accounting/revenue-recognition"
+@using System.Globalization
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
+@using Beep.OilandGas.Models.Data.Accounting
+@inject IAccountingServiceClient AccountingClient
 @inject ISnackbar Snackbar
-@inject HttpClient Http
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Track Revenue Recognition</PageTitle>
 
@@ -13,139 +16,170 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Track Revenue Recognition</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Monitor revenue recognition by well, product, and period under ASC 606 / IFRS 15</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Revenue recorded for the current field this year, by well, product and month</MudText>
                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.TrendingUp">Revenue</MudChip>
             </MudStack>
         </MudStack>
+        @* It said "Revenue recalculation initiated" and recalculated nothing: it reads the revenue again. *@
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
-                   OnClick="RecalculateRevenue">
-            Recalculate
+                   OnClick="RefreshAsync" Disabled="@_isLoading">
+            Refresh
         </MudButton>
     </MudStack>
 
-    @* ─── Summary Cards *@
-    <MudGrid Class="mb-4" Spacing="3">
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_totalRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Total Revenue (YTD)</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Primary" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_oilRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Oil Revenue</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Air" Color="Color.Info" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_gasRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Gas Revenue</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Assessment" Color="Color.Warning" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_unrecognizedRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Unrecognized (Deferred)</MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    @* No revenue recognition status in the API: nothing records whether revenue is recognized or deferred under ASC 606 /
+       IFRS 15, so the "Unrecognized (Deferred)" figure and the "Recognized %" column were removed. *@
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Recognition status (recognized versus deferred revenue under ASC 606 / IFRS 15) is not available yet.
+    </MudAlert>
 
-    @* ─── Revenue by Well *@
-    <MudPaper Elevation="2" Class="pa-4 mb-4">
-        <MudText Typo="Typo.h6" Class="mb-3">Revenue by Well</MudText>
-        <MudDataGrid T="WellRevenueDto" Items="@_wellRevenues" Filterable="true" Sortable="true"
-                     Hover="true" Dense="true">
-            <Columns>
-                <PropertyColumn Property="x => x.WellName" Title="Well" />
-                <PropertyColumn Property="x => x.OilVolume" Title="Oil (bbl)" Format="N0" />
-                <PropertyColumn Property="x => x.GasVolume" Title="Gas (Mcf)" Format="N0" />
-                <PropertyColumn Property="x => x.OilPrice" Title="Oil Price" Format="C2" />
-                <PropertyColumn Property="x => x.GasPrice" Title="Gas Price" Format="C2" />
-                <PropertyColumn Property="x => x.TotalRevenue" Title="Total Revenue" Format="C2" />
-                <PropertyColumn Property="x => x.RecognizedPct" Title="Recognized %" Format="P1" />
-            </Columns>
-        </MudDataGrid>
-    </MudPaper>
-
-    @* ─── Revenue by Month *@
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudText Typo="Typo.h6" Class="mb-3">Monthly Revenue Trend</MudText>
-        <MudChart T="double" ChartType="ChartType.Line"
-                  @* TODO: Wire to actual chart data when MudBlazor chart data binding is available *@
-                  InputData="@_monthlyRevenueData"
-                  XAxisLabels="@_monthLabels"
-                  Width="100%" Height="300px" />
-    </MudPaper>
+    @* A load under way or failed shows no figures: zeros there would read as the field's revenue. *@
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+    }
+    else if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+    }
+    else
+    {
+        @* ─── Summary Cards. The oil and gas revenue figures were removed: the API's revenue lines label a transaction with
+           both oil and gas as oil and carry its whole amount, so revenue cannot be split by product. They read
+           /api/accounting/revenue/summary, a route the API does not have. *@
+        <MudGrid Class="mb-4" Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="2" Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Large" />
+                    <MudText Typo="Typo.h4">@_totalRevenue.ToString("C0")</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Default">Total Revenue (YTD)</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="2" Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.h4">@_revenueLines.Count.ToString("N0")</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Default">Revenue Transactions (YTD)</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    
+        @* ─── Revenue transactions, each with its well, product and date. The per-well summary it replaced came from the same
+           missing route; the grid filters and sorts by well. *@
+        <MudPaper Elevation="2" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Revenue Transactions</MudText>
+            <MudDataGrid T="RevenueLine" Items="@_revenueLines" Filterable="true" SortMode="SortMode.Multiple"
+                         Hover="true" Dense="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.TransactionDate" Title="Date" Format="yyyy-MM-dd" />
+                    <PropertyColumn Property="x => x.WellId" Title="Well" />
+                    <PropertyColumn Property="x => x.Description" Title="Description" />
+                    <PropertyColumn Property="x => x.Product" Title="Product" />
+                    <PropertyColumn Property="x => x.Volume" Title="Volume" Format="N0" />
+                    <PropertyColumn Property="x => x.Unit" Title="Unit" />
+                    <PropertyColumn Property="x => x.Price" Title="Price" Format="C2" />
+                    <PropertyColumn Property="x => x.AmountUsd" Title="Revenue" Format="C2" />
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    
+        @* ─── Revenue by Month *@
+        <MudPaper Elevation="2" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Monthly Revenue Trend</MudText>
+            <MudChart T="double" ChartType="ChartType.Line"
+                      ChartSeries="@_monthlyRevenueSeries"
+                      ChartLabels="@_monthLabels"
+                      Width="100%" Height="300px" />
+            @if (_undatedCount > 0)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @_undatedCount revenue transaction(s) carry no date and are counted in the total but not in any month.
+                </MudText>
+            }
+        </MudPaper>
+    }
 </MudContainer>
 
 @code {
     private bool _isLoading = true;
+    private string? _loadError;
     private decimal _totalRevenue;
-    private decimal _oilRevenue;
-    private decimal _gasRevenue;
-    private decimal _unrecognizedRevenue;
-    private List<WellRevenueDto> _wellRevenues = new();
-    private List<decimal> _monthlyRevenueData = new();
-    private string[] _monthLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    private int _undatedCount;
+    private List<RevenueLine> _revenueLines = new();
+    private List<ChartSeries<double>> _monthlyRevenueSeries = new();
+    private string[] _monthLabels = Array.Empty<string>();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadRevenueDataAsync();
     }
 
-    private async Task LoadRevenueDataAsync()
+    /// <returns>Whether the revenue data was loaded; when it was not, the person has been told why.</returns>
+    private async Task<bool> LoadRevenueDataAsync()
     {
         _isLoading = true;
+        _loadError = null;
+        var today = DateTime.UtcNow.Date;
+        var yearStart = new DateTime(today.Year, 1, 1);
         try
         {
-            var summary = await Http.GetFromJsonAsync<RevenueSummaryDto>("/api/accounting/revenue/summary");
-            if (summary is not null)
-            {
-                _totalRevenue = summary.TotalRevenue;
-                _oilRevenue = summary.OilRevenue;
-                _gasRevenue = summary.GasRevenue;
-                _unrecognizedRevenue = summary.DeferredRevenue;
-                _wellRevenues = summary.WellDetails ?? new();
-                _monthlyRevenueData = summary.MonthlyData ?? new();
-            }
+            _revenueLines = await AccountingClient.GetRevenueLinesAsync(yearStart, today);
+            Summarize(today);
+            return true;
         }
-        catch
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Could not load revenue data. Using defaults.", Severity.Warning);
+            Clear();
+            _loadError = Answers.Explain(answer, "loading the revenue for the current field", "The revenue data could not be loaded");
+            return false;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Clear();
+            _loadError = Notifier.FailureText(ex, "loading the revenue for the current field", "The revenue data could not be loaded");
+            return false;
         }
         finally { _isLoading = false; }
     }
 
-    private async Task RecalculateRevenue()
+    /// <summary>The year's total and its months, from the revenue lines the API answered.</summary>
+    private void Summarize(DateTime today)
     {
-        Snackbar.Add("Revenue recalculation initiated...", Severity.Info);
-        await LoadRevenueDataAsync();
-        Snackbar.Add("Revenue data refreshed.", Severity.Success);
+        _totalRevenue = _revenueLines.Sum(line => line.AmountUsd);
+        _undatedCount = _revenueLines.Count(line => !line.TransactionDate.HasValue);
+        var months = Enumerable.Range(1, today.Month).ToArray();
+        _monthLabels = months
+            .Select(month => CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month))
+            .ToArray();
+        _monthlyRevenueSeries =
+        [
+            new ChartSeries<double>
+            {
+                Name = "Revenue",
+                Data = months
+                    .Select(month => (double)_revenueLines
+                        .Where(line => line.TransactionDate is { } date && date.Year == today.Year && date.Month == month)
+                        .Sum(line => line.AmountUsd))
+                    .ToArray()
+            }
+        ];
     }
 
-    public class RevenueSummaryDto
+    private void Clear()
     {
-        public decimal TotalRevenue { get; set; }
-        public decimal OilRevenue { get; set; }
-        public decimal GasRevenue { get; set; }
-        public decimal DeferredRevenue { get; set; }
-        public List<WellRevenueDto>? WellDetails { get; set; }
-        public List<decimal>? MonthlyData { get; set; }
+        _revenueLines = new();
+        _totalRevenue = 0m;
+        _undatedCount = 0;
+        _monthlyRevenueSeries = new();
+        _monthLabels = Array.Empty<string>();
     }
 
-    public class WellRevenueDto
+    private async Task RefreshAsync()
     {
-        public string WellName { get; set; } = string.Empty;
-        public decimal OilVolume { get; set; }
-        public decimal GasVolume { get; set; }
-        public decimal OilPrice { get; set; }
-        public decimal GasPrice { get; set; }
-        public decimal TotalRevenue { get; set; }
-        public decimal RecognizedPct { get; set; }
+        if (await LoadRevenueDataAsync())
+        {
+            Snackbar.Add("Revenue data refreshed.", Severity.Success);
+        }
     }
 }

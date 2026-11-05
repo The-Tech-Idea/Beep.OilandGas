@@ -136,15 +136,8 @@
             else
                 Snackbar.Add(_result.Message ?? "Generation failed.", Severity.Error);
         }
-        catch (Exception)
-        {
-            _result = new GenerateDummyDataResponse
-            {
-                Success = false,
-                Message = "An error occurred generating demo data."
-            };
-            Snackbar.Add("An error occurred generating demo data.", Severity.Error);
-        }
+        // A failed call is already a failed result, worded with its reference, from the data management service; anything
+        // else is a fault in this page and reaches its error boundary.
         finally
         {
             _busy = false;

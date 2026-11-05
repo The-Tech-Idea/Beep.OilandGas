@@ -5,6 +5,8 @@
 @inject IAccountingServiceClient AccountingServiceClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Preview Cost Allocation</PageTitle>
 
@@ -140,7 +142,16 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch { /* field name is non-critical */ }
+        // The breakdown needs the active field: the person is told it could not be read, rather than later that there is none.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field for cost allocation", "The active field could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field for cost allocation", "The active field could not be loaded", FailureSeverity.Degraded);
+        }
     }
 
     private async Task AllocateCosts()
@@ -171,12 +182,20 @@
             _allocationResult = await AccountingServiceClient.AllocateCostsAsync(request);
 
             if (_allocationResult is null)
-                throw new InvalidOperationException("No cost breakdown was returned.");
+            {
+                Snackbar.Add("No cost breakdown was returned.", Severity.Error);
+                return;
+            }
             Snackbar.Add("Cost breakdown calculated", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error allocating costs.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "calculating a cost allocation breakdown", "The cost breakdown was not calculated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "calculating a cost allocation breakdown", "The cost breakdown was not calculated");
         }
         finally
         {

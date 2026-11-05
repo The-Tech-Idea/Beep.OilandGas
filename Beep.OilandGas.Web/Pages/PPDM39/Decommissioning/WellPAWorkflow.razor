@@ -4,7 +4,8 @@
 @inject ApiClient ApiClient
 @inject IDecommissioningServiceClient DecommissioningService
 @inject ILifeCycleService LifeCycleService
-@inject OilGasApiFailures Answers
+@inject OilGasCallFailures Calls
+@inject IClientFileExportService ExportService
 
 <PageTitle>Execute Well P&amp;A Programme</PageTitle>
 
@@ -30,9 +31,11 @@
                        OnClick="NavigateToNewCampaign">
                 New Campaign
             </MudButton>
+            @* Downloads the P&A records as loaded; it had announced "export queued" and queued nothing. *@
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Download"
-                       OnClick='@(() => Snackbar.Add("P&A report export queued", Severity.Success))'>
+                       Disabled="@(_records.Count == 0)"
+                       OnClick="ExportReportAsync">
                 Export Report
             </MudButton>
         </MudStack>
@@ -61,9 +64,9 @@
     @* KPIs *@
     <MudGrid Class="mb-4" Spacing="3">
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Wells P&A'd (YTD)" Value="@_paCompleted.ToString()" Unit="wells"
-                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Close"
-                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="On plan" />
+            @* Every completed record, not a year's: nothing filters by year, and no plan is recorded to be "on". *@
+            <KpiCard Label="Wells P&A'd" Value="@_paCompleted.ToString()" Unit="wells"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Close" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="In Progress" Value="@_wells.Count(w => IsExecutionPhase(w.Phase)).ToString()" Unit="wells"
@@ -71,9 +74,10 @@
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active campaigns" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="P&A Cost (YTD)" Value="@_paCostMm.ToString("N1")" Unit="$MM"
+            @* The records' costs, or the field's estimate when none is recorded; no P&A budget is recorded to compare with. *@
+            <KpiCard Label="P&A Cost" Value="@_paCostMm.ToString("N1")" Unit="$MM"
                      ValueColor="Color.Info" Icon="@Icons.Material.Filled.AttachMoney"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="vs $28M budget" />
+                     TrendColor="Color.Default" TrendText="@(_paCostIsEstimate ? "Estimate" : "Recorded on the P&A records")" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Pending Approval" Value="@_wells.Count(w => IsApprovalPhase(w.Phase)).ToString()" Unit="wells"
@@ -146,10 +150,11 @@
                         <MudStack Spacing="2" Class="mud-width-full">
                             @if (_selectedWell.Phase == "APPROVAL")
                             {
-                                <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
-                                           OnClick="ApprovePA">
+                                @* No P&A approval record in the API: nothing stores an approval, and PATCH wells-abandoned/{id}/approve answers 501. *@
+                                <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Disabled="true">
                                     Approve P&amp;A Programme
                                 </MudButton>
+                                <MudAlert Severity="Severity.Info" Dense="true">Approving a P&amp;A programme is not available yet.</MudAlert>
                             }
                             else if (_selectedWell.Phase == "EXECUTION")
                             {
@@ -218,6 +223,8 @@
 
     private int _paCompleted;
     private double _paCostMm;
+    private bool _paCostIsEstimate;
+    private List<WellAbandonmentResponse> _records = new();
 
     private record PAWell(string AbandonmentId, string WellId, string WellType, string ProgramStart, string TargetComplete,
         double EstCostUsd, string Phase);
@@ -241,7 +248,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the well P&A workflow page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         _loading = true;
         try
@@ -249,6 +259,7 @@
             var raw = await DecommissioningService.GetAbandonedWellsAsync();
             var estimate = await DecommissioningService.EstimateCostsAsync();
 
+            _records = raw;
             _wells = raw.Select(r => new PAWell(
                 r.AbandonmentId,
                 r.WellId ?? r.AbandonmentId,
@@ -261,11 +272,15 @@
             _paCompleted = _wells.Count(w => IsCompletedPhase(w.Phase));
             var actualCostMm = _wells.Sum(w => w.EstCostUsd) / 1_000_000d;
             var estimatedCostMm = (double)(estimate?.EstimatedWellAbandonmentCost ?? 0m) / 1_000_000d;
-            _paCostMm = actualCostMm > 0 ? actualCostMm : estimatedCostMm;
+            _paCostIsEstimate = actualCostMm <= 0;
+            _paCostMm = _paCostIsEstimate ? estimatedCostMm : actualCostMm;
 
             ApplySelectedWell();
         }
-        catch (Exception) { Snackbar.Add("Failed to load wells.", Severity.Warning); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading wells for the P&A workflow", "The wells could not be loaded"), Severity.Warning);
+        }
         finally { _loading = false; }
     }
 
@@ -280,23 +295,37 @@
         _paSteps = BuildPaSteps(args.Item.Phase);
     }
 
-    private async Task ApprovePA()
+    // The P&A records as loaded, one row each, with a header row; nothing is queued anywhere.
+    private async Task ExportReportAsync()
     {
-        if (_selectedWell == null) return;
-        try
+        var rows = new List<string[]>
         {
-            await DecommissioningService.ApprovePAAsync(_selectedWell.AbandonmentId);
-            Snackbar.Add($"{_selectedWell.WellId} P&A programme approved", Severity.Success);
-            _selectedWell = null;
-            _paSteps = BuildPaSteps(null);
-            await OnInitializedAsync();
-        }
-        catch (OilGasApiException answer)
+            new[] { "Abandonment ID", "Well ID", "Type", "Status", "Start Date", "End Date", "Abandonment Cost", "Plugging Cost",
+                "Regulatory Approval Number", "Regulatory Approval Date" }
+        };
+        rows.AddRange(_records.Select(r => new[]
         {
-            Snackbar.Add(Answers.Explain(answer, "approving a P&A programme", "The P&A programme was not approved"), Severity.Error);
-        }
-        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
+            r.AbandonmentId,
+            r.WellId ?? string.Empty,
+            r.AbandonmentType ?? string.Empty,
+            r.Status ?? string.Empty,
+            FormatDate(r.AbandonmentStartDate),
+            FormatDate(r.AbandonmentEndDate),
+            FormatAmount(r.AbandonmentCost),
+            FormatAmount(r.PluggingCost),
+            r.RegulatoryApprovalNumber ?? string.Empty,
+            FormatDate(r.RegulatoryApprovalDate),
+        }));
+
+        await ExportService.DownloadCsvAsync($"well-pa-programme-{DateTime.Today:yyyy-MM-dd}", row => row, rows);
+        Snackbar.Add($"{_records.Count} P&A records downloaded.", Severity.Success);
     }
+
+    private static string FormatDate(DateTime? value) =>
+        value?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+
+    private static string FormatAmount(decimal? value) =>
+        value?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
 
     private void NavigateToNewCampaign()
     {

@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Globalization;
 using Microsoft.AspNetCore.WebUtilities;
 using TheTechIdea.Data.OilGas;
@@ -12,7 +11,12 @@ public interface IUnifiedTaskInboxService
     Task<List<UnifiedTask>> GetFilteredTasksAsync(InboxFilter filter, string personaCode);
 }
 
-public class UnifiedTaskInboxService(HttpClient http) : IUnifiedTaskInboxService
+/// <remarks>
+/// Through <see cref="ApiClient"/>, which carries the API's address and the signed-in person's token and answers a refusal or
+/// failure as <see cref="OilGasApiException"/>: the unnamed <see cref="HttpClient"/> this used had neither, so every inbox
+/// request failed before it was sent.
+/// </remarks>
+public class UnifiedTaskInboxService(ApiClient api) : IUnifiedTaskInboxService
 {
     public Task<UnifiedInbox> GetInboxAsync(string personaCode) =>
         GetAsync<UnifiedInbox>(QueryHelpers.AddQueryString("/api/workflow/tasks/inbox", "personaCode", personaCode));
@@ -32,5 +36,5 @@ public class UnifiedTaskInboxService(HttpClient http) : IUnifiedTaskInboxService
         }));
 
     private async Task<T> GetAsync<T>(string uri) =>
-        await http.GetFromJsonAsync<T>(uri) ?? throw new InvalidOperationException("The task API returned an empty response.");
+        await api.GetAsync<T>(uri) ?? throw new InvalidOperationException("The task API returned an empty response.");
 }

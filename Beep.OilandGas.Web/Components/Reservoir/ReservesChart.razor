@@ -17,9 +17,10 @@
     }
     else
     {
-        <MudChart ChartType="ChartType.Bar"
+        <MudChart T="double"
+                  ChartType="ChartType.Bar"
                   ChartSeries="@_series"
-                  XAxisLabels="@_labels"
+                  ChartLabels="@_labels"
                   Width="100%"
                   Height="@Height"
                   ChartOptions="@_options" />
@@ -98,9 +99,12 @@
             }
         };
 
+        // The theme's own colours, through MudBlazor's palette variables, so 1P/2P/3P follow the application's palette in
+        // light and dark alike. MudBlazor writes each entry as the bar's fill and the legend marker's background, as it does
+        // its own var(--mud-palette-…) chart defaults; the three hex colours set here were nobody's theme.
         _options = new ChartOptions
         {
-            ChartPalette = new[] { "#1976D2", "#26A69A", "#8BC34A" }
+            ChartPalette = new[] { "var(--mud-palette-primary)", "var(--mud-palette-secondary)", "var(--mud-palette-tertiary)" }
         };
     }
 

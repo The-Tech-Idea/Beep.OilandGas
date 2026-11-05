@@ -5,6 +5,8 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Review Development Status</PageTitle>
 
@@ -34,6 +36,11 @@
             </MudButton>
         </MudStack>
     </MudStack>
+
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+    }
 
     @* ── KPI Row ─────────────────────────────────────────────────────────── *@
     <MudGrid Spacing="3" Class="mb-4">
@@ -86,9 +93,11 @@
                             <MudText Typo="Typo.subtitle1">Project Milestones</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
-                            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
-                                           OnClick='() => NavigationManager.NavigateTo("/development/construction")'
-                                           Title="Full construction tracker" />
+                            <MudTooltip Text="Full construction tracker">
+                                <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                               OnClick='() => NavigationManager.NavigateTo("/development/construction")'
+                                               aria-label="Full construction tracker" />
+                            </MudTooltip>
                         </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent>
@@ -151,6 +160,10 @@
                         {
                             <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
                         }
+                        else if (_loadError is not null)
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">The development wells could not be loaded.</MudText>
+                        }
                         else if (_activeWells.Count == 0)
                         {
                             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">No development wells found for the active field.</MudText>
@@ -207,6 +220,7 @@
 @code {
     private string _fieldName = string.Empty;
     private bool _loading = true;
+    private string? _loadError;
 
     private int _totalWells;
     private int _drillingWells;
@@ -223,9 +237,19 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for the development dashboard", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for the development dashboard", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         _loading = true;
+        _loadError = null;
         try
         {
             var summary = await DevelopmentServiceClient.GetDashboardSummaryAsync();
@@ -239,9 +263,15 @@
 
             _activeWells = await DevelopmentServiceClient.GetDashboardWellsAsync();
         }
-        catch (Exception)
+        // The page says the development data did not load, rather than that the field has no wells.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load development data.", Severity.Warning);
+            _loadError = Answers.Explain(answer, "loading the development dashboard", "The development data could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _loadError = Notifier.FailureText(ex, "loading the development dashboard", "The development data could not be loaded");
         }
         finally { _loading = false; }
     }

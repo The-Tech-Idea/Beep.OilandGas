@@ -306,7 +306,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 status.AccountingMethod = await GetAccountingMethodAsync(fieldId, date, connectionName);
 
                 // Get period status
-                status.PeriodStatus = await GetPeriodStatusAsync(fieldId, date, connectionName);
+                status.PeriodStatus = await GetPeriodStatusAsync(fieldId, date);
 
                 _logger?.LogInformation(
                     "Accounting status retrieved for field {FieldId}: Production={Production}, Revenue={Revenue}, Royalty={Royalty}, Costs={Costs}, NetIncome={NetIncome}",
@@ -622,40 +622,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogInformation("Field {FieldId} has no accounting method recorded as of {AsOfDate}", fieldId, asOfDate);
             return method ?? string.Empty;
         }
-        private async Task<string> GetPeriodStatusAsync(string fieldId, DateTime asOfDate, string connectionName)
-        {
-            try
-            {
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, connectionName, "JOURNAL_ENTRY");
-
-                var entryNumber = $"PC-{fieldId}-{asOfDate:yyyyMM}";
-                var entries = await repo.GetAsync(new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ENTRY_NUMBER", Operator = "=", FilterValue = entryNumber },
-                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = JournalEntryTypeCodes.PeriodClose },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                });
-
-                var periodStatus = entries != null && entries.Any()
-                    ? PeriodCloseStatusCodes.Closed
-                    : PeriodCloseStatusCodes.Open;
-                _logger?.LogDebug("Period status for field {FieldId} and period {Period}: {Status}", fieldId, asOfDate.ToString("yyyy-MM"), periodStatus);
-                return periodStatus;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Period status retrieval cancelled for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-        }
+        /// <summary>
+        /// The close status of the field's period containing <paramref name="asOfDate"/>, as the period close recognizes
+        /// it. It looked for a journal numbered "PC-…" and typed PERIOD_CLOSE, which no close writes, so every period read
+        /// "Open"; the period close owns how a closed period is recognized, and reads it from the database it writes to.
+        /// </summary>
+        private Task<string> GetPeriodStatusAsync(string fieldId, DateTime asOfDate) =>
+            _periodClosingService.GetPeriodStatusAsync(fieldId, asOfDate);
 
         private async Task MarkRunTicketProcessedAsync(RUN_TICKET RUN_TICKET, string userId, string connectionName)
         {

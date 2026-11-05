@@ -4,6 +4,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Process Definition — @_def?.ProcessName</PageTitle>
 
@@ -111,7 +112,7 @@
 </MudContainer>
 
 @* ── Start Instance dialog ─────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showStartDialog">
+<MudDialog @bind-Visible="_showStartDialog">
     <TitleContent>
         <MudText Typo="Typo.h6">Start Process Instance</MudText>
     </TitleContent>
@@ -162,7 +163,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the definition still loads; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for a process definition page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         _loadedId = Id;
         await LoadDefinitionAsync();
@@ -190,9 +196,9 @@
                     )).ToList();
             }
         }
-        catch
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load process definition.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading a process definition", "Could not load process definition"), Severity.Warning);
         }
     }
 
@@ -226,9 +232,9 @@
             if (instance != null)
                 NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(instance.InstanceId)}");
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to start instance.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "starting a process instance", "Failed to start instance"), Severity.Error);
         }
         finally { _starting = false; }
     }

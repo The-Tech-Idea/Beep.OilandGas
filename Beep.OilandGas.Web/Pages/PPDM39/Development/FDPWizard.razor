@@ -7,6 +7,8 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Build Field Development Plan</PageTitle>
 
@@ -14,9 +16,11 @@
 
     @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       Href="@GetBackHref()"
-                       Title="Back to Development" />
+        <MudTooltip Text="Back to Development">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           Href="@GetBackHref()"
+                           aria-label="Back to Development" />
+        </MudTooltip>
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Build Field Development Plan</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
@@ -54,7 +58,11 @@
                     <MudCardContent>
                         <MudStack Spacing="2" AlignItems="AlignItems.Center">
                             <StatusBadge Status="@_fdp.Status" Size="Size.Large" />
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Version @_fdp.Version · @_fdp.LastUpdated</MudText>
+                            @* No version number: nothing records an FDP's version (it showed a constant "1.0"); the date is the gate review's start. *@
+                            @if (!string.IsNullOrEmpty(_fdp.LastUpdated))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Submitted @_fdp.LastUpdated</MudText>
+                            }
                         </MudStack>
                         <MudDivider Class="my-3" />
                         <ProcessTimeline Steps="@_fdpStatusHistory" />
@@ -68,7 +76,7 @@
                 </MudCard>
             </MudItem>
 
-            @* FDP Summary *@
+            @* FDP Summary — the draft as submitted, kept with the gate review's drafting step *@
             <MudItem xs="12" md="8">
                 <MudCard Elevation="2">
                     <MudCardHeader>
@@ -77,65 +85,131 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="false">
-                            <MudTabPanel Text="Reservoir">
-                                <MudStack Spacing="2" Class="pa-2">
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">STOIIP</MudText>
-                                        <MudText Typo="Typo.body2">@_fdp.StoiipMmbo MMBO</MudText>
+                        @if (_fdpStatus is null)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true">The FDP could not be loaded.</MudAlert>
+                        }
+                        else if (_fdpStatus.Draft is not { } plan)
+                        {
+                            @* A gate review started before drafts were stored kept none; its figures are not shown as zeros. *@
+                            <MudAlert Severity="Severity.Info" Dense="true">
+                                This FDP's contents were not kept when it was submitted; only its gate review was started. Revise the FDP to submit its contents.
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="false">
+                                <MudTabPanel Text="Reservoir">
+                                    <MudStack Spacing="2" Class="pa-2">
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">STOIIP</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.StoiipMmbo, string.Empty, " MMBO")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">GIIP</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.GiipBcf, string.Empty, " BCF")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Recovery Factor</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.RecoveryFactor, string.Empty, "%")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">2P Reserves</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.ReservesMmbo, string.Empty, " MMBO")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Reserves Classification</MudText>
+                                            <MudText Typo="Typo.body2">@Entered(plan.ReservesClass)</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Reservoir Description</MudText>
+                                            <MudText Typo="Typo.body2">@Entered(plan.ReservoirDescription)</MudText>
+                                        </MudStack>
                                     </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">GIIP</MudText>
-                                        <MudText Typo="Typo.body2">@_fdp.GiipBcf BCF</MudText>
+                                </MudTabPanel>
+                                <MudTabPanel Text="Concept">
+                                    <MudPaper Elevation="0" Class="pa-3">
+                                        <MudText Typo="Typo.subtitle2" Class="mb-1">Selected Concept</MudText>
+                                        <MudText Typo="Typo.body2">@Entered(plan.SelectedConcept)</MudText>
+                                        <MudDivider Class="my-2" />
+                                        <MudText Typo="Typo.subtitle2" Class="mb-1">Facility Type</MudText>
+                                        <MudText Typo="Typo.body2">@Entered(plan.FacilityType)</MudText>
+                                        <MudDivider Class="my-2" />
+                                        <MudText Typo="Typo.subtitle2" Class="mb-1">Concept Selection Rationale</MudText>
+                                        <MudText Typo="Typo.body2">@Entered(plan.ConceptRationale)</MudText>
+                                    </MudPaper>
+                                </MudTabPanel>
+                                <MudTabPanel Text="Well Program">
+                                    @if (plan.WellProgram.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-2">No wells were planned in this draft.</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudDataGrid T="FdpWellProgramItem" Items="@plan.WellProgram" Dense="true" Hover="true" Striped="true">
+                                            <Columns>
+                                                <PropertyColumn Property="w => w.WellName" Title="Well Name" />
+                                                <PropertyColumn Property="w => w.WellType" Title="Type" />
+                                                <PropertyColumn Property="w => w.TargetZone" Title="Target Zone" />
+                                                <PropertyColumn Property="w => w.PlannedYear" Title="Year" />
+                                            </Columns>
+                                        </MudDataGrid>
+                                    }
+                                </MudTabPanel>
+                                <MudTabPanel Text="Economics">
+                                    <MudStack Spacing="2" Class="pa-2">
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Total CAPEX</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.CapexMm, "USD ", " MM")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Peak OPEX</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.OpexMmPerYear, "USD ", " MM/yr")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">NPV (10%)</MudText>
+                                            <MudText Typo="Typo.body2" Color="@NpvColor(plan.Npv10Mm)">@Figure(plan.Npv10Mm, "USD ", " MM")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">IRR</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.Irr, string.Empty, "%")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Breakeven Price</MudText>
+                                            <MudText Typo="Typo.body2">@Figure(plan.BreakevenUsd, "USD ", "/bbl")</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Risked Economics Notes</MudText>
+                                            <MudText Typo="Typo.body2">@Entered(plan.EconomicsNotes)</MudText>
+                                        </MudStack>
                                     </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Recovery Factor</MudText>
-                                        <MudText Typo="Typo.body2">@_fdp.RecoveryFactor%</MudText>
+                                </MudTabPanel>
+                                <MudTabPanel Text="Regulatory">
+                                    <MudStack Spacing="2" Class="pa-2">
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Jurisdiction</MudText>
+                                            <MudText Typo="Typo.body2">@Entered(plan.Jurisdiction)</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Required Permits</MudText>
+                                            <MudText Typo="Typo.body2">@Entered(plan.PermitList)</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Planned Submission</MudText>
+                                            <MudText Typo="Typo.body2">@(plan.SubmissionDate?.ToString("dd MMM yyyy") ?? NotEntered)</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Expected Approval</MudText>
+                                            <MudText Typo="Typo.body2">@(plan.ExpectedApprovalDate?.ToString("dd MMM yyyy") ?? NotEntered)</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Regulatory Notes</MudText>
+                                            <MudText Typo="Typo.body2">@Entered(plan.RegulatoryNotes)</MudText>
+                                        </MudStack>
                                     </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">2P Reserves</MudText>
-                                        <MudText Typo="Typo.body2">@_fdp.ReservesMmbo MMBO</MudText>
-                                    </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Reserves Classification</MudText>
-                                        <MudText Typo="Typo.body2">@_fdp.ReservesClass</MudText>
-                                    </MudStack>
-                                </MudStack>
-                            </MudTabPanel>
-                            <MudTabPanel Text="Concept">
-                                <MudPaper Elevation="0" Class="pa-3">
-                                    <MudText Typo="Typo.subtitle2" Class="mb-1">Selected Concept</MudText>
-                                    <MudText Typo="Typo.body2">@_fdp.SelectedConcept</MudText>
-                                    <MudDivider Class="my-2" />
-                                    <MudText Typo="Typo.subtitle2" Class="mb-1">Facility Type</MudText>
-                                    <MudText Typo="Typo.body2">@_fdp.FacilityType</MudText>
-                                </MudPaper>
-                            </MudTabPanel>
-                            <MudTabPanel Text="Economics">
-                                <MudStack Spacing="2" Class="pa-2">
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Total CAPEX</MudText>
-                                        <MudText Typo="Typo.body2">USD @_fdp.CapexMm MM</MudText>
-                                    </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Peak OPEX</MudText>
-                                        <MudText Typo="Typo.body2">USD @_fdp.OpexMmPerYear MM/yr</MudText>
-                                    </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">NPV (10%)</MudText>
-                                        <MudText Typo="Typo.body2" Color="@(_fdp.Npv10Mm >= 0 ? Color.Success : Color.Error)">USD @_fdp.Npv10Mm MM</MudText>
-                                    </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">IRR</MudText>
-                                        <MudText Typo="Typo.body2">@_fdp.Irr%</MudText>
-                                    </MudStack>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Breakeven Price</MudText>
-                                        <MudText Typo="Typo.body2">USD @_fdp.BreakevenUsd/bbl</MudText>
-                                    </MudStack>
-                                </MudStack>
-                            </MudTabPanel>
-                        </MudTabs>
+                                </MudTabPanel>
+                            </MudTabs>
+                        }
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -148,10 +222,10 @@
     @* ─────────────────────────────────────────────────────────────────────── *@
     else
     {
-        <MudStepper @bind-ActiveIndex="_step" Linear="true" Color="Color.Primary">
+        <MudStepper @bind-ActiveIndex="_step" StepCompleteIcon="@Icons.Material.Filled.CheckCircle">
 
             @* Step 1: Reservoir Summary *@
-            <MudStep Title="Reservoir Summary" Icon="@Icons.Material.Filled.Landscape" CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudStep Title="Reservoir Summary">
                 <MudGrid Spacing="3" Class="pt-4">
                     <MudItem xs="12" md="4">
                         <MudNumericField @bind-Value="_draft.StoiipMmbo" Label="STOIIP (MMBO)" Variant="Variant.Outlined" Min="0" />
@@ -182,7 +256,7 @@
             </MudStep>
 
             @* Step 2: Development Concept *@
-            <MudStep Title="Development Concept" Icon="@Icons.Material.Filled.Architecture" CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudStep Title="Development Concept">
                 <MudGrid Spacing="3" Class="pt-4">
                     <MudItem xs="12">
                         <MudText Typo="Typo.subtitle2" Class="mb-2">Concept Options Considered</MudText>
@@ -227,14 +301,14 @@
             </MudStep>
 
             @* Step 3: Well Program *@
-            <MudStep Title="Well Program" Icon="@Icons.Material.Filled.OilBarrel" CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudStep Title="Well Program">
                 <MudPaper Elevation="0" Class="pt-4">
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                    <MudStack Spacing="1" Class="mb-3">
                         <MudText Typo="Typo.subtitle2">Planned Wells</MudText>
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add"
-                                   OnClick="AddWellRow">
-                            Add Well
-                        </MudButton>
+                        @* No "Add Well": the rows cannot be edited here, so it could only add a fixed "New Well" placeholder, which is now kept with the plan. *@
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            The planned wells are the field's development wells. Adding a well that is not yet recorded is not available here.
+                        </MudText>
                     </MudStack>
                     <MudDataGrid T="WellRow" Items="@_draft.WellProgram" Dense="true" Hover="true" Striped="true">
                         <Columns>
@@ -248,8 +322,10 @@
                             <PropertyColumn Property="w => w.PlannedYear" Title="Year" />
                             <TemplateColumn Title="">
                                 <CellTemplate>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Title="Remove well" Size="Size.Small" Color="Color.Error"
-                                                  OnClick="@(() => _draft.WellProgram.Remove(context.Item))" />
+                                    <MudTooltip Text="Remove well">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="Remove well" Size="Size.Small" Color="Color.Error"
+                                                       OnClick="@(() => _draft.WellProgram.Remove(context.Item))" />
+                                    </MudTooltip>
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
@@ -265,7 +341,7 @@
             </MudStep>
 
             @* Step 4: Economics *@
-            <MudStep Title="Economics" Icon="@Icons.Material.Filled.TrendingUp" CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudStep Title="Economics">
                 <MudGrid Spacing="3" Class="pt-4">
                     <MudItem xs="12" md="6">
                         <MudNumericField @bind-Value="_draft.CapexMm" Label="Total CAPEX (USD MM)" Variant="Variant.Outlined" Min="0" />
@@ -294,7 +370,7 @@
             </MudStep>
 
             @* Step 5: Regulatory Plan *@
-            <MudStep Title="Regulatory Plan" Icon="@Icons.Material.Filled.Gavel" CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudStep Title="Regulatory Plan">
                 <MudGrid Spacing="3" Class="pt-4">
                     <MudItem xs="12" md="6">
                         <MudTextField @bind-Value="_draft.Jurisdiction" Label="Jurisdiction / Regulatory Body" Variant="Variant.Outlined" Required="true" />
@@ -317,9 +393,9 @@
                 <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
                     <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Send"
-                               OnClick="SubmitFDP"
-                               Disabled="@(string.IsNullOrWhiteSpace(_draft.Jurisdiction))">
-                        Submit FDP Draft
+                               OnClick="SubmitFDPAsync"
+                               Disabled="@(_submittingFdp || string.IsNullOrWhiteSpace(_draft.Jurisdiction))">
+                        @(_submittingFdp ? "Submitting…" : "Submit FDP Draft")
                     </MudButton>
                 </MudStack>
             </MudStep>
@@ -363,8 +439,59 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* non-critical — keep default */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for the development plan", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for the development plan", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
+        await LoadFdpStatusAsync();
+
+        try
+        {
+            var wells = await DevelopmentServiceClient.GetWellsAsync();
+            if (wells.Count > 0)
+            {
+                _draft.WellProgram = wells
+                    .Where(w => w.ACTIVE_IND == "Y")
+                    .Select(w => new WellRow(
+                        w.UWI ?? string.Empty,
+                        w.WELL_TYPE ?? w.CURRENT_CLASS ?? string.Empty,
+                        string.Empty,
+                        null))
+                    .ToList();
+            }
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the development wells for the plan's well program", "The development wells could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the development wells for the plan's well program", "The development wells could not be loaded", FailureSeverity.Degraded);
+        }
+
+        ApplyRegulatoryPrefill();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ApplyRegulatoryPrefill();
+    }
+
+    // The field's current FDP gate review and the draft kept with it. What was shown before is cleared first, so a
+    // failed load shows nothing rather than another submission's plan.
+    private async Task LoadFdpStatusAsync()
+    {
+        _fdpStatus = null;
+        _fdp = new();
+        _fdpStatusHistory = new();
         try
         {
             _fdpStatus = await DevelopmentServiceClient.GetFdpStatusAsync();
@@ -381,41 +508,22 @@
                 _wizardMode = true;
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load FDP status.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the field development plan's status", "The FDP status could not be loaded"), Severity.Warning);
         }
-
-        try
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            var wells = await DevelopmentServiceClient.GetWellsAsync();
-            if (wells.Count > 0)
-            {
-                _draft.WellProgram = wells
-                    .Where(w => w.ACTIVE_IND == "Y")
-                    .Select(w => new WellRow(
-                        w.UWI ?? string.Empty,
-                        w.WELL_TYPE ?? w.CURRENT_CLASS ?? "Producer",
-                        string.Empty,
-                        DateTime.Now.Year + 1))
-                    .ToList();
-            }
+            Notifier.Failure(ex, "loading the field development plan's status", "The FDP status could not be loaded", FailureSeverity.Degraded);
         }
-        catch (Exception)
-        {
-            Snackbar.Add("Failed to load development wells.", Severity.Warning);
-        }
-
-        ApplyRegulatoryPrefill();
     }
 
-    protected override void OnParametersSet()
-    {
-        ApplyRegulatoryPrefill();
-    }
-
+    // A revision starts from the draft as submitted, when the gate review kept one.
     private void StartRevision()
     {
+        if (_fdpStatus?.Draft is { } plan)
+            _draft = FDPDraft.From(plan);
         _wizardMode = true;
         _step = 0;
     }
@@ -423,16 +531,14 @@
     private void NextStep() { if (_step < 4) _step++; }
     private void PrevStep() { if (_step > 0) _step--; }
 
-    private void AddWellRow() =>
-        _draft.WellProgram.Add(new("New Well", "Producer", "", DateTime.Now.Year + 1));
-
     private void TrackRegulatorResponse() =>
         NavigationManager.NavigateTo($"/hse/compliance?returnTo={Uri.EscapeDataString("/development/fdp")}");
 
-    private void SubmitFDP() => _ = SubmitFDPAsync();
+    private bool _submittingFdp;
 
     private async Task SubmitFDPAsync()
     {
+        _submittingFdp = true;
         try
         {
             var request = new SubmitFdpDraftRequest
@@ -468,41 +574,48 @@
 
             await DevelopmentServiceClient.SubmitFdpAsync(request);
 
-            Snackbar.Add("FDP draft submitted for technical review.", Severity.Success);
+            Snackbar.Add("The FDP draft was saved and its gate review started.", Severity.Success);
             _wizardMode = false;
+            // The view shows the plan as the API kept it, read again rather than taken from the form.
+            await LoadFdpStatusAsync();
             NavigationManager.NavigateTo("/development/fdp");
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to submit FDP.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "submitting the field development plan draft", "The FDP draft was not submitted"), Severity.Error);
         }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "submitting the field development plan draft", "The FDP draft was not submitted");
+        }
+        finally { _submittingFdp = false; }
     }
 
+    // The gate review's status; the plan's contents are the draft the API returns with it (_fdpStatus.Draft).
     private class FDPViewModel
     {
         public string Status { get; set; } = string.Empty;
-        public string Version { get; set; } = "1.0";
         public string LastUpdated { get; set; } = string.Empty;
-        public double StoiipMmbo { get; set; }
-        public double GiipBcf { get; set; }
-        public double RecoveryFactor { get; set; }
-        public double ReservesMmbo { get; set; }
-        public string ReservesClass { get; set; } = string.Empty;
-        public string SelectedConcept { get; set; } = string.Empty;
-        public string FacilityType { get; set; } = string.Empty;
-        public double CapexMm { get; set; }
-        public double OpexMmPerYear { get; set; }
-        public double Npv10Mm { get; set; }
-        public double Irr { get; set; }
-        public double BreakevenUsd { get; set; }
     }
 
+    private const string NotEntered = "Not entered";
+
+    private static string Entered(string? value) => string.IsNullOrWhiteSpace(value) ? NotEntered : value;
+
+    private static string Figure(double? value, string before, string after) =>
+        value is double figure ? $"{before}{figure.ToString("0.##", CultureInfo.CurrentCulture)}{after}" : NotEntered;
+
+    private static Color NpvColor(double? npv) =>
+        npv is not double value ? Color.Default : value >= 0 ? Color.Success : Color.Error;
+
+    // A figure not entered stays empty (null) and is submitted as not entered, never as 0 or a preset estimate.
     private class FDPDraft
     {
-        public double StoiipMmbo { get; set; }
-        public double GiipBcf { get; set; }
-        public double RecoveryFactor { get; set; } = 35;
-        public double ReservesMmbo { get; set; }
+        public double? StoiipMmbo { get; set; }
+        public double? GiipBcf { get; set; }
+        public double? RecoveryFactor { get; set; }
+        public double? ReservesMmbo { get; set; }
         public string ReservesClass { get; set; } = "2P — Proved+Probable";
         public string ReservoirDescription { get; set; } = string.Empty;
         public List<ConceptOption> Concepts { get; set; } = new();
@@ -510,17 +623,42 @@
         public string FacilityType { get; set; } = string.Empty;
         public string ConceptRationale { get; set; } = string.Empty;
         public List<WellRow> WellProgram { get; set; } = new();
-        public double CapexMm { get; set; }
-        public double OpexMmPerYear { get; set; }
-        public double Npv10Mm { get; set; }
-        public double Irr { get; set; }
-        public double BreakevenUsd { get; set; }
+        public double? CapexMm { get; set; }
+        public double? OpexMmPerYear { get; set; }
+        public double? Npv10Mm { get; set; }
+        public double? Irr { get; set; }
+        public double? BreakevenUsd { get; set; }
         public string EconomicsNotes { get; set; } = string.Empty;
         public string Jurisdiction { get; set; } = string.Empty;
         public string PermitList { get; set; } = string.Empty;
         public DateTime? SubmissionDate { get; set; }
         public DateTime? ExpectedApprovalDate { get; set; }
         public string RegulatoryNotes { get; set; } = string.Empty;
+
+        public static FDPDraft From(SubmitFdpDraftRequest plan) => new()
+        {
+            StoiipMmbo           = plan.StoiipMmbo,
+            GiipBcf              = plan.GiipBcf,
+            RecoveryFactor       = plan.RecoveryFactor,
+            ReservesMmbo         = plan.ReservesMmbo,
+            ReservesClass        = plan.ReservesClass,
+            ReservoirDescription = plan.ReservoirDescription,
+            SelectedConcept      = plan.SelectedConcept,
+            FacilityType         = plan.FacilityType,
+            ConceptRationale     = plan.ConceptRationale,
+            WellProgram          = plan.WellProgram.Select(w => new WellRow(w.WellName, w.WellType, w.TargetZone, w.PlannedYear)).ToList(),
+            CapexMm              = plan.CapexMm,
+            OpexMmPerYear        = plan.OpexMmPerYear,
+            Npv10Mm              = plan.Npv10Mm,
+            Irr                  = plan.Irr,
+            BreakevenUsd         = plan.BreakevenUsd,
+            EconomicsNotes       = plan.EconomicsNotes,
+            Jurisdiction         = plan.Jurisdiction,
+            PermitList           = plan.PermitList,
+            SubmissionDate       = plan.SubmissionDate,
+            ExpectedApprovalDate = plan.ExpectedApprovalDate,
+            RegulatoryNotes      = plan.RegulatoryNotes,
+        };
     }
 
     private record ConceptOption(string Name, double CapexMm, double Recovery, string Risk, bool IsSelected);
@@ -562,7 +700,8 @@
         public string WellName { get; set; }
         public string WellType { get; set; }
         public string TargetZone { get; set; }
-        public int PlannedYear { get; set; }
-        public WellRow(string n, string t, string z, int y) { WellName=n; WellType=t; TargetZone=z; PlannedYear=y; }
+        // Null until a year is planned: a well's record holds no planned year, and none is invented.
+        public int? PlannedYear { get; set; }
+        public WellRow(string n, string t, string z, int? y) { WellName=n; WellType=t; TargetZone=z; PlannedYear=y; }
     }
 }

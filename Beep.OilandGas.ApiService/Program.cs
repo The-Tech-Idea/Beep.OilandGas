@@ -203,7 +203,8 @@ builder.Services.AddScoped<IPPDMDataVersioningService>(sp =>
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    return new PPDMDataVersioningService(editor, commonColumnHandler, defaults, metadata, connectionName);
+    return new PPDMDataVersioningService(editor, commonColumnHandler, defaults, metadata,
+        sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), connectionName);
 });
 
 // PPDM39 Section Services
@@ -1032,7 +1033,8 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.IAuthorizationObse
 });
 
 // Role-Based Aggregation Services (Phases 3-5) — using standard BeepDM DI helper
-builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.HseEngineerAggregationService>(connectionName);
+// The HSE aggregations count through IHSEKPIService, the one owner of incident counts; they read no table themselves.
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.HseEngineerAggregationService>();
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.DrillingEngineerAggregationService>(connectionName);
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ReservoirEngineerAggregationService>(connectionName);
 
@@ -1040,7 +1042,7 @@ builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ReservoirEngi
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ExecutiveAggregationService>(connectionName);
 
 // Role-Based Aggregation Services — HSE + Reservoir (Phase 4-5)
-builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.HseAggregationService>(connectionName);
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.HseAggregationService>();
 builder.Services.AddBeepService<Beep.OilandGas.ApiService.Services.ReservoirAggregationService>(connectionName);
 
 // Role-Based Aggregation — Accounting (Phase 2)

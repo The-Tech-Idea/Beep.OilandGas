@@ -46,7 +46,8 @@ public sealed class DevelopmentWorkPackageDto
     public string TargetDate { get; set; } = string.Empty;
     public bool IsCompleted { get; set; }
     public bool IsActive { get; set; }
-    public double PercentComplete { get; set; }
+    // Null when no record states the package's progress; the page then draws no progress bar.
+    public double? PercentComplete { get; set; }
     public string Note { get; set; } = string.Empty;
 }
 

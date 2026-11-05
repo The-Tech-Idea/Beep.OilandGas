@@ -1,9 +1,11 @@
 ﻿@page "/hse/compliance"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject ApiClient ApiClient
 @inject IComplianceServiceClient ComplianceClient
 @inject ILifeCycleService LifeCycleService
+@inject IClientFileExportService ExportService
 @using Beep.OilandGas.Models.Data.Compliance
 
 <PageTitle>Compliance Calendar</PageTitle>
@@ -29,8 +31,10 @@
             <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddObligation">
                 Add Obligation
             </MudButton>
+            @* The obligations this page loaded, downloaded as CSV: the API has no calendar export of its own. *@
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.Download" OnClick="ExportCalendar">
+                       StartIcon="@Icons.Material.Filled.Download" OnClick="ExportCalendarAsync"
+                       Disabled="@(_obligations.Count == 0)">
                 Export
             </MudButton>
         </MudStack>
@@ -41,21 +45,25 @@
         <MudItem xs="12" sm="6" md="3">
             <KpiCard Label="Due This Month" Value="@_dueThisMonth.ToString()" Unit="items"
                      ValueColor="Color.Warning" Icon="@Icons.Material.Filled.CalendarMonth"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="April 2026" />
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="@DateTime.Today.ToString("MMMM yyyy", CultureInfo.InvariantCulture)" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Overdue" Value="@_obligations.Count(o => o.Status == "OVERDUE").ToString()"
+            <KpiCard Label="Overdue" Value="@_obligations.Count(IsOverdue).ToString()"
                      ValueColor="Color.Error" Icon="@Icons.Material.Filled.ErrorOutline"
                      TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Error" TrendText="Immediate action" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Compliance Rate (YTD)" Value="@_complianceRate.ToString("N0")" Unit="%"
-                     ValueColor="@(_complianceRate >= 95 ? Color.Success : Color.Warning)"
+            @* The API's own score card (on time over all of this year's obligations), the figure the compliance dashboard
+               shows: the page counted a "Complete" status no obligation has, so it read 0%. *@
+            <KpiCard Label="On-Time Rate (This Year)"
+                     Value="@(_score?.OnTimeRate.ToString("N0") ?? "—")" Unit="%"
+                     ValueColor="@(_score is { OnTimeRate: >= 95 } ? Color.Success : Color.Warning)"
                      Icon="@Icons.Material.Filled.VerifiedUser"
                      TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="vs 95% target" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Open Permits" Value="@_obligations.Count(o => o.ObligationType == "Permit" && o.Status != "COMPLETE").ToString()"
+            <KpiCard Label="Open Permits" Value="@_obligations.Count(o => o.ObligationType == "Permit" && IsOpen(o)).ToString()"
                      ValueColor="Color.Info" Icon="@Icons.Material.Filled.Badge"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active" />
         </MudItem>
@@ -96,7 +104,7 @@
                                     <StatusBadge Status="@context.Item.Status" />
                                 </CellTemplate>
                             </TemplateColumn>
-                            <PropertyColumn Property="o => o.AssignedTo" Title="Assigned To" />
+                            @* No "Assigned To" column: an obligation records no assignee, and the column was always blank. *@
                         </Columns>
                     </MudDataGrid>
                 </MudCardContent>
@@ -109,13 +117,17 @@
 
                 <MudCard Elevation="2">
                     <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.subtitle1">April 2026 — Upcoming</MudText></CardHeaderContent>
+                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Open Obligations by Due Date</MudText></CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent Class="pa-0">
+                        @if (!UpcomingEvents.Any())
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">No open obligations.</MudText>
+                        }
                         <MudTimeline TimelineAlign="TimelineAlign.Start" TimelinePosition="TimelinePosition.Start">
                             @foreach (var ev in UpcomingEvents)
                             {
-                                <MudTimelineItem Color="@ObligationColor(ev.Status)" Variant="Variant.Filled" Size="Size.Small">
+                                <MudTimelineItem Color="@ObligationColor(ev)" Variant="Variant.Filled" Size="Size.Small">
                                     <ItemContent>
                                         <MudStack Spacing="0">
                                             <MudText Typo="Typo.body2"><strong>@ev.DueDate</strong> — @ev.ObligationId</MudText>
@@ -134,13 +146,9 @@
                     </MudCardHeader>
                     <MudCardContent>
                         <MudChart T="double" ChartType="ChartType.Donut"
-                                  Series="@(new double[] { _obligations.Count(o => o.Status == "Complete"), _obligations.Count(o => o.Status != "Complete" && o.Status != "Overdue"), _obligations.Count(o => o.Status == "Overdue") })"
+                                  ChartSeries="@CategorySeries"
+                                  ChartLabels="@CategoryLabels"
                                   Width="100%" Height="180px" />
-                        <MudStack Row="true" Justify="Justify.SpaceEvenly" Class="mt-1">
-                            <MudText Typo="Typo.caption">Complete</MudText>
-                            <MudText Typo="Typo.caption">Due Soon</MudText>
-                            <MudText Typo="Typo.caption">Overdue</MudText>
-                        </MudStack>
                     </MudCardContent>
                 </MudCard>
 
@@ -151,7 +159,7 @@
 </MudContainer>
 
 @* ── Add Obligation dialog ────────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showAddObligationDialog">
+<MudDialog @bind-Visible="_showAddObligationDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.AddTask" Color="Color.Primary" />
@@ -234,33 +242,58 @@
     private string? _prefillKey;
 
     private List<ObligationDto> _obligations = new();
+    private ComplianceScoreCard? _score;
 
+    // DueOn is the date the figures are counted from; DueDate is how the grid and the timeline show it.
     private record ObligationDto(
         string ObligationId, string ObligationType, string JurisdictionTag,
-        string DueDate, string Status, string AssignedTo);
+        string DueDate, DateTime DueOn, string Status, bool PastDue);
+
+    // The statuses are the API's (ObligationStatus): the page compared "Complete", "Active", "Open" and "Overdue", which no
+    // obligation has, so the filters, the counts and the chart read nothing.
+    private static bool IsOverdue(ObligationDto o) => o.Status == ObligationStatus.Overdue || o.PastDue;
+
+    private static bool IsOpen(ObligationDto o) =>
+        o.Status != ObligationStatus.Submitted && o.Status != ObligationStatus.Waived;
+
+    private static bool IsDueSoon(ObligationDto o) =>
+        IsOpen(o) && !IsOverdue(o) && o.DueOn.Date <= DateTime.Today.AddDays(30);
 
     private IEnumerable<ObligationDto> FilteredObligations => _filter switch
     {
-        "Overdue"   => _obligations.Where(o => o.Status == "Overdue"),
-        "Due Soon"  => _obligations.Where(o => o.Status == "Active" || o.Status == "Open"),
+        "Overdue"   => _obligations.Where(IsOverdue),
+        "Due Soon"  => _obligations.Where(IsDueSoon),
         "Permit"    => _obligations.Where(o => o.ObligationType == "Permit"),
-        "Reporting" => _obligations.Where(o => o.ObligationType == "Reporting"),
+        // Reporting obligations are the report types (ONRR_PRODUCTION_REPORT, BSEE_REPORT, AER_ST39_REPORT, ...).
+        "Reporting" => _obligations.Where(o => o.ObligationType.Contains("REPORT", StringComparison.OrdinalIgnoreCase)),
         _           => _obligations,
     };
 
     private int _dueThisMonth => _obligations.Count(o =>
+        o.DueOn.Year == DateTime.Today.Year && o.DueOn.Month == DateTime.Today.Month);
+
+    // The donut's one series: submitted, open, overdue and waived obligations, named by its labels.
+    private static readonly string[] CategoryLabels = { "Submitted", "Open", "Overdue", "Waived" };
+
+    private List<ChartSeries<double>> CategorySeries => new()
     {
-        if (DateTime.TryParse(o.DueDate, out var dt))
-            return dt.Year == DateTime.Today.Year && dt.Month == DateTime.Today.Month;
-        return false;
-    });
+        new ChartSeries<double>
+        {
+            Name = "Obligations",
+            Data = new double[]
+            {
+                _obligations.Count(o => o.Status == ObligationStatus.Submitted),
+                _obligations.Count(o => IsOpen(o) && !IsOverdue(o)),
+                _obligations.Count(IsOverdue),
+                _obligations.Count(o => o.Status == ObligationStatus.Waived)
+            }
+        }
+    };
 
-    private double _complianceRate => _obligations.Count == 0 ? 100 :
-        Math.Round(_obligations.Count(o => o.Status == "Complete") * 100.0 / _obligations.Count, 1);
-
+    // The open obligations, earliest due first — overdue ones included, since they are still owed.
     private IEnumerable<ObligationDto> UpcomingEvents => _obligations
-        .Where(o => DateTime.TryParse(o.DueDate, out _))
-        .OrderBy(o => DateTime.Parse(o.DueDate))
+        .Where(IsOpen)
+        .OrderBy(o => o.DueOn)
         .Take(8);
 
     protected override async Task OnInitializedAsync()
@@ -271,8 +304,21 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the obligations still load; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the compliance calendar", "The field name could not be loaded"), Severity.Warning);
+        }
 
+        await LoadObligationsAsync();
+
+        ApplyQueryPrefill();
+    }
+
+    // This year's obligations (the API's default) and its score card for the same obligations.
+    private async Task LoadObligationsAsync()
+    {
         _loading = true;
         try
         {
@@ -282,13 +328,26 @@
                 r.ObligType,
                 r.Jurisdiction,
                 r.DueDate.ToLocalTime().ToString("dd MMM yyyy"),
+                r.DueDate.ToLocalTime(),
                 r.Status,
-                string.Empty)).ToList();
+                r.IsOverdue)).ToList();
         }
-        catch (Exception) { Snackbar.Add("Failed to load obligations.", Severity.Warning); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the compliance obligations", "Failed to load obligations"), Severity.Warning);
+        }
         finally { _loading = false; }
 
-        ApplyQueryPrefill();
+        try
+        {
+            _score = await ComplianceClient.GetScoreAsync();
+        }
+        // The on-time rate shows a dash rather than a figure it does not have; anything else reaches the error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _score = null;
+            Snackbar.Add(Calls.Explain(failure, "loading the compliance score card", "The on-time rate could not be loaded"), Severity.Warning);
+        }
     }
 
     protected override void OnParametersSet()
@@ -296,13 +355,16 @@
         ApplyQueryPrefill();
     }
 
-    private Color ObligationColor(string status) => status switch
+    private static Color ObligationColor(ObligationDto o)
     {
-        "Overdue"  => Color.Error,
-        "Active" or "Open" => Color.Warning,
-        "Complete" => Color.Success,
-        _          => Color.Default,
-    };
+        if (IsOverdue(o)) return Color.Error;
+        return o.Status switch
+        {
+            ObligationStatus.Submitted => Color.Success,
+            ObligationStatus.Waived    => Color.Default,
+            _                          => Color.Warning,   // pending, or flagged for a payment variance
+        };
+    }
 
     // ── Add Obligation dialog state ─────────────────────────────────────────────
     private bool      _showAddObligationDialog = false;
@@ -340,12 +402,6 @@
                 Description: _newObligDescription,
                 CreatedByProcess: ResolveCreatedByProcess());
             var id = await ComplianceClient.CreateObligationAsync(req);
-            var newRow = new ObligationDto(
-                id ?? Guid.NewGuid().ToString(),
-                _newObligType, _newObligJurisdiction,
-                (_newObligDueDate ?? DateTime.Today.AddMonths(1)).ToString("dd MMM yyyy"),
-                ObligationStatus.Pending, string.Empty);
-            _obligations.Add(newRow);
             _showAddObligationDialog = false;
             Snackbar.Add("Obligation added.", Severity.Success);
 
@@ -354,12 +410,40 @@
                 NavigationManager.NavigateTo(BuildObligationDetailHref(id));
                 return;
             }
+
+            // The list is read back from the API, which assigned the obligation's id and status (the page added a row
+            // of its own, with an id it made up when the API answered none). The reload answers its own failures.
+            await LoadObligationsAsync();
         }
-        catch (Exception) { Snackbar.Add("Error adding obligation.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "adding a compliance obligation", "The obligation was not added"), Severity.Error);
+        }
         finally { _addingObligation = false; }
     }
 
-    private void ExportCalendar()  => Snackbar.Add("Calendar export queued", Severity.Success);
+    // The obligations as loaded, one row each, with a header row; nothing is queued anywhere.
+    private async Task ExportCalendarAsync()
+    {
+        var rows = new List<string[]>
+        {
+            new[] { "Obligation ID", "Type", "Jurisdiction", "Due Date", "Status", "Overdue" }
+        };
+        rows.AddRange(_obligations
+            .OrderBy(o => o.DueOn)
+            .Select(o => new[]
+            {
+                o.ObligationId,
+                o.ObligationType,
+                o.JurisdictionTag,
+                o.DueOn.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                o.Status,
+                IsOverdue(o) ? "Yes" : "No",
+            }));
+
+        await ExportService.DownloadCsvAsync($"compliance-calendar-{DateTime.Today:yyyy-MM-dd}", row => row, rows);
+        Snackbar.Add($"{_obligations.Count} obligations downloaded.", Severity.Success);
+    }
 
     private void ApplyQueryPrefill()
     {

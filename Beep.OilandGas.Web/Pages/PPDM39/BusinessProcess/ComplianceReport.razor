@@ -5,6 +5,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Submit Compliance Report</PageTitle>
 
@@ -122,9 +123,11 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch
+        // The header's field name is helpful but does not block submitting a report: a failed call is said as a warning
+        // and the form stays usable; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            // Header field name is helpful but non-blocking for report submission.
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the compliance report page", "The field name could not be loaded"), Severity.Warning);
         }
     }
 
@@ -149,9 +152,9 @@
             Snackbar.Add("Compliance report submitted successfully.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/compliance");
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Submission failed.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "submitting a compliance report", "The compliance report was not submitted"), Severity.Error);
         }
         finally
         {

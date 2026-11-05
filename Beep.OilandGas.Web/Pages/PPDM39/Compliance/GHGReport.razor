@@ -2,13 +2,14 @@
 @using Beep.OilandGas.Models.Data.Compliance
 @inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>GHG Emission Report</PageTitle>
 
 <MudText Typo="Typo.h5" Class="mb-4">GHG Emission Report</MudText>
 
 <MudPaper Elevation="2" Class="pa-4 mb-4">
-    <MudGrid Spacing="2" AlignItems="AlignItems.End">
+    <MudGrid Spacing="2" Class="align-end">
         <MudItem xs="12" sm="4" md="2">
             <MudNumericField T="int" @bind-Value="_year" Label="Report Year" Min="2000" Max="2100" />
         </MudItem>
@@ -113,9 +114,9 @@
             if (_report is null)
                 _error = "No report data returned.";
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            _error = "Failed to generate GHG report.";
+            _error = Calls.Explain(failure, "generating a GHG emission report", "The GHG report was not generated");
             Snackbar.Add(_error, Severity.Error);
         }
         finally

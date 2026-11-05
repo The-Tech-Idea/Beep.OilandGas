@@ -17,6 +17,7 @@ using Beep.OilandGas.Web.Theme;
 using Beep.OilandGas.Web.Services;
 using Beep.OilandGas.Client.DependencyInjection;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.DataProtection;
 using Beep.Foundation.IdentityServer.Shared.Extensions;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Duende.AccessTokenManagement.OpenIdConnect;
@@ -74,6 +75,24 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpContextAccessor();
 
 // ============================================
+// KEY RING — the sign-in cookie's and antiforgery tokens' keys (R7-W24)
+// ============================================
+// There was no key ring of this site's own: the framework's default store, which a shared host's app pool without a user
+// profile keeps in memory, so every recycle and deployment signed everybody out. Outside Development the keys persist under
+// App_Data (DataProtection:KeysPath to move them; App_Data survives a deployment) and are encrypted at rest with the PEM key
+// in DataProtection:Key — the 2026-10-02 key-ring rule, expected: without it the site still starts, keeps its keys unencrypted and says so at startup, naming the setting. A
+// developer's machine keeps the framework's own store. The subject and serial number are this key ring's identity: never
+// change them, or the keys written with them cannot be read.
+var dataProtection = builder.Services.AddDataProtection().SetApplicationName("Beep.OilandGas.Web");
+if (!builder.Environment.IsDevelopment())
+{
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keysPath
+        ? Path.GetFullPath(keysPath, builder.Environment.ContentRootPath)
+        : Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys")));
+}
+dataProtection.ProtectKeysWithPemKey(builder.Configuration, builder.Environment, new KeyRingIdentity("CN=Beep Oil and Gas key ring", [0x7C, 0x0A, 0x0A, 0x10]));
+
+// ============================================
 // SIGN-IN (the identity server) AND ROLES (the OilGas repository, through the API)
 // ============================================
 // The identity server authenticates; everything a person may do is the OilGas repository's, which the API owns — the
@@ -88,10 +107,16 @@ builder.Services.AddHttpContextAccessor();
 // link to a route that did not exist (S3-06 §3). The client id and secret are the pair the identity server's console
 // generated (IdentityServer:ClientId / ClientSecret); IdentityServer:ApiScopes names the OilGas API's identifier and
 // IdentityServer:AccountScopes the scopes /account/manage uses.
+//
+// CWF-06. The secret is named as required because this is a confidential client: the library takes an absent secret for a
+// public client, so a server whose settings omitted it started with sign-in on and had every code exchange refused
+// (invalid_client). Now a missing or placeholder secret switches sign-in off, names the setting in the log, and leaves the
+// public pages up (the 2026-10-06 rule).
 builder.AddBeepClientApp(options =>
 {
     options.CookieName = ".Beep.OilGas.Auth";
     options.UiLocales = () => System.Globalization.CultureInfo.CurrentUICulture.Name;
+    options.RequiredConfigurationKeys = ["IdentityServer:ClientSecret"];
 });
 
 builder.Services.AddScoped<IAccountAdmission, OilGasAccountAdmission>();

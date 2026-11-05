@@ -1,0 +1,167 @@
+@attribute [Route(LegalPages.Terms)]
+@attribute [AllowAnonymous]
+
+@* The terms of service the identity server's sign-in page for Beep Oil & Gas links (LegalPages). Public, like the privacy
+   policy. Every clause describes how the service actually works: the first account administers and every later one
+   starts with no access (RepositoryBootstrapService); access follows roles and asset grants, not the workspace persona;
+   records keep who created and changed them; deletion is the account page's, which refuses the only active administrator
+   and switches the account off (OilGasAccountDeactivation). The operator is the one TheTechIdea's published legal pages
+   name; neither names a registered company, address or governing law, so these terms state none. *@
+
+<PageTitle>Terms of service - Beep Oil &amp; Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
+    <MudPaper Outlined="true" Class="pa-6">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Terms of service</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+            Effective @LegalPages.EffectiveDateText
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            These terms are the agreement between you and @LegalPages.Operator ("we", "us") for your use of Beep Oil &amp; Gas
+            (the "service"). By creating an account or using the service you accept them. If you use the service on behalf of
+            an organization, you confirm that you may accept them for it.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Who provides the service</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            Beep Oil &amp; Gas is provided by @LegalPages.Operator. Questions about these terms:
+            <MudLink Href="@LegalPages.ContactHref">@LegalPages.ContactEmail</MudLink>.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Your account and your roles</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.VpnKey" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    You sign in through @LegalPages.Operator's identity service,
+                    <MudLink Href="@LegalPages.IdentityService" Target="_blank">@LegalPages.IdentityServiceName</MudLink>. Keep
+                    your credentials to yourself: anything done through your account is treated as done by you.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.AdminPanelSettings" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    The first person to sign in to the service becomes its administrator. Every account after that starts with
+                    no access: an administrator assigns roles, and the fields, wells and other assets each person may reach. What
+                    you can see and do follows those roles and grants — the workspace persona you choose only arranges your
+                    workspace.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.ManageAccounts" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    Administrators are responsible for giving each person only the access they need, and for removing access
+                    that people should no longer have.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Block" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    We may suspend or close an account that is used to break these terms, to reach data its holder is not
+                    entitled to, or to attack the service.
+                </MudText>
+            </MudListItem>
+        </MudList>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Acceptable use</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            Do not use the service to break the law; to enter data you have no right to enter, including other people's
+            personal data without a lawful reason; to reach records your access does not cover, or to try to get round its
+            access controls; to interfere with the service, overload it or test its security without our written permission;
+            or to impersonate anyone. We may remove content, or suspend access, that does any of these things.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Your data</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.Inventory" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    The operational, engineering and financial data you and your organization enter remains yours or your
+                    organization's. You give us permission to store, process, copy and display it only as needed to provide the
+                    service to you and to the people your administrators give access.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.FactCheck" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    You are responsible for having the right to enter what you enter, for its accuracy, and for any personal
+                    data it contains — the names and details of lessors, royalty owners, contractors, employees or anyone else.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.History" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    Each record keeps who created it and who last changed it. That history is part of the record and stays with it.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Policy" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    How we handle personal data is described in our <MudLink Href="@LegalPages.Privacy">privacy policy</MudLink>.
+                </MudText>
+            </MudListItem>
+        </MudList>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Calculations, analyses and reports</MudText>
+        <MudText Typo="Typo.body1" Class="mb-1">
+            The service performs engineering and financial calculations — among them decline-curve, nodal, flash, gas-lift,
+            choke, compressor, pump, well-test and pipeline analyses, fluid properties, reserves classification, economic
+            evaluation, production allocation, royalty, revenue and tax figures, and compliance and emissions reports. They are
+            decision support:
+        </MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.Calculate" IconColor="Color.Warning">
+                <MudText Typo="Typo.body1">
+                    Their results depend on the data and assumptions entered, and on the limits of the methods used. Check them
+                    before you rely on them.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Engineering" IconColor="Color.Warning">
+                <MudText Typo="Typo.body1">
+                    They are not engineering, geological, reserves, accounting, tax, legal or regulatory advice, and they are not
+                    a certification, audit or sign-off by a qualified professional. A reserves classification produced here is
+                    not a reserves report or audit, and a compliance, emissions, tax or royalty figure produced here is not a
+                    filing.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Gavel" IconColor="Color.Warning">
+                <MudText Typo="Typo.body1">
+                    Decisions about wells, facilities, safety, spending, reporting and payments remain yours and your
+                    organization's, made by people qualified to make them.
+                </MudText>
+            </MudListItem>
+        </MudList>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Availability and changes to the service</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            We work to keep the service available, but we do not guarantee uninterrupted service: maintenance, hosting failures
+            and outages at the identity service or other services it depends on all happen. We may change, add or remove
+            features. Keep your own copies of anything you cannot afford to lose, and do not rely on the service as the only
+            record of something that matters to you.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Ending your use</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            You may stop using the service at any time. You can delete your account from the Personal Data tab of
+            <MudLink Href="@BeepClientEndpoints.Manage">your account page</MudLink>: that deletes your sign-in account at the
+            identity service and switches your Beep Oil &amp; Gas account off. If you are the only active administrator, make
+            someone else an administrator first. The records you created stay, as part of your organization's history; the
+            <MudLink Href="@LegalPages.Privacy">privacy policy</MudLink> explains what remains and how to ask about it. We may
+            suspend or close an account as described above, proportionately, and with a warning first where the circumstances
+            allow one.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Disclaimer and limitation of liability</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            The service is provided as it is. To the fullest extent the law allows, we exclude implied warranties, and we are
+            not liable for indirect or consequential loss, for loss of data, profit, production or opportunity, or for
+            decisions made on the strength of the service's calculations, analyses or reports. Nothing in these terms limits
+            liability that cannot lawfully be limited — including for death or personal injury caused by negligence, or for
+            fraud.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Changes to these terms</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            We may update these terms as the service changes. The date at the top is when this version took effect, and
+            continuing to use the service after a change means the updated terms apply.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Contact</MudText>
+        <MudText Typo="Typo.body1">
+            Questions about these terms: <MudLink Href="@LegalPages.ContactHref">@LegalPages.ContactEmail</MudLink>. How we
+            handle your data is described in our <MudLink Href="@LegalPages.Privacy">privacy policy</MudLink>.
+        </MudText>
+    </MudPaper>
+</MudContainer>

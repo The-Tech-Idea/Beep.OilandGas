@@ -15,6 +15,10 @@
     <!-- SEC-BCL-01. The back-channel logout table the Web's sign-in keeps in this context. -->
     <ProjectReference Include="$(IdentitySharedProject)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
+    <!-- 2026-10-20. Microsoft.Data.SqlClient, which the SQL Server provider brings in, resolves System.Security.Cryptography.Pkcs
+         inside GHSA-846f-f764-76mx (CVE-2026-84008, high) and GHSA-2fmv-rv2c-59x7 (to 9.0.20 and 10.0.12). 10.0.13 is the
+         patched release; a direct reference outranks the transitive one. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="Oracle.EntityFrameworkCore" Version="10.23.26300" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">

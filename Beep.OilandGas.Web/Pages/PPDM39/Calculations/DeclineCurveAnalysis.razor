@@ -9,6 +9,8 @@
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Run Decline Curve Analysis</PageTitle>
 
@@ -129,7 +131,7 @@
                     {
                         <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_forecastRateSeries"
-                                  XAxisLabels="@_forecastLabels"
+                                  ChartLabels="@_forecastLabels"
                                   Width="100%"
                                   Height="300px" />
                     }
@@ -145,7 +147,7 @@
                     {
                         <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_cumulativeSeries"
-                                  XAxisLabels="@_forecastLabels"
+                                  ChartLabels="@_forecastLabels"
                                   Width="100%"
                                   Height="300px" />
                     }
@@ -346,9 +348,15 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch
+        // The field name is non-critical: the page goes on without it, and says so.
+        catch (OilGasApiException answer)
         {
-            // Field name is non-critical.
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for decline curve analysis", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for decline curve analysis", "The field name could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -363,9 +371,14 @@
                 _fieldName = _wells[0].ASSIGNED_FIELD ?? _fieldName;
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load wells for DCA.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the wells for decline curve analysis", "The wells for DCA could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the wells for decline curve analysis", "The wells for DCA could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -417,16 +430,38 @@
             }
 
             BuildForecastCharts();
-            await ReloadHistoryAsync();
             Snackbar.Add("Decline curve analysis completed.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error running decline curve analysis.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"running decline curve analysis for well {_selectedWellId}", "The decline curve analysis did not run"), Severity.Error);
+            return;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"running decline curve analysis for well {_selectedWellId}", "The decline curve analysis did not run");
+            return;
         }
         finally
         {
             _isRunning = false;
+        }
+
+        // The analysis has run and its result is shown; the history beside it is refreshed apart, so a failure here is
+        // not mistaken for the run's.
+        try
+        {
+            await ReloadHistoryAsync();
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, $"refreshing the decline curve analysis history for well {_selectedWellId}", "The DCA history could not be refreshed"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"refreshing the decline curve analysis history for well {_selectedWellId}", "The DCA history could not be refreshed", FailureSeverity.Degraded);
         }
     }
 

@@ -7,6 +7,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>@_prospect.Name — Prospect Detail</PageTitle>
 
@@ -14,13 +15,16 @@
 
     @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       OnClick='() => NavigationManager.NavigateTo("/exploration/prospect-board")'
-                       Title="Back to Board" />
+        <MudTooltip Text="Back to Board">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           OnClick='() => NavigationManager.NavigateTo("/exploration/prospect-board")'
+                           aria-label="Back to Board" />
+        </MudTooltip>
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">@_prospect.Name</MudText>
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — @_prospect.Basin · @_prospect.PlayType</MudText>
+                @* No basin: a prospect record carries none (the header showed its responsible business associate's id as one). *@
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — @_prospect.PlayType</MudText>
                 <StatusBadge Status="@_prospect.Status" />
             </MudStack>
         </MudStack>
@@ -36,14 +40,48 @@
                 @* Tab 1: Summary *@
                 <MudTabPanel Text="Summary" Icon="@Icons.Material.Filled.Summarize">
                     <MudGrid Spacing="3" Class="pa-4">
-                        <MudItem xs="12" sm="6" md="4">
-                            <KpiCard Label="Resource P90" Value="@_prospect.ResourceP90.ToString("N0")" Unit="@_prospect.ResourceUnit" ValueColor="Color.Error" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6" md="4">
-                            <KpiCard Label="Resource P50" Value="@_prospect.ResourceP50.ToString("N0")" Unit="@_prospect.ResourceUnit" ValueColor="Color.Primary" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6" md="4">
-                            <KpiCard Label="Resource P10" Value="@_prospect.ResourceP10.ToString("N0")" Unit="@_prospect.ResourceUnit" ValueColor="Color.Success" />
+                        @if (_prospect.EstimatedOilVolume.HasValue)
+                        {
+                            <MudItem xs="12" sm="6">
+                                <KpiCard Label="Estimated Oil Volume" Value="@_prospect.EstimatedOilVolume.Value.ToString("N0")" Unit="@_prospect.VolumeUnit" ValueColor="Color.Primary" />
+                            </MudItem>
+                        }
+                        @if (_prospect.EstimatedGasVolume.HasValue)
+                        {
+                            <MudItem xs="12" sm="6">
+                                <KpiCard Label="Estimated Gas Volume" Value="@_prospect.EstimatedGasVolume.Value.ToString("N0")" Unit="@_prospect.VolumeUnit" ValueColor="Color.Primary" />
+                            </MudItem>
+                        }
+                        <MudItem xs="12">
+                            @* The prospect's latest recorded volume estimate (PROSPECT_VOLUME_ESTIMATE), as the API reads it; a
+                               volume is shown only for the fluid the estimate gives one for. *@
+                            @if (_volumeEstimateError is not null)
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true">@_volumeEstimateError</MudAlert>
+                            }
+                            else if (_volumeEstimatesLoaded && _volumeEstimate is null)
+                            {
+                                <MudAlert Severity="Severity.Info" Dense="true">No probabilistic resource estimate (P90, P50, P10) is recorded for this prospect.</MudAlert>
+                            }
+                            else if (_volumeEstimate is { } estimate)
+                            {
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">@EstimateHeading(estimate)</MudText>
+                                <MudSimpleTable Dense="true" Elevation="0">
+                                    <thead>
+                                        <tr><th></th><th>P90</th><th>P50</th><th>P10</th><th>Unit</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (estimate.OIL_VOLUME_P90 != 0m || estimate.OIL_VOLUME_P50 != 0m || estimate.OIL_VOLUME_P10 != 0m)
+                                        {
+                                            <tr><td>Oil</td><td>@estimate.OIL_VOLUME_P90.ToString("N0")</td><td>@estimate.OIL_VOLUME_P50.ToString("N0")</td><td>@estimate.OIL_VOLUME_P10.ToString("N0")</td><td>@estimate.VOLUME_OUOM</td></tr>
+                                        }
+                                        @if (estimate.GAS_VOLUME_P90 != 0m || estimate.GAS_VOLUME_P50 != 0m || estimate.GAS_VOLUME_P10 != 0m)
+                                        {
+                                            <tr><td>Gas</td><td>@estimate.GAS_VOLUME_P90.ToString("N0")</td><td>@estimate.GAS_VOLUME_P50.ToString("N0")</td><td>@estimate.GAS_VOLUME_P10.ToString("N0")</td><td>@estimate.VOLUME_OUOM</td></tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                            }
                         </MudItem>
                         <MudItem xs="12">
                             <MudPaper Elevation="0" Class="pa-3">
@@ -62,10 +100,8 @@
                                 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Play Type</MudText>
                                 <MudText Typo="Typo.body2">@_prospect.PlayType</MudText>
                             </MudStack>
-                            <MudStack Row="true" Spacing="2">
-                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Basin</MudText>
-                                <MudText Typo="Typo.body2">@_prospect.Basin</MudText>
-                            </MudStack>
+                            @* No "Basin" row: the prospect record has no basin; the row showed RESPONSIBLE_BA_ID, a business
+                               associate's id. *@
                             <MudStack Row="true" Spacing="2">
                                 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Target Formation</MudText>
                                 <MudText Typo="Typo.body2">@_prospect.TargetFormation</MudText>
@@ -107,12 +143,20 @@
                             </Columns>
                         </MudDataGrid>
                         <MudDivider Class="my-3" />
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudText Typo="Typo.subtitle2">Overall Pg (Chance of Success):</MudText>
-                            <MudText Typo="Typo.h5" Color="@((_prospect.RiskElements.Aggregate(1.0, (acc, r) => acc * r.Probability / 100) * 100) >= 25 ? Color.Success : Color.Warning)">
-                                @((_prospect.RiskElements.Aggregate(1.0, (acc, r) => acc * r.Probability / 100) * 100).ToString("F1"))%
-                            </MudText>
-                        </MudStack>
+                        @if (_prospect.RiskElements.Count > 0)
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudText Typo="Typo.subtitle2">Overall Pg (Chance of Success):</MudText>
+                                <MudText Typo="Typo.h5" Color="@((_prospect.RiskElements.Aggregate(1.0, (acc, r) => acc * r.Probability / 100) * 100) >= 25 ? Color.Success : Color.Warning)">
+                                    @((_prospect.RiskElements.Aggregate(1.0, (acc, r) => acc * r.Probability / 100) * 100).ToString("F1"))%
+                                </MudText>
+                            </MudStack>
+                        }
+                        else
+                        {
+                            @* The prospect API carries no risk-element breakdown; a product over no elements would read as a 100% chance of success. *@
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">No chance-of-success breakdown is recorded for this prospect.</MudText>
+                        }
                     </MudPaper>
                 </MudTabPanel>
 
@@ -214,6 +258,9 @@
     private int _activeTab;
     private ProspectViewModel _prospect = new();
     private List<ProcessStep> _stageHistory = new();
+    private Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT_VOLUME_ESTIMATE? _volumeEstimate;
+    private bool _volumeEstimatesLoaded;
+    private string? _volumeEstimateError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -224,7 +271,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for a prospect", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for a prospect", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         await LoadProspectAsync();
     }
@@ -238,11 +294,15 @@
 
     private async Task LoadProspectAsync()
     {
+        _volumeEstimate = null;
+        _volumeEstimateError = null;
+        _volumeEstimatesLoaded = false;
         if (string.IsNullOrEmpty(Id) || Id == "new")
         {
             _prospect = new ProspectViewModel { Name = "New Prospect", Status = "DRAFT" };
             return;
         }
+        var loaded = false;
         try
         {
             var p = await ExplorationService.GetProspectAsync(Id);
@@ -251,7 +311,6 @@
                 _prospect = new ProspectViewModel
                 {
                     Name            = p.PROSPECT_NAME ?? p.PROSPECT_ID ?? string.Empty,
-                    Basin           = p.RESPONSIBLE_BA_ID ?? string.Empty,
                     PlayType        = p.PROSPECT_TYPE ?? string.Empty,
                     Status          = p.PROSPECT_STATUS ?? "ACTIVE",
                     Description     = p.REMARK ?? string.Empty,
@@ -259,18 +318,57 @@
                     StructuralStyle = string.Empty,
                     SeismicCoverage = string.Empty,
                     SeismicVintage  = string.Empty,
-                    ResourceP90     = (double)(p.AREA_SIZE ?? 0m) * 0.7,
-                    ResourceP50     = (double)(p.AREA_SIZE ?? 0m),
-                    ResourceP10     = (double)(p.AREA_SIZE ?? 0m) * 1.5,
-                    ResourceUnit    = p.AREA_SIZE_OUOM ?? "MMBO",
+                    EstimatedOilVolume = p.ESTIMATED_OIL_VOLUME,
+                    EstimatedGasVolume = p.ESTIMATED_GAS_VOLUME,
+                    VolumeUnit         = p.ESTIMATED_VOLUME_OUOM ?? string.Empty,
                 };
                 _stageHistory = BuildStageHistory(p.PROSPECT_STATUS);
+                loaded = true;
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load prospect.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading a prospect", "The prospect could not be loaded"), Severity.Warning);
         }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a prospect", "The prospect could not be loaded", FailureSeverity.Degraded);
+        }
+
+        if (loaded)
+            await LoadVolumeEstimateAsync(Id);
+    }
+
+    private async Task LoadVolumeEstimateAsync(string prospectId)
+    {
+        try
+        {
+            var estimates = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT_VOLUME_ESTIMATE>>(
+                $"/api/prospect/{Uri.EscapeDataString(prospectId)}/volume-estimates");
+            // The API answers newest first.
+            _volumeEstimate = estimates?.FirstOrDefault();
+            _volumeEstimatesLoaded = true;
+        }
+        // The rest of the prospect shows; the summary says the estimate could not be read rather than that none exists.
+        catch (OilGasApiException answer)
+        {
+            _volumeEstimateError = Answers.Explain(answer, "loading a prospect's volume estimate", "The prospect's volume estimate could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _volumeEstimateError = Notifier.FailureText(ex, "loading a prospect's volume estimate", "The prospect's volume estimate could not be loaded", FailureSeverity.Degraded);
+        }
+    }
+
+    private static string EstimateHeading(Beep.OilandGas.Models.Data.ProspectIdentification.PROSPECT_VOLUME_ESTIMATE estimate)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(estimate.ESTIMATE_METHOD)) parts.Add(estimate.ESTIMATE_METHOD);
+        if (estimate.ESTIMATE_DATE is DateTime date) parts.Add(date.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
+        if (!string.IsNullOrWhiteSpace(estimate.ESTIMATOR)) parts.Add($"by {estimate.ESTIMATOR}");
+        return parts.Count == 0 ? "Volume estimate" : $"Volume estimate ({string.Join(", ", parts)})";
     }
 
     private static List<ProcessStep> BuildStageHistory(string? status)
@@ -318,9 +416,10 @@
             {
                 Snackbar.Add(Answers.Explain(answer, "advancing a prospect to drill candidate", "The prospect was not advanced"), Severity.Error);
             }
-            catch (Exception)
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
             {
-                Snackbar.Add("Failed to advance prospect stage.", Severity.Error);
+                Notifier.Failure(ex, "advancing a prospect to drill candidate", "The prospect was not advanced");
             }
         }
     }
@@ -352,16 +451,16 @@
         {
             Snackbar.Add(Answers.Explain(answer, "dropping a prospect", "The prospect was not dropped"), Severity.Error);
         }
-        catch (Exception)
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("Failed to drop prospect.", Severity.Error);
+            Notifier.Failure(ex, "dropping a prospect", "The prospect was not dropped");
         }
     }
 
     private class ProspectViewModel
     {
         public string Name { get; set; } = string.Empty;
-        public string Basin { get; set; } = string.Empty;
         public string PlayType { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -369,10 +468,9 @@
         public string StructuralStyle { get; set; } = string.Empty;
         public string SeismicCoverage { get; set; } = string.Empty;
         public string SeismicVintage { get; set; } = string.Empty;
-        public double ResourceP90 { get; set; }
-        public double ResourceP50 { get; set; }
-        public double ResourceP10 { get; set; }
-        public string ResourceUnit { get; set; } = "MMBO";
+        public decimal? EstimatedOilVolume { get; set; }
+        public decimal? EstimatedGasVolume { get; set; }
+        public string VolumeUnit { get; set; } = string.Empty;
         public List<RiskElement> RiskElements { get; set; } = new();
         public List<WellReference> RelatedWells { get; set; } = new();
     }

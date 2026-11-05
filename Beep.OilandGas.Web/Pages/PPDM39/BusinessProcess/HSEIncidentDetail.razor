@@ -4,6 +4,8 @@
 @inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
+@inject IFailureReporter Failures
 
 <PageTitle>HSE Incident — @Id</PageTitle>
 
@@ -170,7 +172,7 @@
 </MudContainer>
 
 @* ── Add Corrective Action dialog ──────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showAddActionDialog">
+<MudDialog @bind-Visible="_showAddActionDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
@@ -300,9 +302,10 @@
                 _rcaDraft = _rcaSummary;
             }
         }
-        catch
+        // A failed call says the incident did not load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load incident detail.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading an HSE incident", "Could not load incident detail"), Severity.Warning);
         }
     }
 
@@ -312,8 +315,16 @@
         {
             return await BusinessProcessClient.GetHseIncidentAsync(incidentId);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        // The endpoint answers 404 when the incident has no workflow instance: the page says so and disables the workflow
+        // actions, and the answer is recorded. (It read HttpRequestException's status, which ApiClient no longer throws for
+        // an answer, so the 404 failed the whole page.)
+        catch (OilGasApiException noWorkflow) when (noWorkflow.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
+            Failures.ReportHandled(
+                noWorkflow,
+                "reading an HSE incident's workflow instance",
+                consequence: "the incident has no workflow instance; the page says so and disables its workflow actions",
+                FailureSeverity.Degraded);
             _workflowAvailable = false;
             _workflowWarning = "No workflow instance was found for this incident. The PPDM incident record is still available, but workflow actions are disabled for this page.";
             return null;
@@ -334,9 +345,9 @@
                     : "Workflow created for this incident.",
                 instance == null ? Severity.Warning : Severity.Success);
         }
-        catch
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not create workflow for this incident.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "creating an HSE incident's workflow", "Could not create workflow for this incident"), Severity.Error);
         }
         finally
         {
@@ -357,7 +368,10 @@
             await LoadDetailAsync();
             Snackbar.Add("RCA submitted.", Severity.Success);
         }
-        catch { Snackbar.Add("Could not submit RCA.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "submitting an HSE incident's root cause analysis", "Could not submit RCA"), Severity.Error);
+        }
     }
 
     private async Task CloseActionAsync(string actionId)
@@ -372,7 +386,10 @@
             await LoadDetailAsync();
             Snackbar.Add("Action closed.", Severity.Success);
         }
-        catch { Snackbar.Add("Could not close action.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "closing an HSE corrective action", "Could not close action"), Severity.Error);
+        }
     }
 
     private async Task CloseIncidentAsync()
@@ -388,7 +405,10 @@
             Snackbar.Add("Incident closed.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/hse/incidents");
         }
-        catch { Snackbar.Add("Could not close incident.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "closing an HSE incident", "Could not close incident"), Severity.Error);
+        }
     }
 
     private record ActionRow(string ActionId, string Description, string AssignedTo, DateTime DueDate, string Status);
@@ -435,9 +455,9 @@
             _showAddActionDialog = false;
             Snackbar.Add("Corrective action added.", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to add action.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "adding an HSE corrective action", "Failed to add action"), Severity.Error);
         }
         finally { _addingAction = false; }
     }

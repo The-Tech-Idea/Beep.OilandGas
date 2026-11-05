@@ -43,6 +43,19 @@ namespace Beep.OilandGas.Web.Services
             return await ReadAsync<T>(response, cancellationToken);
         }
 
+        /// <summary>
+        /// A GET whose answer's type is known only at run time: a PPDM table's rows read as the entity class its metadata
+        /// names (<c>List&lt;WELL&gt;</c>), which the generic table page needs to tell one record from another.
+        /// </summary>
+        public async Task<object?> GetAsync(string endpoint, Type answerType, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(answerType);
+            using var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            return JsonSerializer.Deserialize(content, answerType, JsonOptions);
+        }
+
         public async Task<TResponse?> PostAsync<TRequest, TResponse>(
             string endpoint,
             TRequest data,

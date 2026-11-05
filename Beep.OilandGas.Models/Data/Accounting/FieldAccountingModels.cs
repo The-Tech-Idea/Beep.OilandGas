@@ -22,6 +22,10 @@ namespace Beep.OilandGas.Models.Data.Accounting
 
     public class RevenueLine
     {
+        /// <summary>When the revenue transaction was recorded; null when it carries no date.</summary>
+        public System.DateTime? TransactionDate { get; set; }
+        /// <summary>The well the revenue transaction names; empty when it names none.</summary>
+        public string WellId { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Product { get; set; } = string.Empty;
         public decimal Volume { get; set; }

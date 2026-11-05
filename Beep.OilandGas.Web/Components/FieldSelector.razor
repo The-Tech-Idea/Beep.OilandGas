@@ -3,7 +3,7 @@
 @inject ApiClient ApiClient
 @inject OilGasCallFailures Calls
 
-<MudGrid AlignItems="AlignItems.Center" Spacing="2">
+<MudGrid Spacing="2" Class="align-center">
     <MudItem xs="12" sm="8" md="6">
         <MudSelect T="string" Label="Active field" Variant="Variant.Outlined" Margin="Margin.Dense"
                    Value="@_state?.SelectedId" ValueChanged="Select" Disabled="@(_state is null || _state.Loading || _state.Saving || !_state.Loaded || _state.Fields.Count == 0)"

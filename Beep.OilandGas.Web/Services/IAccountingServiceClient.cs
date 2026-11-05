@@ -6,6 +6,7 @@ using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.Accounting.Cost;
 using Beep.OilandGas.Models.Data.Accounting.Royalty;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Reporting;
 
 namespace Beep.OilandGas.Web.Services;
 
@@ -22,4 +23,8 @@ public interface IAccountingServiceClient
     Task<List<ROYALTY_PAYMENT>> GetRoyaltyPaymentsAsync(string calculationId, CancellationToken cancellationToken = default);
     Task<List<RoyaltyPostingReview>> GetRoyaltyPostingReviewAsync(string calculationId, CancellationToken cancellationToken = default);
     Task ClosePeriodAsync(CloseAccountingPeriodRequest request, CancellationToken cancellationToken = default);
+    /// <summary>Whether the current field's period ending <paramref name="periodEnd"/> may be closed, and what stands in the way.</summary>
+    Task<PeriodCloseReadinessResult> GetCloseReadinessAsync(DateTime periodEnd, CancellationToken cancellationToken = default);
+    /// <summary>Generates a joint interest billing statement for a lease and answers the statement written.</summary>
+    Task<JOINT_INTEREST_STATEMENT> GenerateJibStatementAsync(GenerateJIBStatementRequest request, CancellationToken cancellationToken = default);
 }

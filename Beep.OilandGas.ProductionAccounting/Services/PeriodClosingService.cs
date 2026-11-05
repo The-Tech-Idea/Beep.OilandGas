@@ -1,6 +1,7 @@
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -24,7 +25,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// Period Closing Service - Manages month-end and year-end close procedures.
     /// Validates period readiness, closes periods, and tracks unreconciled items.
     /// </summary>
-    public class PeriodClosingService : IPeriodClosingService
+    /// <remarks>
+    /// The one period close the API runs, and the one owner of how a closed period is recognized (its closing journal,
+    /// <c>PeriodClosingService.ClosingJournal.cs</c>). <c>Beep.OilandGas.Accounting.Services.PeriodClosingService</c> is a
+    /// different, book-wide close (trial balance, AP and AR subledgers, every temporary account) that no endpoint runs.
+    /// Reopening a closed period is not offered: re-closing it would post depletion, ARO accretion, currency translation,
+    /// lease remeasurement, hedge, emissions and inventory adjustments a second time, since none of those steps is
+    /// idempotent per period or reversible here (no reopen until each step can be undone or re-run for a period).
+    /// </remarks>
+    public partial class PeriodClosingService : IPeriodClosingService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -111,8 +120,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
+                // A closed period, or one whose closing journal was left unposted, is not one the close will run for.
+                var periodStatus = await GetPeriodStatusAsync(fieldId, periodEnd);
+                if (periodStatus == PeriodCloseStatusCodes.Closed || periodStatus == PeriodCloseStatusCodes.Closing)
+                {
+                    _logger?.LogWarning(
+                        "Period not ready: the period ending {PeriodEnd} for field {FieldId} is {Status}",
+                        periodEnd.ToShortDateString(), fieldId, periodStatus);
+                    return false;
+                }
+
+                var production = await ReadFieldProductionAsync(fieldId);
+
                 // Check allocations are complete
-                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, periodEnd, connectionName);
+                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, production, periodEnd);
                 if (unreconciledAllocations.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -122,7 +143,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Check royalties are calculated
-                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, periodEnd, connectionName);
+                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, production, periodEnd);
                 if (unreconciledRoyalties.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -132,7 +153,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Check revenue is recognized
-                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, periodEnd, connectionName);
+                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, production, periodEnd);
                 if (unreconciledRevenue.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -141,7 +162,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     return false;
                 }
 
-                var reconciliationIssues = await GetReconciliationIssuesAsync(fieldId, periodEnd, connectionName);
+                var reconciliationIssues = await GetReconciliationIssuesAsync(production, periodEnd);
                 if (reconciliationIssues.Count > 0)
                 {
                     _logger?.LogWarning(
@@ -185,7 +206,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         /// <summary>
-        /// Closes a period - locks it and prevents future modifications.
+        /// Closes a period: runs the period-end steps and posts the closing journal the period is recognized as closed by.
+        /// Nothing yet refuses a later posting dated in a closed period (no writer asks for the period's status).
         /// </summary>
         public async Task<bool> ClosePeriodAsync(
             string fieldId,
@@ -208,6 +230,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
+                // A period closes once: closing it again re-ran every step below, depletion and accretion included.
+                var periodStatus = await GetPeriodStatusAsync(fieldId, periodEnd);
+                if (periodStatus == PeriodCloseStatusCodes.Closed)
+                    throw RefusalException.Conflict(
+                        $"The period ending {periodEnd.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)} is already closed for field {fieldId}.");
+                if (periodStatus == PeriodCloseStatusCodes.Closing)
+                    throw RefusalException.Conflict(UnfinishedClosingJournal);
+
                 // First validate readiness
                 var isReady = await ValidateReadinessAsync(fieldId, periodEnd, connectionName);
                 if (!isReady)
@@ -219,14 +249,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         $"The period is not ready to close: reconcile all items for field {fieldId} first.");
                 }
 
+                var production = await ReadFieldProductionAsync(fieldId);
+
                 // Mark all allocation results as closed
-                await MarkAllocationsClosed(fieldId, periodEnd, userId, connectionName);
+                await MarkAllocationsClosed(fieldId, production, periodEnd, userId);
 
                 // Mark all royalty calculations as paid/settled
-                await MarkRoyaltiesClosed(fieldId, periodEnd, userId, connectionName);
+                await MarkRoyaltiesClosed(fieldId, production, periodEnd, userId);
 
                 // Mark all revenue as collected/billed
-                await MarkRevenueClosed(fieldId, periodEnd, userId, connectionName);
+                await MarkRevenueClosed(fieldId, production, periodEnd, userId);
 
                 // Apply depletion for the period based on reserves
                 await ApplyDepletionAsync(fieldId, periodEnd, userId, connectionName);
@@ -251,8 +283,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (IsYearEnd(periodEnd))
                     await BuildReserveDisclosuresAsync(fieldId, periodEnd, connectionName);
 
-                // Post final GL entries (period close entry)
-                await PostPeriodCloseEntry(fieldId, periodEnd, userId, connectionName);
+                // Post final GL entries (period close entry): the record every reader recognizes a closed period by.
+                await PostPeriodCloseEntry(fieldId, production, periodEnd, userId);
 
                 _logger?.LogInformation(
                     "Period closed successfully for field {FieldId} as of {PeriodEnd}",
@@ -358,8 +390,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 var unreconciledItems = new List<string>();
 
+                // The period itself: closed already, or its closing journal left unposted.
+                var periodStatus = await GetPeriodStatusAsync(fieldId, periodEnd);
+                if (periodStatus == PeriodCloseStatusCodes.Closed)
+                    unreconciledItems.Add(
+                        $"PERIOD: the period ending {periodEnd.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)} is already closed");
+                else if (periodStatus == PeriodCloseStatusCodes.Closing)
+                    unreconciledItems.Add($"PERIOD: {UnfinishedClosingJournal}");
+
+                var production = await ReadFieldProductionAsync(fieldId);
+
                 // Unreconciled allocations
-                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, periodEnd, connectionName);
+                var unreconciledAllocations = await GetUnreconciledAllocationsAsync(fieldId, production, periodEnd);
                 if (unreconciledAllocations.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -375,7 +417,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Unreconciled royalties
-                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, periodEnd, connectionName);
+                var unreconciledRoyalties = await GetUnreconciledRoyaltiesAsync(fieldId, production, periodEnd);
                 if (unreconciledRoyalties.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -391,7 +433,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Unreconciled revenue
-                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, periodEnd, connectionName);
+                var unreconciledRevenue = await GetUnreconciledRevenueAsync(fieldId, production, periodEnd);
                 if (unreconciledRevenue.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -423,7 +465,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Reconciliation issues
-                var reconciliationIssues = await GetReconciliationIssuesAsync(fieldId, periodEnd, connectionName);
+                var reconciliationIssues = await GetReconciliationIssuesAsync(production, periodEnd);
                 if (reconciliationIssues.Count > 0)
                 {
                     unreconciledItems.Add(
@@ -460,165 +502,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     fieldId);
                 throw new ProductionAccountingException(
                     $"Failed to retrieve unreconciled items for field {fieldId}", ex);
-            }
-        }
-
-        // Private helper methods
-
-        private async Task<List<string>> GetUnreconciledAllocationsAsync(
-            string fieldId,
-            DateTime periodEnd,
-            string connectionName)
-        {
-            var items = new List<string>();
-
-            try
-            {
-                var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
-
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ALLOCATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var results = await repo.GetAsync(filters);
-                var allocResults = results.Cast<ALLOCATION_RESULT>().ToList();
-
-                var detailRepo = await CreateRepositoryAsync<ALLOCATION_DETAIL>("ALLOCATION_DETAIL");
-
-                // Filter for incomplete allocations (missing details)
-                foreach (var alloc in allocResults)
-                {
-                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, connectionName);
-                    if (RUN_TICKET == null || !string.Equals(RUN_TICKET.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    var detailFilters = new List<AppFilter>
-                    {
-                        new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = alloc.ALLOCATION_RESULT_ID },
-                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                    };
-
-                    var details = await detailRepo.GetAsync(detailFilters);
-                    var detailList = details?.Cast<ALLOCATION_DETAIL>().ToList() ?? new List<ALLOCATION_DETAIL>();
-                    if (detailList.Count == 0)
-                    {
-                        items.Add($"Allocation {alloc.ALLOCATION_RESULT_ID} has no details");
-                    }
-                }
-
-                return items;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Unreconciled allocation retrieval cancelled for field {FieldId} as of {PeriodEnd}",
-                    fieldId,
-                    periodEnd);
-                throw;
-            }
-        }
-
-        private async Task<List<string>> GetUnreconciledRoyaltiesAsync(
-            string fieldId,
-            DateTime periodEnd,
-            string connectionName)
-        {
-            var items = new List<string>();
-
-            try
-            {
-                var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
-
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
-                    new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var results = await repo.GetAsync(filters);
-                var royalties = results.Cast<ROYALTY_CALCULATION>().ToList();
-
-                foreach (var royalty in royalties)
-                {
-                    if (!string.Equals(royalty.ROYALTY_STATUS, RoyaltyStatus.Accrued, StringComparison.OrdinalIgnoreCase) &&
-                        !string.Equals(royalty.ROYALTY_STATUS, RoyaltyStatus.Paid, StringComparison.OrdinalIgnoreCase))
-                    {
-                        items.Add($"Royalty {royalty.ROYALTY_CALCULATION_ID}");
-                    }
-                }
-
-                return items;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Unreconciled royalty retrieval cancelled for field {FieldId} as of {PeriodEnd}",
-                    fieldId,
-                    periodEnd);
-                throw;
-            }
-        }
-
-        private async Task<List<string>> GetUnreconciledRevenueAsync(
-            string fieldId,
-            DateTime periodEnd,
-            string connectionName)
-        {
-            var items = new List<string>();
-
-            try
-            {
-                var transactionRepo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
-
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
-                    new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var transactionResults = await transactionRepo.GetAsync(filters);
-                var transactions = transactionResults.Cast<REVENUE_TRANSACTION>().ToList();
-
-                var allocationRepo = await CreateRepositoryAsync<REVENUE_ALLOCATION>("REVENUE_ALLOCATION");
-
-                var allocationResults = await allocationRepo.GetAsync(new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                });
-
-                var allocationList = allocationResults?.Cast<REVENUE_ALLOCATION>().ToList() ?? new List<REVENUE_ALLOCATION>();
-                var transactionIds = new HashSet<string>(
-                    transactions
-                        .Where(t => !string.IsNullOrWhiteSpace(t.REVENUE_TRANSACTION_ID))
-                        .Select(t => t.REVENUE_TRANSACTION_ID));
-
-                var allocatedTransactionIds = new HashSet<string>(
-                    allocationList
-                        .Where(a => !string.IsNullOrWhiteSpace(a.REVENUE_TRANSACTION_ID) &&
-                                    transactionIds.Contains(a.REVENUE_TRANSACTION_ID))
-                        .Select(a => a.REVENUE_TRANSACTION_ID));
-
-                foreach (var transaction in transactions)
-                {
-                    if (!allocatedTransactionIds.Contains(transaction.REVENUE_TRANSACTION_ID))
-                    {
-                        items.Add($"Revenue transaction {transaction.REVENUE_TRANSACTION_ID} missing allocation");
-                    }
-                }
-
-                return items;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Unreconciled revenue retrieval cancelled for field {FieldId} as of {PeriodEnd}",
-                    fieldId,
-                    periodEnd);
-                throw;
             }
         }
 
@@ -665,430 +548,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     periodEnd);
                 throw;
             }
-        }
-
-        private async Task MarkAllocationsClosed(
-            string fieldId,
-            DateTime periodEnd,
-            string userId,
-            string connectionName)
-        {
-            try
-            {
-                _logger?.LogInformation("Marking allocations closed for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
-
-                var repo = await CreateRepositoryAsync<ALLOCATION_RESULT>("ALLOCATION_RESULT");
-
-                // Get all unclosed allocations for this field up to period end
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ALLOCATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var results = await repo.GetAsync(filters);
-                var allocResults = results.Cast<ALLOCATION_RESULT>().ToList();
-
-                // Mark each allocation as processed by updating row changed timestamp
-                foreach (var alloc in allocResults)
-                {
-                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, connectionName);
-                    if (RUN_TICKET == null || !string.Equals(RUN_TICKET.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    alloc.ROW_CHANGED_BY = userId;
-                    alloc.ROW_CHANGED_DATE = DateTime.UtcNow;
-
-                    await repo.UpdateAsync(alloc, userId);
-                    
-                    _logger?.LogInformation(
-                        "Allocation {AllocationId} marked for period close for field {FieldId}",
-                        alloc.ALLOCATION_RESULT_ID, fieldId);
-                }
-
-                _logger?.LogInformation(
-                    "Successfully marked {Count} allocations as closed for field {FieldId}",
-                    allocResults.Count, fieldId);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Allocation close marking cancelled for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error marking allocations closed for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-        }
-
-        private async Task MarkRoyaltiesClosed(
-            string fieldId,
-            DateTime periodEnd,
-            string userId,
-            string connectionName)
-        {
-            try
-            {
-                _logger?.LogInformation("Marking royalties closed for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
-
-                var repo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
-
-                // Get all royalties that still need accrual posting
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
-                    new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var results = await repo.GetAsync(filters);
-                var royalties = results.Cast<ROYALTY_CALCULATION>().ToList();
-
-                // Update each royalty's status to "ACCRUED" (ready for payment)
-                foreach (var royalty in royalties)
-                {
-                    if (string.Equals(royalty.ROYALTY_STATUS, RoyaltyStatus.Accrued, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(royalty.ROYALTY_STATUS, RoyaltyStatus.Paid, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    royalty.ROYALTY_STATUS = RoyaltyStatus.Accrued;
-                    royalty.ROW_CHANGED_BY = userId;
-                    royalty.ROW_CHANGED_DATE = DateTime.UtcNow;
-
-                    await repo.UpdateAsync(royalty, userId);
-
-                    _logger?.LogInformation(
-                        "Royalty {RoyaltyId} marked as accrued for field {FieldId}",
-                        royalty.ROYALTY_CALCULATION_ID, fieldId);
-                }
-
-                _logger?.LogInformation(
-                    "Successfully marked {Count} royalties as accrued for field {FieldId}",
-                    royalties.Count, fieldId);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Royalty close marking cancelled for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error marking royalties closed for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-        }
-
-        private async Task MarkRevenueClosed(
-            string fieldId,
-            DateTime periodEnd,
-            string userId,
-            string connectionName)
-        {
-            try
-            {
-                _logger?.LogInformation("Marking revenue closed for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
-
-                var repo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
-
-                // Get all unrecognized revenue for this field up to period end
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
-                    new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                };
-
-                var results = await repo.GetAsync(filters);
-                var revenues = results.Cast<REVENUE_TRANSACTION>().ToList();
-
-                // Update each revenue's row metadata to mark as processed
-                foreach (var revenue in revenues)
-                {
-                    revenue.ROW_CHANGED_BY = userId;
-                    revenue.ROW_CHANGED_DATE = DateTime.UtcNow;
-
-                    await repo.UpdateAsync(revenue, userId);
-
-                    _logger?.LogInformation(
-                        "Revenue {RevenueId} marked as processed for field {FieldId}",
-                        revenue.REVENUE_TRANSACTION_ID, fieldId);
-                }
-
-                _logger?.LogInformation(
-                    "Successfully marked {Count} revenue items as processed for field {FieldId}",
-                    revenues.Count, fieldId);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Revenue close marking cancelled for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error marking revenue closed for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-        }
-
-        private async Task PostPeriodCloseEntry(
-            string fieldId,
-            DateTime periodEnd,
-            string userId,
-            string connectionName)
-        {
-            try
-            {
-                _logger?.LogInformation("Posting period close GL entry for field {FieldId} as of {PeriodEnd}", fieldId, periodEnd.ToShortDateString());
-
-                // Create a period closing journal entry to lock the period
-                var repo = await CreateRepositoryAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
-
-                var referenceNumber = $"CLOSE-{fieldId}-{periodEnd:yyyyMM}";
-                var existing = await repo.GetAsync(new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "REFERENCE_NUMBER", Operator = "=", FilterValue = referenceNumber },
-                    new AppFilter { FieldName = "SOURCE_MODULE", Operator = "=", FilterValue = AccountingSourceModuleCodes.PeriodClosing },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                });
-
-                if (existing != null && existing.Any())
-                {
-                    if (existing.Cast<JOURNAL_ENTRY>().Any(entry =>
-                        !string.Equals(entry.STATUS, JournalEntryStatusCodes.Posted, StringComparison.OrdinalIgnoreCase)))
-                        throw RefusalException.Conflict("An unfinished closing journal requires review before this period can be closed.");
-
-                    _logger?.LogInformation(
-                        "Period close entry already exists for field {FieldId} as of {PeriodEnd}",
-                        fieldId, periodEnd.ToShortDateString());
-                    return;
-                }
-
-                var (grossRevenue, totalRoyalty) = await GetRevenueRoyaltyTotalsAsync(fieldId, periodEnd, connectionName);
-                if (grossRevenue == 0m && totalRoyalty == 0m)
-                {
-                    _logger?.LogInformation(
-                        "No revenue or royalty activity for field {FieldId} as of {PeriodEnd}. Skipping close entry.",
-                        fieldId, periodEnd.ToShortDateString());
-                    return;
-                }
-
-                var netIncome = grossRevenue - totalRoyalty;
-                var entryDescription = $"Period close summary for {periodEnd:MMMM yyyy} (Gross={grossRevenue}, Royalty={totalRoyalty})";
-
-                var lines = new List<JOURNAL_ENTRY_LINE>();
-                var lineNumber = 1;
-
-                if (grossRevenue > 0m)
-                {
-                    lines.Add(new JOURNAL_ENTRY_LINE
-                    {
-                        JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString(),
-                        GL_ACCOUNT_ID = DefaultGlAccounts.Revenue,
-                        LINE_NUMBER = lineNumber++,
-                        DEBIT_AMOUNT = grossRevenue,
-                        CREDIT_AMOUNT = 0m,
-                        DESCRIPTION = PeriodCloseJournalLineDescriptionPhrases.CloseRevenue,
-                        ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                        PPDM_GUID = Guid.NewGuid().ToString(),
-                        ROW_CREATED_BY = userId,
-                        ROW_CREATED_DATE = DateTime.UtcNow
-                    });
-                }
-
-                if (totalRoyalty > 0m)
-                {
-                    lines.Add(new JOURNAL_ENTRY_LINE
-                    {
-                        JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString(),
-                        GL_ACCOUNT_ID = DefaultGlAccounts.RoyaltyExpense,
-                        LINE_NUMBER = lineNumber++,
-                        DEBIT_AMOUNT = 0m,
-                        CREDIT_AMOUNT = totalRoyalty,
-                        DESCRIPTION = PeriodCloseJournalLineDescriptionPhrases.CloseRoyaltyExpense,
-                        ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                        PPDM_GUID = Guid.NewGuid().ToString(),
-                        ROW_CREATED_BY = userId,
-                        ROW_CREATED_DATE = DateTime.UtcNow
-                    });
-                }
-
-                if (netIncome != 0m)
-                {
-                    var retainedDebit = netIncome < 0m ? Math.Abs(netIncome) : 0m;
-                    var retainedCredit = netIncome > 0m ? netIncome : 0m;
-                    lines.Add(new JOURNAL_ENTRY_LINE
-                    {
-                        JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString(),
-                        GL_ACCOUNT_ID = DefaultGlAccounts.RetainedEarnings,
-                        LINE_NUMBER = lineNumber++,
-                        DEBIT_AMOUNT = retainedDebit,
-                        CREDIT_AMOUNT = retainedCredit,
-                        DESCRIPTION = PeriodCloseJournalLineDescriptionPhrases.CloseNetIncomeToRetainedEarnings,
-                        ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                        PPDM_GUID = Guid.NewGuid().ToString(),
-                        ROW_CREATED_BY = userId,
-                        ROW_CREATED_DATE = DateTime.UtcNow
-                    });
-                }
-
-                var entry = await _journalEntries.CreateEntryAsync(
-                    periodEnd, entryDescription, lines, userId,
-                    referenceNumber, AccountingSourceModuleCodes.PeriodClosing);
-                if (!await _journalEntries.PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId))
-                    throw new InvalidOperationException($"Period close journal {entry.JOURNAL_ENTRY_ID} was created but not posted.");
-
-                _logger?.LogInformation(
-                    "Period close GL entry {EntryId} posted for field {FieldId} as of {PeriodEnd}",
-                    entry.JOURNAL_ENTRY_ID, fieldId, periodEnd.ToShortDateString());
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning(
-                    "Period close entry posting cancelled for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(
-                    ex,
-                    "Error posting period close entry for field {FieldId}",
-                    fieldId);
-                throw;
-            }
-        }
-
-        private async Task<List<string>> GetReconciliationIssuesAsync(
-            string fieldId,
-            DateTime periodEnd,
-            string connectionName)
-        {
-            var issues = new List<string>();
-
-            var (productionVolume, revenueVolume) = await GetProductionRevenueVolumesAsync(fieldId, periodEnd, connectionName);
-            var volumeVariance = productionVolume - revenueVolume;
-            var volumeTolerance = Math.Max(1m, productionVolume * 0.001m);
-            if (Math.Abs(volumeVariance) > volumeTolerance)
-            {
-                issues.Add($"Production vs revenue volume variance: {volumeVariance} (production={productionVolume}, revenue={revenueVolume})");
-            }
-
-            var (grossRevenue, totalRoyalty) = await GetRevenueRoyaltyTotalsAsync(fieldId, periodEnd, connectionName);
-            if (totalRoyalty > grossRevenue + 0.01m)
-            {
-                issues.Add($"Royalty exceeds gross revenue: royalty={totalRoyalty}, gross={grossRevenue}");
-            }
-
-            return issues;
-        }
-
-        private async Task<(decimal productionVolume, decimal revenueVolume)> GetProductionRevenueVolumesAsync(
-            string fieldId,
-            DateTime periodEnd,
-            string connectionName)
-        {
-            var periodStart = new DateTime(periodEnd.Year, periodEnd.Month, 1);
-
-            var measurementRepo = await CreateRepositoryAsync<MEASUREMENT_RECORD>("MEASUREMENT_RECORD");
-
-            var measurementFilters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = fieldId },
-                new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-            };
-
-            var measurementResults = await measurementRepo.GetAsync(measurementFilters);
-            var measurements = measurementResults?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
-            var productionVolume = measurements.Sum(m => m.NET_VOLUME ?? m.GROSS_VOLUME ?? 0m);
-
-            var revenueRepo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
-
-            var revenueFilters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
-                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-            };
-
-            var revenueResults = await revenueRepo.GetAsync(revenueFilters);
-            var revenues = revenueResults?.Cast<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
-            var revenueVolume = revenues.Sum(r => r.OIL_VOLUME ?? 0m);
-
-            return (productionVolume, revenueVolume);
-        }
-
-        private async Task<(decimal grossRevenue, decimal totalRoyalty)> GetRevenueRoyaltyTotalsAsync(
-            string fieldId,
-            DateTime periodEnd,
-            string connectionName)
-        {
-            var periodStart = new DateTime(periodEnd.Year, periodEnd.Month, 1);
-
-            var revenueRepo = await CreateRepositoryAsync<REVENUE_TRANSACTION>("REVENUE_TRANSACTION");
-
-            var revenueFilters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
-                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-            };
-
-            var revenueResults = await revenueRepo.GetAsync(revenueFilters);
-            var revenues = revenueResults?.Cast<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
-            var grossRevenue = revenues.Sum(r => r.GROSS_REVENUE ?? 0m);
-
-            var royaltyRepo = await CreateRepositoryAsync<ROYALTY_CALCULATION>("ROYALTY_CALCULATION");
-
-            var royaltyFilters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
-                new AppFilter { FieldName = "CALCULATION_DATE", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-            };
-
-            var royaltyResults = await royaltyRepo.GetAsync(royaltyFilters);
-            var royalties = royaltyResults?.Cast<ROYALTY_CALCULATION>().ToList() ?? new List<ROYALTY_CALCULATION>();
-            var totalRoyalty = royalties.Sum(r => r.ROYALTY_AMOUNT ?? 0m);
-
-            return (grossRevenue, totalRoyalty);
-        }
-
-        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string connectionName)
-        {
-            if (string.IsNullOrWhiteSpace(allocationRequestId))
-                return null;
-
-            var repo = await CreateRepositoryAsync<RUN_TICKET>("RUN_TICKET");
-
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "RUN_TICKET_ID", Operator = "=", FilterValue = allocationRequestId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-            };
-
-            var results = await repo.GetAsync(filters);
-            return results?.Cast<RUN_TICKET>().FirstOrDefault();
         }
 
         private async Task RunImpairmentTestingAsync(

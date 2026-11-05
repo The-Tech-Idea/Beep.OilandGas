@@ -1,9 +1,13 @@
 ﻿@page "/development/construction"
+@using Beep.OilandGas.Models.Data.HSE
 @inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentServiceClient
+@inject IHSEServiceClient HseClient
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Track Construction Progress</PageTitle>
 
@@ -47,47 +51,8 @@
         </MudPaper>
     }
 
-    @* ── Project Health Banner ────────────────────────────────────────────── *@
-    <MudPaper Elevation="2" Class="pa-3 mb-4">
-        <MudGrid Spacing="2" AlignItems="AlignItems.Center">
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Schedule</MudText>
-                        <MudText Typo="Typo.body2"><strong>On Track</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Budget</MudText>
-                        <MudText Typo="Typo.body2"><strong>3% Over</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Safety</MudText>
-                        <MudText Typo="Typo.body2"><strong>Zero incidents</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Quality</MudText>
-                        <MudText Typo="Typo.body2"><strong>98% punch closed</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
+    @* No project health banner: the construction-progress API carries no schedule variance, budget variance or punch-closure figures
+       (the field's safety record is in the Safety card, from the HSE incident register). *@
 
     @* ── Main Content ─────────────────────────────────────────────────────── *@
     <MudGrid Spacing="3">
@@ -126,9 +91,10 @@
                                                     {
                                                         <MudText Typo="Typo.caption" Color="Color.Secondary">@pkg.Note</MudText>
                                                     }
-                                                    @if (pkg.IsActive && pkg.PercentComplete > 0)
+                                                    @* A bar only for a percentage a record states; none does yet, so none is drawn. *@
+                                                    @if (pkg.IsActive && pkg.PercentComplete is double percent && percent > 0)
                                                     {
-                                                        <MudProgressLinear Value="@pkg.PercentComplete"
+                                                        <MudProgressLinear Value="@percent"
                                                                            Color="Color.Primary"
                                                                            Class="mt-1 og-progress-inline" />
                                                     }
@@ -148,17 +114,12 @@
                     </MudCard>
                 }
 
-                @* First Oil target banner *@
-                <MudPaper Elevation="3" Class="pa-4">
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="3">
-                        <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Warning" Size="Size.Large" />
-                        <MudStack AlignItems="AlignItems.Center" Spacing="0">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Target Date</MudText>
-                            <MudText Typo="Typo.h5" Color="Color.Warning"><strong>FIRST OIL — Dec 2026</strong></MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Warning" Size="Size.Large" />
-                    </MudStack>
-                </MudPaper>
+                @if (_progressLoaded && _workGroups.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info">No development wells or facilities are recorded for this field yet.</MudAlert>
+                }
+
+                @* No first-oil target banner: no API records a field's first-oil target date. *@
 
             </MudStack>
         </MudItem>
@@ -174,10 +135,18 @@
                             <MudText Typo="Typo.subtitle1">Open Punch Items</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
-                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@_punchItems.Count</MudChip>
+                            @if (_punchItems.Count > 0)
+                            {
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small">@_punchItems.Count</MudChip>
+                            }
                         </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent Class="pa-0">
+                        @if (_punchItems.Count == 0)
+                        {
+                            @* The construction-progress API returns no punch items: nothing in the codebase records a punch list yet. *@
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4">Punch-list tracking is not available yet.</MudText>
+                        }
                         <MudList T="PunchItem" Dense="true">
                             @foreach (var p in _punchItems)
                             {
@@ -199,49 +168,34 @@
                     </MudCardContent>
                 </MudCard>
 
-                @* Cost variance *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Cost Variance</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudChart ChartType="ChartType.Bar"
-                                  ChartSeries="@_costSeries"
-                                  XAxisLabels="@_costLabels"
-                                  Width="100%"
-                                  Height="180px" />
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">USD MM · Q1 2024 to date</MudText>
-                    </MudCardContent>
-                </MudCard>
+                @* No cost variance chart: the construction-progress API carries no budget or actual cost figures. *@
 
-                @* Safety observations *@
+                @* Safety — the field's HSE incident register for the last 30 days *@
                 <MudCard Elevation="2">
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Safety Observations (30-day)</MudText>
+                            <MudText Typo="Typo.subtitle1">Safety Incidents (30-day)</MudText>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudGrid Spacing="2">
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Positive</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Success">142</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Near Misses</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Warning">3</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">LTIs</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Success">0</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">TRIR</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Success">0.0</MudText>
-                            </MudItem>
-                        </MudGrid>
+                        @if (_safetyLoaded)
+                        {
+                            <MudGrid Spacing="2">
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Incidents Reported</MudText>
+                                    <MudText Typo="Typo.h5" Color="@(_incidentsLast30Days > 0 ? Color.Warning : Color.Success)">@_incidentsLast30Days</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Near Misses</MudText>
+                                    <MudText Typo="Typo.h5" Color="@(_nearMissesLast30Days > 0 ? Color.Warning : Color.Success)">@_nearMissesLast30Days</MudText>
+                                </MudItem>
+                            </MudGrid>
+                            @* No positive-observation count, LTI count or TRIR: the HSE register records no observations, no lost-time classification and no exposure hours. *@
+                        }
+                        else if (_safetyAttempted)
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">The field's safety incidents could not be loaded.</MudText>
+                        }
                     </MudCardContent>
                 </MudCard>
 
@@ -279,8 +233,14 @@
 
     private List<WorkGroup>   _workGroups  = new();
     private List<PunchItem>   _punchItems  = new();
-    private List<ChartSeries<double>> _costSeries = new();
-    private string[] _costLabels = Array.Empty<string>();
+    private bool _progressLoaded;
+
+    // The field's HSE incident register over the last 30 days, read once when the page loads.
+    private const int SafetyWindowDays = 30;
+    private int  _incidentsLast30Days;
+    private int  _nearMissesLast30Days;
+    private bool _safetyLoaded;
+    private bool _safetyAttempted;
 
     private bool HasDevelopmentWorkflowContext =>
         !string.IsNullOrWhiteSpace(WellUwi)
@@ -295,7 +255,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for construction progress", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for construction progress", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         _loading = true;
         try
@@ -314,12 +283,47 @@
                 _punchItems = progress.PunchItems.Select(p =>
                     new PunchItem(p.Description, p.Owner, p.DueDate, p.Category)).ToList();
             }
+            _progressLoaded = true;
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load construction progress.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "loading the field's construction progress", "The construction progress could not be loaded"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field's construction progress", "The construction progress could not be loaded");
         }
         finally { _loading = false; }
+
+        await LoadSafetyAsync();
+    }
+
+    private async Task LoadSafetyAsync()
+    {
+        try
+        {
+            var to   = DateTime.UtcNow;
+            var from = to.AddDays(-SafetyWindowDays);
+            var incidents = (await HseClient.GetIncidentsAsync(from, to))
+                .Where(i => !string.Equals(i.CurrentState, IncidentState.Cancelled, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _incidentsLast30Days  = incidents.Count;
+            _nearMissesLast30Days = incidents.Count(i => string.Equals(i.IncidentType, IncidentType.NearMiss, StringComparison.OrdinalIgnoreCase));
+            _safetyLoaded = true;
+        }
+        // Only the safety card depends on it; it says the figures could not be loaded rather than showing any.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the field's safety incidents for construction progress", "The safety incidents could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field's safety incidents for construction progress", "The safety incidents could not be loaded", FailureSeverity.Degraded);
+        }
+        finally { _safetyAttempted = true; }
     }
 
     private string PkgIcon(WorkPackage p) =>
@@ -468,9 +472,9 @@
         public string TargetDate { get; set; }
         public bool IsCompleted { get; set; }
         public bool IsActive { get; set; }
-        public double PercentComplete { get; set; }
+        public double? PercentComplete { get; set; }
         public string Note { get; set; }
-        public WorkPackage(string n, string d, bool done, bool active, double pct, string note)
+        public WorkPackage(string n, string d, bool done, bool active, double? pct, string note)
         { Name=n; TargetDate=d; IsCompleted=done; IsActive=active; PercentComplete=pct; Note=note; }
     }
 

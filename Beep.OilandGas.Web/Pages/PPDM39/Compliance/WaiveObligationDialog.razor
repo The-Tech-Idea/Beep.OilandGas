@@ -1,0 +1,64 @@
+@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
+@inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
+
+@* Waiving an obligation records why. The page asked "Enter reason" in a message box with no field and sent "User waived"
+   every time, so no waiver ever said why it was made. *@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Waive Obligation — @ObligationId</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-2">Waiving cannot be undone. The reason is kept with the obligation.</MudText>
+        <MudForm @ref="_form">
+            <MudTextField T="string" @bind-Value="_reason" Label="Reason" Lines="3" Required="true"
+                          RequiredError="Give a reason for waiving the obligation." MaxLength="2000" Counter="2000"
+                          Immediate="true" AutoFocus="true" />
+        </MudForm>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-2">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel" Disabled="@_saving">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Disabled="@(_saving || string.IsNullOrWhiteSpace(_reason))"
+                   OnClick="@WaiveAsync">@(_saving ? "Waiving…" : "Waive")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string ObligationId { get; set; } = string.Empty;
+
+    private MudForm? _form;
+    private string? _reason;
+    private string? _error;
+    private bool _saving;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task WaiveAsync()
+    {
+        if (_form is not null)
+            await _form.ValidateAsync();
+        if (_form?.IsValid != true || string.IsNullOrWhiteSpace(_reason)) return;
+
+        _saving = true;
+        _error = null;
+        try
+        {
+            await ComplianceClient.WaiveObligationAsync(ObligationId, _reason.Trim());
+            Snackbar.Add("Obligation waived.", Severity.Info);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "waiving a compliance obligation", "The obligation was not waived");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using TheTechIdea.Beep.Editor;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
@@ -22,6 +23,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
+        private readonly IFailureReporter _failures;
         private readonly string _connectionName;
         private readonly PPDMGenericRepository _versionSnapshotRepository;
         private readonly PPDMGenericRepository _versionComparisonRepository;
@@ -31,12 +33,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            IFailureReporter failures,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _connectionName = connectionName;
 
             // Create repositories for version entities
@@ -155,14 +159,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             object? entityData = null;
             if (!string.IsNullOrWhiteSpace(entity.ENTITY_DATA_JSON))
             {
+                // A version whose stored data cannot be read is listed without it, and the failure is reported: the catch
+                // took every exception and said nothing. System.Text.Json cannot judge a text without reading it, so its
+                // exception is how that answer arrives.
                 try
                 {
                     // Note: This requires knowing the entity type, which we'd need to get from metadata
                     // For now, we'll return a dictionary representation
                     entityData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(entity.ENTITY_DATA_JSON);
                 }
-                catch
+                catch (System.Text.Json.JsonException unreadable)
                 {
+                    _failures.ReportHandled(unreadable,
+                        $"reading the stored data of version {entity.VERSION_NUMBER} of {entity.TABLE_NAME} record {entity.ENTITY_ID}",
+                        "the version is listed without its data", FailureSeverity.Degraded);
                     entityData = null;
                 }
             }

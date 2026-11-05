@@ -43,7 +43,7 @@
         RepositoryReadiness.BootstrapRequired => "Repository installed. Nobody administers it yet: the first person to sign in becomes its administrator.",
         RepositoryReadiness.MigrationRequired => "Repository installation or migration required on the API server.",
         RepositoryReadiness.RecoveryRequired => "Repository administrator state requires operator recovery. First-user registration is unavailable.",
-        _ => "Repository unavailable. Check the API service and repository connection."
+        RepositoryReadiness.Unavailable => "Repository unavailable. Check the API service and repository connection."
     };
     private Severity SeverityForStatus => _status == RepositoryReadiness.Ready ? Severity.Success : Severity.Warning;
     protected override Task OnInitializedAsync() => Refresh();

@@ -1,6 +1,7 @@
 ﻿@page "/data/quality-dashboard"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject ApiClient ApiClient
 
 <PageTitle>Assess Data Quality</PageTitle>
@@ -120,10 +121,12 @@
                                 <PropertyColumn Property="i => i.RecordsAffected" Title="# Records" />
                                 <TemplateColumn Title="" Sortable="false">
                                     <CellTemplate>
-                                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
-                                                       Title="Resolve issue"
-                                                       Size="Size.Small" Color="Color.Success"
-                                                       OnClick="@(() => ResolveIssue(context.Item))" />
+                                        <MudTooltip Text="Resolve issue">
+                                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                                           aria-label="Resolve issue"
+                                                           Size="Size.Small" Color="Color.Success"
+                                                           OnClick="@(() => ResolveIssue(context.Item))" />
+                                        </MudTooltip>
                                     </CellTemplate>
                                 </TemplateColumn>
                             </Columns>
@@ -196,9 +199,9 @@
                     false)))
                 .ToList();
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading quality data.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading the data quality dashboard", "The data quality results could not be loaded"), Severity.Error);
         }
         finally
         {

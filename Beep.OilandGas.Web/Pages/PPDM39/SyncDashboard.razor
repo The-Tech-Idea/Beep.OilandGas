@@ -1,9 +1,12 @@
 @page "/ppdm39/sync"
-@using System.Net.Http.Json
+@using System.Text.Json.Serialization
 @using MudBlazor
-@inject HttpClient Http
+@inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
+@inject IFailureReporter Failures
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudText Typo="Typo.h4" GutterBottom="true">
@@ -36,19 +39,21 @@
                         </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent>
-                        @if (_schemas?.Count > 0)
+                        @if (_schemasError is not null)
+                        {
+                            <MudAlert Severity="Severity.Error">@_schemasError</MudAlert>
+                        }
+                        else if (_schemas?.Count > 0)
                         {
                             <MudTable Items="@_schemas" Hover="true" Striped="true" Dense="true">
                                 <HeaderContent>
                                     <MudTh>Entity</MudTh>
                                     <MudTh>Mode</MudTh>
-                                    <MudTh>Enabled</MudTh>
                                     <MudTh>Actions</MudTh>
                                 </HeaderContent>
                                 <RowTemplate>
                                     <MudTd>@context.SchemaName</MudTd>
                                     <MudTd>@context.SyncMode</MudTd>
-                                    <MudTd><MudChip T="string" Color="@(context.IsEnabled ? Color.Success : Color.Default)" Size="Size.Small">@(context.IsEnabled ? "Yes" : "No")</MudChip></MudTd>
                                     <MudTd>
                                         <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
                                                    OnClick="() => SyncEntity(context.SchemaId)" Disabled="_syncing">
@@ -79,7 +84,11 @@
                         </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent>
-                        @if (_reconciliation != null)
+                        @if (_reconciliationError is not null)
+                        {
+                            <MudAlert Severity="Severity.Error">@_reconciliationError</MudAlert>
+                        }
+                        else if (_reconciliation != null)
                         {
                             <MudStack Row="true" Justify="Justify.SpaceAround" Class="mb-4">
                                 <div>
@@ -159,7 +168,7 @@
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
                        OnClick="SyncAll" FullWidth="true">
-                Sync All Enabled Schemas
+                Sync All Schemas
             </MudButton>
         }
     }
@@ -169,8 +178,10 @@
     private bool _loading = true;
     private bool _syncing;
     private List<SyncSchemaDto>? _schemas;
+    private string? _schemasError;
     private SyncRunDto? _lastResult;
     private ReconciliationDto? _reconciliation;
+    private string? _reconciliationError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,37 +191,73 @@
 
     private async Task LoadData()
     {
+        _schemasError = null;
         try
         {
-            _schemas = await Http.GetFromJsonAsync<List<SyncSchemaDto>>("/api/sync/schemas");
+            var answer = await ApiClient.GetAsync<SyncSchemasAnswer>("/api/sync/schemas");
+            _schemas = answer?.Schemas ?? new List<SyncSchemaDto>();
         }
-        catch { /* API may not be available yet */ }
+        // The card says the schemas did not load, rather than that none are configured.
+        catch (OilGasApiException answer)
+        {
+            _schemas = null;
+            _schemasError = Answers.Explain(answer, "loading the sync schemas", "The sync schemas could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _schemas = null;
+            _schemasError = Notifier.FailureText(ex, "loading the sync schemas", "The sync schemas could not be loaded");
+        }
         await LoadReconciliation();
     }
 
     private async Task LoadReconciliation()
     {
+        _reconciliationError = null;
         try
         {
-            _reconciliation = await Http.GetFromJsonAsync<ReconciliationDto>("/api/sync/reconciliation");
+            _reconciliation = await ApiClient.GetAsync<ReconciliationDto>("/api/sync/reconciliation");
         }
-        catch { }
+        // The endpoint answers 404 until a sync has run: that is "no report yet", which the card says, and is recorded.
+        catch (OilGasApiException noReport) when (noReport.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            Failures.ReportHandled(
+                noReport,
+                "reading the last sync reconciliation report",
+                consequence: "the API holds no report until a sync has run; the page says there is none yet",
+                FailureSeverity.Degraded);
+            _reconciliation = null;
+        }
+        catch (OilGasApiException answer)
+        {
+            _reconciliation = null;
+            _reconciliationError = Answers.Explain(answer, "reading the last sync reconciliation report", "The reconciliation report could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _reconciliation = null;
+            _reconciliationError = Notifier.FailureText(ex, "reading the last sync reconciliation report", "The reconciliation report could not be loaded");
+        }
     }
 
     private async Task InitializeSchemas()
     {
         try
         {
-            var response = await Http.PostAsync("/api/sync/init-schemas", null);
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add("Schemas initialized", Severity.Success);
-                await LoadData();
-            }
+            await ApiClient.PostAsync<JsonElement>("/api/sync/init-schemas", (HttpContent?)null);
+            Snackbar.Add("Schemas initialized", Severity.Success);
+            await LoadData();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "initializing the standard PPDM39 sync schemas", "The sync schemas were not initialized"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Failed: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "initializing the standard PPDM39 sync schemas", "The sync schemas were not initialized");
         }
     }
 
@@ -220,17 +267,18 @@
         StateHasChanged();
         try
         {
-            var response = await Http.PostAsync($"/api/sync/run/{schemaId}", null);
-            if (response.IsSuccessStatusCode)
-            {
-                _lastResult = await response.Content.ReadFromJsonAsync<SyncRunDto>();
-                Snackbar.Add($"Synced {schemaId}: {_lastResult?.RecordsRead ?? 0:N0} records", Severity.Success);
-                await LoadReconciliation();
-            }
+            _lastResult = await ApiClient.PostAsync<SyncRunDto>($"/api/sync/run/{Uri.EscapeDataString(schemaId)}", (HttpContent?)null);
+            Snackbar.Add($"Synced {schemaId}: {_lastResult?.RecordsRead ?? 0:N0} records", Severity.Success);
+            await LoadReconciliation();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "synchronizing one PPDM39 sync schema", $"{schemaId} was not synchronized"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Sync failed: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "synchronizing one PPDM39 sync schema", $"{schemaId} was not synchronized");
         }
         finally { _syncing = false; }
     }
@@ -241,16 +289,22 @@
         StateHasChanged();
         try
         {
-            var response = await Http.PostAsync("/api/sync/run-all", null);
-            if (response.IsSuccessStatusCode)
-            {
+            var answer = await ApiClient.PostAsync<SyncAllAnswer>("/api/sync/run-all", (HttpContent?)null);
+            // The API answers every schema's outcome; the person is told how many did not synchronize, not "completed".
+            if (answer is { Failed: > 0 })
+                Snackbar.Add($"Sync-all finished: {answer.Succeeded} of {answer.TotalSchemas} schemas synchronized, {answer.Failed} did not.", Severity.Warning);
+            else
                 Snackbar.Add("Sync-all completed", Severity.Success);
-                await LoadReconciliation();
-            }
+            await LoadReconciliation();
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "synchronizing all PPDM39 sync schemas", "The schemas were not synchronized"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Sync-all failed: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "synchronizing all PPDM39 sync schemas", "The schemas were not synchronized");
         }
         finally { _syncing = false; }
     }
@@ -263,13 +317,28 @@
         _ => Color.Default
     };
 
-    // DTOs for API deserialization
+    // DTOs for API deserialization, in the shapes SyncController answers with. The schema list arrives as
+    // { count, schemas } of BeepDM DataSyncSchema (id, entityName, syncType); the page read a bare list of members no
+    // schema has, so the list could never load. A schema has no enabled flag (sync-all runs every schema), so the
+    // column that always said "No" is gone.
+    public class SyncSchemasAnswer
+    {
+        public List<SyncSchemaDto> Schemas { get; set; } = new();
+    }
     public class SyncSchemaDto
     {
+        [JsonPropertyName("id")]
         public string SchemaId { get; set; } = string.Empty;
+        [JsonPropertyName("entityName")]
         public string SchemaName { get; set; } = string.Empty;
+        [JsonPropertyName("syncType")]
         public string SyncMode { get; set; } = string.Empty;
-        public bool IsEnabled { get; set; }
+    }
+    public class SyncAllAnswer
+    {
+        public int TotalSchemas { get; set; }
+        public int Succeeded { get; set; }
+        public int Failed { get; set; }
     }
     public class SyncRunDto
     {
@@ -280,11 +349,16 @@
         public string Duration { get; set; } = string.Empty;
         public string? SloTier { get; set; }
     }
+    // The reconciliation endpoint answers BeepDM's SyncReconciliationReport under its own member names.
     public class ReconciliationDto
     {
+        [JsonPropertyName("sourceRowsScanned")]
         public int SourceRows { get; set; }
+        [JsonPropertyName("destRowsWritten")]
         public int DestRows { get; set; }
+        [JsonPropertyName("rejectCount")]
         public int Rejects { get; set; }
+        [JsonPropertyName("conflictCount")]
         public int Conflicts { get; set; }
         public string? MappingQualityBand { get; set; }
     }

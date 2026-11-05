@@ -4,6 +4,8 @@
 @inject UserAdministrationClient Accounts
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject OilGasCallFailures Calls
 
 <PageTitle>Users</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
@@ -93,7 +95,10 @@
             _users = await Accounts.GetUsersAsync();
             Cancel();
         }
-        catch { _error = "Could not load users. Try reloading."; }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "loading the user list", "The users could not be loaded; try reloading");
+        }
         finally { _busy = false; }
     }
 
@@ -123,12 +128,20 @@
                 "Deactivate user", "Deactivate this user's OilGas account?", yesText: "Deactivate", cancelText: "Cancel") != true)
                 return;
             var saved = await Accounts.UpdateUserAsync(_selected.UserId, new(_fullName, _active, _selected.ConcurrencyStamp));
-            if (saved is null) throw new InvalidOperationException("Missing saved user.");
+            // An answer naming no saved account is not one this API gives; it reaches the page's error boundary, which reports it.
+            if (saved is null) throw new InvalidOperationException("The OilGas API answered a user update with no saved account.");
             _users = _users.Select(user => user.UserId == saved.UserId ? saved : user).ToList();
             Select(saved);
             Snackbar.Add("User saved.", Severity.Success);
         }
-        catch { _error = "Could not save. The account may have changed, or this may be the last active administrator. Reload before retrying."; }
+        catch (OilGasApiException answer)
+        {
+            _error = Answers.Explain(answer, "saving a user's account", "The user was not saved; reload before retrying");
+        }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "saving a user's account", "The save could not be verified; reload before retrying");
+        }
         finally { _busy = false; }
     }
 }

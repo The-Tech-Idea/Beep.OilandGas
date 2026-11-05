@@ -7,6 +7,7 @@
 @using Beep.OilandGas.Models.Data.Operations
 @using Beep.OilandGas.Client.App
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject IEnhancedRecoveryServiceClient EnhancedRecoveryService
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
@@ -246,7 +247,12 @@
                 _fieldName = field.FieldName ?? string.Empty;
             }
         }
-        catch { /* non-fatal — user can still enter field ID manually */ }
+        // Non-fatal: the person can still enter a field ID by hand, so a failed call is said as a warning; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the current field for the enhanced recovery page", "The current field could not be loaded; enter a field ID"), Severity.Warning);
+        }
         finally
         {
             _isLoading = false;
@@ -268,9 +274,9 @@
             SeedPilotEconomicsFromResult();
             Snackbar.Add("EOR potential analysis completed", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error analyzing EOR potential.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "analysing EOR potential", "Error analyzing EOR potential"), Severity.Error);
         }
         finally
         {
@@ -299,9 +305,9 @@
             SeedPilotEconomicsFromResult();
             Snackbar.Add("Recovery factor calculated", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error calculating recovery factor.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "calculating an EOR recovery factor", "Error calculating recovery factor"), Severity.Error);
         }
         finally
         {
@@ -324,9 +330,9 @@
             await LoadInjectionOperationAsync(showLoadedFeedback: false, showMissingFeedback: false);
             Snackbar.Add("Injection operation managed successfully", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error managing injection.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "managing an injection operation", "Error managing injection"), Severity.Error);
         }
         finally
         {
@@ -381,9 +387,9 @@
 
             Snackbar.Add("Pilot economics calculated", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error analyzing pilot economics.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "analysing EOR pilot economics", "Error analyzing pilot economics"), Severity.Error);
         }
         finally
         {
@@ -420,9 +426,9 @@
             if (showLoadedFeedback)
                 Snackbar.Add("Stored injection operation loaded", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading injection operation.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading an injection operation", "Error loading injection operation"), Severity.Error);
         }
         finally
         {

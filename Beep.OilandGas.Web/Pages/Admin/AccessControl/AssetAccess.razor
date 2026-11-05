@@ -3,6 +3,7 @@
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Assign Asset Access</PageTitle>
 
@@ -86,11 +87,13 @@
                     </TemplateColumn>
                     <TemplateColumn Title="" Sortable="false">
                         <CellTemplate>
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                          Title="Revoke access"
-                                          Color="Color.Error"
-                                          Size="Size.Small"
-                                          OnClick="@(() => RevokeAccess(context.Item))" />
+                            <MudTooltip Text="Revoke access">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               aria-label="Revoke access"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="@(() => RevokeAccess(context.Item))" />
+                            </MudTooltip>
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
@@ -120,9 +123,9 @@
         {
             _assetAccessList = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.AssetAccess>>($"/api/accesscontrol/user/{Uri.EscapeDataString(_userId)}/assets");
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading asset access.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading a user's asset access", "The user's asset access could not be loaded"), Severity.Error);
         }
     }
 
@@ -157,9 +160,9 @@
                 Snackbar.Add("Failed to grant access", Severity.Error);
             }
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error granting access.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "granting asset access", "The access was not granted"), Severity.Error);
         }
     }
 
@@ -182,9 +185,9 @@
                 await LoadAssetAccess();
             }
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error revoking access.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "revoking asset access", "The access was not revoked"), Severity.Error);
         }
     }
 

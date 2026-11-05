@@ -4,6 +4,8 @@
 @inject ApiClient ApiClient
 @inject IAfeServiceClient AfeClient
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 @using Beep.OilandGas.Models.Data.ProductionAccounting
 
 <PageTitle>Manage Authorities for Expenditure</PageTitle>
@@ -97,7 +99,9 @@
         @* Detail View *@
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="BackToList" Title="Back to AFE list" />
+                <MudTooltip Text="Back to AFE list">
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="BackToList" aria-label="Back to AFE list" />
+                </MudTooltip>
                 <MudStack Spacing="0">
                     <MudText Typo="Typo.h5">@_selectedAfe.AfeNumber — @_selectedAfe.Description</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedAfe.WellId · @_selectedAfe.Category</MudText>
@@ -207,7 +211,7 @@
 </MudContainer>
 
 @* ── New AFE dialog ─────────────────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showCreateAfeDialog">
+<MudDialog @bind-Visible="_showCreateAfeDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
@@ -272,7 +276,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: the page goes on without it, and says so.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for AFE management", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for AFE management", "The field name could not be loaded", FailureSeverity.Degraded);
+        }
 
         await LoadAfesAsync();
 
@@ -307,9 +320,14 @@
                 r.Status ?? "ACTIVE",
                 string.Empty)).ToList();
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load AFEs.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the AFEs", "The AFEs could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the AFEs", "The AFEs could not be loaded", FailureSeverity.Degraded);
         }
         finally
         {
@@ -366,49 +384,67 @@
                 BudgetAmount = (decimal)_newAfeEstimate,
                 EffectiveDate = (DateTime?)DateTime.UtcNow
             };
-            var result = await AfeClient.CreateAfeAsync(payload);
-            var newRow = new AfeItem(
-                result?.AfeId ?? Guid.NewGuid().ToString(),
-                result?.AfeNumber ?? _newAfeNumber,
-                _newAfeName,
-                _newAfePropertyId,
-                "AFE",
-                _newAfeEstimate,
-                0,
-                "ACTIVE",
-                string.Empty);
-            _afes.Add(newRow);
+            await AfeClient.CreateAfeAsync(payload);
             _showCreateAfeDialog = false;
             Snackbar.Add($"AFE {_newAfeNumber} created.", Severity.Success);
+            // The list is read back from the repository, so the new row carries the identifier the repository gave it; a row
+            // made here had to invent one whenever the answer carried no body.
+            await LoadAfesAsync();
         }
-        catch (Exception) { Snackbar.Add("Error creating AFE.", Severity.Error); }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, $"creating AFE {_newAfeNumber}", $"AFE {_newAfeNumber} was not created"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"creating AFE {_newAfeNumber}", $"AFE {_newAfeNumber} was not created");
+        }
         finally { _savingAfe = false; }
     }
 
     private async Task ApproveAfe()
     {
         if (_selectedAfe == null) return;
+        var (afeId, afeNumber) = (_selectedAfe.AfeId, _selectedAfe.AfeNumber);
         try
         {
-            await AfeClient.ApproveAfeAsync(_selectedAfe.AfeId);
+            await AfeClient.ApproveAfeAsync(afeId);
             await LoadAfesAsync();
-            Snackbar.Add($"{_selectedAfe.AfeNumber} approved", Severity.Success);
+            Snackbar.Add($"{afeNumber} approved", Severity.Success);
             _selectedAfe = null;
         }
-        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, $"approving AFE {afeNumber}", $"{afeNumber} was not approved"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"approving AFE {afeNumber}", $"{afeNumber} was not approved");
+        }
     }
 
     private async Task RejectAfe()
     {
         if (_selectedAfe == null) return;
+        var (afeId, afeNumber) = (_selectedAfe.AfeId, _selectedAfe.AfeNumber);
         try
         {
-            await AfeClient.RejectAfeAsync(_selectedAfe.AfeId);
+            await AfeClient.RejectAfeAsync(afeId);
             await LoadAfesAsync();
-            Snackbar.Add($"{_selectedAfe.AfeNumber} returned for revision", Severity.Warning);
+            Snackbar.Add($"{afeNumber} returned for revision", Severity.Warning);
             _selectedAfe = null;
         }
-        catch (Exception) { Snackbar.Add("Rejection failed.", Severity.Error); }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, $"returning AFE {afeNumber} for revision", $"{afeNumber} was not returned for revision"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"returning AFE {afeNumber} for revision", $"{afeNumber} was not returned for revision");
+        }
     }
 
     private double SpentPercent(AfeItem a) =>

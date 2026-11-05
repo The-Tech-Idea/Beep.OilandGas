@@ -6,9 +6,11 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
-@inject ILogger<DatabaseManagement> Logger
 @inject IProgressTrackingClient ProgressClient
 @inject IDataManagementService DataManagementService
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
+@inject IFailureReporter Failures
 @using Beep.OilandGas.Web.Components
 
 <PageTitle>Manage Database Connections</PageTitle>
@@ -44,6 +46,10 @@
         {
             <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
             <MudText>Loading connections...</MudText>
+        }
+        else if (_loadError is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
         }
         else if (_connections == null || !_connections.Any())
         {
@@ -91,22 +97,28 @@
                             <MudStack Row="true" Spacing="2">
                                 @if (!context.Item.IsCurrent)
                                 {
-                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
-                                                 Color="Color.Success"
-                                                 Size="Size.Small"
-                                                 Title="Set as Current"
-                                                 OnClick="@(() => SetCurrentConnection(context.Item.ConnectionName))" />
+                                    <MudTooltip Text="Set as Current">
+                                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                                     Color="Color.Success"
+                                                     Size="Size.Small"
+                                                     aria-label="Set as Current"
+                                                     OnClick="@(() => SetCurrentConnection(context.Item.ConnectionName))" />
+                                    </MudTooltip>
                                 }
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                             Color="Color.Primary"
-                                             Size="Size.Small"
-                                             Title="Edit"
-                                             OnClick="@(() => OpenEditWizard(context.Item.ConnectionName))" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                             Color="Color.Error"
-                                             Size="Size.Small"
-                                             Title="Delete"
-                                             OnClick="@(() => DeleteConnection(context.Item.ConnectionName))" />
+                                <MudTooltip Text="Edit">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                 Color="Color.Primary"
+                                                 Size="Size.Small"
+                                                 aria-label="Edit"
+                                                 OnClick="@(() => OpenEditWizard(context.Item.ConnectionName))" />
+                                </MudTooltip>
+                                <MudTooltip Text="Delete">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                 Color="Color.Error"
+                                                 Size="Size.Small"
+                                                 aria-label="Delete"
+                                                 OnClick="@(() => DeleteConnection(context.Item.ConnectionName))" />
+                                </MudTooltip>
                             </MudStack>
                         </CellTemplate>
                     </TemplateColumn>
@@ -126,7 +138,7 @@
     <MudPaper Elevation="2" Class="pa-4 mt-4">
         <MudText Typo="Typo.h6" Class="mb-4">Database Operations</MudText>
         
-        <MudExpansionPanels Elevation="0" Variant="Variant.Outlined" MultiExpansion="false">
+        <MudExpansionPanels Elevation="0" Outlined="true" MultiExpansion="false">
             <!-- Drop Database -->
             <MudExpansionPanel Text="Drop Database" Icon="@Icons.Material.Filled.Delete">
                 <MudText Typo="Typo.body2" Color="Color.Warning" Class="mb-3">
@@ -291,6 +303,7 @@
 @code {
     private List<DatabaseConnectionListItem>? _connections;
     private bool _isLoading = true;
+    private string? _loadError;
     private string? _currentConnectionName;
     
     // Drop Database
@@ -323,16 +336,23 @@
     private async Task LoadConnections()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _connections = await DataManagementService.GetAllConnectionsAsync();
-            
+
             // Get current connection using DataManagementService
             _currentConnectionName = await DataManagementService.GetCurrentConnectionNameAsync();
         }
-        catch (Exception)
+        // The page says the connections did not load, rather than that there are none.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading connections.", Severity.Error);
+            _loadError = Answers.Explain(answer, "loading the database connections", "The database connections could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _loadError = Notifier.FailureText(ex, "loading the database connections", "The database connections could not be loaded");
         }
         finally
         {
@@ -382,9 +402,14 @@
                 await LoadConnections();
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading connection.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "loading a database connection to edit", $"The connection '{connectionName}' could not be opened"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a database connection to edit", $"The connection '{connectionName}' could not be opened");
         }
     }
 
@@ -406,11 +431,11 @@
                 Snackbar.Add($"Failed to set current connection: {result?.Message}", Severity.Error);
             }
         }
-        catch (Exception exception)
+        // The service answers a failed call as a failed result; anything reaching here is a fault in this application,
+        // told with its reference. The list is unchanged.
+        catch (Exception ex)
         {
-            // Handled: the switch failed or its result could not be read; the person is told and the list is unchanged.
-            Logger.LogError(exception, "The current connection could not be set to {ConnectionName}.", connectionName);
-            Snackbar.Add("Error setting current connection.", Severity.Error);
+            Notifier.Failure(ex, "setting the current database connection", "The current connection was not changed");
         }
     }
 
@@ -437,9 +462,10 @@
                     Snackbar.Add($"Failed to delete connection: {deleteResult.Message}", Severity.Error);
                 }
             }
-            catch (Exception)
+            // The service answers a failed call as a failed result; anything reaching here is a fault, told with its reference.
+            catch (Exception ex)
             {
-                Snackbar.Add("Error deleting connection.", Severity.Error);
+                Notifier.Failure(ex, "deleting a database connection", "The connection was not deleted");
             }
         }
     }
@@ -482,9 +508,10 @@
                     Snackbar.Add($"Failed to drop database: {dropResult.Message}", Severity.Error);
                 }
             }
-            catch (Exception)
+            // The service answers a failed call as a failed result; anything reaching here is a fault, told with its reference.
+            catch (Exception ex)
             {
-                Snackbar.Add("Error dropping database.", Severity.Error);
+                Notifier.Failure(ex, "dropping a PPDM database", "The database was not dropped");
             }
             finally
             {
@@ -531,9 +558,10 @@
                     Snackbar.Add($"Failed to recreate database: {recreateResult.Message}", Severity.Error);
                 }
             }
-            catch (Exception)
+            // The service answers a failed call as a failed result; anything reaching here is a fault, told with its reference.
+            catch (Exception ex)
             {
-                Snackbar.Add("Error recreating database.", Severity.Error);
+                Notifier.Failure(ex, "recreating a PPDM database", "The database was not recreated");
             }
             finally
             {
@@ -594,9 +622,11 @@
                 Snackbar.Add(response.Message ?? "Operation started", response.Success ? Severity.Info : Severity.Error);
             }
         }
-        catch (Exception)
+        // The copy starts as a failed result when the call fails; what reaches here is following its progress (the hub)
+        // or a fault, told with its reference.
+        catch (Exception ex)
         {
-            Snackbar.Add("Error starting database copy.", Severity.Error);
+            Notifier.Failure(ex, "starting a PPDM database copy and following its progress", "The database copy's progress could not be followed");
             _isCopying = false;
             _currentOperationId = null;
         }
@@ -640,9 +670,11 @@
             }
         }
         }
+        // An async void handler: nothing awaits it, so every failure is told here (and kept in the store) rather than
+        // ending the circuit.
         catch (Exception ex)
         {
-            Snackbar.Add($"Progress error: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "following a PPDM database copy's progress", "The database copy's progress could not be shown");
         }
     }
 
@@ -659,7 +691,20 @@
         if (!string.IsNullOrEmpty(_currentOperationId))
         {
             ProgressClient.OnProgressUpdate -= HandleProgressUpdate;
-            try { await ProgressClient.LeaveOperationAsync(_currentOperationId); } catch { }
+            try
+            {
+                await ProgressClient.LeaveOperationAsync(_currentOperationId);
+            }
+            // The page is closing, so there is nobody to tell, and a failure here must not end the circuit with it. The
+            // copy goes on; the hub stops sending this circuit its progress when the connection closes.
+            catch (Exception ex)
+            {
+                Failures.ReportHandled(
+                    ex,
+                    "leaving a PPDM database copy's progress group as the page closed",
+                    consequence: "the copy continues; its progress is no longer followed on this page",
+                    FailureSeverity.Degraded);
+            }
             _currentOperationId = null;
         }
     }

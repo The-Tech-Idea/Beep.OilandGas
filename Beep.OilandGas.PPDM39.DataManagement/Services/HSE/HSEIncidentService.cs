@@ -12,12 +12,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.HSE;
 
 public class HSEIncidentService : IHSEService
 {
-    private const string PrimaryDetailType = "PRIMARY";
     private const string PrimaryFieldComponentRole = "PRIMARY_FIELD_CONTEXT";
     private const string PrimaryFieldComponentType = "INCIDENT_LOCATION";
     private const string InvestigatorRole = "INVESTIGATOR";
     private const string InvestigatorStatus = "ASSIGNED";
-    private const string StatusResponseType = "STATUS";
 
     private readonly IDMEEditor                _editor;
     private readonly ICommonColumnHandler      _commonColumnHandler;
@@ -97,10 +95,10 @@ public class HSEIncidentService : IHSEService
             INCIDENT_ID = incidentId,
             DETAIL_OBS_NO = 1,
             ACTIVE_IND = "Y",
-            DETAIL_TYPE = PrimaryDetailType,
+            DETAIL_TYPE = HSEIncidentRules.PrimaryDetailType,
             EFFECTIVE_DATE = request.IncidentDate,
             INCIDENT_DATE = request.IncidentDate,
-            INCIDENT_SEVERITY_ID = MapTierToSeverityId(request.Tier),
+            INCIDENT_SEVERITY_ID = HSEIncidentRules.ToSeverityId(request.Tier),
             INCIDENT_SET_ID = "FIELD_INCIDENT",
             INCIDENT_TYPE_ID = request.IncidentType,
             REMARK = request.Description,
@@ -128,7 +126,7 @@ public class HSEIncidentService : IHSEService
             EFFECTIVE_DATE = DateTime.UtcNow,
             REMARK = "Incident reported",
             RESPONSE_RESULT = IncidentState.Reported,
-            RESPONSE_TYPE = StatusResponseType,
+            RESPONSE_TYPE = HSEIncidentRules.StatusResponseType,
             SOURCE = "Beep.OilandGas.HSE",
         };
 
@@ -243,7 +241,7 @@ public class HSEIncidentService : IHSEService
         var existing = await GetPrimaryDetailAsync(incidentId)
             ?? throw new InvalidOperationException($"Incident {incidentId} not found");
 
-        existing.INCIDENT_SEVERITY_ID = MapTierToSeverityId(tier);
+        existing.INCIDENT_SEVERITY_ID = HSEIncidentRules.ToSeverityId(tier);
         var repo = await BuildRepoAsync("HSE_INCIDENT_DETAIL");
         await repo.UpdateAsync(existing, userId);
     }
@@ -270,7 +268,7 @@ public class HSEIncidentService : IHSEService
             EFFECTIVE_DATE = DateTime.UtcNow,
             REMARK = string.IsNullOrWhiteSpace(reason) ? trigger : reason,
             RESPONSE_RESULT = transition.To,
-            RESPONSE_TYPE = StatusResponseType,
+            RESPONSE_TYPE = HSEIncidentRules.StatusResponseType,
             SOURCE = "Beep.OilandGas.HSE",
         };
 
@@ -324,11 +322,7 @@ public class HSEIncidentService : IHSEService
             new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
         };
 
-        return (await repo.GetAsync(filters))
-            .OfType<HSE_INCIDENT_DETAIL>()
-            .OrderBy(detail => detail.DETAIL_TYPE == PrimaryDetailType ? 0 : 1)
-            .ThenBy(detail => detail.DETAIL_OBS_NO)
-            .FirstOrDefault();
+        return HSEIncidentRules.PrimaryDetail((await repo.GetAsync(filters)).OfType<HSE_INCIDENT_DETAIL>());
     }
 
     private async Task<HSE_INCIDENT_COMPONENT?> GetPrimaryFieldComponentAsync(string incidentId)
@@ -372,12 +366,7 @@ public class HSEIncidentService : IHSEService
             new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
         };
 
-        return (await repo.GetAsync(filters))
-            .OfType<HSE_INCIDENT_RESPONSE>()
-            .Where(response => string.Equals(response.RESPONSE_TYPE, StatusResponseType, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(response => response.EFFECTIVE_DATE ?? DateTime.MinValue)
-            .ThenByDescending(response => response.RESPONSE_OBS_NO)
-            .FirstOrDefault();
+        return HSEIncidentRules.LatestStatus((await repo.GetAsync(filters)).OfType<HSE_INCIDENT_RESPONSE>());
     }
 
     private async Task<decimal> GetNextPartyObsNoAsync(string incidentId)
@@ -428,12 +417,12 @@ public class HSEIncidentService : IHSEService
             IncidentId = header.INCIDENT_ID ?? string.Empty,
             FieldId = component?.FIELD_ID ?? string.Empty,
             IncidentType = detail?.INCIDENT_TYPE_ID ?? component?.INCIDENT_TYPE ?? string.Empty,
-            Tier = MapSeverityIdToTier(detail?.INCIDENT_SEVERITY_ID),
+            Tier = HSEIncidentRules.TierOf(detail?.INCIDENT_SEVERITY_ID),
             IncidentDate = header.INCIDENT_DATE ?? detail?.INCIDENT_DATE ?? header.EFFECTIVE_DATE ?? DateTime.UtcNow,
             Location = component?.REMARK ?? string.Empty,
             Description = detail?.REMARK ?? header.REMARK ?? string.Empty,
             Jurisdiction = component?.JURISDICTION ?? string.Empty,
-            CurrentState = response?.RESPONSE_RESULT ?? IncidentState.Reported,
+            CurrentState = HSEIncidentRules.StateOf(response),
             InvestigatorId = investigator?.INVOLVED_PARTY_BA_ID,
         };
     }
@@ -442,38 +431,6 @@ public class HSEIncidentService : IHSEService
     {
         var seq = DateTime.UtcNow.Ticks % 10000;
         return $"HSE-{fieldId}-{incidentDate:yyyyMMdd}-{seq:D4}";
-    }
-
-    private static string MapTierToSeverityId(int tier)
-    {
-        var normalizedTier = Math.Clamp(tier, 1, 4);
-        return $"TIER_{normalizedTier}";
-    }
-
-    private static int MapSeverityIdToTier(string? severityId)
-    {
-        if (string.IsNullOrWhiteSpace(severityId))
-        {
-            return 4;
-        }
-
-        if (severityId.StartsWith("TIER_", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(severityId[5..], out var parsedTier))
-        {
-            return parsedTier;
-        }
-
-        if (int.TryParse(severityId, out parsedTier))
-        {
-            return parsedTier;
-        }
-
-        return severityId.ToUpperInvariant() switch
-        {
-            IncidentType.PseTier1 => 1,
-            IncidentType.PseTier2 => 2,
-            _ => 4,
-        };
     }
 
     private async Task<PPDMGenericRepository> BuildRepoAsync(string tableName)

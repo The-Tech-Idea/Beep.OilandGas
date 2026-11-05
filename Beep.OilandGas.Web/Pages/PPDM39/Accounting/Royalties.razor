@@ -6,6 +6,8 @@
 @inject IDataManagementService DataManagement
 @implements IDisposable
 @inject IDialogService DialogService
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Field Royalty Records</PageTitle>
 
@@ -29,7 +31,7 @@
     @* ─── Date Filter *@
     <MudCard Elevation="1" Class="mb-4">
         <MudCardContent>
-            <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+            <MudGrid Spacing="2" Class="align-center">
                 <MudItem xs="12" sm="5">
                     <MudDatePicker @bind-Date="@_filterStartDate" Label="Calculated From" Variant="Variant.Outlined" />
                 </MudItem>
@@ -163,9 +165,15 @@
             _fieldId = fieldId;
             _fieldName = _fieldId;
         }
-        catch
+        catch (OilGasApiException answer)
         {
-            _loadError = "The current field could not be loaded. Select a field and retry.";
+            _loadError = Answers.Explain(answer, "reading the active field for the royalty records", "The current field could not be loaded");
+            return;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _loadError = Notifier.FailureText(ex, "reading the active field for the royalty records", "The current field could not be loaded");
             return;
         }
 
@@ -194,10 +202,18 @@
             var records = await AccountingServiceClient.GetRoyaltyCalculationsAsync(_fieldId, _filterStartDate, _filterEndDate);
             if (!_disposed && version == _loadVersion) _royalties = records;
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
+            var sentence = Answers.Explain(answer, "loading the field's royalty records", "Royalty records could not be loaded");
             if (!_disposed && version == _loadVersion)
-                _loadError = "Royalty records could not be loaded. Check field access and the selected dates, then retry.";
+                _loadError = sentence;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            var sentence = Notifier.FailureText(ex, "loading the field's royalty records", "Royalty records could not be loaded");
+            if (!_disposed && version == _loadVersion)
+                _loadError = sentence;
         }
         finally
         {

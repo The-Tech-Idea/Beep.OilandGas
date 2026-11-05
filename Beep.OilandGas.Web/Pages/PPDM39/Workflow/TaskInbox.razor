@@ -5,6 +5,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject IUnifiedTaskInboxService InboxService
 @inject NavigationManager Nav
+@inject OilGasCallFailures Calls
 @implements IDisposable
 
 <MudContainer MaxWidth="MaxWidth.Large">
@@ -21,7 +22,8 @@
 
     @* ── Filter Bar ── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4" Wrap="Wrap.Wrap">
-        <MudChipSet T="string" @bind-SelectedValue="_selectedTaskType" CheckMark="true">
+        @* Choosing a type narrows the list at once; the bound value was read only by the next refresh, so a chip changed nothing. *@
+        <MudChipSet T="string" SelectedValue="_selectedTaskType" SelectedValueChanged="SelectTaskType" CheckMark="true">
             <MudChip T="string" Value="@(string.Empty)">All</MudChip>
             <MudChip T="string" Value='@("APPROVAL")'>
                 Approvals
@@ -61,11 +63,13 @@
                     @_counts.Overdue overdue
                 </MudChip>
             }
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
-                           Size="Size.Small"
-                           OnClick="RefreshAsync"
-                           Disabled="@_isLoading"
-                           Title="Refresh" />
+            <MudTooltip Text="Refresh">
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                               Size="Size.Small"
+                               OnClick="RefreshAsync"
+                               Disabled="@_isLoading"
+                               aria-label="Refresh" />
+            </MudTooltip>
         </MudStack>
     </MudStack>
 
@@ -88,7 +92,11 @@
     }
 
     @* ── Main Task List ── *@
-    @if (!_allTasks.Any() && !_isLoading)
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="my-2">@_loadError</MudAlert>
+    }
+    else if (!_allTasks.Any() && !_isLoading)
     {
         <MudPaper Elevation="1" Class="pa-6" Style="text-align:center">
             <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
@@ -113,11 +121,12 @@
     [Inject] private INotificationService? NotificationService { get; set; }
 
     private List<UnifiedTask> _allTasks = new();
+    private List<UnifiedTask> _loadedTasks = new();
     private List<UnifiedTask> _criticalTasks = new();
     private InboxCounts _counts = new();
     private string? _selectedTaskType;
     private bool _isLoading;
-    private string? _personaCode;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,33 +140,50 @@
     private async Task RefreshAsync()
     {
         _isLoading = true;
+        _loadError = null;
         StateHasChanged();
 
         try
         {
-            var inbox = await InboxService.GetInboxAsync(_personaCode ?? string.Empty);
+            // No persona is named: the API answers for the signed-in person's own persona, which it reads from their
+            // account (WorkflowTasksController), and refuses one that is not theirs. The page kept a persona field that
+            // nothing ever set, and the API is the one owner of that answer, so it is gone rather than wired.
+            var inbox = await InboxService.GetInboxAsync(string.Empty);
             _criticalTasks = inbox.CriticalTasks;
-            _allTasks = inbox.HighPriorityTasks.Concat(inbox.NormalTasks).ToList();
+            _loadedTasks = inbox.HighPriorityTasks.Concat(inbox.NormalTasks).ToList();
             _counts = inbox.Counts;
-
-            if (!string.IsNullOrWhiteSpace(_selectedTaskType))
-            {
-                _allTasks = _allTasks
-                    .Where(t => string.Equals(t.TaskType, _selectedTaskType, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
+            ApplyTaskTypeFilter();
         }
-        catch (Exception ex)
+        // The inbox service refuses an empty task answer with InvalidOperationException. An inbox that did not load is not
+        // shown as "all caught up": the page says it did not load.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure) || failure is InvalidOperationException)
         {
             _criticalTasks.Clear();
+            _loadedTasks.Clear();
             _allTasks.Clear();
             _counts = new();
-            Snackbar.Add($"Failed to load tasks: {ex.Message}", Severity.Error);
+            _loadError = Calls.Explain(failure, "loading the task inbox", "The tasks could not be loaded");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {
             _isLoading = false;
         }
+    }
+
+    private void SelectTaskType(string? taskType)
+    {
+        _selectedTaskType = taskType;
+        ApplyTaskTypeFilter();
+    }
+
+    private void ApplyTaskTypeFilter()
+    {
+        _allTasks = string.IsNullOrWhiteSpace(_selectedTaskType)
+            ? _loadedTasks.ToList()
+            : _loadedTasks
+                .Where(t => string.Equals(t.TaskType, _selectedTaskType, StringComparison.OrdinalIgnoreCase))
+                .ToList();
     }
 
     private async Task HandleTaskAction(UnifiedTask task)
@@ -169,10 +195,26 @@
         await Task.CompletedTask;
     }
 
-    private async void OnCountsUpdated(InboxCounts counts)
+    // The notification service raises a plain event from its SignalR connection, outside every lifecycle method. An async
+    // void handler's failure reached nothing; the update now runs on the renderer, and a fault is handed to the error boundary.
+    private void OnCountsUpdated(InboxCounts counts) => _ = ShowCountsAsync(counts);
+
+    private async Task ShowCountsAsync(InboxCounts counts)
     {
-        _counts = counts;
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                _counts = counts;
+                StateHasChanged();
+            });
+        }
+        catch (Exception failure)
+        {
+            // Deliberately broad: this runs outside every lifecycle method, so a fault reaches no error boundary unless it is
+            // handed over. DispatchExceptionAsync is the framework's route there, and the boundary reports it.
+            await DispatchExceptionAsync(failure);
+        }
     }
 
     public void Dispose()

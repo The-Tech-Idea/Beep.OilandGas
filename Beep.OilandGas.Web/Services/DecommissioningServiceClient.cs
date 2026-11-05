@@ -34,13 +34,6 @@ namespace Beep.OilandGas.Web.Services
                 request);
         }
 
-        public async Task ApprovePAAsync(string abandonmentId)
-        {
-            await _apiClient.PatchAsync(
-                $"/api/field/current/decommissioning/wells-abandoned/{Uri.EscapeDataString(abandonmentId)}/approve",
-                new { });
-        }
-
         public async Task<List<FacilityDecommissioningResponse>> GetDecommissionedFacilitiesAsync(Dictionary<string, string>? filters = null)
         {
             var endpoint = BuildEndpoint("/api/field/current/decommissioning/facilities", filters);

@@ -17,18 +17,24 @@
                             <MudSelectItem Value="@("completion")">Completion Diagram</MudSelectItem>
                             <MudSelectItem Value="@("details")">Details View</MudSelectItem>
                         </MudSelect>
-                        <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" 
-                                      Size="Size.Small"
-                                      OnClick="@ZoomIn"
-                                      Title="Zoom in" />
-                        <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" 
-                                      Size="Size.Small"
-                                      OnClick="@ZoomOut"
-                                      Title="Zoom out" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" 
-                                      Size="Size.Small"
-                                      OnClick="@ToggleFullscreen"
-                                      Title="Toggle fullscreen" />
+                        <MudTooltip Text="Zoom in">
+                            <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" 
+                                          Size="Size.Small"
+                                          OnClick="@ZoomIn"
+                                          aria-label="Zoom in" />
+                        </MudTooltip>
+                        <MudTooltip Text="Zoom out">
+                            <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" 
+                                          Size="Size.Small"
+                                          OnClick="@ZoomOut"
+                                          aria-label="Zoom out" />
+                        </MudTooltip>
+                        <MudTooltip Text="Toggle fullscreen">
+                            <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" 
+                                          Size="Size.Small"
+                                          OnClick="@ToggleFullscreen"
+                                          aria-label="Toggle fullscreen" />
+                        </MudTooltip>
                     </MudStack>
                 }
             </MudStack>

@@ -6,6 +6,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject IClientFileExportService ExportService
 @inject IDevelopmentServiceClient DevelopmentService
 @inject IProductionServiceClient ProductionService
@@ -87,9 +88,9 @@
 
                 <MudTabPanel Text="Rate vs Potential">
                     <MudPaper Elevation="0" Class="pa-3">
-                        <MudChart ChartType="ChartType.Line"
+                        <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_rateSeries"
-                                  XAxisLabels="@_rateLabels"
+                                  ChartLabels="@_rateLabels"
                                   Width="100%"
                                   Height="280px" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
@@ -100,9 +101,9 @@
 
                 <MudTabPanel Text="Pressure & GOR">
                     <MudPaper Elevation="0" Class="pa-3">
-                        <MudChart ChartType="ChartType.Line"
+                        <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_pressureSeries"
-                                  XAxisLabels="@_rateLabels"
+                                  ChartLabels="@_rateLabels"
                                   Width="100%"
                                   Height="280px" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
@@ -113,9 +114,9 @@
 
                 <MudTabPanel Text="Decline Analysis">
                     <MudPaper Elevation="0" Class="pa-3">
-                        <MudChart ChartType="ChartType.Line"
+                        <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_dcaSeries"
-                                  XAxisLabels="@_dcaLabels"
+                                  ChartLabels="@_dcaLabels"
                                   Width="100%"
                                   Height="280px" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
@@ -126,9 +127,9 @@
 
                 <MudTabPanel Text="Water Cut Trend">
                     <MudPaper Elevation="0" Class="pa-3">
-                        <MudChart ChartType="ChartType.Line"
+                        <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_wcSeries"
-                                  XAxisLabels="@_rateLabels"
+                                  ChartLabels="@_rateLabels"
                                   Width="100%"
                                   Height="280px" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
@@ -291,7 +292,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the wells still load; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the well performance optimizer", "The field name could not be loaded"), Severity.Warning);
+        }
 
         _loading = true;
         try
@@ -314,9 +320,9 @@
             if (!string.IsNullOrEmpty(_selectedWellId))
                 await LoadWellPerformanceAsync(_selectedWellId);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to load well list.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the well list for the well performance optimizer", "Failed to load well list"), Severity.Warning);
         }
         finally { _loading = false; }
     }
@@ -420,9 +426,9 @@
             if (perf.PotentialRate > 0)
                 _dcaEur = $"{perf.PotentialRate * 365 / 1_000:N0} MBBL/yr";
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to load performance data.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading a well's performance data", "Failed to load performance data"), Severity.Warning);
         }
     }
 
@@ -452,11 +458,11 @@
 
             var result = await ProductionService.LogPerformanceDeviationAsync(_selectedWellId, request);
             await LoadWellPerformanceAsync(_selectedWellId);
-            Snackbar.Add(result.Message ?? "Deviation logged for review.", Severity.Success);
+            Snackbar.Add(result?.Message ?? "Deviation logged for review.", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to log performance deviation.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "logging a well performance deviation", "Failed to log performance deviation"), Severity.Error);
         }
         finally
         {

@@ -2,6 +2,8 @@
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Assess Data Quality</PageTitle>
 
@@ -147,9 +149,14 @@
                 Snackbar.Add("Quality dashboard loaded", Severity.Success);
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading quality dashboard.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "loading a table's data quality dashboard", "The quality dashboard could not be loaded"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a table's data quality dashboard", "The quality dashboard could not be loaded");
         }
         finally
         {
@@ -169,7 +176,7 @@
             QualityAlertSeverity.Critical => Color.Error,
             QualityAlertSeverity.High => Color.Warning,
             QualityAlertSeverity.Medium => Color.Info,
-            _ => Color.Default
+            QualityAlertSeverity.Low => Color.Default
         };
     }
 }

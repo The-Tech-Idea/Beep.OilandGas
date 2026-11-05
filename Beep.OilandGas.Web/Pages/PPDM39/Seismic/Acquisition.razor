@@ -3,6 +3,7 @@
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Manage Seismic Acquisition Programmes</PageTitle>
 
@@ -64,6 +65,10 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
+            }
             else if (!_isLoading)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
@@ -81,6 +86,7 @@
     private string _fieldName = string.Empty;
     private List<SEIS_ACQTN_SURVEY>? _acquisition;
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,7 +96,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the seismic acquisition page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         await LoadAcquisition();
     }
@@ -98,12 +107,16 @@
     private async Task LoadAcquisition()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _acquisition = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>("/api/datamanagement/SEIS_ACQTN_SURVEY") ?? new();        }
-        catch (Exception)
+        // A list that did not load is not shown as "no records": the page says it did not load.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading seismic acquisition.", Severity.Error);
+            _acquisition = null;
+            _loadError = Calls.Explain(failure, "loading seismic acquisition surveys", "The seismic acquisition records could not be loaded");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {

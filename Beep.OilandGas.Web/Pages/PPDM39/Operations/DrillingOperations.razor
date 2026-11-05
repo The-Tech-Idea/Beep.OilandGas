@@ -5,6 +5,7 @@
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject IDrillingServiceClient DrillingService
 
 <PageTitle>Monitor Drilling Operations</PageTitle>
@@ -115,10 +116,14 @@
                         <TemplateColumn Title="" Sortable="false">
                             <CellTemplate>
                                 <MudStack Row="true" Spacing="1">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="Update operation status" Size="Size.Small" Color="Color.Primary"
-                                                   OnClick="@(() => OpenEditDialog(context.Item))" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.Description" Title="Open drilling reports" Size="Size.Small" Color="Color.Default"
-                                                   OnClick="@(() => ViewReports(context.Item.OPERATION_ID))" />
+                                    <MudTooltip Text="Update operation status">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" aria-label="Update operation status" Size="Size.Small" Color="Color.Primary"
+                                                       OnClick="@(() => OpenEditDialog(context.Item))" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Open drilling reports">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Description" aria-label="Open drilling reports" Size="Size.Small" Color="Color.Default"
+                                                       OnClick="@(() => ViewReports(context.Item.OPERATION_ID))" />
+                                    </MudTooltip>
                                 </MudStack>
                             </CellTemplate>
                         </TemplateColumn>
@@ -130,6 +135,10 @@
                         </MudStack>
                     </NoRecordsContent>
                 </MudDataGrid>
+            }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
             }
             else if (!_isLoading)
             {
@@ -147,7 +156,7 @@
 
 </MudContainer>
 
-<MudDialog @bind-IsVisible="_showCreateDialog">
+<MudDialog @bind-Visible="_showCreateDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Warning" />
@@ -178,7 +187,7 @@
     </DialogActions>
 </MudDialog>
 
-<MudDialog @bind-IsVisible="_showStatusDialog">
+<MudDialog @bind-Visible="_showStatusDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" />
@@ -195,6 +204,7 @@
             }
             <MudSelect T="string" @bind-Value="_selectedOperationStatus" Label="Status" Variant="Variant.Outlined">
                 <MudSelectItem Value="@("Active")">Active</MudSelectItem>
+                <MudSelectItem Value="@("Completed")">Completed</MudSelectItem>
                 <MudSelectItem Value="@("Inactive")">Inactive</MudSelectItem>
             </MudSelect>
             <MudNumericField T="decimal?" @bind-Value="_selectedOperationCurrentDepth"
@@ -215,7 +225,7 @@
     </DialogActions>
 </MudDialog>
 
-<MudDialog @bind-IsVisible="_showReportsDialog">
+<MudDialog @bind-Visible="_showReportsDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.Description" Color="Color.Default" />
@@ -235,6 +245,11 @@
             @if (_loadingReports)
             {
                 <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (_reportsLoadError is not null)
+            {
+                @* A list that did not load is not shown as "no reports logged". *@
+                <MudAlert Severity="Severity.Warning">@_reportsLoadError</MudAlert>
             }
             else if (_operationReports.Count > 0)
             {
@@ -308,6 +323,7 @@
     private string _fieldName = string.Empty;
     private List<DRILLING_OPERATION>? _operations;
     private bool _isLoading = false;
+    private string? _loadError;
     private bool _showCreateDialog;
     private bool _creatingOperation;
     private bool _showStatusDialog;
@@ -328,6 +344,7 @@
     private string _reportsOperationId = string.Empty;
     private string _reportsWellLabel = string.Empty;
     private List<DRILLING_REPORT> _operationReports = new();
+    private string? _reportsLoadError;
     private DateTime? _newReportDate = DateTime.Today;
     private string _newReportRemarks = string.Empty;
     private string? _prefillKey;
@@ -347,7 +364,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the operations still load; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the drilling operations page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         _loadedWellUwi = WellUwi;
         await LoadOperations();
@@ -373,14 +395,17 @@
     private async Task LoadOperations()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _operations = await DrillingService.GetDrillingOperationsAsync(WellUwi);
         }
-        catch (Exception)
+        // A failed call is said in place of the list, rather than as "No drilling operations found"; anything else reaches
+        // the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading drilling operations.", Severity.Error);
-            _operations = new List<DRILLING_OPERATION>();
+            _operations = null;
+            _loadError = Calls.Explain(failure, "loading the drilling operations", "Error loading drilling operations");
         }
         finally
         {
@@ -420,9 +445,9 @@
             _showCreateDialog = false;
             await LoadOperations();
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error creating drilling operation.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "creating a drilling operation", "The drilling operation was not created"), Severity.Error);
         }
         finally
         {
@@ -453,9 +478,10 @@
         {
             await LoadReportsAsync(operationId);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading drilling reports.", Severity.Error);
+            _reportsLoadError = Calls.Explain(failure, "loading a drilling operation's reports", "Error loading drilling reports");
+            Snackbar.Add(_reportsLoadError, Severity.Error);
         }
     }
 
@@ -533,9 +559,9 @@
             _showStatusDialog = false;
             await LoadOperations();
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error updating drilling operation status.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "updating a drilling operation's status", "The drilling operation status was not updated"), Severity.Error);
         }
         finally
         {
@@ -545,7 +571,11 @@
 
     private async Task LoadReportsAsync(string operationId)
     {
+        // The list shown belonged to the last operation asked for; it is cleared first, so a failed load cannot show another
+        // operation's reports under this one.
         _loadingReports = true;
+        _reportsLoadError = null;
+        _operationReports = new();
         try
         {
             _operationReports = await DrillingService.GetDrillingReportsAsync(operationId);
@@ -573,38 +603,57 @@
             return;
         }
 
+        var operationId = _reportsOperationId;
         _creatingReport = true;
         try
         {
-            await DrillingService.CreateDrillingReportAsync(_reportsOperationId, new CreateDrillingReport
+            await DrillingService.CreateDrillingReportAsync(operationId, new CreateDrillingReport
             {
                 ReportDate = _newReportDate.Value,
                 Remarks = _newReportRemarks.Trim()
             });
-
-            Snackbar.Add("Drilling report logged successfully", Severity.Success);
-            _newReportDate = DateTime.Today;
-            _newReportRemarks = string.Empty;
-            await LoadReportsAsync(_reportsOperationId);
-            await LoadOperations();
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error logging drilling report.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "logging a drilling report", "The drilling report was not logged"), Severity.Error);
+            return;
         }
         finally
         {
             _creatingReport = false;
         }
+
+        // The report is saved from here on. A reload that fails says so, never that the report was not logged: logging it
+        // again would record it twice.
+        _newReportDate = DateTime.Today;
+        _newReportRemarks = string.Empty;
+        try
+        {
+            await LoadReportsAsync(operationId);
+            Snackbar.Add("Drilling report logged successfully", Severity.Success);
+        }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _reportsLoadError = "The drilling report was logged. " + Calls.Explain(failure,
+                "reloading a drilling operation's reports after logging one", "The list of reports could not be refreshed");
+            Snackbar.Add(_reportsLoadError, Severity.Warning);
+        }
+        await LoadOperations();
     }
 
     private static string NormalizeOperationStatus(string? status)
     {
-        if (string.Equals(status, "Inactive", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "COMPLETE", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(status, "Inactive", StringComparison.OrdinalIgnoreCase))
         {
             return "Inactive";
+        }
+
+        // A completed operation stays listed now that completing it no longer deletes its well, so the dialog keeps
+        // "Completed" rather than turning it into "Inactive" on save.
+        if (string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "COMPLETE", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Completed";
         }
 
         return "Active";

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.Models.Data.Operations;
 using Beep.OilandGas.ProspectIdentification;
@@ -94,7 +95,30 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             if (prospect == null)
                 return NotFound(new { error = $"Prospect {prospectId} was not found." });
 
-            return Ok(MapVolumeEstimate(prospect));
+            // The prospect's latest recorded estimate (PROSPECT_VOLUME_ESTIMATE). This had built one from the prospect's
+            // single resource figure — P10 and P90 as +/-20% of it, a 0.35 recovery factor, a "SYSTEM" estimator and the
+            // time of the request — which no one estimated (2026-10-10).
+            var latest = (await _service.GetVolumeEstimatesAsync(prospectId)).FirstOrDefault();
+            if (latest == null)
+                throw RefusalException.NotFound($"No volume estimate is recorded for prospect {prospectId}.");
+
+            return Ok(latest);
+        }
+
+        /// <summary>
+        /// GET /api/prospect/{prospectId}/volume-estimates — every volume estimate recorded for the prospect, newest first;
+        /// empty when none is. The prospect detail page reads it, so that "none recorded" is an answer and not a failure.
+        /// </summary>
+        [HttpGet("/api/prospect/{prospectId}/volume-estimates")]
+        public async Task<ActionResult<List<PROSPECT_VOLUME_ESTIMATE>>> GetVolumeEstimates(string prospectId)
+        {
+            if (string.IsNullOrWhiteSpace(prospectId)) return BadRequest(new { error = "Prospect ID is required." });
+
+            var prospect = await GetProspectByIdAsync(prospectId);
+            if (prospect == null)
+                return NotFound(new { error = $"Prospect {prospectId} was not found." });
+
+            return Ok(await _service.GetVolumeEstimatesAsync(prospectId));
         }
 
         [HttpPost("/api/prospect/rank")]
@@ -290,36 +314,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
                 EMV = request.ESTIMATED_VALUE,
                 NPV = request.ESTIMATED_VALUE,
                 RISK_CATEGORY = string.IsNullOrWhiteSpace(evaluation.RiskLevel) ? CategorizeRisk(riskScore) : evaluation.RiskLevel
-            };
-        }
-
-        private static PROSPECT_VOLUME_ESTIMATE MapVolumeEstimate(Prospect prospect)
-        {
-            var baseVolume = prospect.EstimatedResources ?? 0m;
-            var riskScore = NormalizeRiskScore(prospect.RiskLevel, prospect.RiskScore);
-            var probabilityOfSuccess = Clamp01(1m - riskScore);
-
-            return new PROSPECT_VOLUME_ESTIMATE
-            {
-                PROSPECT_ID = prospect.ProspectId,
-                ESTIMATE_ID = Guid.NewGuid().ToString("N"),
-                OIL_VOLUME_P10 = decimal.Round(baseVolume * 1.2m, 2, MidpointRounding.AwayFromZero),
-                OIL_VOLUME_P50 = baseVolume,
-                OIL_VOLUME_P90 = decimal.Round(baseVolume * 0.8m, 2, MidpointRounding.AwayFromZero),
-                GAS_VOLUME_P10 = 0m,
-                GAS_VOLUME_P50 = 0m,
-                GAS_VOLUME_P90 = 0m,
-                VOLUME_OUOM = string.IsNullOrWhiteSpace(prospect.ResourceUnit) ? "MMBOE" : prospect.ResourceUnit,
-                UNRISKED_OIL_VOLUME = baseVolume,
-                UNRISKED_GAS_VOLUME = 0m,
-                RISKED_OIL_VOLUME = decimal.Round(baseVolume * probabilityOfSuccess, 2, MidpointRounding.AwayFromZero),
-                RISKED_GAS_VOLUME = 0m,
-                RECOVERY_FACTOR = 0.35m,
-                FORMATION_VOLUME_FACTOR = 1.0m,
-                ESTIMATE_METHOD = "LEGACY_COMPAT",
-                ESTIMATE_DATE = DateTime.UtcNow,
-                ESTIMATOR = "SYSTEM",
-                DESCRIPTION = $"Compatibility volumetric estimate for prospect {prospect.ProspectName}"
             };
         }
 

@@ -4,6 +4,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Compliance Obligations</PageTitle>
 
@@ -67,7 +68,7 @@
                                  Dense="true"
                                  Hover="true"
                                  Striped="true"
-                                 Sortable="true">
+                                 SortMode="SortMode.Multiple">
                         <Columns>
                             <PropertyColumn Property="o => o.ObligationType"  Title="Type" />
                             <PropertyColumn Property="o => o.JurisdictionTag" Title="Jurisdiction" />
@@ -161,9 +162,11 @@
                 _dueSoon = new();
             }
         }
-        catch
+        // A failed call leaves the lists empty and says the obligations did not load; anything else reaches the page's
+        // error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load compliance obligations.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the compliance obligations", "Could not load compliance obligations"), Severity.Warning);
         }
     }
 

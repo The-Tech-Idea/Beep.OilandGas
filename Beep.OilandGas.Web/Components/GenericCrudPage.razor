@@ -1,4 +1,5 @@
 @using System.Text
+@using System.Text.Json
 @using System.Reflection
 @using System.Globalization
 @using Beep.OilandGas.PPDM39.Core.Tree
@@ -65,10 +66,12 @@ else
     @if (_fromCategory)
     {
         <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2" Spacing="1">
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                           Size="Size.Small"
-                           OnClick="ReturnToCategory"
-                           Title="@($"Back to {CategoryName}")" />
+            <MudTooltip Text="@($"Back to {CategoryName}")">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                               Size="Size.Small"
+                               OnClick="ReturnToCategory"
+                               aria-label="@($"Back to {CategoryName}")" />
+            </MudTooltip>
             <MudText Typo="Typo.caption" Class="mud-text-secondary">@CategoryName</MudText>
             <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
             <MudText Typo="Typo.caption">@(TableNode?.Text ?? "")</MudText>
@@ -77,10 +80,11 @@ else
     <MudText Typo="Typo.h5" Class="mb-4">@GetTableDisplayName()</MudText>
     
     <MudButtonGroup Class="mb-4">
-        <MudButton Variant="Variant.Filled" 
-                   Color="Color.Primary" 
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="CreateNew">
+                   OnClick="CreateNew"
+                   Disabled="@(_entityType is null)">
             New Record
         </MudButton>
         <MudButton Variant="Variant.Outlined" 
@@ -114,13 +118,14 @@ else
         <MudCard Class="mb-4">
             <MudCardContent>
                 <MudText Typo="Typo.h6" Class="mb-3">
-                    @(_editingRecord == null ? "Create New Record" : "Edit Record")
+                    @(_editingKey is null ? "Create New Record" : "Edit Record")
                 </MudText>
                 <PPDMEntityForm Entity="@_editingRecord"
                                TableMetadata="@_tableMetadata"
                                DefaultValues="@_defaultValues"
                                GetDefaultValue="@((fieldName) => GetDefaultValue(fieldName))"
                                FieldOptions="@_foreignKeyFieldOptions"
+                               FieldReadOnly="@_keyFieldsReadOnly"
                                OnValidSubmit="SaveRecord"
                                OnCancel="CancelEdit"
                                ShowCancel="true"
@@ -136,6 +141,7 @@ else
     }
     else if (_data != null && _data.Any())
     {
+        @* No View action: it opened the same editable form as Edit, with its Save button, under the name of a view. *@
         <PPDMDataGrid Items="@_data"
                      Title="@GetTableDisplayName()"
                      TableMetadata="@_tableMetadata"
@@ -146,7 +152,6 @@ else
                      ShowPagination="true"
                      MaxDisplayColumns="10"
                      OnEdit="EditRecord"
-                     OnView="ViewRecord"
                      OnDelete="DeleteRecord"
                      OnExport="ExportToCsv">
             <ToolbarActions>
@@ -206,8 +211,10 @@ else
         TableNode = null;
         _data = null;
         _editingRecord = null;
+        _editingKey = null;
         _showEditForm = false;
         _tableMetadata = null;
+        _entityType = null;
         _tableSearch = string.Empty;
         StateHasChanged();
     }
@@ -224,8 +231,16 @@ else
             ? Color.Warning
             : Color.Primary;
 
+    // The rows are read as the table's entity class (PPDMEntityTypes, the API's own answer), so each one is a record the page
+    // can name by its key. Read as untyped JSON, no row had a key: Delete returned before it asked anything, and Edit posted a
+    // copy of the row as a new record.
+    private Type? _entityType;
     private List<object>? _data;
     private object? _editingRecord;
+    // The key (PPDMRecordKey) of the record the form edits, which its update is sent under; null while it creates a record.
+    private string? _editingKey;
+    // The key columns: read-only while a record is edited, since its key is what the update names; editable while one is created.
+    private Dictionary<string, bool>? _keyFieldsReadOnly;
     private bool _isLoading = false;
     private string? _loadError;
     private bool _showEditForm = false;
@@ -242,10 +257,14 @@ else
             {
                 _data = null;
                 _editingRecord = null;
+                _editingKey = null;
                 _showEditForm = false;
                 _tableMetadata = null;
 
                 await LoadTableMetadata();
+                _entityType = _tableMetadata is null
+                    ? null
+                    : PPDMEntityTypes.Find(_tableMetadata.EntityTypeName, _tableMetadata.TableName);
 
                 if (_tableMetadata != null)
                     await LoadData();
@@ -258,6 +277,7 @@ else
             {
                 _data = null;
                 _tableMetadata = null;
+                _entityType = null;
                 StateHasChanged();
             }
         }
@@ -267,6 +287,7 @@ else
             Notifier.Failure(ex, "opening a table", $"The table {TableNode?.Text} could not be opened");
             _data = null;
             _tableMetadata = null;
+            _entityType = null;
             StateHasChanged();
         }
     }
@@ -312,8 +333,16 @@ else
         try
         {
             var tableName = _tableMetadata.TableName;
-            _data = await ApiClient.GetAsync<List<object>>($"/api/{GetApiEndpoint(tableName)}");
-            _data ??= new List<object>();
+            if (_entityType is null)
+            {
+                // The API answers a table with no entity class as not found, through the same owner, so it has no rows to send.
+                _data = null;
+                _loadError = $"The {tableName} records cannot be shown here: no record class is known for the table.";
+                return;
+            }
+
+            var rows = await ApiClient.GetAsync($"/api/{GetApiEndpoint(tableName)}", typeof(List<>).MakeGenericType(_entityType));
+            _data = rows is System.Collections.IEnumerable records ? records.Cast<object>().ToList() : new List<object>();
         }
         // A component answers every failure it meets with a sentence; the store keeps the exception. The page says the
         // records did not load, rather than that there are none.
@@ -330,15 +359,11 @@ else
 
     private async Task CreateNew()
     {
-        Type? entityType = null;
-        if (_tableMetadata != null && !string.IsNullOrEmpty(_tableMetadata.EntityTypeName))
-        {
-            // Get the type from the entity type name
-            var assembly = typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly;
-            entityType = assembly.GetType($"Beep.OilandGas.PPDM39.Models.{_tableMetadata.EntityTypeName}") 
-                        ?? Type.GetType(_tableMetadata.EntityTypeName);
-        }
-        _editingRecord = Activator.CreateInstance(entityType ?? typeof(object));
+        if (_entityType is null) return;
+
+        _editingRecord = Activator.CreateInstance(_entityType);
+        _editingKey = null;
+        _keyFieldsReadOnly = KeyFields(readOnly: false);
         await PrepareDefaultsAndForeignKeyOptions();
         _showEditForm = true;
     }
@@ -380,16 +405,21 @@ else
 
     private async Task EditRecord(object record)
     {
-        _editingRecord = record;
+        var key = PPDMRecordKey.Of(record, _tableMetadata);
+        if (key is null)
+        {
+            Snackbar.Add(Unaddressable("edited"), Severity.Warning);
+            return;
+        }
+
+        // The form edits a copy: the grid's row keeps what is stored until the saved record is read back, and Cancel leaves
+        // it as it was. Edited in place, a cancelled change stayed on the row as though it had been saved.
+        _editingRecord = CopyOf(record);
+        _editingKey = key;
+        _keyFieldsReadOnly = KeyFields(readOnly: true);
         await PreloadForeignKeyOptions();
         _defaultValues = null; // No defaults when editing existing record
         _showEditForm = true;
-    }
-
-    private async Task ViewRecord(object record)
-    {
-        // For now, viewing is the same as editing, but could be enhanced to show read-only view
-        await EditRecord(record);
     }
 
     private async Task SaveRecord()
@@ -400,33 +430,24 @@ else
         {
             var tableName = _tableMetadata.TableName;
             var apiEndpoint = GetApiEndpoint(tableName);
-            var recordId = GetRecordId(_editingRecord);
 
-            if (string.IsNullOrEmpty(recordId))
+            // Whether this is a new record is what the person opened, not whether the record has a key: PPDM keys are typed
+            // in (a UWI), so a new record with its key filled in was sent as an update of a record that did not exist.
+            if (_editingKey is null)
             {
-                // Create new - send full object
                 await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}", _editingRecord);
                 Snackbar.Add("Record created successfully", Severity.Success);
             }
             else
             {
-                // Update existing - use record ID in URL or send full object
-                // For composite keys, we might need to send the full object
-                if (_tableMetadata.PrimaryKeyColumn.Contains(','))
-                {
-                    // Composite key - send full object
-                    await ApiClient.PutAsync<object, object>($"/api/{apiEndpoint}", _editingRecord);
-                }
-                else
-                {
-                    // Single key - use ID in URL
-                    await ApiClient.PutAsync<object, object>($"/api/{apiEndpoint}/{recordId}", _editingRecord);
-                }
+                // The update goes under the key the record was opened with; the form keeps its key fields read-only.
+                await ApiClient.PutAsync<object, object>($"/api/{apiEndpoint}/{Uri.EscapeDataString(_editingKey)}", _editingRecord);
                 Snackbar.Add("Record updated successfully", Severity.Success);
             }
 
             _showEditForm = false;
             _editingRecord = null;
+            _editingKey = null;
             await LoadData();
         }
         catch (OilGasApiException answer)
@@ -444,35 +465,28 @@ else
     {
         if (_tableMetadata == null) return;
 
-        var recordId = GetRecordId(record);
-        if (string.IsNullOrEmpty(recordId)) return;
+        // A row the page cannot name is said so: it returned here before asking, so Delete did nothing and said nothing.
+        var key = PPDMRecordKey.Of(record, _tableMetadata);
+        if (key is null)
+        {
+            Snackbar.Add(Unaddressable("deleted"), Severity.Warning);
+            return;
+        }
 
+        // The API's delete is PPDM's soft delete, so the record stays in the list, marked inactive; the person is told so.
         var result = await DialogService.ShowMessageBoxAsync(
             "Confirm Delete",
-            $"Are you sure you want to delete this record?",
+            $"Delete the {_tableMetadata.TableName} record {KeyText(key)}? It is marked inactive (ACTIVE_IND = N) and stays in the table.",
             yesText: "Delete", cancelText: "Cancel");
 
         if (result == true)
         {
             try
             {
-                var tableName = _tableMetadata.TableName;
-                var apiEndpoint = GetApiEndpoint(tableName);
-                
-                // For composite keys, encode the ID or send in body
-                if (_tableMetadata.PrimaryKeyColumn.Contains(','))
-                {
-                    // Composite key - send delete request with record in body or encoded ID
-                    var encodedId = Uri.EscapeDataString(recordId);
-                    await ApiClient.DeleteAsync($"/api/{apiEndpoint}/{encodedId}");
-                }
-                else
-                {
-                    // Single key
-                    await ApiClient.DeleteAsync($"/api/{apiEndpoint}/{recordId}");
-                }
-                
-                Snackbar.Add("Record deleted successfully", Severity.Success);
+                var apiEndpoint = GetApiEndpoint(_tableMetadata.TableName);
+                await ApiClient.DeleteAsync($"/api/{apiEndpoint}/{Uri.EscapeDataString(key)}");
+
+                Snackbar.Add($"The record {KeyText(key)} was deleted: it is marked inactive.", Severity.Success);
                 await LoadData();
             }
             catch (OilGasApiException answer)
@@ -491,6 +505,7 @@ else
     {
         _showEditForm = false;
         _editingRecord = null;
+        _editingKey = null;
     }
 
     private string GetTableDisplayName()
@@ -501,46 +516,46 @@ else
     private static string GetApiEndpoint(string tableName) =>
         $"datamanagement/{Uri.EscapeDataString(tableName)}";
 
-    private string? GetRecordId(object record)
+    /// <summary>The key columns, each read-only or not, for the form.</summary>
+    private Dictionary<string, bool> KeyFields(bool readOnly) =>
+        PPDMRecordKey.Columns(_tableMetadata).ToDictionary(column => column, _ => readOnly, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A key as the person reads it: each key column with its value.</summary>
+    private string KeyText(string key) =>
+        string.Join(", ", (PPDMRecordKey.Read(key, _tableMetadata) ?? Array.Empty<KeyValuePair<string, string>>())
+            .Select(part => $"{part.Key} {part.Value}"));
+
+    /// <summary>
+    /// Why a row cannot be named to the API: its table names no key, it has no value for a key column, or a key value has a
+    /// comma in it.
+    /// </summary>
+    private string Unaddressable(string whatCannotHappen)
     {
-        if (_tableMetadata?.PrimaryKeyColumn == null) return null;
-        
-        // Handle composite primary keys
-        if (_tableMetadata.PrimaryKeyColumn.Contains(','))
-        {
-            var keyParts = _tableMetadata.PrimaryKeyColumn.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var values = new List<string>();
-            
-            foreach (var keyPart in keyParts)
-            {
-                var prop = record.GetType().GetProperty(keyPart);
-                var value = prop?.GetValue(record)?.ToString();
-                if (string.IsNullOrEmpty(value))
-                    return null; // Composite key incomplete
-                values.Add(value);
-            }
-            
-            return string.Join(",", values);
-        }
-        else
-        {
-            // Single primary key
-            var prop = record.GetType().GetProperty(_tableMetadata.PrimaryKeyColumn);
-            return prop?.GetValue(record)?.ToString();
-        }
+        var columns = PPDMRecordKey.Columns(_tableMetadata);
+        return columns.Count == 0
+            ? $"Records of this table cannot be {whatCannotHappen} here: the table names no key to find one by."
+            : $"This record cannot be {whatCannotHappen} here: it needs a value for each key column ({string.Join(", ", columns)}), and none may contain a comma.";
     }
 
-    // These methods are no longer needed as they're handled by shared components
-    // Keeping them for backward compatibility if referenced elsewhere
+    /// <summary>A copy of a row, of its own class, for the form to edit.</summary>
+    private static object? CopyOf(object record)
+    {
+        var type = record.GetType();
+        return JsonSerializer.Deserialize(JsonSerializer.Serialize(record, type), type);
+    }
+
+    /// <summary>
+    /// The columns a CSV export writes: every column of the table's class but the audit columns. It wrote the first ten
+    /// columns only, and read them off the first row — an untyped JSON value, whose own members it wrote, until the export
+    /// failed on one of them.
+    /// </summary>
     private List<PropertyInfo> GetDisplayProperties()
     {
-        if (_data == null || !_data.Any()) return new List<PropertyInfo>();
-        
-        var firstRecord = _data.First();
-        return firstRecord.GetType()
+        if (_entityType is null) return new List<PropertyInfo>();
+
+        return _entityType
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead && !IsSystemProperty(p))
-            .Take(10) // Limit to first 10 properties for display
+            .Where(p => p.CanRead && p.GetIndexParameters().Length == 0 && !IsSystemProperty(p))
             .ToList();
     }
     
@@ -731,22 +746,16 @@ else
                 var apiEndpoint = GetApiEndpoint(fkInfo.ReferencedTable);
                 if (!string.IsNullOrEmpty(apiEndpoint))
                 {
-                    var data = await ApiClient.GetAsync<List<object>>($"/api/{apiEndpoint}");
+                    // The referenced rows are read as JSON objects and their columns by name, in any case (the API writes
+                    // them camel-cased). They were read by reflecting over the JSON value itself, which has no columns and
+                    // failed on its indexer, so no foreign key ever had choices.
+                    var data = await ApiClient.GetAsync<List<JsonElement>>($"/api/{apiEndpoint}");
                     if (data != null)
                     {
-                        var options = new List<Dictionary<string, string>>();
-                        foreach (var item in data)
-                        {
-                            var dict = new Dictionary<string, string>();
-                            var props = item.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                            foreach (var prop in props)
-                            {
-                                var value = prop.GetValue(item)?.ToString() ?? string.Empty;
-                                dict[prop.Name] = value;
-                            }
-                            options.Add(dict);
-                        }
-                        _foreignKeyCache[cacheKey] = options;
+                        _foreignKeyCache[cacheKey] = data
+                            .Where(row => row.ValueKind == JsonValueKind.Object)
+                            .Select(ColumnTexts)
+                            .ToList();
                     }
                 }
             }
@@ -787,6 +796,27 @@ else
         }
 
         return result.OrderBy(kvp => kvp.Value).ToList();
+    }
+
+    /// <summary>A JSON row's columns as text, found by name in any case.</summary>
+    private static Dictionary<string, string> ColumnTexts(JsonElement row)
+    {
+        var texts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var column in row.EnumerateObject())
+        {
+            texts[column.Name] = column.Value.ValueKind switch
+            {
+                JsonValueKind.String => column.Value.GetString() ?? string.Empty,
+                JsonValueKind.Null => string.Empty,
+                JsonValueKind.Undefined => string.Empty,
+                JsonValueKind.Number => column.Value.GetRawText(),
+                JsonValueKind.True => column.Value.GetRawText(),
+                JsonValueKind.False => column.Value.GetRawText(),
+                JsonValueKind.Object => column.Value.GetRawText(),
+                JsonValueKind.Array => column.Value.GetRawText()
+            };
+        }
+        return texts;
     }
 
     private string GetNameValue(Dictionary<string, string> item)

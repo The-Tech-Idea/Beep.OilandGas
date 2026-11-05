@@ -5,6 +5,7 @@
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Analytics Dashboard</PageTitle>
 
@@ -36,7 +37,7 @@
             <MudNumericField T="double" Label="Exposure hours (for HSE rates)"
                              Value="_exposureHours" ValueChanged="OnExposureChanged"
                              Min="1" Step="100000"
-                             Dense="true" Margin="Margin.Dense" />
+                             Margin="Margin.Dense" />
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Refresh"
                        OnClick="LoadAllAsync" Disabled="_loading">
@@ -183,9 +184,9 @@
                 <MudText Typo="Typo.subtitle1" Class="mb-3">Monthly Production (BOE)</MudText>
                 @if (_productionTrend.Count > 0)
                 {
-                    <MudChart ChartType="ChartType.Line"
+                    <MudChart T="double" ChartType="ChartType.Line"
                               ChartSeries="@_chartSeries"
-                              XAxisLabels="@_chartLabels"
+                              ChartLabels="@_chartLabels"
                               Width="100%" Height="300px"
                               ChartOptions="@_chartOptions" />
                 }
@@ -245,9 +246,10 @@
             _fieldName       = fieldTask.Result?.FieldName;
             BuildChart();
         }
-        catch (Exception)
+        // A failed call says the analytics did not load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Analytics load error.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading the analytics dashboard", "The analytics could not be loaded"), Severity.Error);
         }
         finally
         {

@@ -7,7 +7,8 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject ILogger<HSEIncidents> Logger
+@inject OilGasCallFailures Calls
+@inject IFailureReporter Failures
 
 <PageTitle>Manage HSE Incidents</PageTitle>
 
@@ -95,7 +96,7 @@
                  Dense="true"
                  Hover="true"
                  Striped="true"
-                 Sortable="true"
+                 SortMode="SortMode.Multiple"
                  RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(e.Item.IncidentId)}"))">
         <Columns>
             <PropertyColumn Property="r => r.IncidentDate" Title="Date"         Format="dd-MMM-yy" />
@@ -153,7 +154,7 @@
 </MudContainer>
 
 @* ── Report Incident dialog ───────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showReportDialog">
+<MudDialog @bind-Visible="_showReportDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.AddAlert" Color="Color.Error" />
@@ -229,9 +230,11 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch
+        // The field name is helpful for the header but does not block incident operations: a failed call is said as a
+        // warning and the incidents still load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            // Field name is helpful for the header but non-blocking for incident operations.
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the HSE incidents page", "The field name could not be loaded"), Severity.Warning);
         }
 
         await LoadIncidentsAsync();
@@ -289,8 +292,15 @@
             _loadWarning = null;
             _requiresLogin = false;
         }
-        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+        // The API refuses a person who is not signed in: the page asks them to sign in, and the answer is recorded. (It read
+        // HttpRequestException's status, which ApiClient no longer throws for an answer.)
+        catch (OilGasApiException signIn) when (signIn.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
         {
+            Failures.ReportHandled(
+                signIn,
+                "loading the HSE incidents",
+                consequence: "the API refused the request as not signed in; the page asks the person to sign in",
+                FailureSeverity.Degraded);
             _incidents = new();
             _tier1Count = 0;
             _tier2Count = 0;
@@ -302,13 +312,13 @@
             _requiresLogin = true;
             _loadWarning = "Sign in to load HSE incidents and workflow status for the current field.";
         }
-        catch (Exception exception)
+        // Any other failed call says the incidents did not load, in the alert and the snackbar; anything else reaches the
+        // page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            // Handled: any failure to load (the API, its payload, a lifecycle lookup) leaves the page empty and says so.
-            Logger.LogWarning(exception, "HSE incidents could not be loaded.");
             _requiresLogin = false;
-            _loadWarning = "Could not load HSE incidents.";
-            Snackbar.Add("Could not load HSE incidents.", Severity.Warning);
+            _loadWarning = Calls.Explain(failure, "loading the HSE incidents", "Could not load HSE incidents");
+            Snackbar.Add(_loadWarning, Severity.Warning);
         }
     }
 
@@ -371,9 +381,9 @@
             if (result != null && !string.IsNullOrWhiteSpace(result.EntityId))
                 NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(result.EntityId)}");
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to report incident.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "reporting an HSE incident", "Failed to report incident"), Severity.Error);
         }
         finally { _reporting = false; }
     }
@@ -393,9 +403,9 @@
                     : "Workflow created for the incident.",
                 instance == null ? Severity.Warning : Severity.Success);
         }
-        catch
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not create workflow for the incident.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "creating an HSE incident's workflow", "Could not create workflow for the incident"), Severity.Error);
         }
         finally
         {

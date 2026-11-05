@@ -5,7 +5,7 @@
 @inject IHSEServiceClient HSEClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject OilGasApiFailures Answers
+@inject OilGasCallFailures Calls
 
 <PageTitle>HAZOP Study @StudyId</PageTitle>
 
@@ -91,9 +91,11 @@
                                          Value="@($"{node.Deviations.Count} deviation(s)")">
                                     @node.Deviations.Count deviation(s)
                                 </MudChip>
-                                <MudIconButton Icon="@Icons.Material.Outlined.Add" Size="Size.Small"
-                                               Title="Add Deviation"
-                                               OnClick="@(async () => await OpenAddDeviationDialog(node.NodeSeq))" />
+                                <MudTooltip Text="Add Deviation">
+                                    <MudIconButton Icon="@Icons.Material.Outlined.Add" Size="Size.Small"
+                                                   aria-label="Add Deviation"
+                                                   OnClick="@(async () => await OpenAddDeviationDialog(node.NodeSeq))" />
+                                </MudTooltip>
                             </MudStack>
                         </MudStack>
                     </TitleContent>
@@ -133,10 +135,12 @@
                                     <MudTd>
                                         @if (context.Status != "CLOSED")
                                         {
-                                            <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle"
-                                                           Size="Size.Small" Color="Color.Success"
-                                                           Title="Close Deviation"
-                                                           OnClick="@(async () => await CloseDeviationAsync(node.NodeSeq, context.CondSeq))" />
+                                            <MudTooltip Text="Close Deviation">
+                                                <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle"
+                                                               Size="Size.Small" Color="Color.Success"
+                                                               aria-label="Close Deviation"
+                                                               OnClick="@(async () => await CloseDeviationAsync(node.NodeSeq, context.CondSeq))" />
+                                            </MudTooltip>
                                         }
                                     </MudTd>
                                 </RowTemplate>
@@ -157,7 +161,7 @@
 </MudStack>
 
 @* ── Add Node Dialog ───────────────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showAddNode"
+<MudDialog @bind-Visible="_showAddNode"
            Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
     <TitleContent><MudText Typo="Typo.h6">Add HAZOP Node</MudText></TitleContent>
     <DialogContent>
@@ -175,7 +179,7 @@
 </MudDialog>
 
 @* ── Add Deviation Dialog ──────────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showAddDeviation"
+<MudDialog @bind-Visible="_showAddDeviation"
            Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true })">
     <TitleContent><MudText Typo="Typo.h6">Add Deviation</MudText></TitleContent>
     <DialogContent>
@@ -249,7 +253,12 @@
             _summary = await HSEClient.GetHazopStudyAsync(StudyId);
             _nodes   = await HSEClient.GetHazopNodesAsync(StudyId);
         }
-        catch (Exception) { _error = "Failed to load HAZOP study."; Snackbar.Add(_error, Severity.Error); }
+        // A failed call is said in the page's alert and a snackbar; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "loading a HAZOP study", "Failed to load HAZOP study");
+            Snackbar.Add(_error, Severity.Error);
+        }
         finally { _loading = false; }
     }
 
@@ -271,7 +280,11 @@
             _showAddNode = false;
             await LoadAsync();
         }
-        catch (Exception) { _error = "Failed to add node."; Snackbar.Add(_error, Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "adding a HAZOP node", "Failed to add node");
+            Snackbar.Add(_error, Severity.Error);
+        }
     }
 
     private Task OpenAddDeviationDialog(int nodeSeq)
@@ -296,7 +309,11 @@
             _showAddDeviation = false;
             await LoadAsync();
         }
-        catch (Exception) { _error = "Failed to add deviation."; Snackbar.Add(_error, Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "adding a HAZOP deviation", "Failed to add deviation");
+            Snackbar.Add(_error, Severity.Error);
+        }
     }
 
     private async Task CloseDeviationAsync(int nodeSeq, int condSeq)
@@ -306,11 +323,10 @@
             await HSEClient.UpdateHazopDeviationStatusAsync(StudyId, nodeSeq, condSeq, "CLOSED");
             await LoadAsync();
         }
-        catch (OilGasApiException answer)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            _error = Answers.Explain(answer, "closing a HAZOP deviation", "The deviation was not closed");
+            _error = Calls.Explain(failure, "closing a HAZOP deviation", "The deviation was not closed");
             Snackbar.Add(_error, Severity.Error);
         }
-        catch (Exception) { _error = "Failed to close deviation."; Snackbar.Add(_error, Severity.Error); }
     }
 }

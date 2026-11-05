@@ -2,6 +2,7 @@
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Process Instance — @Id</PageTitle>
 
@@ -154,9 +155,10 @@
                 _history = new();
             }
         }
-        catch
+        // A failed call says the instance did not load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load process instance.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading a process instance", "Could not load process instance"), Severity.Warning);
         }
     }
 

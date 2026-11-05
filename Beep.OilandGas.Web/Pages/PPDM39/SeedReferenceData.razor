@@ -6,6 +6,8 @@
 @inject IDataManagementService DataManagementService
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Seed Reference Data</PageTitle>
 
@@ -34,6 +36,10 @@
     </MudStack>
 
     <!-- Status cards -->
+    @if (_statusError is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">@_statusError</MudAlert>
+    }
     @if (_status != null)
     {
         <MudGrid Class="mb-4">
@@ -119,6 +125,10 @@
                         {
                             <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Seeded</MudChip>
                         }
+                        else if (_statusError is not null)
+                        {
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small" Icon="@Icons.Material.Filled.HelpOutline">Status unknown</MudChip>
+                        }
                         else
                         {
                             <MudChip T="string" Color="Color.Warning" Size="Size.Small" Icon="@Icons.Material.Filled.Warning">Not Seeded</MudChip>
@@ -188,7 +198,7 @@
     {
         <MudExpansionPanels>
             <MudExpansionPanel Text="@($"Last Operation: {(_lastResult.Success ? "Success" : "Partial/Failed")} — {_lastResult.TotalInserted} rows inserted")"
-                               IsInitiallyExpanded="@(!_lastResult.Success)">
+                               @bind-Expanded="_lastResultExpanded">
                 @if (_lastResult.Details?.Count > 0)
                 {
                     <MudText Typo="Typo.subtitle2" Class="mb-2">Details</MudText>
@@ -243,7 +253,14 @@
 
 @code {
     private FacetSeedStatus? _status;
+    private string? _statusError;
     private SeedingOperationResult? _lastResult;
+
+    /// <summary>
+    /// Whether the result panel is open. A new result opens it when the operation failed or was partial, as the panel's
+    /// initial state did before; the person may then close or open it.
+    /// </summary>
+    private bool _lastResultExpanded;
     private bool _busy;
     private bool _isSetupFlow;
 
@@ -256,13 +273,22 @@
 
     private async Task LoadStatusAsync()
     {
+        _statusError = null;
         try
         {
             _status = await DataManagementService.GetWellStatusFacetSeedStatusAsync();
         }
-        catch
+        // Seeding works without the status, but the page must not then say "Not Seeded": it says the status is unknown.
+        catch (OilGasApiException answer)
         {
-            // Status endpoint is optional; silently skip if unavailable.
+            _status = null;
+            _statusError = Answers.Explain(answer, "reading the well status facets' seed status", "The seed status could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _status = null;
+            _statusError = Notifier.FailureText(ex, "reading the well status facets' seed status", "The seed status could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -274,15 +300,17 @@
         try
         {
             _lastResult = await DataManagementService.SeedWellStatusFacetsAsync();
+            _lastResultExpanded = !_lastResult.Success;
 
             if (_lastResult.Success)
                 Snackbar.Add($"WSC v3 facets seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
             else
                 Snackbar.Add(_lastResult.Message ?? "Seeding failed.", Severity.Error);
         }
-        catch (Exception)
+        // The service answers a failed call as a failed result; anything reaching here is a fault, told with its reference.
+        catch (Exception ex)
         {
-            Snackbar.Add("Facet seeding failed.", Severity.Error);
+            Notifier.Failure(ex, "seeding the WSC v3 well status facets", "The well status facets were not seeded");
         }
         finally
         {
@@ -299,15 +327,17 @@
         try
         {
             _lastResult = await DataManagementService.SeedEnumReferenceDataAsync();
+            _lastResultExpanded = !_lastResult.Success;
 
             if (_lastResult.Success)
                 Snackbar.Add($"Enum reference data seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
             else
                 Snackbar.Add(_lastResult.Message ?? "Seeding failed.", Severity.Error);
         }
-        catch (Exception)
+        // The service answers a failed call as a failed result; anything reaching here is a fault, told with its reference.
+        catch (Exception ex)
         {
-            Snackbar.Add("Enum reference data seeding failed.", Severity.Error);
+            Notifier.Failure(ex, "seeding the enum reference data", "The enum reference data was not seeded");
         }
         finally
         {
@@ -323,15 +353,17 @@
         try
         {
             _lastResult = await DataManagementService.SeedAllReferenceDataAsync();
+            _lastResultExpanded = !_lastResult.Success;
 
             if (_lastResult.Success)
                 Snackbar.Add($"All reference data seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
             else
                 Snackbar.Add(_lastResult.Message ?? "Seeding partially failed — check details.", Severity.Warning);
         }
-        catch (Exception)
+        // The service answers a failed call as a failed result; anything reaching here is a fault, told with its reference.
+        catch (Exception ex)
         {
-            Snackbar.Add("Reference data seeding failed.", Severity.Error);
+            Notifier.Failure(ex, "seeding all reference data", "The reference data was not seeded");
         }
         finally
         {

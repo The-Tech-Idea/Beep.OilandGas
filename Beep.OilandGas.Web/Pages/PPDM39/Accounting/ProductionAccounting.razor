@@ -1,8 +1,10 @@
 ﻿@page "/accounting/production"
 @using Beep.OilandGas.Models.Data.Accounting
+@using Beep.OilandGas.ProductionAccounting.Constants
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 @inject ApiClient ApiClient
 @inject IAccountingServiceClient AccountingClient
 @inject ILifeCycleService LifeCycleService
@@ -25,10 +27,15 @@
                     <MudSelectItem Value="@periodOption">@GetPeriodLabel(periodOption)</MudSelectItem>
                 }
             </MudSelect>
-            <MudChip T="string" Color="@(_closeStatus == "CLOSED" ? Color.Success : Color.Warning)" Size="Size.Small">@_closeStatus</MudChip>
+            @* The period's close status, as the period close recognizes it from its closing journal; shown only once read:
+               it was "OPEN" before the summary loaded and when it failed to. *@
+            @if (_closeStatus is not null)
+            {
+                <MudChip T="string" Color="@(_closeStatus == PeriodCloseStatusCodes.Closed ? Color.Success : Color.Warning)" Size="Size.Small">@_closeStatus</MudChip>
+            }
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Lock"
-                       Disabled="@(_closeStatus == "CLOSED")"
+                       Disabled="@(_loading || _closeStatus is null || _closeStatus == PeriodCloseStatusCodes.Closed)"
                        OnClick="ClosePeriodAsync">
                 Close Period
             </MudButton>
@@ -186,7 +193,7 @@
     private List<string> _availablePeriods = Enumerable.Range(0, 6)
         .Select(offset => DateTime.UtcNow.AddMonths(-offset).ToString("yyyy-MM"))
         .ToList();
-    private string _closeStatus = "OPEN";
+    private string? _closeStatus;
     private bool _loading = true;
 
     private double _grossRevenue;
@@ -211,7 +218,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for production accounting", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for production accounting", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         await LoadAccountingDataAsync();
     }
@@ -222,6 +238,7 @@
         try
         {
             _deductions.Clear();
+            _closeStatus = null;
 
             var periodEnd = GetPeriodEnd(_period);
             var periodStart = new DateTime(periodEnd.Year, periodEnd.Month, 1);
@@ -230,7 +247,7 @@
             {
                 _grossRevenue = (double)summary.GrossRevenue;
                 _totalOpex = (double)summary.TotalOpex;
-                _closeStatus = string.IsNullOrWhiteSpace(summary.PeriodStatus) ? "OPEN" : summary.PeriodStatus.ToUpperInvariant();
+                _closeStatus = string.IsNullOrWhiteSpace(summary.PeriodStatus) ? null : summary.PeriodStatus.ToUpperInvariant();
 
                 if (summary.OutstandingUsd > 0)
                 {
@@ -253,9 +270,14 @@
                 (double)l.AmountUsd,
                 l.Type ?? "ACTIVE")).ToList();
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load accounting data.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the production accounting summary", "The accounting data could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the production accounting summary", "The accounting data could not be loaded", FailureSeverity.Degraded);
         }
         finally
         {
@@ -283,9 +305,10 @@
         {
             Snackbar.Add(Answers.Explain(answer, "closing the accounting period", $"Period {_period} was not closed"), Severity.Error);
         }
-        catch (Exception)
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("Failed to close accounting period.", Severity.Error);
+            Notifier.Failure(ex, "closing the accounting period", $"Period {_period} was not closed");
         }
         finally
         {

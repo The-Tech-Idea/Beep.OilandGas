@@ -45,7 +45,7 @@
             </MudButtonGroup>
         </MudStack>
         
-        <MudPaper Id="@_mapContainerId" Class="@GetMapContainerClass()" Outlined="true" @attributes="GetMapContainerAttributes()">
+        <MudPaper id="@_mapContainerId" Class="@GetMapContainerClass()" Outlined="true" @attributes="GetMapContainerAttributes()">
             @if (!string.IsNullOrWhiteSpace(NoDataMessage) && (Items == null || !Items.Any()))
             {
                 <MudAlert Severity="Severity.Info" Class="ma-4">@NoDataMessage</MudAlert>

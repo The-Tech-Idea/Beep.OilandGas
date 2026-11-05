@@ -4,6 +4,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject IWellStatusServiceClient WellStatusClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Track Well Status History</PageTitle>
 
@@ -75,6 +76,10 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
+            }
             else if (!_isLoading)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
@@ -93,6 +98,7 @@
     private string _searchUwi = string.Empty;
     private List<WELL_STATUS>? _status;
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,7 +108,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the well status page", "The field name could not be loaded"), Severity.Warning);
+        }
     }
 
     private async Task SearchStatus()
@@ -114,6 +123,7 @@
         }
 
         _isLoading = true;
+        _loadError = null;
         try
         {
             var statusDict = await WellStatusClient.GetCurrentStatusAsync(_searchUwi);
@@ -122,9 +132,12 @@
                 _status = statusDict.Values.ToList();
             }
         }
-        catch (Exception)
+        // A status that did not load shows no status, never the previous well's.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error getting well status.", Severity.Error);
+            _status = null;
+            _loadError = Calls.Explain(failure, "loading a well's current status", $"The status of well {_searchUwi} could not be loaded");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {

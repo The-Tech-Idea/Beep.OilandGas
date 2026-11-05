@@ -6,6 +6,7 @@
 @inject IWorkOrderServiceClient WorkOrderService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Work Order Dashboard</PageTitle>
 
@@ -28,9 +29,11 @@
                     Back to Optimizer
                 </MudButton>
             }
-            <MudIconButton Icon="@Icons.Material.Outlined.CalendarMonth"
-                           Href="/ppdm39/workorder/calendar"
-                           Title="Calendar view" Color="Color.Default" />
+            <MudTooltip Text="Calendar view">
+                <MudIconButton Icon="@Icons.Material.Outlined.CalendarMonth"
+                               Href="/ppdm39/workorder/calendar"
+                               aria-label="Calendar view" Color="Color.Default" />
+            </MudTooltip>
             <MudButton StartIcon="@Icons.Material.Outlined.AddCircleOutline"
                        Variant="Variant.Filled" Color="Color.Primary"
                        OnClick="OpenCreateDialog">
@@ -125,7 +128,7 @@
 </MudStack>
 
 @* ── Create dialog ─────────────────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showCreate" Options="_dialogOptions">
+<MudDialog @bind-Visible="_showCreate" Options="_dialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">Create Work Order</MudText>
     </TitleContent>
@@ -209,7 +212,12 @@
             var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             _fieldName = summary?.FieldName;
         }
-        catch { }
+        // The field name is non-critical: a failed call is said as a warning and the work orders still load; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the work order dashboard", "The field name could not be loaded"), Severity.Warning);
+        }
 
         if (!string.IsNullOrWhiteSpace(SuggestedSubType))
             _filterSubType = SuggestedSubType;
@@ -228,7 +236,12 @@
         {
             _workOrders = await WorkOrderService.GetWorkOrdersAsync(woSubType: _filterSubType);
         }
-        catch (Exception) { _error = "Failed to load work orders."; Snackbar.Add(_error, Severity.Error); }
+        // A failed call is said in the page's alert and a snackbar; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "loading the work orders", "Failed to load work orders");
+            Snackbar.Add(_error, Severity.Error);
+        }
         finally { _loading = false; }
     }
 
@@ -264,14 +277,24 @@
         {
             var created = await WorkOrderService.CreateWorkOrderAsync(_create);
 
-            AFEResponse? linkedAfe = null;
             if (created is not null && LinkAfeOnCreate)
             {
-                linkedAfe = await WorkOrderService.CreateOrLinkAfeAsync(created.InstanceId);
-                if (!string.IsNullOrWhiteSpace(linkedAfe.AfeNumber))
-                    Snackbar.Add($"Work order {created.InstanceId} created and linked to AFE {linkedAfe.AfeNumber}.", Severity.Success);
-                else
-                    Snackbar.Add($"Work order {created.InstanceId} created. AFE linking is available from the work-order detail page.", Severity.Warning);
+                // The work order exists by now: a link that fails is said as such, not as a failed creation.
+                try
+                {
+                    var linkedAfe = await WorkOrderService.CreateOrLinkAfeAsync(created.InstanceId);
+                    if (!string.IsNullOrWhiteSpace(linkedAfe?.AfeNumber))
+                        Snackbar.Add($"Work order {created.InstanceId} created and linked to AFE {linkedAfe.AfeNumber}.", Severity.Success);
+                    else
+                        Snackbar.Add($"Work order {created.InstanceId} created. AFE linking is available from the work-order detail page.", Severity.Warning);
+                }
+                catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+                {
+                    Snackbar.Add(Calls.Explain(
+                        failure,
+                        "linking an AFE to a new work order",
+                        $"Work order {created.InstanceId} was created but not linked to an AFE; link it from the work-order detail page"), Severity.Warning);
+                }
             }
 
             _showCreate = false;
@@ -287,7 +310,11 @@
 
             await LoadWorkOrders();
         }
-        catch (Exception) { _error = "Failed to create work order."; Snackbar.Add(_error, Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "creating a work order", "Failed to create work order");
+            Snackbar.Add(_error, Severity.Error);
+        }
     }
 
     private static Color SubTypeColor(string subType) => subType switch

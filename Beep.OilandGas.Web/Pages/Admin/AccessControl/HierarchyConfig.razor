@@ -3,6 +3,7 @@
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Configure Organisation Hierarchy</PageTitle>
 
@@ -86,9 +87,11 @@
                 Snackbar.Add("No hierarchy configuration found. You can create one.", Severity.Info);
             }
         }
-        catch (Exception)
+        // A configuration that did not load is not shown, so Save cannot write the previous organization's levels to this one.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading hierarchy configuration.", Severity.Error);
+            _hierarchyConfig = null;
+            Snackbar.Add(Calls.Explain(failure, "loading an organization's hierarchy configuration", "The hierarchy configuration could not be loaded"), Severity.Error);
         }
     }
 
@@ -115,9 +118,9 @@
                 Snackbar.Add("Failed to save hierarchy configuration", Severity.Error);
             }
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error saving hierarchy configuration.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "saving an organization's hierarchy configuration", "The hierarchy configuration was not saved"), Severity.Error);
         }
     }
 }

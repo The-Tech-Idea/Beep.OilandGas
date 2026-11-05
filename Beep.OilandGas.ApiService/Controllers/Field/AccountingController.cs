@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
@@ -96,7 +97,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             var lines = transactions.Select(t => new RevenueLine
             {
-                Description = string.IsNullOrWhiteSpace(t.DESCRIPTION) ? $"Revenue {t.REVENUE_TRANSACTION_ID}" : t.DESCRIPTION,
+                TransactionDate = t.TRANSACTION_DATE,
+                WellId      = t.WELL_ID ?? string.Empty,
+                Description =string.IsNullOrWhiteSpace(t.DESCRIPTION) ? $"Revenue {t.REVENUE_TRANSACTION_ID}" : t.DESCRIPTION,
                 Product     = (t.GAS_VOLUME ?? 0m) > 0m && (t.OIL_VOLUME ?? 0m) <= 0m ? "GAS" : "OIL",
                 Volume      = (t.GAS_VOLUME ?? 0m) > 0m && (t.OIL_VOLUME ?? 0m) <= 0m ? (t.GAS_VOLUME ?? 0m) : (t.OIL_VOLUME ?? 0m),
                 Unit        = (t.GAS_VOLUME ?? 0m) > 0m && (t.OIL_VOLUME ?? 0m) <= 0m ? "Mcf" : "Bbl",
@@ -106,6 +109,52 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }).ToList();
 
             return Ok(lines);
+        }
+
+        /// <summary>GET /api/field/current/accounting/close-readiness</summary>
+        /// <remarks>
+        /// Whether the current field's period ending <paramref name="periodEnd"/> may be closed: the checks
+        /// <see cref="IPeriodClosingService"/> makes before it will close, and, when one fails, what it found. The close
+        /// asks them again itself; this is what the person is shown before they ask for it.
+        /// </remarks>
+        [HttpGet("close-readiness")]
+        public async Task<ActionResult<PeriodCloseReadinessResult>> GetCloseReadinessAsync(
+            [FromQuery] DateTime periodEnd,
+            [FromServices] IPeriodClosingService periodClosing)
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId))
+                throw RefusalException.Invalid("No active field selected.");
+            if (periodEnd == default)
+                throw RefusalException.Invalid("A valid period end date is required.");
+
+            var effectivePeriodEnd = periodEnd.Date;
+            var ready = await periodClosing.ValidateReadinessAsync(fieldId, effectivePeriodEnd);
+            return Ok(new PeriodCloseReadinessResult
+            {
+                PeriodEnd = effectivePeriodEnd,
+                PeriodStatus = await periodClosing.GetPeriodStatusAsync(fieldId, effectivePeriodEnd),
+                Ready = ready,
+                OutstandingItems = ready
+                    ? new List<string>()
+                    : await periodClosing.GetUnreconciledItemsAsync(fieldId, effectivePeriodEnd),
+            });
+        }
+
+        /// <summary>GET /api/field/current/accounting/period-closes</summary>
+        /// <remarks>
+        /// Every close of the current field's periods, newest period first, read from the closing journals the close posts
+        /// (<see cref="IPeriodClosingService.GetPeriodClosesAsync"/>).
+        /// </remarks>
+        [HttpGet("period-closes")]
+        public async Task<ActionResult<List<Beep.OilandGas.Models.Data.ProductionAccounting.PeriodCloseSummary>>> GetPeriodClosesAsync(
+            [FromServices] IPeriodClosingService periodClosing)
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId))
+                throw RefusalException.Invalid("No active field selected.");
+
+            return Ok(await periodClosing.GetPeriodClosesAsync(fieldId));
         }
 
         /// <summary>POST /api/field/current/accounting/close-period</summary>

@@ -133,7 +133,11 @@
     {
         await Reload();
         try { await PersonaContext.EnsureLoadedAsync(); }
-        catch { Snackbar.Add("Persona settings could not be loaded. Use Retry personas to refresh them.", Severity.Warning); }
+        // PersonaClient refuses an empty persona answer with InvalidOperationException; anything else reaches the error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure) || failure is InvalidOperationException)
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the signed-in person's persona settings", "Persona settings could not be loaded; use Retry personas to refresh them"), Severity.Warning);
+        }
         UpdatePersonaLabel();
     }
     private Task Reload() => _state!.LoadAsync(() => DataManagementService.GetCurrentFieldIdAsync());

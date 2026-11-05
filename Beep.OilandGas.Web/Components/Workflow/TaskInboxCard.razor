@@ -51,18 +51,22 @@
         <div>
             @if (!string.IsNullOrWhiteSpace(Task.Route))
             {
-                <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
-                               Color="Color.Primary"
-                               Size="Size.Small"
-                               Href="@Task.Route"
-                               Title="Open task" />
+                <MudTooltip Text="Open task">
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Href="@Task.Route"
+                                   aria-label="Open task" />
+                </MudTooltip>
             }
             @if (OnAction.HasDelegate)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
-                               Size="Size.Small"
-                               OnClick="@(() => OnAction.InvokeAsync(Task))"
-                               Title="More actions" />
+                <MudTooltip Text="More actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                                   Size="Size.Small"
+                                   OnClick="@(() => OnAction.InvokeAsync(Task))"
+                                   aria-label="More actions" />
+                </MudTooltip>
             }
         </div>
     </MudStack>

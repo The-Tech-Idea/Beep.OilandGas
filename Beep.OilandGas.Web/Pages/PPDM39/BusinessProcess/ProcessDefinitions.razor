@@ -4,6 +4,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @using Beep.OilandGas.Models.Processes
 
 <PageTitle>Browse Process Definitions</PageTitle>
@@ -50,7 +51,7 @@
                  Dense="true"
                  Hover="true"
                  Striped="true"
-                 Sortable="true"
+                 SortMode="SortMode.Multiple"
                  RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/definitions/{Uri.EscapeDataString(e.Item.ProcessId)}"))">
         <ToolBarContent>
             <MudText Typo="Typo.subtitle2">@FilteredDefinitions.Count() definitions</MudText>
@@ -105,7 +106,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the page still loads; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the process definitions page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         try
         {
@@ -127,9 +133,9 @@
                 _definitions = new();
             }
         }
-        catch
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load process definitions.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the process definitions", "Could not load process definitions"), Severity.Warning);
         }
     }
 

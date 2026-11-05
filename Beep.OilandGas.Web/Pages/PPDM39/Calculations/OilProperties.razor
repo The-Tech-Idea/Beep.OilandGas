@@ -6,6 +6,8 @@
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Analyze Oil Properties</PageTitle>
 
@@ -218,8 +220,14 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch
+        catch (OilGasApiException answer)
         {
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for oil properties", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for oil properties", "The field name could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -240,9 +248,14 @@
                 : _currentResult.CompositionId;
             Snackbar.Add("Oil properties calculated.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error calculating oil properties.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "calculating oil properties", "The oil properties were not calculated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "calculating oil properties", "The oil properties were not calculated");
         }
         finally
         {
@@ -270,17 +283,25 @@
                 _compositionLookupId = response.CompositionId;
             }
 
-            await ReloadHistoryAsync();
             Snackbar.Add(response?.Message ?? "Oil composition saved.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error saving oil composition.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "saving an oil composition", "The oil composition was not saved"), Severity.Error);
+            return;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "saving an oil composition", "The oil composition was not saved");
+            return;
         }
         finally
         {
             _isSaving = false;
         }
+
+        await RefreshHistoryAsync();
     }
 
     private async Task LoadCompositionAsync()
@@ -303,17 +324,25 @@
 
             _composition = composition;
             _compositionLookupId = composition.CompositionId ?? string.Empty;
-            await ReloadHistoryAsync();
             Snackbar.Add("Oil composition loaded.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading oil composition.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "loading an oil composition", "The oil composition could not be loaded"), Severity.Error);
+            return;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading an oil composition", "The oil composition could not be loaded");
+            return;
         }
         finally
         {
             _isLoading = false;
         }
+
+        await RefreshHistoryAsync();
     }
 
     private async Task SaveResultAsync()
@@ -342,16 +371,45 @@
                 _currentResult.CalculationId = response.CalculationId;
             }
 
-            await ReloadHistoryAsync();
             Snackbar.Add(response?.Message ?? "Oil property result saved.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error saving oil property result.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "saving an oil property result", "The oil property result was not saved"), Severity.Error);
+            return;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "saving an oil property result", "The oil property result was not saved");
+            return;
         }
         finally
         {
             _isSaving = false;
+        }
+
+        await RefreshHistoryAsync();
+    }
+
+    /// <summary>
+    /// Refreshes the result history after a composition or result was saved or loaded. A failure here is the history's
+    /// alone, and is said so — never as a failure of the step before it, which succeeded.
+    /// </summary>
+    private async Task RefreshHistoryAsync()
+    {
+        try
+        {
+            await ReloadHistoryAsync();
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "refreshing the oil property history", "The oil property history could not be refreshed"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "refreshing the oil property history", "The oil property history could not be refreshed", FailureSeverity.Degraded);
         }
     }
 

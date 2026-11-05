@@ -4,7 +4,8 @@
 @inject ISnackbar Snackbar
 @inject IDevelopmentServiceClient DevelopmentService
 @inject IProductionServiceClient ProductionService
-@inject OilGasApiFailures Answers
+@inject IClientFileExportService ExportService
+@inject OilGasCallFailures Calls
 
 <PageTitle>Allocate Production Volumes</PageTitle>
 
@@ -13,6 +14,7 @@
     @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     @* ── Header ──────────────────────────────────────────────────────────── *@
+    @* No allocation status is shown: the API keeps no allocation record with a status (draft, submitted, locked). *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Allocate Production Volumes</MudText>
@@ -21,30 +23,25 @@
                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.CallSplit">Production</MudChip>
             </MudStack>
         </MudStack>
-        <MudChip T="string" Color="@(_allocationStatus == "LOCKED" ? Color.Success : Color.Warning)"
-                 Icon="@(_allocationStatus == "LOCKED" ? Icons.Material.Filled.Lock : Icons.Material.Filled.LockOpen)"
-                 Size="Size.Small">
-            @_allocationStatus
-        </MudChip>
     </MudStack>
 
     @* ── Period selector ─────────────────────────────────────────────────── *@
+    @* The period is the person's choice of calendar month: the API keeps no list of allocation periods, so the months
+       offered are the current one and the eleven before it. Only the well-test ratio is calculated here — no metered or
+       reservoir-model allocation exists in the codebase, so no method is offered. *@
     <MudPaper Elevation="1" Class="pa-3 mb-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
-            <MudSelect T="string" Label="Allocation Period" @bind-Value="_selectedPeriod"
+            <MudSelect T="DateTime" Label="Allocation Period" @bind-Value="_periodMonth"
                        Variant="Variant.Outlined" Class="og-select-lg">
-                <MudSelectItem Value="@("Mar 2026")">March 2026</MudSelectItem>
-                <MudSelectItem Value="@("Feb 2026")">February 2026</MudSelectItem>
-                <MudSelectItem Value="@("Jan 2026")">January 2026</MudSelectItem>
+                @foreach (var month in PeriodMonths)
+                {
+                    <MudSelectItem T="DateTime" Value="@month">@month.ToString("MMMM yyyy", CultureInfo.InvariantCulture)</MudSelectItem>
+                }
             </MudSelect>
-            <MudSelect T="string" Label="Method" @bind-Value="_allocationMethod"
-                       Variant="Variant.Outlined" Class="og-select-xl">
-                <MudSelectItem Value="@("Well Test")">Well Test Ratio</MudSelectItem>
-                <MudSelectItem Value="@("Metered")">Metered (Individual)</MudSelectItem>
-                <MudSelectItem Value="@("Model")">Reservoir Model</MudSelectItem>
-            </MudSelect>
+            @* No field meter reading reaches this page: the field total is the sum of the wells' latest test rates, so it
+               is not called "measured". *@
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                Field total: <strong>@_fieldTotal.ToString("N0") BOPD</strong> measured
+                Field total: <strong>@_fieldTotal.ToString("N0") BOPD</strong> from the wells' latest tests
             </MudText>
         </MudStack>
     </MudPaper>
@@ -57,7 +54,7 @@
             <MudStack Spacing="0">
                 <MudText Typo="Typo.body1">
                     <strong>@(_isBalanced ? "Allocation Balanced" : "Allocation Imbalanced")</strong>
-                    — Allocated: @_allocatedTotal.ToString("N0") BOPD vs Measured: @_fieldTotal.ToString("N0") BOPD
+                    — Allocated: @_allocatedTotal.ToString("N0") BOPD vs Field total: @_fieldTotal.ToString("N0") BOPD
                 </MudText>
                 @if (!_isBalanced)
                 {
@@ -78,7 +75,7 @@
             <MudCard Elevation="2">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.subtitle1">Well Allocation — @_selectedPeriod</MudText>
+                        <MudText Typo="Typo.subtitle1">Well Allocation — @PeriodName</MudText>
                     </CardHeaderContent>
                     <CardHeaderActions>
                         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
@@ -89,18 +86,18 @@
                     </CardHeaderActions>
                 </MudCardHeader>
                 <MudCardContent Class="pa-0">
-                    <MudDataGrid T="WellAllocation" Items="@_allocations" Dense="true"
-                                 EditMode="DataGridEditMode.Cell"
-                                 CommittedItemChanges="@CommitAllocationChangesAsync"
-                                 ReadOnly="@(_allocationStatus == "LOCKED")">
+                    @* No allocation adjustment is stored: the API has no writer for a well's allocated volumes (PPDM's
+                       PDEN_VOL_SUMMARY), and its endpoint had answered "saved" while keeping nothing — so the cells are
+                       not offered for editing. *@
+                    <MudDataGrid T="WellAllocation" Items="@_allocations" Dense="true" ReadOnly="true">
                         <Columns>
-                            <PropertyColumn Property="a => a.WellName" Title="Well" IsEditable="false" />
-                            <PropertyColumn Property="a => a.TestRateBopd" Title="Test Rate (BOPD)" Format="N0" IsEditable="false" />
-                            <PropertyColumn Property="a => a.UptimeFraction" Title="Uptime" Format="P1" IsEditable="false" />
-                            <PropertyColumn Property="a => a.AllocationFactor" Title="Factor %" Format="P1" IsEditable="false" />
-                            <PropertyColumn Property="a => a.AllocatedOilBopd" Title="Allocated Oil (BOPD)" Format="N0" IsEditable="true" />
-                            <PropertyColumn Property="a => a.AllocatedGasMmscfd" Title="Gas (MMSCFD)" Format="N2" IsEditable="true" />
-                            <PropertyColumn Property="a => a.AllocatedWaterBopd" Title="Water (BWPD)" Format="N0" IsEditable="true" />
+                            <PropertyColumn Property="a => a.WellName" Title="Well" Editable="false" />
+                            <PropertyColumn Property="a => a.TestRateBopd" Title="Test Rate (BOPD)" Format="N0" Editable="false" />
+                            <PropertyColumn Property="a => a.UptimeFraction" Title="Uptime" Format="P1" Editable="false" />
+                            <PropertyColumn Property="a => a.AllocationFactor" Title="Factor %" Format="P1" Editable="false" />
+                            <PropertyColumn Property="a => a.AllocatedOilBopd" Title="Allocated Oil (BOPD)" Format="N0" Editable="false" />
+                            <PropertyColumn Property="a => a.AllocatedGasMmscfd" Title="Gas (MMSCFD)" Format="N2" Editable="false" />
+                            <PropertyColumn Property="a => a.AllocatedWaterBopd" Title="Water (BWPD)" Format="N0" Editable="false" />
                             <TemplateColumn Title="">
                                 <CellTemplate>
                                     @{
@@ -117,33 +114,35 @@
                     </MudDataGrid>
                 </MudCardContent>
                 <MudCardContent Class="pa-2">
+                    <MudText Typo="Typo.caption" Class="mb-1">Adjusting a well's allocation by hand is not available yet; the allocation shown is calculated from the wells' latest tests.</MudText>
                     <MudStack Row="true" Spacing="4">
                         <MudText Typo="Typo.body2"><strong>TOTAL:</strong> Oil @_allocatedTotal.ToString("N0") BOPD &nbsp;|&nbsp; Gas @_allocations.Sum(a => a.AllocatedGasMmscfd).ToString("N2") MMSCFD &nbsp;|&nbsp; Water @_allocations.Sum(a => a.AllocatedWaterBopd).ToString("N0") BWPD</MudText>
                     </MudStack>
                 </MudCardContent>
                 <MudCardActions>
-                    <MudStack Row="true" Spacing="2" Class="pa-2">
-                        @if (_allocationStatus != "LOCKED")
-                        {
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                       Disabled="@(!_isBalanced)"
-                                       StartIcon="@Icons.Material.Filled.Save"
-                                       OnClick="SubmitAllocation">
-                                Submit for Approval
-                            </MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Default"
-                                       StartIcon="@Icons.Material.Filled.Autorenew"
-                                       OnClick="RecalculateAllocation">
-                                Reset to Calculated
-                            </MudButton>
-                        }
-                        else
-                        {
-                            <MudButton Variant="Variant.Outlined" Color="Color.Default"
-                                       StartIcon="@Icons.Material.Filled.Download">
-                                Export to Excel
-                            </MudButton>
-                        }
+                    <MudStack Row="true" Spacing="2" Class="pa-2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                        @* No allocation-approval endpoint in the API: submitting changed only this page's status and said it
+                           was submitted. *@
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   Disabled="true"
+                                   StartIcon="@Icons.Material.Filled.Save">
+                            Submit for Approval
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.Autorenew"
+                                   OnClick="RecalculateAllocation">
+                            Reset to Calculated
+                        </MudButton>
+                        @* The table as shown, downloaded as CSV (Excel opens it): no spreadsheet writer is in the codebase. *@
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.Download"
+                                   Disabled="@(_allocations.Count == 0)"
+                                   OnClick="ExportAllocationAsync">
+                            Export to CSV
+                        </MudButton>
+                        <MudAlert Severity="Severity.Info" Dense="true">
+                            Submitting an allocation for approval is not available yet.
+                        </MudAlert>
                     </MudStack>
                 </MudCardActions>
             </MudCard>
@@ -174,6 +173,7 @@
                     <MudCardHeader>
                         <CardHeaderContent>
                             <MudText Typo="Typo.subtitle1">Monthly Totals</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Allocated daily rates × @DaysInPeriod days in @PeriodName</MudText>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
@@ -181,21 +181,21 @@
                             <MudListItem T="string" Value="@("oil")">
                                 <MudStack Row="true" Justify="Justify.SpaceBetween">
                                     <MudText Typo="Typo.body2">Oil (MBBl)</MudText>
-                                    <MudText Typo="Typo.body2"><strong>@((_allocatedTotal * 31 / 1000).ToString("N0"))</strong></MudText>
+                                    <MudText Typo="Typo.body2"><strong>@((_allocatedTotal * DaysInPeriod / 1000).ToString("N0"))</strong></MudText>
                                 </MudStack>
                             </MudListItem>
                             <MudDivider />
                             <MudListItem T="string" Value="@("gas")">
                                 <MudStack Row="true" Justify="Justify.SpaceBetween">
                                     <MudText Typo="Typo.body2">Gas (BSCF)</MudText>
-                                    <MudText Typo="Typo.body2"><strong>@(_allocations.Sum(a => a.AllocatedGasMmscfd * 31 / 1000).ToString("N3"))</strong></MudText>
+                                    <MudText Typo="Typo.body2"><strong>@(_allocations.Sum(a => a.AllocatedGasMmscfd * DaysInPeriod / 1000).ToString("N3"))</strong></MudText>
                                 </MudStack>
                             </MudListItem>
                             <MudDivider />
                             <MudListItem T="string" Value="@("water")">
                                 <MudStack Row="true" Justify="Justify.SpaceBetween">
                                     <MudText Typo="Typo.body2">Water (MBWl)</MudText>
-                                    <MudText Typo="Typo.body2"><strong>@((_allocations.Sum(a => a.AllocatedWaterBopd) * 31 / 1000).ToString("N0"))</strong></MudText>
+                                    <MudText Typo="Typo.body2"><strong>@((_allocations.Sum(a => a.AllocatedWaterBopd) * DaysInPeriod / 1000).ToString("N0"))</strong></MudText>
                                 </MudStack>
                             </MudListItem>
                             <MudDivider />
@@ -209,34 +209,8 @@
                     </MudCardContent>
                 </MudCard>
 
-                @* Allocation history *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Recent Allocation History</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent Class="pa-0">
-                        <MudList T="AllocationRecord" Dense="true">
-                            @foreach (var rec in _history)
-                            {
-                                <MudListItem T="AllocationRecord" Value="rec">
-                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
-                                        <MudStack Spacing="0">
-                                            <MudText Typo="Typo.body2">@rec.Period</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Submitted @rec.SubmittedBy</MudText>
-                                        </MudStack>
-                                        <MudChip T="string" Size="Size.Small"
-                                                 Color="@(rec.Status == "APPROVED" ? Color.Success : Color.Default)">
-                                            @rec.Status
-                                        </MudChip>
-                                    </MudStack>
-                                </MudListItem>
-                                <MudDivider />
-                            }
-                        </MudList>
-                    </MudCardContent>
-                </MudCard>
+                @* No allocation history is shown: the API records no submitted or approved allocations (the list was never
+                   filled). *@
 
             </MudStack>
         </MudItem>
@@ -247,14 +221,28 @@
 
 @code {
     private string _fieldName = string.Empty;
-    private string _selectedPeriod    = DateTime.Now.ToString("MMM yyyy");
-    private string _allocationMethod  = "Well Test";
-    private string _allocationStatus  = "DRAFT";
     private double _fieldTotal        = 0;
     private bool   _loading           = true;
 
+    // The first day of the calendar month being allocated; the current month until the person picks another.
+    private DateTime _periodMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
     private List<WellAllocation> _allocations = new();
-    private List<AllocationRecord> _history   = new();
+
+    // The current month and the eleven before it, newest first.
+    private static IEnumerable<DateTime> PeriodMonths
+    {
+        get
+        {
+            var current = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            return Enumerable.Range(0, 12).Select(back => current.AddMonths(-back));
+        }
+    }
+
+    // The period as the allocation API names it ("Oct 2026"), and as the page shows it.
+    private string PeriodKey  => _periodMonth.ToString("MMM yyyy", CultureInfo.InvariantCulture);
+    private string PeriodName => _periodMonth.ToString("MMMM yyyy", CultureInfo.InvariantCulture);
+    private int    DaysInPeriod => DateTime.DaysInMonth(_periodMonth.Year, _periodMonth.Month);
 
     private double _allocatedTotal => _allocations.Sum(a => a.AllocatedOilBopd);
     private bool   _isBalanced     => _fieldTotal <= 0 || Math.Abs(_allocatedTotal - _fieldTotal) < 50;
@@ -283,9 +271,11 @@
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
-            catch
+            // The field name is supplemental: a failed call is said as a warning and the allocation still loads; anything
+            // else reaches the page's error boundary.
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
             {
-                // Field name is supplemental.
+                Snackbar.Add(Calls.Explain(failure, "loading the field name for the allocation workbench", "The field name could not be loaded"), Severity.Warning);
             }
 
             // Load development wells
@@ -300,11 +290,19 @@
             var perfTasks = wells.Select(w => LoadWellPerfAsync(w.UWI ?? string.Empty)).ToList();
             var perfs = await Task.WhenAll(perfTasks);
 
+            // A well whose performance did not load is allocated at zero: the page says how many, with the first one's
+            // sentence and reference (each is recorded where it failed).
+            var unloaded = perfs.Where(p => p.Failure is not null).ToList();
+            if (unloaded.Count == 1)
+                Snackbar.Add(unloaded[0].Failure!, Severity.Warning);
+            else if (unloaded.Count > 1)
+                Snackbar.Add($"The performance of {unloaded.Count} wells could not be loaded, so their rates show as zero. {unloaded[0].Failure}", Severity.Warning);
+
             // Build allocation rows
             _allocations = wells
                 .Select((w, i) =>
                 {
-                    var perf = perfs[i];
+                    var perf = perfs[i].Performance;
                     return new WellAllocation(
                         wellName: w.WELL_NAME ?? w.UWI ?? "Unknown",
                         uwi:      w.UWI ?? string.Empty,
@@ -322,52 +320,34 @@
             _fieldTotal = _allocations.Sum(a => a.TestRateBopd);
             ApplyCalculatedAllocation(showToast: false);
         }
-        catch (Exception)
+        // A failed call says the allocation did not load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to load allocation data.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the allocation data", "Failed to load allocation data"), Severity.Warning);
         }
         finally { _loading = false; }
     }
 
-    private async Task<ProductionWellPerformanceDto?> LoadWellPerfAsync(string uwi)
+    private async Task<WellPerformanceLoad> LoadWellPerfAsync(string uwi)
     {
-        if (string.IsNullOrEmpty(uwi)) return null;
+        if (string.IsNullOrEmpty(uwi)) return new(null, null);
         try
         {
-            return await ProductionService.GetWellPerformanceAsync(uwi);
+            return new(await ProductionService.GetWellPerformanceAsync(uwi), null);
         }
-        catch { return null; }
-    }
-
-    private async Task OnAllocationChanged(WellAllocation item)
-    {
-        try
+        // One well that does not load leaves its rates at zero and the others still load: the failure is recorded here and
+        // its sentence returned for the page to say (it answered "no performance", silently).
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            await ProductionService.PatchAllocationAsync(
-                _selectedPeriod,
-                item.Uwi,
-                new ProductionAllocationPatchRequest
-                {
-                    AllocatedOilBopd   = item.AllocatedOilBopd,
-                    AllocatedGasMmscfd = item.AllocatedGasMmscfd,
-                    AllocatedWaterBopd = item.AllocatedWaterBopd,
-                });
-        }
-        catch (OilGasApiException answer)
-        {
-            Snackbar.Add(Answers.Explain(answer, "syncing a well's allocation change", $"The allocation change for {item.WellName} was not synced"), Severity.Warning);
-        }
-        catch
-        {
-            // non-critical: allocation changes are local until Submit
+            return new(null, Calls.Explain(
+                failure,
+                "loading a well's performance for the allocation",
+                $"The performance of well {uwi} could not be loaded, so its rates show as zero"));
         }
     }
 
-    private async Task<DataGridEditFormAction> CommitAllocationChangesAsync(WellAllocation item)
-    {
-        await OnAllocationChanged(item);
-        return DataGridEditFormAction.Close;
-    }
+    /// <summary>A well's performance, or the sentence saying why it did not load.</summary>
+    private sealed record WellPerformanceLoad(ProductionWellPerformanceDto? Performance, string? Failure);
 
     private void RecalculateAllocation()
     {
@@ -393,10 +373,31 @@
         }
     }
 
-    private void SubmitAllocation()
+    // The allocation table as the page shows it, one row per well, with a header row.
+    private async Task ExportAllocationAsync()
     {
-        _allocationStatus = "SUBMITTED";
-        Snackbar.Add($"Allocation for {_selectedPeriod} submitted for approval", Severity.Success);
+        var rows = new List<string[]>
+        {
+            new[] { "Period", "Well", "UWI", "Test Rate (BOPD)", "Uptime", "Factor", "Allocated Oil (BOPD)", "Gas (MMSCFD)", "Water (BWPD)" }
+        };
+        rows.AddRange(_allocations.Select(a => new[]
+        {
+            PeriodKey,
+            a.WellName,
+            a.Uwi,
+            a.TestRateBopd.ToString("0.##", CultureInfo.InvariantCulture),
+            a.UptimeFraction.ToString("0.####", CultureInfo.InvariantCulture),
+            a.AllocationFactor.ToString("0.####", CultureInfo.InvariantCulture),
+            a.AllocatedOilBopd.ToString("0.##", CultureInfo.InvariantCulture),
+            a.AllocatedGasMmscfd.ToString("0.####", CultureInfo.InvariantCulture),
+            a.AllocatedWaterBopd.ToString("0.##", CultureInfo.InvariantCulture),
+        }));
+
+        await ExportService.DownloadCsvAsync(
+            $"allocation-{_periodMonth:yyyy-MM}",
+            row => row,
+            rows);
+        Snackbar.Add($"The allocation table for {PeriodName} was downloaded.", Severity.Success);
     }
 
     private class WellAllocation
@@ -418,6 +419,4 @@
             AllocatedOilBopd = oil; AllocatedGasMmscfd = gas; AllocatedWaterBopd = water;
         }
     }
-
-    private record AllocationRecord(string Period, string SubmittedBy, string Status);
 }

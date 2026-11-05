@@ -8,6 +8,7 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Approve Well Programme</PageTitle>
 
@@ -15,9 +16,11 @@
 
     @* Header *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       OnClick='() => NavigationManager.NavigateTo("/exploration")'
-                       Title="Back to Exploration" />
+        <MudTooltip Text="Back to Exploration">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           OnClick='() => NavigationManager.NavigateTo("/exploration")'
+                           aria-label="Back to Exploration" />
+        </MudTooltip>
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Approve Well Programme</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
@@ -33,13 +36,10 @@
     }
 
     <MudStepper @bind-ActiveIndex="_step"
-                Linear="true"
-                Color="Color.Primary"
+                StepCompleteIcon="@Icons.Material.Filled.CheckCircle"
                 Class="mb-4">
 
-        <MudStep Title="Well Objectives"
-                 Icon="@Icons.Material.Filled.Flag"
-                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+        <MudStep Title="Well Objectives">
             <MudGrid Spacing="3" Class="pt-4">
                 <MudItem xs="12" md="6">
                     <MudSelect T="string"
@@ -96,9 +96,7 @@
             </MudStack>
         </MudStep>
 
-        <MudStep Title="Technical Summary"
-                 Icon="@Icons.Material.Filled.Engineering"
-                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+        <MudStep Title="Technical Summary">
             <MudGrid Spacing="3" Class="pt-4">
                 <MudItem xs="12" md="4">
                     <MudNumericField @bind-Value="_form.PlannedTdM" Label="Planned TD (m)" Variant="Variant.Outlined" Min="0" />
@@ -134,9 +132,7 @@
             </MudStack>
         </MudStep>
 
-        <MudStep Title="Risk Assessment"
-                 Icon="@Icons.Material.Filled.Shield"
-                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+        <MudStep Title="Risk Assessment">
             <MudPaper Elevation="0" Class="pt-4">
                 <MudText Typo="Typo.subtitle2" Class="mb-3">Technical and Operational Risks</MudText>
                 <MudDataGrid T="WellProgramRiskItem" Items="@_form.Risks" Dense="true" Hover="true" Striped="true" Class="mb-4">
@@ -182,9 +178,7 @@
             </MudStack>
         </MudStep>
 
-        <MudStep Title="Cost Estimate (AFE)"
-                 Icon="@Icons.Material.Filled.AttachMoney"
-                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+        <MudStep Title="Cost Estimate (AFE)">
             <MudPaper Elevation="0" Class="pt-4">
                 <MudText Typo="Typo.subtitle2" Class="mb-3">AFE Line Items</MudText>
                 <MudDataGrid T="WellProgramAfeLine" Items="@_form.AfeLines" Dense="true" Hover="true" Striped="true">
@@ -223,9 +217,7 @@
             </MudStack>
         </MudStep>
 
-        <MudStep Title="Approval Sign-off"
-                 Icon="@Icons.Material.Filled.Gavel"
-                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+        <MudStep Title="Approval Sign-off">
             <MudGrid Spacing="3" Class="pt-4">
                 <MudItem xs="12">
                     <MudPaper Elevation="1" Class="pa-4">
@@ -313,9 +305,15 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
         {
-            // Field name is non-critical.
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for well program approval", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for well program approval", "The field's name could not be loaded", FailureSeverity.Degraded);
         }
 
         try
@@ -369,9 +367,14 @@
                 .Where(p => !string.IsNullOrWhiteSpace(p.Id))
                 .ToList();
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading field prospects.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the field's prospects for a well program", "The field's prospects could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field's prospects for a well program", "The field's prospects could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -409,9 +412,18 @@
 
                 _form.Risks = BuildRiskItems(evaluation);
             }
-            catch (Exception)
+            // The program can still be drafted without the evaluation, but an approver must not read its absence as
+            // "no risks": the person is told it did not load.
+            catch (OilGasApiException answer)
             {
                 _form.Risks = new List<WellProgramRiskItem>();
+                Snackbar.Add(Answers.Explain(answer, "evaluating a prospect's risks for a well program", "The prospect's risk evaluation could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                _form.Risks = new List<WellProgramRiskItem>();
+                Notifier.Failure(ex, "evaluating a prospect's risks for a well program", "The prospect's risk evaluation could not be loaded", FailureSeverity.Degraded);
             }
 
             try
@@ -425,14 +437,27 @@
                         line.CostUsd))
                     .ToList();
             }
-            catch (Exception)
+            // As above: an approver must not read missing cost lines as a program with no cost.
+            catch (OilGasApiException answer)
             {
                 _form.AfeLines = new List<WellProgramAfeLine>();
+                Snackbar.Add(Answers.Explain(answer, "loading a prospect's AFE lines for a well program", "The prospect's AFE lines could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                _form.AfeLines = new List<WellProgramAfeLine>();
+                Notifier.Failure(ex, "loading a prospect's AFE lines for a well program", "The prospect's AFE lines could not be loaded", FailureSeverity.Degraded);
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading prospect details for the well program.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading a prospect's details for a well program", "The prospect's details could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a prospect's details for a well program", "The prospect's details could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -477,9 +502,10 @@
             Snackbar.Add(Answers.Explain(answer, "recording a well program decision", "The well program decision was not recorded"), Severity.Error);
             return;
         }
-        catch (Exception)
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("Error submitting decision.", Severity.Error);
+            Notifier.Failure(ex, "recording a well program decision", "The well program decision was not recorded");
             return;
         }
 

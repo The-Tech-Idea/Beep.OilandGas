@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
@@ -222,7 +223,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
+            var instances = await FieldGateReviewsAsync(fieldId);
             var summaries = new List<ProcessInstanceSummary>();
             if (instances != null)
             {
@@ -288,7 +289,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrEmpty(fieldId))
                     return BadRequest(new { error = "No active field selected." });
 
-            var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
+            var instances = await FieldGateReviewsAsync(fieldId);
             var pending   = new List<ProcessInstanceSummary>();
             if (instances != null)
             {
@@ -316,6 +317,22 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             }
             return Ok(pending);
         }
+
+        /// <summary>
+        /// The current field's gate reviews, whatever entity each reviews: an instance belongs to the field it was started
+        /// in (PROCESS_INSTANCE.FIELD_ID), and a gate review is an instance of a GATE_REVIEW process definition. They had
+        /// been read as instances whose entity was the field itself, so a gate submitted for a well (WELL_DESIGN for a
+        /// UWI) or the FDP gate never appeared in these lists.
+        /// </summary>
+        private async Task<List<ProcessInstance>> FieldGateReviewsAsync(string fieldId)
+        {
+            var gateDefinitions = await _processService.GetProcessDefinitionsByTypeAsync(GateReviewProcessType);
+            var gateProcessIds = gateDefinitions.Select(d => d.ProcessId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var instances = await _processService.GetProcessInstancesForFieldAsync(fieldId);
+            return instances.Where(i => gateProcessIds.Contains(i.ProcessId)).ToList();
+        }
+
+        private const string GateReviewProcessType = "GATE_REVIEW";
 
         /// <summary>Retrieve the required document checklist for a gate.</summary>
         [HttpGet("{instanceId}/checklist")]

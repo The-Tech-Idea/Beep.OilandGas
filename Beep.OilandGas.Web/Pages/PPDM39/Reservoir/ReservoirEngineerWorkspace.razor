@@ -1,16 +1,19 @@
 @page "/reservoir/workspace"
-@using System.Net.Http.Json
 @using MudBlazor
-@inject HttpClient Http
+@inject ApiClient ApiClient
+@inject OilGasCallFailures Calls
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.Science" Class="mr-2" Color="Color.Primary"/>Reservoir Engineer Workspace</MudText>
+    @if(_loadError is not null){<MudAlert Severity="Severity.Warning" Class="mb-4">@_loadError</MudAlert>}
     @if(_loading){<MudProgressLinear Indeterminate="true" Class="my-4"/>}else{
+    @* The recovery factor reads "Not recorded", never 0: the API reads no pool's in-place volume, so it computes none.
+       Pressure maintenance is the wells with an active injection operation in the enhanced-recovery records. *@
     <MudGrid>
         <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Active Pools</MudText><MudText Typo="Typo.h4" Color="Color.Primary">@_kpi?.ActivePools.ToString("N0")</MudText><MudText Typo="Typo.caption">total</MudText></div><MudIcon Icon="@Icons.Material.Filled.WaterDrop" Color="Color.Primary" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
         <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Discovery Pools</MudText><MudText Typo="Typo.h4" Color="Color.Success">@_kpi?.PoolsWithDiscovery.ToString("N0")</MudText><MudText Typo="Typo.caption">discovered</MudText></div><MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Success" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
-        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Recovery Factor</MudText><MudText Typo="Typo.h4" Color="Color.Info">@($"{_kpi?.RecoveryFactor:F1}%")</MudText><MudText Typo="Typo.caption">avg</MudText></div><MudIcon Icon="@Icons.Material.Filled.PieChartOutline" Color="Color.Info" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
-        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Pressure Maint</MudText><MudText Typo="Typo.h4" Color="Color.Warning">@_kpi?.PressureMaintenanceWells.ToString("N0")</MudText><MudText Typo="Typo.caption">injection wells</MudText></div><MudIcon Icon="@Icons.Material.Filled.Compress" Color="Color.Warning" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Recovery Factor</MudText>@if(_kpi?.RecoveryFactor is decimal recovery){<MudText Typo="Typo.h4" Color="Color.Info">@($"{recovery:F1}%")</MudText><MudText Typo="Typo.caption">avg</MudText>}else{<MudText Typo="Typo.h6" Color="Color.Secondary">Not recorded</MudText><MudText Typo="Typo.caption">no in-place volumes</MudText>}</div><MudIcon Icon="@Icons.Material.Filled.PieChartOutline" Color="Color.Info" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Pressure Maint</MudText><MudText Typo="Typo.h4" Color="Color.Warning">@_kpi?.PressureMaintenanceWells.ToString("N0")</MudText><MudText Typo="Typo.caption">wells on injection</MudText></div><MudIcon Icon="@Icons.Material.Filled.Compress" Color="Color.Warning" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
     </MudGrid>
     <MudGrid>
         <MudItem xs="12" md="5"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-1" Size="Size.Small"/>Analysis Tools</MudText></CardHeaderContent></MudCardHeader><MudCardContent Class="pa-2"><MudGrid>
@@ -27,12 +30,19 @@
         <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/ppdm39/production/reserves">Reserves Report</MudButton>
         <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/ppdm39/operations/enhancedrecovery">Enhanced Recovery</MudButton>
     </MudStack></MudCardContent></MudCard>
-        <MudCard Elevation="2" Class="mt-2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Campaign" Class="mr-1" Size="Size.Small"/>Attention Required</MudText></CardHeaderContent></MudCardHeader><MudCardContent>
-        <MudAlert Severity="Severity.Warning" Dense="true">Pool PL-003: Reservoir pressure below bubble point — evaluate pressure maintenance.</MudAlert>
-        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">EOR screening due for 5 pools this quarter. Run screening analysis.</MudAlert>
-    </MudCardContent></MudCard></MudItem></MudGrid>}
+        @* No source of reservoir attention items in the API (no pool pressure-versus-bubble-point check, no EOR screening schedule): the "Attention Required" card's two alerts were constants and are gone. *@
+    </MudItem></MudGrid>}
 </MudContainer>
 
-@code{private bool _loading=true;private ReservoirEngineerKpi? _kpi;
-protected override async Task OnInitializedAsync(){try{_kpi=await Http.GetFromJsonAsync<ReservoirEngineerKpi>("/api/reservoir/engineer/kpi")??new();}catch{_kpi=new();}_loading=false;}
-public class ReservoirEngineerKpi{public int ActivePools{get;set;}public int PoolsWithDiscovery{get;set;}public decimal RecoveryFactor{get;set;}public int PressureMaintenanceWells{get;set;}}}
+@code{private bool _loading=true;private ReservoirEngineerKpi? _kpi;private string? _loadError;
+protected override async Task OnInitializedAsync()
+{
+    // Through ApiClient, which carries the API's address and the person's token: the unnamed HttpClient this page used
+    // has neither, so every load failed and the catch showed zeros.
+    try{_kpi=await ApiClient.GetAsync<ReservoirEngineerKpi>("/api/reservoir/engineer/kpi")??new();}
+    // A failed call says the figures did not load, rather than showing zeros; anything else reaches the page's error boundary.
+    catch(Exception failure) when (OilGasCallFailures.IsCallFailure(failure)){_loadError=Calls.Explain(failure,"loading the reservoir engineer workspace figures","The reservoir engineer workspace figures could not be loaded");}
+    finally{_loading=false;}
+}
+// The API's ReservoirEngineerKpi: a null figure is one nothing computes.
+public class ReservoirEngineerKpi{public int ActivePools{get;set;}public int PoolsWithDiscovery{get;set;}public decimal? RecoveryFactor{get;set;}public int PressureMaintenanceWells{get;set;}}}

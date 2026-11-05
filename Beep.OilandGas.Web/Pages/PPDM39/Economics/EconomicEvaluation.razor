@@ -8,6 +8,8 @@
 @inject IAccountingServiceClient AccountingClient
 @inject ILifeCycleService LifeCycleService
 @inject IClientFileExportService ExportService
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Run Economic Evaluation</PageTitle>
 
@@ -157,8 +159,8 @@
                 </MudCardHeader>
                 <MudCardContent>
                     <MudChart T="double" ChartType="ChartType.Bar"
-                              Series="@_cashflowSeries"
-                              XAxisLabels="@_cashflowYears"
+                              ChartSeries="@_cashflowSeries"
+                              ChartLabels="@_cashflowYears"
                               Width="100%" Height="220px" />
                     @if (!_cashflowSeries.Any())
                     {
@@ -228,8 +230,8 @@
                 </MudCardHeader>
                 <MudCardContent>
                     <MudChart T="double" ChartType="ChartType.Line"
-                              Series="@_cumulativeSeries"
-                              XAxisLabels="@_cashflowYears"
+                              ChartSeries="@_cumulativeSeries"
+                              ChartLabels="@_cashflowYears"
                               Width="100%" Height="180px" />
                     @if (!_cumulativeSeries.Any())
                     {
@@ -341,7 +343,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: the page goes on without it, and says so.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for economic evaluation", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for economic evaluation", "The field name could not be loaded", FailureSeverity.Degraded);
+        }
 
         _loading = true;
         try
@@ -350,9 +361,15 @@
             if (summary != null)
                 _grossRevenue = (double)summary.GrossRevenue;
         }
-        catch (Exception)
+        // Without it the evaluation estimates revenue from the oil price; the person is told the context is missing.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load revenue context.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the revenue context for economic evaluation", "The revenue context could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the revenue context for economic evaluation", "The revenue context could not be loaded", FailureSeverity.Degraded);
         }
         finally { _loading = false; }
 
@@ -478,9 +495,14 @@
 
             Snackbar.Add("Economic model recalculated", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Evaluation failed.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "running the economic evaluation", "The economic evaluation was not run"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "running the economic evaluation", "The economic evaluation was not run");
         }
         finally
         {
@@ -507,9 +529,14 @@
             await ApiClient.PostAsync<object, object>("api/EconomicAnalysis/result", payload);
             Snackbar.Add("Economic evaluation saved", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Save failed.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "saving the economic evaluation", "The economic evaluation was not saved"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "saving the economic evaluation", "The economic evaluation was not saved");
         }
     }
 

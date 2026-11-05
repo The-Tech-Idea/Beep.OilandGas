@@ -6,6 +6,7 @@
 @inject TheTechIdeaWeb.Diagnostics.IFailureReporter Failures
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.OilandGas.Web.Theme
+@using Beep.OilandGas.Web.Pages.Legal
 @using TheTechIdeaWeb.Diagnostics.Components
 @implements IDisposable
 
@@ -117,6 +118,9 @@
                         @(_branding.Copyright ?? $"© {DateTime.Now.Year} {(_branding.AppName ?? "Beep Oil & Gas")}. All rights reserved.")
                     </MudText>
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        @* The two documents the identity server's sign-in page links to (LegalPages). *@
+                        <MudLink Href="@LegalPages.Privacy" Typo="Typo.body2" Underline="Underline.Hover">Privacy policy</MudLink>
+                        <MudLink Href="@LegalPages.Terms" Typo="Typo.body2" Underline="Underline.Hover" Class="me-2">Terms of service</MudLink>
                         <img src="/imgs/companylogo.svg" alt="The Tech Idea" class="og-footer-logo" onerror="this.style.display='none';" />
                         <MudText Typo="Typo.body2" Color="Color.Secondary">
                             Powered by <strong>The Tech Idea</strong>™
@@ -203,13 +207,15 @@
     }
 
     /// <summary>
-    /// The pages that must render while the repository is not ready: its own setup page, and the account pages this
-    /// application hosts for the identity server's client library — none of them reads the repository. The library's own
+    /// The pages that must render while the repository is not ready: its own setup page, the account pages this
+    /// application hosts for the identity server's client library, and the privacy policy and terms of service, which the
+    /// identity server's sign-in page links for anybody to read — none of them reads the repository. The library's own
     /// endpoints are not pages and never reach this layout.
     /// </summary>
     private static bool IsSetupExemptPath(string currentPath) =>
         !string.IsNullOrWhiteSpace(currentPath)
         && (currentPath.Equals("/setup/repository", StringComparison.OrdinalIgnoreCase)
             || currentPath.Equals(BeepClientEndpoints.AccessDenied, StringComparison.OrdinalIgnoreCase)
-            || currentPath.Equals(BeepClientEndpoints.Manage, StringComparison.OrdinalIgnoreCase));
+            || currentPath.Equals(BeepClientEndpoints.Manage, StringComparison.OrdinalIgnoreCase)
+            || LegalPages.IsLegalPage(currentPath));
 }

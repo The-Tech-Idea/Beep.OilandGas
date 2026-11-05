@@ -81,6 +81,9 @@ public class ObligationDetailModel : ModelEntityBase
     public string?  RegulatorBaId         { get; set; }
     public string?  CreatedByProcess      { get; set; }
 
+    /// <summary>The obligation's PPDM remark: the reason it was waived, when it was.</summary>
+    public string?  Remark                { get; set; }
+
     public List<ObligationPayment> Payments { get; set; } = new();
 }
 

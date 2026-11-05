@@ -13,6 +13,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @inject ModuleDatabaseClient Client
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>PPDM Database Setup</PageTitle>
 <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
@@ -161,7 +162,12 @@
             SelectModule(_modules.Any(x => x.ModuleId == _moduleId) ? _moduleId :
                 _modules.FirstOrDefault(x => x.ModuleId == "PPDM_CORE")?.ModuleId ?? _modules.FirstOrDefault()?.ModuleId ?? "");
         }
-        catch { _modules = []; _connections = []; _error = "Could not load module databases."; }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _modules = [];
+            _connections = [];
+            _error = Calls.Explain(failure, "loading the module databases", "The module databases could not be loaded");
+        }
         finally { _busy = false; }
     }
 
@@ -187,7 +193,10 @@
             _connection = saved.ConnectionName;
             Snackbar.Add("Module binding saved.", Severity.Success);
         }
-        catch { _error = "Binding could not be saved. Reload to check for changes."; }
+        catch (Exception failure) when (IsActionFailure(failure))
+        {
+            _error = Calls.Explain(failure, "saving a module's database binding", "The binding could not be saved; reload to check for changes");
+        }
         finally { _busy = false; }
     }
 
@@ -205,16 +214,29 @@
             _plan = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             if (!result.Success) _error = "Migration planning failed.";
         }
-        catch { _error = "Could not generate the migration plan. Check the binding and connection."; }
+        catch (Exception failure) when (IsActionFailure(failure))
+        {
+            _error = Calls.Explain(failure, "planning a module's schema migration", "The migration plan could not be generated; check the binding and connection");
+        }
         finally { _busy = false; }
     }
 
-    private async Task VerifyBinding()
+    private const string BindingChanged = "The module's binding changed since this page loaded it. Reload before retrying.";
+
+    /// <summary>Whether the module is still bound as this page shows it; a changed binding is a refusal the page words.</summary>
+    private async Task<bool> BindingUnchangedAsync()
     {
         var current = (await Client.ListAsync()).SingleOrDefault(x => x.ModuleId == _moduleId);
-        if (current?.ConcurrencyStamp != Selected?.ConcurrencyStamp || current?.ConnectionName != _connection)
-            throw new InvalidOperationException("The binding changed.");
+        return current?.ConcurrencyStamp == Selected?.ConcurrencyStamp && current?.ConnectionName == _connection;
     }
+
+    /// <summary>
+    /// A setup action that did not complete: the API did not answer with success, the request did not complete, or
+    /// <see cref="ModuleDatabaseClient"/> refused an answer that was empty or did not match the reviewed plan (it throws
+    /// <see cref="InvalidOperationException"/> for those). Anything else is a fault in this page and reaches its error boundary.
+    /// </summary>
+    private static bool IsActionFailure(Exception failure) =>
+        OilGasCallFailures.IsCallFailure(failure) || failure is InvalidOperationException;
 
     private async Task Seed()
     {
@@ -225,11 +247,18 @@
         _seedConfirmed = false;
         try
         {
-            await VerifyBinding();
+            if (!await BindingUnchangedAsync())
+            {
+                _error = BindingChanged;
+                return;
+            }
             _seedResult = await Client.SeedAsync(_moduleId, new(Selected.ConcurrencyStamp!));
             if (!_seedResult.Success) _error = "Module seeding reported errors. Check the database before retrying.";
         }
-        catch { _error = "Seeding did not complete successfully. Check the binding, schema and server logs before retrying."; }
+        catch (Exception failure) when (IsActionFailure(failure))
+        {
+            _error = Calls.Explain(failure, "seeding a module database", "Seeding did not complete successfully; check the binding, schema and server logs before retrying");
+        }
         finally { _busy = false; }
     }
 
@@ -240,12 +269,19 @@
         _error = null;
         try
         {
-            await VerifyBinding();
+            if (!await BindingUnchangedAsync())
+            {
+                _error = BindingChanged;
+                return;
+            }
             var result = await Client.ApproveAsync(_reviewed.PlanId);
             _approved = result.Success && result.PlanHash == _reviewed.PlanHash && result.ManifestHash == _reviewed.ManifestHash;
             if (!_approved) _error = "Approval failed or the plan changed. Generate a new plan.";
         }
-        catch { _error = "Approval could not be verified. Reload and generate a new plan."; }
+        catch (Exception failure) when (IsActionFailure(failure))
+        {
+            _error = Calls.Explain(failure, "approving a schema migration plan", "Approval could not be verified; reload and generate a new plan");
+        }
         finally { _busy = false; }
     }
 
@@ -257,10 +293,17 @@
         _error = null;
         try
         {
-            await VerifyBinding();
+            if (!await BindingUnchangedAsync())
+            {
+                _error = BindingChanged;
+                return;
+            }
             _execution = await Client.ExecuteAsync(_reviewed, _riskAcknowledged);
         }
-        catch { _error = "Execution outcome could not be verified. Check migration status before attempting another migration."; }
+        catch (Exception failure) when (IsActionFailure(failure))
+        {
+            _error = Calls.Explain(failure, "executing a schema migration plan", "The execution outcome could not be verified; check migration status before attempting another migration");
+        }
         finally { _busy = false; }
     }
 }

@@ -10,6 +10,7 @@
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Design Plunger Lift System</PageTitle>
 
@@ -152,7 +153,16 @@
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
-            catch { /* field name is non-critical */ }
+            // The field name is non-critical: the page goes on without it, and says so.
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "loading the field name for plunger lift design", "The field name could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "loading the field name for plunger lift design", "The field name could not be loaded", FailureSeverity.Degraded);
+            }
 
             try
             {
@@ -166,9 +176,14 @@
                     _wellDepth = selectedWell.FINAL_TD ?? _wellDepth;
                 }
             }
-            catch (Exception)
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add("Error loading wells.", Severity.Warning);
+                Snackbar.Add(Answers.Explain(answer, "loading the wells for plunger lift design", "The wells could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "loading the wells for plunger lift design", "The wells could not be loaded", FailureSeverity.Degraded);
             }
         }
         finally
@@ -212,9 +227,14 @@
             _performanceWellUWI = _wellUWI;
             Snackbar.Add("Plunger lift design completed", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error designing plunger lift.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"designing a plunger lift system for well {_wellUWI}", "The plunger lift was not designed"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"designing a plunger lift system for well {_wellUWI}", "The plunger lift was not designed");
         }
         finally
         {
@@ -239,9 +259,10 @@
         {
             Snackbar.Add(Answers.Explain(answer, "saving the plunger lift design", "The plunger lift design was not saved"), Severity.Error);
         }
-        catch (Exception)
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("Error saving design.", Severity.Error);
+            Notifier.Failure(ex, "saving the plunger lift design", "The plunger lift design was not saved");
         }
     }
 
@@ -259,9 +280,14 @@
             _performance = await PumpService.AnalyzePlungerLiftPerformanceAsync(_performanceWellUWI);
             Snackbar.Add("Performance analysis completed", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error analyzing performance.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"analyzing plunger lift performance for well {_performanceWellUWI}", "The plunger lift performance was not analyzed"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"analyzing plunger lift performance for well {_performanceWellUWI}", "The plunger lift performance was not analyzed");
         }
         finally
         {

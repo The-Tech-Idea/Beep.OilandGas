@@ -4,6 +4,7 @@
 @inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Compliance Dashboard</PageTitle>
 
@@ -62,7 +63,7 @@ else
             </MudSelect>
         </MudStack>
 
-        <MudDataGrid T="ObligationSummary" Items="@_obligations" Filterable="true" Sortable="true"
+        <MudDataGrid T="ObligationSummary" Items="@_obligations" Filterable="true" SortMode="SortMode.Multiple"
                      Hover="true" Dense="true" RowClick="@OnRowClick">
             <Columns>
                 <PropertyColumn Property="x => x.ObligType"    Title="Type" />
@@ -116,9 +117,9 @@ else
             _overdueCount  = overdue.Count;
             _upcomingCount = upcoming.Count;
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            _error = "Failed to load compliance data.";
+            _error = Calls.Explain(failure, "loading the compliance dashboard", "The compliance data could not be loaded");
             Snackbar.Add(_error, Severity.Error);
         }
         finally

@@ -320,6 +320,27 @@ public sealed class BusinessProcessServiceClient : IBusinessProcessServiceClient
         }
     }
 
+    public async Task<ProcessInstance?> SubmitForGateReviewAsync(string gateId, GateReviewSubmitRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(gateId))
+            throw new ArgumentException("Gate ID is required.", nameof(gateId));
+
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            return await _apiClient.PostAsync<GateReviewSubmitRequest, ProcessInstance>(
+                $"/api/field/current/gates/submit/{Uri.EscapeDataString(gateId)}",
+                request,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error submitting entity {EntityId} for gate review {GateId}.", request.EntityId, gateId);
+            throw;
+        }
+    }
+
     public async Task<List<ProcessInstanceSummary>> GetGatesAsync(string? status = null, CancellationToken cancellationToken = default)
     {
         try

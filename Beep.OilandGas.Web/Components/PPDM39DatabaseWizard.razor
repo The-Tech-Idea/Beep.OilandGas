@@ -8,16 +8,20 @@
 @using Beep.OilandGas.Web.Components.Demo
 @using Beep.OilandGas.Models.Data.DataManagement
 
-<MudDialog MaxWidth="MaxWidth.Large" FullWidth="true">
+<MudDialog Options="DialogLayout">
     <DialogContent>
         <MudText Typo="Typo.h6" Class="mb-4">PPDM39 Database Setup Wizard</MudText>
         <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
             Follow the steps below to set up your PPDM39 database
         </MudText>
 
-        <MudStepper @bind-ActiveStep="@_activeStep" Variant="Variant.Outlined" Color="Color.Primary">
+        @* The dialog's own buttons move between the steps: they check each step and do its work on leaving it (the default
+           port, the driver check, the script list). The stepper's would skip both, so it draws none of its own. *@
+        <MudStepper @bind-ActiveIndex="@_activeStep">
+            <ActionContent />
+            <ChildContent>
             <!-- Step 1: Database Selection -->
-            <MudStep Title="Select Database" Icon="@Icons.Material.Filled.Storage">
+            <MudStep Title="Select Database">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 1: Select Database Type</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -46,7 +50,7 @@
             </MudStep>
 
             <!-- Step 2: Connection Configuration -->
-            <MudStep Title="Connection Settings" Icon="@Icons.Material.Filled.Settings" Disabled="@(string.IsNullOrEmpty(_selectedDatabaseType))">
+            <MudStep Title="Connection Settings" Disabled="@(string.IsNullOrEmpty(_selectedDatabaseType))">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 2: Configure Connection</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -196,7 +200,7 @@
             </MudStep>
 
             <!-- Step 3: Driver Installation -->
-            <MudStep Title="Driver Installation" Icon="@Icons.Material.Filled.Download" Disabled="@(_connectionTestResult == null || !_connectionTestResult.Success)">
+            <MudStep Title="Driver Installation" Disabled="@(_connectionTestResult == null || !_connectionTestResult.Success)">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 3: Check Driver</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -248,7 +252,7 @@
             <!-- Step 4: Script Execution (Skip in edit mode) -->
             @if (!IsEditMode)
             {
-                <MudStep Title="Execute Scripts" Icon="@Icons.Material.Filled.PlayArrow" Disabled="@(_driverInfo == null || !_driverInfo.IsInstalled)">
+                <MudStep Title="Execute Scripts" Disabled="@(_driverInfo == null || !_driverInfo.IsInstalled)">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 4: Execute Database Scripts</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -381,7 +385,7 @@
             <!-- Step 5: Seed Data (Skip in edit mode) -->
             @if (!IsEditMode)
             {
-                <MudStep Title="Seed Data" Icon="@Icons.Material.Filled.DataObject" Disabled="@(_allScriptsResult == null || !_allScriptsResult.AllSucceeded)">
+                <MudStep Title="Seed Data" Disabled="@(_allScriptsResult == null || !_allScriptsResult.AllSucceeded)">
                     <MudPaper Class="pa-4" Elevation="1">
                         <MudText Typo="Typo.h6" Class="mb-3">Step 5: Seed Database Data</MudText>
                         <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -435,7 +439,7 @@
             }
 
             <!-- Step 6: Save Connection -->
-            <MudStep Title="@(IsEditMode ? "Update Connection" : "Save Connection")" Icon="@Icons.Material.Filled.Save" Disabled="@(!IsEditMode && (_allScriptsResult == null || !_allScriptsResult.AllSucceeded))">
+            <MudStep Title="@(IsEditMode ? "Update Connection" : "Save Connection")" Disabled="@(!IsEditMode && (_allScriptsResult == null || !_allScriptsResult.AllSucceeded))">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 5: Save Connection</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -490,6 +494,7 @@
                     }
                 </MudPaper>
             </MudStep>
+            </ChildContent>
         </MudStepper>
     </DialogContent>
     <DialogActions>
@@ -498,7 +503,7 @@
         {
             <MudButton Variant="Variant.Text" OnClick="PreviousStep" Disabled="_isAdvancing">Previous</MudButton>
         }
-        @if (_activeStep < (IsEditMode ? 2 : 5))
+        @if (_activeStep < LastStep)
         {
             <MudButton Color="Color.Primary" 
                       Variant="Variant.Filled"
@@ -515,7 +520,15 @@
     [Parameter] public ConnectionConfig? Connection { get; set; }
     [Parameter] public bool IsEditMode { get; set; } = false;
 
+    private static readonly DialogOptions DialogLayout = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
     private int _activeStep = 0;
+
+    /// <summary>
+    /// The save step's index: an edit has no script or seed steps, so it is the fourth step there and the sixth when
+    /// creating. The edit's bound read two, which left its update step out of reach of the dialog's Next.
+    /// </summary>
+    private int LastStep => IsEditMode ? 3 : 5;
     private bool _isAdvancing;
     private List<string> _availableDatabaseTypes = new();
     private string _selectedDatabaseType = string.Empty;
@@ -546,7 +559,13 @@
     private bool _isSavingConnection = false;
     private SaveConnectionResult? _saveResult;
     private string? _originalConnectionName; // For edit mode
-    
+
+    /// <summary>
+    /// The database type the connection fields (port, schema) and the checks made with them were filled for: the stored
+    /// connection's in an edit, none for a new connection until its first Next.
+    /// </summary>
+    private string? _fieldsDatabaseType;
+
     // Seed data fields
     private SeedDataOption _selectedSeedOption = SeedDataOption.None;
     private bool _isSeedingData = false;
@@ -571,6 +590,7 @@
             _username = Connection.Username;
             _password = Connection.Password;
             _originalConnectionName = Connection.ConnectionName; // Store original for update
+            _fieldsDatabaseType = Connection.DatabaseType;
         }
     }
 
@@ -1072,15 +1092,28 @@
         _isAdvancing = true;
         try
         {
-        if (_activeStep == 0 && !string.IsNullOrEmpty(_selectedDatabaseType))
+        // A new connection, or a database type the person changed, takes that type's default port and a fresh schema choice,
+        // and what was checked for the other type no longer holds. Otherwise the fields keep what they hold: this ran on
+        // every Next from the first step, so an edit saved the type's default port over the stored one, and its schema as
+        // none — and a new connection lost a port typed before going back to this step.
+        if (_activeStep == 0 && !string.IsNullOrEmpty(_selectedDatabaseType) && _selectedDatabaseType != _fieldsDatabaseType)
         {
+            _fieldsDatabaseType = _selectedDatabaseType;
             _defaultPort = GetDefaultPort(_selectedDatabaseType);
             _port = _defaultPort;
-            
-            // Reset schema selection when database type changes
+
             _selectedSchema = null;
             _availableSchemas = null;
             _privilegeCheckResult = null;
+
+            // The connection test, the driver and the scripts were for the other type.
+            _connectionTestResult = null;
+            _driverInfo = null;
+            _availableScripts = null;
+            _selectedScriptFileNames.Clear();
+            _scriptExecutionResults = null;
+            _allScriptsResult = null;
+            _seedDataResult = null;
         }
 
         if (_activeStep == 1 && _driverInfo == null)
@@ -1099,7 +1132,7 @@
             await CheckSchemaPrivileges();
         }
 
-        if (_activeStep < (IsEditMode ? 2 : 5))
+        if (_activeStep < LastStep)
         {
             _activeStep++;
             StateHasChanged();

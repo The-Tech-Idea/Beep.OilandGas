@@ -5,6 +5,7 @@
 @attribute [Authorize(Roles = "ReservesEngineer,Manager,Admin")]
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Reserves Maturation Report</PageTitle>
 
@@ -102,9 +103,9 @@
         <MudCard Elevation="2">
             <MudCardContent Class="pa-4">
                 <MudText Typo="Typo.subtitle1" Class="mb-3">Volume Distribution</MudText>
-                <MudChart ChartType="ChartType.Bar"
+                <MudChart T="double" ChartType="ChartType.Bar"
                           ChartSeries="@_chartSeries"
-                          XAxisLabels="@_chartLabels"
+                          ChartLabels="@_chartLabels"
                           Width="100%" Height="300px"
                           ChartOptions="@_chartOptions" />
             </MudCardContent>
@@ -154,9 +155,10 @@
 
             if (_data is not null) BuildChartData();
         }
-        catch (Exception)
+        // A failed call says the report did not load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Reserves maturation load error.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading the reserves maturation report", "The reserves maturation report could not be loaded"), Severity.Error);
         }
         finally
         {

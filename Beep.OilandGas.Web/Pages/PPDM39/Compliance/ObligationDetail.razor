@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Obligation Detail</PageTitle>
 
@@ -41,6 +42,10 @@ else
                             <td>@(_detail.ReportingPeriodStart?.ToString("yyyy-MM-dd") ?? "—") → @(_detail.ReportingPeriodEnd?.ToString("yyyy-MM-dd") ?? "—")</td></tr>
                         <tr><td><b>Created By</b></td><td>@(_detail.CreatedByProcess ?? "manual")</td></tr>
                         <tr><td><b>Description</b></td><td>@_detail.Description</td></tr>
+                        @if (_detail.ObligStatus == ObligationStatus.Waived && !string.IsNullOrWhiteSpace(_detail.Remark))
+                        {
+                            <tr><td><b>Waiver Reason</b></td><td>@_detail.Remark</td></tr>
+                        }
                     </tbody>
                 </MudSimpleTable>
             </MudPaper>
@@ -138,9 +143,9 @@ else
         {
             _detail = await ComplianceClient.GetObligationAsync(ObligationId);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            _error = "Failed to load obligation.";
+            _error = Calls.Explain(failure, "loading a compliance obligation", "The obligation could not be loaded");
         }
         finally { _loading = false; }
     }
@@ -153,24 +158,22 @@ else
             Snackbar.Add("Obligation marked as submitted.", Severity.Success);
             await LoadAsync();
         }
-        catch (Exception) { _error = "Submit failed."; Snackbar.Add(_error, Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "submitting a compliance obligation", "The obligation was not marked as submitted");
+            Snackbar.Add(_error, Severity.Error);
+        }
     }
 
     private async Task OnWaive()
     {
-        var result = await DialogService.ShowMessageBoxAsync(
-            "Waive Obligation",
-            "Enter reason (this cannot be undone).",
-            "Waive", cancelText: "Cancel");
-        if (result != true) return;
-
-        try
+        var parameters = new DialogParameters<WaiveObligationDialog>
         {
-            await ComplianceClient.WaiveObligationAsync(ObligationId, "User waived");
-            Snackbar.Add("Obligation waived.", Severity.Info);
-            await LoadAsync();
-        }
-        catch (Exception) { _error = "Waive failed."; Snackbar.Add(_error, Severity.Error); }
+            { x => x.ObligationId, ObligationId }
+        };
+        var dialog = await DialogService.ShowAsync<WaiveObligationDialog>("Waive Obligation", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false }) await LoadAsync();
     }
 
     private async Task OnRecordPayment()

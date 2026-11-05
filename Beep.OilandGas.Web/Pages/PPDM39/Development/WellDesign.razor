@@ -1,12 +1,15 @@
 ﻿@page "/development/well-design"
 @page "/development/well-design/{Id}"
 @page "/development/well-design/new"
+@using Beep.OilandGas.Models.Data.Process
 @inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentServiceClient
+@inject IBusinessProcessServiceClient BusinessProcessClient
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>@(_showDetail ? $"{_well.WellName} — Well Design" : "Development Well Design")</PageTitle>
 
@@ -16,9 +19,11 @@
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
         @if (_showDetail)
         {
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                           OnClick="BackToList"
-                           Title="Back to list" />
+            <MudTooltip Text="Back to list">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                               OnClick="BackToList"
+                               aria-label="Back to list" />
+            </MudTooltip>
         }
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">@(_showDetail ? _well.WellName : "Development Well Design")</MudText>
@@ -70,12 +75,14 @@
                 <PropertyColumn Property="x => x.Status" Title="Status">
                     <CellTemplate><StatusBadge Status="@context.Item.Status" /></CellTemplate>
                 </PropertyColumn>
-                <PropertyColumn Property="x => x.AfeMm" Title="AFE (USD MM)" Format="N2" />
+                @* No AFE column: the development wells API carries no AFE amount for a well (an AFE row names a PROPERTY_ID, not a UWI). *@
                 <PropertyColumn Property="x => x.RigAssigned" Title="Rig" />
                 <TemplateColumn CellClass="d-flex justify-end">
                     <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Title="Open well design" Size="Size.Small" Color="Color.Primary"
-                                       OnClick="@(() => OpenDetail(context.Item.Id))" />
+                        <MudTooltip Text="Open well design">
+                            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" aria-label="Open well design" Size="Size.Small" Color="Color.Primary"
+                                           OnClick="@(() => OpenDetail(context.Item.Id))" />
+                        </MudTooltip>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
@@ -192,27 +199,8 @@
                     @* Tab 4: AFE *@
                     <MudTabPanel Text="AFE" Icon="@Icons.Material.Filled.AttachMoney">
                         <MudPaper Elevation="0" Class="pa-4">
-                            <MudDataGrid T="AfeLine" Items="@_well.AfeLines" Dense="true" Hover="true" Striped="true">
-                                <Columns>
-                                    <PropertyColumn Property="a => a.Category" Title="Category" />
-                                    <PropertyColumn Property="a => a.Description" Title="Description" />
-                                    <TemplateColumn Title="Cost (USD)">
-                                        <CellTemplate>
-                                            <MudText Typo="Typo.body2">@context.Item.CostUsd.ToString("N0")</MudText>
-                                        </CellTemplate>
-                                    </TemplateColumn>
-                                </Columns>
-                            </MudDataGrid>
-                            <MudStack Class="mt-2 pa-2" Spacing="1">
-                                <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
-                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Contingency (15%)</MudText>
-                                    <MudText Typo="Typo.body2"><strong>@(_well.AfeLines.Sum(a => a.CostUsd) * 0.15m).ToString("N0")</strong></MudText>
-                                </MudStack>
-                                <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
-                                    <MudText Typo="Typo.body2"><strong>Total AFE</strong></MudText>
-                                    <MudText Typo="Typo.body2" Color="Color.Warning"><strong>@(_well.AfeLines.Sum(a => a.CostUsd) * 1.15m).ToString("N0")</strong></MudText>
-                                </MudStack>
-                            </MudStack>
+                            @* No AFE lines for a well: the development wells API carries none, and an AFE row names a PROPERTY_ID, not a UWI. *@
+                            <MudAlert Severity="Severity.Info">AFE lines for a development well are not available yet.</MudAlert>
                         </MudPaper>
                     </MudTabPanel>
 
@@ -264,13 +252,33 @@
                     </MudCardHeader>
                     <MudCardContent>
                         <MudStack Spacing="2">
-                            @if (_well.Status == "DRAFT")
+                            @if (_designApproval is not null)
+                            {
+                                <MudStack Spacing="0">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudText Typo="Typo.body2">Well design approval</MudText>
+                                        <StatusBadge Status="@_designApproval.Status" />
+                                    </MudStack>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@DescribeDesignApproval()</MudText>
+                                </MudStack>
+                            }
+                            @if (_well.Status == "DRAFT" && !DesignApprovalOpen)
                             {
                                 <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                            StartIcon="@Icons.Material.Filled.Send"
-                                           FullWidth="true" OnClick="SubmitForApproval">
-                                    Submit for Approval
+                                           FullWidth="true"
+                                           Disabled="@(_submittingApproval || !_approvalLoaded || string.IsNullOrWhiteSpace(_well.Id))"
+                                           OnClick="SubmitForApprovalAsync">
+                                    @(_submittingApproval ? "Submitting…" : "Submit for Approval")
                                 </MudButton>
+                                @if (string.IsNullOrWhiteSpace(_well.Id))
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">A saved well is required before its design can be submitted for approval.</MudText>
+                                }
+                                else if (!_approvalLoaded)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">The well design's approval state could not be read, so it cannot be submitted now.</MudText>
+                                }
                             }
                             @if (_well.Status is "DRAFT" or "APPROVED")
                             {
@@ -298,27 +306,33 @@
                             }
                             @if (_well.Status == "APPROVED")
                             {
+                                @* No endpoint records a development well's spud (WELL.SPUD_DATE) or moves it to drilling; a drilling operation is started without one. *@
                                 <MudButton Variant="Variant.Filled" Color="Color.Success"
                                            StartIcon="@Icons.Material.Filled.PlayArrow"
-                                           FullWidth="true" OnClick="RecordSpud">
+                                           FullWidth="true" Disabled="true">
                                     Record Spud
                                 </MudButton>
+                                <MudAlert Severity="Severity.Info" Dense="true">Recording the spud from the well design is not available yet.</MudAlert>
                             }
                             @if (_well.Status == "DRILLING")
                             {
+                                @* No endpoint records TD reached for a development well; the drilling tracker records only the depth drilled (UpdateDrillingOperation.CurrentDepth). *@
                                 <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                            StartIcon="@Icons.Material.Filled.VerticalAlignBottom"
-                                           FullWidth="true" OnClick="RecordTD">
+                                           FullWidth="true" Disabled="true">
                                     Record TD Reached
                                 </MudButton>
+                                <MudAlert Severity="Severity.Info" Dense="true">Recording TD from the well design is not available yet. The depth drilled is recorded in the drilling tracker.</MudAlert>
                             }
                             @if (_well.Status == "TD_REACHED")
                             {
+                                @* No endpoint completes a development well: the drilling operation's "Completed" status sets the WELL row's ACTIVE_IND to 'N', which is a soft delete. *@
                                 <MudButton Variant="Variant.Filled" Color="Color.Success"
                                            StartIcon="@Icons.Material.Filled.CheckCircle"
-                                           FullWidth="true" OnClick="CompleteWell">
+                                           FullWidth="true" Disabled="true">
                                     Complete Well
                                 </MudButton>
+                                <MudAlert Severity="Severity.Info" Dense="true">Marking the well complete is not available yet.</MudAlert>
                             }
                         </MudStack>
                     </MudCardContent>
@@ -331,7 +345,7 @@
 </MudContainer>
 
 @* ── Assign Rig dialog ────────────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showAssignRigDialog">
+<MudDialog @bind-Visible="_showAssignRigDialog">
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudIcon Icon="@Icons.Material.Filled.Engineering" Color="Color.Primary" />
@@ -375,7 +389,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for well design", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for well design", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         try
         {
@@ -388,14 +411,18 @@
                     w.WELL_TYPE ?? w.CURRENT_CLASS ?? w.WELL_LEVEL_TYPE ?? "Producer",
                     string.Empty,
                     w.CURRENT_STATUS ?? w.STATUS_TYPE ?? "DRAFT",
-                    (decimal)(w.FINAL_TD),
                     string.Empty
                 )).ToList();
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load wells.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the development wells for well design", "The wells could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the development wells for well design", "The wells could not be loaded", FailureSeverity.Degraded);
         }
 
         if (!string.IsNullOrEmpty(Id) && Id != "new")
@@ -407,10 +434,17 @@
         {
             _showDetail = true;
             _well = new WellDetail { WellName = "New Well", Status = "DRAFT" };
+            ForgetDesignApproval();
         }
     }
 
     private async Task LoadWellDetailAsync(string id)
+    {
+        await LoadWellAsync(id);
+        await LoadDesignApprovalAsync(id);
+    }
+
+    private async Task LoadWellAsync(string id)
     {
         try
         {
@@ -429,9 +463,14 @@
                 };
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load well detail.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading a development well's design", "The well's details could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a development well's design", "The well's details could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -448,12 +487,81 @@
         {
             _showDetail = true;
             _well = new WellDetail { WellName = "New Well", Status = "DRAFT" };
+            ForgetDesignApproval();
         }
         else
         {
             _showDetail = false;
         }
     }
+
+    // The well design approval is the GATE_WELL_DESIGN gate review, started by POST /api/field/current/gates/submit/WELL_DESIGN
+    // with the well's UWI; its state is read back from the field's process instances.
+    private const string WellDesignGateId        = "WELL_DESIGN";
+    private const string WellDesignGateProcessId = "GATE_WELL_DESIGN";
+
+    private ProcessInstanceSummary? _designApproval;
+    private string _designApprovalStep = string.Empty;
+    private bool _approvalLoaded;
+    private bool _submittingApproval;
+
+    // A cancelled or failed review leaves the design free to be submitted again; any other state is an open review.
+    private bool DesignApprovalOpen =>
+        _designApproval is not null
+        && !string.Equals(_designApproval.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(_designApproval.Status, "FAILED", StringComparison.OrdinalIgnoreCase);
+
+    private string DescribeDesignApproval()
+    {
+        if (_designApproval is null) return string.Empty;
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(_designApprovalStep)
+            && !string.Equals(_designApproval.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase))
+            parts.Add($"Current step: {_designApprovalStep}");
+        if (_designApproval.StartedAt.HasValue) parts.Add($"submitted {_designApproval.StartedAt.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}");
+        return string.Join(" · ", parts);
+    }
+
+    private void ForgetDesignApproval()
+    {
+        _designApproval     = null;
+        _designApprovalStep = string.Empty;
+        _approvalLoaded     = false;
+    }
+
+    private async Task LoadDesignApprovalAsync(string uwi)
+    {
+        ForgetDesignApproval();
+        try
+        {
+            var instances = await BusinessProcessClient.GetInstancesAsync();
+            _designApproval = instances
+                .Where(i => string.Equals(i.ProcessId, WellDesignGateProcessId, StringComparison.OrdinalIgnoreCase)
+                         && string.Equals(i.EntityId, uwi, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(i => i.StartedAt)
+                .FirstOrDefault();
+
+            if (_designApproval is not null && !string.IsNullOrWhiteSpace(_designApproval.CurrentStepId))
+            {
+                var instance = await BusinessProcessClient.GetInstanceAsync(_designApproval.InstanceId);
+                var step = instance?.StepInstances?.FirstOrDefault(s => s.StepId == _designApproval.CurrentStepId);
+                _designApprovalStep = string.IsNullOrWhiteSpace(step?.StepName) ? _designApproval.CurrentStepId : step.StepName;
+            }
+
+            _approvalLoaded = true;
+        }
+        // The approval state decides whether the design may be submitted; without it the button stays disabled and says why.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading a development well's design approval", "The well design's approval state could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a development well's design approval", "The well design's approval state could not be loaded", FailureSeverity.Degraded);
+        }
+    }
+
     private void OpenDetail(string id) =>
         NavigationManager.NavigateTo($"/development/well-design/{Uri.EscapeDataString(id)}");
 
@@ -466,10 +574,37 @@
     private void OnRowClick(DataGridRowClickEventArgs<WellDesignRow> args) =>
         OpenDetail(args.Item.Id);
 
-    private void SubmitForApproval()
+    private async Task SubmitForApprovalAsync()
     {
-        _well.Status = "APPROVED";
-        Snackbar.Add("Well design submitted for approval.", Severity.Success);
+        if (string.IsNullOrWhiteSpace(_well.Id))
+        {
+            Snackbar.Add("A saved well is required before its design can be submitted for approval.", Severity.Warning);
+            return;
+        }
+
+        _submittingApproval = true;
+        try
+        {
+            await BusinessProcessClient.SubmitForGateReviewAsync(WellDesignGateId, new GateReviewSubmitRequest
+            {
+                EntityId   = _well.Id,
+                EntityType = "WELL",
+                Comments   = $"Well design for {_well.WellName} submitted from the development well design page."
+            });
+
+            Snackbar.Add($"The design of {_well.WellName} was submitted for approval.", Severity.Success);
+            await LoadDesignApprovalAsync(_well.Id);
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "submitting a development well's design for approval", "The well design was not submitted for approval"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "submitting a development well's design for approval", "The well design was not submitted for approval");
+        }
+        finally { _submittingApproval = false; }
     }
 
     private void AssignRig()
@@ -501,7 +636,7 @@
         NavigationManager.NavigateTo(BuildConstructionProgressHref());
     }
 
-    // \u2500\u2500 Rig assignment dialog state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // ── Rig assignment dialog state ─────────────────────────────────────
     private bool      _showAssignRigDialog = false;
     private bool      _assigningRig        = false;
     private string    _rigName             = string.Empty;
@@ -531,29 +666,12 @@
         {
             Snackbar.Add(Answers.Explain(answer, "assigning a rig to a development well", "The rig was not assigned"), Severity.Error);
         }
-        catch (Exception)
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("Failed to assign rig.", Severity.Error);
+            Notifier.Failure(ex, "assigning a rig to a development well", "The rig was not assigned");
         }
         finally { _assigningRig = false; }
-    }
-
-    private void RecordSpud()
-    {
-        _well.Status = "DRILLING";
-        Snackbar.Add($"Spud recorded for {_well.WellName}.", Severity.Success);
-    }
-
-    private void RecordTD()
-    {
-        _well.Status = "TD_REACHED";
-        Snackbar.Add($"TD recorded at {_well.CurrentDepthM}m for {_well.WellName}.", Severity.Success);
-    }
-
-    private void CompleteWell()
-    {
-        _well.Status = "COMPLETE";
-        Snackbar.Add($"{_well.WellName} marked complete.", Severity.Success);
     }
 
     private string GetDrillingWorkflowActionLabel() =>
@@ -629,10 +747,9 @@
         public string Type { get; set; }
         public string TargetZone { get; set; }
         public string Status { get; set; }
-        public decimal AfeMm { get; set; }
         public string RigAssigned { get; set; }
-        public WellDesignRow(string id, string n, string t, string z, string s, decimal afe, string rig)
-        { Id=id; WellName=n; Type=t; TargetZone=z; Status=s; AfeMm=afe; RigAssigned=rig; }
+        public WellDesignRow(string id, string n, string t, string z, string s, string rig)
+        { Id=id; WellName=n; Type=t; TargetZone=z; Status=s; RigAssigned=rig; }
     }
 
     private class WellDetail
@@ -644,7 +761,7 @@
         public string TargetZone { get; set; } = string.Empty;
         public string SurfaceLatLon { get; set; } = string.Empty;
         public int TargetDepthM { get; set; }
-        public string TrajectoryType { get; set; } = "Vertical";
+        public string TrajectoryType { get; set; } = string.Empty;
         public double PlannedInclination { get; set; }
         public int PlannedDays { get; set; }
         public int DaysDrilling { get; set; }
@@ -661,12 +778,10 @@
         public string RigAssigned { get; set; } = string.Empty;
         public List<CasingString> CasingProgram { get; set; } = new();
         public List<FormationTop> FormationTops { get; set; } = new();
-        public List<AfeLine> AfeLines { get; set; } = new();
         public List<NptEntry> NptLog { get; set; } = new();
     }
 
     private record CasingString(string StringName, decimal SizeIn, int SetDepthM, string Grade);
     private record FormationTop(string Name, int DepthM);
-    private record AfeLine(string Category, string Description, decimal CostUsd);
     private record NptEntry(string Date, string Category, double DurationHrs, string Description);
 }

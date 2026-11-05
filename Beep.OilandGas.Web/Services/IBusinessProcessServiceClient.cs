@@ -25,6 +25,7 @@ public interface IBusinessProcessServiceClient
     Task<List<ProcessInstanceSummary>> GetInstancesAsync(CancellationToken cancellationToken = default);
     Task<ProcessInstance?> GetInstanceAsync(string instanceId, CancellationToken cancellationToken = default);
     Task<List<ProcessHistoryEntry>> GetHistoryAsync(string instanceId, CancellationToken cancellationToken = default);
+    Task<ProcessInstance?> SubmitForGateReviewAsync(string gateId, GateReviewSubmitRequest request, CancellationToken cancellationToken = default);
     Task<List<ProcessInstanceSummary>> GetGatesAsync(string? status = null, CancellationToken cancellationToken = default);
     Task<List<ProcessInstanceSummary>> GetPendingGatesAsync(CancellationToken cancellationToken = default);
     Task<ProcessInstanceSummary?> GetGateAsync(string gateId, CancellationToken cancellationToken = default);

@@ -23,7 +23,8 @@
     <!-- The failure store (DIAG-01): every failure logged and stored under the reference the caller is given. -->
     <ProjectReference Include="..\Beep.OilandGas.Diagnostics\Beep.OilandGas.Diagnostics.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
-    <PackageReference Include="Microsoft.OpenApi" Version="3.5.2" />
+    <!-- 3.5.4 or later: 3.0.0-3.5.3 crash on a circular schema reference (NU1903 / GHSA-v5pm-xwqc-g5wc). -->
+    <PackageReference Include="Microsoft.OpenApi" Version="3.5.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
     <PackageReference Include="SkiaSharp" Version="3.119.4" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="$(BeepDMVersion)" />

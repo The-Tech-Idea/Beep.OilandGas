@@ -5,6 +5,8 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Advance Prospect Maturation</PageTitle>
 
@@ -29,7 +31,7 @@
 
     @* ── Filter Bar ───────────────────────────────────────────────────────── *@
     <MudPaper Elevation="1" Class="pa-3 mb-4">
-        <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+        <MudGrid Spacing="2" Class="align-center">
             <MudItem xs="12" sm="4" md="3">
                 <MudSelect T="string" @bind-Value="_filterPlay" Label="Play Type" Dense="true" Margin="Margin.Dense" Clearable="true">
                     <MudSelectItem T="string" Value="@("Clastic")">Clastic</MudSelectItem>
@@ -50,6 +52,11 @@
             </MudItem>
         </MudGrid>
     </MudPaper>
+
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+    }
 
     @* ── Kanban Board ─────────────────────────────────────────────────────── *@
     <div class="kanban-board">
@@ -124,6 +131,7 @@
 
 @code {
     private string _fieldName = string.Empty;
+    private string? _loadError;
     private string? _filterPlay;
     private string? _filterBasin;
     private bool _showArchived;
@@ -150,13 +158,23 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for the prospect board", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for the prospect board", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         await LoadProspectsAsync();
     }
 
     private async Task LoadProspectsAsync()
     {
+        _loadError = null;
         try
         {
             var prospects = await ExplorationService.GetProspectsAsync();
@@ -187,9 +205,15 @@
                 _basins = new List<string>();
             }
         }
-        catch (Exception)
+        // The board says the prospects did not load, rather than showing every column empty.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load prospects.", Severity.Warning);
+            _loadError = Answers.Explain(answer, "loading the prospects for the prospect board", "The prospects could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _loadError = Notifier.FailureText(ex, "loading the prospects for the prospect board", "The prospects could not be loaded");
         }
     }
 
@@ -262,9 +286,14 @@
                 await LoadProspectsAsync();
                 StateHasChanged();
             }
-            catch (Exception)
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add($"Failed to advance {prospect.Name}.", Severity.Error);
+                Snackbar.Add(Answers.Explain(answer, "advancing a prospect to its next maturation stage", $"{prospect.Name} was not advanced"), Severity.Error);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "advancing a prospect to its next maturation stage", $"{prospect.Name} was not advanced");
             }
         }
     }

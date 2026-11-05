@@ -42,17 +42,19 @@ public sealed class ProductionWellPerformanceDto
     public List<WellTestResponse> WellTests { get; set; } = new();
 }
 
+// The API's InterventionCandidateDto: a null figure is one nothing records (the well's name when its WELL row has none, the
+// deferred rate when no test records an oil rate; onset, cost and priority are not recorded anywhere yet).
 public sealed class ProductionInterventionCandidateDto
 {
     public string WellId { get; set; } = string.Empty;
-    public string WellName { get; set; } = string.Empty;
+    public string? WellName { get; set; }
     public string InterventionType { get; set; } = string.Empty;
     public string Problem { get; set; } = string.Empty;
-    public double DeferredBopd { get; set; }
-    public int EstDaysSinceOnset { get; set; }
-    public string Priority { get; set; } = "MEDIUM";
+    public double? DeferredBopd { get; set; }
+    public int? EstDaysSinceOnset { get; set; }
+    public string? Priority { get; set; }
     public string Status { get; set; } = "REVIEW";
-    public double EstCostUsd { get; set; }
+    public double? EstCostUsd { get; set; }
     public string? WorkOrderId { get; set; }
     public string? AfeId { get; set; }
     public string? AfeNumber { get; set; }

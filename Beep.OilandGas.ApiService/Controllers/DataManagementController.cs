@@ -12,7 +12,6 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -99,14 +98,9 @@ namespace Beep.OilandGas.ApiService.Controllers
             if (repository == null)
                     return NotFound(new { error = $"Table '{tableName}' not found." });
 
-            // Handle composite keys (comma-separated)
-            object recordId = id;
-            if (id.Contains(','))
-            {
-                recordId = id.Split(',').ToList();
-            }
-
-            var record = await repository.GetByIdAsync(recordId);
+            // A composite key's values were handed to GetByIdAsync as a list, which refuses a composite key with a fault;
+            // the record is found by its whole key, as the delete finds it.
+            var record = await FindByKeyAsync(repository, tableName, id);
             if (record == null)
                 return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
 
@@ -133,7 +127,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 return BadRequest(new { error = "Invalid entity data." });
 
             var createdEntity = await repository.InsertAsync(entity, userId);
-            var recordId = await GetRecordIdAsync(createdEntity, repository);
+            var recordId = PPDMRecordKey.Of(createdEntity, await _metadata.GetTableMetadataAsync(repository.TableName));
             return CreatedAtAction(nameof(GetTableRecord), new { tableName, id = recordId }, createdEntity);
         }
 
@@ -171,7 +165,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Update an existing record by ID
+        /// Update an existing record by its key (<see cref="PPDMRecordKey"/>: its key columns' values, comma-separated)
         /// PUT /api/datamanagement/{tableName}/{id}
         /// </summary>
         [HttpPut("{tableName}/{id}")]
@@ -190,6 +184,12 @@ namespace Beep.OilandGas.ApiService.Controllers
             var entity = ConvertJsonToEntity(entityJson, repository.EntityType);
             if (entity == null)
                 return BadRequest(new { error = "Invalid entity data." });
+
+            // The address names the record to change and the body must be that record: the update is made by the body's own
+            // key, so a body naming another record changed that one under this record's address.
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            if (PPDMRecordKey.Columns(metadata).Count > 0 && PPDMRecordKey.Of(entity, metadata) != RouteKey(id))
+                throw RefusalException.Invalid($"The record sent is not the {tableName} record '{id}': its key does not match.");
 
             var updatedEntity = await repository.UpdateAsync(entity, userId);
             return Ok(updatedEntity);
@@ -219,12 +219,14 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Delete a record (soft delete)
+        /// Delete a record (soft delete: ACTIVE_IND = 'N', the row kept), named by its key (<see cref="PPDMRecordKey"/>: its
+        /// key columns' values, comma-separated)
         /// DELETE /api/datamanagement/{tableName}/{id}
         /// </summary>
         [HttpDelete("{tableName}/{id}")]
         public async Task<ActionResult> DeleteTableRecord(string tableName, string id)
         {
+            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
             if (string.IsNullOrWhiteSpace(id))
@@ -233,17 +235,15 @@ namespace Beep.OilandGas.ApiService.Controllers
             if (repository == null)
                     return NotFound(new { error = $"Table '{tableName}' not found." });
 
-            // Handle composite keys (comma-separated)
-            object recordId = id;
-            if (id.Contains(','))
-            {
-                recordId = id.Split(',').ToList();
-            }
-
-            var deleted = await repository.DeleteAsync(recordId);
-            if (!deleted)
+            // The key was handed to DeleteAsync, which takes the record itself, so no delete through this endpoint ever
+            // removed anything. The record is found by its whole key and soft-deleted, as this endpoint says and as
+            // PPDM39GenericDataService's delete does.
+            var record = await FindByKeyAsync(repository, tableName, id);
+            if (record == null)
                 return NotFound(new { error = $"Record with ID '{id}' not found in table '{tableName}'." });
 
+            _commonColumnHandler.SoftDelete((IPPDMEntity)record, userId);
+            await repository.UpdateAsync(record, userId);
             return NoContent();
         }
 
@@ -517,46 +517,58 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         /// <summary>
-        /// Gets the entity type for a table name using metadata
+        /// Gets the entity type for a table name using metadata — the web's generic table page reads the rows as the same
+        /// class, through the same owner.
         /// </summary>
         private async Task<Type?> GetEntityTypeForTableAsync(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return null;
 
-            // Try to get metadata first
             var tableMetadata = await _metadata.GetTableMetadataAsync(tableName);
-            if (tableMetadata != null && !string.IsNullOrWhiteSpace(tableMetadata.EntityTypeName))
-            {
-                var assembly = typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly;
-                var entityType = assembly.GetType($"Beep.OilandGas.PPDM39.Models.{tableMetadata.EntityTypeName}");
-                if (entityType != null)
-                    return entityType;
-            }
-
-            // Fallback to assembly lookup
-            var assembly2 = typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly;
-            
-            // Try exact match
-            var entityType2 = assembly2.GetType($"Beep.OilandGas.PPDM39.Models.{tableName}");
-            if (entityType2 != null)
-                return entityType2;
-
-            // Try case-insensitive search
-            entityType2 = assembly2.GetTypes()
-                .FirstOrDefault(t => t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase) &&
-                                    typeof(IPPDMEntity).IsAssignableFrom(t));
-            if (entityType2 != null)
-                return entityType2;
-
-            // Try removing underscores (e.g., STRAT_UNIT -> STRATUNIT)
-            var normalizedName = tableName.Replace("_", "");
-            entityType2 = assembly2.GetTypes()
-                .FirstOrDefault(t => t.Name.Equals(normalizedName, StringComparison.OrdinalIgnoreCase) &&
-                                    typeof(IPPDMEntity).IsAssignableFrom(t));
-            
-            return entityType2;
+            return PPDMEntityTypes.Find(tableMetadata?.EntityTypeName, tableName);
         }
+
+        /// <summary>
+        /// The record a key names (<see cref="PPDMRecordKey"/>), or null when there is none. The text columns of the key
+        /// narrow the query; every column of the key, compared as the key writes it, decides the match, so a number or a
+        /// date in a key is not compared as text by the data source.
+        /// </summary>
+        private async Task<object?> FindByKeyAsync(PPDMGenericRepository repository, string tableName, string routeKey)
+        {
+            var key = RouteKey(routeKey);
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var columns = PPDMRecordKey.Columns(metadata);
+            if (columns.Count == 0)
+                throw RefusalException.Invalid($"Table '{tableName}' names no key, so a record cannot be named in it.");
+
+            var parts = PPDMRecordKey.Read(key, metadata)
+                ?? throw RefusalException.Invalid(
+                    $"'{key}' does not name a {tableName} record: give a value for each key column ({string.Join(", ", columns)}), separated by commas.");
+
+            var filters = parts
+                .Where(part => repository.EntityType.GetProperty(part.Key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.PropertyType == typeof(string))
+                .Select(part => new AppFilter { FieldName = part.Key, Operator = "=", FilterValue = part.Value })
+                .ToList();
+
+            var matches = (await repository.GetAsync(filters))
+                .Where(row => PPDMRecordKey.Of(row, metadata) == key)
+                .ToList();
+
+            return matches.Count switch
+            {
+                0 => null,
+                1 => matches[0],
+                _ => throw RefusalException.Conflict($"More than one {tableName} record has the key '{key}', so none was changed.")
+            };
+        }
+
+        /// <summary>
+        /// A record key as its address carried it. Kestrel decodes a request path except for an escaped slash, which it
+        /// leaves as <c>%2F</c> in the route value, so a key holding a slash (a Canadian UWI, <c>100/06-11-033-24W4/00</c>)
+        /// would never match its record.
+        /// </summary>
+        private static string RouteKey(string id) => id.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Converts JSON element to entity object. JSON that is not a record of the table's entity is refused in this API's
@@ -579,40 +591,6 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (JsonException notAnEntity)
             {
                 throw new RefusalException(RefusalKind.Invalid, $"The data is not a valid {entityType.Name} record.", notAnEntity);
-            }
-        }
-
-        /// <summary>
-        /// Gets the record ID from an entity object using metadata
-        /// </summary>
-        private async Task<string?> GetRecordIdAsync(object entity, PPDMGenericRepository repository)
-        {
-            var tableMetadata = await _metadata.GetTableMetadataAsync(repository.TableName);
-            if (tableMetadata?.PrimaryKeyColumn == null)
-                return null;
-
-            // Handle composite primary keys
-            if (tableMetadata.PrimaryKeyColumn.Contains(','))
-            {
-                var keyParts = tableMetadata.PrimaryKeyColumn.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                var values = new List<string>();
-
-                foreach (var keyPart in keyParts)
-                {
-                    var prop = entity.GetType().GetProperty(keyPart);
-                    var value = prop?.GetValue(entity)?.ToString();
-                    if (string.IsNullOrEmpty(value))
-                        return null;
-                    values.Add(value);
-                }
-
-                return string.Join(",", values);
-            }
-            else
-            {
-                // Single primary key
-                var prop = entity.GetType().GetProperty(tableMetadata.PrimaryKeyColumn);
-                return prop?.GetValue(entity)?.ToString();
             }
         }
     }

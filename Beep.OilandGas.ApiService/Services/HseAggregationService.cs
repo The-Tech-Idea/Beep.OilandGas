@@ -1,58 +1,31 @@
 using System;
-using Beep.OilandGas.Models.Core.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Microsoft.Extensions.Logging;
-using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Report;
-using HseIncident=Beep.OilandGas.PPDM39.Models.HSE_INCIDENT;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.ApiService.Services
 {
+    /// <summary>
+    /// The HSE incident summary behind <c>GET api/hse/aggregation/incidents</c>. Its counts are
+    /// <see cref="IHSEKPIService.CountIncidentsAsync"/>'s, the one rule for an incident's tier (the severity on its primary
+    /// detail). This service had counted tiers by HSE_INCIDENT.INCIDENT_CLASS_ID, which nothing writes, so its Tier 1 count
+    /// was zero while the KPI service counted the recorded tier; and it ignored the field it was asked about (2026-10-10).
+    /// </summary>
     public class HseAggregationService
     {
-        private readonly IDMEEditor _editor;
-        private readonly ICommonColumnHandler _commonColumnHandler;
-        private readonly IPPDM39DefaultsRepository _defaults;
-        private readonly IPPDMMetadataRepository _metadata;
-        private readonly string _connectionName;
-        private readonly ILogger<HseAggregationService> _logger;
+        private readonly IHSEKPIService _incidents;
 
-        public HseAggregationService(IDMEEditor editor,ICommonColumnHandler commonColumnHandler,
-            IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,
-            string connectionName="PPDM39",ILogger<HseAggregationService>? logger=null)
+        public HseAggregationService(IHSEKPIService incidents)
         {
-            _editor = editor;
-            _commonColumnHandler = commonColumnHandler;
-            _defaults = defaults;
-            _metadata = metadata;
-            _connectionName = connectionName;
-            _logger = logger;
+            _incidents = incidents ?? throw new ArgumentNullException(nameof(incidents));
         }
 
-        private PPDMGenericRepository GetRepo<T>(string t)=>new(_editor,_commonColumnHandler,_defaults,_metadata,typeof(T),_connectionName,t);
-
-        public async Task<IncidentSummary> GetIncidentSummaryAsync(string? fieldId=null,DateTime? start=null,DateTime? end=null)
+        public async Task<IncidentSummary> GetIncidentSummaryAsync(string? fieldId = null, DateTime? start = null, DateTime? end = null)
         {
-            var r=new IncidentSummary();
-            var repo=GetRepo<HseIncident>("HSE_INCIDENT");
-            var f=new List<AppFilter>{new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
-            if(start.HasValue)f.Add(new(){FieldName="INCIDENT_DATE",Operator=">=",FilterValue=start.Value.ToString("yyyy-MM-dd")});
-            if(end.HasValue)f.Add(new(){FieldName="INCIDENT_DATE",Operator="<=",FilterValue=end.Value.ToString("yyyy-MM-dd")});
-            var entities=(await repo.GetAsync(f)).OfType<HseIncident>().ToList();
-            r.Total=entities.Count;
-            // PPDM HSE_INCIDENT uses INCIDENT_CLASS_ID for classification
-            r.Tier1=entities.Count(e=>string.Equals(e.INCIDENT_CLASS_ID,"TIER_1",StringComparison.OrdinalIgnoreCase));
-            r.Tier2=entities.Count(e=>string.Equals(e.INCIDENT_CLASS_ID,"TIER_2",StringComparison.OrdinalIgnoreCase));
-            return r;
+            var counts = await _incidents.CountIncidentsAsync(fieldId, start, end);
+            return new IncidentSummary { Total = counts.Total, Tier1 = counts.Tier1, Tier2 = counts.Tier2 };
         }
     }
 
-    public class IncidentSummary{public int Total{get;set;}public int Tier1{get;set;}public int Tier2{get;set;}public Dictionary<string,int> ByType{get;set;}=new();}
+    // No incidents-by-type figure: it was a dictionary nothing filled, answered as "no incidents of any type".
+    public class IncidentSummary { public int Total { get; set; } public int Tier1 { get; set; } public int Tier2 { get; set; } }
 }

@@ -3,6 +3,7 @@
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject IDialogService DialogService
 
 <PageTitle>Gate Review — @Id</PageTitle>
@@ -14,15 +15,27 @@
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
                        OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/gates")' />
         <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">@_gateName</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <StatusBadge Status="@_status" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Entity: @_entityId · Submitted by @_submittedBy on @(_submittedAt?.ToString("dd-MMM-yyyy") ?? "N/A")</MudText>
-            </MudStack>
+            <MudText Typo="Typo.h5">@(_loaded ? _gateName : $"Gate review {Id}")</MudText>
+            @if (_loaded)
+            {
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                    <StatusBadge Status="@_status" />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Entity: @_entityId · Submitted by @_submittedBy on @(_submittedAt?.ToString("dd-MMM-yyyy") ?? "N/A")</MudText>
+                </MudStack>
+            }
         </MudStack>
     </MudStack>
 
     <MudDivider Class="mb-4" />
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+    }
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">@_loadError</MudAlert>
+    }
 
     <MudGrid Spacing="3">
 
@@ -56,25 +69,35 @@
                                   Lines="3" Variant="Variant.Outlined" Class="mb-3" />
                     <MudDatePicker @bind-Date="_deferDate" Label="Defer To (if deferring)"
                                    Variant="Variant.Outlined" Class="mb-4" />
+                    @* A decision is offered only for the gate this page loaded: until the review for the Id in the address
+                       has loaded, nothing of another gate can be approved, rejected or deferred. *@
                     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
                         <MudButton Variant="Variant.Filled" Color="Color.Success"
                                    StartIcon="@Icons.Material.Filled.ThumbUp"
-                                   Disabled="@(!AllDocumentsSubmitted)"
+                                   Disabled="@(!_loaded || !AllDocumentsSubmitted)"
                                    OnClick="ApproveAsync">
                             Approve
                         </MudButton>
                         <MudButton Variant="Variant.Filled" Color="Color.Error"
                                    StartIcon="@Icons.Material.Filled.ThumbDown"
+                                   Disabled="@(!_loaded)"
                                    OnClick="RejectAsync">
                             Reject
                         </MudButton>
                         <MudButton Variant="Variant.Outlined" Color="Color.Warning"
                                    StartIcon="@Icons.Material.Filled.Schedule"
+                                   Disabled="@(!_loaded)"
                                    OnClick="DeferAsync">
                             Defer
                         </MudButton>
                     </MudStack>
-                    @if (!AllDocumentsSubmitted)
+                    @if (!_loaded)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                            A decision can be recorded once this gate review has loaded.
+                        </MudText>
+                    }
+                    else if (!AllDocumentsSubmitted)
                     {
                         <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-2">
                             All required documents must be submitted before approval.
@@ -98,11 +121,15 @@
     private string   _loadedId    = string.Empty;
     private string   _gateName    = string.Empty;
     private string   _entityId    = string.Empty;
-    private string   _status      = "AWAITING APPROVAL";
+    private string   _status      = string.Empty;
     private string   _submittedBy = string.Empty;
     private DateTime? _submittedAt;
     private string   _comments    = string.Empty;
     private DateTime? _deferDate  = null;
+    // Whether what the page shows is the review of the gate named by Id; the decisions are offered only then.
+    private bool     _loaded;
+    private bool     _loading;
+    private string?  _loadError;
 
     private List<GateChecklistTable.GateChecklistItem> _checklist = new();
 
@@ -123,31 +150,56 @@
 
     private async Task LoadReviewAsync()
     {
+        // What the page showed belonged to the previous gate. It is cleared before the new gate is asked for, so a failed or
+        // slow load leaves nothing of another gate on the page to act on.
+        var id = Id;
+        _loaded      = false;
+        _loading     = true;
+        _loadError   = null;
+        _gateName    = string.Empty;
+        _entityId    = string.Empty;
+        _status      = string.Empty;
+        _submittedBy = string.Empty;
+        _submittedAt = null;
+        _comments    = string.Empty;
+        _deferDate   = null;
+        _checklist   = new();
+
         try
         {
-            // Load gate summary
-            var gate = await BusinessProcessClient.GetGateAsync(Id);
-            if (gate != null)
+            var gate = await BusinessProcessClient.GetGateAsync(id);
+            var cl = await BusinessProcessClient.GetGateChecklistAsync(id);
+            // The address moved on to another gate while these were loading; that gate's load owns the page.
+            if (id != Id) return;
+
+            if (gate is null)
             {
-                _gateName    = string.IsNullOrWhiteSpace(gate.ProcessName) ? gate.ProcessId : gate.ProcessName;
-                _entityId    = gate.EntityId;
-                _status      = gate.Status;
-                _submittedBy = gate.StartedBy;
-                _submittedAt = gate.StartedAt;
+                _loadError = "This gate review was not found.";
+                return;
             }
 
-            // Load checklist
-            var cl = await BusinessProcessClient.GetGateChecklistAsync(Id);
-            if (cl?.RequiredDocuments != null)
-            {
-                _checklist = cl.RequiredDocuments
-                    .Select(doc => new GateChecklistTable.GateChecklistItem(doc, "RM_INFORMATION_ITEM", false))
-                    .ToList();
-            }
+            _gateName    = string.IsNullOrWhiteSpace(gate.ProcessName) ? gate.ProcessId : gate.ProcessName;
+            _entityId    = gate.EntityId;
+            _status      = gate.Status;
+            _submittedBy = gate.StartedBy;
+            _submittedAt = gate.StartedAt;
+            _checklist   = (cl?.RequiredDocuments ?? new List<string>())
+                .Select(doc => new GateChecklistTable.GateChecklistItem(doc, "RM_INFORMATION_ITEM", false))
+                .ToList();
+            _loaded = true;
         }
-        catch
+        // A failed call says the review did not load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load gate review detail.", Severity.Warning);
+            // Reported whichever gate the page now shows; it is said only on the page of the gate it was for.
+            var explained = Calls.Explain(failure, "loading a gate review", "Could not load gate review detail");
+            if (id != Id) return;
+            _loadError = explained;
+            Snackbar.Add(_loadError, Severity.Warning);
+        }
+        finally
+        {
+            if (id == Id) _loading = false;
         }
     }
 
@@ -168,7 +220,10 @@
             Snackbar.Add("Gate approved.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
-        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "approving a gate review", "The gate was not approved"), Severity.Error);
+        }
     }
 
     private async Task RejectAsync()
@@ -189,7 +244,10 @@
             Snackbar.Add("Gate rejected.", Severity.Warning);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
-        catch (Exception) { Snackbar.Add("Rejection failed.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "rejecting a gate review", "The gate was not rejected"), Severity.Error);
+        }
     }
 
     private async Task DeferAsync()
@@ -206,6 +264,9 @@
             Snackbar.Add("Gate deferred.", Severity.Info);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
-        catch (Exception) { Snackbar.Add("Deferral failed.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "deferring a gate review", "The gate was not deferred"), Severity.Error);
+        }
     }
 }

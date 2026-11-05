@@ -41,8 +41,9 @@ public class HSEKPIService : IHSEKPIService
     {
         var exposureHours = await GetExposureHoursAsync(fieldId, range);
 
-        var tier1Count = await CountIncidentsAsync(fieldId, range, tier: 1);
-        var tier2Count = await CountIncidentsAsync(fieldId, range, tier: 2);
+        var incidents  = await CountIncidentsAsync(fieldId, range.Start, range.End);
+        var tier1Count = incidents.Tier1;
+        var tier2Count = incidents.Tier2;
         var ltis       = await CountInjuriesAsync(fieldId, range, "LTI");
         var fatalities = await CountInjuriesAsync(fieldId, range, "FATALITY");
         var recordable = await CountInjuriesAsync(fieldId, range, null);  // all injury types
@@ -80,8 +81,9 @@ public class HSEKPIService : IHSEKPIService
             var range       = new DateRangeFilter(periodStart, periodEnd);
 
             var exp    = await GetExposureHoursAsync(fieldId, range);
-            var t1     = await CountIncidentsAsync(fieldId, range, tier: 1);
-            var t2     = await CountIncidentsAsync(fieldId, range, tier: 2);
+            var counts = await CountIncidentsAsync(fieldId, range.Start, range.End);
+            var t1     = counts.Tier1;
+            var t2     = counts.Tier2;
             double s   = exp > 0 ? exp : 1;
 
             result.Add(new TierRateTrend(
@@ -127,54 +129,75 @@ public class HSEKPIService : IHSEKPIService
         return exp > 0 ? (rec * 1_000_000.0) / exp : 0;
     }
 
-    private async Task<int> CountIncidentsAsync(string fieldId, DateRangeFilter range, int? tier)
+    /// <summary>
+    /// The one count of HSE incidents: active incidents — in the field when one is named (through its HSE_INCIDENT_COMPONENT
+    /// rows), in every field otherwise — dated within the range when one is given; how many are open and how many are in each
+    /// tier, by <see cref="HSEIncidentRules"/>.
+    /// </summary>
+    public async Task<IncidentCounts> CountIncidentsAsync(string? fieldId, DateTime? start, DateTime? end)
     {
-        var incidentIds = await GetFieldIncidentIdsAsync(fieldId);
-        if (incidentIds.Count == 0)
+        HashSet<string>? fieldIncidentIds = null;
+        if (!string.IsNullOrWhiteSpace(fieldId))
         {
-            return 0;
+            fieldIncidentIds = await GetFieldIncidentIdsAsync(fieldId);
+            if (fieldIncidentIds.Count == 0)
+            {
+                return new IncidentCounts(0, 0, 0, 0, 0, 0);
+            }
         }
 
-        var incidentRepo = BuildRepo<HSE_INCIDENT>("HSE_INCIDENT");
         var incidentFilters = new List<AppFilter>
         {
-            new AppFilter { FieldName = "INCIDENT_DATE", Operator = ">=", FilterValue = range.Start.ToString("yyyy-MM-dd") },
-            new AppFilter { FieldName = "INCIDENT_DATE", Operator = "<=", FilterValue = range.End.ToString("yyyy-MM-dd") },
-            new AppFilter { FieldName = "ACTIVE_IND",   Operator = "=",  FilterValue = "Y" },
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
         };
+        if (start.HasValue)
+        {
+            incidentFilters.Add(new AppFilter { FieldName = "INCIDENT_DATE", Operator = ">=", FilterValue = start.Value.ToString("yyyy-MM-dd") });
+        }
+        if (end.HasValue)
+        {
+            incidentFilters.Add(new AppFilter { FieldName = "INCIDENT_DATE", Operator = "<=", FilterValue = end.Value.ToString("yyyy-MM-dd") });
+        }
 
-        var incidentsInRange = (await incidentRepo.GetAsync(incidentFilters))
+        var incidentIds = (await BuildRepo<HSE_INCIDENT>("HSE_INCIDENT").GetAsync(incidentFilters))
             .OfType<HSE_INCIDENT>()
-            .Where(incident => incidentIds.Contains(incident.INCIDENT_ID))
             .Select(incident => incident.INCIDENT_ID)
+            .Where(id => !string.IsNullOrWhiteSpace(id) && (fieldIncidentIds is null || fieldIncidentIds.Contains(id)))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        if (incidentsInRange.Count == 0)
+        if (incidentIds.Count == 0)
         {
-            return 0;
+            return new IncidentCounts(0, 0, 0, 0, 0, 0);
         }
 
-        if (!tier.HasValue)
-        {
-            return incidentsInRange.Count;
-        }
-
-        var detailRepo = BuildRepo<HSE_INCIDENT_DETAIL>("HSE_INCIDENT_DETAIL");
-        var detailFilters = new List<AppFilter>
+        var activeFilter = new List<AppFilter>
         {
             new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
         };
 
-        var incidentsForTier = (await detailRepo.GetAsync(detailFilters))
+        var detailsByIncident = (await BuildRepo<HSE_INCIDENT_DETAIL>("HSE_INCIDENT_DETAIL").GetAsync(activeFilter))
             .OfType<HSE_INCIDENT_DETAIL>()
-            .Where(detail => incidentsInRange.Contains(detail.INCIDENT_ID))
-            .GroupBy(detail => detail.INCIDENT_ID)
-            .Select(group => group.OrderBy(detail => detail.DETAIL_TYPE == "PRIMARY" ? 0 : 1)
-                .ThenBy(detail => detail.DETAIL_OBS_NO)
-                .First())
-            .Count(detail => MapSeverityIdToTier(detail.INCIDENT_SEVERITY_ID) == tier.Value);
+            .Where(detail => incidentIds.Contains(detail.INCIDENT_ID))
+            .ToLookup(detail => detail.INCIDENT_ID, StringComparer.OrdinalIgnoreCase);
 
-        return incidentsForTier;
+        var responsesByIncident = (await BuildRepo<HSE_INCIDENT_RESPONSE>("HSE_INCIDENT_RESPONSE").GetAsync(activeFilter))
+            .OfType<HSE_INCIDENT_RESPONSE>()
+            .Where(response => incidentIds.Contains(response.INCIDENT_ID))
+            .ToLookup(response => response.INCIDENT_ID, StringComparer.OrdinalIgnoreCase);
+
+        var tiers = incidentIds
+            .Select(id => HSEIncidentRules.TierOf(HSEIncidentRules.PrimaryDetail(detailsByIncident[id])?.INCIDENT_SEVERITY_ID))
+            .ToList();
+        var open = incidentIds
+            .Count(id => HSEIncidentRules.IsOpen(HSEIncidentRules.StateOf(HSEIncidentRules.LatestStatus(responsesByIncident[id]))));
+
+        return new IncidentCounts(
+            Total: incidentIds.Count,
+            Open:  open,
+            Tier1: tiers.Count(tier => tier == 1),
+            Tier2: tiers.Count(tier => tier == 2),
+            Tier3: tiers.Count(tier => tier == 3),
+            Tier4: tiers.Count(tier => tier == HSEIncidentRules.UnrecordedTier));
     }
 
     private async Task<int> CountInjuriesAsync(string fieldId, DateRangeFilter range, string? injuryType)
@@ -253,20 +276,4 @@ public class HSEKPIService : IHSEKPIService
         => new(
             _editor, _commonColumnHandler, _defaults, _metadata,
             typeof(TEntity), _connectionName, tableName);
-
-    private static int MapSeverityIdToTier(string? severityId)
-    {
-        if (string.IsNullOrWhiteSpace(severityId))
-        {
-            return 4;
-        }
-
-        if (severityId.StartsWith("TIER_", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(severityId[5..], out var parsedTier))
-        {
-            return parsedTier;
-        }
-
-        return int.TryParse(severityId, out parsedTier) ? parsedTier : 4;
-    }
 }

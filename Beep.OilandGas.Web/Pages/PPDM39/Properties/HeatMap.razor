@@ -7,6 +7,8 @@
 @inject IPropertiesServiceClient PropertiesService
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Generate Field Heat Map</PageTitle>
 
@@ -87,9 +89,14 @@
                 _fieldName = field.FieldName ?? string.Empty;
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading field.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the active field for the heat map", "The active field could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field for the heat map", "The active field could not be loaded", FailureSeverity.Degraded);
         }
         finally
         {
@@ -118,9 +125,14 @@
                 _fieldId, _startDate.Value, _endDate.Value);
             Snackbar.Add("Heat map generated successfully", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error generating heat map.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "generating a heat map for the active field", "The heat map was not generated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "generating a heat map for the active field", "The heat map was not generated");
         }
         finally
         {
@@ -148,9 +160,14 @@
             _heatMapResult = await PropertiesService.GenerateProductionHeatMapAsync(_fieldId, _startDate.Value, _endDate.Value);
             Snackbar.Add("Production heat map generated successfully", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error generating production heat map.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "generating a production heat map", "The production heat map was not generated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "generating a production heat map", "The production heat map was not generated");
         }
         finally
         {
@@ -171,9 +188,14 @@
             var heatMapId = await PropertiesService.SaveHeatMapConfigurationAsync(configuration);
             Snackbar.Add("Heat map configuration saved successfully", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error saving configuration.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "saving a heat map configuration", "The heat map configuration was not saved"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "saving a heat map configuration", "The heat map configuration was not saved");
         }
     }
 }

@@ -7,6 +7,7 @@
 @inject IExplorationServiceClient ExplorationService
 @inject ILifeCycleService LifeCycleService
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Evaluate Exploration Prospects</PageTitle>
 
@@ -112,6 +113,10 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
+            }
             else if (!_isLoading)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
@@ -137,6 +142,7 @@
     private string _fieldName = string.Empty;
     private List<ProspectListItem>? _prospects;
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -146,7 +152,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for the prospect pipeline", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for the prospect pipeline", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         await LoadProspects();
     }
@@ -154,6 +169,7 @@
     private async Task LoadProspects()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             var prospects = await ExplorationService.GetProspectsAsync();
@@ -167,10 +183,17 @@
                 .OrderBy(prospect => prospect.Name)
                 .ToList();
         }
-        catch (Exception)
+        // The page says the prospects did not load, rather than that there are none yet.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading prospects.", Severity.Error);
-            _prospects = new List<ProspectListItem>();
+            _prospects = null;
+            _loadError = Answers.Explain(answer, "loading the field's exploration prospects", "The prospects could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _prospects = null;
+            _loadError = Notifier.FailureText(ex, "loading the field's exploration prospects", "The prospects could not be loaded");
         }
         finally
         {
@@ -202,9 +225,14 @@
                 Snackbar.Add("Prospect created successfully", Severity.Success);
                 await LoadProspects();
             }
-            catch (Exception)
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add("Error creating prospect.", Severity.Error);
+                Snackbar.Add(Answers.Explain(answer, "creating an exploration prospect", "The prospect was not created"), Severity.Error);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "creating an exploration prospect", "The prospect was not created");
             }
         }
     }
@@ -216,9 +244,15 @@
         {
             currentProspect = await ExplorationService.GetProspectAsync(prospect.Id);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading prospect details.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "loading a prospect to evaluate", "The prospect's details could not be loaded"), Severity.Error);
+            return;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a prospect to evaluate", "The prospect's details could not be loaded");
             return;
         }
 
@@ -252,9 +286,14 @@
                 Snackbar.Add("Prospect updated successfully", Severity.Success);
                 await LoadProspects();
             }
-            catch (Exception)
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add("Error updating prospect.", Severity.Error);
+                Snackbar.Add(Answers.Explain(answer, "updating an exploration prospect", "The prospect was not updated"), Severity.Error);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "updating an exploration prospect", "The prospect was not updated");
             }
         }
     }
@@ -278,9 +317,10 @@
             {
                 Snackbar.Add(Answers.Explain(answer, "deleting a prospect", "The prospect was not deleted"), Severity.Error);
             }
-            catch (Exception)
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
             {
-                Snackbar.Add("Error deleting prospect.", Severity.Error);
+                Notifier.Failure(ex, "deleting a prospect", "The prospect was not deleted");
             }
         }
     }

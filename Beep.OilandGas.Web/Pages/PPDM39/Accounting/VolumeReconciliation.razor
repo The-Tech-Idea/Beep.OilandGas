@@ -5,6 +5,8 @@
 @inject IAccountingServiceClient AccountingServiceClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Reconcile Oil Run Tickets</PageTitle>
 
@@ -151,7 +153,16 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch { /* field name is non-critical */ }
+        // The reconciliation needs the active field: the person is told it could not be read, rather than later that there is none.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field for volume reconciliation", "The active field could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field for volume reconciliation", "The active field could not be loaded", FailureSeverity.Degraded);
+        }
     }
 
     private async Task ReconcileVolumes()
@@ -180,11 +191,21 @@
 
             _reconciliationResult = await AccountingServiceClient.ReconcileVolumesAsync(request);
 
+            if (_reconciliationResult is null)
+            {
+                Snackbar.Add("No reconciliation was returned.", Severity.Error);
+                return;
+            }
             Snackbar.Add("Volume reconciliation completed", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error reconciling volumes.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "reconciling metered and allocated volumes", "The volumes were not reconciled"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "reconciling metered and allocated volumes", "The volumes were not reconciled");
         }
         finally
         {
@@ -198,8 +219,7 @@
         {
             ReconciliationStatus.Matched => Color.Success,
             ReconciliationStatus.VarianceDetected => Color.Warning,
-            ReconciliationStatus.Error => Color.Error,
-            _ => Color.Default
+            ReconciliationStatus.Error => Color.Error
         };
     }
 

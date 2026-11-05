@@ -5,7 +5,7 @@
 @inject IConnectionService ConnectionService
 @inject OilGasCallFailures Calls
 
-<MudDialog MaxWidth="MaxWidth.Medium" FullWidth="true">
+<MudDialog Options="DialogLayout">
     <DialogContent>
         <MudContainer Class="pa-4">
             <MudText Typo="Typo.h6" Class="mb-4">
@@ -16,16 +16,20 @@
                 Create a demo SQLite database on the server to test the application. Demo databases are automatically cleaned up after the retention period.
             </MudText>
 
-            <MudStepper @bind-ActiveStep="@_activeStep" Color="Color.Primary" Variant="Variant.Filled">
+            @* The dialog's own buttons and the step's Create Database button move the wizard on, so the stepper draws none of
+               its own. *@
+            <MudStepper @bind-ActiveIndex="@_activeStep">
+                <ActionContent />
+                <ChildContent>
                 <!-- Step 1: Seed Data Selection -->
-                <MudStep Title="Seed Data" Icon="@Icons.Material.Filled.DataObject">
+                <MudStep Title="Seed Data">
                     <MudPaper Class="pa-4" Elevation="1">
                         <SeedDataSelector @bind-SelectedOption="@_selectedSeedOption" />
                     </MudPaper>
                 </MudStep>
 
                 <!-- Step 2: Create Database -->
-                <MudStep Title="Create Database" Icon="@Icons.Material.Filled.Storage">
+                <MudStep Title="Create Database">
                     <MudPaper Class="pa-4" Elevation="1">
                         @if (_isCreatingDatabase)
                         {
@@ -74,7 +78,7 @@
                                         </MudCardContent>
                                     </MudCard>
 
-                                    <MudExpansionPanels Elevation="0" Variant="Variant.Outlined" MultiExpansion="true">
+                                    <MudExpansionPanels Elevation="0" Outlined="true" MultiExpansion="true">
                                         <MudExpansionPanel Text="Schema Migration Evidence" Icon="@Icons.Material.Filled.FactCheck">
                                             <MudStack Spacing="2">
                                                 <MudText Typo="Typo.body2">Plan ID: @DisplayValue(_createResult.SchemaPlanId)</MudText>
@@ -112,6 +116,7 @@
                         }
                     </MudPaper>
                 </MudStep>
+                </ChildContent>
             </MudStepper>
         </MudContainer>
     </DialogContent>
@@ -140,6 +145,8 @@
 @code {
     [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
     [Parameter] public EventCallback OnComplete { get; set; }
+
+    private static readonly DialogOptions DialogLayout = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     private int _activeStep = 0;
     private SeedDataOption _selectedSeedOption = SeedDataOption.ReferenceAndSample;

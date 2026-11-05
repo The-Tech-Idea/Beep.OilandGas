@@ -87,7 +87,7 @@
                 <MudExpansionPanels Class="mt-4">
                     <MudExpansionPanel Text="@($"Import Errors ({_importErrors.Count})")" 
                                      Icon="@Icons.Material.Filled.Error"
-                                     IsExpanded="true">
+                                     Expanded="true">
                         <MudList T="ImportError" Dense="true">
                             @foreach (var error in _importErrors.OrderBy(e => e.RowNumber))
                             {

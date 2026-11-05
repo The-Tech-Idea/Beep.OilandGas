@@ -4,6 +4,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject IProductionServiceClient ProductionService
 
 <PageTitle>Decide Well Interventions</PageTitle>
@@ -54,7 +55,10 @@
                         <MudDataGrid T="InterventionCandidate" Items="@_candidates" Dense="true"
                                      Hover="true" RowClick="@OnCandidateClick" ReadOnly="true">
                             <Columns>
+                                @* The well's name is its WELL row's, blank when it records none; the UWI is its own column
+                                   (it had been shown as the name). Deferral, cost and priority are blank when not recorded. *@
                                 <PropertyColumn Property="c => c.WellName" Title="Well" />
+                                <PropertyColumn Property="c => c.WellId" Title="UWI" />
                                 <TemplateColumn Title="Type">
                                     <CellTemplate>
                                         <MudChip T="string" Size="Size.Small"
@@ -68,10 +72,13 @@
                                 <PropertyColumn Property="c => c.EstCostUsd" Title="Est. Cost ($K)" Format="N0" />
                                 <TemplateColumn Title="Priority">
                                     <CellTemplate>
-                                        <MudChip T="string" Size="Size.Small"
-                                                 Color="@PriorityColor(context.Item.Priority)">
-                                            @context.Item.Priority
-                                        </MudChip>
+                                        @if (context.Item.Priority is { } priority)
+                                        {
+                                            <MudChip T="string" Size="Size.Small"
+                                                     Color="@PriorityColor(priority)">
+                                                @priority
+                                            </MudChip>
+                                        }
                                     </CellTemplate>
                                 </TemplateColumn>
                                 <TemplateColumn Title="Status">
@@ -102,7 +109,7 @@
                 Back to List
             </MudButton>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                / @_selectedIntervention.WellName / @_selectedIntervention.InterventionType
+                / @_selectedIntervention.WellLabel / @_selectedIntervention.InterventionType
             </MudText>
         </MudStack>
 
@@ -117,7 +124,7 @@
                         <MudGrid Spacing="2">
                             <MudItem xs="12">
                                 <MudText Typo="Typo.h6">
-                                    Decision: @_selectedIntervention.InterventionType — @_selectedIntervention.WellName
+                                    Decision: @_selectedIntervention.InterventionType — @_selectedIntervention.WellLabel
                                 </MudText>
                                 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
                                     @_selectedIntervention.ProblemDescription
@@ -125,19 +132,41 @@
                             </MudItem>
                             <MudItem xs="6" sm="3">
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Deferred Production</MudText>
-                                <MudText Typo="Typo.h6" Color="Color.Error">@_selectedIntervention.DeferredBopd.ToString("N0") BOPD</MudText>
+                                @if (_selectedIntervention.DeferredBopd is double deferred)
+                                {
+                                    @* The well's best tested oil rate less its latest tested oil rate, as the API computes it. *@
+                                    <MudText Typo="Typo.h6" Color="Color.Error">@deferred.ToString("N0") BOPD</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.h6" Color="Color.Secondary">Not recorded</MudText>
+                                }
                             </MudItem>
                             <MudItem xs="6" sm="3">
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Days Deferred</MudText>
-                                <MudText Typo="Typo.h6" Color="Color.Warning">@_selectedIntervention.DaysDeferred days</MudText>
+                                @* No onset date is recorded for a well's problem, so the API states no day count. *@
+                                @if (_selectedIntervention.DaysDeferred is int days)
+                                {
+                                    <MudText Typo="Typo.h6" Color="Color.Warning">@days days</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.h6" Color="Color.Secondary">Not recorded</MudText>
+                                }
                             </MudItem>
-                            <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Lost Revenue</MudText>
-                                <MudText Typo="Typo.h6">$@((_selectedIntervention.DeferredBopd * _selectedIntervention.DaysDeferred * 70 / 1000).ToString("N0"))K</MudText>
-                            </MudItem>
+                            @* No lost-revenue figure: it multiplied the deferral by a fixed $70 a barrel, and no oil price is
+                               read here. *@
                             <MudItem xs="6" sm="3">
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Est. Cost</MudText>
-                                <MudText Typo="Typo.h6">$@_selectedIntervention.EstCostUsd.ToString("N0")K</MudText>
+                                @* No intervention cost estimate is recorded anywhere yet. *@
+                                @if (_selectedIntervention.EstCostUsd is double cost)
+                                {
+                                    <MudText Typo="Typo.h6">$@cost.ToString("N0")K</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.h6" Color="Color.Secondary">Not recorded</MudText>
+                                }
                             </MudItem>
                         </MudGrid>
                     </MudPaper>
@@ -146,13 +175,30 @@
                     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
                         <MudTabPanel Text="Production History">
                             <MudPaper Elevation="0" Class="pa-3">
-                                <MudChart ChartType="ChartType.Line"
-                                          ChartSeries="@_wellRateSeries"
-                                          XAxisLabels="@_wellRateLabels"
-                                          Width="100%" Height="220px" />
-                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
-                                    Rate drop started @_selectedIntervention.OnsetDate — @_selectedIntervention.RootCause
-                                </MudText>
+                                @if (_wellTestsLoaded is null)
+                                {
+                                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                                }
+                                else if (_wellTestsLoaded == false)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">The well's tests could not be loaded.</MudText>
+                                }
+                                else if (_wellRateLabels.Length == 0)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">No dated well test with an oil rate is recorded for this well.</MudText>
+                                }
+                                else
+                                {
+                                    <MudChart T="double" ChartType="ChartType.Line"
+                                              ChartSeries="@_wellRateSeries"
+                                              ChartLabels="@_wellRateLabels"
+                                              Width="100%" Height="220px" />
+                                    @* No onset date or root cause is stated: neither is recorded (the onset was today minus a
+                                       day count the API does not compute). *@
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                                        Oil rate from the well's recorded tests, oldest first.
+                                    </MudText>
+                                }
                             </MudPaper>
                         </MudTabPanel>
                         <MudTabPanel Text="Diagnostics">
@@ -177,24 +223,8 @@
                                 </MudList>
                             </MudPaper>
                         </MudTabPanel>
-                        <MudTabPanel Text="Similar Past Cases">
-                            <MudPaper Elevation="0" Class="pa-3">
-                                <MudList T="HistoricalCase" Dense="true">
-                                    @foreach (var c in _historicalCases)
-                                    {
-                                        <MudListItem T="HistoricalCase" Value="c">
-                                            <MudStack Spacing="0">
-                                                <MudText Typo="Typo.body2">@c.Well — @c.InterventionType (@c.Date)</MudText>
-                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                    Uplift: @c.UpliftBopd BOPD · Cost: $@c.CostUsdK K · Success: @c.Outcome
-                                                </MudText>
-                                            </MudStack>
-                                        </MudListItem>
-                                        <MudDivider />
-                                    }
-                                </MudList>
-                            </MudPaper>
-                        </MudTabPanel>
+                        @* No "Similar Past Cases" tab: no past-intervention lookup exists in the API, and its list was never
+                           filled. *@
                     </MudTabs>
 
                 </MudStack>
@@ -204,36 +234,8 @@
             <MudItem xs="12" lg="4">
                 <MudStack Spacing="3">
 
-                    @* Recommendation *@
-                    <MudCard Elevation="2">
-                        <MudCardHeader>
-                            <CardHeaderContent>
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                    <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Color="Color.Warning" Size="Size.Small" />
-                                    <MudText Typo="Typo.subtitle1">Recommendation</MudText>
-                                </MudStack>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardContent>
-                            <MudAlert Severity="Severity.Warning" Class="mb-3">
-                                <strong>@_selectedIntervention.RecommendedAction</strong>
-                            </MudAlert>
-                            <MudList T="string" Dense="true">
-                                <MudListItem T="string" Value="@("scope")">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Scope</MudText>
-                                    <MudText Typo="Typo.body2">@_selectedIntervention.Scope</MudText>
-                                </MudListItem>
-                                <MudListItem T="string" Value="@("duration")">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Est. Duration</MudText>
-                                    <MudText Typo="Typo.body2">@_selectedIntervention.EstDurationDays days</MudText>
-                                </MudListItem>
-                                <MudListItem T="string" Value="@("payout")">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Payout Period</MudText>
-                                    <MudText Typo="Typo.body2">@_selectedIntervention.PayoutMonths months</MudText>
-                                </MudListItem>
-                            </MudList>
-                        </MudCardContent>
-                    </MudCard>
+                    @* No recommendation card: no intervention recommendation is computed anywhere. It read "Proceed with"
+                       the intervention type, a 7-day duration and a 2-month payout, each a constant on this page. *@
 
                     @* Decision panel *@
                     @if (!string.IsNullOrWhiteSpace(_selectedIntervention.WorkOrderId) || !string.IsNullOrWhiteSpace(_selectedIntervention.AfeNumber))
@@ -345,9 +347,10 @@
 
     private List<InterventionCandidate> _candidates = new();
     private List<DiagnosticItem>          _diagnostics = new();
-    private List<HistoricalCase>          _historicalCases = new();
     private List<ChartSeries<double>>     _wellRateSeries = new();
     private string[]                      _wellRateLabels = Array.Empty<string>();
+    // Whether the selected well's tests loaded: null while loading, false when the call failed.
+    private bool?                         _wellTestsLoaded;
     private bool                          _isLoading;
 
     protected override async Task OnInitializedAsync()
@@ -358,7 +361,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the candidates still load; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the intervention decisions page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         _isLoading = true;
         try
@@ -376,9 +384,9 @@
                 if (match != null) await SelectCandidateAsync(match);
             }
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading candidates.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading the intervention candidates", "Error loading candidates"), Severity.Error);
         }
         finally
         {
@@ -386,26 +394,24 @@
         }
     }
 
-    private void OnCandidateClick(DataGridRowClickEventArgs<InterventionCandidate> args) =>
-        _ = SelectCandidateAsync(args.Item);
+    // Awaited by the grid, so a failure the selection does not answer reaches the page's error boundary rather than an
+    // unobserved task.
+    private Task OnCandidateClick(DataGridRowClickEventArgs<InterventionCandidate> args) =>
+        SelectCandidateAsync(args.Item);
 
     private async Task SelectCandidateAsync(InterventionCandidate c)
     {
         _selectedIntervention = new InterventionDetail(
             WellId:             c.WellId,
-            WellName:           c.WellName,
+            WellLabel:          c.WellName ?? c.WellId,
             InterventionType:   c.InterventionType,
             Problem:            c.Problem,
-            ProblemDescription: $"{c.Problem}. Work request raised {c.EstDaysSinceOnset} days ago.",
+            // The problem as recorded: "Work request raised N days ago" counted from a day count the API does not compute.
+            ProblemDescription: c.Problem,
             DeferredBopd:       c.DeferredBopd,
             DaysDeferred:       c.EstDaysSinceOnset,
             EstCostUsd:         c.EstCostUsd,
-            OnsetDate:          DateTime.UtcNow.AddDays(-c.EstDaysSinceOnset).ToString("dd MMM yyyy"),
-            RootCause:          "Refer to well diagnostic data below",
-            RecommendedAction:  $"Proceed with {c.InterventionType}",
-            Scope:              $"{c.InterventionType} scope to be defined by well engineer",
-            EstDurationDays:    7,
-            PayoutMonths:       2,
+            WorkOrderTitle:     $"{c.InterventionType} — {c.WellName ?? c.WellId}",
             WorkOrderId:        c.WorkOrderId,
             AfeId:              c.AfeId,
             AfeNumber:          c.AfeNumber,
@@ -416,6 +422,7 @@
         _diagnostics = new();
         _wellRateSeries = new();
         _wellRateLabels = Array.Empty<string>();
+        _wellTestsLoaded = null;
         try
         {
             var perf = await ProductionService.GetWellPerformanceAsync(c.WellId);
@@ -430,9 +437,33 @@
                     _diagnostics.Add(new("Test Type",  latest.TestType ?? "N/A", false));
                     _diagnostics.Add(new("Well Status", perf.Status ?? "UNKNOWN", perf.Status != "ACTIVE"));
                 }
+
+                // The production history is the well's tests in date order — the same tests the API answers with the
+                // well's performance. A test with no date cannot be placed on the line, and one with no oil rate has
+                // nothing to plot: both are left out rather than drawn as zero.
+                var dated = perf.WellTests
+                    .Select(t => (Date: t.TestDate ?? t.TestStartDate ?? t.TestEndDate, Oil: t.OilFlowAmount))
+                    .Where(x => x.Date.HasValue && x.Oil.HasValue)
+                    .OrderBy(x => x.Date!.Value)
+                    .ToList();
+                if (dated.Count > 0)
+                {
+                    _wellRateLabels = dated.Select(x => x.Date!.Value.ToString("dd MMM yy", CultureInfo.InvariantCulture)).ToArray();
+                    _wellRateSeries = new()
+                    {
+                        new ChartSeries<double> { Name = "Oil (BOPD)", Data = dated.Select(x => (double)x.Oil!.Value).ToArray() },
+                    };
+                }
             }
+            _wellTestsLoaded = true;
         }
-        catch { /* diagnostics are supplemental — do not block the decision flow */ }
+        // The diagnostics are supplemental and do not block the decision: a failed call is said as a warning; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _wellTestsLoaded = false;
+            Snackbar.Add(Calls.Explain(failure, "loading a well's diagnostics for an intervention decision", "The well's diagnostics could not be loaded"), Severity.Warning);
+        }
         StateHasChanged();
     }
 
@@ -442,12 +473,13 @@
         _decisionNote = "";
         _diagnostics = new();
         _wellRateSeries = new();
+        _wellRateLabels = Array.Empty<string>();
     }
 
     private void OpenNewIntervention()
     {
         var wellId = _selectedIntervention?.WellId ?? WellId;
-        var title = _selectedIntervention?.RecommendedAction ?? "Intervention follow-up";
+        var title = _selectedIntervention?.WorkOrderTitle ?? "Intervention follow-up";
         var description = _selectedIntervention?.ProblemDescription ?? "Create an intervention work order for the selected well.";
         var query = new List<string> { "openCreate=true", $"subType={Uri.EscapeDataString(WorkOrderSubType.Corrective)}" };
 
@@ -485,13 +517,13 @@
                     WorkOrderId = _selectedIntervention.WorkOrderId,
                     AfeId = _selectedIntervention.AfeId
                 });
-            if (!result.Success)
+            if (result is not { Success: true })
             {
                 Snackbar.Add("Approval failed.", Severity.Error);
                 return;
             }
 
-            Snackbar.Add(result.Message ?? $"Intervention approved for {_selectedIntervention.WellName}.", Severity.Success);
+            Snackbar.Add(result.Message ?? $"Intervention approved for {_selectedIntervention.WellLabel}.", Severity.Success);
 
             if (!string.IsNullOrWhiteSpace(result.WorkOrderId))
             {
@@ -502,7 +534,10 @@
             _selectedIntervention = null;
             await OnInitializedAsync();
         }
-        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "approving a well intervention", "Approval failed"), Severity.Error);
+        }
     }
 
     private async Task TransitionToDecommissioning()
@@ -524,14 +559,14 @@
                     StartWorkflow = true
                 });
 
-            if (!result.Success || string.IsNullOrWhiteSpace(result.AbandonmentId))
+            if (result is not { Success: true } || string.IsNullOrWhiteSpace(result.AbandonmentId))
             {
                 Snackbar.Add("Decommissioning handoff failed.", Severity.Error);
                 return;
             }
 
             Snackbar.Add(
-                result.Message ?? $"Decommissioning handoff created for {_selectedIntervention.WellName}.",
+                result.Message ?? $"Decommissioning handoff created for {_selectedIntervention.WellLabel}.",
                 result.WorkflowStarted || result.AlreadyExists ? Severity.Success : Severity.Warning);
 
             NavigationManager.NavigateTo(
@@ -541,9 +576,9 @@
                     result.ProcessInstanceId,
                     _decisionNote));
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Decommissioning handoff failed.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "handing a well intervention to decommissioning", "Decommissioning handoff failed"), Severity.Error);
         }
     }
 
@@ -555,17 +590,20 @@
             var result = await ProductionService.RecordInterventionDecisionAsync(
                 _selectedIntervention.WellId,
                 new ProductionInterventionDecisionRequest { Decision = "Deferred", Note = _decisionNote });
-            if (!result.Success)
+            if (result is not { Success: true })
             {
                 Snackbar.Add("Deferral failed.", Severity.Error);
                 return;
             }
 
-            Snackbar.Add($"Intervention deferred — monitoring {_selectedIntervention.WellName}", Severity.Warning);
+            Snackbar.Add($"Intervention deferred — monitoring {_selectedIntervention.WellLabel}", Severity.Warning);
             _selectedIntervention = null;
             await OnInitializedAsync();
         }
-        catch (Exception) { Snackbar.Add("Deferral failed.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "deferring a well intervention", "Deferral failed"), Severity.Error);
+        }
     }
 
     private async Task RejectIntervention()
@@ -576,17 +614,20 @@
             var result = await ProductionService.RecordInterventionDecisionAsync(
                 _selectedIntervention.WellId,
                 new ProductionInterventionDecisionRequest { Decision = "Rejected", Note = _decisionNote });
-            if (!result.Success)
+            if (result is not { Success: true })
             {
                 Snackbar.Add("Rejection failed.", Severity.Error);
                 return;
             }
 
-            Snackbar.Add($"Intervention closed for {_selectedIntervention.WellName}", Severity.Info);
+            Snackbar.Add($"Intervention closed for {_selectedIntervention.WellLabel}", Severity.Info);
             _selectedIntervention = null;
             await OnInitializedAsync();
         }
-        catch (Exception) { Snackbar.Add("Rejection failed.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "rejecting a well intervention", "Rejection failed"), Severity.Error);
+        }
     }
 
     private Color TypeColor(string t) => t switch
@@ -604,17 +645,18 @@
         _        => Color.Default,
     };
 
-    private record InterventionCandidate(string WellId, string WellName, string InterventionType, string Problem,
-        double DeferredBopd, int EstDaysSinceOnset, string Priority, string Status, double EstCostUsd,
+    // A null figure is one the API says nothing records; the page shows it blank or "Not recorded", never as 0.
+    private record InterventionCandidate(string WellId, string? WellName, string InterventionType, string Problem,
+        double? DeferredBopd, int? EstDaysSinceOnset, string? Priority, string Status, double? EstCostUsd,
         string? WorkOrderId, string? AfeId, string? AfeNumber, string? AbandonmentId, string? ProcessInstanceId);
 
-    private record InterventionDetail(string WellId, string WellName, string InterventionType, string Problem,
-        string ProblemDescription, double DeferredBopd, int DaysDeferred, double EstCostUsd, string OnsetDate,
-        string RootCause, string RecommendedAction, string Scope, int EstDurationDays, int PayoutMonths,
+    // WellLabel names the well: its recorded name, else its UWI. WorkOrderTitle is the title a new work order is opened
+    // with (OpenNewIntervention).
+    private record InterventionDetail(string WellId, string WellLabel, string InterventionType, string Problem,
+        string ProblemDescription, double? DeferredBopd, int? DaysDeferred, double? EstCostUsd, string WorkOrderTitle,
         string? WorkOrderId, string? AfeId, string? AfeNumber, string? AbandonmentId, string? ProcessInstanceId);
 
     private record DiagnosticItem(string Parameter, string Value, bool IsAbnormal);
-    private record HistoricalCase(string Well, string InterventionType, string Date, int UpliftBopd, int CostUsdK, string Outcome);
 
     private string GetLinkedWorkOrderHref(string workOrderId) =>
         $"/ppdm39/workorder/{Uri.EscapeDataString(workOrderId)}?returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}";

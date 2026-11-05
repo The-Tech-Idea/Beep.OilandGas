@@ -3,7 +3,7 @@
 @using Beep.OilandGas.Web.Services
 @inject IWorkOrderServiceClient WorkOrderService
 @inject ISnackbar Snackbar
-@inject OilGasApiFailures Answers
+@inject OilGasCallFailures Calls
 
 <PageTitle>Work Order @Id</PageTitle>
 
@@ -212,14 +212,18 @@
                                     @if (!string.Equals(context.Status, "PASS", StringComparison.OrdinalIgnoreCase)
                                          && !string.Equals(context.Status, "FAIL", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        <MudIconButton Icon="@Icons.Material.Outlined.CheckCircleOutline"
-                                                       Color="Color.Success" Size="Size.Small"
-                                                       Title="Record PASS"
-                                                       OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "PASS"))" />
-                                        <MudIconButton Icon="@Icons.Material.Outlined.Cancel"
-                                                       Color="Color.Error" Size="Size.Small"
-                                                       Title="Record FAIL"
-                                                       OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "FAIL"))" />
+                                        <MudTooltip Text="Record PASS">
+                                            <MudIconButton Icon="@Icons.Material.Outlined.CheckCircleOutline"
+                                                           Color="Color.Success" Size="Size.Small"
+                                                           aria-label="Record PASS"
+                                                           OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "PASS"))" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="Record FAIL">
+                                            <MudIconButton Icon="@Icons.Material.Outlined.Cancel"
+                                                           Color="Color.Error" Size="Size.Small"
+                                                           aria-label="Record FAIL"
+                                                           OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "FAIL"))" />
+                                        </MudTooltip>
                                     }
                                 </MudTd>
                             </RowTemplate>
@@ -306,7 +310,7 @@
 </MudStack>
 
 @* ── Transition dialog ─────────────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showTransition" Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+<MudDialog @bind-Visible="_showTransition" Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
     <TitleContent>
         <MudText Typo="Typo.h6">Transition to @_pendingTransition</MudText>
     </TitleContent>
@@ -369,7 +373,12 @@
             _contractors = await WorkOrderService.GetContractorsAsync(Id);
             await LoadLinkedAfeAsync();
         }
-        catch (Exception) { _error = "Failed to load work order."; Snackbar.Add(_error, Severity.Error); }
+        // A failed call is said in the page's alert and a snackbar; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "loading a work order", "Failed to load work order");
+            Snackbar.Add(_error, Severity.Error);
+        }
         finally { _loading = false; }
     }
 
@@ -399,7 +408,11 @@
             _showTransition = false;
             await LoadAsync();
         }
-        catch (Exception) { _error = "Transition failed."; Snackbar.Add(_error, Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "transitioning a work order", "Transition failed");
+            Snackbar.Add(_error, Severity.Error);
+        }
     }
 
     private async Task RecordConditionAsync(int condSeq, string result)
@@ -412,12 +425,11 @@
                 new RecordInspectionResultRequest { Result = result });
             _checklist = await WorkOrderService.GetChecklistAsync(Id);
         }
-        catch (OilGasApiException answer)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            _error = Answers.Explain(answer, "recording a work order inspection result", "The inspection result was not recorded");
+            _error = Calls.Explain(failure, "recording a work order inspection result", "The inspection result was not recorded");
             Snackbar.Add(_error, Severity.Error);
         }
-        catch (Exception) { _error = "Failed to record result."; Snackbar.Add(_error, Severity.Error); }
     }
 
     private async Task CreateOrLinkAfeAsync()
@@ -435,9 +447,9 @@
             _linkedAfe = afe;
             Snackbar.Add($"AFE {afe.AfeNumber} linked to work order {Id}.", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            _error = "Failed to create or link AFE.";
+            _error = Calls.Explain(failure, "creating or linking a work order's AFE", "Failed to create or link AFE");
             Snackbar.Add(_error, Severity.Error);
         }
         finally

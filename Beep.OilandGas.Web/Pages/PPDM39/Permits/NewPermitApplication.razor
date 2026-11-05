@@ -3,6 +3,7 @@
 @inject IPermitServiceClient PermitClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>New Permit Application</PageTitle>
 
@@ -90,9 +91,9 @@
             Snackbar.Add("Permit application created successfully.", Severity.Success);
             NavigationManager.NavigateTo($"/ppdm39/permits/{applicationId}");
         }
-        catch (Exception ex)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add($"Failed to create application: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "creating a permit application", "The permit application was not created"), Severity.Error);
         }
         finally
         {

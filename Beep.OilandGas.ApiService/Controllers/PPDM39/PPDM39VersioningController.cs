@@ -184,59 +184,36 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             });
         }
         /// <summary>
-        /// Create a table-level snapshot labelled by the caller.
+        /// Create a table-level snapshot — not available.
         /// POST /api/ppdm39/versioning/snapshots
         /// </summary>
         [HttpPost("snapshots")]
-        public async Task<ActionResult<VersioningResult>> CreateTableSnapshot(
-            [FromBody] TableSnapshotRequest request)
+        public IActionResult CreateTableSnapshot()
         {
-            var userId = User.ActingUserId();
-                if (request == null)
-                    return BadRequest(new { error = "Request body is required." });
-                if (string.IsNullOrWhiteSpace(request.TableName))
-                    return BadRequest(new { error = "Table name is required." });
-            var label = string.IsNullOrWhiteSpace(request.Label)
-                ? $"{request.TableName} — {DateTime.UtcNow:dd MMM yyyy HH:mm}"
-                : request.Label;
-
-            var version = await _versioningService.CreateVersionAsync(
-                request.TableName,
-                request.TableName,   // use table name as entity placeholder for table-level snapshots
-                userId,
-                label);
-
-            return Ok(new VersioningResult
-            {
-                Success    = true,
-                VersionId  = version.VersionNumber.ToString(),
-                Message    = label
-            });
+            // Not available: the versioning service versions one record at a time (a DATA_VERSION_SNAPSHOT row per record,
+            // read back by table and record key); nothing captures a table's rows as one snapshot. This passed the table's
+            // name as the record to version, and the service, finding no key column on a string, failed every time with a
+            // 500 (2026-10-10).
+            return Problem(
+                statusCode: StatusCodes.Status501NotImplemented,
+                title: "Not available",
+                detail: "Taking a snapshot of a table is not available yet.");
         }
 
         /// <summary>
-        /// Get table-level snapshot history.
+        /// List a table's snapshots — not available.
         /// GET /api/ppdm39/versioning/snapshots?table=WELL
         /// </summary>
         [HttpGet("snapshots")]
-        public async Task<ActionResult<List<SnapshotSummary>>> GetTableSnapshots([FromQuery] string table)
+        public IActionResult GetTableSnapshots()
         {
-            if (string.IsNullOrWhiteSpace(table))
-                    return BadRequest(new { error = "Table query parameter is required." });
-            var versions = await _versioningService.GetVersionsAsync(table, table);
-            var result   = (versions ?? new System.Collections.Generic.List<VersionSnapshot>())
-                .Select(v => new SnapshotSummary(
-                    v.VersionLabel ?? $"{table} snapshot",
-                    table,
-                    v.CreatedBy,
-                    v.CreatedDate,
-                    v.VersionNumber))
-                .OrderByDescending(s => s.CreatedAt)
-                .ToList();
-            return Ok(result);
+            // Not available, as taking one is not: there are no table snapshots to list. This listed the versions of a
+            // record keyed by the table's name, of which there are none, with each version's number as its "row count"
+            // (2026-10-10).
+            return Problem(
+                statusCode: StatusCodes.Status501NotImplemented,
+                title: "Not available",
+                detail: "Listing a table's snapshots is not available yet.");
         }
-
-        public record TableSnapshotRequest(string TableName, string? Label);
-        public record SnapshotSummary(string Label, string Table, string? CreatedBy, DateTime CreatedAt, int RowCount);
     }
 }

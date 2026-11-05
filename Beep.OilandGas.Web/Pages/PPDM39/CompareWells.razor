@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @inject IClientFileExportService ExportService
 @inject OilGasCallFailures Calls
+@inject FailureNotifier Notifier
 
 <PageTitle>Compare Well Properties</PageTitle>
 
@@ -171,9 +172,10 @@
             await ExportService.DownloadJsonAsync($"well-comparison-{DateTime.UtcNow:yyyyMMdd-HHmmss}", payload);
             Snackbar.Add("Well comparison package exported.", Severity.Success);
         }
-        catch
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("The comparison could not be exported. Try again.", Severity.Error);
+            Notifier.Failure(ex, "exporting a well comparison package", "The comparison could not be exported");
         }
     }
 }

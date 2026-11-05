@@ -6,6 +6,7 @@
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Analyse Pipeline Flow</PageTitle>
 
@@ -80,7 +81,16 @@
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
-            catch { /* field name is non-critical */ }
+            // The field name is non-critical: the page goes on without it, and says so.
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "loading the field name for pipeline analysis", "The field name could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "loading the field name for pipeline analysis", "The field name could not be loaded", FailureSeverity.Degraded);
+            }
         }
         finally
         {
@@ -111,10 +121,20 @@
             {
                 Snackbar.Add(Answers.Explain(answer, "saving the pipeline analysis result", "The pipeline flow analysis finished but its result was not saved"), Severity.Warning);
             }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "saving the pipeline analysis result", "The pipeline flow analysis finished but its result was not saved", FailureSeverity.Degraded);
+            }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error analyzing pipeline flow.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "analyzing pipeline flow", "The pipeline flow was not analyzed"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "analyzing pipeline flow", "The pipeline flow was not analyzed");
         }
         finally
         {
@@ -137,9 +157,14 @@
             
             Snackbar.Add($"Pressure drop: {result.PressureDrop.ToString("F2")} PSI", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error calculating pressure drop.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "calculating a pipeline pressure drop", "The pressure drop was not calculated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "calculating a pipeline pressure drop", "The pressure drop was not calculated");
         }
         finally
         {

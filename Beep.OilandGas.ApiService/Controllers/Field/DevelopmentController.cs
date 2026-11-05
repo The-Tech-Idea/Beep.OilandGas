@@ -391,37 +391,33 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var wells      = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
             var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
 
-            // Build "Wells" work group from well records
+            // Neither a well nor a facility record holds a construction percentage, so no package carries one
+            // (PercentComplete is null): it had been 50% for every well drilling, completing or testing, and 100% for every
+            // facility row not soft-deleted, which the page drew as progress bars. A package is completed or under way only
+            // as its own record says.
             var wellPackages = (wells ?? new()).Select(w =>
             {
-                var statusCode = w.CURRENT_STATUS ?? "PLANNED";
+                var statusCode = w.CURRENT_STATUS;
                 bool isCompleted = statusCode is "PRODUCING" or "COMPLETED" or "ABANDONED";
                 bool isActive    = statusCode is "DRILLING" or "COMPLETING" or "TESTING";
-                double pct = isCompleted ? 100 : isActive ? 50 : 0;
                 return new WorkPackageDto(
-                    Name:       w.UWI ?? w.CURRENT_STATUS ?? "Unknown Well",
+                    Name:       w.UWI ?? "Unknown Well",
                     TargetDate: w.SPUD_DATE.HasValue ? w.SPUD_DATE.Value.ToString("MMM yyyy") : string.Empty,
                     IsCompleted: isCompleted,
                     IsActive:    isActive,
-                    PercentComplete: pct,
-                    Note:        statusCode);
+                    PercentComplete: null,
+                    Note:        statusCode ?? string.Empty);
             }).ToList();
 
-            // Build "Facilities" work group
-            var facilityPackages = (facilities ?? new()).Select(f =>
-            {
-                var statusCode = f.ACTIVE_IND == "Y" ? "OPERATIONAL" : "PLANNED";
-                bool isCompleted = statusCode is "OPERATIONAL";
-                bool isActive    = false;
-                double pct = isCompleted ? 100 : 0;
-                return new WorkPackageDto(
+            // A facility is constructed when its record says when it was (CONSTRUCTED_DATE); ACTIVE_IND is the row's
+            // soft-delete flag, not construction, and had marked every recorded facility complete.
+            var facilityPackages = (facilities ?? new()).Select(f => new WorkPackageDto(
                     Name:       f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME ?? f.FACILITY_ID ?? "Unknown Facility",
                     TargetDate: string.Empty,
-                    IsCompleted: isCompleted,
-                    IsActive:    isActive,
-                    PercentComplete: pct,
-                    Note:        f.FACILITY_TYPE ?? string.Empty);
-            }).ToList();
+                    IsCompleted: f.CONSTRUCTED_DATE.HasValue,
+                    IsActive:    false,
+                    PercentComplete: null,
+                    Note:        f.FACILITY_TYPE ?? string.Empty)).ToList();
 
             var workGroups = new List<WorkGroupDto>();
             if (facilityPackages.Count > 0)
@@ -497,26 +493,29 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 CurrentStepId     = instance.CurrentStepId,
                 StartDate         = instance.StartDate,
                 Steps             = steps,
+                Draft             = Beep.OilandGas.LifeCycle.Services.Development.Processes.DevelopmentProcessService.StoredFdpDraft(instance),
             });
         }
 
         /// <summary>
         /// POST /api/field/current/development/fdp
-        /// Submits a Field Development Plan draft and starts the FDP Gate Review process.
+        /// Starts the FDP Gate Review process with the plan's draft kept as its drafting step's data, where
+        /// GET /fdp reads it back. (The draft had been ignored: only the gate review was started.)
         /// </summary>
         [HttpPost("fdp")]
         public async Task<ActionResult<SubmitFdpDraftResponse>> SubmitFdpAsync(
             [FromBody] SubmitFdpDraftRequest request)
         {
             var userId = User.ActingUserId();
+            if (request == null) return BadRequest(new { error = "The FDP draft is required." });
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
                 if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
 
-            var instance = await _developmentProcessService.StartFdpGateProcessAsync(fieldId, userId);
+            var instance = await _developmentProcessService.SubmitFdpDraftAsync(fieldId, request, userId);
             return Ok(new SubmitFdpDraftResponse
             {
-                InstanceId = instance?.InstanceId ?? string.Empty,
-                Status     = instance != null ? instance.Status.ToString() : "SUBMITTED"
+                InstanceId = instance.InstanceId,
+                Status     = instance.Status.ToString()
             });
         }
 
@@ -534,7 +533,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         string TargetDate,
         bool   IsCompleted,
         bool   IsActive,
-        double PercentComplete,
+        // Null unless a record states the package's progress; none does yet (no construction-progress record in PPDM's
+        // WELL or FACILITY rows).
+        double? PercentComplete,
         string Note);
 
     public record PunchItemDto(

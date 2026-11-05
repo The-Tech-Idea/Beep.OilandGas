@@ -87,6 +87,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
         Task<PROSPECT> IdentifyProspectAsync(PROSPECT request, CancellationToken cancellationToken = default);
         Task<PROSPECT_RISK_ASSESSMENT> EvaluateRiskAsync(PROSPECT request, CancellationToken cancellationToken = default);
+        /// <summary>The prospect's latest recorded volume estimate; the API answers 404 when none is recorded (it no longer derives one).</summary>
         Task<PROSPECT_VOLUME_ESTIMATE> GetVolumetricsAsync(string prospectId, CancellationToken cancellationToken = default);
         Task<PROSPECT_RANKING> RankProspectsAsync(PROSPECT_PORTFOLIO request, CancellationToken cancellationToken = default);
         Task<List<PROSPECT>> GetProspectPortfolioAsync(string basinId, CancellationToken cancellationToken = default);

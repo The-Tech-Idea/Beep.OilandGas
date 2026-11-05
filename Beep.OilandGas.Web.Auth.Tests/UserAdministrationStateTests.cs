@@ -33,8 +33,11 @@ public class UserAdministrationStateTests
         using var handler = new FailureHandler(status);
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.example") };
         var page = new UsersPage();
+        var failures = new RecordingFailureReporter();
         typeof(UsersPage).GetProperty("Accounts", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(page, new UserAdministrationClient(new ApiClient(http, new RecordingFailureReporter())));
+            .SetValue(page, new UserAdministrationClient(new ApiClient(http, failures)));
+        typeof(UsersPage).GetProperty("Calls", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(page, TestFailures.Calls(failures));
         var user = new RepositoryUserSummary("user", "user", null, "Name", true, "version");
         Field("_users").SetValue(page, new List<RepositoryUserSummary> { user });
         Field("_selected").SetValue(page, user);
@@ -46,6 +49,9 @@ public class UserAdministrationStateTests
         Assert.Null(Field("_selected").GetValue(page));
         Assert.NotNull(Field("_error").GetValue(page));
         Assert.Equal(false, Field("_busy").GetValue(page));
+        // The failed answer is reported, under the reference the page shows, and its exception's text is not on the page.
+        var report = Assert.Single(failures.Reports, r => r.Exception is OilGasApiException);
+        Assert.DoesNotContain(report.Exception.Message, (string)Field("_error").GetValue(page)!);
     }
 
     private static FieldInfo Field(string name) =>

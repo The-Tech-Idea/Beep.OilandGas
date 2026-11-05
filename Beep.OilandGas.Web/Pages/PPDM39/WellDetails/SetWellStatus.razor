@@ -5,6 +5,7 @@
 @inject IWellLookupServiceClient WellLookupClient
 @inject IWellStatusServiceClient WellStatusClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Classify Well Status</PageTitle>
 
@@ -396,8 +397,9 @@
             var quals = await WellStatusClient.GetQualifiersAsync(facet.StatusType, newStatus);
             _qualifiers[tabIndex] = quals ?? new();
         }
-        catch
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
+            Snackbar.Add(Calls.Explain(failure, "loading a well status's qualifiers", $"The qualifiers for {newStatus} could not be loaded; the catalog's qualifiers are offered"), Severity.Warning);
             // Fall back to qualifiers already embedded in the facet DTO.
             if (facet.Qualifiers.TryGetValue(newStatus, out var embedded))
                 _qualifiers[tabIndex] = embedded;
@@ -435,14 +437,21 @@
             {
                 _well = await WellLookupClient.GetWellAsync(_searchUwi);
             }
-            catch { /* non-critical */ }
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+            {
+                Snackbar.Add(Calls.Explain(failure, "loading a well's header", "The well header could not be loaded"), Severity.Warning);
+            }
 
             // Load full status history for the history expansion panels.
             try
             {
                 _statusHistory = await WellStatusClient.GetStatusHistoryAsync(_searchUwi);
             }
-            catch { _statusHistory = new(); }
+            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+            {
+                _statusHistory = new();
+                Snackbar.Add(Calls.Explain(failure, "loading a well's status history", "The status history could not be loaded"), Severity.Warning);
+            }
 
             // Allocate per-tab form state.
             var count = _facets.Count;
@@ -457,9 +466,9 @@
 
             _activeTab = 0;
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading well data.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading a well's status facets", $"The well data for {_searchUwi} could not be loaded"), Severity.Error);
         }
         finally
         {
@@ -495,9 +504,9 @@
                 await LoadWellAsync();
             }
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add($"Error saving {statusType}.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "saving a well status facet", $"{statusType} was not saved"), Severity.Error);
         }
         finally
         {
@@ -535,16 +544,18 @@
                     await WellStatusClient.SetFacetAsync(_searchUwi, req);
                     saved++;
                 }
-                catch
+                // Each facet that was not saved is said with its own reason; the rest are still saved.
+                catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
                 {
                     failed++;
+                    Snackbar.Add(Calls.Explain(failure, "saving a well status facet", $"{statusType} was not saved"), Severity.Error);
                 }
             }
 
             if (failed == 0)
                 Snackbar.Add($"All {saved} facet(s) saved successfully.", Severity.Success);
             else
-                Snackbar.Add($"{saved} saved, {failed} failed. Check individual tabs for details.", Severity.Warning);
+                Snackbar.Add($"{saved} saved, {failed} failed.", Severity.Warning);
 
             await LoadWellAsync();
         }

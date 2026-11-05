@@ -86,17 +86,17 @@ public static class HelpContent
         ["/ppdm39/accounting/joint-interest-billing"] = new PageHelp
         {
             Title = "Joint Interest Billing",
-            Content = "Track and manage JIB invoices for working interest partners. Generate JIB runs, track payments, and manage disputes."
+            Content = "Generate a joint interest billing statement for a lease up to a period end: its charges (costs and overhead), credits (revenue) and net, for the period the statement records. Listing JIB invoices and tracking partner payments, overdue invoices and disputes is not available yet."
         },
         ["/ppdm39/accounting/period-close"] = new PageHelp
         {
             Title = "Period Close",
-            Content = "Execute period-end close procedures. Complete the pre-close checklist before locking the accounting period."
+            Content = "Choose a period end to see whether the current field's period can be closed. The checks are the ones the close makes itself: allocations have their details, royalties are accrued or paid, revenue is allocated, production matches revenue and journal entries balance; anything outstanding is listed. Closing posts the period's closing journal, and the history lists every close. Reopening a closed period is not available yet."
         },
         ["/ppdm39/accounting/revenue-recognition"] = new PageHelp
         {
             Title = "Revenue Recognition",
-            Content = "Monitor revenue recognition by well, product, and period under ASC 606 / IFRS 15. Track recognized vs deferred revenue."
+            Content = "Review the revenue recorded for the current field this year: the total, each revenue transaction with its well, product and date, and the revenue by month. Whether revenue is recognized or deferred under ASC 606 / IFRS 15 is not recorded yet."
         },
 
         // ── Compliance ────────────────────────────────────────────────────────

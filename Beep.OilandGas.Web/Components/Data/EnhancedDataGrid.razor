@@ -1,6 +1,7 @@
 @typeparam TItem
 @using MudBlazor
 @using System.Linq.Expressions
+@using System.Reflection
 
 <MudCard Elevation="@Elevation" Class="@($"enhanced-data-grid {Class}")">
     <MudCardContent>
@@ -20,7 +21,8 @@
                                      Immediate="true"
                                      Class="og-search-sm" />
                     }
-                    @if (ShowExport)
+                    @* Export and Refresh are the host's to do; without its callback the button would do nothing. *@
+                    @if (ShowExport && OnExport.HasDelegate)
                     {
                         <MudButton Variant="Variant.Outlined" 
                                   Size="Size.Small"
@@ -29,12 +31,14 @@
                             Export
                         </MudButton>
                     }
-                    @if (ShowRefresh)
+                    @if (ShowRefresh && OnRefresh.HasDelegate)
                     {
-                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
-                                      Size="Size.Small"
-                                      OnClick="@RefreshData"
-                                      Title="Refresh data" />
+                        <MudTooltip Text="Refresh data">
+                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                          Size="Size.Small"
+                                          OnClick="@RefreshData"
+                                          aria-label="Refresh data" />
+                        </MudTooltip>
                     }
                 </MudStack>
             </MudStack>
@@ -43,7 +47,7 @@
             @if (ShowFilters && _filters.Any())
             {
                 <MudExpansionPanels>
-                    <MudExpansionPanel Text="Filters" IsExpanded="@_filtersExpanded">
+                    <MudExpansionPanel Text="Filters" @bind-Expanded="_filtersExpanded">
                         <MudGrid Spacing="2">
                             @foreach (var filter in _filters)
                             {
@@ -72,6 +76,12 @@
                         </MudGrid>
                     </MudExpansionPanel>
                 </MudExpansionPanels>
+            }
+            @if (_applied.Count > 0)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @_filteredItems.Count of @Items.Count rows match the filters.
+                </MudText>
             }
 
             <!-- Data Grid -->
@@ -113,10 +123,22 @@
     [Parameter] public string? Class { get; set; }
     [Parameter] public EventCallback OnRefresh { get; set; }
     [Parameter] public EventCallback OnExport { get; set; }
+
+    /// <summary>
+    /// The filter panel's fields. Each names, in <see cref="FilterDefinition.Field"/>, a public property of
+    /// <typeparamref name="TItem"/>; Apply keeps the rows whose value of that property contains the text typed, ignoring
+    /// case, for every filled filter at once. A field the item type does not have stops the component, naming it.
+    /// </summary>
     [Parameter] public List<FilterDefinition> Filters { get; set; } = new();
 
     private List<TItem> _filteredItems = new();
     private List<FilterDefinition> _filters = new();
+
+    /// <summary>
+    /// The filters Apply took, kept apart from the fields so that what is shown changes only on Apply and Clear, and so
+    /// that new items from the host are filtered the same way rather than shown whole.
+    /// </summary>
+    private List<AppliedFilter> _applied = new();
     private string _searchText = string.Empty;
     private Func<TItem, bool>? _quickFilter;
     private bool _isLoading = false;
@@ -125,7 +147,13 @@
     protected override void OnParametersSet()
     {
         _filters = Filters;
-        _filteredItems = Items;
+        // A filter naming a field the items lack is the host's mistake: it stops here, when the host hands it over, not
+        // when a person presses Apply.
+        foreach (var filter in _filters)
+        {
+            PropertyOf(filter);
+        }
+        _filteredItems = Filtered();
         UpdateQuickFilter();
     }
 
@@ -139,8 +167,8 @@
         {
             _quickFilter = item => 
             {
-                // Simple search - check if any property contains the search text
-                var properties = typeof(TItem).GetProperties();
+                // Simple search - check if any property contains the search text (an indexer has no value of its own)
+                var properties = typeof(TItem).GetProperties().Where(p => p.GetIndexParameters().Length == 0);
                 return properties.Any(p =>
                 {
                     var value = p.GetValue(item);
@@ -156,11 +184,14 @@
         StateHasChanged();
     }
 
+    // Apply filtered nothing: it re-rendered the same rows, so the filters were a control that only looked like one.
     private void ApplyFilters()
     {
-        // Filter logic would be applied here
-        // For now, just refresh the grid
-        StateHasChanged();
+        _applied = _filters
+            .Where(filter => !string.IsNullOrWhiteSpace(filter.Value))
+            .Select(filter => new AppliedFilter(PropertyOf(filter), filter.Value!.Trim()))
+            .ToList();
+        _filteredItems = Filtered();
     }
 
     private void ClearFilters()
@@ -169,7 +200,24 @@
         {
             filter.Value = string.Empty;
         }
-        StateHasChanged();
+        _applied = new();
+        _filteredItems = Filtered();
+    }
+
+    private List<TItem> Filtered() =>
+        _applied.Count == 0 ? Items : Items.Where(item => _applied.All(filter => filter.Matches(item))).ToList();
+
+    private static PropertyInfo PropertyOf(FilterDefinition filter) =>
+        typeof(TItem).GetProperty(filter.Field, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+            is { CanRead: true } property && property.GetIndexParameters().Length == 0
+            ? property
+            : throw new InvalidOperationException(
+                $"The filter '{filter.Label}' names the field '{filter.Field}', which {typeof(TItem).Name} does not have.");
+
+    private sealed record AppliedFilter(PropertyInfo Property, string Text)
+    {
+        public bool Matches(TItem item) =>
+            Property.GetValue(item)?.ToString()?.Contains(Text, StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private async Task RefreshData()

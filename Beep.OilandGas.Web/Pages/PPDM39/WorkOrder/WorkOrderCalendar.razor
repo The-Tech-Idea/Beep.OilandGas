@@ -6,6 +6,7 @@
 @inject IWorkOrderServiceClient WorkOrderService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Work Order Calendar</PageTitle>
 
@@ -166,7 +167,12 @@
             var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
             _fieldName = summary?.FieldName;
         }
-        catch { }
+        // The field name is non-critical: a failed call is said as a warning and the calendar still loads; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the work order calendar", "The field name could not be loaded"), Severity.Warning);
+        }
         await LoadCalendarAsync();
     }
 
@@ -178,7 +184,12 @@
         {
             _slots = await WorkOrderService.GetCalendarAsync(_weekStart, _weekStart.AddDays(28));
         }
-        catch (Exception) { _error = "Failed to load calendar."; Snackbar.Add(_error, Severity.Error); }
+        // A failed call is said in the page's alert and a snackbar; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            _error = Calls.Explain(failure, "loading the work order calendar", "Failed to load calendar");
+            Snackbar.Add(_error, Severity.Error);
+        }
         finally { _loading = false; }
     }
 
