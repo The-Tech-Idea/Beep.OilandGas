@@ -1,0 +1,46 @@
+### Page
+- Page URL: http://127.0.0.1:62732/
+### Snapshot
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e3]
+    - paragraph [ref=f1e4]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e5]:
+      - button "Use read-only unmapped profile" [ref=f1e6] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e8] [cursor=pointer]
+      - button "Switch other company" [ref=f1e10] [cursor=pointer]
+      - button "Switch other account" [ref=f1e12] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e14] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e16] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [disabled]
+      - button "Retain an unrecorded competing start" [ref=f1e18] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f1e20] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e22] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f1e24] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=f1e48]:
+    - heading "Execution reporting responsibility" [level=1] [ref=f1e49]
+    - group [ref=f1e50]:
+      - link "Drilling workspace" [ref=f1e51] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=f1e53] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload source and recipients" [ref=f1e55] [cursor=pointer]
+    - generic [ref=f1e57]: Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.
+    - generic [ref=f1e64]:
+      - heading "Recorded execution source" [level=2] [ref=f1e65]
+      - paragraph [ref=f1e66]: Company tenant / company · Sender execution-recorder · Original FIELD original-field/واحد
+      - paragraph [ref=f1e67]: Original drilling program · Version 1 · Well recorded-well/one
+      - paragraph [ref=f1e68]: Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5 · Actual reported spud 2026-10-26 18:14:49Z UTC · Original recorder execution-recorder
+      - link "Open observed drilling progress" [ref=f1e69] [cursor=pointer]:
+        - /url: /drilling/program-execution/reports?reviewId=drilling-program-review-7AAE010FA6BE6A5AE24B7CCADC0AE3677F39101781CB5601AED01178458624F1
+    - generic [ref=f1e71]:
+      - heading "Confirm original reporting assignment" [level=2] [ref=f1e72]
+      - paragraph [ref=f1e73]: Original drilling program · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5 · Original FIELD original-field/واحد
+      - paragraph [ref=f1e74]: Sender role ConfiguredExecutionAssigner · Receiving role ConfiguredReportingRole · 1 persona destinations
+      - paragraph [ref=f1e75]: Frozen recipient site-recorder-1 · Workspace SITE-1
+      - paragraph [ref=f1e76]: Frozen actual reporting destination 473
+      - button "Confirm and retain reporting assignment" [ref=f1e77] [cursor=pointer]
+      - button "Back to assignment" [ref=f1e79] [cursor=pointer]
+```

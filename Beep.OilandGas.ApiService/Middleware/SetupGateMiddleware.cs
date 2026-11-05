@@ -1,4 +1,5 @@
 using Beep.OilandGas.Repository;
+using Microsoft.AspNetCore.Http;
 using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Middleware
@@ -13,7 +14,7 @@ namespace Beep.OilandGas.ApiService.Middleware
 
         public async Task InvokeAsync(HttpContext context, IRepositoryReadinessService readiness)
         {
-            if (ExemptPaths.Any(path => context.Request.Path.StartsWithSegments(path, StringComparison.OrdinalIgnoreCase)))
+            if (SetupBootstrapPaths.IsKeyProtected(context.Request.Path) || ExemptPaths.Any(path => context.Request.Path.StartsWithSegments(path, StringComparison.OrdinalIgnoreCase)))
             {
                 await _next(context);
                 return;

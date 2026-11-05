@@ -10,6 +10,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Mode -eq 'Apply') {
+    throw 'Apply repository migrations through first-time setup so company persona data is checked before schema changes.'
+}
 . (Join-Path $PSScriptRoot 'LocalDevelopmentConnection.ps1')
 $project = Join-Path $PSScriptRoot 'Beep.OilandGas.Repository.csproj'
 $contexts = @{

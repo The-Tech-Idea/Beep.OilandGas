@@ -68,7 +68,7 @@ public class ProductionDashboardStateTests
     public async Task ClientDistinguishesMissingPayloadFromEmptyList(string body, bool valid)
     {
         using var http = new HttpClient(new Handler(body)) { BaseAddress = new Uri("https://api.example") };
-        var client = new ProductionServiceClient(new ApiClient(http, new RecordingFailureReporter()), NullLogger<ProductionServiceClient>.Instance);
+        var client = new ProductionServiceClient(new ApiClient(http, new RecordingFailureReporter(), TestCompany.Selected()), NullLogger<ProductionServiceClient>.Instance);
         if (valid) Assert.Empty(await client.GetDashboardWellsAsync());
         else await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetDashboardWellsAsync());
     }
@@ -76,7 +76,7 @@ public class ProductionDashboardStateTests
     public async Task FieldBoundClientEscapesFieldAndRejectsNullPayload()
     {
         using var http = new HttpClient(new BoundHandler()) { BaseAddress = new Uri("https://api.example") };
-        var client = new ProductionServiceClient(new ApiClient(http, new RecordingFailureReporter()), NullLogger<ProductionServiceClient>.Instance);
+        var client = new ProductionServiceClient(new ApiClient(http, new RecordingFailureReporter(), TestCompany.Selected()), NullLogger<ProductionServiceClient>.Instance);
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetDashboardAsync("field ?#"));
     }
     private sealed class BoundHandler : HttpMessageHandler

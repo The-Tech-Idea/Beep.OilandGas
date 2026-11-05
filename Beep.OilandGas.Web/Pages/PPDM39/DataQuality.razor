@@ -1,176 +1,108 @@
-﻿@page "/ppdm39/data-quality"
-@using Beep.OilandGas.Models.Data
-@inject ApiClient ApiClient
-@inject ISnackbar Snackbar
+@page "/ppdm39/data-quality"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using TheTechIdea.Data.OilGas
+@inject CompanyWellQualityClient Quality
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject ILogger<DataQuality> Logger
+@implements IDisposable
 
-<PageTitle>Assess Data Quality</PageTitle>
-
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-
-    @* ─── Header *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Assess Data Quality</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Completeness and quality metrics per PPDM table</MudText>
-                <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
-                         Icon="@Icons.Material.Filled.FactCheck">Data Management</MudChip>
-            </MudStack>
-        </MudStack>
-    </MudStack>
-
-    @* ─── Table Selector *@
-    <MudCard Elevation="1" Class="mb-4">
-        <MudCardContent>
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                <MudSelect @bind-Value="_selectedTable"
-                           Label="Select Table"
-                           Variant="Variant.Outlined"
-                           T="string" Class="og-grow">
-                    <MudSelectItem Value="@("WELL")">WELL</MudSelectItem>
-                    <MudSelectItem Value="@("WELL_STATUS")">WELL_STATUS</MudSelectItem>
-                    <MudSelectItem Value="@("WELL_XREF")">WELL_XREF</MudSelectItem>
-                </MudSelect>
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Assessment"
-                           OnClick="LoadQualityDashboard"
-                           Disabled="@_isLoading">Load Dashboard</MudButton>
-            </MudStack>
-        </MudCardContent>
-    </MudCard>
-    
-    @if (_isLoading)
+<PageTitle>Well data review</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Well data review</MudText>
+    <MudText Class="my-3">Review the identifier, name and number for up to 20 wells visible to you in the selected company. Enter one UWI per line. This is not a table-wide quality score.</MudText>
+    @if (Company.Selection is null) { <MudAlert Severity="Severity.Info">Select a company before reviewing a well.</MudAlert> }
+    <MudButton OnClick="FindWells" Disabled="@(_busy || Company.Selection is null)" Variant="Variant.Outlined" Class="my-3">@(string.IsNullOrWhiteSpace(_wellIds) ? "Find visible well sample" : "Replace list with visible well sample")</MudButton>
+    <MudText Typo="Typo.body2">The sample contains at most 20 visible wells and does not represent the full population.</MudText>
+    <MudTextField T="string" Value="@_wellIds" ValueChanged="ChangeWells" Label="Well identifiers (UWI)" Lines="5" MaxLength="2600" Disabled="@_busy" />
+    <MudButton OnClick="Review" Disabled="@(_busy || Company.Selection is null || string.IsNullOrWhiteSpace(_wellIds))" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">Review well fields</MudButton>
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reviewing well data" /> }
+    @if (_error is not null) { <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert> }
+    @if (_sampleNotice is not null) { <MudAlert Severity="Severity.Info" role="status">@_sampleNotice</MudAlert> }
+    @if (_review is { } review)
     {
-        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
-    }
-
-    @if (_dashboard != null)
-    {
-        @* ─── Quality KPI Cards ─── *@
-        <MudGrid Class="mb-4" Spacing="3">
-            <MudItem xs="12" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Overall Quality</MudText>
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
-                            <MudProgressCircular Value="@_dashboard.OverallQualityScore"
-                                               Size="Size.Large"
-                                               Color="@GetQualityColor(_dashboard.OverallQualityScore)" />
-                            <MudText Typo="Typo.h5">@_dashboard.OverallQualityScore.ToString("F1")%</MudText>
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-
-            <MudItem xs="12" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Completeness</MudText>
-                        <MudText Typo="Typo.h4" Class="mt-2">@(_dashboard.CurrentMetrics.COMPLETENESS_SCORE?.ToString("F1") ?? "0.0")%</MudText>
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">Complete: @_dashboard.CurrentMetrics.CompleteRecords / @_dashboard.CurrentMetrics.TotalRecords</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-
-            <MudItem xs="12" md="4">
-                <MudCard Elevation="2">
-                    <MudCardContent>
-                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Active Alerts</MudText>
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
-                            <MudText Typo="Typo.h4">@_dashboard.ActiveAlerts.Count</MudText>
-                            @if (_dashboard.ActiveAlerts.Any(a => a.Severity == QualityAlertSeverity.Critical))
-                            {
-                                <MudChip T="string" Color="Color.Error" Size="Size.Small">Critical</MudChip>
-                            }
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
-
-        @* ─── Alerts Grid ─── *@
-        @if (_dashboard.ActiveAlerts.Any())
+        var visible = review.Wells.Where(well => well.Status == "Found").ToArray();
+        <MudText Typo="Typo.h6" Class="my-3">Presence in the requested wells</MudText>
+        <MudText Typo="Typo.body2">@visible.Length of @review.Wells.Length requested wells were visible. Wells that were not visible are excluded from the field counts.</MudText>
+        @if (visible.Length == 0) { <MudAlert Severity="Severity.Info">Field presence is unavailable because no requested wells were visible.</MudAlert> }
+        else
         {
-            <MudCard Elevation="2">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Quality Alerts</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent Class="pa-0">
-                    <MudDataGrid T="QualityAlert" Items="@_dashboard.ActiveAlerts" Dense="true" Hover="true" Striped="true"
-                                 SortMode="SortMode.Multiple" Filterable="true">
-                        <Columns>
-                            <TemplateColumn Title="Severity" SortBy="a => a.Severity">
-                                <CellTemplate>
-                                    <MudChip T="string" Color="@GetSeverityColor(context.Item.Severity)" Size="Size.Small">
-                                        @context.Item.Severity
-                                    </MudChip>
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <PropertyColumn Property="a => a.FieldName" Title="Field" />
-                            <PropertyColumn Property="a => a.AlertMessage" Title="Message" />
-                        </Columns>
-                        <NoRecordsContent>
-                            <MudStack AlignItems="AlignItems.Center" Class="pa-6">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Class="og-icon-xl" />
-                                <MudText Typo="Typo.body1">No alerts — all quality checks pass</MudText>
-                            </MudStack>
-                        </NoRecordsContent>
-                    </MudDataGrid>
-                </MudCardContent>
-            </MudCard>
+            @foreach (var name in new[] { "UWI", "WELL_NAME", "WELL_NUM" })
+            {
+                var present = visible.Count(well => well.Fields.Single(field => field.Name == name).Present);
+                <MudText>@name: @present of @visible.Length visible wells recorded</MudText>
+            }
+        }
+        <MudText Typo="Typo.h6" Class="my-3">Reviewed wells</MudText>
+        @foreach (var well in review.Wells)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-2">
+                <MudText Typo="Typo.subtitle1">@well.WellId</MudText>
+                @if (well.Status == "NotVisible") { <MudText>No well was visible for this identifier in the selected company.</MudText> }
+                else { @foreach (var field in well.Fields) { <MudText>@field.Name: @(field.Present ? "present" : "not recorded")</MudText> } }
+            </MudPaper>
         }
     }
+    <MudButton Href="/analytics/dashboard" Variant="Variant.Text" Class="mt-4">Back to data analyst workspace</MudButton>
 </MudContainer>
 
 @code {
-    private string _selectedTable = "WELL";
-    private QualityDashboardData? _dashboard;
-    private bool _isLoading = false;
-
-    private async Task LoadQualityDashboard()
+    private string _wellIds = "";
+    private CompanyWellQualityBatchReview? _review;
+    private string? _error;
+    private string? _sampleNotice;
+    private bool _busy, _disposed;
+    private long _generation;
+    protected override void OnInitialized() => Company.Changed += CompanyChanged;
+    private void CompanyChanged()
     {
-        if (string.IsNullOrWhiteSpace(_selectedTable))
-        {
-            Snackbar.Add("Please select a table", Severity.Warning);
-            return;
-        }
-
-        _isLoading = true;
+        Interlocked.Increment(ref _generation);
+        _ = InvokeAsync(() => { if (!_disposed) { _review = null; _error = null; _sampleNotice = null; _wellIds = ""; _busy = false; StateHasChanged(); } });
+    }
+    private void ChangeWells(string value) { if (_busy) return; Interlocked.Increment(ref _generation); _wellIds = value; _review = null; _error = null; _sampleNotice = null; }
+    private async Task FindWells()
+    {
+        var snapshot = Company.Snapshot; var previous = _wellIds;
+        if (_busy || snapshot.Selection is null) return;
+        var generation = Interlocked.Increment(ref _generation);
+        bool Current() => !_disposed && generation == Interlocked.Read(ref _generation) && snapshot == Company.Snapshot && _wellIds == previous;
+        _busy = true; _review = null; _error = null; _sampleNotice = null;
         try
         {
-            _dashboard = await ApiClient.GetAsync<QualityDashboardData>($"/api/datamanagement/quality/{Uri.EscapeDataString(_selectedTable)}/dashboard");
-            if (_dashboard != null)
-            {
-                Snackbar.Add("Quality dashboard loaded", Severity.Success);
-            }
+            var sample = await Quality.FindAsync();
+            if (!Current()) return;
+            if (sample is null || sample.Company != snapshot.Selection.Scope || sample.WellIds is null || sample.WellIds.Length > 20 ||
+                sample.WellIds.Any(id => string.IsNullOrWhiteSpace(id) || id.Length > 128 || id != id.Trim() || id.Any(char.IsControl)) ||
+                sample.WellIds.Distinct(StringComparer.Ordinal).Count() != sample.WellIds.Length)
+                throw new InvalidOperationException("The visible well sample was not confirmed.");
+            _wellIds = string.Join("\n", sample.WellIds);
+            _sampleNotice = sample.WellIds.Length == 0 ? "No wells were returned in this visible sample." : $"{sample.WellIds.Length} wells selected from the visible sample. Review or edit the list before continuing.";
         }
-        catch (Exception)
-        {
-            Snackbar.Add("Error loading quality dashboard.", Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Visible well sample was not confirmed"); _error = "The visible well sample could not be confirmed. Check company access and try again."; } }
+        finally { if (!_disposed && generation == Interlocked.Read(ref _generation) && snapshot == Company.Snapshot) _busy = false; }
     }
-
-    private Color GetQualityColor(double score)
+    private async Task Review()
     {
-        return score >= 80 ? Color.Success : score >= 60 ? Color.Warning : Color.Error;
-    }
-
-    private Color GetSeverityColor(QualityAlertSeverity severity)
-    {
-        return severity switch
+        var snapshot = Company.Snapshot; var input = _wellIds;
+        if (_busy || snapshot.Selection is null) return;
+        var wells = input.Split('\n').Select(value => value.TrimEnd('\r')).Where(value => value.Length != 0).ToArray();
+        if (wells.Length is < 1 or > 20 || wells.Any(well => string.IsNullOrWhiteSpace(well) || well.Length > 128 || well != well.Trim() || well.Any(char.IsControl)) ||
+            wells.Distinct(StringComparer.Ordinal).Count() != wells.Length) { _error = "Enter one to twenty distinct well identifiers, one per line, without surrounding spaces."; return; }
+        var generation = Interlocked.Increment(ref _generation);
+        bool Current() => !_disposed && generation == Interlocked.Read(ref _generation) && snapshot == Company.Snapshot && _wellIds == input;
+        _busy = true; _review = null; _error = null;
+        try
         {
-            QualityAlertSeverity.Critical => Color.Error,
-            QualityAlertSeverity.High => Color.Warning,
-            QualityAlertSeverity.Medium => Color.Info,
-            _ => Color.Default
-        };
+            var review = await Quality.ReviewAsync(new(wells));
+            if (!Current()) return;
+            if (review is null || review.Company != snapshot.Selection.Scope || review.Wells is null || review.Wells.Length != wells.Length ||
+                review.Wells.Where((item, i) => item is null || item.Company != review.Company || item.WellId != wells[i] || item.Fields is null ||
+                    item.Status is not ("Found" or "NotVisible") || item.Status == "NotVisible" && item.Fields.Length != 0 ||
+                    item.Status == "Found" && (!item.Fields.Select(x => x.Name).SequenceEqual(new[] { "UWI", "WELL_NAME", "WELL_NUM" }, StringComparer.Ordinal) || !item.Fields[0].Present)).Any())
+                throw new InvalidOperationException("The well reviews were not confirmed for the selected company.");
+            _review = review;
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Well data review was not confirmed"); _error = "Well data could not be confirmed. Check your company, access and well identifier, then try again."; } }
+        finally { if (Current()) _busy = false; }
     }
+    public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); Company.Changed -= CompanyChanged; }
 }
-

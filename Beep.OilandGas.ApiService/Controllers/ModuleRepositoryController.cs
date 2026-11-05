@@ -19,13 +19,21 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [Route("api/setup/modules")]
 [Authorize(Roles = "Administrator")]
 public sealed class ModuleRepositoryController(RepositoryDbContext repository, IDMEEditor editor,
-    IEnumerable<IModuleSetup> modules, IPPDM39SchemaMigrationService migration, IFailureReporter failures) : ControllerBase
+    IEnumerable<IModuleSetup> modules, IPPDM39SchemaMigrationService migration, IFailureReporter failures,
+    ModuleBindingService bindingService, RepositoryTenantContext tenant) : ControllerBase
 {
+    private readonly ModuleConnectionResolver _connectionResolver = new(repository, editor, tenant);
+
+    [HttpGet("tenants")]
+    public async Task<IActionResult> Tenants(CancellationToken cancellationToken) =>
+        Ok(await repository.Set<AppTenant>().AsNoTracking().Where(x => x.IsActive)
+            .OrderBy(x => x.Name).ToListAsync(cancellationToken));
+
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
-        var bindings = await repository.ModuleDatabases.AsNoTracking().ToDictionaryAsync(x => x.ModuleId, cancellationToken);
-        return Ok(modules.Where(x => !string.Equals(x.ModuleId, "SECURITY", StringComparison.OrdinalIgnoreCase))
+        var bindings = (await bindingService.ListAsync(SelectedTenant(), cancellationToken)).ToDictionary(x => x.ModuleId);
+        return Ok(modules.Where(x => !string.Equals(x.ModuleId, "SECURITY", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.ModuleId, "SYSTEM_SETUP", StringComparison.OrdinalIgnoreCase))
             .OrderBy(x => x.Order).Select(module => new ModuleDatabaseSummary(module.ModuleId, module.ModuleName,
                 bindings.GetValueOrDefault(module.ModuleId)?.ConnectionName,
                 bindings.GetValueOrDefault(module.ModuleId)?.ConcurrencyStamp)));
@@ -47,26 +55,29 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
             string.Equals(x.ConnectionName, request.ConnectionName, StringComparison.OrdinalIgnoreCase)).ToList();
         if (matches.Count != 1) return BadRequest(new { Error = "Select an existing, uniquely named BeepDM connection." });
         var connection = matches[0];
-        var binding = await repository.ModuleDatabases.FindAsync([module.ModuleId], cancellationToken);
-        if (binding is null)
-        {
-            if (request.ConcurrencyStamp is not null) return Conflict();
-            binding = new ModuleDatabaseBinding { ModuleId = module.ModuleId, ConnectionName = connection.ConnectionName };
-            repository.ModuleDatabases.Add(binding);
-        }
-        else
-        {
-            if (!string.Equals(binding.ConcurrencyStamp, request.ConcurrencyStamp, StringComparison.Ordinal))
-                return Conflict(new { Error = "The module binding changed. Reload before saving." });
-            binding.ConnectionName = connection.ConnectionName;
-            binding.ConcurrencyStamp = Guid.NewGuid().ToString();
-        }
         // A binding somebody else saved first — a stale version, or the same module bound twice — is the administrator's to
         // reload; any other refused save is a failure and goes on to the API's handler (OILGAS-CATCH-01).
-        try { await repository.SaveChangesAsync(cancellationToken); }
+        try { return Ok(await bindingService.BindAsync(SelectedTenant(), module.ModuleId,
+            request with { ConnectionName = connection.ConnectionName }, User.ActingUserId(), cancellationToken)); }
         catch (DbUpdateConcurrencyException changed) { return BindingChanged(changed); }
         catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return BindingChanged(duplicate); }
-        return Ok(binding);
+    }
+
+    [HttpGet("unowned")]
+    public async Task<IActionResult> Unowned(CancellationToken cancellationToken) =>
+        Ok(await bindingService.UnownedAsync(cancellationToken));
+
+    [HttpPost("{bindingId:long}/owner")]
+    public async Task<IActionResult> AssignOwner(long bindingId, ModuleOwnershipRequest request, CancellationToken cancellationToken)
+    {
+        var binding = await repository.ModuleDatabases.AsNoTracking().SingleOrDefaultAsync(x => x.BindingId == bindingId, cancellationToken);
+        if (binding is null) return NotFound();
+        if (editor.ConfigEditor.DataConnections.Count(x =>
+            string.Equals(x.ConnectionName, binding.ConnectionName, StringComparison.OrdinalIgnoreCase)) != 1)
+            return Conflict(new { Error = "The BeepDM connection is missing or ambiguous; reconcile it before assigning ownership." });
+        try { return Ok(await bindingService.AssignOwnershipAsync(bindingId, request, User.ActingUserId(), cancellationToken)); }
+        catch (DbUpdateConcurrencyException changed) { return BindingChanged(changed); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return BindingChanged(duplicate); }
     }
 
     [HttpPost("{moduleId}/plan")]
@@ -74,10 +85,13 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
     {
         var module = Find(moduleId);
         if (module is null) return BadRequest(new { Error = "Unknown module or repository-owned security module." });
-        var binding = await repository.ModuleDatabases.AsNoTracking().SingleOrDefaultAsync(x => x.ModuleId == module.ModuleId, cancellationToken);
+        var tenantId = SelectedTenant();
+        await bindingService.RequireActiveTenantAsync(tenantId, cancellationToken);
+        var binding = await repository.ModuleDatabases.AsNoTracking().SingleOrDefaultAsync(x => x.TenantId == tenantId && x.ModuleId == module.ModuleId, cancellationToken);
         if (binding is null || string.IsNullOrWhiteSpace(request.ConcurrencyStamp) ||
             !string.Equals(binding.ConcurrencyStamp, request.ConcurrencyStamp, StringComparison.Ordinal))
             return Conflict(new { Error = "The module binding changed or is missing. Reload before planning." });
+        await _connectionResolver.ResolveAsync(module.ModuleId, cancellationToken);
         if (editor.ConfigEditor.DataConnections.Count(x =>
             string.Equals(x.ConnectionName, binding.ConnectionName, StringComparison.OrdinalIgnoreCase)) != 1)
             return Conflict(new { Error = "The selected BeepDM connection is missing or ambiguous." });
@@ -102,11 +116,14 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
         // reaches the API's handler as its refusal, and a provider that fails while it looks is a reported failure — not a
         // "could not be verified" (OILGAS-CATCH-01: every exception here was answered 400 or 409, unreported).
         ModuleSchemaBoundary.Validate(module.EntityTypes);
+        var tenantId = SelectedTenant();
+        await bindingService.RequireActiveTenantAsync(tenantId, cancellationToken);
         var binding = await repository.ModuleDatabases.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.ModuleId == module.ModuleId, cancellationToken);
+            .SingleOrDefaultAsync(x => x.TenantId == tenantId && x.ModuleId == module.ModuleId, cancellationToken);
         if (binding is null || string.IsNullOrWhiteSpace(request.ConcurrencyStamp) ||
             !string.Equals(binding.ConcurrencyStamp, request.ConcurrencyStamp, StringComparison.Ordinal))
             return Conflict(new { Error = "The module binding changed or is missing. Reload before seeding." });
+        await _connectionResolver.ResolveAsync(module.ModuleId, cancellationToken);
         var matches = editor.ConfigEditor.DataConnections.Where(x =>
             string.Equals(x.ConnectionName, binding.ConnectionName, StringComparison.OrdinalIgnoreCase)).ToList();
         if (matches.Count != 1)
@@ -135,6 +152,9 @@ public sealed class ModuleRepositoryController(RepositoryDbContext repository, I
     }
 
     private IModuleSetup? Find(string moduleId) => modules.SingleOrDefault(x =>
-        !string.Equals(x.ModuleId, "SECURITY", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(x.ModuleId, "SECURITY", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.ModuleId, "SYSTEM_SETUP", StringComparison.OrdinalIgnoreCase) &&
         string.Equals(x.ModuleId, moduleId, StringComparison.OrdinalIgnoreCase));
+
+    private string SelectedTenant() => tenant.TenantId ??
+        throw Beep.OilandGas.Models.Core.Refusals.RefusalException.Invalid("Select a tenant before managing module databases.");
 }

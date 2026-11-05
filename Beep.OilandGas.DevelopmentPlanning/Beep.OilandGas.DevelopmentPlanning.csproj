@@ -9,6 +9,7 @@
 </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
   </ItemGroup>

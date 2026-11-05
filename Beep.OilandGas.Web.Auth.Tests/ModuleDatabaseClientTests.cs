@@ -14,8 +14,8 @@ public class ModuleDatabaseClientTests
         using var handler = new Handler(HttpStatusCode.OK,
             "{\"moduleId\":\"LIFECYCLE\",\"success\":true,\"recordsInserted\":3,\"tablesSeeded\":1,\"errors\":[]}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        var result = await client.SeedAsync("LIFECYCLE", new("saved-version"));
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        var result = await client.SeedAsync("test-tenant", "LIFECYCLE", new("saved-version"));
         Assert.True(result.Success);
         Assert.Equal(3, result.RecordsInserted);
         Assert.Equal(HttpMethod.Post, handler.Method);
@@ -33,8 +33,8 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(status, "{}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.SeedAsync("LIFECYCLE", new("saved-version")));
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        await Assert.ThrowsAsync<OilGasApiException>(() => client.SeedAsync("test-tenant", "LIFECYCLE", new("saved-version")));
     }
 
     [Fact]
@@ -42,8 +42,8 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"reviewed-plan\",\"planHash\":\"plan-hash\",\"manifestHash\":\"manifest-hash\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        await client.ExecuteAsync(new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }, true);
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        await client.ExecuteAsync("test-tenant", new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }, true);
         Assert.Equal("/api/ppdm39/setup/schema/execute", handler.Path);
         using var body = JsonDocument.Parse(handler.Body!);
         Assert.Equal("reviewed-plan", body.RootElement.GetProperty("planId").GetString());
@@ -57,13 +57,15 @@ public class ModuleDatabaseClientTests
     [Fact]
     public async Task ApprovalUsesReviewedPlanWithoutClientActor()
     {
-        using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"reviewed-plan\"}");
+        using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"reviewed-plan\",\"planHash\":\"plan-hash\",\"manifestHash\":\"manifest-hash\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        await client.ApproveAsync("reviewed-plan");
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        await client.ApproveAsync("test-tenant", new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" });
         Assert.Equal("/api/ppdm39/setup/schema/approve", handler.Path);
         using var body = JsonDocument.Parse(handler.Body!);
         Assert.Equal("reviewed-plan", body.RootElement.GetProperty("planId").GetString());
+        Assert.Equal("plan-hash", body.RootElement.GetProperty("expectedPlanHash").GetString());
+        Assert.Equal("manifest-hash", body.RootElement.GetProperty("expectedManifestHash").GetString());
         Assert.Equal("", body.RootElement.GetProperty("approvedBy").GetString());
     }
 
@@ -72,8 +74,8 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"moduleId\":\"GAS_LIFT\",\"connectionName\":\"gas-db\",\"concurrencyStamp\":\"new\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        var result = await client.BindAsync("GAS_LIFT", new("gas-db", "old"));
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        var result = await client.BindAsync("test-tenant", "GAS_LIFT", new("gas-db", "old"));
         Assert.Equal("new", result.ConcurrencyStamp);
         Assert.Equal(HttpMethod.Put, handler.Method);
         Assert.Equal("/api/setup/modules/GAS_LIFT/connection", handler.Path);
@@ -87,8 +89,8 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"success\":true,\"planId\":\"plan\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        Assert.True((await client.PlanAsync("GAS_LIFT", new("Production", true, true, "restore-123", "binding-version"))).Success);
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        Assert.True((await client.PlanAsync("test-tenant", "GAS_LIFT", new("Production", true, true, "restore-123", "binding-version"))).Success);
         Assert.Equal(HttpMethod.Post, handler.Method);
         Assert.Equal("/api/setup/modules/GAS_LIFT/plan", handler.Path);
         using var body = JsonDocument.Parse(handler.Body!);
@@ -103,8 +105,8 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.Conflict, "{}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.BindAsync("GAS_LIFT", new("gas-db", "stale")));
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        await Assert.ThrowsAsync<OilGasApiException>(() => client.BindAsync("test-tenant", "GAS_LIFT", new("gas-db", "stale")));
     }
 
     [Theory]
@@ -124,8 +126,8 @@ public class ModuleDatabaseClientTests
         reply[key] = value;
         using var handler = new Handler(HttpStatusCode.OK, JsonSerializer.Serialize(reply));
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ExecuteAsync(
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ExecuteAsync("test-tenant",
             new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }, false));
     }
 
@@ -137,8 +139,21 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, JsonSerializer.Serialize(new { success = true, planId = id }));
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ApproveAsync("reviewed-plan"));
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ApproveAsync("test-tenant", new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }));
+    }
+
+    [Theory]
+    [InlineData("planHash")]
+    [InlineData("manifestHash")]
+    public async Task SuccessfulApprovalMustMatchBothReviewedHashes(string changed)
+    {
+        var reply = new Dictionary<string, object> { ["success"] = true, ["planId"] = "reviewed-plan", ["planHash"] = "plan-hash", ["manifestHash"] = "manifest-hash" };
+        reply[changed] = "different";
+        using var handler = new Handler(HttpStatusCode.OK, JsonSerializer.Serialize(reply));
+        using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.ApproveAsync("test-tenant", new() { PlanId = "reviewed-plan", PlanHash = "plan-hash", ManifestHash = "manifest-hash" }));
     }
 
     [Fact]
@@ -146,8 +161,8 @@ public class ModuleDatabaseClientTests
     {
         using var handler = new Handler(HttpStatusCode.OK, "{\"success\":false,\"message\":\"Plan expired\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new ModuleDatabaseClient(new ApiClient(http, new RecordingFailureReporter()));
-        var result = await client.ExecuteAsync(new() { PlanId = "plan", PlanHash = "hash", ManifestHash = "manifest" }, false);
+        var client = new ModuleDatabaseClient(new ApiClient(http, Moq.Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), TestCompany.Selected()));
+        var result = await client.ExecuteAsync("test-tenant", new() { PlanId = "plan", PlanHash = "hash", ManifestHash = "manifest" }, false);
         Assert.False(result.Success);
         Assert.Equal("Plan expired", result.Message);
     }
@@ -156,11 +171,14 @@ public class ModuleDatabaseClientTests
     {
         public HttpMethod? Method { get; private set; }
         public string? Path { get; private set; }
+        public string? Query { get; private set; }
         public string? Body { get; private set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
             Method = request.Method;
             Path = request.RequestUri!.AbsolutePath;
+            Query = request.RequestUri.Query;
+            Assert.Equal("?tenantId=test-tenant", Query);
             Body = request.Content is null ? null : await request.Content.ReadAsStringAsync(token);
             return new(status) { Content = new StringContent(response) };
         }

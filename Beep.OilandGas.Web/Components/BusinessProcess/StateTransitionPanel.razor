@@ -4,7 +4,16 @@
 @inject ApiClient ApiClient
 @inject OilGasApiFailures Answers
 @inject FailureNotifier Notifier
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
 
+@if (_busy)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Submitting reviewed action" />
+}
+@if (Review is not null && DetailState is not null && !DetailState.CanSubmit(Review) && !DetailState.HasUnconfirmedAttempt && !_busy)
+{
+    <MudAlert Severity="Severity.Info">This action review has already been submitted. Reload the recorded process and review available actions again.</MudAlert>
+}
 @if (Transitions.Count == 0)
 {
     <MudText Typo="Typo.body2" Color="Color.Secondary">No transitions available from current state.</MudText>
@@ -14,13 +23,14 @@ else
     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
         @foreach (var t in Transitions)
         {
-            var transitionId = t.TransitionId;
+            var choice = t;
             var label = t.Trigger;
             var needsApproval = t.RequiresApproval;
             <MudButton Variant="Variant.Filled"
                        Color="@(needsApproval ? Color.Warning : Color.Primary)"
                        StartIcon="@(needsApproval ? Icons.Material.Filled.HowToReg : Icons.Material.Filled.ArrowForward)"
-                       OnClick="@(() => ConfirmTransitionAsync(transitionId, label))">
+                       Disabled="@(_busy || DetailState is null || Review is null || !DetailState.CanSubmit(Review))"
+                       OnClick="@(() => ConfirmTransitionAsync(choice))">
                 @label
             </MudButton>
         }
@@ -33,46 +43,38 @@ else
 @using MudBlazor
 
 @code {
+    [Parameter, EditorRequired] public Beep.OilandGas.Web.Services.ProcessInstanceDetailState? DetailState { get; set; }
+    [Parameter, EditorRequired] public TheTechIdea.Data.OilGas.ProcessTransitionReview? Review { get; set; }
+    [Parameter] public string ExpectedRevision { get; set; } = string.Empty;
+    [Parameter] public string CurrentState { get; set; } = string.Empty;
     [Parameter] public string InstanceId { get; set; } = string.Empty;
-    [Parameter] public List<ProcessTransition> Transitions { get; set; } = new();
+    [Parameter] public IReadOnlyList<TheTechIdea.Data.OilGas.ProcessTransitionChoice> Transitions { get; set; } = [];
+    [Parameter] public EventCallback OnAttemptChanged { get; set; }
     [Parameter] public EventCallback OnTransitioned { get; set; }
 
-    private string _reason = string.Empty;
-
-    private async Task ConfirmTransitionAsync(string transitionId, string label)
+    private bool _busy;
+    private async Task ConfirmTransitionAsync(TheTechIdea.Data.OilGas.ProcessTransitionChoice choice)
     {
-        var confirmed = await DialogService.ShowMessageBoxAsync(
-            title: $"Execute: {label}",
-            message: "Provide a reason (optional) and confirm this transition.",
-            yesText: "Execute",
-            noText: "Cancel",
-            options: new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
-
-        if (confirmed != true) return;
-
+        if(_busy || DetailState is null || Review is null || !DetailState.CanSubmit(Review) || string.IsNullOrWhiteSpace(CurrentState) || choice.FromStateId!=CurrentState)return;
+        var reviewed=Review;var detail=DetailState;var instance=InstanceId;var state=CurrentState;var revision=ExpectedRevision;var company=Company.Snapshot;
+        var request=new ProcessTransitionRequest { FromStateId=state,ToStateId=choice.ToStateId,Trigger=choice.Trigger,ExpectedRevision=revision };
+        _busy=true;
         try
         {
-            var request = new ProcessTransitionRequest
-            {
-                FromStateId = string.Empty,
-                ToStateId = transitionId
-            };
-            await ApiClient.PostAsync<ProcessTransitionRequest, object>(
-                $"/api/field/current/process/instances/{Uri.EscapeDataString(InstanceId)}/transitions", request);
+            var confirmed=await DialogService.ShowMessageBoxAsync(title:$"Execute: {choice.Trigger}",message:$"Confirm transition from {state} to {choice.ToStateId}.",yesText:"Execute",noText:"Cancel",options:new DialogOptions { MaxWidth=MaxWidth.ExtraSmall,FullWidth=true });
+            if(confirmed!=true || instance!=InstanceId || state!=CurrentState || revision!=ExpectedRevision || company!=Company.Snapshot)return;
+            // Retain before handing the request to transport; any exception after this point may hide a committed action.
+            if(!detail.TryBeginSubmission(reviewed,choice))return;
+            var result=await ApiClient.PostAsync<ProcessTransitionRequest,ProcessTransitionResult>($"/api/field/current/process/instances/{Uri.EscapeDataString(instance)}/transitions",request);
+            if(company!=Company.Snapshot || instance!=InstanceId || state!=CurrentState || revision!=ExpectedRevision)return;
+            if(result is null || !result.Success || result.InstanceId!=instance || result.FromState!=state || result.NewStepId!=request.ToStateId)
+                throw new InvalidOperationException("The transition response could not be confirmed. Reload recorded source history to investigate the outcome. Repeat submission is blocked on this page.");
+            detail.MarkResponseReturned(reviewed);
+            await OnTransitioned.InvokeAsync();
+            Snackbar.Add("Transition request returned. Review recorded source history to confirm the outcome.",Severity.Info);
         }
-        catch (OilGasApiException answer)
-        {
-            Snackbar.Add(Answers.Explain(answer, "executing a process transition", $"Transition '{label}' was not executed"), Severity.Error);
-            return;
-        }
-        // A component answers every failure it meets with a sentence; the store keeps the exception.
-        catch (Exception ex)
-        {
-            Notifier.Failure(ex, "executing a process transition", $"Transition '{label}' was not executed");
-            return;
-        }
-
-        Snackbar.Add($"Transition '{label}' executed.", Severity.Success);
-        await OnTransitioned.InvokeAsync();
+        catch(OilGasApiException answer){Snackbar.Add(Answers.Explain(answer,"requesting a process transition","The transition outcome was not confirmed. Reload source history to investigate the outcome; repeat submission is blocked on this page"),Severity.Error);}
+        catch(Exception ex){Notifier.Failure(ex,"requesting a process transition","The transition outcome was not confirmed. Reload source history to investigate the outcome; repeat submission is blocked on this page");}
+        finally{_busy=false;await OnAttemptChanged.InvokeAsync();}
     }
 }

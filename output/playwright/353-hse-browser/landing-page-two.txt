@@ -1,0 +1,9 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Next incidents' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 2 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-hse-browser\artifacts\page-2026-10-29T09-32-37-591Z.yml)

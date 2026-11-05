@@ -1,0 +1,24 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@if(Conversion is {} conversion)
+{
+    var rate=conversion.Rates.RequireApplicable();var book=conversion.Rates.Books.Books.Single(row=>row.BookId==conversion.Rates.BookId);
+    <MudPaper Outlined="true" Class="pa-3 my-3">
+        <MudText Typo="Typo.subtitle1">Recorded functional currency conversion</MudText>
+        <MudText>Original @conversion.SourceTotal @rate.SourceCurrency · Functional @conversion.TargetTotal @rate.TargetCurrency · Book @book.BookId</MudText>
+        <MudText>Rate @rate.Rate @rate.TargetCurrency per @rate.SourceCurrency · Version @rate.Version · @rate.RateDecimals exact rate decimals</MudText>
+        <MudText>Quote @rate.QuoteDate.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · Effective @rate.EffectiveFrom.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) through @rate.EffectiveThrough.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · Observed UTC @rate.ObservedAtUtc.ToString("O",System.Globalization.CultureInfo.InvariantCulture)</MudText>
+        @if (CompanyEnvironment?.Matches(Company) == true && conversion.Rates.Books.Company == Company.Selection?.Scope && CompanyEnvironment.LocalTime(rate.ObservedAtUtc) is { } localTime)
+        { <MudText>Observed in company time zone: @localTime</MudText> }
+        <MudText>Provider @rate.Provider · Quote provenance @rate.Provenance · Reviewed authority @rate.AuthorityReference</MudText>
+        <MudText>Functional precision @book.CurrencyDecimals · Total rounding @book.RoundingPolicy · Allocation @rate.AllocationPolicy</MudText>
+        @foreach(var component in conversion.Components){<MudText>@component.Purpose · Original @component.SourceAmount @rate.SourceCurrency · Base @component.BaseTargetAmount · Allocated minor units @component.AllocatedMinorUnits · Functional @component.TargetAmount @rate.TargetCurrency</MudText>}
+        <MudText Typo="Typo.caption">Rate native revision @rate.NativeRevision · Conversion @conversion.Revision</MudText>
+    </MudPaper>
+}
+@code{
+    [Parameter] public CompanyFxConversion? Conversion { get; set; }
+    [CascadingParameter] public CompanyEnvironmentDisplay? CompanyEnvironment { get; set; }
+}

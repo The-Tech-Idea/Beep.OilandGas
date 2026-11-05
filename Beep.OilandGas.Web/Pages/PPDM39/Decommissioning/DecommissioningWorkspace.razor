@@ -1,0 +1,13 @@
+@page "/lifecycle/decommissioning/dashboard"
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<PageTitle>Decommissioning workspace</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-3">Decommissioning workspace</MudText>
+    <MudText Class="mb-3">Review assigned decommissioning work and the current company and FIELD facility sources.</MudText>
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/lifecycle/decommissioning/dashboard"})' />
+    <MudAlert Severity="Severity.Info" Class="mb-4">Recorded facility identity does not establish an approved decommissioning program, abandonment, regulatory clearance or cost. Those decisions require their own evidence and authorized owners.</MudAlert>
+    <CompanyFacilityEvidencePanel />
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2"><MudButton Href="/production/intervention" Variant="Variant.Outlined">Review production interventions</MudButton><MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton></MudStack>
+</MudContainer>

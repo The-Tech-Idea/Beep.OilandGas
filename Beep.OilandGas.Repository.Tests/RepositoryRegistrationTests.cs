@@ -44,7 +44,7 @@ public class RepositoryRegistrationTests
     [InlineData(null, null)]
     [InlineData("SqlServer", null)]
     [InlineData("Sqlite", "Data Source=repository")]
-    public void MissingOrUnsupportedSettingsFailExplicitly(string? provider, string? connection)
+    public async Task MissingOrUnsupportedSettingsExposeUnavailableReadinessAndBlockDatabaseAccess(string? provider, string? connection)
     {
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -52,6 +52,10 @@ public class RepositoryRegistrationTests
             ["Repository:ConnectionString"] = connection,
             ["ConnectionStrings:PPDM39"] = "MustNotBeUsedAsRepository"
         }).Build();
-        Assert.Throws<InvalidOperationException>(() => new ServiceCollection().AddOilGasRepository(config));
+        var services = new ServiceCollection(); services.AddLogging(); services.AddOilGasRepository(config);
+        using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using var scope = root.CreateScope();
+        Assert.Equal(RepositoryReadiness.Unavailable, await scope.ServiceProvider.GetRequiredService<IRepositoryReadinessService>().CheckAsync());
+        Assert.Throws<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<RepositoryDbContext>());
     }
 }

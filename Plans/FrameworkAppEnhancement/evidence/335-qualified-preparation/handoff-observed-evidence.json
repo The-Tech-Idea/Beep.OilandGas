@@ -1,0 +1,216 @@
+{
+  "observed_at_utc": "2026-10-21T05:12:51.7448262Z",
+  "scope": "Original-well intervention history and native-owned maintenance handoff command validation, private start/retry/recovery. Local focused dirty-worktree evidence.",
+  "previous_checkpoint": "authority-observed-evidence.json",
+  "sources": [
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "sha256": "9c6f77994bd808983e3759140c049ffd8e16760fc541e099733db60dd94e0892"
+    },
+    {
+      "path": "Beep.OilandGas.LifeCycle/Services/Production/PPDMProductionService.cs",
+      "sha256": "142f6225fe897871d7c3e35ac765144551e3a3388e95d0d030e29ed3d8848641"
+    },
+    {
+      "path": "Beep.OilandGas.LifeCycle/Services/Production/PPDMProductionService.InterventionDecisions.cs",
+      "sha256": "498238571cca0e70c450731718fe8214c628a17483628b7bf7cf38c833103b3b"
+    },
+    {
+      "path": "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.MaintenanceStart.cs",
+      "sha256": "3e6ddd3cec5da2d6becbf9187a31fa385554b321aa91bad27bef49321bf8fae5"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceHandoffHttpTests.cs",
+      "sha256": "1a8fe779f852d6c78d3ce35c08e9cac2ceb6df98e9ee551c75921b73fd521a64"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/ProductionInterventionNativeDecisionTests.cs",
+      "sha256": "b67f62f9ca64103b4e7bf3f767d43ea4d94dd3855ddc2df8d9eed0d636329463"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceProcessStartTests.cs",
+      "sha256": "f542329615c65c652619f38c82f663a732d4b02589cd6e16969a63a767f2d264"
+    },
+    {
+      "path": "Scripts/Test-MaintenanceProcessStart.ps1",
+      "sha256": "aacbdff6e9b6b4a71e42fb9a98774e7399bd417482591fb3a20e36a442d7afbc"
+    }
+  ],
+  "source_mapping": "Final hashes apply to current protected API code and native definition guards. Scoped-history test ran before the final native process name/key guard edit; its production-reader files and tested behavior are unchanged. Instrumented pre-scope failure has a separate four-file source checkpoint.",
+  "data_assembly": {
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "sha256": "ded3cd480b20b72ebbc3a992358526cc9a7af8a9f7b17a1ab48d978b7ce2e7b0",
+    "copied_runtime_matches": true,
+    "source": "Existing Data5 assembly; no shared Data contract or domain schema was changed in this slice."
+  },
+  "project": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+  "properties": [
+    "FocusedCompanyTests=true",
+    "FocusedDataAssemblyPath=<existing Data5 DLL>",
+    "BuildProjectReferences=false",
+    "GeneratePackageOnBuild=false",
+    "UseBeepDMSource=false"
+  ],
+  "checks": [
+    {
+      "name": "instrumented-original-http-before-source-routing-change",
+      "filter": "FullyQualifiedName~ActualOriginalMaintenanceRecoveryHttp",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "5.6938 minutes",
+      "log": "oilgas-335-handoff-profile-isolated.log",
+      "profile": "oilgas-335-handoff-profile-before-scope.json",
+      "source_checkpoint": "oilgas-335-handoff-profile-source-checkpoint.json",
+      "observed_initial_review_ms": 31840.1196,
+      "current_field_authority_calls": 45,
+      "current_field_authority_ms": 28180.0327,
+      "failure_boundary": "Initial review and choices completed; missing-assignment body recovery at CompanyMaintenanceHandoffHttpTests.cs line 108 exceeded the unchanged 100-second timeout. Later start/recovery assertions were not reached.",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~ActualOriginalMaintenanceRecoveryHttp\" --logger \"console;verbosity=normal\"",
+      "status": "failed"
+    },
+    {
+      "name": "original-well-history-scope",
+      "filter": "FullyQualifiedName~OriginalInterventionRecoveryReadsOnlyItsWellActivityAndRefusesMismatchingRows",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "duration": "1.6877 minutes",
+      "log": "oilgas-335-original-well-scope.log",
+      "seam": "Actual profile/company/row policy and production/repository owners; explicit Beep provider records. Another authorized well exists; wrong/inactive provider activity rows refuse; no native write or transaction.",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:UseSharedCompilation=false -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~OriginalInterventionRecoveryReadsOnlyItsWellActivityAndRefusesMismatchingRows\" --logger \"console;verbosity=normal\"",
+      "status": "verified"
+    },
+    {
+      "name": "native-maintenance-command-validation",
+      "script": "Scripts/Test-MaintenanceProcessStart.ps1",
+      "filter": "FullyQualifiedName~CompanyMaintenanceProcessStartTests",
+      "exit_code": 0,
+      "passed": 40,
+      "failed": 0,
+      "duration": "2.0089 seconds",
+      "log": "oilgas-335-native-maintenance-validation.log",
+      "seam": "Actual lifecycle/process/router/repository/transaction sources; explicit source-link/authority/persona callbacks and Beep provider ledger. Includes changed source/definition/authority, rollback, uncertain commit, original recovery and matching forged revision for blank-name/wrong-key refusal.",
+      "command": "& ./Scripts/Test-MaintenanceProcessStart.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -Filter \"FullyQualifiedName~CompanyMaintenanceProcessStartTests\"",
+      "status": "verified"
+    },
+    {
+      "name": "current-protected-original-handoff-http",
+      "filter": "FullyQualifiedName~ActualOriginalMaintenanceRecoveryHttp",
+      "no_restore": true,
+      "use_shared_compilation": false,
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "duration": "5.4426 minutes",
+      "log": "oilgas-335-handoff-current-http.log",
+      "profile": "oilgas-335-handoff-profile-current.json",
+      "observed_initial_review_ms": 18634.8305,
+      "timeout_seconds": 100,
+      "coverage": [
+        "actual native original production decision",
+        "current app role/company/FIELD/order authority",
+        "only configured WORK_ORDER workflow choices",
+        "missing-assignment recovery refuses without creation",
+        "whole native process/step/history/task start",
+        "exact original retry without extra writes",
+        "private body and reference recovery preserve original intent/receipt",
+        "missing task set is not recreated by body or reference recovery"
+      ],
+      "seam": "Actual standard role bridge from app tables, company/profile/grant owners and native production/lifecycle/transaction/router sources; controlled Beep provider rows and role-persona reader. No OIDC/browser or actual provider claim.",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:UseSharedCompilation=false -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~ActualOriginalMaintenanceRecoveryHttp\" --logger \"console;verbosity=normal\"",
+      "status": "verified"
+    },
+    {
+      "name": "current-protected-handoff-refusals",
+      "filter": "FullyQualifiedName~ActualMaintenanceHandoffReviewAndStartUseOriginalNativeReceiptAndScopedAppAuthority",
+      "no_build": true,
+      "exit_code": 0,
+      "log": "oilgas-335-handoff-current-refusals.log",
+      "passed": 2,
+      "failed": 0,
+      "duration": "2.8806 minutes",
+      "coverage": [
+        "read-only order refuses before start",
+        "live app order-grant revocation during native start rolls back process/task graph"
+      ],
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:UseSharedCompilation=false -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~ActualMaintenanceHandoffReviewAndStartUseOriginalNativeReceiptAndScopedAppAuthority\" --logger \"console;verbosity=normal\"",
+      "status": "verified"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "oilgas-335-handoff-profile-isolated.log",
+      "sha256": "61f6f03eace55f17b7bb0777f486e68e2c39468dd8546e5357ff22a3a0945a7e"
+    },
+    {
+      "path": "oilgas-335-handoff-profile-before-scope.json",
+      "sha256": "4862c7c75efbf925c9124425bb1b90d3e0e449450715ba271b0828f36d07e48b"
+    },
+    {
+      "path": "oilgas-335-handoff-profile-source-checkpoint.json",
+      "sha256": "40aa3f14c151c19aa65da523811064ee008b19060edf0c0306185b7819058382"
+    },
+    {
+      "path": "oilgas-335-original-well-scope.log",
+      "sha256": "fc30328d46065ed7823eb205b13e23f210c1a7e41eaeab3587f7f058e282bd53"
+    },
+    {
+      "path": "oilgas-335-native-maintenance-validation.log",
+      "sha256": "81a5862f3b57aeb3a9d2d2141a133e65e9c6d0f5b3d211d44598409066be29bf"
+    },
+    {
+      "path": "oilgas-335-handoff-current-http.log",
+      "sha256": "1f5c59411533c10c390c5525e1472196a7ef94a6b529a12df12293e1469dfec9"
+    },
+    {
+      "path": "oilgas-335-handoff-profile-current.json",
+      "sha256": "c68956df6983d223b35906cf6faea5bcd93421d4e4b1b4064a95d967d1ae7ec3"
+    },
+    {
+      "path": "oilgas-335-handoff-current-source-checkpoint.json",
+      "sha256": "e86e6f5f773fba90339a3c1e310d199dbae1166919e4b173a6cb8bfe06264751"
+    },
+    {
+      "path": "oilgas-335-handoff-current-refusals.log",
+      "sha256": "41c5e07653551c562b7e0446de4e2082f788c5b988bfa01707f019980bcd2bde"
+    }
+  ],
+  "limitations": [
+    "Stage times overlap and come from separate local runs; they are not a controlled performance comparison.",
+    "All current authority/native source checks remain fresh; no cross-read cache or timeout increase.",
+    "No handwritten SQL, domain EF, migration, schema application, new intent ledger or DTO was introduced.",
+    "The full qualified execution-start/report/physical-acceptance/closure/asset-return API path and persona action/status/dashboard integration remain open.",
+    "Earlier qualified evidence/UI/native checkpoints keep their own source versions and explicit seams.",
+    "Provider, browser/OIDC, concurrent load, clock and release acceptance remain unproven.",
+    "No staging, commit or push; full goal and plan remain active."
+  ],
+  "all_processes_terminal": true,
+  "git": {
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "staging_commit_or_push_performed": false
+  },
+  "self_review": "Reviewed standard role/company/FIELD/order authority, original body/source/definition validation, canonical owner before/after source reads outside its owned transaction, unchanged graph/receipt construction and trace redaction. No independent review or full-roadmap completion claimed.",
+  "environment": {
+    "os": "Microsoft Windows 10.0.26200",
+    "sdk": "10.0.401",
+    "root": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas",
+    "documentation_framework_snapshot": "a80d41ad0affd81b549f5f063787e186d162e37f"
+  },
+  "documentation_maintenance": {
+    "updated": [
+      "Plans/FrameworkAppEnhancement/Implementation-335-Qualified-Facility-and-Equipment-Return.md",
+      "MASTER-TODO-TRACKER.md",
+      "Plans/FrameworkAppEnhancement/README.md",
+      "Plans/FrameworkAppEnhancement/Company-Plan-Index.md",
+      "Plans/FrameworkAppEnhancement/Company-Phase-D-Operations.md",
+      "Plans/FrameworkAppEnhancement/Persona-08-Maintenance-and-Facility.md",
+      "Plans/FrameworkAppEnhancement/Persona-05-Operator-and-Shift-Supervisor.md",
+      "Plans/FrameworkAppEnhancement/Implementation-317-Controlled-Execution-Verification-and-Return.md",
+      "Plans/FrameworkAppEnhancement/Persona-12-Company-Administrator.md"
+    ],
+    "removed": [],
+    "disposition": "Updated the existing owner and eight current tracker checkpoints in place. Replaced obsolete timeout/investigation guidance and reconciled already-implemented nullable capability, returned-column presence, native participant and original-work capture descriptions. Preserved unresolved qualified API/persona requirements and historical immutable failed logs/source-specific evidence. No duplicate fix Markdown document or removed unique requirement."
+  }
+}

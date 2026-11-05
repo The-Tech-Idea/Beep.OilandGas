@@ -5,6 +5,7 @@ using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Client.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 
@@ -30,6 +31,7 @@ namespace Beep.OilandGas.Client.DependencyInjection
 
             services.AddSingleton(options);
             services.AddHttpClient();
+            services.TryAddScoped<CompanyClientContext>();
 
             // The API admits only signed-in people, so remote calls carry a person's access token, which the host supplies
             // (IAuthenticationProvider — the Web's is the signed-in person's own). It signed in here with a username and
@@ -42,7 +44,7 @@ namespace Beep.OilandGas.Client.DependencyInjection
                     ?? throw new InvalidOperationException(
                         "The Beep Oil & Gas client in remote mode needs an IAuthenticationProvider supplying the signed-in person's access token; register one.");
                 var logger = sp.GetService<ILogger<BeepOilandGasApp>>();
-                return new BeepOilandGasApp(httpClient, options, authProvider, logger);
+                return new BeepOilandGasApp(httpClient, options, sp.GetRequiredService<CompanyClientContext>(), authProvider, logger);
             });
 
             return services;

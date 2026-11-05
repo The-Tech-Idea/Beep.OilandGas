@@ -60,7 +60,11 @@ public class ComplianceController : ControllerBase
     public async Task<ActionResult<ObligationDetailModel>> GetByIdAsync(string obligationId)
     {
         if (string.IsNullOrWhiteSpace(obligationId)) return BadRequest(new { error = "Obligation ID is required." });
-        var result = await _compliance.GetByIdAsync(obligationId);
+        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
+        var result = await _compliance.GetByIdAsync(obligationId, fieldId);
+        if (_fieldOrchestrator.CurrentFieldId != fieldId || result is not null && (result.FieldId != fieldId || result.ObligationId != obligationId))
+            throw new InvalidOperationException("The obligation or selected FIELD changed during the read.");
         if (result is null) return NotFound(new { error = $"Obligation {obligationId} not found." });
         return Ok(result);
     }
@@ -144,19 +148,23 @@ public class ComplianceController : ControllerBase
 
     [HttpPost("ghg/report")]
     public async Task<ActionResult<GHGEmissionReport>> GenerateGHGReportAsync(
-        [FromQuery] int year, [FromQuery] string jurisdiction = "USA")
+        [FromQuery] int year, [FromQuery] string jurisdiction)
     {
+        if (string.IsNullOrWhiteSpace(jurisdiction)) return BadRequest(new { error = "Select a jurisdiction." });
         var userId = User.ActingUserId();
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-        return Ok(await _ghg.GenerateAnnualReportAsync(fieldId, year, jurisdiction, userId));
+        try { return Ok(await _ghg.GenerateAnnualReportAsync(fieldId, year, jurisdiction, userId)); }
+        catch (NotSupportedException) { return StatusCode(503, new { error = "GHG reporting requires verified company-scoped activity data and emission factors." }); }
     }
 
     [HttpGet("ghg/total")]
     public async Task<ActionResult<double>> GetTotalEmissionsAsync(
         [FromQuery] int? year, [FromQuery] string? jurisdiction)
     {
+        if (string.IsNullOrWhiteSpace(jurisdiction)) return BadRequest(new { error = "Select a jurisdiction." });
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         var y       = year ?? DateTime.UtcNow.Year;
-        return Ok(await _ghg.GetTotalEmissionsAsync(fieldId, y, jurisdiction));
+        try { return Ok(await _ghg.GetTotalEmissionsAsync(fieldId, y, jurisdiction)); }
+        catch (NotSupportedException) { return StatusCode(503, new { error = "GHG reporting requires verified company-scoped activity data and emission factors." }); }
     }
 }

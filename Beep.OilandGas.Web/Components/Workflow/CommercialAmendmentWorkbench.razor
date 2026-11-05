@@ -1,0 +1,129 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CommercialAmendmentWorkspaceState State
+@inject IBusinessProcessServiceClient Processes
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 mt-3">
+    <MudText Typo="Typo.h6">Amend rejected commercial terms</MudText>
+    <MudText>Review fresh data and propose a distinct version after completing the original rejection review. The new terms require a separate independent handoff.</MudText>
+    <MudButton OnClick="Reload" Disabled="State.Busy">Reload amendment evidence and reconcile</MudButton>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing or recording the commercial amendment" />}
+    @if(State.HasPendingIntent && State.SavedIntent is null){<MudAlert Severity="Severity.Warning">The original amendment remains unconfirmed. Keep this session until its proposal is saved and return to its original company, account and process to reconcile the same intent.</MudAlert>}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(_authorized)
+    {
+        @if(State.SavedIntent is {} saved)
+        {
+            <MudAlert Severity="Severity.Info">Original amendment proposal saved. Return to this original process to recover the same intent after reconnecting.</MudAlert>
+            <MudText>Saved intent: @saved.COMMERCIAL_TERMS_INTENT_ID · Original account: @saved.ROW_CREATED_BY · Saved UTC: @saved.ROW_CREATED_DATE?.ToString("O")</MudText>
+        }
+        @if(State.Recorded is {} record)
+        {
+            <MudAlert Severity="Severity.Success">Recorded amendment and original process history confirmed.</MudAlert>
+            <MudText>Version: @record.Preparation.Terms.Version · Prepared by: @record.Preparation.ActorUserId · UTC: @record.PreparedAtUtc.ToString("O")</MudText>
+            <MudText>Price: @record.Preparation.Terms.Price.ToString(System.Globalization.CultureInfo.CurrentCulture) @record.Preparation.Terms.CurrencyCode · Basis: @record.Preparation.Terms.PriceUnit · Method: @record.Preparation.Terms.PricingMethod</MudText>
+            <MudText>Decision: @(record.Decision?.Decision.ToString() ?? "Independent decision pending")</MudText>
+            @if(State.Handoff?.Start is {} existing)
+            {
+                <MudAlert Severity="Severity.Info">Existing handoff: @State.Handoff.Status</MudAlert>
+                <MudButton Href="@($"/accounting/processes/{Uri.EscapeDataString(existing.InstanceId())}")">Open recorded amendment handoff</MudButton>
+            }
+            else if(State.Handoff is null)
+            {
+                <MudAlert Severity="Severity.Warning">The existing handoff could not be confirmed. Reload the evidence before starting a workflow.</MudAlert>
+            }
+            else if(record.Decision is null && !State.HasPendingIntent && Company.Selection?.Permissions.Contains("Workflow.Start",StringComparer.Ordinal)==true)
+            {
+                <Beep.OilandGas.Web.Components.BusinessProcess.CompanyAccountingHandoffPanel EntityType="SALES_CONTRACT" EntityId="@record.Preparation.Source.Contract.SALES_CONTRACT_ID" SourceRevision="@CompanyAccountingSourceTypes.CommercialPreparationRevision(record)" />
+            }
+        }
+        else if(State.Review is {} review && !State.HasPendingIntent)
+        {
+            <MudText>Rejected version: @review.Previous.Preparation.Terms.Version · Independent reviewer: @review.Previous.Decision!.ActorUserId</MudText>
+            <MudText>Rejection reason: @review.Previous.Decision!.Reason</MudText>
+            <MudText>Fresh FIELD: @review.Source.Source.FieldId · Transaction: @review.Source.TransactionId · Source revision: @review.Source.Revision</MudText>
+            <MudText>Fresh gross revenue: @(review.Source.Source.Rows.Single(row=>row.REVENUE_TRANSACTION_ID==review.Source.TransactionId).GROSS_REVENUE?.ToString(System.Globalization.CultureInfo.CurrentCulture) ?? "Not recorded")</MudText>
+            <MudForm @ref="_form">
+                <MudTextField T="string" Label="New terms version" @bind-Value="_version" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudDatePicker Label="New effective from stored calendar date" @bind-Date="_from" Required="true" Disabled="State.Busy" />
+                <MudDatePicker Label="New effective through stored calendar date (optional)" @bind-Date="_through" Disabled="State.Busy" />
+                <MudTextField T="string" Label="New currency code" @bind-Value="_currency" Required="true" MaxLength="16" Disabled="State.Busy" />
+                <MudNumericField T="decimal?" Label="New proposed price" @bind-Value="_price" Min="0" Required="true" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Explicit price unit and basis" @bind-Value="_basis" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudTextField T="string" Label="New pricing method" @bind-Value="_method" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudTextField T="string" Label="New terms notes" @bind-Value="_notes" Required="true" MaxLength="4096" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Amendment reason" @bind-Value="_reason" Required="true" MaxLength="4096" Disabled="State.Busy" />
+                <MudButton OnClick="Prepare" Disabled="State.Busy" Color="Color.Primary">Record new amendment version</MudButton>
+            </MudForm>
+        }
+        @if(State.Pending is {} retained)
+        {
+            <MudText>Retained amendment intent: @retained.Amendment.Preparation.IntentId · Version: @retained.Amendment.Preparation.Terms.Version · Reason: @retained.Amendment.Reason</MudText>
+            <MudText>Retained price: @retained.Amendment.Preparation.Terms.Price.ToString(System.Globalization.CultureInfo.CurrentCulture) @retained.Amendment.Preparation.Terms.CurrencyCode · Basis: @retained.Amendment.Preparation.Terms.PriceUnit</MudText>
+            <MudButton OnClick="Retry" Disabled="@(!State.CanRetry)">Retry original amendment intent</MudButton>
+        }
+        <MudText Typo="Typo.h6" Class="mt-3">Recorded version history</MudText>
+        @foreach(var entry in Versions())
+        {
+            <MudText>Version: @entry.Record.Preparation.Terms.Version · Preparer: @entry.Record.Preparation.ActorUserId · Decision: @(entry.Record.Decision?.Decision.ToString() ?? "Pending")</MudText>
+            @if(entry.Amendment is {} amendment)
+            {
+                <MudText>Amendment reason: @amendment.Reason</MudText>
+                @if(amendment.Process is {} origin){<MudButton Href="@("/accounting/processes/"+Uri.EscapeDataString(origin.InstanceId))">Open predecessor rejection review</MudButton>}
+            }
+        }
+    }
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public CompanyCommercialProcessSourceReview Source{get;set;}=default!;
+    [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
+    private MudForm? _form;
+    private bool _authorized,_disposed;
+    private long _epoch;
+    private string? _error;
+    private string _version="",_currency="",_basis="",_method="",_notes="",_reason="";
+    private DateTime? _from,_through;
+    private decimal? _price;
+    private string? _instance;
+    private IEnumerable<SalesContractTermsPriorVersion> Versions()
+    {
+        if(Source.CurrentNativeContract is null)return [];
+        var proof=SalesContractTermsNativeProof.Require(Source.Company,Source.CurrentNativeContract);
+        return (proof.PriorVersions ?? []).Append(new(proof.Record,proof.NativeRowJson,proof.Revision,proof.Amendment));
+    }
+    protected override void OnInitialized(){Company.Changed+=ContextChanged;State.Changed+=StateChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){if(_instance==Source.InstanceId)return;_instance=Source.InstanceId;++_epoch;State.AttachOwner(this,Source.InstanceId);ResetDraft();await ReloadEvidence(false);}
+    private async Task Access()
+    {
+        _authorized=false;var epoch=_epoch;var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selection || user.Identity?.IsAuthenticated!=true ||
+            (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=selection.UserId || !selection.Roles.Any(user.IsInRole) ||
+            !selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal))throw new UnauthorizedAccessException();
+        Source.Require(selection.Scope,selection.UserId,Source.InstanceId);
+        if(Source.Terms.Recorded?.Preparation.ActorUserId!=selection.UserId || !Source.IsHistorical)throw new UnauthorizedAccessException();
+        _authorized=true;
+    }
+    private Task Reload()=>ReloadEvidence(true);
+    private async Task ReloadEvidence(bool notify){var epoch=_epoch;_error=null;try{await Access();await State.LoadAsync(Processes);if(!_disposed && epoch==_epoch){await Access();if(notify && State.Recorded is not null)await RecordedOutcomeChanged.InvokeAsync();}}catch{if(!_disposed && epoch==_epoch)_error="The original closed process, fresh source or amendment authority could not be confirmed. Retain any original intent and reload.";}}
+    private async Task Prepare()
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_from is null || _price is null)throw new ArgumentException();
+            var terms=new SalesContractEffectiveTerms(_version,DateTime.SpecifyKind(_from.Value.Date,DateTimeKind.Unspecified),_through is null?null:DateTime.SpecifyKind(_through.Value.Date,DateTimeKind.Unspecified),_currency,_price.Value,_basis,_method,_notes);
+            terms.Require();await State.PrepareAsync(Processes,terms,_reason);
+            if(!_disposed && epoch==_epoch && State.Recorded is not null){ResetDraft();await RecordedOutcomeChanged.InvokeAsync();}}
+        catch{if(!_disposed && epoch==_epoch)_error="The amendment is unconfirmed. Check explicit terms and reason, retain the original intent and reconcile before another proposal.";}
+    }
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();await State.SubmitPendingAsync(Processes);if(!_disposed && epoch==_epoch && State.Recorded is not null)await RecordedOutcomeChanged.InvokeAsync();}catch{if(!_disposed && epoch==_epoch)_error="The original amendment remains unconfirmed. Return to its original context, reload and reconcile the same intent.";}}
+    private void ResetDraft(){_version="";_currency="";_basis="";_method="";_notes="";_reason="";_from=null;_through=null;_price=null;}
+    private void ContextChanged(){++_epoch;_authorized=false;_error=null;ResetDraft();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;State.Changed-=StateChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.DetachOwner(this);}
+}

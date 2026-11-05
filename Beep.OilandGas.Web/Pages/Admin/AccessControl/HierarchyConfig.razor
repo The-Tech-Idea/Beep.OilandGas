@@ -1,124 +1,104 @@
-﻿@page "/admin/access-control/hierarchy-config"
-@using Beep.OilandGas.Models.Data.AccessControl
+@page "/admin/access-control/hierarchy-config"
+@attribute [Authorize(Roles = "Administrator")]
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Web.Components.AccessControl
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
-@inject ISnackbar Snackbar
+@inject CompanyClientContext Company
+@inject HierarchyConfigurationState State
+@implements IDisposable
 
-<PageTitle>Configure Organisation Hierarchy</PageTitle>
-
+<PageTitle>Organisation Hierarchy Configuration</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-    <MudText Typo="Typo.h5" Class="mb-4">Configure Organisation Hierarchy</MudText>
-    
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudText Typo="Typo.h6" Class="mb-4">Configure Asset Hierarchy for Organization</MudText>
-        
-        <MudGrid>
-            <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="@_organizationId" 
-                             Label="Organization ID" 
-                             Variant="Variant.Outlined"
-                             HelperText="Enter the organization ID" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudButton Variant="Variant.Filled" 
-                          Color="Color.Primary"
-                          OnClick="LoadHierarchyConfig"
-                          StartIcon="@Icons.Material.Filled.Refresh">
-                    Load Configuration
-                </MudButton>
-            </MudItem>
-        </MudGrid>
-
-        @if (_hierarchyConfig != null && _hierarchyConfig.Any())
+    <MudText Typo="Typo.h5" Class="mb-4">Organisation Hierarchy Configuration</MudText>
+    <MudPaper Elevation="2" Class="pa-4" aria-busy="@((State.Loading || State.Saving).ToString().ToLowerInvariant())">
+        @if (Company.Selection is { } selection)
         {
-            <MudDivider Class="my-4" />
-            <MudText Typo="Typo.h6" Class="mb-3">Hierarchy Levels</MudText>
-            <MudDataGrid T="Beep.OilandGas.Models.Data.HierarchyConfig" Items="@_hierarchyConfig" Dense="true" Hover="true" Striped="true"
-                         SortMode="SortMode.Multiple">
+            <MudText Typo="Typo.body1" Class="mb-3">Company: @selection.Scope.BusinessAssociateId (@selection.Scope.TenantId)</MudText>
+        }
+        <MudButton OnClick="Reload" Disabled="@(State.Loading || State.Saving || Company.Selection is null)" Color="Color.Primary"
+                   Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Refresh">Refresh Configuration</MudButton>
+        @if (State.Loading)
+        {
+            <MudProgressLinear Indeterminate="true" Class="my-4" aria-label="Loading hierarchy configuration" />
+        }
+        @if (State.Error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">@State.Error</MudAlert>
+        }
+        @if (State.Confirmation is not null)
+        {
+            <MudAlert Severity="Severity.Success" Class="mt-4">@State.Confirmation</MudAlert>
+        }
+        @if (State.Loaded && State.Configuration.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">No hierarchy configuration exists for the selected company.</MudAlert>
+            <MudButton OnClick="State.BeginDraft" Disabled="@(State.Loading || State.Saving)" Color="Color.Primary" Class="mt-3">Create Configuration</MudButton>
+        }
+        else if (State.Loaded)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="my-4">Edit category display names and visibility, then save. These settings control presentation; asset permissions remain independently enforced.</MudText>
+            <MudText Typo="Typo.body2">Work orders and equipment each form an independent category. Equipment location requires separate installation evidence. Hiding FIELD does not hide or authorize either category.</MudText>
+            @if(State.CanAddOrderCategory){<MudButton OnClick="State.AddOrderCategory" Variant="Variant.Outlined">Add work-order category</MudButton>}
+            @if(State.CanAddEquipmentCategory){<MudButton OnClick="State.AddEquipmentCategory" Variant="Variant.Outlined">Add equipment category</MudButton>}
+            <MudDataGrid T="Beep.OilandGas.Models.Data.HierarchyConfig" Items="@State.Configuration" Dense="true" Hover="true" Striped="true">
                 <Columns>
-                    <PropertyColumn Property="h => h.HierarchyLevel" Title="Level" />
-                    <PropertyColumn Property="h => h.LevelName" Title="Level Name" />
-                    <PropertyColumn Property="h => h.AssetType" Title="Asset Type" />
-                    <TemplateColumn Title="Parent Level">
+                    <PropertyColumn Property="row => row.HierarchyLevel" Title="Level" />
+                    <TemplateColumn Title="Display Name">
                         <CellTemplate>
-                            <MudText Typo="Typo.body2">@(context.Item.ParentLevel?.ToString() ?? "\u2014")</MudText>
+                            <MudTextField T="string" Value="context.Item.LevelName" ValueChanged="value => State.SetDisplayName(context.Item, value)" Label="@($"{context.Item.AssetType} display name")"
+                                          Required="true" MaxLength="128" Disabled="@State.Saving" />
                         </CellTemplate>
                     </TemplateColumn>
-                    <TemplateColumn Title="Active">
+                    <PropertyColumn Property="row => row.AssetType" Title="Asset Type" />
+                    <PropertyColumn Property="row => row.ParentLevel" Title="Parent Level" />
+                    <TemplateColumn Title="Visible">
                         <CellTemplate>
-                            <MudIcon Icon="@(context.Item.Active ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)"
-                                     Color="@(context.Item.Active ? Color.Success : Color.Default)"
-                                     Size="Size.Small" />
+                            <MudSwitch T="bool" Value="context.Item.Active" ValueChanged="value => State.SetVisible(context.Item, value)"
+                                       Label="@($"Show {context.Item.AssetType}")" Color="Color.Primary"
+                                       Disabled="@(State.Saving || (context.Item.AssetType is not ("FIELD" or "WORK_ORDER" or "EQUIPMENT") && !State.Configuration.Single(row => row.AssetType == "FIELD").Active))" />
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
             </MudDataGrid>
-
-            <MudDivider Class="my-4" />
-            <MudButton Variant="Variant.Filled" 
-                      Color="Color.Primary"
-                      OnClick="SaveHierarchyConfig"
-                      StartIcon="@Icons.Material.Filled.Save">
-                Save Configuration
-            </MudButton>
+            <MudButton OnClick="Save" Disabled="@(!State.CanSave)" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4">Save Configuration</MudButton>
+            @if (State.Saving)
+            {
+                <MudProgressLinear Indeterminate="true" Class="my-4" aria-label="Saving hierarchy configuration" />
+            }
         }
     </MudPaper>
+    <MudText Typo="Typo.h6" Class="mt-6 mb-3">Your accessible assets</MudText>
+    <AssetAccessTree @key="_treeVersion" OnAssetSelected="SelectAsset" OnSelectionInvalidated="ClearSelection" />
+    @if (_selected is { } asset)
+    {
+        <MudAlert Severity="Severity.Info" Class="mt-3">Selected: @asset.Name (@asset.Type, @asset.Id)@(asset.Facility is null ? "" : $" — {asset.Facility}")</MudAlert>
+    }
 </MudContainer>
 
 @code {
-    private string _organizationId = string.Empty;
-    private List<Beep.OilandGas.Models.Data.HierarchyConfig>? _hierarchyConfig;
-
-    private async Task LoadHierarchyConfig()
+    private bool _disposed;
+    private int _treeVersion;
+    private (string Name, string Type, string Id, string? Facility)? _selected;
+    protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(_organizationId))
-        {
-            Snackbar.Add("Please enter an organization ID", Severity.Warning);
-            return;
-        }
-
-        try
-        {
-            _hierarchyConfig = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.HierarchyConfig>>($"/api/assethierarchy/organization/{Uri.EscapeDataString(_organizationId)}/config");
-            
-            if (_hierarchyConfig == null || !_hierarchyConfig.Any())
-            {
-                Snackbar.Add("No hierarchy configuration found. You can create one.", Severity.Info);
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error loading hierarchy configuration.", Severity.Error);
-        }
+        State.Changed += StateChanged; Company.Changed += CompanyChanged;
+        await Reload();
     }
-
-    private async Task SaveHierarchyConfig()
+    private async Task Reload()
     {
-        if (string.IsNullOrEmpty(_organizationId) || _hierarchyConfig == null)
-        {
-            Snackbar.Add("Please load a configuration first", Severity.Warning);
-            return;
-        }
-
-        try
-        {
-            var result = await ApiClient.PutAsync<List<Beep.OilandGas.Models.Data.HierarchyConfig>, bool>(
-                $"/api/assethierarchy/organization/{_organizationId}/config", 
-                _hierarchyConfig);
-            
-            if (result)
-            {
-                Snackbar.Add("Hierarchy configuration saved successfully", Severity.Success);
-            }
-            else
-            {
-                Snackbar.Add("Failed to save hierarchy configuration", Severity.Error);
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error saving hierarchy configuration.", Severity.Error);
-        }
+        _selected = null;
+        await State.LoadAsync();
+        if (!_disposed) _treeVersion++;
     }
+    private async Task Save()
+    {
+        await State.SaveAsync();
+        if (!_disposed && State.Confirmation is not null) { _selected = null; _treeVersion++; }
+    }
+    private void StateChanged() { if (!_disposed) _ = InvokeAsync(() => { if (!_disposed) StateHasChanged(); }); }
+    private void CompanyChanged() { _selected = null; if (!_disposed) _ = InvokeAsync(async () => { if (!_disposed) await Reload(); }); }
+    private void SelectAsset(AssetHierarchyNode asset) => _selected = (asset.AssetName ?? asset.AssetId, asset.AssetType, asset.AssetId, asset.FacilityType);
+    private void ClearSelection() => _selected = null;
+    public void Dispose() { _disposed = true; Company.Changed -= CompanyChanged; State.Changed -= StateChanged; State.Dispose(); }
 }
-

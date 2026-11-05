@@ -25,6 +25,8 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.UserManagement.Contracts.Services;
+using Beep.OilandGas.Repository;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Tests;
 
@@ -35,6 +37,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     private readonly Mock<IAccessControlService> _access = new();
     private readonly Mock<INotificationPersonaReader> _personas = new();
     private readonly Mock<IProcessService> _processes = new();
+    private static readonly CompanyScope TestScope = new("test-tenant", "test-company");
 
     public async Task InitializeAsync()
     {
@@ -45,13 +48,35 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         builder.Services.AddAuthentication("test")
             .AddScheme<AuthenticationSchemeOptions, TestIdentityHandler>("test", _ => { });
         builder.Services.AddAuthorization();
-        builder.Services.AddSignalR();
+        builder.Services.AddSignalR(options => options.AddFilter<CompanyHubFilter>());
         builder.Services.AddWorkflowNotificationAuthorization();
+        builder.Services.AddScoped<RepositoryTenantContext>();
+        builder.Services.AddScoped<RepositoryCompanyContextResolver>();
+        builder.Services.AddSingleton(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
+        var memberships = new Mock<IRepositoryAccessService>();
+        memberships.Setup(x => x.GetCompanyAccessAsync(It.IsAny<string>(), TestScope, It.IsAny<CancellationToken>()))
+            .Returns<string, CompanyScope, CancellationToken>(async (user, scope, _) => new(scope,
+                (await _access.Object.GetUserRolesAsync(user, null))?.ToArray() ?? [], []));
+        builder.Services.AddSingleton(memberships.Object);
         builder.Services.AddSingleton(_access.Object);
         builder.Services.AddSingleton(_personas.Object);
         builder.Services.AddSingleton(_processes.Object);
         _host = builder.Build();
         _host.UseAuthentication();
+        _host.Use(async (http, next) =>
+        {
+            // The fixture tests hub transport/resource checks; real request membership middleware has separate focused tests.
+            var user = PartyIdClaims.Find(http.User);
+            if (http.User.Identity?.IsAuthenticated == true && user is not null &&
+                http.Request.Headers[CompanyRequestHeaders.Tenant] == TestScope.TenantId &&
+                http.Request.Headers[CompanyRequestHeaders.Company] == TestScope.BusinessAssociateId)
+            {
+                var company = await http.RequestServices.GetRequiredService<RepositoryCompanyContextResolver>()
+                    .ResolveAsync(user, TestScope, http.RequestAborted);
+                if (company is not null) http.Features.Set(company);
+            }
+            await next(http);
+        });
         _host.UseAuthorization();
         // The API's progress hub, which its fallback policy admits only a signed-in account to.
         _host.MapHub<Beep.OilandGas.ApiService.Services.ProgressHub>("/progressHub").RequireAuthorization();
@@ -97,9 +122,9 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     {
         _personas.Setup(p => p.IsCurrentPersonaAsync(It.IsAny<string>(), "ENGINEER")).ReturnsAsync(true);
         _access.Setup(a => a.GetUserRolesAsync("alice", null)).ReturnsAsync(new List<string> { "PetroleumEngineer" });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-b", "FIELD", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-b", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = false });
         await using var connection = Client("alice");
         await connection.StartAsync();
@@ -136,10 +161,12 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         var auth = new TestAuthenticationState("alice");
         var tokens = new PersonTokens();
         tokens.Set("bob", "bob");
-        await using var service = CreateService(auth, tokens);
+        using var company = SelectedCompany("alice");
+        await using var service = CreateService(auth, tokens, company: company);
         await service.StartAsync();
         await DeliverAsync("alice", "old-user", () => service.UnreadCount == 1);
         auth.SetUser("bob");
+        Assert.True(company.TrySelect(company.Clear(), "bob", new(new("test-tenant", "test-company"), [], [])));
         await DeliverAsync("bob", "new-user", () => service.RecentNotifications.Any(n => n.Id == "new-user"));
         Assert.Equal("new-user", Assert.Single(service.RecentNotifications).Id);
     }
@@ -149,7 +176,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     {
         _personas.Setup(p => p.IsCurrentPersonaAsync(It.IsAny<string>(), "ENGINEER")).ReturnsAsync(true);
         _access.Setup(a => a.GetUserRolesAsync(It.IsAny<string>(), null)).ReturnsAsync(new List<string> { "PetroleumEngineer" });
-        _access.Setup(a => a.CheckAssetAccessAsync(It.IsAny<string>(), It.IsAny<string>(), "FIELD", null))
+        _access.Setup(a => a.CheckAssetAccessAsync(It.IsAny<string>(), It.IsAny<string>(), "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
         await using var alice = Client("alice");
         await using var bob = Client("bob");
@@ -162,9 +189,9 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         await alice.InvokeAsync("SubscribeToPersona", "ENGINEER", "field-a");
         await bob.InvokeAsync("SubscribeToPersona", "ENGINEER", "field-b");
         var hub = _host.Services.GetRequiredService<IHubContext<WorkflowNotificationHub>>();
-        await hub.NotifyPersonaAsync("ENGINEER", "field-a", "PetroleumEngineer", "Notification", new NotificationModel { Id = "private-a" });
-        await hub.NotifyPersonaAsync("ENGINEER", "field-b", "PetroleumEngineer", "Notification", new NotificationModel { Id = "private-b" });
-        await hub.NotifyUserAsync("bob", "Marker", "processed");
+        await hub.NotifyPersonaAsync(TestScope, "ENGINEER", "field-a", "PetroleumEngineer", "Notification", new NotificationModel { Id = "private-a" });
+        await hub.NotifyPersonaAsync(TestScope, "ENGINEER", "field-b", "PetroleumEngineer", "Notification", new NotificationModel { Id = "private-b" });
+        await hub.NotifyUserAsync(TestScope, "bob", null, "Marker", "processed");
         await marker.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal(new[] { "private-b" }, messages.ToArray());
     }
@@ -174,14 +201,14 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     {
         _processes.Setup(p => p.GetProcessInstanceAsync("process-1")).ReturnsAsync(new ProcessInstance
         { InstanceId = "process-1", FieldId = "field-a", EntityId = "well-1", EntityType = "WELL" });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = false });
         await using var connection = Client("alice");
         await connection.StartAsync();
         await Assert.ThrowsAsync<HubException>(() => connection.InvokeAsync("SubscribeToProcess", "process-1"));
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
         await connection.InvokeAsync("SubscribeToProcess", "process-1");
     }
@@ -194,7 +221,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     {
         _personas.Setup(p => p.IsCurrentPersonaAsync("alice", "ENGINEER")).ReturnsAsync(true);
         _access.Setup(a => a.GetUserRolesAsync("alice", null)).ReturnsAsync(new List<string> { "Viewer" });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
         await using var connection = Client("alice");
         var messages = new System.Collections.Concurrent.ConcurrentQueue<string>();
@@ -209,9 +236,9 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         if (reason == "unscoped-payload")
             await hub.Clients.Group("persona:ENGINEER:field:field-a").SendAsync("Notification", new NotificationModel { Id = "denied" });
         else
-            await hub.NotifyPersonaAsync("ENGINEER", "field-a", reason == "different-role" ? "Approver" : "Viewer",
+            await hub.NotifyPersonaAsync(TestScope, "ENGINEER", "field-a", reason == "different-role" ? "Approver" : "Viewer",
                 "Notification", new NotificationModel { Id = "denied" });
-        await hub.NotifyUserAsync("alice", "Marker", "processed");
+        await hub.NotifyUserAsync(TestScope, "alice", null, "Marker", "processed");
         await marker.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Empty(messages);
     }
@@ -224,7 +251,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     {
         _personas.Setup(p => p.IsCurrentPersonaAsync(It.IsAny<string>(), "ENGINEER")).ReturnsAsync(true);
         _access.Setup(a => a.GetUserRolesAsync("alice", null)).ReturnsAsync(new List<string> { "PetroleumEngineer" });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
         await using var connection = Client("alice");
         var messages = new System.Collections.Concurrent.ConcurrentQueue<string>();
@@ -234,18 +261,18 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         await connection.StartAsync();
         await connection.InvokeAsync("SubscribeToPersona", "ENGINEER", "field-a");
         var hub = _host.Services.GetRequiredService<IHubContext<WorkflowNotificationHub>>();
-        await hub.NotifyPersonaAsync("ENGINEER", "field-a", "PetroleumEngineer", "Notification", new NotificationModel { Id = "before-change" });
+        await hub.NotifyPersonaAsync(TestScope, "ENGINEER", "field-a", "PetroleumEngineer", "Notification", new NotificationModel { Id = "before-change" });
         if (change == "role")
             _access.Setup(a => a.GetUserRolesAsync("alice", null)).ReturnsAsync(new List<string>());
         else if (change == "field")
-            _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null))
+            _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null, null))
                 .ReturnsAsync(new AccessCheckResponse { HasAccess = false });
         else
             _access.Setup(a => a.GetUserRolesAsync("alice", null)).ThrowsAsync(new InvalidOperationException("RBAC unavailable"));
 
         // Do not reconnect or resubscribe: a previously accepted group must not retain authority.
-        await hub.NotifyPersonaAsync("ENGINEER", "field-a", "PetroleumEngineer", "Notification", new NotificationModel { Id = "after-change" });
-        await hub.NotifyUserAsync("alice", "Marker", "processed");
+        await hub.NotifyPersonaAsync(TestScope, "ENGINEER", "field-a", "PetroleumEngineer", "Notification", new NotificationModel { Id = "after-change" });
+        await hub.NotifyUserAsync(TestScope, "alice", null, "Marker", "processed");
         await marker.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal(new[] { "before-change" }, messages.ToArray());
         Assert.Equal(HubConnectionState.Connected, connection.State);
@@ -256,9 +283,9 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
     {
         _processes.Setup(p => p.GetProcessInstanceAsync("process-1")).ReturnsAsync(new ProcessInstance
         { InstanceId = "process-1", FieldId = "field-a", EntityId = "well-1", EntityType = "WELL" });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "field-a", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = true });
         await using var connection = Client("alice");
         var messages = new System.Collections.Concurrent.ConcurrentQueue<string>();
@@ -267,11 +294,11 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         connection.On<string>("Marker", _ => marker.TrySetResult());
         await connection.StartAsync();
         await connection.InvokeAsync("SubscribeToProcess", "process-1");
-        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null))
+        _access.Setup(a => a.CheckAssetAccessAsync("alice", "well-1", "WELL", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = false });
         var hub = _host.Services.GetRequiredService<IHubContext<WorkflowNotificationHub>>();
-        await hub.NotifyProcessAsync("process-1", "Notification", new NotificationModel { Id = "restricted" });
-        await hub.NotifyUserAsync("alice", "Marker", "processed");
+        await hub.NotifyProcessAsync(TestScope, "process-1", "Notification", new NotificationModel { Id = "restricted" });
+        await hub.NotifyUserAsync(TestScope, "alice", null, "Marker", "processed");
         await marker.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Empty(messages);
     }
@@ -295,7 +322,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         tokens.Set("alice", "alice");
         await using var progress = new ProgressTrackingClient(new TestAuthenticationState("alice"), tokens,
             new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance,
-            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
+            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), SelectedCompany("alice"));
 
         await progress.ConnectAsync();
 
@@ -309,7 +336,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         tokens.Set("bob", "bob");
         await using var progress = new ProgressTrackingClient(new TestAuthenticationState("alice"), tokens,
             new OilGasApiAddress(new Uri(_baseUrl + "/")), NullLogger<ProgressTrackingClient>.Instance,
-            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
+            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), SelectedCompany("alice"));
 
         await Assert.ThrowsAnyAsync<Exception>(progress.ConnectAsync);
         Assert.False(progress.IsConnected);
@@ -367,30 +394,42 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         await DeliverAsync("alice", "ready", () => service.UnreadCount == 1);
         var hub = _host.Services.GetRequiredService<IHubContext<WorkflowNotificationHub>>();
         for (var index = 0; index < 110; index++)
-            await hub.NotifyUserAsync("alice", "Notification", new NotificationModel { Id = $"item-{index}" });
+            await hub.NotifyUserAsync(TestScope, "alice", null, "Notification", new NotificationModel { Id = $"item-{index}" });
         await WaitUntilAsync(() => service.RecentNotifications.FirstOrDefault()?.Id == "item-109");
         Assert.Equal(100, service.RecentNotifications.Count);
         Assert.Equal(100, service.UnreadCount);
-        await hub.NotifyUserAsync("alice", "Notification", new NotificationModel { Id = "item-109" });
+        await hub.NotifyUserAsync(TestScope, "alice", null, "Notification", new NotificationModel { Id = "item-109" });
         // An ordered subsequent marker proves the duplicate message was processed.
-        await hub.NotifyUserAsync("alice", "Notification", new NotificationModel { Id = "marker" });
+        await hub.NotifyUserAsync(TestScope, "alice", null, "Notification", new NotificationModel { Id = "marker" });
         await WaitUntilAsync(() => service.RecentNotifications.FirstOrDefault()?.Id == "marker");
         Assert.Single(service.RecentNotifications, n => n.Id == "item-109");
         Assert.Equal(100, service.UnreadCount);
     }
 
-    private NotificationService CreateService(TestAuthenticationState auth, PersonTokens tokens, bool seedToken = true)
+    private static Beep.OilandGas.Client.App.CompanyClientContext SelectedCompany(string user)
+    {
+        var company = new Beep.OilandGas.Client.App.CompanyClientContext();
+        Assert.True(company.TrySelect(company.Clear(), user, new(new("test-tenant", "test-company"), [], [])));
+        return company;
+    }
+
+    private NotificationService CreateService(TestAuthenticationState auth, PersonTokens tokens, bool seedToken = true,
+        Beep.OilandGas.Client.App.CompanyClientContext? company = null)
     {
         if (seedToken) tokens.Set(auth.UserId!, auth.UserId!);
         // The address Program.cs resolves (https, from ApiService:BaseUrl) is handed over directly: the test hub is on a
         // loopback address over plain HTTP.
         return new NotificationService(auth, tokens, new OilGasApiAddress(new Uri(_baseUrl + "/")),
-            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
+            Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>(), company ?? SelectedCompany(auth.UserId ?? "anonymous"));
     }
 
     private HubConnection Client(string? userId) => new HubConnectionBuilder()
         .WithUrl(_baseUrl + "/hubs/workflow-notifications", options =>
-            options.AccessTokenProvider = () => Task.FromResult(userId))
+        {
+            options.Headers[CompanyRequestHeaders.Tenant] = TestScope.TenantId;
+            options.Headers[CompanyRequestHeaders.Company] = TestScope.BusinessAssociateId;
+            options.AccessTokenProvider = () => Task.FromResult(userId);
+        })
         .Build();
 
     private async Task DeliverAsync(string userId, string id, Func<bool> delivered)
@@ -399,7 +438,7 @@ public sealed class WorkflowNotificationIsolationTests : IAsyncLifetime
         // Handshake completion may precede OnConnectedAsync; retry the same ID.
         for (var attempt = 0; attempt < 100 && !delivered(); attempt++)
         {
-            await hub.NotifyUserAsync(userId, "Notification", new NotificationModel { Id = id });
+            await hub.NotifyUserAsync(TestScope, userId, null, "Notification", new NotificationModel { Id = id });
             await Task.Delay(25);
         }
         Assert.True(delivered(), "The notification was not delivered to its authenticated recipient.");

@@ -1,0 +1,144 @@
+### Page
+- Page URL: http://127.0.0.1:64714/ppdm39/hse
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - generic [ref=f1e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=f1e10]:
+      - button "Fixture author" [ref=f1e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=f1e13] [cursor=pointer]
+      - button "Fixture read only" [ref=f1e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=f1e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=f1e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=f1e21] [cursor=pointer]
+      - link "HSE landing" [ref=f1e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=f1e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=f1e27]:
+    - heading "HSE workspace" [level=1] [ref=f1e28]
+    - paragraph [ref=f1e29]: Review your company assignments and open the recorded incident, compliance or permit sources to carry out your work.
+    - generic [ref=f1e30]:
+      - heading "Assigned work" [level=5] [ref=f1e31]
+      - paragraph [ref=f1e32]: Open the recorded process to review its source, evidence and permitted next action.
+      - button "Reload assigned work" [ref=f1e33] [cursor=pointer]
+      - generic [ref=f1e39]: "Company: tenant / company · Workspace: Safety"
+      - text: Counts describe the loaded assigned-work response. Reload for updated work; these are task counts.
+      - group [ref=f1e40]:
+        - 'button "All source assignments: 0" [pressed] [ref=f1e41] [cursor=pointer]'
+      - generic [ref=f1e43]: "Selected source: ALL. Multiple assigned tasks may refer to one source; these counts do not establish financial or receipt completion, maintenance acceptance, execution or return to service."
+      - group [ref=f1e44]:
+        - button "All assigned roles" [pressed] [ref=f1e45] [cursor=pointer]
+      - generic [ref=f1e47]: "Selected assigned role: All roles"
+      - group [ref=f1e48]:
+        - 'button "Pending work: 0" [ref=f1e49] [cursor=pointer]'
+        - 'button "Approvals: 0" [ref=f1e51] [cursor=pointer]'
+        - 'button "Reviews: 0" [ref=f1e53] [cursor=pointer]'
+        - 'button "Data entry: 0" [ref=f1e55] [cursor=pointer]'
+        - 'button "Overdue work: 0" [ref=f1e57] [cursor=pointer]'
+        - 'button "Critical work: 0" [ref=f1e59] [cursor=pointer]'
+      - generic [ref=f1e63]:
+        - combobox "Work type" [ref=f1e65] [cursor=pointer]: All assigned work
+        - generic: Work type
+      - generic [ref=f1e72]:
+        - combobox "Attention" [ref=f1e74] [cursor=pointer]: All priorities and due statuses
+        - generic: Attention
+      - status [ref=f1e79]: "Showing 0 of 0 pending tasks for ALL · All loaded source assignments: 0 · Work type: ALL · Attention: ALL"
+      - generic [ref=f1e80]: No pending work is visible for this company, workspace, source and work-type filter.
+    - generic [ref=f1e87]:
+      - heading "Permit work queues" [level=2] [ref=f1e88]
+      - group [ref=f1e89]:
+        - button "Refresh permit work queues" [ref=f1e90] [cursor=pointer]
+      - paragraph [ref=f1e92]: FIELD A · 4 returned applications · read UTC 2026-10-29 14:51:47Z
+      - text: Counts cover the returned records. Open the exact application and review its current source before acting; these queues do not establish regulator clearance or complete provider inventory.
+      - group [ref=f1e93]:
+        - button "All returned (4)" [ref=f1e94] [cursor=pointer]
+        - button "Independent review (1)" [ref=f1e96] [cursor=pointer]
+        - button "Other returned records (3)" [ref=f1e98] [cursor=pointer]
+      - generic [ref=f1e101]:
+        - textbox "Search returned permit records" [ref=f1e103]
+        - generic: Search returned permit records
+      - table [ref=f1e106]:
+        - rowgroup [ref=f1e107]:
+          - row [ref=f1e108]:
+            - columnheader "Application" [ref=f1e109]
+            - columnheader "Applicant" [ref=f1e110]
+            - columnheader "Country / region / authority" [ref=f1e111]
+            - columnheader "Status / handoff" [ref=f1e112]
+        - rowgroup [ref=f1e113]:
+          - row [ref=f1e114]:
+            - cell [ref=f1e115]:
+              - link "correction" [ref=f1e116] [cursor=pointer]:
+                - /url: /ppdm39/permits/detail?applicationId=correction
+            - cell "Recorded applicant" [ref=f1e117]
+            - cell "Kuwait / Other / Other" [ref=f1e118]
+            - cell "AdditionalInformationRequired · Other returned records" [ref=f1e119]
+          - row [ref=f1e120]:
+            - cell [ref=f1e121]:
+              - link "draft" [ref=f1e122] [cursor=pointer]:
+                - /url: /ppdm39/permits/detail?applicationId=draft
+            - cell "Recorded applicant" [ref=f1e123]
+            - cell "Kuwait / Other / Other" [ref=f1e124]
+            - cell "Draft · Other returned records" [ref=f1e125]
+          - row [ref=f1e126]:
+            - cell [ref=f1e127]:
+              - link "review/شركة?1" [ref=f1e128] [cursor=pointer]:
+                - /url: /ppdm39/permits/detail?applicationId=review%2F%D8%B4%D8%B1%D9%83%D8%A9%3F1
+            - cell "Recorded applicant" [ref=f1e129]
+            - cell "Kuwait / Other / Other" [ref=f1e130]
+            - cell "Submitted · Independent review" [ref=f1e131]
+          - row [ref=f1e132]:
+            - cell [ref=f1e133]:
+              - link "self" [ref=f1e134] [cursor=pointer]:
+                - /url: /ppdm39/permits/detail?applicationId=self
+            - cell "Recorded applicant" [ref=f1e135]
+            - cell "Kuwait / Other / Other" [ref=f1e136]
+            - cell "Submitted · Other returned records" [ref=f1e137]
+      - group [ref=f1e138]:
+        - button "Previous permit records" [disabled]
+        - paragraph [ref=f1e139]: Page 1 · 4 matching returned records
+        - button "Next permit records" [disabled]
+    - generic [ref=f1e140]:
+      - group [ref=f1e141]:
+        - heading "Current FIELD incidents" [level=2] [ref=f1e142]
+        - button "Refresh" [ref=f1e143] [cursor=pointer]
+      - paragraph [ref=f1e145]: Fixture FIELD A · Incidents returned for the selected FIELD. Counts describe these returned records; completeness is not established.
+      - generic [ref=f1e146]: Current state in the selected FIELD incident response; no reporting-date filter. Checked 2026-10-29 14:51:47Z. Select a count to review its returned records.
+      - group [ref=f1e147]:
+        - 'button "Returned: 0" [pressed] [ref=f1e148] [cursor=pointer]'
+        - 'button "Open: 0" [ref=f1e150] [cursor=pointer]'
+        - 'button "Closed: 0" [ref=f1e152] [cursor=pointer]'
+        - 'button "Cancelled: 0" [ref=f1e154] [cursor=pointer]'
+        - 'button "Other or unrecorded state: 0" [ref=f1e156] [cursor=pointer]'
+      - status [ref=f1e158]: All returned incidents · 0 returned records · page 1 of 1 (10 per page, ordered by ID)
+      - paragraph [ref=f1e159]: No returned incident records match this group.
+    - generic [ref=f1e160]: Corrective action and permit totals are not available on this page. Open the source records for their current details.
+    - generic [ref=f1e167]:
+      - generic [ref=f1e170]:
+        - heading "Incidents and investigations" [level=2] [ref=f1e171]
+        - paragraph [ref=f1e172]: Review reported incidents and their recorded investigations and actions.
+        - link "Open incident records" [ref=f1e173] [cursor=pointer]:
+          - /url: /ppdm39/hse/incidents
+      - generic [ref=f1e177]:
+        - heading "Compliance and studies" [level=2] [ref=f1e178]
+        - paragraph [ref=f1e179]: Inspect recorded obligations and safety studies in their source screens.
+        - group [ref=f1e180]:
+          - link "Compliance obligations" [ref=f1e181] [cursor=pointer]:
+            - /url: /ppdm39/compliance/obligations
+          - generic [ref=f1e184]:
+            - textbox "Recorded HAZOP study ID" [ref=f1e186]
+            - generic: Recorded HAZOP study ID
+          - button "Open recorded HAZOP study" [disabled]
+      - generic [ref=f1e189]:
+        - heading "Permits and assigned work" [level=2] [ref=f1e190]
+        - paragraph [ref=f1e191]: Review permit records and open the original process for assigned work.
+        - group [ref=f1e192]:
+          - link "Permit records" [ref=f1e193] [cursor=pointer]:
+            - /url: /ppdm39/permits
+          - link "Company inbox" [ref=f1e195] [cursor=pointer]:
+            - /url: /tasks/inbox
+```
+### Events
+- New console entries: output\playwright\354-permit-browser\artifacts\console-2026-10-29T14-51-46-688Z.log#L3

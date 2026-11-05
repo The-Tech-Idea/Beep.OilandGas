@@ -1,0 +1,5 @@
+  PurchaseOwnership -> C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\PurchaseOwnership.dll
+Test run for C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\PurchaseOwnership.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    14, Skipped:     0, Total:    14, Duration: 3 s - PurchaseOwnership.dll (net10.0)

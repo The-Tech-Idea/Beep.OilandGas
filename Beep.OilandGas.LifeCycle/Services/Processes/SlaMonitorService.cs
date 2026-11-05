@@ -23,7 +23,8 @@ public class SlaMonitorService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<SlaMonitorService> _logger;
     private readonly TimeSpan _checkInterval;
-    private readonly Func<IServiceProvider, CancellationToken, Task<string?>>? _resolveConnection;
+    private readonly Func<IServiceProvider, CancellationToken, Task<IReadOnlyList<string>>>? _resolveTenants;
+    private readonly Func<IServiceProvider, string, CancellationToken, Task<string?>>? _resolveConnection;
 
     // Track which breaches have already been escalated (prevents duplicate escalations)
     private readonly HashSet<string> _alreadyEscalated = new();
@@ -32,12 +33,14 @@ public class SlaMonitorService : BackgroundService
         IServiceScopeFactory scopeFactory,
         ILogger<SlaMonitorService>? logger = null,
         TimeSpan? checkInterval = null,
-        Func<IServiceProvider, CancellationToken, Task<string?>>? resolveConnection = null)
+        Func<IServiceProvider, CancellationToken, Task<IReadOnlyList<string>>>? resolveTenants = null,
+        Func<IServiceProvider, string, CancellationToken, Task<string?>>? resolveConnection = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _checkInterval = checkInterval ?? TimeSpan.FromMinutes(1);
         _resolveConnection = resolveConnection;
+        _resolveTenants = resolveTenants;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -67,9 +70,21 @@ public class SlaMonitorService : BackgroundService
 
     private async Task CheckSlaBreachesAsync(CancellationToken ct)
     {
+        if (_resolveTenants is null) return;
+        IReadOnlyList<string> tenants;
+        using (var scope = _scopeFactory.CreateScope()) tenants = await _resolveTenants(scope.ServiceProvider, ct);
+        foreach (var tenantId in tenants)
+        {
+            ct.ThrowIfCancellationRequested();
+            await CheckTenantBreachesAsync(tenantId, ct);
+        }
+    }
+
+    private async Task CheckTenantBreachesAsync(string tenantId, CancellationToken ct)
+    {
         using var scope = _scopeFactory.CreateScope();
         var connectionName = _resolveConnection is null ? null
-            : await _resolveConnection(scope.ServiceProvider, ct);
+            : await _resolveConnection(scope.ServiceProvider, tenantId, ct);
         if (string.IsNullOrWhiteSpace(connectionName)) return;
         ct.ThrowIfCancellationRequested();
         var editor = scope.ServiceProvider.GetRequiredService<IDMEEditor>();
@@ -105,7 +120,7 @@ public class SlaMonitorService : BackgroundService
                 continue;
 
             // Already escalated — skip
-            var breachKey = $"{connectionName}|{step.PROCESS_STEP_INSTANCE_ID}|SLA";
+            var breachKey = $"{tenantId}|{connectionName}|{step.PROCESS_STEP_INSTANCE_ID}|SLA";
             if (_alreadyEscalated.Contains(breachKey))
                 continue;
 

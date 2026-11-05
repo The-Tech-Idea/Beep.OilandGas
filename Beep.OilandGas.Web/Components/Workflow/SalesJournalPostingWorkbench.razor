@@ -1,0 +1,81 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CompanySalesReceivableWorkspaceState State
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-4">
+    <MudText Typo="Typo.h6">Post independently approved sales journal</MudText>
+    <MudText>Posting records the original balanced journal and GL entries with a durable receivable correlation. It records no payment or settlement.</MudText>
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing or reconciling journal posting" />}
+    @if(State.PendingJournalPosting is {} pending && pending.Source.Current.ReceivableId==ReceivableId)
+    {
+        <MudAlert Severity="Severity.Warning">The exact original posting request is retained. Recover and reconcile it before another posting.</MudAlert>
+        <MudText>Journal @pending.Source.Reviewed.Header.ENTRY_NUMBER · Request @pending.IntentId · Reason @pending.Reason</MudText>
+        <MudButton OnClick="Retry" Disabled="@(!State.CanRetryJournalPosting)">Reconcile exact original posting</MudButton>
+    }
+    else if(State.HasPendingJournalPosting){<MudAlert Severity="Severity.Warning">Return to the original posting company, account and receivable to reconcile the retained request.</MudAlert>}
+    @if(State.JournalPostingRecovery is {Outcome:not null} recovery && recovery.Outcome.Receivable.AR_INVOICE_ID==ReceivableId)
+    {
+        var outcome=recovery.Outcome;
+        <MudAlert Severity="Severity.Success">The original posted journal, native GL entries and receivable correlation are confirmed.</MudAlert>
+        <MudText>Journal @outcome.Journal.Header.ENTRY_NUMBER · @outcome.Journal.Header.STATUS · Book @recovery.Intent!.BOOK_ID · Currency @recovery.Intent.CURRENCY_CODE</MudText>
+        <MudText>Posted by @outcome.Journal.Header.ROW_CHANGED_BY · UTC @outcome.Journal.Header.ROW_CHANGED_DATE?.ToString("O")</MudText>
+        <MudText>Debit @outcome.Journal.Header.TOTAL_DEBIT · Credit @outcome.Journal.Header.TOTAL_CREDIT · Receivable @outcome.Receivable.INVOICE_NUMBER</MudText>
+        @foreach(var entry in outcome.Entries){<MudText>Account @entry.GL_ACCOUNT_ID · Debit @entry.DEBIT_AMOUNT · Credit @entry.CREDIT_AMOUNT · @entry.CURRENCY_CODE</MudText>}
+    }
+    @if(_canRead)
+    {
+        <MudForm @ref="_identityForm">
+            <MudTextField T="string" Label="Original posting book" Value="_book" ValueChanged='@(v=>Identity("book",v))' Required="true" MaxLength="128" Disabled="@(AssignedSource is not null || State.Busy)" />
+            <MudTextField T="string" Label="Original posting currency" Value="_currency" ValueChanged='@(v=>Identity("currency",v))' Required="true" MaxLength="16" Disabled="@(AssignedSource is not null || State.Busy)" />
+            <MudTextField T="string" Label="Original approved journal identity" Value="_id" ValueChanged='@(v=>Identity("id",v))' Required="true" MaxLength="32" Disabled="@(AssignedSource is not null || State.Busy)" />
+            <MudButton OnClick="Load" Disabled="@(State.Busy || State.HasPendingJournalPosting)">Review original approved posting source</MudButton>
+            <MudButton OnClick="Recover" Disabled="@State.Busy">Recover my original posting</MudButton>
+        </MudForm>
+    }
+    @if(State.JournalPostingSource is {} source && source.Current.ReceivableId==ReceivableId)
+    {
+        <MudText>Journal @source.Reviewed.Header.ENTRY_NUMBER · Maker @source.Reviewed.Header.ROW_CREATED_BY · Independent reviewer @source.Reviewed.Header.ROW_CHANGED_BY</MudText>
+        <MudText>Posting calendar date @source.Current.PostingDate.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · Book @source.Current.BookId · Currency @source.Current.CurrencyCode</MudText>
+        <MudText>Receivable @source.Receivable.INVOICE_NUMBER · Original @source.Receivable.TOTAL_AMOUNT @source.Receivable.CURRENCY_CODE</MudText>
+        <CompanyFxEvidencePanel Conversion="source.Current.Conversion" />
+        @foreach(var line in source.Reviewed.Lines){<MudText>Account @line.GL_ACCOUNT_ID · Debit @line.DEBIT_AMOUNT · Credit @line.CREDIT_AMOUNT · @line.CURRENCY_CODE</MudText>}
+        @if(State.CanPostJournal)
+        {
+            <MudForm @ref="_postingForm">
+                <MudTextField T="string" Label="Journal posting reason" @bind-Value="_reason" Required="true" MaxLength="1000" Lines="3" />
+                <MudButton OnClick="Post" Disabled="@State.Busy" Color="Color.Primary" Variant="Variant.Filled">Post approved journal</MudButton>
+            </MudForm>
+        }
+    }
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public string ReceivableId{get;set;}="";
+    [Parameter] public CompanySalesJournalProcessSourceReview? AssignedSource{get;set;}
+    [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
+    private MudForm? _identityForm,_postingForm;
+    private string _book="",_currency="",_id="",_reason="";
+    private string? _error,_assignedRevision;
+    private bool _canRead,_disposed;
+    private long _epoch;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){var revision=AssignedSource?.Journal.Revision;if(revision is not null && revision==_assignedRevision)return;Reset();_assignedRevision=revision;if(revision is not null)State.InvalidateJournalPosting();try{await Access();if(AssignedSource is {} assigned){assigned.Require(Company.Selection!.Scope,Company.Selection.UserId,assigned.InstanceId);var row=assigned.Journal.Journal.Header;if(row.SOURCE_AR_INVOICE_ID!=ReceivableId)throw new InvalidOperationException("The assigned journal belongs to another receivable.");_book=row.BOOK_ID!;_currency=row.CURRENCY_CODE!;_id=assigned.JournalId;}}catch{_canRead=false;}}
+    private async Task Access(){var epoch=_epoch;var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);_canRead=Company.Selection!.Permissions.Contains("Accounting.ReviewSalesJournalPosting",StringComparer.Ordinal) && Company.Selection.Permissions.Contains("Accounting.ReviewSalesJournalSource",StringComparer.Ordinal);if(!_canRead)throw new UnauthorizedAccessException();}
+    private void Identity(string name,string value){if(name=="book")_book=value;else if(name=="currency")_currency=value;else _id=value;State.InvalidateJournalPosting();_error=null;}
+    private async Task Execute(Func<Task> action,bool identity=false){var epoch=_epoch;_error=null;try{await Access();if(identity && _identityForm is not null){await _identityForm.ValidateAsync();if(!_identityForm.IsValid)return;}await action();if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="Posting is unconfirmed. Check original company/account, posting role, FIELD access and source. Retain the exact original request after an uncertain response; recover and reconcile it before another posting.";}}
+    private Task Load()=>Execute(async()=>{await State.LoadJournalPostingSourceAsync(_book,_currency,_id,ReceivableId,Accounting);if(AssignedSource is {} assigned && (State.JournalPostingSource is not {} current || System.Text.Json.JsonSerializer.Serialize(current.Reviewed)!=System.Text.Json.JsonSerializer.Serialize(assigned.Journal.Journal))){State.InvalidateJournalPosting();throw new InvalidOperationException("The assigned journal changed. Reload its recorded process.");}},true);
+    private Task ObserveOutcome(Func<Task> action,bool identity=false)=>Execute(async()=>{await action();if(!_disposed && !State.HasPendingJournalPosting && State.JournalPostingRecovery?.Outcome is not null)await RecordedOutcomeChanged.InvokeAsync();},identity);
+    private Task Recover()=>ObserveOutcome(()=>State.RecoverJournalPostingAsync(_book,_currency,_id,ReceivableId,Accounting),true);
+    private Task Retry()=>ObserveOutcome(()=>State.SubmitJournalPostingAsync(Accounting));
+    private Task Post()=>ObserveOutcome(async()=>{if(_postingForm is not null){await _postingForm.ValidateAsync();if(!_postingForm.IsValid)return;}await State.PostJournalAsync(_reason,Accounting);});
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void Reset(){++_epoch;_assignedRevision=null;_canRead=false;_error=null;_book=_currency=_id=_reason="";if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();Reset();}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

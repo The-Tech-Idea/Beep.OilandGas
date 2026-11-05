@@ -1,0 +1,6 @@
+### Browser `permit354` opened with pid 6956.
+### Error
+Error: net::ERR_HTTP_RESPONSE_CODE_FAILURE at http://127.0.0.1:63749/ppdm39/hse
+Call log:
+[2m  - navigating to "http://127.0.0.1:63749/ppdm39/hse", waiting until "domcontentloaded"[22m
+

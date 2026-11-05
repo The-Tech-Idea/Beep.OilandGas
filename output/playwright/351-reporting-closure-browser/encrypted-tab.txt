@@ -1,0 +1,12 @@
+### Result
+[
+  {
+    "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-reporting-closure",
+    "chars": 531355,
+    "plaintext": false
+  }
+]
+### Ran Playwright code
+```js
+await page.evaluate('() => Object.entries(sessionStorage).map(([key,value]) => ({key,chars:value.length,plaintext:value.includes("Checked independent acceptance;")}))');
+```

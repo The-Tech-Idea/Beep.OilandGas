@@ -1,0 +1,140 @@
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Models.Data.Security
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IBusinessProcessServiceClient Client
+@inject ICompanyHseWorkflowIntentStore Intents
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<HseWorkflowStart> Logger
+
+@if (_unavailable)
+{
+    <MudText Typo="Typo.caption">Workflow recovery state is unavailable. Reload before starting or reconciling.</MudText>
+}
+else if (_checked && (Original is not null || CanStart && !HasWorkflow))
+{
+    @if (Original is not null)
+    {
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" Disabled="@(!CanManage || Busy)" OnClick="RetryAsync">Reconcile original workflow</MudButton>
+    }
+    else if (Review is null)
+    {
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" Disabled="@(!CanManage || Busy)" OnClick="ReviewAsync">Review workflow</MudButton>
+    }
+    else
+    {
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.caption">@Review.ProcessName · first role: @Review.InitialRole · incident: @IncidentId</MudText>
+            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanManage || Busy || HasWorkflow)" OnClick="StartAsync">Start reviewed workflow</MudButton>
+            <MudButton Size="Size.Small" Disabled="@Busy" OnClick="CancelReview">Cancel review</MudButton>
+        </MudStack>
+    }
+}
+@if (Message is not null) { <MudText Typo="Typo.caption" role="status">@Message</MudText> }
+
+@code {
+    [Parameter, EditorRequired] public FieldSelectionReview Context { get; set; } = null!;
+    [Parameter, EditorRequired] public string IncidentId { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public bool CanStart { get; set; }
+    [Parameter] public bool HasWorkflow { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    private FieldSelectionReview? _context;
+    private string? _incident;
+    private bool _canStart;
+    private bool _needsRead, _checked, _unavailable, _disposed, Busy;
+    private long _generation;
+    private string? Message;
+    private CompanyHseWorkflowReview? Review;
+    private CompanyHseWorkflowStart? Original;
+
+    protected override void OnParametersSet()
+    {
+        if (_context == Context && _incident == IncidentId && _canStart == CanStart) return;
+        _context = Context; _incident = IncidentId; _canStart = CanStart; ++_generation;
+        _needsRead = true; _checked = false; _unavailable = false; Review = null; Original = null; Message = null;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsRead || _disposed) return;
+        _needsRead = false; var generation = _generation; var context = Context; var incident = IncidentId;
+        try
+        {
+            var original = await Intents.ReadAsync(context, incident);
+            if (_disposed || generation != _generation) return;
+            Original = original; _checked = true;
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning(error, "HSE workflow recovery state could not be read");
+            if (_disposed || generation != _generation) return;
+            _unavailable = true;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task RequireContextAsync(long generation, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        void Current() { if (_disposed || generation != _generation || snapshot != Company.Snapshot) throw new InvalidOperationException("The workflow context changed."); }
+        Current(); var selected = snapshot.Selection ?? throw new UnauthorizedAccessException();
+        var user = (await Authentication.GetAuthenticationStateAsync()).User; Current();
+        if (!CanManage || user.Identity?.IsAuthenticated != true || user.FindFirst("party_id")?.Value != selected.UserId ||
+            selected.Scope != Context.Company || selected.UserId != Context.ActorUserId || !selected.Roles.Any(user.IsInRole) ||
+            !selected.Permissions.Contains(PermissionConstants.HSE.ManageIncidents, StringComparer.Ordinal)) throw new UnauthorizedAccessException();
+        var current = await Fields.GetCurrentFieldSelectionAsync(); Current();
+        FieldSelectionReviewValidator.RequireCurrent(current, selected.Scope, selected.UserId);
+        if (!current.SelectionAvailable || current.SelectionContext != Context) throw new InvalidOperationException("The selected FIELD changed.");
+    }
+    private async Task ReviewAsync()
+    {
+        if (!CanStart || Busy || !_checked || Original is not null || HasWorkflow) return;
+        Busy = true; Message = null; var generation = _generation; var snapshot = Company.Snapshot;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var review = await Client.ReviewHseWorkflowAsync(IncidentId);
+            await RequireContextAsync(generation, snapshot);
+            if (review.Context != Context || review.IncidentId != IncidentId) throw new InvalidOperationException("The incident review changed.");
+            _ = review.CreateIntent(Guid.NewGuid()); Review = review;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "HSE workflow review failed"); if (!_disposed && generation == _generation) Message = "Workflow review could not be confirmed. Reload and check access."; }
+        finally { Busy = false; }
+    }
+    private async Task StartAsync()
+    {
+        if (!CanStart || Busy || Review is null || Original is not null || !_checked || HasWorkflow) return;
+        var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var original = Review.CreateIntent(Guid.NewGuid());
+            await Intents.RetainAsync(original);
+            if (_disposed || generation != _generation || snapshot != Company.Snapshot) return;
+            Original = original; Review = null;
+            await SendAsync(original, generation, snapshot);
+        }
+        catch (Exception error) { Logger.LogWarning(error, "HSE workflow start was not confirmed"); if (!_disposed && generation == _generation) { Review = null; _needsRead = true; _checked = false; Message = "Workflow request was not confirmed. Reconcile the original before starting another."; } }
+        finally { Busy = false; }
+    }
+    private async Task RetryAsync()
+    {
+        if (Busy || Original is not { } original) return;
+        var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
+        try { await SendAsync(original, generation, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "HSE workflow reconciliation was not confirmed"); if (!_disposed && generation == _generation) Message = "The original workflow could not be reconciled. Check the company and FIELD, then retry."; }
+        finally { Busy = false; }
+    }
+    private async Task SendAsync(CompanyHseWorkflowStart original, long generation, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await RequireContextAsync(generation, snapshot);
+        if (original.Context != Context || original.IncidentId != IncidentId) throw new InvalidOperationException("The original workflow context changed.");
+        var receipt = await Client.StartHseWorkflowAsync(original);
+        await RequireContextAsync(generation, snapshot); receipt.Require(original);
+        await Intents.ClearAsync(original);
+        await RequireContextAsync(generation, snapshot);
+        Original = null; Message = "Workflow confirmed."; await OnConfirmed.InvokeAsync();
+    }
+    private void CancelReview() { Review = null; Message = null; }
+    public void Dispose() { _disposed = true; ++_generation; }
+}

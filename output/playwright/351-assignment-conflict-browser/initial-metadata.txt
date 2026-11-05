@@ -1,0 +1,10 @@
+### Result
+{"text":"Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.","metadata":{"recordRequests":0,"recoverRequests":0,"sourceRequests":2,"profileLoads":4,"startRecoverRequests":0,"assignmentWrites":1,"assignmentRecoveries":1,"assignmentReads":2,"assignedReads":0,"mode":"assignment","conflictReads":0,"conflictConfirmations":0,"assignmentConflictReads":0,"assignmentConflictConfirmations":0,"assignmentRecorded":true,"recordedReports":0,"readOnly":true,"recoveryUnavailable":false,"lastIntentRevision":null,"role":"ConfiguredExecutionRecorder","unit":"m","periodStart":"2026-10-26T18:14:44.9370048+00:00","periodEnd":"2026-10-26T18:14:45.9298408+00:00","previousEnd":null},"storage":[]}
+### Ran Playwright code
+```js
+await (async (page)=>{
+ const metadata=await(await page.request.get(new URL('/fixture/metadata',page.url()).href)).json();
+ const storage=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.endsWith('.drilling-execution-assignment')).map(([key,value])=>({key,length:value.length,plaintext:value.includes('Different unrecorded browser reporting original')})));
+ return {text:await page.locator('body').innerText(),metadata,storage};
+})(page);
+```

@@ -1,0 +1,245 @@
+{
+  "observed_at_utc": "2026-10-21T06:14:51.9656966Z",
+  "scope": "Current API-qualified participant binding, fresh configured app-role/date-zone guard and shared historical outcome display; full qualified original source-to-return HTTP and qualified recording/public-current forms remain open.",
+  "git": {
+    "staging_commit_or_push_performed": false,
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7"
+  },
+  "environment": {
+    "sdk": "10.0.401",
+    "framework_snapshot": "a80d41ad0affd81b549f5f063787e186d162e37f",
+    "os": "Microsoft Windows NT 10.0.26200.0"
+  },
+  "sources": [
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceWellEvidenceReader.cs",
+      "sha256": "b816b111fea84309ec72e2c5ebf74863c559f2d2b89f6006c03285afee780491"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs",
+      "sha256": "78daa6ed1c300df65809b56fdd50aa06e3f3e20028536bfc939ac5547e28a9e5"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "37220bbe933903d8e24b153418f3f5818a97d143e9ec5d6a16f649f7af1f24e2"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnOutcome.razor",
+      "sha256": "d1269c6ec507e46ed67cca9263b5f1a4cafe6db60db9b1b43d7341d34a5ebde0"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnPanel.razor",
+      "sha256": "cfde46eb691b25d9bfc500bdb36269c44f422ba29a8f7c00b098f261bd8e4e96"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetEvidencePanel.razor",
+      "sha256": "7a8173c0639d15262ec5a16e55acfc19fbc67316b7fdcdc813c201dea7079f70"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStateTests.cs",
+      "sha256": "6e4b866b799d4db683247620ee7c92c87ca8c2c49475b1f3a6f16e627ba7c2c2"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStatusTests.cs",
+      "sha256": "725c5cd96f78742ed5be7f56f17f7d9c50f1d780f34dbcfab3c8155c871ad5b4"
+    },
+    {
+      "path": "Scripts/Test-MaintenanceReceivingPage.ps1",
+      "sha256": "154eca83f9f61b7ac64b38791f23009705226e13904ebc950afa2d3e69ddce48"
+    }
+  ],
+  "first_gate_sources": [
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceWellEvidenceReader.cs",
+      "sha256": "b816b111fea84309ec72e2c5ebf74863c559f2d2b89f6006c03285afee780491"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs",
+      "sha256": "78daa6ed1c300df65809b56fdd50aa06e3f3e20028536bfc939ac5547e28a9e5"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "84ba5a5354a5a61834539c250f33316a6ce465100564d1e11627470948fac3fd"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnOutcome.razor",
+      "sha256": "d1269c6ec507e46ed67cca9263b5f1a4cafe6db60db9b1b43d7341d34a5ebde0"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnPanel.razor",
+      "sha256": "cfde46eb691b25d9bfc500bdb36269c44f422ba29a8f7c00b098f261bd8e4e96"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetEvidencePanel.razor",
+      "sha256": "7a8173c0639d15262ec5a16e55acfc19fbc67316b7fdcdc813c201dea7079f70"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStateTests.cs",
+      "sha256": "6e4b866b799d4db683247620ee7c92c87ca8c2c49475b1f3a6f16e627ba7c2c2"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStatusTests.cs",
+      "sha256": "725c5cd96f78742ed5be7f56f17f7d9c50f1d780f34dbcfab3c8155c871ad5b4"
+    },
+    {
+      "path": "Scripts/Test-MaintenanceReceivingPage.ps1",
+      "sha256": "154eca83f9f61b7ac64b38791f23009705226e13904ebc950afa2d3e69ddce48"
+    }
+  ],
+  "first_gate_source_note": "The final test-only change downgrades all asset grants to READ before the same two public-facts cases; production and UI sources remain identical.",
+  "data_assembly": {
+    "note": "Existing canonical Data6; this slice changes no Data contracts or native domain schemas.",
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "sha256": "f7ff1518ac84db95b49f7b5f0af85f51f5136987cb6727439a4317e290884a8d"
+  },
+  "checks": [
+    {
+      "log": "oilgas-335-api-participant-first-build.log",
+      "note": "New fixture callback used an async zero-argument signature against Action<object>. No tests ran; corrected to synchronous argument-taking callback preserving thrown failures.",
+      "exit_code": 1,
+      "name": "initial-focused-compile",
+      "status": "failed"
+    },
+    {
+      "failed": 0,
+      "source_version": "first_gate_sources",
+      "name": "actual-api-participant-native",
+      "duration": "4.7858 minutes",
+      "exit_code": 0,
+      "status": "verified",
+      "log": "oilgas-335-api-participant-native.log",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:UseSharedCompilation=false -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~ActualApiAdaptersJoinCompleteNativeReturnAndSeparatePrivateRecoveryFromReadOnlyFacts|FullyQualifiedName~ActualApiQualifiedParticipantRefusesChangedConfiguredRoleOrZoneAndRollsBackAllTargets\" --logger \"console;verbosity=normal\"",
+      "seams": "Actual interface injection, app RBAC/role resolver, native well/qualified owners, original native intent and rollback/recovery; controlled physical/report/closure DTOs and Beep provider rows. No full protected lifecycle or external-provider claim.",
+      "passed": 6
+    },
+    {
+      "status": "verified",
+      "seams": "Same two positive API adapter cases; every affected native asset and installation parent downgraded to actual READ grants before public facts; write capabilities/configured role removed. Private recovery still denied.",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:UseSharedCompilation=false -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~ActualApiAdaptersJoinCompleteNativeReturnAndSeparatePrivateRecoveryFromReadOnlyFacts\" --logger \"console;verbosity=normal\"",
+      "name": "public-native-facts-after-read-only-grants",
+      "exit_code": 0,
+      "log": "oilgas-335-api-participant-readonly.log",
+      "source_version": "sources",
+      "passed": 2,
+      "failed": 0,
+      "duration": "3.1131 minutes",
+      "note": "Repeats the two positive cases with actual READ-grant downgrades; counts overlap the six-case gate."
+    },
+    {
+      "failed": 0,
+      "name": "actual-shared-outcome-client-state-screens",
+      "duration": "23.4564 seconds",
+      "exit_code": 0,
+      "status": "verified",
+      "log": "oilgas-335-api-participant-ui.log",
+      "command": "./Scripts/Test-MaintenanceReceivingPage.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -Filter \"FullyQualifiedName~MaintenanceAssetReturnStateTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests|FullyQualifiedName~MaintenanceAssetEvidenceTests\"",
+      "seams": "Actual components/HtmlRenderer, typed client and states; controlled facts/transport/auth/FIELD/JS seams, no browser acceptance.",
+      "passed": 79
+    }
+  ],
+  "outputs": [
+    {
+      "path": "oilgas-335-api-participant-first-build.log",
+      "sha256": "bcfeca9655e30281ee5118d97e7bee7d6055e21f6c13ade0d006ea11b4bc50b6"
+    },
+    {
+      "path": "oilgas-335-api-participant-native.log",
+      "sha256": "e3aaee0154800bdd3bbb1efd13d777b2dc6521007ae4df1442b73eda47c3f325"
+    },
+    {
+      "path": "oilgas-335-api-participant-ui.log",
+      "sha256": "bdf96d89113b3d9e86b581ad5762a3696fbd855edbbd935c17d3a53369c539e2"
+    },
+    {
+      "path": "oilgas-335-api-participant-source-checkpoint.json",
+      "sha256": "cd5e26ee82049aec19578b3ca202a230f635aca013ac8882e1ee050b21b049f5"
+    },
+    {
+      "path": "oilgas-335-api-participant-readonly.log",
+      "sha256": "d6a33aaecc3b0cc7d2e1a7e9c750ec6a87a4acf647f62e6d8482073dab066ad8"
+    }
+  ],
+  "limitations": [
+    "Qualified observation recording remains gated in the existing screen; complete qualified public status/current-source projection and full native protected source journey remain open.",
+    "Native facts projection and headless outcome rendering do not establish protected public qualified status endpoint support.",
+    "Current company/app roles and target/resource authority remain required; IdentityServer remains authentication only.",
+    "No new command/transaction/store/schema/migration application, SQL/domain EF, CSS/JS/theme or new business-role policy.",
+    "Provider, OIDC/browser/accessibility/RTL/device, concurrent load, historical rework and broader persona/finance/multinational/release gates remain open.",
+    "Full goal/plan remains active; commit/push deferred until its completion."
+  ],
+  "all_processes_terminal": true,
+  "documentation": {
+    "owner": "Plans/FrameworkAppEnhancement/Implementation-335-Qualified-Facility-and-Equipment-Return.md",
+    "trackers": [
+      "MASTER-TODO-TRACKER.md",
+      "Plans/FrameworkAppEnhancement/README.md",
+      "Plans/FrameworkAppEnhancement/Company-Plan-Index.md",
+      "Plans/FrameworkAppEnhancement/Company-Phase-D-Operations.md",
+      "Plans/FrameworkAppEnhancement/Persona-08-Maintenance-and-Facility.md",
+      "Plans/FrameworkAppEnhancement/Persona-05-Operator-and-Shift-Supervisor.md",
+      "Plans/FrameworkAppEnhancement/Implementation-317-Controlled-Execution-Verification-and-Return.md",
+      "Plans/FrameworkAppEnhancement/Persona-12-Company-Administrator.md"
+    ],
+    "maintenance": "Updated active guidance in place, removed obsolete participant-injection work items and preserved historical scoped evidence; no extra fix plan.",
+    "encoding": "Existing eight trackers Latin1 bytes; owner335 UTF8.",
+    "internal_links_checked": 1102,
+    "hashes": [
+      {
+        "path": "Plans/FrameworkAppEnhancement/Implementation-335-Qualified-Facility-and-Equipment-Return.md",
+        "sha256": "e5d99fe2828f7783ed631e30891971d7961b44420e2cab7fbd3899c5f179fb3c"
+      },
+      {
+        "path": "MASTER-TODO-TRACKER.md",
+        "sha256": "de3aeb4bd30e4f1bbae5e60392b0079653314befeca114840f61b926b9a2e501"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/README.md",
+        "sha256": "9d41820cfcaf8642c70e9f2a1451315bbf43d4dbf2979c09148a09fba09c7c82"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Company-Plan-Index.md",
+        "sha256": "a2af03bfb9654caaed29284fbff700e49cf6dff3b3faa0d57743e7778aaced3c"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Company-Phase-D-Operations.md",
+        "sha256": "34de19ffb8a01bdd1df60a718ae55ee794a77903740a401c9c08dddf1b527b90"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Persona-08-Maintenance-and-Facility.md",
+        "sha256": "f6f3eaf74b7b8bd81fd527b8e50f1032798ed75cbd01df01296591e8c8f99930"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Persona-05-Operator-and-Shift-Supervisor.md",
+        "sha256": "21eebc69858420db087e2675ec14f5e187c7827ad29b59554d297bd39de721fe"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Implementation-317-Controlled-Execution-Verification-and-Return.md",
+        "sha256": "1ad72718bab8caf45c45389da273c85cc151aca4cd6b492481126cb5b1f0e6c0"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Persona-12-Company-Administrator.md",
+        "sha256": "b5d8a23404a5df6a8099d01806cc7fcf65cf049f423d994eaa3c8f83bc71e4cf"
+      }
+    ]
+  },
+  "review": {
+    "kind": "self-review",
+    "checks": [
+      "Production interface registration resolves the existing scoped qualified owner with no dependency cycle or extra command/ledger.",
+      "Private assigned-role capability is checked in authoritative app RBAC even when aggregate permissions are unchanged.",
+      "Public historical proof uses native READ rights without private command-role requirements.",
+      "Before/after-write role/zone refusals preserve complete native rows and retained original ledger boundaries.",
+      "One shared outcome consumes the existing public facts contract without command UUID, reason or private graphs.",
+      "Existing parent context invalidation, failure reporting and original intent retention remain in place; no new catch/silent success path."
+    ],
+    "limits": "No independent reviewer, full qualified protected source-to-return HTTP, actual browser/provider or release certification."
+  },
+  "runtime": {
+    "data_copy": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "data_sha256": "f7ff1518ac84db95b49f7b5f0af85f51f5136987cb6727439a4317e290884a8d",
+    "test_assembly": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+    "test_sha256": "93064b3bc97853fd6cee697638c2e857d65d079f609b6c33a15c4cd91ddc448c",
+    "processes": "First compile48176 failed; native8671 passed; isolated UI94094 passed; final READ16392 passed; all terminal."
+  }
+}

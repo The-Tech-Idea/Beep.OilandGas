@@ -1,0 +1,13 @@
+### Result
+{
+  "url": "http://127.0.0.1:65419/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+  "origin": 1793325111888.3,
+  "keys": [
+    "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+  ],
+  "text": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY — Recorded assigned incident\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 01:51 · North FIELD · originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 01:51\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nNorth FIELD\n\n\nReported jurisdiction\t\n\nKUWAIT\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nThe original final incident closure approval request awaits confirmation.\n\nReviewed final independent evidence; preserve this exact original through both acknowledgements.\n\nRECONCILE ORIGINAL CLOSURE STAGE\nREVIEW CHANGED NATIVE INCIDENT HISTORY\n\nThe stage outcome is unconfirmed. Reload and reconcile the retained original; the incident has not been confirmed closed.\n\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nInspect valve\tworker\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed."
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({url:location.href,origin:performance.timeOrigin,keys:Object.keys(sessionStorage),text:document.body.innerText})');
+```

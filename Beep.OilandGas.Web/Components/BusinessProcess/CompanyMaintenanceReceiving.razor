@@ -1,0 +1,81 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject CompanyMaintenanceReceivingState State
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 mt-3" aria-busy="@State.Busy.ToString().ToLowerInvariant()">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Independent maintenance receiving</MudText>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || State.Busy || State.Reference is not null)">Review original receiving task</MudButton>
+        @if(State.Review is {} review)
+        {
+            <MudText>Receiving role @review.AssignedRole · Original starter @review.WorkflowStarter · Production reviewer @review.Source.Reviewer</MudText>
+            <MudText>FIELD @review.Assignment.FieldId · Order @review.Assignment.WorkOrderId · Well @review.Assignment.WellId</MudText>
+            <MudText>Original approval @review.Assignment.DecisionId · Recorded scope @review.Source.Reason</MudText>
+            <MudTextField T="string" Label="Receiving rationale" @bind-Value="_notes" Lines="3" MaxLength="2000" Required="true" Disabled="@(!_authorized || State.Busy)" />
+            <MudButton Color="Color.Primary" OnClick="AcceptAsync" Disabled="@(!_authorized || State.Busy || State.Reference is not null || string.IsNullOrWhiteSpace(_notes))">Accept recorded receiving scope</MudButton>
+        }
+        @if(State.Reference is not null && State.VisibleReference is null){<MudAlert Severity="Severity.Warning">Return to the original company/account/FIELD/task to reconcile the retained acceptance.</MudAlert>}
+        @if(State.VisibleReference is {} reference)
+        {
+            <MudText>Original acceptance reference: @reference.ToString("D")</MudText>
+            @if(State.Receipt is null){<MudAlert Severity="Severity.Warning">Receiving acceptance is unconfirmed. Keep the original reference and read its recorded outcome before continuing.</MudAlert>}
+        }
+        <MudTextField T="string" Label="Original acceptance reference" @bind-Value="_reference" MaxLength="36" HelperText="Use the saved reference for read-only recovery after reconnecting." Disabled="@(!_authorized || State.Busy)" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy || string.IsNullOrWhiteSpace(_reference))">Read original acceptance</MudButton>
+        @if(State.Receipt is {} receipt)
+        {
+            <MudAlert Severity="Severity.Success">Independent receiving acceptance confirmed.</MudAlert>
+            <MudText>Approval @receipt.ApprovalId · History @receipt.HistoryId · Accepted task references @string.Join(", ",receipt.CompletedTaskIds)</MudText>
+            @if(receipt.NextStepInstanceId is {} next){<MudText>Next configured step @next · Assigned task references @string.Join(", ",receipt.NextTaskIds)</MudText>}
+            <MudButton Href="/tasks/inbox">Reload assigned work</MudButton>
+        }
+        <MudAlert Severity="Severity.Info">Receiving acceptance confirms the recorded scope and role handoff. Permits, execution, work-order completion and accepted return to service require separate evidence.</MudAlert>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public CompanyMaintenanceReceivingQuery? Task {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    [Parameter] public Guid? AcceptanceReference {get;set;}
+    private string _notes=string.Empty,_reference=string.Empty,_key=string.Empty;
+    private string? _error;
+    private bool _authorized,_disposed;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=AuthorityChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        var key=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision,AcceptanceReference});if(key==_key)return;_key=key;_authorized=false;_error=null;_notes=string.Empty;
+        try{Task?.Require();State.Attach(Task,SourceRevision);await Authority();_authorized=true;if(AcceptanceReference is {} id){if(id==Guid.Empty)throw new InvalidOperationException("A valid original acceptance reference is required.");_reference=id.ToString("D");if(State.Reference!=id)await State.RecoverAsync(Workflows,id);}}
+        catch(Exception error){_error=Calls.Explain(error,"reviewing the original receiving task","The original receiving acceptance could not be confirmed");}
+    }
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot!=Company.Snapshot || snapshot.Selection is null || Task is null || user.Identity?.IsAuthenticated!=true || !snapshot.Selection.Roles.Any(user.IsInRole) || !snapshot.Selection.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal))throw new UnauthorizedAccessException("Current standard app receiving roles and approval permission are required.");
+        var review=State.Review??State.Intent?.Review;
+        if(review is not null && !user.IsInRole(review.AssignedRole))throw new UnauthorizedAccessException("The configured receiving role is required.");
+    }
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthenticationChanged(Task<AuthenticationState> _)=>AuthorityChanged();
+    private void AuthorityChanged(){_authorized=false;_reference=string.Empty;_notes=string.Empty;State.Attach(null,null);Changed();}
+    private async Task Run(Func<Task> action)
+    {
+        if(_disposed || State.Busy)return;_error=null;
+        try{await Authority();_authorized=true;State.Attach(Task,SourceRevision);await action();await Authority();}
+        catch(Exception error){if(error is UnauthorizedAccessException){_authorized=false;State.Attach(null,null);}_error=Calls.Explain(error,"reviewing the original receiving acceptance","The original acceptance could not be confirmed");}
+    }
+    private Task Retain(Guid id){_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("acceptanceId",id),replace:true);return System.Threading.Tasks.Task.CompletedTask;}
+    private Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows));
+    private Task AcceptAsync()=>Run(()=>State.AcceptAsync(Workflows,_notes,Retain));
+    private Task RecoverAsync()=>Run(()=>{if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new InvalidOperationException("Enter the original acceptance Guid.");return State.RecoverAsync(Workflows,id,Retain);});
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=AuthorityChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.Attach(null,null);}
+}

@@ -1,0 +1,47 @@
+### Page
+- Page URL: http://127.0.0.1:52246/ppdm39/process/instances/hse-process-assigned-original
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e63]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=f3e64]
+    - paragraph [ref=f3e65]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=f3e66]:
+      - link "Open assigned HSE process" [ref=f3e67] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=f3e69] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=f3e71] [cursor=pointer]
+      - button "Restore original company" [ref=f3e73] [cursor=pointer]
+  - generic [ref=f3e75]:
+    - link "Assigned work" [ref=f3e76] [cursor=pointer]:
+      - /url: /tasks/inbox
+    - heading "Source process" [level=5] [ref=f3e82]
+    - generic [ref=f3e83]:
+      - generic [ref=f3e86]:
+        - generic [ref=f3e87]:
+          - generic [ref=f3e88] [cursor=pointer]:
+            - combobox "Active field" [ref=f3e89]: North FIELD
+            - group "Active field"
+          - generic: Active field
+        - generic [ref=f3e94]: Choose a FIELD for available workbenches in the selected company.
+      - button "Refresh fields" [ref=f3e98] [cursor=pointer]
+    - button "Reload recorded process" [ref=f3e104] [cursor=pointer]
+    - paragraph [ref=f3e110]: "Company: tenant / company"
+    - paragraph [ref=f3e111]: "FIELD: field"
+    - heading "HSE_INCIDENT_REPORTING · IN_PROGRESS" [level=6] [ref=f3e112]
+    - paragraph [ref=f3e113]: "Source: HSE_INCIDENT / case/شركة?one#2"
+    - paragraph [ref=f3e114]: "Started: 2026-10-28T10:03:48.4907596Z by originator"
+    - paragraph [ref=f3e115]: "Current state: PENDING_CLOSE_OUT · Current step: INC_CLOSURE"
+    - paragraph [ref=f3e116]: Continue investigation, corrective work, independent verification or final closure on the recorded incident.
+    - link "Open recorded incident workflow" [ref=f3e117] [cursor=pointer]:
+      - /url: /ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+    - heading "Recorded steps" [level=6] [ref=f3e119]
+    - paragraph [ref=f3e120]: "Final incident closure (INC_CLOSURE / step-instance) · PENDING · Assigned: actor · Role: Safety"
+    - heading "Recorded history" [level=6] [ref=f3e121]
+    - paragraph [ref=f3e122]: No recorded history entries were returned.
+    - paragraph [ref=f3e123]: Generic state actions are unavailable for an incident. Use its recorded incident workflow for the assigned reviewed stage.
+```
+### Events
+- New console entries: output\playwright\353-assigned-incident-browser\artifacts\console-2026-10-29T10-03-47-636Z.log#L9

@@ -41,6 +41,7 @@ internal static class IdentityExtensionMapping
             entity.Property(x => x.UserRoleId).HasMaxLength(128);
             entity.Property(x => x.UserId).HasMaxLength(128);
             entity.Property(x => x.RoleId).HasMaxLength(128);
+            entity.Property(x => x.RevokedByUserId).HasMaxLength(128);
             entity.HasOne<OilGasUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<IdentityRole>().WithMany().HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => new { x.UserId, x.RoleId });

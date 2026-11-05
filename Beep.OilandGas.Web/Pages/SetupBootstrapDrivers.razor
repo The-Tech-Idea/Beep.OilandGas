@@ -1,0 +1,295 @@
+@page "/setup/bootstrap-drivers"
+@using TheTechIdea.Data.OilGas
+@inject SetupBootstrapDriverClient Drivers
+@inject ILogger<SetupBootstrapDrivers> Logger
+
+<PageTitle>First-time database drivers</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">First-time database drivers and connectors</MudText>
+    <MudText Class="my-3">Enter the temporary setup key configured by the server operator. Select the database you will use; the API server downloads and loads its configured Beep connector and provider.</MudText>
+    <MudText Typo="Typo.body2">Enable SetupBootstrap on the API server and supply a long, randomly generated SetupBootstrap:Key through its secret configuration. Disable it after setup. The key is not saved by this page.</MudText>
+    <MudText Typo="Typo.body2">The server operator can configure trusted package feeds with SetupDrivers:PackageSources. The feed must contain the exact connector and provider versions shown below.</MudText>
+    <MudTextField T="string" Value="@_key" ValueChanged="ChangeKey" Label="Temporary setup key" InputType="InputType.Password" Disabled="@_busy" />
+    <MudButton OnClick="Load" Disabled="@(_busy || string.IsNullOrWhiteSpace(_key))" Variant="Variant.Outlined" Class="my-3">Open driver catalog</MudButton>
+    @if (_message is not null) { <MudAlert Severity="Severity.Info" Class="my-3" role="status">@_message</MudAlert> }
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    @if (!_busy && _catalogLoaded && _items.Count == 0)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">The server's Beep driver catalog is empty. Ask the server operator to register database drivers, then open the catalog again.</MudAlert>
+    }
+    @if (_items.Count > 0)
+    {
+        <MudTextField T="string" @bind-Value="_driverSearch" Immediate="true" Label="Find a database or package" Disabled="@_busy" />
+        @if (!VisibleDrivers.Any()) { <MudText Class="my-2">No drivers match this search. Clear it to see the catalog.</MudText> }
+    }
+    @foreach (var item in VisibleDrivers)
+    {
+        <MudPaper Outlined="true" Class="pa-3 my-2">
+            <MudText>@item.DataSourceType</MudText>
+            <MudText Typo="Typo.body2">Beep connector: @(item.BundledConnector ? "bundled with the API server" : item.ConnectorPackage ?? "not configured") — @(item.ConnectorLoaded ? "loaded" : "not loaded")</MudText>
+            @if (!item.BundledConnector && item.ConnectorPackage is not null) { <MudText Typo="Typo.body2">Connector version: @(item.ConnectorVersion ?? "not specified")</MudText> }
+            <MudText Typo="Typo.body2">Database provider: @item.Package (@(item.PackageVersion ?? "not specified")) — @(item.ProviderLoaded ? "loaded" : "not loaded")</MudText>
+            @if (item.SqlServerOwnedTransactionContract == false)
+            {
+                <MudAlert Severity="Severity.Warning" Class="my-2">This SQL Server connector lacks the owned transaction contract required for the shared system repository. Configure a current connector from a trusted feed and restart the API server before setting up that repository.</MudAlert>
+            }
+            @if (IdentityProvider(item) is null)
+            {
+                <MudText Typo="Typo.body2">This connector is not available for the identity repository. Choose SQL Server, PostgreSQL or Oracle for identity setup.</MudText>
+            }
+            @if (!item.CanInstall) { <MudText Typo="Typo.body2">Configure exact package names and versions for the missing connector and provider on the API server before installing.</MudText> }
+            <MudButton OnClick="@(() => Install(item))" Disabled="@(_busy || item.Loaded || !item.CanInstall)" Variant="Variant.Outlined">Download and load</MudButton>
+            @if (item.Loaded && IdentityProvider(item) is not null)
+            {
+                <MudButton OnClick="@(() => SelectDriver(item))" Disabled="@_busy" Variant="Variant.Outlined">Use for identity connection</MudButton>
+            }
+        </MudPaper>
+    }
+    <MudDivider Class="my-4" />
+    <MudText Typo="Typo.h5" HtmlTag="h2">Identity repository connection</MudText>
+    <MudText Class="my-2">Select a registered Beep connection with a complete SQL Server, PostgreSQL or Oracle connection string. The server keeps its connection settings.</MudText>
+    <MudText Typo="Typo.h6" HtmlTag="h3" Class="mt-3">Create a Beep connection</MudText>
+    <MudText Typo="Typo.body2">Load the matching connector and provider above first. Passwords and tokens require a Beep runtime with credential protection configured on the API server. On non-Windows servers, the protected runtime needs a host-managed key even for credential-free connection strings.</MudText>
+    <MudText Typo="Typo.body2">@(_selectedDriver is null ? "Select a loaded driver above before creating a connection." : $"Selected driver: {_selectedDriver.Package} ({_selectedDriver.DataSourceType})")</MudText>
+    <MudSelect T="string" Value="@_newProvider" ValueChanged="ChangeProvider" Label="Database provider" Disabled="@_busy">
+        <MudSelectItem T="string" Value="@("SQLSERVER")">SQL Server</MudSelectItem>
+        <MudSelectItem T="string" Value="@("POSTGRESQL")">PostgreSQL</MudSelectItem>
+        <MudSelectItem T="string" Value="@("ORACLE")">Oracle</MudSelectItem>
+    </MudSelect>
+    <MudTextField T="string" @bind-Value="_newName" Label="Beep connection name" Disabled="@_busy" />
+    <MudTextField T="string" @bind-Value="_newHost" Label="Server or host" Disabled="@_busy" />
+    <MudNumericField T="int?" @bind-Value="_newPort" Label="Port (optional)" Min="1" Max="65535" Disabled="@_busy" />
+    <MudTextField T="string" @bind-Value="_newDatabase" Label="@(_newProvider == "ORACLE" ? "Oracle service name" : "Database name")" Disabled="@_busy" />
+    <MudSelect T="string" @bind-Value="_newAuthentication" Label="Authentication" Disabled="@_busy">
+        @if (_newProvider != "ORACLE") { <MudSelectItem T="string" Value="@("EXTERNAL")">@(_newProvider == "SQLSERVER" ? "Windows integrated" : "External or operating system")</MudSelectItem> }
+        <MudSelectItem T="string" Value="@("PASSWORD")">Username and password</MudSelectItem>
+    </MudSelect>
+    @if (_newAuthentication == "PASSWORD")
+    {
+        <MudTextField T="string" @bind-Value="_newUser" Label="Username" Disabled="@_busy" />
+        <MudTextField T="string" @bind-Value="_newPassword" Label="Password" InputType="InputType.Password" Disabled="@_busy" />
+    }
+    @if (_newProvider == "SQLSERVER") { <MudCheckBox T="bool" @bind-Value="_trustCertificate" Label="Trust the SQL Server certificate" Disabled="@_busy" /> }
+    <MudButton OnClick="CreateConnection" Disabled="@(_busy || string.IsNullOrWhiteSpace(_key) || _selectedDriver is null)" Variant="Variant.Outlined" Class="my-2">Create Beep connection</MudButton>
+    <MudButton OnClick="LoadConnections" Disabled="@(_busy || string.IsNullOrWhiteSpace(_key))" Variant="Variant.Outlined">Find registered connections</MudButton>
+    @if (_connectionsLoaded)
+    {
+        @if (_connections.Count == 0) { <MudText Class="my-2">No eligible registered Beep connections were found.</MudText> }
+        else
+        {
+            <MudSelect T="string" Value="@_connection" ValueChanged="ChangeConnection" Label="Identity repository connection" Disabled="@_busy">
+                @foreach (var option in _connections) { <MudSelectItem T="string" Value="@option.ConnectionName">@option.ConnectionName (@option.Provider)</MudSelectItem> }
+            </MudSelect>
+            <MudButton OnClick="TestConnection" Disabled="@(_busy || string.IsNullOrWhiteSpace(_connection))" Variant="Variant.Outlined">Test identity connection</MudButton>
+            <MudButton OnClick="SelectConnection" Disabled="@(_busy || string.IsNullOrWhiteSpace(_connection))" Variant="Variant.Outlined">Select identity repository</MudButton>
+        }
+    }
+    <MudDivider Class="my-4" />
+    <MudText Typo="Typo.h5" HtmlTag="h2">Identity repository migration</MudText>
+    <MudText Class="my-2">The API server must have its identity repository provider and connection configured. Review the database and pending migrations before applying them.</MudText>
+    <MudButton OnClick="ReviewRepository" Disabled="@(_busy || string.IsNullOrWhiteSpace(_key))" Variant="Variant.Outlined">Review identity repository migrations</MudButton>
+    @if (_plan is not null)
+    {
+        <MudText Class="my-2">Provider: @_plan.Provider</MudText>
+        @if (_plan.CreatesDatabase) { <MudAlert Severity="Severity.Warning" Class="my-2">The configured database does not exist. Applying this plan will create it before applying the migrations.</MudAlert> }
+        else { <MudText Typo="Typo.body2">The configured database exists.</MudText> }
+        @foreach (var migration in _plan.PendingMigrations) { <MudText Typo="Typo.body2">@migration</MudText> }
+        <MudCheckBox T="bool" @bind-Value="_reviewed" Label="I reviewed the migrations for the configured repository" Disabled="@_busy" />
+        <MudButton OnClick="ApplyRepository" Disabled="@(_busy || !_reviewed)" Variant="Variant.Filled" Color="Color.Primary">Apply reviewed migrations</MudButton>
+    }
+    <MudButton Href="/setup/repository" Variant="Variant.Text" Class="mt-4">Back to first-time setup</MudButton>
+</MudContainer>
+
+@code {
+    private string _key = "";
+    private bool _busy;
+    private bool _catalogLoaded;
+    private string? _message;
+    private List<SetupDriverItem> _items = [];
+    private string _driverSearch = "";
+    private IEnumerable<SetupDriverItem> VisibleDrivers => _items.Where(item => string.IsNullOrWhiteSpace(_driverSearch) ||
+        new[] { item.DataSourceType, item.Category, item.Package, item.ConnectorPackage }.Any(value =>
+            value?.Contains(_driverSearch.Trim(), StringComparison.OrdinalIgnoreCase) == true));
+    private SetupDriverItem? _selectedDriver;
+    private SetupRepositoryMigrationPlan? _plan;
+    private bool _reviewed;
+    private List<SetupRepositoryConnectionOption> _connections = [];
+    private string _connection = "";
+    private bool _connectionsLoaded;
+    private string _newProvider = "SQLSERVER", _newName = "", _newHost = "", _newDatabase = "", _newAuthentication = "EXTERNAL", _newUser = "", _newPassword = "";
+    private int? _newPort;
+    private bool _trustCertificate;
+    private void ChangeKey(string value) { _key = value; _items = []; _driverSearch = ""; _catalogLoaded = false; _selectedDriver = null; _plan = null; _reviewed = false; _connections = []; _connection = ""; _connectionsLoaded = false; _newPassword = ""; _message = null; }
+    private void ChangeProvider(string value) { _newProvider = value; _selectedDriver = null; _newAuthentication = value == "ORACLE" ? "PASSWORD" : "EXTERNAL"; _newPort = null; _newPassword = ""; _message = null; }
+    private void ChangeConnection(string value) { _connection = value; _message = null; }
+    private static string? IdentityProvider(SetupDriverItem item) => item.DataSourceType.ToUpperInvariant() switch
+    {
+        "SQLSERVER" => "SQLSERVER", "POSTGRE" => "POSTGRESQL", "ORACLE" => "ORACLE", _ => null
+    };
+    private void SelectDriver(SetupDriverItem item)
+    {
+        if (_busy || !_items.Contains(item) || !item.Loaded || !item.ConnectorLoaded || !item.ProviderLoaded || IdentityProvider(item) is not { } provider) return;
+        if (_newProvider != provider) ChangeProvider(provider);
+        _selectedDriver = item;
+        _message = "Driver selected. Enter the identity repository connection details below.";
+    }
+    private async Task Load()
+    {
+        if (_busy || string.IsNullOrWhiteSpace(_key)) return;
+        _busy = true; _message = null; _selectedDriver = null; _catalogLoaded = false;
+        try { _items = await Drivers.ListAsync(_key); _catalogLoaded = true; }
+        catch (Exception error) { Logger.LogWarning(error, "First-time driver catalog could not be loaded"); _items = []; _message = "The catalog is unavailable. Check the temporary setup configuration and repository status."; }
+        finally { _busy = false; }
+    }
+    private async Task Install(SetupDriverItem item)
+    {
+        if (_busy || item.Loaded || !item.CanInstall || !_items.Contains(item)) return;
+        _busy = true; _message = null;
+        try
+        {
+            var result = await Drivers.InstallAsync(_key, item);
+            if (result.Id != item.Id || result.DataSourceType != item.DataSourceType || result.Category != item.Category || result.Package != item.Package || result.PackageVersion != item.PackageVersion || result.ConnectorPackage != item.ConnectorPackage || result.ConnectorVersion != item.ConnectorVersion || !result.Loaded || !result.ProviderLoaded || !result.ConnectorLoaded)
+                throw new InvalidOperationException("The loaded connector and provider were not confirmed.");
+            _items = _items.Select(x => x.Id == item.Id ? result : x).ToList();
+            if (IdentityProvider(result) is { } provider)
+            {
+                if (_newProvider != provider) ChangeProvider(provider);
+                _selectedDriver = result;
+                _message = "Connector and provider loaded. Enter the identity repository connection details below.";
+            }
+            else
+                _message = "Connector and provider loaded. Continue with repository setup.";
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning(error, "First-time driver installation was not confirmed");
+            // A failed response can follow a partial download or a completed installation.
+            // Require a fresh catalog before selecting a driver or repeating the request.
+            _items = []; _catalogLoaded = false; _selectedDriver = null;
+            _message = "Installation was not confirmed. Check the API server's package feeds, then open the driver catalog again to see the current state before retrying. If it still fails, ask the server operator to check the package cache and server logs.";
+        }
+        finally { _busy = false; }
+    }
+    private async Task ReviewRepository()
+    {
+        if (_busy || string.IsNullOrWhiteSpace(_key)) return;
+        _busy = true; _message = null; _plan = null; _reviewed = false;
+        try { _plan = await Drivers.PlanRepositoryAsync(_key); }
+        catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Conflict)
+        { Logger.LogWarning(error, "Identity repository migration requires review"); _message = "Migration requires operator review. Existing account-wide persona settings may need a reviewed company assignment."; }
+        catch (Exception error) { Logger.LogWarning(error, "Identity repository migration plan could not be reviewed"); _message = "The migration plan is unavailable. Check the server configuration, database connection and setup key."; }
+        finally { _busy = false; }
+    }
+    private async Task LoadConnections()
+    {
+        if (_busy || string.IsNullOrWhiteSpace(_key)) return;
+        _busy = true; _connectionsLoaded = false; _connections = []; _connection = ""; _plan = null; _reviewed = false; _message = null;
+        try { _connections = await Drivers.RepositoryConnectionsAsync(_key); _connectionsLoaded = true; }
+        catch (Exception error) { Logger.LogWarning(error, "Identity repository connections could not be listed"); _message = "The connection catalog is unavailable. Check the server and setup key."; }
+        finally { _busy = false; }
+    }
+
+    private async Task TestConnection()
+    {
+        if (_busy || string.IsNullOrWhiteSpace(_key) || !_connections.Any(c => c.ConnectionName == _connection)) return;
+        _busy = true; _message = null;
+        try
+        {
+            var result = await Drivers.TestRepositoryConnectionAsync(_key, _connection);
+            _message = result.Connected ? "The identity database connection opened successfully."
+                : "The connection could not be opened. Check the server, credentials and database. A new database may need to be created during migration.";
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning("Identity connection test could not be confirmed ({ErrorType})", error.GetType().Name);
+            _message = "The connection test could not be confirmed. Refresh the connection list and try again.";
+        }
+        finally { _busy = false; }
+    }
+    private async Task CreateConnection()
+    {
+        if (_busy || string.IsNullOrWhiteSpace(_key)) return;
+        if (_selectedDriver is null || !_items.Contains(_selectedDriver) || !_selectedDriver.Loaded || !_selectedDriver.ConnectorLoaded ||
+            !_selectedDriver.ProviderLoaded || IdentityProvider(_selectedDriver) != _newProvider)
+        { _message = "Select a loaded driver for the chosen database provider before creating a connection."; return; }
+        if (!BeepConnectionName.IsValid(_newName) || string.IsNullOrWhiteSpace(_newHost) || string.IsNullOrWhiteSpace(_newDatabase) ||
+            _newHost.Any(char.IsControl) || _newDatabase.Any(char.IsControl) || _newHost.IndexOfAny([';', '/', '?', '#']) >= 0 ||
+            _newDatabase.IndexOfAny([';', '/', '?', '#']) >= 0 || _newPort is < 1 or > 65535 ||
+            (_newAuthentication == "PASSWORD" && (string.IsNullOrWhiteSpace(_newUser) || string.IsNullOrWhiteSpace(_newPassword) || _newUser.Any(char.IsControl) || _newPassword.Any(char.IsControl))))
+        { _message = "Enter a valid connection name, server, database or service, port and any required credentials."; return; }
+        var host = _newHost.Trim(); var database = _newDatabase.Trim();
+        var fields = new System.Data.Common.DbConnectionStringBuilder();
+        if (_newProvider == "SQLSERVER")
+        {
+            if (host.Contains(':') && !host.StartsWith('[')) host = $"[{host}]";
+            fields["Data Source"] = _newPort.HasValue ? $"{host},{_newPort}" : host;
+            fields["Initial Catalog"] = database;
+            if (_newAuthentication == "EXTERNAL") fields["Integrated Security"] = true;
+            if (_trustCertificate) fields["TrustServerCertificate"] = true;
+        }
+        else if (_newProvider == "POSTGRESQL")
+        {
+            fields["Host"] = host; fields["Database"] = database;
+            if (_newPort.HasValue) fields["Port"] = _newPort.Value;
+        }
+        else if (_newProvider == "ORACLE")
+        {
+            if (host.Contains(':') && !host.StartsWith('[')) host = $"[{host}]";
+            fields["Data Source"] = $"//{host}:{_newPort ?? 1521}/{database}";
+        }
+        else { _message = "Select a supported database provider."; return; }
+        if (_newAuthentication == "PASSWORD") { fields["User ID"] = _newUser.Trim(); fields["Password"] = _newPassword; }
+        var name = _newName; var request = new SetupRepositoryConnectionCreate(name, _newProvider, fields.ConnectionString, _selectedDriver.Id);
+        _busy = true; _message = null; _connectionsLoaded = false; _connections = []; _connection = ""; _plan = null; _reviewed = false;
+        try
+        {
+            var result = await Drivers.CreateRepositoryConnectionAsync(_key, request);
+            if (!string.Equals(result.ConnectionName, name, StringComparison.Ordinal)) throw new InvalidOperationException("The created connection changed.");
+            try
+            {
+                var available = await Drivers.RepositoryConnectionsAsync(_key);
+                var matches = available.Where(x => string.Equals(x.ConnectionName, name, StringComparison.Ordinal) &&
+                    string.Equals(x.Provider, request.Provider, StringComparison.OrdinalIgnoreCase)).ToArray();
+                if (matches.Length != 1) throw new InvalidOperationException("The created connection was not confirmed in the catalog.");
+                _connections = available; _connectionsLoaded = true; _connection = name;
+                _message = "Beep connection created and found in the catalog. Select it for the identity repository.";
+            }
+            catch (Exception error)
+            {
+                Logger.LogWarning(error, "The newly created identity connection could not be confirmed in the catalog");
+                _message = "Beep connection created, but the connection catalog could not confirm it. Find registered connections and check before selecting.";
+            }
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning(error, "Identity Beep connection creation was not confirmed");
+            _message = "The connection creation was not confirmed. Find registered connections before retrying; if it is absent, check the loaded driver, connection settings and server credential protection.";
+        }
+        finally { _newPassword = ""; _busy = false; }
+    }
+    private async Task SelectConnection()
+    {
+        if (_busy || !_connections.Any(x => x.ConnectionName == _connection)) return;
+        var name = _connection; _busy = true; _message = null; _plan = null; _reviewed = false;
+        try
+        {
+            var result = await Drivers.SelectRepositoryConnectionAsync(_key, name);
+            if (!string.Equals(result.ConnectionName, name, StringComparison.Ordinal)) throw new InvalidOperationException("The selected connection changed.");
+            _message = "Identity repository connection selected. Review its migrations next.";
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Identity repository connection selection was not confirmed"); _message = "The connection selection was not confirmed. Check the server configuration and retry."; }
+        finally { _busy = false; }
+    }
+    private async Task ApplyRepository()
+    {
+        if (_busy || !_reviewed || _plan is null) return;
+        var plan = _plan; _plan = null; _reviewed = false; _busy = true; _message = null;
+        try
+        {
+            var result = await Drivers.ApplyRepositoryAsync(_key, plan);
+            _message = $"Migration request completed. Identity repository status: {result.Readiness}. Return to setup and check the repository again.";
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Identity repository migration was not confirmed"); _message = "The migration outcome could not be confirmed. Check the repository status before reviewing again."; }
+        finally { _busy = false; }
+    }
+}

@@ -296,8 +296,8 @@ IDMEEditor
 │                                                              │
 │  Step 3: Install Driver (NuGet Package)                    │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │  POST /api/ppdm39/setup/install-driver               │  │
-│  │  → Downloads and installs database driver NuGet      │  │
+│  │  POST /api/setup/drivers/{id}/install                │  │
+│  │  → Loads the Beep connector and database provider    │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                                                              │
 │  Step 4: Execute Scripts                                    │

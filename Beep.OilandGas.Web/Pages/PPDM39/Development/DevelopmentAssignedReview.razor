@@ -1,0 +1,131 @@
+@page "/development/fdp/assigned"
+@using System.Globalization
+@using MudBlazor
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDevelopmentServiceClient Development
+@inject OilGasCallFailures Calls
+@inject IDevelopmentDraftIntentStore Journal
+
+<PageTitle>Assigned development review</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Assigned development review</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-4">
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company assigned work</MudButton>
+        @if(!string.IsNullOrWhiteSpace(ProcessId)){<MudButton Href="@("/development/fdp/history?processId="+Uri.EscapeDataString(ProcessId))" Variant="Variant.Outlined">Recorded review history</MudButton>}
+        <MudButton OnClick="Reload" Disabled="@(_state?.Loading==true || _state?.Busy==true)" StartIcon="@Icons.Material.Filled.Refresh">Reload assigned source</MudButton>
+    </MudStack>
+    @if (_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming original development decision" />}
+    @if (_state?.DecisionError is {} decisionError){<MudAlert Severity="Severity.Error" Class="mb-3">@decisionError</MudAlert>}
+    @if (_state?.DecisionConfirmation is {} confirmation){<MudAlert Severity="Severity.Success" Class="mb-3">@confirmation</MudAlert>}
+    @if (_state?.NeedsCompany!=false)
+    {
+        <MudAlert Severity="Severity.Info">Choose a company before opening its assigned development review.</MudAlert>
+    }
+    else if (!_state.CanView)
+    {
+        <MudAlert Severity="Severity.Info">Current company Development Planning and Workflow review permissions are required for this assignment.</MudAlert>
+    }
+    else if (_state.Loading)
+    {
+        <MudProgressLinear Indeterminate="true" aria-label="Loading assigned development review" />
+    }
+    else if (_state.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_state.Error</MudAlert>
+    }
+    else if (_state.RetainedDecisionProcessId is {} originalProcess)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Recover original stage decision</MudText>
+            <MudText>An earlier decision has an unconfirmed outcome. Recover its retained original before recording more work.</MudText>
+            @if (_state.PendingDecision is {} original)
+            {
+                <MudText>@original.Review.StepName · @(original.Decision=="APPROVE"?"Approve stage":"Reject stage")</MudText>
+                <MudText Class="development-draft-description">@original.Notes</MudText>
+                <MudButton OnClick="RecoverDecision" Disabled="@(!_state.CanRecoverDecision)" Variant="Variant.Outlined" Class="mt-3">Recover original decision</MudButton>
+            }
+            else
+            {
+                <MudButton Href="@("/development/fdp/assigned?processId="+Uri.EscapeDataString(originalProcess))" Variant="Variant.Outlined">Open original review decision</MudButton>
+            }
+        </MudPaper>
+    }
+    else if (_state.DecisionReceipt is {} receipt)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original decision outcome</MudText>
+            <MudText>Review workflow: @WorkflowState(receipt.WorkflowState)</MudText>
+            @if (receipt.Recorded)
+            {
+                <MudText Class="development-draft-identity">Approval audit: @receipt.ApprovalId</MudText>
+                <MudText Class="development-draft-identity">History: @receipt.HistoryId</MudText>
+                @if (receipt.NextStepInstanceId is not null){<MudText>This decision assigned the next configured review stage. Open company assigned work for its current pending tasks.</MudText>}
+            }
+            <MudText Typo="Typo.caption">Outcome checked: @receipt.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+        </MudPaper>
+    }
+    else if (_state.Current is {} review)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mb-4">
+            <MudText>Company: @review.Scope.Company.TenantId / @review.Scope.Company.BusinessAssociateId</MudText>
+            <MudText>Assignment FIELD: @review.Scope.FieldId</MudText>
+            <MudText>@review.WorkflowName · Version @review.WorkflowVersion</MudText>
+            <MudText Typo="Typo.h6" HtmlTag="h2">@review.StepName</MudText>
+            <MudText>Assigned role: @review.AssignedRole</MudText>
+            <MudText>Reviewer workspace: @review.PersonaCode</MudText>
+            <MudText>Requested by: @review.WorkflowStarterUserId</MudText>
+            <MudText Class="development-draft-identity">Task: @review.TaskId</MudText>
+            <MudText Typo="Typo.caption">Assignment and source checked: @review.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+        </MudPaper>
+        <DevelopmentDraftSourceCard Plan="review.Plan" />
+        <MudAlert Severity="Severity.Info">This is the original draft for your recorded review assignment. Opening it does not record a technical, investment or operations approval.</MudAlert>
+        <MudPaper Outlined="true" Class="pa-4 my-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Record this review stage</MudText>
+            <MudSelect T="string" Label="Stage decision" @bind-Value="_decision" Disabled="@(!_state.CanPrepareDecision || _state.PreparedDecision is not null)">
+                <MudSelectItem T="string" Value='@("APPROVE")'>Approve this stage</MudSelectItem>
+                <MudSelectItem T="string" Value='@("REJECT")'>Reject this stage</MudSelectItem>
+            </MudSelect>
+            <MudTextField T="string" Label="Review rationale" Lines="4" MaxLength="1600" @bind-Value="_notes" Disabled="@(!_state.CanPrepareDecision || _state.PreparedDecision is not null)" Class="my-3" />
+            <MudButton OnClick="PrepareDecision" Disabled="@(!_state.CanPrepareDecision || _state.PreparedDecision is not null)" Variant="Variant.Outlined">Review stage decision</MudButton>
+            @if (_state.PreparedDecision is {} prepared)
+            {
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.h6" HtmlTag="h3">Confirm @(prepared.Decision=="APPROVE"?"stage approval":"stage rejection")</MudText>
+                <MudText Class="development-draft-description">@prepared.Notes</MudText>
+                <MudText Class="my-3">This records your independent decision for @prepared.Review.StepName. Investment and operations release remain separate.</MudText>
+                <MudStack Row="true" Wrap="Wrap.Wrap">
+                    <MudButton OnClick="SubmitDecision" Disabled="@(!_state.CanPrepareDecision)" Variant="Variant.Filled" Color="@(prepared.Decision=="APPROVE"?Color.Primary:Color.Warning)">Confirm stage decision</MudButton>
+                    <MudButton OnClick="CancelDecision" Disabled="@_state.Busy" Variant="Variant.Outlined">Edit stage decision</MudButton>
+                </MudStack>
+            }
+        </MudPaper>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">Open a current development review from company assigned work, or reload after a workspace change.</MudAlert>
+    }
+</MudContainer>
+
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
+    private DevelopmentAssignedReviewState? _state;
+    private bool _disposed;
+    private string _decision="",_notes="";
+    private string? _displayedRevision;
+    protected override void OnInitialized(){_state=new(Company,Personas,Development,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>Reload();
+    private Task Reload(){_decision="";_notes="";return _state!.LoadAsync(ProcessId);}
+    private void PrepareDecision()=>_state!.PrepareDecision(_decision,_notes);
+    private Task SubmitDecision()=>_state!.SubmitDecisionAsync();
+    private Task RecoverDecision()=>_state!.RecoverDecisionAsync();
+    private void CancelDecision()=>_state!.CancelDecision();
+    private void Changed(){if(!_disposed)_=InvokeAsync(()=>{var revision=_state?.Current?.Revision;if(revision!=_displayedRevision){_decision="";_notes="";_displayedRevision=revision;}StateHasChanged();});}
+    private static string WorkflowState(string state)=>state switch{"REVIEW_APPROVED"=>"All configured review stages approved","REVIEW_REJECTED"=>"Review rejected","INITIAL"=>"Initial review pending",_=>"Configured stage "+state};
+    public void Dispose(){_disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

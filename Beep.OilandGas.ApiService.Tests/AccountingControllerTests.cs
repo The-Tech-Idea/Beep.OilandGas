@@ -96,7 +96,7 @@ public class AccountingControllerTests
         var productionAccounting = new Mock<IProductionAccountingService>(MockBehavior.Strict);
         var controller = CreateController(orchestrator.Object, accountingService.Object, productionAccounting.Object, "user-3");
 
-        var result = await controller.ClosePeriodAsync(new CloseAccountingPeriodRequest());
+        var result = await controller.ClosePeriodAsync(new CloseAccountingPeriodRequest(),new Beep.OilandGas.Repository.RepositoryTenantContext(),new Mock<Beep.OilandGas.Repository.IRepositoryAccessService>().Object,new Mock<IAccessControlService>().Object,null!);
 
         Assert.IsType<BadRequestObjectResult>(result);
         productionAccounting.VerifyNoOtherCalls();
@@ -104,7 +104,7 @@ public class AccountingControllerTests
     }
 
     [Fact]
-    public async Task ClosePeriodAsync_ReturnsOk_WhenCloseSucceeds()
+    public async Task ClosePeriodAsync_RefusesUnselectedCompanyBeforeBusinessMutation()
     {
         const string fieldId = "FIELD-PA-4";
 
@@ -113,19 +113,16 @@ public class AccountingControllerTests
 
         var accountingService = new Mock<IAccountingService>(MockBehavior.Loose);
         var productionAccounting = new Mock<IProductionAccountingService>(MockBehavior.Strict);
-        productionAccounting
-            .Setup(x => x.ClosePeriodAsync(fieldId, new DateTime(2026, 3, 31), "user-4", "PPDM39"))
-            .ReturnsAsync(true);
 
         var controller = CreateController(orchestrator.Object, accountingService.Object, productionAccounting.Object, "user-4");
 
         var result = await controller.ClosePeriodAsync(new CloseAccountingPeriodRequest
         {
             PeriodEnd = new DateTime(2026, 3, 31)
-        });
+        },new Beep.OilandGas.Repository.RepositoryTenantContext(),new Mock<Beep.OilandGas.Repository.IRepositoryAccessService>().Object,new Mock<IAccessControlService>().Object,null!);
 
-        Assert.IsType<OkResult>(result);
-        productionAccounting.VerifyAll();
+        Assert.IsType<ForbidResult>(result);
+        productionAccounting.VerifyNoOtherCalls();
         orchestrator.VerifyAll();
     }
 

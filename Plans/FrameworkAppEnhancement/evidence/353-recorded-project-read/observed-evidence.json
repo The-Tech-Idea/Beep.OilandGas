@@ -1,0 +1,37 @@
+{
+  "plan": "Plan353 recorded-project/action read prerequisite to provider queue paging",
+  "date": "2026-10-30",
+  "result": { "passed": 10, "failed": 0, "skipped": 0, "duration": "18 seconds" },
+  "build": "18.66 seconds; 664 existing/support/nullable warnings; zero errors; dependency builds disabled",
+  "cases": {
+    "ActualCorrectiveActionReadStaysBoundToRecordedProjectAndIncident": ["large-field", "unrelated-malformed", "foreign-link", "duplicate-link", "changed-link", "retired-field", "missing-status", "foreign-provider-row", "contradictory-project"],
+    "Actual_studies_nodes_deviations_and_summary_read_recorded_facts_without_status_or_name_defaults": "affected shared project-family guard"
+  },
+  "sha256": {
+    "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "42AFC963803599CD2932AA147E23794BCA925A68777115BF4805B930917B4ED3",
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Plan.cs": "5EEE1D447AED79BD9A845F9ADADD3A2A5F3BA9CAA1D04A199FAA32C4E0D8CD97",
+    "Beep.OilandGas.Repository.Tests/CompanyCorrectiveActionAuthorityTests.cs": "12931D9B51816BA757ADE03BD0D570E76045B4C293C5FCD650A6D38D9AF1C6A0",
+    "Beep.OilandGas.Repository.Tests.dll": "769FD4518BAA1D5B2B0BFE0ED54515061F6DAB371DBF9473D5FC02E12581134D",
+    "Beep.OilandGas.PPDM39.dll": "8A1E830C728079CE338975574BC78549406F506F9E82A861CA8D73D26A7217B6"
+  },
+  "change": [
+    "Exact PROJECT_ID filters select the actual project family and remain bound through row validation.",
+    "Corrective reads start from the project and its unique current incident link, then rebuild exact incident authority without FIELD-wide case discovery.",
+    "Parent, link and authority are rechecked; native plan resolution supplies exact filters during canonical validation.",
+    "Foreign rows and contradictory project IDs refuse before child reference validation; no name-derived plan inference.",
+    "HAZOP keeps its existing graph owner. Unfiltered project discovery remains unchanged."
+  ],
+  "observed": [
+    "Actual CorrectiveActionService, canonical plan resolver, current shared repository and API policy/profile/registry execute with a controlled recording Beep datasource.",
+    "Actual action sequence, description and responsible BA are returned with 300 unrelated FIELD components, including a malformed unrelated component.",
+    "The seven refusal inputs withhold data and every incident-component query remains exact. Zero native writes.",
+    "The existing actual HAZOP studies/nodes/deviations/summary check passes through the affected project-family policy."
+  ],
+  "remaining": [
+    "Restriction-safe provider paging/counts are not implemented by this change.",
+    "Queue limits of 64 returned incidents and 4096 selected actions remain; actual large-FIELD latency is unqualified.",
+    "Configured provider/HTTP/OIDC, production layout and wider persona acceptance remain open.",
+    "No schema, SQL, business EF migration, compatibility owner or parallel authorization/assignment service introduced.",
+    "No permit, class/full, provider, closure or previous incident-test sweep ran. Overall goal remains active; commit/push pending."
+  ]
+}

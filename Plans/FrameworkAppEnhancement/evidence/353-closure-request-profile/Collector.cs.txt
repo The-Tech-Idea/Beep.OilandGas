@@ -1,0 +1,47 @@
+using System.Diagnostics;
+using System.Diagnostics.Tracing;
+using System.Text.Json;
+using Microsoft.Diagnostics.NETCore.Client;
+using Microsoft.Diagnostics.Tracing.Etlx;
+var pid = int.Parse(args[0]); var seconds = int.Parse(args[1]); var output = args[2];
+var start = DateTimeOffset.UtcNow; using var process = Process.GetProcessById(pid);
+var cpuStart = process.TotalProcessorTime; var watch = Stopwatch.StartNew();
+var providers = new[] { new EventPipeProvider("Microsoft-DotNETCore-SampleProfiler", EventLevel.Informational),
+ new EventPipeProvider("Microsoft-Windows-DotNETRuntime", EventLevel.Verbose, 0x18) };
+using (var session = new DiagnosticsClient(pid).StartEventPipeSession(providers, requestRundown: true, circularBufferMB: 128))
+{
+ await using var file = File.Create(output + ".nettrace");
+ var copy = session.EventStream.CopyToAsync(file);
+ await Task.Delay(TimeSpan.FromSeconds(seconds));
+ session.Stop(); await copy;
+}
+process.Refresh(); var cpuSeconds = (process.TotalProcessorTime-cpuStart).TotalSeconds;
+Console.WriteLine("Collected " + watch.Elapsed.TotalSeconds + "s; processing trace.");
+var etlx = TraceLog.CreateFromEventPipeDataFile(output+".nettrace", output+".etlx", new TraceLogOptions { LocalSymbolsOnly=true });
+using var log = new TraceLog(etlx);
+var inclusive = new Dictionary<string,int>(); var leaves = new Dictionary<string,int>(); var kinds = new Dictionary<string,int>();
+var stacks = new Dictionary<string,int>(); var samples = 0; var withoutStack = 0;
+void Add(Dictionary<string,int> target,string key) => target[key] = target.GetValueOrDefault(key)+1;
+foreach(var ev in log.Events)
+{
+ if(ev.ProviderName != "Microsoft-DotNETCore-SampleProfiler") continue;
+ Add(kinds, ev.EventName + ":" + string.Join(",",ev.PayloadNames.Select(n=>n+"="+ev.PayloadByName(n))));
+ var stack = ev.CallStack(); if(stack is null) { withoutStack++; continue; }
+ samples++; var frames = new List<string>();
+ for(var frame=stack;frame is not null;frame=frame.Caller)
+ {
+  var name = frame.CodeAddress.FullMethodName;
+  if(string.IsNullOrWhiteSpace(name)) name = frame.CodeAddress.ModuleName+"!<unresolved>";
+  frames.Add(name);
+ }
+ if(frames.Count==0) continue;
+ Add(leaves,frames[0]); foreach(var frame in frames.Distinct()) Add(inclusive,frame);
+ Add(stacks,string.Join("\n", frames.Take(30)));
+}
+var result = new { ProcessId=pid,StartedUtc=start,RequestedSeconds=seconds,CollectedSeconds=watch.Elapsed.TotalSeconds,ProcessCpuSeconds=cpuSeconds,
+ Samples=samples,EventsWithoutStack=withoutStack,EventsLost=log.EventsLost,EventKinds=kinds,
+ Inclusive=inclusive.OrderByDescending(x=>x.Value).Take(80),Leaves=leaves.OrderByDescending(x=>x.Value).Take(50),
+ Stacks=stacks.OrderByDescending(x=>x.Value).Take(20),
+ Limits="Diagnostic stack-sample weights, not exact method wall-time or invocation counts. Collection and rundown can perturb the request. No production deadline acceptance from this run." };
+File.WriteAllText(output+".json",JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true}));
+Console.WriteLine(JsonSerializer.Serialize(new{result.Samples,result.EventsLost,result.ProcessCpuSeconds}));

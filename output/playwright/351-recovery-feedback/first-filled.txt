@@ -1,0 +1,96 @@
+### Page
+- Page URL: http://127.0.0.1:64072/
+### Snapshot
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e3]
+    - paragraph [ref=f1e4]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e5]:
+      - button "Use read-only unmapped profile" [ref=f1e6] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e8] [cursor=pointer]
+      - button "Switch other company" [ref=f1e10] [cursor=pointer]
+      - button "Switch other account" [ref=f1e12] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e14] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e16] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f1e18] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e20] [cursor=pointer]
+  - generic [ref=f1e22]:
+    - heading "Observed drilling progress" [level=1] [ref=f1e23]
+    - group [ref=f1e24]:
+      - link "Original execution" [ref=f1e25] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-13B398B3582A2414B3E8B805EB53FE60F1E8A7E619E6838610C054FE56A80221
+      - button "Reload original report history" [ref=f1e27] [cursor=pointer]
+    - generic [ref=f1e29]:
+      - heading "Recorded execution and report history" [level=2] [ref=f1e30]
+      - paragraph [ref=f1e31]: Original drilling program · Version 1 · Operation drilling-execution-C02016915B547892699C6578BF30CA2000B5194F77B05E8F510196C06DF4B414
+      - paragraph [ref=f1e32]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=f1e33]: 0 recorded observed reports · History checked 2026-10-26 14:08:52Z UTC
+      - paragraph [ref=f1e34]: No observed reports are recorded for this exact execution.
+      - button "Inspect current report basis" [ref=f1e35] [cursor=pointer]
+    - generic [ref=f1e44]:
+      - heading "Report observed drilling period" [level=2] [ref=f1e45]
+      - paragraph [ref=f1e46]: Next report 1 · Previous report None · Workspace DRILLING_RECORDER
+      - generic [ref=f1e49]:
+        - combobox "Current report recorder role" [ref=f1e170] [cursor=pointer]: ConfiguredExecutionRecorder
+        - generic: Current report recorder role*
+      - generic [ref=f1e56]:
+        - generic [ref=f1e57]:
+          - textbox "Observed period start UTC*" [ref=f1e59]: 2026-10-26T14:06:05.0920786Z
+          - generic: Observed period start UTC*
+        - generic [ref=f1e60]: Enter Z or +00:00. The period must begin at or after actual spud and the prior report end.
+      - generic [ref=f1e63]:
+        - generic [ref=f1e64]:
+          - textbox "Observed period end UTC*" [ref=f1e66]: 2026-10-26T14:13:34.1743027Z
+          - generic: Observed period end UTC*
+        - generic [ref=f1e67]: Completed observed period, up to 24 hours. No midnight or local-time default.
+      - generic [ref=f1e71]:
+        - generic [ref=f1e72]:
+          - spinbutton "Observed hole MD at start*" [ref=f1e73]: "100"
+          - generic [ref=f1e74]:
+            - button "Increment" [ref=f1e75] [cursor=pointer]
+            - button "Decrement" [ref=f1e80] [cursor=pointer]
+        - generic: Observed hole MD at start*
+      - generic [ref=f1e86]:
+        - generic [ref=f1e87]:
+          - spinbutton "Observed hole MD at end*" [ref=f1e88]: "125"
+          - generic [ref=f1e89]:
+            - button "Increment" [ref=f1e90] [cursor=pointer]
+            - button "Decrement" [ref=f1e95] [cursor=pointer]
+        - generic: Observed hole MD at end*
+      - generic [ref=f1e102]:
+        - combobox "Observed MD unit" [ref=f1e180] [cursor=pointer]: m
+        - generic: Observed MD unit*
+      - generic [ref=f1e109]:
+        - generic [ref=f1e110]:
+          - generic [ref=f1e111]:
+            - spinbutton "Observed rotating hours (optional)" [ref=f1e112]
+            - generic [ref=f1e113]:
+              - button "Increment" [ref=f1e114] [cursor=pointer]
+              - button "Decrement" [ref=f1e119] [cursor=pointer]
+          - generic: Observed rotating hours (optional)
+        - generic [ref=f1e124]: Leave unknown values empty. Zero means observed zero.
+      - generic [ref=f1e128]:
+        - generic [ref=f1e129]:
+          - spinbutton "Observed NPT hours (optional)" [ref=f1e130]
+          - generic [ref=f1e131]:
+            - button "Increment" [ref=f1e132] [cursor=pointer]
+            - button "Decrement" [ref=f1e137] [cursor=pointer]
+        - generic: Observed NPT hours (optional)
+      - generic [ref=f1e143]:
+        - textbox "NPT reason (required when NPT is positive)" [ref=f1e145]
+        - generic: NPT reason (required when NPT is positive)
+      - generic [ref=f1e146]:
+        - generic [ref=f1e147]:
+          - textbox "Report source provenance*" [ref=f1e149]: Feedback source 471
+          - generic: Report source provenance*
+        - generic [ref=f1e150]: Identify the observed site log, report or measurement reference.
+      - generic [ref=f1e154]:
+        - textbox "Observed operations summary*" [ref=f1e156]: Observed retained-original feedback
+        - generic: Observed operations summary*
+      - generic [ref=f1e158]:
+        - textbox "Next period plan (optional)" [ref=f1e160]
+        - generic: Next period plan (optional)
+      - button "Review observed drilling report" [ref=f1e161] [cursor=pointer]
+    - generic [ref=f1e37]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

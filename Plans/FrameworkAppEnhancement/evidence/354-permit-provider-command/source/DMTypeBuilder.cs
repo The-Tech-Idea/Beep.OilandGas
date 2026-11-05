@@ -1,0 +1,371 @@
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+using TheTechIdea.Beep.ConfigUtil;
+using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.DataBase;
+using TheTechIdea.Beep.Roslyn;
+using TheTechIdea.Beep.Tools;
+
+namespace TheTechIdea.Beep.Utilities
+{
+    /// <summary>
+    /// A utility class for building and manipulating dynamic types.
+    /// </summary>
+    public static class DMTypeBuilder
+    {
+        /// <summary>Gets or sets the DMEEditor instance.</summary>
+        public static IDMEEditor DMEEditor { get; set; }
+
+        public static Type MyType { get; set; }
+        public static object MyObject { get; set; }
+        private static TypeBuilder typeBuilder;
+        private static AssemblyBuilder assemblyBuilder;
+        private static ModuleBuilder moduleBuilder;
+
+        /// <summary>Advisory type mirror. Generated entries use full name plus source-v2 hash, never bare-name admission.</summary>
+        /// <remarks>
+        /// Concurrent because this is public, static and shared by every data
+        /// source driver. It was a plain Dictionary, so two threads resolving
+        /// entity types at the same time could corrupt it or throw from
+        /// ContainsKey — and the engine now awaits with ConfigureAwait(false)
+        /// throughout, so type resolution is genuinely reachable from more than
+        /// one thread. (2026-08-03)
+        /// </remarks>
+        public static readonly ConcurrentDictionary<string, Type> typeCache =
+            new ConcurrentDictionary<string, Type>();
+        private static readonly object generatedCacheGate = new();
+        private static readonly Queue<KeyValuePair<string, Type>> generatedCacheEntries = new();
+
+        /// <summary>Maintains namespace mappings for types, keyed by full type name.</summary>
+        /// <remarks>
+        /// Concurrent, and keyed by the FULL type name rather than the bare entity
+        /// name. Keyed by entity name it collided the moment two data sources
+        /// exposed an entity of the same name — and because the only writer
+        /// guarded with ContainsValue (which inspects VALUES) before calling
+        /// Add (which is keyed), the second one threw
+        /// "An item with the same key has already been added" at runtime rather
+        /// than merely overwriting. Nothing outside this class reads it.
+        /// (2026-08-03)
+        /// </remarks>
+        public static ConcurrentDictionary<string, string> DataSourceNameSpace { get; set; } =
+            new ConcurrentDictionary<string, string>();
+
+        private static readonly object logLock = new object(); // Thread-safe logging
+
+        /// <summary>
+        /// Creates a new dynamic object based on the specified parameters.
+        /// </summary>
+        /// <param name="editor">The IDMEEditor instance.</param>
+        /// <param name="classNamespace">The namespace for the class.</param>
+        /// <param name="dataSourceName">The data source name to build namespace.</param>
+        /// <param name="typeName">The name of the type.</param>
+        /// <param name="fields">List of fields defining the type structure.</param>
+        /// <returns>A new dynamic object of the generated type.</returns>
+        /// <summary>
+        /// The generated <see cref="Type"/> for <paramref name="typeName"/>,
+        /// compiling and caching it on first use. Returns the TYPE, not an
+        /// instance.
+        /// </summary>
+        /// <remarks>
+        /// This exists because every driver's <c>GetEntityType</c> had to do
+        ///
+        ///   <code>CreateNewObject(...); return DMTypeBuilder.MyType;</code>
+        ///
+        /// — call a method that returns an *instance*, then read the type off a
+        /// mutable static. MyType is a "last result" field, so any thread that
+        /// resolved a different entity between those two statements made the
+        /// caller return the wrong type. Fifteen drivers were written that way,
+        /// because there was no API that simply returned a Type. Now there is.
+        /// (2026-08-03)
+        /// </remarks>
+        public static Type GetOrCreateType(
+            IDMEEditor editor, string classNamespace, string dataSourceName,
+            string typeName, List<EntityField> fields)
+        {
+            if (editor == null)
+                throw new ArgumentNullException(nameof(editor));
+            if (string.IsNullOrEmpty(typeName))
+                throw new ArgumentException("Type name cannot be null or empty.", nameof(typeName));
+            if (fields == null || fields.Count == 0)
+                throw new ArgumentException("Fields must contain destination metadata.", nameof(fields));
+
+            // Namespace resolution
+            string fullNamespace = string.IsNullOrEmpty(classNamespace)
+                ? (!string.IsNullOrEmpty(dataSourceName) ? dataSourceName : "TheTechIdea.Classes")
+                : classNamespace;
+            fullNamespace = NormalizeGeneratedNamespace(fullNamespace);
+
+            string fullTypeName = $"{fullNamespace}.{typeName}";
+
+            var entity = EntityMetadataSnapshot.Capture(new EntityStructure { Fields = fields, EntityName = typeName });
+            string code = ConvertPOCOClassToEntity(editor, entity, fullNamespace);
+
+            var compiled = RoslynCompiler.CompileClassTypeandAssembly(fullTypeName, code);
+            if (compiled?.Item1 == null)
+                throw new InvalidOperationException("Generated source does not contain the requested entity type.");
+            var cacheKey = fullTypeName + "::source-v2:" + RoslynCompiler.GeneratedSourceHash(code);
+            lock (generatedCacheGate)
+            {
+                // Public entries are an advisory mirror, never schema admission authority.
+                if (typeCache.TryAdd(cacheKey, compiled.Item1)) generatedCacheEntries.Enqueue(new(cacheKey, compiled.Item1));
+                while (generatedCacheEntries.Count > 256)
+                    ((ICollection<KeyValuePair<string, Type>>)typeCache).Remove(generatedCacheEntries.Dequeue());
+            }
+            return compiled.Item1;
+        }
+
+        // Connection names are not C# namespaces. Encode invalid segments without
+        // merging distinct names such as "permit-provider" and "permit_provider".
+        private static string NormalizeGeneratedNamespace(string value)
+        {
+            const string encodedPrefix = "_BeepEncoded_";
+            return string.Join(".", value.Split('.').Select(segment =>
+                Microsoft.CodeAnalysis.CSharp.SyntaxFacts.IsValidIdentifier(segment) &&
+                !segment.StartsWith(encodedPrefix, StringComparison.Ordinal)
+                    ? segment
+                    : encodedPrefix + string.Concat(segment.Select(character =>
+                        ((int)character).ToString("X4", System.Globalization.CultureInfo.InvariantCulture)))));
+        }
+
+        public static object CreateNewObject(IDMEEditor editor, string classNamespace, string dataSourceName, string typeName, List<EntityField> fields)
+        {
+            var type = GetOrCreateType(editor, classNamespace, dataSourceName, typeName, fields);
+
+            // MyType/MyObject are kept for callers that still read them. They are
+            // a convenience, not the mechanism — GetOrCreateType is.
+            MyType = type;
+            var instance = Activator.CreateInstance(type);
+            MyObject = instance;
+            return instance;
+        }
+        /// <summary>
+        /// Creates a new dynamic object based on the specified parameters.
+        /// </summary>
+        /// <param name="editor">The IDMEEditor instance.</param>
+        /// <param name="classNamespace">The namespace for the class. Defaults to "TheTechIdea.Classes" if null.</param>
+        /// <param name="typeName">The name of the type.</param>
+        /// <param name="fields">List of fields defining the type structure.</param>
+        /// <returns>A new dynamic object of the generated type.</returns>
+        public static object CreateNewObject(IDMEEditor editor, string classNamespace, string typeName, List<EntityField> fields)
+        {
+            if (editor == null)
+                throw new ArgumentNullException(nameof(editor));
+            if (string.IsNullOrEmpty(typeName))
+                throw new ArgumentException("Type name cannot be null or empty.", nameof(typeName));
+
+            var type = GetOrCreateType(editor, classNamespace, null, typeName, fields);
+            MyType = type;
+            var instance = Activator.CreateInstance(type);
+            MyObject = instance;
+            return instance;
+        }
+
+        /// <summary>Generates or retrieves a namespace for a type.</summary>
+        /// <remarks>
+        /// Currently unused. Kept, but keyed by data source AND type rather than
+        /// type alone, so reviving it does not reintroduce the collision fixed
+        /// above. (2026-08-03)
+        /// </remarks>
+        private static string GetOrCreateNamespace(string typeName, string dataSourceName)
+        {
+            var key = $"{dataSourceName}.{typeName}";
+
+            if (!DataSourceNameSpace.ContainsKey(key))
+                DataSourceNameSpace[key] = $"{dataSourceName}.{typeName}";
+
+            // Fix: Store the split result in a variable before using LINQ methods
+            var parts = DataSourceNameSpace[key].Split('.');
+            if (parts.Length <= 1)
+                return DataSourceNameSpace[key]; // No namespace to extract
+
+            // Remove the last part (typeName) to get the namespace
+            return string.Join(".", parts.Take(parts.Length - 1));
+        }
+
+        /// <summary>Compiles a dynamic type with the specified fields.</summary>
+        private static Type CompileResultType(string libName, string namespaceName, string typeName, List<EntityField> fields)
+        {
+            typeBuilder = GetTypeBuilder(libName, namespaceName, typeName);
+            foreach (var field in fields)
+                CreateProperty(typeBuilder, SanitizeFieldName(field.FieldName), ResolveType(field.Fieldtype));
+            return typeBuilder.CreateTypeInfo();
+        }
+
+        /// <summary>Defines a dynamic TypeBuilder.</summary>
+        private static TypeBuilder GetTypeBuilder(string libName, string namespaceName, string typeName)
+        {
+            if (assemblyBuilder == null || moduleBuilder == null)
+            {
+                assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(libName), AssemblyBuilderAccess.RunAndCollect);
+                moduleBuilder = assemblyBuilder.DefineDynamicModule(libName);
+            }
+            return moduleBuilder.DefineType($"{namespaceName}.{typeName}", TypeAttributes.Public | TypeAttributes.Class);
+        }
+
+        /// <summary>Creates a property dynamically.</summary>
+        private static void CreateProperty(TypeBuilder tb, string propertyName, Type propertyType)
+        {
+            FieldBuilder field = tb.DefineField($"_{propertyName}", propertyType, FieldAttributes.Private);
+
+            PropertyBuilder property = tb.DefineProperty(propertyName, PropertyAttributes.HasDefault, propertyType, null);
+            MethodBuilder getMethod = tb.DefineMethod($"get_{propertyName}", MethodAttributes.Public | MethodAttributes.SpecialName, propertyType, Type.EmptyTypes);
+            ILGenerator getIl = getMethod.GetILGenerator();
+            getIl.Emit(OpCodes.Ldarg_0);
+            getIl.Emit(OpCodes.Ldfld, field);
+            getIl.Emit(OpCodes.Ret);
+
+            MethodBuilder setMethod = tb.DefineMethod($"set_{propertyName}", MethodAttributes.Public | MethodAttributes.SpecialName, null, new[] { propertyType });
+            ILGenerator setIl = setMethod.GetILGenerator();
+            setIl.Emit(OpCodes.Ldarg_0);
+            setIl.Emit(OpCodes.Ldarg_1);
+            setIl.Emit(OpCodes.Stfld, field);
+            setIl.Emit(OpCodes.Ret);
+
+            property.SetGetMethod(getMethod);
+            property.SetSetMethod(setMethod);
+        }
+
+        /// <summary>Converts a POCO class definition into an entity class.</summary>
+        public static string ConvertPOCOClassToEntity(IDMEEditor editor, EntityStructure entityStructure, string namespaceName)
+        {
+            // The using header must cover what CreateEntityClass emits.
+            //
+            // CreateEntityClass decorates properties with [Key], [Required],
+            // [Column], [MaxLength] and friends whenever the EntityStructure
+            // supplies that metadata — which it does for every real database
+            // table. This header carried no DataAnnotations import, so the
+            // generated code failed to compile with "The type or namespace name
+            // 'Key' could not be found" (both 'Key' and 'KeyAttribute', the
+            // signature of a missing using rather than a missing reference).
+            //
+            // CreateEntityClass only appends TheTechIdea.Beep.Editor to a
+            // supplied header, so passing an incomplete one is not corrected
+            // downstream — its own default header, used when the caller passes
+            // null, has always included these. This is the path DMTypeBuilder
+            // uses, which is how the RDBMS drivers build a row type: a form over
+            // a SQL table could not build one at all. (2026-08-02)
+            string usingText =
+                "using System;\n" +
+                "using System.ComponentModel;\n" +
+                "using System.ComponentModel.DataAnnotations;\n" +
+                "using System.ComponentModel.DataAnnotations.Schema;\n" +
+                "using System.Runtime.CompilerServices;\n" +
+                "using TheTechIdea.Beep.Editor;\n" +
+                "using TheTechIdea.Beep.DataBase;";
+            return editor.classCreator.CreateEntityClass(entityStructure, usingText, null, null, namespaceName, false);
+        }
+
+        /// <summary>Resolves .NET type names into actual `Type` objects.</summary>
+        private static Type ResolveType(string typeName)
+        {
+            try
+            {
+                return typeName switch
+                {
+                    "System.Int32" => typeof(int),
+                    "System.String" => typeof(string),
+                    "System.Boolean" => typeof(bool),
+                    "System.Decimal" => typeof(decimal),
+                    "System.DateTime" => typeof(DateTime),
+                    _ => Type.GetType(typeName) ?? typeof(object)
+                };
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error resolving type: {typeName}", ex);
+                return typeof(object); // Fallback type
+            }
+        }
+
+        /// <summary>Sanitizes field names to ensure they are valid .NET identifiers.</summary>
+        private static string SanitizeFieldName(string FieldName)
+        {
+            return string.IsNullOrWhiteSpace(FieldName) ? "UnnamedField" : FieldName.Replace(" ", "_").Replace("-", "_");
+        }
+
+        /// <summary>Logs errors safely in a thread-safe manner.</summary>
+        private static void LogError(string message, Exception ex)
+        {
+            lock (logLock)
+            {
+                DMEEditor?.AddLogMessage("Error", $"{message}: {ex.Message}", DateTime.Now, 0, ex.StackTrace, Errors.Failed);
+            }
+        }
+        public static Type CreateDynamicTypeFromObject(object sourceObject, string typeName = "DynamicType")
+        {
+            if (sourceObject == null)
+                throw new ArgumentNullException(nameof(sourceObject));
+
+            var properties = sourceObject.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            var assemblyName = new AssemblyName("DynamicAssembly_" + Guid.NewGuid().ToString("N"));
+            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+
+            var typeBuilder = moduleBuilder.DefineType(
+                typeName,
+                TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Serializable);
+
+            foreach (var prop in properties)
+            {
+                AddProperty(typeBuilder, prop.Name, prop.PropertyType);
+            }
+
+            return typeBuilder.CreateTypeInfo().AsType();
+        }
+
+        private static void AddProperty(TypeBuilder typeBuilder, string propertyName, Type propertyType)
+        {
+            var fieldBuilder = typeBuilder.DefineField($"_{propertyName.ToLower()}", propertyType, FieldAttributes.Private);
+
+            var propBuilder = typeBuilder.DefineProperty(propertyName, PropertyAttributes.HasDefault, propertyType, null);
+
+            // Getter
+            var getter = typeBuilder.DefineMethod(
+                $"get_{propertyName}",
+                MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig,
+                propertyType,
+                Type.EmptyTypes);
+
+            var getterIL = getter.GetILGenerator();
+            getterIL.Emit(OpCodes.Ldarg_0);
+            getterIL.Emit(OpCodes.Ldfld, fieldBuilder);
+            getterIL.Emit(OpCodes.Ret);
+
+            // Setter
+            var setter = typeBuilder.DefineMethod(
+                $"set_{propertyName}",
+                MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig,
+                null,
+                new[] { propertyType });
+
+            var setterIL = setter.GetILGenerator();
+            setterIL.Emit(OpCodes.Ldarg_0);
+            setterIL.Emit(OpCodes.Ldarg_1);
+            setterIL.Emit(OpCodes.Stfld, fieldBuilder);
+            setterIL.Emit(OpCodes.Ret);
+
+            propBuilder.SetGetMethod(getter);
+            propBuilder.SetSetMethod(setter);
+        }
+    }
+
+    internal static class ClassCreatorExtensions
+    {
+        /// <summary>
+        /// Compat shim that forwards to the standard CreateEntityClass implementation.
+        /// </summary>
+        public static string CreateEntityClass(this IClassCreator creator, EntityStructure entity, string usingHeader, string extraCode, string outputPath, string namespaceString, bool generateFiles)
+        {
+            if (creator == null) throw new ArgumentNullException(nameof(creator));
+
+            // Call the implemented interface member directly (avoids the old misspelled variant).
+            return ((IClassCreator)creator).CreateEntityClass(entity, usingHeader, extraCode, outputPath, namespaceString, generateFiles);
+        }
+    }
+}

@@ -1,0 +1,156 @@
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
+using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data;
+
+namespace Beep.OilandGas.Models.Data.ProductionAccounting
+{
+    public partial class REVENUE_TRANSACTION : ModelEntityBase {
+        private System.String REVENUE_TRANSACTION_IDValue = string.Empty;
+        [Key,MaxLength(128)] public System.String REVENUE_TRANSACTION_ID
+        {
+            get { return this.REVENUE_TRANSACTION_IDValue; }
+            set { SetProperty(ref REVENUE_TRANSACTION_IDValue, value); }
+        }
+
+        private System.String ALLOCATION_RESULT_IDValue = string.Empty;
+        public System.String ALLOCATION_RESULT_ID
+        {
+            get { return this.ALLOCATION_RESULT_IDValue; }
+            set { SetProperty(ref ALLOCATION_RESULT_IDValue, value); }
+        }
+
+        private System.String PROPERTY_IDValue = string.Empty;
+        public System.String PROPERTY_ID
+        {
+            get { return this.PROPERTY_IDValue; }
+            set { SetProperty(ref PROPERTY_IDValue, value); }
+        }
+
+        private System.String WELL_IDValue = string.Empty;
+        public System.String WELL_ID
+        {
+            get { return this.WELL_IDValue; }
+            set { SetProperty(ref WELL_IDValue, value); }
+        }
+
+        private System.String FIELD_IDValue = string.Empty;
+        public System.String FIELD_ID
+        {
+            get { return this.FIELD_IDValue; }
+            set { SetProperty(ref FIELD_IDValue, value); }
+        }
+
+        private System.String CONTRACT_IDValue = string.Empty;
+        public System.String CONTRACT_ID
+        {
+            get { return this.CONTRACT_IDValue; }
+            set { SetProperty(ref CONTRACT_IDValue, value); }
+        }
+
+        private System.String AFE_IDValue = string.Empty;
+        public System.String AFE_ID
+        {
+            get { return this.AFE_IDValue; }
+            set { SetProperty(ref AFE_IDValue, value); }
+        }
+
+        private System.DateTime? TRANSACTION_DATEValue;
+        public System.DateTime? TRANSACTION_DATE
+        {
+            get { return this.TRANSACTION_DATEValue; }
+            set { SetProperty(ref TRANSACTION_DATEValue, value); }
+        }
+
+        private System.String REVENUE_TYPEValue = string.Empty;
+        public System.String REVENUE_TYPE
+        {
+            get { return this.REVENUE_TYPEValue; }
+            set { SetProperty(ref REVENUE_TYPEValue, value); }
+        }
+
+        private System.Decimal? GROSS_REVENUEValue;
+        public System.Decimal? GROSS_REVENUE
+        {
+            get { return this.GROSS_REVENUEValue; }
+            set { SetProperty(ref GROSS_REVENUEValue, value); }
+        }
+
+        private System.Decimal? NET_REVENUEValue;
+        public System.Decimal? NET_REVENUE
+        {
+            get { return this.NET_REVENUEValue; }
+            set { SetProperty(ref NET_REVENUEValue, value); }
+        }
+
+        private System.Decimal? OIL_VOLUMEValue;
+        public System.Decimal? OIL_VOLUME
+        {
+            get { return this.OIL_VOLUMEValue; }
+            set { SetProperty(ref OIL_VOLUMEValue, value); }
+        }
+
+        private System.Decimal? GAS_VOLUMEValue;
+        public System.Decimal? GAS_VOLUME
+        {
+            get { return this.GAS_VOLUMEValue; }
+            set { SetProperty(ref GAS_VOLUMEValue, value); }
+        }
+
+        private System.Decimal? OIL_PRICEValue;
+        public System.Decimal? OIL_PRICE
+        {
+            get { return this.OIL_PRICEValue; }
+            set { SetProperty(ref OIL_PRICEValue, value); }
+        }
+
+        private System.Decimal? GAS_PRICEValue;
+        public System.Decimal? GAS_PRICE
+        {
+            get { return this.GAS_PRICEValue; }
+            set { SetProperty(ref GAS_PRICEValue, value); }
+        }
+
+        private System.Decimal? ROYALTY_AMOUNTValue;
+        public System.Decimal? ROYALTY_AMOUNT
+        {
+            get { return this.ROYALTY_AMOUNTValue; }
+            set { SetProperty(ref ROYALTY_AMOUNTValue, value); }
+        }
+
+        private System.Decimal? TAX_AMOUNTValue;
+        public System.Decimal? TAX_AMOUNT
+        {
+            get { return this.TAX_AMOUNTValue; }
+            set { SetProperty(ref TAX_AMOUNTValue, value); }
+        }
+
+        private System.String CURRENCY_CODEValue = string.Empty;
+        public System.String CURRENCY_CODE
+        {
+            get { return this.CURRENCY_CODEValue; }
+            set { SetProperty(ref CURRENCY_CODEValue, value); }
+        }
+
+        private System.String DESCRIPTIONValue = string.Empty;
+        public System.String DESCRIPTION
+        {
+            get { return this.DESCRIPTIONValue; }
+            set { SetProperty(ref DESCRIPTIONValue, value); }
+        }
+
+        // Standard PPDM columns
+
+        private System.String REMARKValue = string.Empty;
+
+        private System.String SOURCEValue = string.Empty;
+
+        private System.String ROW_IDValue = string.Empty;
+        public System.String ROW_ID
+        {
+            get { return this.ROW_IDValue; }
+            set { SetProperty(ref ROW_IDValue, value); }
+        }
+    }
+}

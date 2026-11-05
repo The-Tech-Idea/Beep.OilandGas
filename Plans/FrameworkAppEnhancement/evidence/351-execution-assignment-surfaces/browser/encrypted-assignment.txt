@@ -1,0 +1,13 @@
+### Result
+{
+  "copies": [
+    {
+      "characters": 101595,
+      "plaintext": false
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => { const keys=Object.keys(sessionStorage).filter(k=>k.endsWith(".drilling-execution-assignment"));return {copies:keys.map(k=>({characters:sessionStorage.getItem(k).length,plaintext:sessionStorage.getItem(k).includes("Frozen actual reporting destination 473")}))}; }');
+```

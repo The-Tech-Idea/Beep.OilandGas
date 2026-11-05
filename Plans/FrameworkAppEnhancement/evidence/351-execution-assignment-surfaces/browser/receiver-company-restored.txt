@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Restore original company/' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:49208/
+### Snapshot
+- [Snapshot](output\playwright\351-assignment-browser\artifacts\page-2026-10-26T16-17-58-439Z.yml)

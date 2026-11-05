@@ -1,186 +1,56 @@
 @page "/executive/dashboard"
-@using System.Net.Http.Json
-@using MudBlazor
-@inject HttpClient Http
-@inject NavigationManager Nav
-
+@page "/lifecycle/asset/dashboard"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Web.Services
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IExecutiveServiceClient Executive
+@inject OilGasCallFailures Calls
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+@if(_authorized){<PersonaTaskInbox WorkspaceRoutes='@(new[]{"/executive/dashboard","/lifecycle/asset/dashboard"})' />}
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h3" GutterBottom="true">
-        <MudIcon Icon="@Icons.Material.Filled.Insights" Class="mr-2" Color="Color.Primary" />
-        Executive Dashboard
-    </MudText>
-
-    @if (_loading)
+    <MudText Typo="Typo.h3">Company portfolio</MudText>
+    <MudButton OnClick="LoadAsync" Disabled="_loading">Reload company evidence</MudButton>
+    @if(_loading){<MudProgressLinear Indeterminate="true" aria-label="Loading current company executive evidence" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    <MudAlert Severity="Severity.Info">Production, financial and HSE KPIs are unavailable until approved period, units, source and consolidation evidence is provided.</MudAlert>
+    @if(_state?.Current is {} review)
     {
-        <MudProgressLinear Indeterminate="true" Class="my-4" />
+        <MudText>Company @review.Company.BusinessAssociateId · Source @review.Source · Retrieved (UTC) @review.RetrievedAtUtc.ToString("u")</MudText>
+        <MudText>@review.Assets.Count authorized FIELD records returned. This is not a complete company/group portfolio or an approved performance total.</MudText>
+        @if(review.Assets.Count==0){<MudAlert Severity="Severity.Info">No authorized FIELD records were returned.</MudAlert>}
+        else
+        {
+            <MudTable Items="review.Assets" Dense="true" Hover="true">
+                <HeaderContent><MudTh>FIELD identity</MudTh><MudTh>Recorded name</MudTh><MudTh>Evidence</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="FIELD identity">@context.FieldId</MudTd><MudTd DataLabel="Recorded name">@(context.FieldName ?? "Unavailable")</MudTd><MudTd DataLabel="Evidence"><MudButton OnClick="@(()=>_state.Select(context.FieldId))">Review recorded FIELD</MudButton></MudTd></RowTemplate>
+            </MudTable>
+        }
+        @if(_state.Selected is {} field){<MudPaper Class="pa-4"><MudText>Recorded FIELD @field.FieldId · @(field.FieldName ?? "Name unavailable")</MudText><MudText>Lifecycle phase: @(field.LifecyclePhase ?? "Unavailable") · Active-well count: @(field.ActiveWells?.ToString() ?? "Unavailable")</MudText></MudPaper>}
     }
-    else
-    {
-        @* ── Top KPI Row ── *@
-        <MudGrid>
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="3">
-                    <MudCardContent>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Total Production</MudText>
-                        <MudText Typo="Typo.h4" Color="Color.Primary">@FormatVolume(_kpi?.TotalProductionBoe ?? 0) BOE/d</MudText>
-                        <MudText Typo="Typo.caption" Color="@(_kpi?.ProductionTrend > 0 ? Color.Success : Color.Error)">@(_kpi?.ProductionTrend > 0 ? "↑" : "↓") @($"{Math.Abs(_kpi?.ProductionTrend ?? 0):F1}%") vs prior period</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="3">
-                    <MudCardContent>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Active Wells</MudText>
-                        <MudText Typo="Typo.h4" Color="Color.Primary">@(_kpi?.ActiveWells ?? 0) / @(_kpi?.TotalWells ?? 0)</MudText>
-                        <MudText Typo="Typo.caption">@(_kpi?.TotalIncidentsYtd ?? 0) HSE incidents YTD</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="3">
-                    <MudCardContent>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Production Trend</MudText>
-                        <MudText Typo="Typo.h4" Color="@(_kpi?.ProductionTrend > 0 ? Color.Success : Color.Warning)">@($"{_kpi?.ProductionTrend ?? 0:F1}%")</MudText>
-                        <MudText Typo="Typo.caption">vs prior month</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Elevation="3">
-                    <MudCardContent>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">HSE Tier 1 Events</MudText>
-                        <MudText Typo="Typo.h4" Color="@(_kpi?.Tier1Events > 0 ? Color.Error : Color.Success)">@(_kpi?.Tier1Events ?? 0)</MudText>
-                        <MudText Typo="Typo.caption">YTD</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
-
-        @* ── Asset Overview Table ── *@
-        <MudGrid>
-            <MudItem xs="12" md="8">
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.h6">Asset Performance</MudText></CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudTable Items="@_assets" Hover="true" Striped="true" Dense="true">
-                            <HeaderContent>
-                                <MudTh>Field</MudTh>
-                                <MudTh>Field ID</MudTh>
-                                <MudTh>Phase</MudTh>
-                                <MudTh>Active Wells</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd>@context.FieldName</MudTd>
-                                <MudTd>@context.FieldId</MudTd>
-                                <MudTd><MudChip T="string" Size="Size.Small" Color="@StatusColor(context.LifecyclePhase)">@context.LifecyclePhase</MudChip></MudTd>
-                                <MudTd>@context.ActiveWells</MudTd>
-                            </RowTemplate>
-                        </MudTable>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-
-            <MudItem xs="12" md="4">
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.h6">Quick Actions</MudText></CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudStack Row="false" Spacing="2">
-                            <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/reservoir/reserves">Reserves Report</MudButton>
-                            <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/economics/evaluation">Economic Analysis</MudButton>
-                            <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/hse/incidents">HSE Incidents</MudButton>
-                            <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/production/intervention">Intervention Candidates</MudButton>
-                            <MudButton Variant="Variant.Outlined" FullWidth="true" Href="/ppdm39/process/gates">Pending Gate Reviews</MudButton>
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
-
-                <MudCard Elevation="2" Class="mt-3">
-                    <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.h6">Upcoming Deadlines</MudText></CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        @if (_deadlines?.Count > 0)
-                        {
-                            @foreach (var d in _deadlines)
-                            {
-                                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-2">
-                                    <MudText Typo="Typo.body2">@d.Description</MudText>
-                                    <MudChip T="string" Size="Size.Small" Color="@(d.DaysUntil < 7 ? Color.Error : d.DaysUntil < 30 ? Color.Warning : Color.Default)">@d.DaysUntil d</MudChip>
-                                </MudStack>
-                            }
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">No upcoming deadlines</MudText>
-                        }
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
-    }
+    else if(!_loading && _error is null){<MudAlert Severity="Severity.Info">Select a company and reload its recorded portfolio evidence.</MudAlert>}
+    <MudStack Class="mt-4"><MudButton Href="/reservoir/reserves">Reserves Report</MudButton><MudButton Href="/economics/evaluation">Economics</MudButton><MudButton Href="/accounting/dashboard">Accounting</MudButton><MudButton Href="/hse/dashboard">HSE</MudButton></MudStack>
 </MudContainer>
-
-@code {
-    private bool _loading = true;
-    private ExecutiveKpi? _kpi;
-    private List<AssetSummary>? _assets = new();
-    private List<DeadlineItem>? _deadlines = new();
-
-    protected override async Task OnInitializedAsync()
+@code{
+    private ExecutivePortfolioState? _state;private bool _loading,_disposed,_authorized;private string? _error;private int _generation;
+    protected override async Task OnInitializedAsync(){_state=new(Company);Company.Changed+=Invalidate;Authentication.AuthenticationStateChanged+=AuthenticationChanged;await LoadAsync();}
+    private void Invalidate(){_generation++;_state?.Clear();_error=null;_loading=false;_authorized=false;if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    public void Dispose(){if(_disposed)return;_disposed=true;_generation++;Company.Changed-=Invalidate;Authentication.AuthenticationStateChanged-=AuthenticationChanged;_state?.Dispose();}
+    private async Task LoadAsync()
     {
+        if(_loading || _disposed)return;var scope=Company.Snapshot;var generation=++_generation;_state!.Clear();_loading=true;_authorized=false;_error=null;
         try
         {
-            _kpi = await Http.GetFromJsonAsync<ExecutiveKpi>("/api/executive/kpi");
-            if (_kpi == null) _kpi = new ExecutiveKpi();
-
-            var assets = await Http.GetFromJsonAsync<List<AssetSummary>>("/api/executive/assets");
-            _assets = assets ?? new();
+            if(scope.Selection is not {} selected)return;
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || scope!=Company.Snapshot || generation!=_generation)return;
+            if(user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole))throw new UnauthorizedAccessException("Current selected company/account and standard app roles are required for executive evidence.");
+            _authorized=true;
+            await _state.LoadAsync(()=>Executive.GetPortfolioAsync());
         }
-        catch
-        {
-            _kpi = new ExecutiveKpi();
-            _assets = new();
-        }
-        _loading = false;
-    }
-
-    private static string FormatVolume(decimal v) => v >= 1_000_000 ? $"{v / 1_000_000m:F2}M" : v >= 1_000 ? $"{v / 1_000m:F1}K" : $"{v:F0}";
-    private static string FormatCurrency(decimal v) => v >= 1_000_000_000 ? $"${v / 1_000_000_000m:F1}B" : v >= 1_000_000 ? $"${v / 1_000_000m:F1}M" : $"${v:N0}";
-    private static Color StatusColor(string? phase) => phase switch
-    {
-        "PRODUCTION" => Color.Success,
-        "DEVELOPMENT" => Color.Primary,
-        "DECLINE" => Color.Warning,
-        "DECOMMISSIONING" => Color.Error,
-        "EXPLORATION" => Color.Info,
-        _ => Color.Default
-    };
-
-    public class ExecutiveKpi
-    {
-        public decimal TotalProductionBoe { get; set; }
-        public decimal ProductionTrend { get; set; }
-        public int TotalWells { get; set; }
-        public int ActiveWells { get; set; }
-        public int Tier1Events { get; set; }
-        public int TotalIncidentsYtd { get; set; }
-    }
-
-    public class AssetSummary
-    {
-        public string FieldId { get; set; } = string.Empty;
-        public string FieldName { get; set; } = string.Empty;
-        public string LifecyclePhase { get; set; } = string.Empty;
-        public int ActiveWells { get; set; }
-    }
-
-    public class DeadlineItem
-    {
-        public string Description { get; set; } = string.Empty;
-        public int DaysUntil { get; set; }
+        catch(Exception ex){var message=Calls.Explain(ex,"reading executive company evidence","Executive evidence could not be confirmed");if(!_disposed && scope==Company.Snapshot && generation==_generation)_error=message;}
+        finally{if(!_disposed && generation==_generation)_loading=false;}
     }
 }

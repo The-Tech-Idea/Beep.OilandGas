@@ -1,0 +1,208 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md native staging owner (phase2 prerequisite)",
+  "observed_at": "2026-10-29T22:52:57.879923+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; prior work preserved; full approved goal active; no commit/push",
+  "policy": "Master tracker AND active plan read immediately before every exact test command; no whole-class/full-suite/unrelated incident tests.",
+  "methods": {
+    "InstalledNativeDocumentStagingOwnsTwoTargetsAndSameOriginal": {
+      "inputs": 8,
+      "proves": "Two actual SQLite files/datasources owned by one setup-initialized editor: bytes only in CORE RM_FILE_CONTENT; separate PERMITS ownership journal. Exact binary readback, one native header/item/file; failure after two CORE writes rolls back; CORE committed/journal confirmation loss reuses same nonce/original without duplicate rows; revoked permission and target drift refuse; foreign nonce, partial set and same-length changed bytes refuse adoption/confirmation; same-original recorded result recovers with writes disabled. No lifecycle history/command or attachment link is invented."
+    },
+    "DocumentStagingOriginalAndOwnershipRejectUnboundValues": {
+      "inputs": 6,
+      "proves": "Wrong bytes/hash, zero length, path-like filename, invalid UTC window, tampered journal nonce and foreign company refuse."
+    },
+    "DocumentStagingReusesFreshApplicationAuthorAuthority": {
+      "inputs": 4,
+      "proves": "Actual existing app RBAC/request/grant/FIELD authority source: author entry, missing IssuePermit despite other roles, mid-callback revocation and foreign actor context. Shared lifecycle authority positive callback remains valid. No document native data access or business writes in these isolated authority probes."
+    },
+    "SetupInstalledSqliteMigratesEntirePermitsManifest": {
+      "inputs": 1,
+      "proves": "Affected full12-entity PERMITS Beep Migration creation/canonical keys/columns/repeat; staging entity Data ownership. Existing reference composite keys remain."
+    }
+  },
+  "gates": [
+    {
+      "log": "oilgas-354-stage-01.log",
+      "passed": 7,
+      "failed": 9,
+      "skipped": 0,
+      "duration": "29s",
+      "exit_code": 1,
+      "scope": "Six contract and one full manifest passed. Five physical fixtures violated editor datasource ownership; four authority fixtures lacked authenticated request/explicit author grant. No production guard weakened."
+    },
+    {
+      "log": "oilgas-354-stage-02.log",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "27s",
+      "exit_code": 0,
+      "scope": "Only five physical/two-target and four authority cases after fixture repairs; lean seed-hash confirmation implementation qualified here."
+    },
+    {
+      "log": "oilgas-354-stage-03.log",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "17s",
+      "exit_code": 0,
+      "filter": "FullyQualifiedName~InstalledNativeDocumentStagingOwnsTwoTargetsAndSameOriginal&(DisplayName~collision|DisplayName~partial|DisplayName~changed-content)",
+      "scope": "Only new collision/partial/changed-content cases; earlier green inputs not rerun. Product sources unchanged."
+    }
+  ],
+  "distinct_selected_inputs": 19,
+  "counts_note": "Final19 distinct inputs pass across gates; initial failures/retries are not added to unique coverage.",
+  "build_observations": [
+    "Data/native/focused builds pass with warnings.",
+    "Initial native build used an API-only target helper; replaced with existing lower-layer MigrationConnectionTarget.Validate/Fingerprint, preserving dependency boundaries.",
+    "Focused project explicitly includes test sources; added the new staging file after a missing helper error revealed exclusion. Test connection-interface cast corrected before execution.",
+    "Before retry, lean journal confirmation stores only seed hash/revisions/time, reconstructing the typed proof from immutable seed, avoiding large original duplication/overflow. Seed bounds checked before persistence."
+  ],
+  "changes": [
+    "Data-owned immutable metadata/hash/byte-count/version/language/format/subtype/UTC original and server nonce ownership seed; PERMIT_DOCUMENT_STAGE journal added to existing PERMITS Beep Migration manifest.",
+    "Reuse native SOURCE_DOCUMENT/RM_INFORMATION_ITEM/RM_FILE_CONTENT in CORE; byte array only in RM_FILE_CONTENT, no duplicate file store or arbitrary path/URL read.",
+    "Sequential owned Serializable intent/core/confirmation transactions with canonical schema keys/types/widths, exact native row/audit/content readback and current scope/target fences.",
+    "Dedicated stage-authority entry into existing application permission/grant/native FIELD guard; standard app RBAC remains owner. Stage row read policy independently includes company/FIELD/parent filters.",
+    "Read-only recorded stage outcome recovery and exact retry/convergence; reject foreign/partial/changed native data rather than adopting or repairing it."
+  ],
+  "self_review": "Server runtime fingerprints are internal journal values; phase3 must project sanitized receipts instead of serializing seed target hashes. Existing work-order document authorization remains separate. Staging is not attachment linkage or current-download authority. Shared lifecycle authority behavior retained by scoped probe.",
+  "limits": [
+    "No distributed atomicity: journal/core/journal commits are independent; recovery handles observed uncertainty. Faults are injected before native FILE insert/confirmation write, not power loss or a real lost CORE commit acknowledgement.",
+    "Two physical local SQLite targets use setup-installed isolated connector1.0.59/provider1.0.119 and prior changed engine runtime; metadata/defaults/author authority/fault hooks controlled for physical tests.",
+    "Controlled CORE Beep MigrationModel supplies complete native properties, canonical keys and nullable optional columns; production PPDM reference catalog/FK/metadata and other-provider acceptance remain unqualified.",
+    "No new protected HTTP/upload endpoint, client retained upload/reselect flow, live attachment link/current document comparison, authorized download, independent content-review UI, browser/OIDC/RTL/a11y acceptance is delivered in this slice. These remain required next work.",
+    "Staging restart/process failure, contention and credential/binding reconciliation beyond selected target-drift refusal remain unqualified. Existing-schema rollout, public driver distribution and overall roadmap remain open."
+  ],
+  "source_files": [
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitDocumentStaging.cs",
+      "sha256": "4bd58424c1c5544a54982fa23f0f166ba62143bcb1f0c17b242f4791cfd59083"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PERMIT_DOCUMENT_STAGE.cs",
+      "sha256": "acd4e809df7b3b948f748d6d3e72734cc8f19053b1f5de6bdebe00cf983cb533"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationDataAccess.cs",
+      "sha256": "14384b1922b280ce6e196b2437ebd631b4f5f9661cac3d591ecdec96cdc49af8"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Documents.cs",
+      "sha256": "dd244cf301caac2e07af3035f104fff63f2107e56f8e4a29237127af2bf4c2b5"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Core/Interfaces/IPermitApplicationLifecycleService.cs",
+      "sha256": "8b0d662dec8f3900a18f2bbaad9c1364416d2944ef8423e15c7d4a5da2bfae36"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Modules/PermitsModule.cs",
+      "sha256": "72903caab1e79af19ffb2d7b9361e53c2be68f388b6bd6cc11810fbfe4e8d09f"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs",
+      "sha256": "51a76a56dc7cfd72afdbab6df23d9e1e47f76d1906d0e19dc2e8c0fd82dee5a6"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitDocumentStagingTests.cs",
+      "sha256": "d7d5a2b647b71a4d4df5928bca9eb79e7bfa23547270f7188886aba53301b8e4"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs",
+      "sha256": "e885de0ad64ce2309cc05f6c7f69162368d299b4afb4574d8ae6f752fe48d556"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs",
+      "sha256": "6597dd8bb0bab66b65e123f1e3eec792ddf1d45ad6fa51cf967a2ed622218bb5"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+      "sha256": "06880bd7b2bd1b5336e1b2a72217bcf432d640e09c8b229642dfb96de3711b7f"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/README.md",
+      "sha256": "038f0c62b91ff271964920b7dd5a0ce1fb58c7cdfbfdb0060be1f2329df7cddf"
+    }
+  ],
+  "runtime_hashes": [
+    {
+      "path": "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll",
+      "sha256": "70a3374f69bfa9947b1f3133a710ce562af289f6b3add9a56df9d9e550c354d5"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll",
+      "sha256": "bd83026236c38e108bc9e3f264ca533c711ae48eb90f0b9ab10d5ee3db845d80"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "3b7e4763fc5a04f6b2c0c67ae87d965a5decd8d334e44e2ac0f3125c914c81ef"
+    }
+  ],
+  "logs": [
+    {
+      "path": "oilgas-354-stage-01.log",
+      "sha256": "6a60dfe37c0e4887f86a6fbc44b6d78583c7168c3b7f9c39ba7dc0c6cb4433c0"
+    },
+    {
+      "path": "oilgas-354-stage-02.log",
+      "sha256": "e89684a23f9363c86926b2b9884cf98179637ab4f745b41b6e26a63222b9259c"
+    },
+    {
+      "path": "oilgas-354-stage-03.log",
+      "sha256": "cab6408b09ed9d5bc510031086beb7ec69679cd08d35068487d7d2b13b48c038"
+    },
+    {
+      "path": "oilgas-354-stage-data-build-02.log",
+      "sha256": "8a24d5091804ef67f932dd18b2fc95f5bf15a35cb4582cd0d038525b78ce44c9"
+    },
+    {
+      "path": "oilgas-354-stage-data-build-03.log",
+      "sha256": "c07b5c361f29463ee5253f0f0599be574f592bffc106331d7069bdbc39deaca8"
+    },
+    {
+      "path": "oilgas-354-stage-data-build.log",
+      "sha256": "ad59d9867da7df956bfc19aec880dec5d891c5bd3b9770a6dacfcf12210d26b9"
+    },
+    {
+      "path": "oilgas-354-stage-native-build-02.log",
+      "sha256": "6fccfb1a8a07c612cc31f5c58a64123eddb5f7f627a73b2c5701df814c82cdcd"
+    },
+    {
+      "path": "oilgas-354-stage-native-build-03.log",
+      "sha256": "a88eea46f2bf053dbfbbaab0d8683a65d2b8b30c628aab7081644bd210f5395c"
+    },
+    {
+      "path": "oilgas-354-stage-native-build.log",
+      "sha256": "02693a55fc9924bc4806c0875fe41386d02332f4fa601863bb8ef3b2d34b9efa"
+    },
+    {
+      "path": "oilgas-354-stage-tests-build-02.log",
+      "sha256": "3ebcefbf3802478e37f5d45217aa40d9ddbc52c3bc82dad37adfc08902c6027f"
+    },
+    {
+      "path": "oilgas-354-stage-tests-build-03.log",
+      "sha256": "3030b7500c3d2430d6f222006f6052e68efcd7a3da90707e55b78561aa9c7c79"
+    },
+    {
+      "path": "oilgas-354-stage-tests-build-04.log",
+      "sha256": "981a45be65624c3c1f81afbe8c7056a728b80295b1489349b5de8a3ad6c6a96a"
+    },
+    {
+      "path": "oilgas-354-stage-tests-build-05.log",
+      "sha256": "bccc40ce9099c1242976cd5cd02b5de5e91b078d5fac33c26ba9cdced4df0ee5"
+    },
+    {
+      "path": "oilgas-354-stage-tests-build-06.log",
+      "sha256": "1f7a7f3af738765fa48803cd937b1043012a78e48ae05555f727f1be8e57b7e3"
+    },
+    {
+      "path": "oilgas-354-stage-tests-build-07.log",
+      "sha256": "fa1cbca7daf80b47dac9c3a1f37b19c9fb46de262ec72a81c3d0b780284e958b"
+    },
+    {
+      "path": "oilgas-354-stage-tests-build.log",
+      "sha256": "938db84a733c8014dd9fbcc45bc84efe8cfe4a20b43b9a53e3678b26851b22a1"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 namespace TheTechIdea.Data.OilGas;
 
 public sealed record AssignRoleRequest(string RoleId, string? Reason);
+public sealed record AssignCompanyRoleRequest(string RoleId, string Reason, DateTimeOffset? EffectiveToUtc = null);
 public sealed record GrantPermissionRequest(string PermissionId);
 
 public sealed class RepositoryRoleDetails
@@ -33,10 +34,13 @@ public sealed class RepositoryPermission
 
 public sealed class RepositoryUserRole
 {
+    public string? TenantId { get; init; }
+    public string? BusinessAssociateId { get; init; }
     public string UserRoleId { get; init; } = "";
     public string UserId { get; init; } = "";
     public string RoleId { get; init; } = "";
     public string? GrantedByUserId { get; init; }
+    public string? RevokedByUserId { get; init; }
     public string? AssignmentReason { get; init; }
     public DateTime EffectiveFromUtc { get; init; }
     public DateTime? EffectiveToUtc { get; init; }

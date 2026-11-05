@@ -1,0 +1,289 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject CompanyLedgerAccountState State
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 mt-4">
+    <MudText Typo="Typo.h5">Company ledger account configuration</MudText>
+    @if(_authorized){<CompanyBookWorkbench State="_state" />}
+    @if(_authorized){<CompanyFxWorkbench State="_state" Book="_book" />}
+    <MudText>Choose the recorded book and currency to review configured accounts before journal preparation.</MudText>
+    <MudForm @ref="_form">
+        <MudTextField T="string" Label="Recorded book" Value="_book" ValueChanged="BookChanged" Required="true" RequiredError="Enter the recorded book." MaxLength="128" Disabled="_state.Busy" />
+        <MudTextField T="string" Label="Recorded currency" Value="_currency" ValueChanged="CurrencyChanged" Required="true" RequiredError="Enter the recorded currency." MaxLength="16" Disabled="_state.Busy" />
+        <MudButton OnClick="Reload" Disabled="_state.Busy" Variant="Variant.Outlined">Review recorded accounts</MudButton>
+    </MudForm>
+    <MudForm @ref="_mappingForm">
+        <MudDatePicker Label="Company calendar date" Date="_mappingDate" DateChanged="MappingDateChanged" Required="true" RequiredError="Choose the company calendar date." Disabled="_state.Busy" />
+        <MudButton OnClick="ReloadMappings" Disabled="_state.Busy" Variant="Variant.Outlined">Review effective account mappings</MudButton>
+    </MudForm>
+    @if(_state.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading recorded company ledger accounts" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(!_authorized){<MudAlert Severity="Severity.Info">Select the company and account with current accounting access, then review.</MudAlert>}
+    @if(_authorized && _canConfigure && !_state.HasPendingMappingConfiguration)
+    {
+        <MudText Typo="Typo.h6">Company administrator: ledger account configuration</MudText>
+        @if(_state.HasPendingConfiguration)
+        {
+            <MudAlert Severity="Severity.Warning" role="status">The original account configuration request is retained in this session. Reconcile it in its original company and account before another configuration.</MudAlert>
+            @if(_state.PendingConfiguration is {} pending){<MudText>Original account: @pending.Command.AccountNumber · Book: @pending.Command.BookId · Currency: @pending.Command.CurrencyCode · Intent: @pending.Command.IntentId</MudText>
+                <MudButton OnClick="ReconcileConfiguration" Disabled="_state.Busy" Variant="Variant.Outlined">Reconcile original account configuration</MudButton>}
+        }
+        else
+        {
+            <MudButton OnClick="ReviewConfiguration" Disabled="_state.Busy" Variant="Variant.Outlined">Review account creation authority</MudButton>
+            @if(_state.ConfigurationReview is {} configuration)
+            {
+                <MudText>Original configuration company: @configuration.Accounts.Company.BusinessAssociateId · Book: @configuration.Accounts.BookId · Currency: @configuration.Accounts.CurrencyCode</MudText>
+                <MudForm @ref="_configureForm">
+                    <MudTextField T="string" Label="Account number" @bind-Value="_number" Required="true" MaxLength="128" Disabled="_state.Busy" />
+                    <MudTextField T="string" Label="Account name" @bind-Value="_name" Required="true" MaxLength="256" Disabled="_state.Busy" />
+                    <MudSelect T="string" Label="Account type" @bind-Value="_type" Required="true" Disabled="_state.Busy">
+                        @foreach(var type in new[]{"ASSET","LIABILITY","EQUITY","REVENUE","EXPENSE"}){<MudSelectItem T="string" Value="@type">@type</MudSelectItem>}
+                    </MudSelect>
+                    <MudSelect T="string" Label="Normal balance" @bind-Value="_normal" Required="true" Disabled="_state.Busy"><MudSelectItem T="string" Value='@("DEBIT")'>DEBIT</MudSelectItem><MudSelectItem T="string" Value='@("CREDIT")'>CREDIT</MudSelectItem></MudSelect>
+                    <MudTextField T="string" Label="Optional native parent account ID" @bind-Value="_parent" MaxLength="128" Disabled="_state.Busy" />
+                    <MudTextField T="string" Label="Optional account description" @bind-Value="_description" MaxLength="1024" Disabled="_state.Busy" />
+                    <MudTextField T="string" Label="Configuration reason" @bind-Value="_reason" Required="true" MaxLength="128" Disabled="_state.Busy" />
+                    <MudButton OnClick="ConfigureAccount" Disabled="_state.Busy" Variant="Variant.Outlined">Record reviewed account configuration</MudButton>
+                </MudForm>
+            }
+            <MudForm @ref="_recoveryForm">
+                <MudTextField T="string" Label="Original configured account ID" @bind-Value="_recoveryId" Required="true" MaxLength="32" Disabled="_state.Busy" />
+                <MudButton OnClick="RecoverConfiguration" Disabled="_state.Busy" Variant="Variant.Outlined">Recover original account request</MudButton>
+            </MudForm>
+        }
+        @if(_state.ConfigurationResult is {} outcome){<MudAlert Severity="Severity.Success" role="status">Account @outcome.ACCOUNT_NUMBER configuration is recorded and confirmed in the complete company account review. Native account ID: @outcome.GL_ACCOUNT_ID. Posting and balances require their own financial workflow.</MudAlert>}
+    }
+    @if(_authorized && _canConfigure && !_state.HasPendingConfiguration)
+    {
+        <MudText Typo="Typo.h6">Company administrator: effective account mappings</MudText>
+        @if(_state.HasPendingMappingConfiguration)
+        {
+            <MudAlert Severity="Severity.Warning" role="status">The original mapping configuration request is retained in this session. Reconcile it in its original company and account before another ledger configuration.</MudAlert>
+            @if(_state.PendingMappingConfiguration is {} pendingMapping){<MudText>Original key: @pendingMapping.Command.MappingKey · Native account ID: @pendingMapping.Command.AccountId · Book: @pendingMapping.Command.BookId · Currency: @pendingMapping.Command.CurrencyCode · Intent: @pendingMapping.Command.IntentId</MudText>
+                <MudButton OnClick="ReconcileMappingConfiguration" Disabled="_state.Busy" Variant="Variant.Outlined">Reconcile original mapping configuration</MudButton>}
+        }
+        else
+        {
+            <MudButton OnClick="ReviewMappingConfiguration" Disabled="_state.Busy" Variant="Variant.Outlined">Review mapping creation authority</MudButton>
+            @if(_state.MappingConfigurationReview is {} configuration)
+            {
+                <MudText>Original mapping company: @configuration.History.Accounts.Company.BusinessAssociateId · Book: @configuration.History.Accounts.BookId · Currency: @configuration.History.Accounts.CurrencyCode · Review date: @Calendar(configuration.History.AsOfDate)</MudText>
+                <MudForm @ref="_mappingConfigureForm">
+                    <MudTextField T="string" Label="Logical mapping key" @bind-Value="_mappingKey" Required="true" MaxLength="128" Disabled="_state.Busy" />
+                    <MudSelect T="string" Label="Reviewed native account" @bind-Value="_mappingAccountId" Required="true" Disabled="_state.Busy">
+                        @foreach(var account in configuration.History.Accounts.Accounts){<MudSelectItem T="string" Value="@account.GL_ACCOUNT_ID">@account.ACCOUNT_NUMBER · @account.ACCOUNT_NAME · ID @account.GL_ACCOUNT_ID · @account.ACCOUNT_TYPE / @account.NORMAL_BALANCE</MudSelectItem>}
+                    </MudSelect>
+                    <MudDatePicker Label="Mapping effective from" @bind-Date="_mappingFrom" Required="true" Disabled="_state.Busy" />
+                    <MudDatePicker Label="Optional mapping effective through" @bind-Date="_mappingThrough" Disabled="_state.Busy" />
+                    <MudTextField T="string" Label="Mapping configuration reason" @bind-Value="_mappingReason" Required="true" MaxLength="128" Disabled="_state.Busy" />
+                    <MudButton OnClick="ConfigureMapping" Disabled="_state.Busy" Variant="Variant.Outlined">Record reviewed mapping configuration</MudButton>
+                </MudForm>
+            }
+            <MudForm @ref="_mappingRecoveryForm">
+                <MudTextField T="string" Label="Original configured mapping ID" @bind-Value="_mappingRecoveryId" Required="true" MaxLength="32" Disabled="_state.Busy" />
+                <MudButton OnClick="RecoverMappingConfiguration" Disabled="_state.Busy" Variant="Variant.Outlined">Recover original mapping request</MudButton>
+            </MudForm>
+        }
+        @if(_state.MappingConfigurationResult is {} mapped){<MudAlert Severity="Severity.Success" role="status">Mapping @mapped.MAPPING_KEY configuration is recorded and confirmed in complete account/mapping history. Native mapping ID: @mapped.GL_ACCOUNT_MAPPING_ID. Effective ranges do not establish posting or balances.</MudAlert>}
+    }
+    @if(_authorized){<MappingTransitionWorkbench State="_state" Book="_book" Currency="_currency" ReviewDate="_mappingDate" />}
+    @if(_authorized && _state.Review is {} review)
+    {
+        <MudText>Company: @review.Company.BusinessAssociateId · Book: @review.BookId · Currency: @review.CurrencyCode</MudText>
+        @if(review.Accounts.Count==0){<MudAlert Severity="Severity.Info" role="status">No recorded accounts are configured for this company, book and currency. Journal preparation remains unavailable.</MudAlert>}
+        @foreach(var account in review.Accounts)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-3">
+                <MudText Typo="Typo.h6">@account.ACCOUNT_NUMBER · @account.ACCOUNT_NAME</MudText>
+                <MudText>Native account ID: @account.GL_ACCOUNT_ID · Type: @account.ACCOUNT_TYPE · Normal balance: @account.NORMAL_BALANCE</MudText>
+                <MudText>Recorded by: @account.ROW_CREATED_BY · @account.ROW_CREATED_DATE?.ToString("O")</MudText>
+            </MudPaper>
+        }
+        <MudAlert Severity="Severity.Info" role="status">Account configuration is confirmed for this review. Posting still requires reviewed mappings, an open period and an independently approved journal. Posted balances are unavailable here.</MudAlert>
+    }
+    @if(_authorized && _state.Mappings is {} mappings)
+    {
+        <MudText>Mapping company: @mappings.Accounts.Company.BusinessAssociateId · Book: @mappings.Accounts.BookId · Currency: @mappings.Accounts.CurrencyCode · Company calendar date: @Calendar(mappings.AsOfDate)</MudText>
+        @if(mappings.Records.Count==0){<MudAlert Severity="Severity.Info" role="status">No recorded mappings are configured for this company, book and currency. Journal preparation remains unavailable.</MudAlert>}
+        @foreach(var mapping in mappings.Records)
+        {
+            var effective=CompanyGLMappingReview.Effective(mapping,mappings.AsOfDate);
+            <MudPaper Outlined="true" Class="pa-3 my-3">
+                <MudText Typo="Typo.h6">@mapping.MAPPING_KEY · @(effective?"Effective on selected date":"Outside selected date")</MudText>
+                <MudText>Mapping ID: @mapping.GL_ACCOUNT_MAPPING_ID · Native account ID: @mapping.GL_ACCOUNT_ID · Recorded account number: @mapping.GL_ACCOUNT_NUMBER</MudText>
+                <MudText>Effective from: @Calendar(mapping.EFFECTIVE_DATE!.Value) · Through: @(mapping.EXPIRY_DATE is {} end?Calendar(end):"No recorded end date")</MudText>
+                @if(effective){var account=mappings.Accounts.Accounts.Single(account=>account.GL_ACCOUNT_ID==mapping.GL_ACCOUNT_ID);<MudText>Recorded account: @account.ACCOUNT_NAME · Type: @account.ACCOUNT_TYPE · Normal balance: @account.NORMAL_BALANCE</MudText>}
+                <MudText>Recorded by: @mapping.ROW_CREATED_BY · @mapping.ROW_CREATED_DATE?.ToString("O")</MudText>
+            </MudPaper>
+        }
+        <MudAlert Severity="Severity.Info" role="status">Mapping evidence is confirmed for this review. Journal preparation still requires compatible posting accounts, a proven open period and its own authorized command. Posted balances are unavailable here.</MudAlert>
+    }
+    @if(_authorized)
+    {
+        <MudText Typo="Typo.h6">Company book periods</MudText>
+        <MudForm @ref="_periodSelectionForm">
+            <MudTextField T="string" Label="Recorded company calendar ID" Value="_calendarId" ValueChanged="CalendarChanged" Required="true" MaxLength="128" Disabled="_state.Busy" />
+            <MudButton OnClick="ReloadPeriods" Disabled="_state.Busy" Variant="Variant.Outlined">Review recorded periods</MudButton>
+        </MudForm>
+        @if(_state.Periods is {} periodSource)
+        {
+            <MudText>Company: @periodSource.Company.BusinessAssociateId · Book: @periodSource.BookId · Currency: @periodSource.CurrencyCode · Calendar: @periodSource.CalendarId</MudText>
+            @if(periodSource.Periods.Count==0){<MudAlert Severity="Severity.Info" role="status">No periods are recorded for this company book. Posting remains unavailable.</MudAlert>}
+            @foreach(var period in periodSource.Periods){<MudPaper Outlined="true" Class="pa-3 my-3"><MudText Typo="Typo.h6">@period.PeriodCode · @period.Status</MudText><MudText>@Calendar(period.From) through @Calendar(period.Through) · Period ID: @period.PeriodId</MudText><MudText>Recorded by @period.CreatedBy · @period.CreatedAt.ToString("O")</MudText></MudPaper>}
+            <MudAlert Severity="Severity.Info" role="status">Recorded period state is available for review. Closing, locking and reopening use their separate controlled workflow. Journal posting requires an open original period and its own authorized command.</MudAlert>
+        }
+    }
+    @if(_authorized){<PeriodTransitionWorkbench State="_state" Book="_book" Currency="_currency" Calendar="_calendarId" />}
+    @if(_canConfigure)
+    {
+        @if(_state.HasPendingPeriod)
+        {
+            <MudAlert Severity="Severity.Warning" role="status">The original period request is retained. Return to its company/account/binding and reconcile before another ledger configuration.</MudAlert>
+            @if(_state.PendingPeriod is {} pendingPeriod){<MudText>Original period ID: @pendingPeriod.Command.PeriodId · Code: @pendingPeriod.Command.PeriodCode · Calendar: @pendingPeriod.Command.CalendarId</MudText><MudButton OnClick="ReconcilePeriod" Disabled="_state.Busy" Variant="Variant.Outlined">Reconcile original period request</MudButton>}
+        }
+        else if(!_state.HasPendingLedgerRequest)
+        {
+            <MudButton OnClick="ReviewPeriodConfiguration" Disabled="_state.Busy" Variant="Variant.Outlined">Review authority to create a period</MudButton>
+            @if(_state.PeriodConfigurationReview is {} periodReview)
+            {
+                <MudText>Original calendar: @periodReview.History.CalendarId · Book: @periodReview.History.BookId · Currency: @periodReview.History.CurrencyCode</MudText>
+                <MudForm @ref="_periodCreationForm">
+                    <MudTextField T="string" Label="Period code" @bind-Value="_periodCode" Required="true" MaxLength="128" Disabled="_state.Busy" />
+                    <MudDatePicker Label="Period starts" @bind-Date="_periodFrom" Required="true" Disabled="_state.Busy" />
+                    <MudDatePicker Label="Period ends" @bind-Date="_periodThrough" Required="true" Disabled="_state.Busy" />
+                    <MudTextField T="string" Label="Period creation reason" @bind-Value="_periodReason" Required="true" MaxLength="128" Disabled="_state.Busy" />
+                    <MudButton OnClick="CreatePeriod" Disabled="_state.Busy" Variant="Variant.Outlined">Record reviewed open period</MudButton>
+                </MudForm>
+            }
+            <MudForm @ref="_periodRecoveryForm"><MudTextField T="string" Label="Original configured period ID" @bind-Value="_periodRecoveryId" Required="true" MaxLength="32" Disabled="_state.Busy" /><MudButton OnClick="RecoverPeriod" Disabled="_state.Busy" Variant="Variant.Outlined">Recover original period request</MudButton></MudForm>
+        }
+        @if(_state.PeriodResult is {} createdPeriod){<MudAlert Severity="Severity.Success" role="status">Period @createdPeriod.PERIOD_CODE is recorded and confirmed in complete company/book/calendar history. Period ID: @createdPeriod.COMPANY_LEDGER_PERIOD_ID.</MudAlert>}
+    }
+</MudPaper>
+
+@code{
+    private CompanyLedgerAccountState _state=null!;
+    private MudForm? _form;
+    private MudForm? _mappingForm;
+    private MudForm? _configureForm,_recoveryForm;
+    private MudForm? _mappingConfigureForm,_mappingRecoveryForm;
+    private string _mappingKey="",_mappingAccountId="",_mappingReason="",_mappingRecoveryId="";
+    private DateTime? _mappingFrom,_mappingThrough;
+    private string _number="",_name="",_type="",_normal="",_parent="",_description="",_reason="",_recoveryId="";
+    private DateTime? _mappingDate;
+    private string _book="",_currency="";
+    private string? _error;
+    private bool _authorized,_canConfigure,_disposed;
+    private long _epoch;
+    private MudForm? _periodSelectionForm,_periodCreationForm,_periodRecoveryForm;
+    private string _calendarId="",_periodCode="",_periodReason="",_periodRecoveryId="";
+    private DateTime? _periodFrom,_periodThrough;
+    private void CalendarChanged(string value){_calendarId=value;_state.Invalidate();_error=null;}
+    private async Task PeriodSelection(){if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)throw new InvalidOperationException();}if(_periodSelectionForm is not null){await _periodSelectionForm.ValidateAsync();if(!_periodSelectionForm.IsValid)throw new InvalidOperationException();}}
+    private async Task PeriodAction(Func<Task> action,bool configure=true)
+    {
+        var epoch=_epoch;_error=null;try{await Access();if(configure && !_canConfigure)throw new UnauthorizedAccessException();await action();if(!_disposed && epoch==_epoch)await Access();}
+        catch{if(!_disposed && epoch==_epoch)_error="Period evidence or configuration is unconfirmed. Check the original company/account/book/currency/calendar, explicit dates and management authority. Retain and reconcile any original request.";}
+    }
+    private Task ReloadPeriods()=>PeriodAction(async()=>{await PeriodSelection();await _state.LoadPeriodsAsync(_book,_currency,_calendarId,Accounting);},false);
+    private Task ReviewPeriodConfiguration()=>PeriodAction(async()=>{await PeriodSelection();await _state.LoadPeriodConfigurationReviewAsync(_book,_currency,_calendarId,Accounting);_periodCode="";_periodReason="";_periodFrom=null;_periodThrough=null;});
+    private Task CreatePeriod()=>PeriodAction(async()=>{if(_periodCreationForm is not null){await _periodCreationForm.ValidateAsync();if(!_periodCreationForm.IsValid)return;}if(_periodFrom is null || _periodThrough is null)throw new InvalidOperationException();await _state.CreatePeriodAsync(_periodCode,DateTime.SpecifyKind(_periodFrom.Value,DateTimeKind.Unspecified),DateTime.SpecifyKind(_periodThrough.Value,DateTimeKind.Unspecified),_periodReason,Accounting);});
+    private Task ReconcilePeriod()=>PeriodAction(()=>_state.SubmitPeriodAsync(Accounting));
+    private Task RecoverPeriod()=>PeriodAction(async()=>{await PeriodSelection();if(_periodRecoveryForm is not null){await _periodRecoveryForm.ValidateAsync();if(!_periodRecoveryForm.IsValid)return;}await _state.RecoverPeriodAsync(_book,_currency,_calendarId,_periodRecoveryId,Accounting);});
+    protected override void OnInitialized(){_state=State;_state.AttachOwner(this);_state.Changed+=StateChanged;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override Task OnInitializedAsync()=>RefreshAccess();
+    private async Task RefreshAccess(){try{await Access();}catch(UnauthorizedAccessException){_authorized=false;_canConfigure=false;}if(!_disposed)await InvokeAsync(StateHasChanged);}
+    private void ResetConfiguration(){_number="";_name="";_type="";_normal="";_parent="";_description="";_reason="";_recoveryId="";_mappingKey="";_mappingAccountId="";_mappingReason="";_mappingRecoveryId="";_mappingFrom=null;_mappingThrough=null;}
+    private async Task ReviewMappingConfiguration()
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_mappingForm is not null){await _mappingForm.ValidateAsync();if(!_mappingForm.IsValid)return;}if(_mappingDate is null)return;
+            await _state.LoadMappingConfigurationReviewAsync(_book,_currency,DateTime.SpecifyKind(_mappingDate.Value,DateTimeKind.Unspecified),Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
+        catch{if(!_disposed && epoch==_epoch)_error="Mapping creation authority could not be confirmed. Check the original company/account/book/currency/calendar date and ledger management access.";}
+    }
+    private async Task ConfigureMapping()
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_mappingConfigureForm is not null){await _mappingConfigureForm.ValidateAsync();if(!_mappingConfigureForm.IsValid)return;}if(_mappingFrom is null)return;
+            await _state.ConfigureMappingAsync(_mappingKey,_mappingAccountId,DateTime.SpecifyKind(_mappingFrom.Value,DateTimeKind.Unspecified),_mappingThrough is {} end?DateTime.SpecifyKind(end,DateTimeKind.Unspecified):null,_mappingReason,Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
+        catch{if(!_disposed && epoch==_epoch)_error="Mapping configuration is unconfirmed. Check the reviewed account, explicit effective dates, nonoverlapping history and reason; retain and reconcile any original request.";}
+    }
+    private async Task ReconcileMappingConfiguration()
+    {var epoch=_epoch;_error=null;try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();await _state.SubmitMappingConfigurationAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="The original mapping configuration remains unconfirmed. Return to its original company/account/binding and reconcile the retained request.";}}
+    private async Task RecoverMappingConfiguration()
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_mappingRecoveryForm is not null){await _mappingRecoveryForm.ValidateAsync();if(!_mappingRecoveryForm.IsValid)return;}
+            await _state.RecoverMappingConfigurationAsync(_book,_currency,_mappingRecoveryId,Accounting);if(!_disposed && epoch==_epoch)await Access();}
+        catch{if(!_disposed && epoch==_epoch)_error="The original producer's committed mapping request could not be recovered. Check original company/account/book/currency and mapping ID; no new configuration is authorized.";}
+    }
+    private async Task ReviewConfiguration()
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}await _state.LoadConfigurationReviewAsync(_book,_currency,Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
+        catch{if(!_disposed && epoch==_epoch)_error="Account creation authority could not be confirmed. Check the original company, account, book, currency and ledger management access.";}
+    }
+    private async Task ConfigureAccount()
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_configureForm is not null){await _configureForm.ValidateAsync();if(!_configureForm.IsValid)return;}
+            await _state.ConfigureAsync(_number,_name,_type,_normal,string.IsNullOrEmpty(_parent)?null:_parent,string.IsNullOrEmpty(_description)?null:_description,_reason,Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
+        catch{if(!_disposed && epoch==_epoch)_error="Account configuration is unconfirmed. Check explicit fields and current management authority; retain and reconcile any original request before another account.";}
+    }
+    private async Task ReconcileConfiguration()
+    {var epoch=_epoch;_error=null;try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();await _state.SubmitConfigurationAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="The original account configuration remains unconfirmed. Return to its original company/account/binding and reconcile the retained request.";}}
+    private async Task RecoverConfiguration()
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_recoveryForm is not null){await _recoveryForm.ValidateAsync();if(!_recoveryForm.IsValid)return;}
+            await _state.RecoverConfigurationAsync(_book,_currency,_recoveryId,Accounting);if(!_disposed && epoch==_epoch)await Access();}
+        catch{if(!_disposed && epoch==_epoch)_error="The original producer's committed configuration request could not be recovered. Check original company/account/book/currency and account ID; no new configuration is authorized.";}
+    }
+    private void BookChanged(string value){_book=value;_state.Invalidate();_error=null;}
+    private void CurrencyChanged(string value){_currency=value;_state.Invalidate();_error=null;}
+    private void MappingDateChanged(DateTime? value){_mappingDate=value;_state.Invalidate();_error=null;}
+    private static string Calendar(DateTime value)=>value.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture);
+    private async Task ReloadMappings()
+    {
+        var epoch=_epoch;_error=null;_state.Invalidate();
+        try
+        {
+            await Access();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}
+            if(_mappingForm is not null){await _mappingForm.ValidateAsync();if(!_mappingForm.IsValid)return;}
+            if(_mappingDate is null)return;
+            var date=DateTime.SpecifyKind(_mappingDate.Value,DateTimeKind.Unspecified);
+            await _state.LoadMappingsAsync(_book,_currency,date,Accounting);if(!_disposed && epoch==_epoch)await Access();
+        }
+        catch{_state.Invalidate();if(!_disposed && epoch==_epoch)_error="Company mapping evidence could not be confirmed. Check current company/account access, recorded book, currency and company calendar date, then review again.";}
+    }
+    private async Task Access()
+    {
+        _authorized=false;_canConfigure=false;var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ??user.FindFirstValue("sub");
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || actor!=selected.UserId ||
+            !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal))throw new UnauthorizedAccessException();
+        _authorized=true;_canConfigure=selected.Permissions.Contains("Accounting.ConfigureLedger",StringComparer.Ordinal);
+    }
+    private async Task Reload()
+    {
+        var epoch=_epoch;_error=null;_state.Invalidate();
+        try
+        {
+            await Access();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}
+            await _state.LoadAsync(_book,_currency,Accounting);if(!_disposed && epoch==_epoch)await Access();
+        }
+        catch{_state.Invalidate();if(!_disposed && epoch==_epoch)_error="Company ledger configuration could not be confirmed. Check current company/account access, the recorded book and currency, then review again.";}
+    }
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_authorized=false;_canConfigure=false;_error=null;_book="";_currency="";_mappingDate=null;_calendarId="";_periodCode="";_periodReason="";_periodRecoveryId="";_periodFrom=null;_periodThrough=null;ResetConfiguration();if(!_disposed)_=RefreshAccess();}
+    private void AuthChanged(Task<AuthenticationState> value){_state.Invalidate();ContextChanged();}
+    public void Dispose(){if(_disposed)return;_disposed=true;_state.Changed-=StateChanged;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthChanged;_state.DetachOwner(this);}
+}

@@ -1,0 +1,88 @@
+@using TheTechIdea.Data.OilGas
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject CompanyPersonnelPolicyState State
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6">Company personnel policy and effective history</MudText>
+    <MudText>Configure explicit duty and jurisdiction requirements. Recorded licences and status names have no automatic qualification meaning.</MudText>
+    @if(!Allowed){<MudAlert Severity="Severity.Warning">Current company Administrator and personnel policy configuration permission are required.</MudAlert>}
+    <MudButton OnClick="ReviewAsync" Color="Color.Primary" Disabled="@(State.Busy || !State.CanReview || !Allowed)">Review company personnel policy catalog</MudButton>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Working with original company personnel policy" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.Catalog is {} catalog)
+    {
+        <MudText>Company: @catalog.Context.Company.BusinessAssociateId · compared UTC @catalog.ComparedAtUtc.ToString("O")</MudText>
+        @if(catalog.Versions.Count==0){<MudAlert Severity="Severity.Info">No personnel policy versions are recorded. Missing policy is not an accepted qualification.</MudAlert>}
+        @foreach(var version in catalog.Versions)
+        {
+            <MudText>Recorded policy @version.RecordId · version @version.Version · @version.Policy.DutyCode / @version.Policy.WorkOrderType / @version.Policy.Jurisdiction</MudText>
+            <MudText>Effective UTC @version.Policy.EffectiveFromUtc.ToString("O") to @version.Policy.EffectiveToUtc.ToString("O") · licence @version.Policy.LicenseType · authority @version.Policy.GrantingAuthority · status type @version.Policy.StatusType · accepted @string.Join(", ",version.Policy.AcceptedStatuses)</MudText>
+            <MudText>Accepted employment statuses: @(version.Policy.AcceptedEmploymentStatuses is {} employmentStatuses?string.Join(", ",employmentStatuses):"Not configured in this historical policy") · positions: @(version.Policy.AcceptedEmploymentPositions is not {} positions?"Not configured":positions.Count==0?"Any recorded position explicitly permitted":string.Join(", ",positions))</MudText>
+            @foreach(var condition in version.Policy.Conditions){<MudText>Required @condition.Code / @condition.Type · @condition.Comparison @condition.Value @condition.Unit · source @condition.SourceReference</MudText>}
+            <MudText Typo="Typo.caption">Recorded by @version.RecordedBy at @version.RecordedAtUtc.ToString("O") · revision @version.Revision · policy source @version.Policy.SourceReference</MudText>
+        }
+        <MudGrid>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_duty" Label="Explicit duty code" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_orderType" Label="Exact native work-order type" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_jurisdiction" Label="Explicit jurisdiction" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_licenseType" Label="Required recorded licence type" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_authority" Label="Required granting authority BA" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_statusType" Label="Required recorded status type" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12"><MudTextField T="string" @bind-Value="_statuses" Label="Explicit accepted statuses (comma-separated)" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12"><MudTextField T="string" @bind-Value="_employmentStatuses" Label="Accepted employment statuses (exact recorded values, comma-separated)" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12"><MudCheckBox T="bool" @bind-Value="_anyPosition" Label="Explicitly permit any recorded employment position" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12"><MudTextField T="string" @bind-Value="_employmentPositions" Label="Accepted employment positions (exact recorded values, comma-separated)" Required="@(!_anyPosition)" Disabled="@(State.Busy || _anyPosition)" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_from" Label="Effective start UTC (ISO 8601 ending Z)" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_to" Label="Effective end UTC (ISO 8601 ending Z)" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudNumericField T="int?" @bind-Value="_version" Label="Explicit next version" Required="true" Disabled="@State.Busy" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_source" Label="Policy source reference" Required="true" Disabled="@State.Busy" /></MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.subtitle1">Required competency conditions</MudText>
+        <MudTextField T="string" @bind-Value="_conditionCode" Label="Recorded condition code" Disabled="@State.Busy" />
+        <MudTextField T="string" @bind-Value="_conditionType" Label="Recorded condition type" Disabled="@State.Busy" />
+        <MudSelect T="string" @bind-Value="_comparison" Label="Explicit condition comparison" Disabled="@State.Busy"><MudSelectItem T="string" Value="@("MINIMUM")">Minimum required value</MudSelectItem><MudSelectItem T="string" Value="@("EXACT")">Exact required value</MudSelectItem></MudSelect>
+        <MudNumericField T="decimal?" @bind-Value="_conditionValue" Label="Explicit positive required value" Disabled="@State.Busy" />
+        <MudTextField T="string" @bind-Value="_unit" Label="Exact recorded condition unit" Disabled="@State.Busy" />
+        <MudTextField T="string" @bind-Value="_conditionSource" Label="Condition requirement source reference" Disabled="@State.Busy" />
+        <MudButton OnClick="AddCondition" Disabled="@State.Busy">Add explicit condition requirement</MudButton>
+        @foreach(var condition in _conditions){<MudText>@condition.Code / @condition.Type · @condition.Comparison @condition.Value @condition.Unit · @condition.SourceReference</MudText>}
+        <MudButton OnClick="ClearConditions" Disabled="@State.Busy">Clear proposed conditions</MudButton>
+        <MudTextField T="string" @bind-Value="_reason" Label="Explicit policy version rationale" Required="true" Lines="3" Disabled="@State.Busy" />
+        <MudButton OnClick="AppendAsync" Color="Color.Primary" Disabled="@(State.Busy || !State.CanAppend || !Allowed)">Retain and append personnel policy version</MudButton>
+    }
+    <MudTextField T="string" @bind-Value="_recordId" Label="Original policy record reference" Disabled="@(State.Busy || State.VisibleReference is not null)" />
+    <MudTextField T="string" @bind-Value="_intent" Label="Original policy intent" Disabled="@(State.Busy || State.VisibleReference is not null)" />
+    <MudButton OnClick="RecoverAsync" Disabled="@(State.Busy || !Allowed)">Recover original policy version</MudButton>
+    @if(State.VisibleReference is {} reference){<MudAlert Severity="Severity.Info">Retained policy @reference.RecordId · intent @reference.IntentId. Recover this exact original reference if confirmation is unavailable.</MudAlert>}
+    @if(State.Receipt is {} saved){<MudAlert Severity="Severity.Success">Personnel policy recorded: @saved.POLICY_RECORD_ID · version @saved.VERSION_NO · maker @saved.ROW_CREATED_BY · recorded UTC @saved.ROW_CREATED_DATE?.ToString("O")</MudAlert><MudButton OnClick="BeginNextAsync" Disabled="@(State.Busy || !Allowed)">Begin another policy version review</MudButton>}
+</MudPaper>
+@code {
+    private string _duty="",_orderType="",_jurisdiction="",_licenseType="",_authority="",_statusType="",_statuses="",_from="",_to="",_source="",_reason="";
+    private string _conditionCode="",_conditionType="",_comparison="",_unit="",_conditionSource="",_recordId="",_intent="";
+    private string _employmentStatuses="",_employmentPositions="";private bool _anyPosition;
+    private int? _version;private decimal? _conditionValue;private List<CompanyPersonnelConditionRequirement> _conditions=[];private string? _error;private bool _disposed;
+    private bool Allowed=>Company.Selection is {} selected && selected.Roles.Contains("Administrator",StringComparer.Ordinal) && selected.Permissions.Contains("HSE.ConfigurePersonnelPolicy",StringComparer.Ordinal);
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Clear;Authentication.AuthenticationStateChanged+=AuthChanged;var query=Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);if(query.TryGetValue("personnelPolicyRecord",out var record))_recordId=record.ToString();if(query.TryGetValue("personnelPolicyIntent",out var intent))_intent=intent.ToString();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private async Task Guard()
+    {
+        var selected=Company.Selection;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(selected is null || !Allowed || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !user.IsInRole("Administrator")){State.ClearDisplay();Clear();throw new UnauthorizedAccessException("Current original app Administrator/company/account and personnel policy permission are required.");}
+    }
+    private static DateTime Utc(string value){if(!value.Contains('T') || !value.EndsWith("Z",StringComparison.Ordinal) || !DateTime.TryParse(value,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out var utc) || utc.Kind!=DateTimeKind.Utc)throw new ArgumentException("Enter explicit effective UTC timestamps ending Z.");return utc;}
+    private void AddCondition(){try{if(_conditionValue is not {} value)throw new ArgumentException("Enter an explicit positive condition value.");var row=new CompanyPersonnelConditionRequirement(_conditionCode,_conditionType,_comparison,value,_unit,_conditionSource);row.Require();if(_conditions.Count>=64 || _conditions.Any(item=>item.Code==row.Code && item.Type==row.Type))throw new ArgumentException("Condition requirements must be bounded and unique.");_conditions.Add(row);_conditionCode="";_conditionType="";_comparison="";_conditionValue=null;_unit="";_conditionSource="";_error=null;}catch(Exception error){_error=error.Message;}}
+    private void ClearConditions()=>_conditions.Clear();
+    private async Task Run(Func<Task> work,string action){var snapshot=Company.Snapshot;_error=null;try{await Guard();await work();await Guard();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,action,"Original policy operation is unconfirmed; retain and recover its original reference");}}
+    private Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows),"reviewing original personnel policy catalog");
+    private Task AppendAsync()=>Run(async()=>{if(_version is not {} version)throw new ArgumentException("Enter the explicit next policy version.");var policy=new CompanyPersonnelPolicyDraft(_duty,_orderType,_jurisdiction,_licenseType,_authority,_statusType,_statuses.Split(',',StringSplitOptions.TrimEntries|StringSplitOptions.RemoveEmptyEntries),_conditions.ToArray(),Utc(_from),Utc(_to),_source){AcceptedEmploymentStatuses=_employmentStatuses.Split(',',StringSplitOptions.TrimEntries|StringSplitOptions.RemoveEmptyEntries),AcceptedEmploymentPositions=_anyPosition?[]:_employmentPositions.Split(',',StringSplitOptions.TrimEntries|StringSplitOptions.RemoveEmptyEntries)};if(!_anyPosition && policy.AcceptedEmploymentPositions.Count==0)throw new ArgumentException("Choose explicit recorded employment positions or explicitly allow any recorded position.");await State.AppendAsync(Workflows,policy,version,_reason,RetainAsync);},"appending original personnel policy version");
+    private async Task RetainAsync(CompanyPersonnelPolicyReference reference){await Guard();_recordId=reference.RecordId;_intent=reference.IntentId.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"personnelPolicyRecord",_recordId},{"personnelPolicyIntent",_intent}}),new NavigationOptions{ReplaceHistoryEntry=true});await Guard();}
+    private Task RecoverAsync()=>Run(async()=>{if(!Guid.TryParse(_intent,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original policy intent.");await State.RecoverReferenceAsync(Workflows,new(_recordId,id),RetainAsync);},"recovering original personnel policy");
+    private async Task BeginNextAsync(){await Guard();State.BeginNextReview();Clear();Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"personnelPolicyRecord",null},{"personnelPolicyIntent",null}}),new NavigationOptions{ReplaceHistoryEntry=true});}
+    private void Clear(){_employmentStatuses="";_employmentPositions="";_anyPosition=false;_duty="";_orderType="";_jurisdiction="";_licenseType="";_authority="";_statusType="";_statuses="";_from="";_to="";_source="";_reason="";_conditionCode="";_conditionType="";_comparison="";_unit="";_conditionSource="";_recordId="";_intent="";_version=null;_conditionValue=null;_conditions.Clear();_error=null;Changed();}
+    private void AuthChanged(Task<AuthenticationState> _){State.ClearDisplay();Clear();}
+    public void Dispose(){_disposed=true;State.Changed-=Changed;Company.Changed-=Clear;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

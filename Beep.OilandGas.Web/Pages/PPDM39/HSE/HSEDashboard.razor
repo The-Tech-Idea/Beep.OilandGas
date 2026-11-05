@@ -1,33 +1,174 @@
 @page "/hse/dashboard"
 @page "/ppdm39/hse"
-@using System.Net.Http.Json
-@using MudBlazor
-@inject HttpClient Http
-@inject NavigationManager Nav
+@page "/lifecycle/hse/dashboard"
+@using Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Models.Data.HSE
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Web.Services.IHSEServiceClient Incidents
+@inject ILogger<HSEDashboard> Logger
+@inject NavigationManager Navigation
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.HealthAndSafety" Class="mr-2" Color="Color.Primary"/>HSE Dashboard</MudText>
-    @if(_loading){<MudProgressLinear Indeterminate="true" Class="my-4"/>}else{
-    <MudGrid>
-        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Total Incidents YTD</MudText><MudText Typo="Typo.h4" Color="@(_kpi?.TotalIncidents>10?Color.Error:Color.Primary)">@_kpi?.TotalIncidents.ToString("N0")</MudText><MudText Typo="Typo.caption">reported</MudText></div><MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Primary" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
-        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Open Incidents</MudText><MudText Typo="Typo.h4" Color="Color.Warning">@_kpi?.OpenIncidents.ToString("N0")</MudText><MudText Typo="Typo.caption">pending</MudText></div><MudIcon Icon="@Icons.Material.Filled.Pending" Color="Color.Warning" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
-        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Overdue Actions</MudText><MudText Typo="Typo.h4" Color="@(_kpi?.OverdueActions>0?Color.Error:Color.Success)">@_kpi?.OverdueActions.ToString("N0")</MudText><MudText Typo="Typo.caption">corrective</MudText></div><MudIcon Icon="@Icons.Material.Filled.Alarm" Color="Color.Error" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
-        <MudItem xs="6" md="3"><MudCard Elevation="3"><MudCardContent><MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween"><div><MudText Typo="Typo.caption" Color="Color.Secondary">Active Permits</MudText><MudText Typo="Typo.h4" Color="Color.Info">@_kpi?.ActivePermits.ToString("N0")</MudText><MudText Typo="Typo.caption">issued</MudText></div><MudIcon Icon="@Icons.Material.Filled.Description" Color="Color.Info" Class="og-icon-xl"/></MudStack></MudCardContent></MudCard></MudItem>
+<PageTitle>HSE workspace</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-3">HSE workspace</MudText>
+    <MudText Class="mb-3">Review your company assignments and open the recorded incident, compliance or permit sources to carry out your work.</MudText>
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/hse/dashboard","/ppdm39/hse","/lifecycle/hse/dashboard"})' />
+    @if(Company.Selection?.Permissions.Contains(Beep.OilandGas.Models.Data.Security.PermissionConstants.HSE.ViewPermits)==true)
+    {<PermitApplicationInbox />}
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Current FIELD incidents</MudText>
+            <MudButton OnClick="LoadIncidentsAsync" Disabled="@_loading">Refresh</MudButton>
+        </MudStack>
+        @if (_loading) { <MudText>Loading recorded incidents…</MudText> }
+        else if (_summary is not null)
+        {
+            <MudText Typo="Typo.body2">@_fieldName · Incidents returned for the selected FIELD. Counts describe these returned records; completeness is not established.</MudText>
+            <MudText Typo="Typo.caption">Current state in the selected FIELD incident response; no reporting-date filter. Checked @_checkedAt?.ToString("u"). Select a count to review its returned records.</MudText>
+            <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mt-2">
+                <MudButton OnClick="@(() => SelectIncidentGroup(IncidentGroup.All))" Variant="Variant.Outlined" aria-pressed="@Pressed(IncidentGroup.All)">Returned: @_summary.Total</MudButton>
+                <MudButton OnClick="@(() => SelectIncidentGroup(IncidentGroup.Open))" Variant="Variant.Outlined" aria-pressed="@Pressed(IncidentGroup.Open)">Open: @_summary.Open</MudButton>
+                <MudButton OnClick="@(() => SelectIncidentGroup(IncidentGroup.Closed))" Variant="Variant.Outlined" aria-pressed="@Pressed(IncidentGroup.Closed)">Closed: @_summary.Closed</MudButton>
+                <MudButton OnClick="@(() => SelectIncidentGroup(IncidentGroup.Cancelled))" Variant="Variant.Outlined" aria-pressed="@Pressed(IncidentGroup.Cancelled)">Cancelled: @_summary.Cancelled</MudButton>
+                <MudButton OnClick="@(() => SelectIncidentGroup(IncidentGroup.Other))" Variant="Variant.Outlined" aria-pressed="@Pressed(IncidentGroup.Other)">Other or unrecorded state: @_summary.Other</MudButton>
+            </MudStack>
+            <MudText Typo="Typo.subtitle2" Class="mt-3" role="status">@IncidentGroupLabel · @FilteredIncidentCount returned records · page @(_incidentPage + 1) of @IncidentPageCount (10 per page, ordered by ID)</MudText>
+            @if (FilteredIncidentCount == 0)
+            {
+                <MudText>No returned incident records match this group.</MudText>
+            }
+            else
+            {
+                @foreach (var incident in IncidentPage)
+                {
+                    <MudText><MudLink Href="@($"/ppdm39/hse/incident-detail?incidentId={Uri.EscapeDataString(incident.Id)}")">@incident.Id</MudLink> · @incident.State</MudText>
+                }
+                <MudStack Row="true" Spacing="2" Class="mt-2">
+                    <MudButton OnClick="PreviousIncidentPage" Disabled="@(_incidentPage == 0)">Previous incidents</MudButton>
+                    <MudButton OnClick="NextIncidentPage" Disabled="@(_incidentPage + 1 >= IncidentPageCount)">Next incidents</MudButton>
+                </MudStack>
+            }
+        }
+        else { <MudText Color="Color.Secondary">@_incidentMessage</MudText> }
+    </MudPaper>
+    <HseAssignedActions />
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="4"><MudCard Outlined="true"><MudCardContent>
+            <MudText Typo="Typo.h6" HtmlTag="h2">Incidents and investigations</MudText>
+            <MudText Class="my-3">Review reported incidents and their recorded investigations and actions.</MudText>
+            <MudButton Href="/ppdm39/hse/incidents" Variant="Variant.Outlined">Open incident records</MudButton>
+        </MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Outlined="true"><MudCardContent>
+            <MudText Typo="Typo.h6" HtmlTag="h2">Compliance and studies</MudText>
+            <MudText Class="my-3">Inspect recorded obligations and safety studies in their source screens.</MudText>
+            <MudStack Spacing="2"><MudButton Href="/ppdm39/compliance/obligations" Variant="Variant.Outlined">Compliance obligations</MudButton>
+                <MudTextField @bind-Value="_studyId" Label="Recorded HAZOP study ID" />
+                <MudButton OnClick="OpenStudy" Disabled="@(!LeaseSummaryValidator.Identifier(_studyId))" Variant="Variant.Outlined">Open recorded HAZOP study</MudButton>
+            </MudStack>
+        </MudCardContent></MudCard></MudItem>
+        <MudItem xs="12" md="4"><MudCard Outlined="true"><MudCardContent>
+            <MudText Typo="Typo.h6" HtmlTag="h2">Permits and assigned work</MudText>
+            <MudText Class="my-3">Review permit records and open the original process for assigned work.</MudText>
+            <MudStack Spacing="2"><MudButton Href="/ppdm39/permits" Variant="Variant.Outlined">Permit records</MudButton><MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton></MudStack>
+        </MudCardContent></MudCard></MudItem>
     </MudGrid>
-    <MudGrid>
-        <MudItem xs="12" md="5"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Build" Class="mr-1" Size="Size.Small"/>HSE Tools</MudText></CardHeaderContent></MudCardHeader><MudCardContent Class="pa-2"><MudGrid>
-        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/hse/incidents">Incident Management</MudButton></MudItem>
-        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/hse/hazop/new">New HAZOP Study</MudButton></MudItem>
-        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/hse/compliance">Compliance Calendar</MudButton></MudItem>
-        <MudItem xs="6"><MudButton Variant="Variant.Outlined" FullWidth="true" Size="Size.Small" Href="/ppdm39/permits">Permit Dashboard</MudButton></MudItem>
-    </MudGrid></MudCardContent></MudCard></MudItem>
-        <MudItem xs="12" md="7"><MudCard Elevation="2"><MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Campaign" Class="mr-1" Size="Size.Small"/>Attention Required</MudText></CardHeaderContent></MudCardHeader><MudCardContent>
-        <MudAlert Severity="Severity.Error" Dense="true">2 Tier 1 incidents this quarter — API RP 754 notification required within 48 hours.</MudAlert>
-        <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-1">3 HAZOP studies overdue for management sign-off.</MudAlert>
-        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">5 permits expiring within 30 days — review and renew.</MudAlert>
-    </MudCardContent></MudCard></MudItem></MudGrid>}
 </MudContainer>
 
-@code{private bool _loading=true;private HseKpi? _kpi;
-protected override async Task OnInitializedAsync(){try{_kpi=await Http.GetFromJsonAsync<HseKpi>("/api/hse/engineer/kpi")??new();}catch{_kpi=new();}_loading=false;}
-public class HseKpi{public int TotalIncidents{get;set;}public int OpenIncidents{get;set;}public int OverdueActions{get;set;}public int ActivePermits{get;set;}}}
+@code {
+    private sealed record IncidentSummary(int Total, int Open, int Closed, int Cancelled, int Other);
+    private sealed record IncidentLink(string Id, string State);
+    private enum IncidentGroup { All, Open, Closed, Cancelled, Other }
+    private const int IncidentPageSize = 10;
+    private IncidentGroup _incidentGroup;
+    private int _incidentPage;
+    private DateTime? _checkedAt;
+    private string Pressed(IncidentGroup group) => _incidentGroup == group ? "true" : "false";
+    private string IncidentGroupLabel => _incidentGroup switch { IncidentGroup.Open => "Open incidents", IncidentGroup.Closed => "Closed incidents", IncidentGroup.Cancelled => "Cancelled incidents", IncidentGroup.Other => "Other or unrecorded states", _ => "All returned incidents" };
+    private IEnumerable<IncidentLink> FilteredIncidents => _incidentLinks.Where(row => _incidentGroup switch
+    {
+        IncidentGroup.Open => IsOpen(row.State),
+        IncidentGroup.Closed => row.State == IncidentState.Closed,
+        IncidentGroup.Cancelled => row.State == IncidentState.Cancelled,
+        IncidentGroup.Other => !IsOpen(row.State) && row.State is not (IncidentState.Closed or IncidentState.Cancelled),
+        _ => true
+    });
+    private int FilteredIncidentCount => FilteredIncidents.Count();
+    private int IncidentPageCount => Math.Max(1, (FilteredIncidentCount + IncidentPageSize - 1) / IncidentPageSize);
+    private IEnumerable<IncidentLink> IncidentPage => FilteredIncidents.Skip(_incidentPage * IncidentPageSize).Take(IncidentPageSize);
+    private void SelectIncidentGroup(IncidentGroup group) { _incidentGroup = group; _incidentPage = 0; }
+    private void PreviousIncidentPage() { if (_incidentPage > 0) --_incidentPage; }
+    private void NextIncidentPage() { if (_incidentPage + 1 < IncidentPageCount) ++_incidentPage; }
+    private void ClearIncidentProjection() { _summary = null; _incidentLinks = []; _fieldName = string.Empty; _checkedAt = null; _incidentPage = 0; _incidentGroup = IncidentGroup.All; }
+    private IncidentSummary? _summary;
+    private List<IncidentLink> _incidentLinks = [];
+    private string _fieldName = string.Empty;
+    private string _incidentMessage = "Choose a company and FIELD to view incident totals.";
+    private bool _loading;
+    private bool _disposed;
+    private long _generation;
+    private string _studyId = string.Empty;
+    private void OpenStudy() { if (LeaseSummaryValidator.Identifier(_studyId)) Navigation.NavigateTo($"/ppdm39/hse/hazop/{Uri.EscapeDataString(_studyId)}"); }
+    protected override async Task OnInitializedAsync()
+    {
+        Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; Authentication.AuthenticationStateChanged += AuthenticationChanged;
+        await LoadIncidentsAsync();
+    }
+    private static bool IsOpen(string? state) => state is IncidentState.Reported or IncidentState.UnderInvestigation or IncidentState.PendingRCA or IncidentState.PendingCorrectiveAction or IncidentState.PendingCloseOut;
+    private async Task LoadIncidentsAsync()
+    {
+        ClearIncidentProjection(); _loading = true;
+        var generation = ++_generation; var selected = Company.Snapshot;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot;
+        try
+        {
+            if (selected.Selection is null) { _incidentMessage = "Choose a company and FIELD to view incident totals."; return; }
+            async Task<bool> ConfirmViewAuthority()
+            {
+                var user = (await Authentication.GetAuthenticationStateAsync()).User;
+                if (!Current()) return false;
+                if (user.Identity?.IsAuthenticated != true || user.FindFirst("party_id")?.Value != selected.Selection.UserId ||
+                    !selected.Selection.Roles.Any(user.IsInRole) || !selected.Selection.Permissions.Contains(Beep.OilandGas.Models.Data.Security.PermissionConstants.HSE.View, StringComparer.Ordinal))
+                    throw new UnauthorizedAccessException("Current company HSE view authority is required.");
+                return true;
+            }
+            if (!await ConfirmViewAuthority()) return;
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, selected.Selection.Scope, selected.Selection.UserId);
+            if (!before.SelectionAvailable) { _incidentMessage = "Choose an available FIELD to view incident totals."; return; }
+            var rows = await Incidents.GetIncidentsAsync() ?? throw new InvalidOperationException("The incident population is unavailable.");
+            if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, selected.Selection.Scope, selected.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext || rows.Any(row => row is null || !LeaseSummaryValidator.Identifier(row.IncidentId) || row.FieldId != before.FieldId) || rows.Select(row => row.IncidentId).Distinct(StringComparer.Ordinal).Count() != rows.Count)
+                throw new InvalidOperationException("The incident population or FIELD could not be confirmed.");
+            if (!await ConfirmViewAuthority()) return;
+            var open = rows.Count(row => IsOpen(row.CurrentState)); var closed = rows.Count(row => row.CurrentState == IncidentState.Closed); var cancelled = rows.Count(row => row.CurrentState == IncidentState.Cancelled);
+            _summary = new(rows.Count, open, closed, cancelled, rows.Count - open - closed - cancelled);
+            _incidentLinks = rows.OrderBy(row => row.IncidentId, StringComparer.Ordinal)
+                .Select(row => new IncidentLink(row.IncidentId, string.IsNullOrWhiteSpace(row.CurrentState) ? "State not recorded" : row.CurrentState)).ToList();
+            _checkedAt = DateTime.UtcNow;
+            _fieldName = string.IsNullOrWhiteSpace(before.FieldName) ? before.FieldId : before.FieldName;
+        }
+        catch (Exception error)
+        {
+            if (Current()) { Logger.LogWarning(error, "Could not confirm current FIELD incident summary"); _incidentMessage = error is UnauthorizedAccessException ? "Current company HSE view authority is required. Sign in with the selected account and refresh." : "Incident totals could not be confirmed. Refresh or open incident records."; }
+        }
+        finally { if (Current()) _loading = false; }
+    }
+    private void FieldChanged(string _) => ContextChanged();
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> _) => InvalidateIncidentProjection("Account changed. Refresh to view incident totals.");
+    private void ContextChanged() => InvalidateIncidentProjection("Company or FIELD changed. Refresh to view incident totals.");
+    private void InvalidateIncidentProjection(string message)
+    {
+        ++_generation; ClearIncidentProjection(); _loading = false; _studyId = string.Empty;
+        _incidentMessage = message;
+        if (!_disposed) _ = InvokeAsync(StateHasChanged);
+    }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }
+}

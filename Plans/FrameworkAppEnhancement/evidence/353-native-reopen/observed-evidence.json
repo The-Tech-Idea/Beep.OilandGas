@@ -1,0 +1,92 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "status": "selected physical-store fresh-owner recovery verified",
+  "method": "HseClosureProviderQualificationTests.InstalledSqliteRcaClosureReopensAndRecoversExactOriginal",
+  "result": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "minutes": 7.1386,
+    "exit": 0
+  },
+  "build": {
+    "seconds": 17.44,
+    "errors": 0,
+    "warnings": 646,
+    "scope": "Focused company/obligation source-linked target; project references disabled"
+  },
+  "changes": [
+    "Extended the same provider fact after its RCA/approval/revocation/closure checks; no parallel recovery owner or new business schema.",
+    "Shared installed-provider fixture can receive the exact persisted ConnectionProperties for reopen, preserving GUID/fingerprint identity rather than fabricating a replacement connection.",
+    "First editor and both datasource lifetimes end before fresh editor, datasource, profile and incident/closure/lifecycle service construction.",
+    "Lifecycle recovery discovers original from stored proof; prior JSON is used only as an equality oracle. Native reconciliation uses that recovered original and stored lifecycle receipt.",
+    "Fresh FIELD selection is reviewed under current app authority; source cause is re-read from actual native rows.",
+    "No migration or domain seeding runs in the second scope."
+  ],
+  "observed": {
+    "FreshEditor": true,
+    "FreshNativeSource": true,
+    "FreshLifecycleSource": true,
+    "OriginalRecoveredFromDatabase": true,
+    "NativeHashBefore": "BC28939ACBF16A55131FF21ACEC5803B0BE98253576780DA32AFFFF3F1B9B4D4",
+    "NativeHashAfter": "BC28939ACBF16A55131FF21ACEC5803B0BE98253576780DA32AFFFF3F1B9B4D4",
+    "LifecycleHashBefore": "82B093C851157C098EC990D6E43B0FDA11FC5A25CC571D952F515DFA4E090E44",
+    "LifecycleHashAfter": "82B093C851157C098EC990D6E43B0FDA11FC5A25CC571D952F515DFA4E090E44",
+    "FoundationRegistry": "Retained controlled fixture; not a whole application process restart"
+  },
+  "invariants": [
+    "Recovered original and final native receipt equal first-scope originals exactly.",
+    "One native closure receipt and CLOSED status among three incident response rows; two lifecycle approvals and all persona tasks completed.",
+    "Native and lifecycle database files have identical SHA256 before/after reopened recovery, proving no stored-row replacement/repair or other file writes during that scope.",
+    "Earlier actual RCA/native intent/cause/verification/approval sequence and HSE permission revocation/restoration assertions remain part of the same selected fact."
+  ],
+  "construction": [
+    "Initial build used a nonexistent recovery.Lifecycle property; corrected to canonical recovery.Receipt before execution.",
+    "Final focused build and single exact test pass. No failed test run or broader suite was invoked for this checkpoint."
+  ],
+  "limits": [
+    "Controlled company registry/identity database is retained across the two scopes, as are metadata definitions and role callback fixtures. This proves editor/datasource/command-owner reopening in one test process, not whole app/process restart or persisted production registry/OIDC startup.",
+    "Connection snapshot is retained test data, not an executed ConfigEditor disk-save/load journey. Read-only source inspection confirms startup calls LoadDataConnectionsValues and setup probe copy includes GuidID; those source observations are not startup acceptance.",
+    "Earlier reporting/investigation/task progression and completion/operator/reference seeds retain previous fixture limitations.",
+    "No real-provider transport/commit acknowledgement fault, concurrent writer, other provider/public feed, production performance or regional/legal qualification.",
+    "No application source/schema change in this checkpoint, handwritten SQL, EF migration, compatibility owner, class/full/permit tests, commit or push. Overall goal remains active."
+  ],
+  "logs": [
+    {
+      "file": "oilgas-353-reopen-build.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reopen-build.log",
+      "sha256": "11b178ceebbd6af0904530c4d02fe3789904e7e3cc2d701c596ab80ef7dc906b"
+    },
+    {
+      "file": "oilgas-353-reopen-build-02.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reopen-build-02.log",
+      "sha256": "8d506fa4549602c422f4ea32f8251446bde71258925c3e2502b1a2b15ee992e8"
+    },
+    {
+      "file": "oilgas-353-reopen-01.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reopen-01.log",
+      "sha256": "407a70de0d8e515ad45582aad9b54e0cf6169994ab4b01535fcb717dbd123aa9"
+    }
+  ],
+  "sha256": {
+    "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs": "05262f69c4b4140905bc171178edad872c8602a6dfdce8d4bc126d55330eca52",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "d107d79418f01ee7845861b5c4424a3e9f5a06f04a5e6884b07461b6af633746",
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.RcaWrite.cs": "bf5d8fa93bef889e76ab6e12d5f28a97253dc8a0238e9c7344a60bd678db8d09",
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Closure.cs": "504ae5e673c3ef4b96c25c82f43f25c165d193e6368ae03f5e491acff884473a",
+    "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.HseClosure.cs": "52b5220b5311bb2b22e34bf5ada0036e5f6386817f753b8fc950402e83eb2ab8",
+    "Beep.OilandGas.LifeCycle/Services/Processes/IncidentReportingDefinition.cs": "ceae2eedddb6de1f69e142333e01db7b50a4e8140d7b9c3903ed0375410f1a9a",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "5f2e1c3a70424fb2aae3c181946a4c71f52256135001d63925e953117e721ac7"
+  },
+  "physical_files": [
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-47b15c7ea9d1402aa8d81737605a6562\\permits.db",
+      "bytes": 348160,
+      "sha256": "bc28939acbf16a55131ff21acec5803b0be98253576780da32affff3f1b9b4d4"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-47b15c7ea9d1402aa8d81737605a6562\\lifecycle.db",
+      "bytes": 258048,
+      "sha256": "82b093c851157c098ec990d6e43b0fda11fc5a25cc571d952f515dfa4e090e44"
+    }
+  ]
+}

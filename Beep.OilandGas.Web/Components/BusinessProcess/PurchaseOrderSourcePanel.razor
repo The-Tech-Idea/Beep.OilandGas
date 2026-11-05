@@ -1,0 +1,125 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@if(Review?.Detail is {} order)
+{
+    <MudPaper Outlined="true" Class="pa-4">
+        <MudText Typo="Typo.h6">Recorded purchase-order header</MudText>
+        <MudText>Order: @order.Id · Number: @(string.IsNullOrWhiteSpace(order.Number) ? "Unavailable" : order.Number)</MudText>
+        <MudText>Supplier: @(string.IsNullOrWhiteSpace(order.VendorId) ? "Unavailable" : order.VendorId) · Status: @(string.IsNullOrWhiteSpace(order.Status) ? "Unavailable" : order.Status)</MudText>
+        <MudText>Order date: @(order.OrderDate?.ToString("O") ?? "Unavailable") · Expected delivery: @(order.ExpectedDeliveryDate?.ToString("O") ?? "Unavailable")</MudText>
+        <MudText>@order.Description</MudText>
+        <MudText>Recorded amount: @order.RecordedAmount.ToString("G",System.Globalization.CultureInfo.InvariantCulture) · Currency: @(string.IsNullOrWhiteSpace(order.CurrencyCode) ? "unavailable" : order.CurrencyCode)</MudText>
+        <MudText>Recorded by: @(string.IsNullOrWhiteSpace(order.RecordedBy) ? "Unavailable" : order.RecordedBy)</MudText>
+        <MudAlert Severity="Severity.Info">Received quantity and receipt status alone do not establish accepted received goods, stock, invoice matching, payment or independent approval. Currency and unit codes are recorded source values; catalog validity, conversions and warehouse/location evidence remain unconfirmed. Quantities and amounts are shown without comparison or aggregation.</MudAlert>
+        @if(Review.Lines is {} lines)
+        {
+            <MudText Typo="Typo.h6" Class="mt-4">Recorded purchase-order lines</MudText>
+            @if(lines.Count==0){<MudAlert Severity="Severity.Info">No recorded lines were returned for this order.</MudAlert>}
+            else
+            {
+                <MudTable T="PurchaseOrderWorkspaceState.LineItem" Items="lines" Dense="true">
+                    <HeaderContent><MudTh>Line</MudTh><MudTh>Description</MudTh><MudTh>Quantity</MudTh><MudTh>Unit</MudTh><MudTh>Unit price</MudTh><MudTh>Line amount</MudTh><MudTh>Active indicator</MudTh></HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Line">@context.Id · @(context.Number?.ToString() ?? "Unavailable")<MudText>Recorded inventory item: @Text(context.InventoryItemId)</MudText>
+                            @if(context.Preparation is {} prepared)
+                            {<MudText>Verified inventory-link preparation: @prepared.Target · Prepared by @prepared.Actor · @prepared.RecordedAt.ToString("O") · @prepared.Reason</MudText>
+                                @if(context.InventoryDecision is null){<MudText>Independent approval and target assignment remain unconfirmed.</MudText>}}
+                            else if(context.HasPreparationEvidence){<MudText>Inventory-link preparation evidence is unconfirmed. Review the original retained intent.</MudText>}
+                            @if(context.InventoryDecision is {} decision)
+                            {<MudText>Verified inventory-link decision: @decision.Decision · Target: @decision.Target · Reviewer: @decision.Actor · @decision.RecordedAt.ToString("O") · @decision.Reason</MudText><MudText>Stock movement and financial posting remain unconfirmed.</MudText>}
+                            else if(context.HasDecisionEvidence){<MudText>Independent inventory-link decision evidence is unconfirmed.</MudText>}
+                        </MudTd>
+                        <MudTd DataLabel="Description">@context.Description</MudTd><MudTd DataLabel="Quantity">@Amount(context.Quantity)</MudTd><MudTd DataLabel="Unit">@Text(context.QuantityUnit)</MudTd>
+                        <MudTd DataLabel="Unit price">@Amount(context.UnitPrice)</MudTd><MudTd DataLabel="Line amount">@Amount(context.LineTotal)</MudTd><MudTd DataLabel="Active indicator">@Text(context.ActiveIndicator)</MudTd>
+                    </RowTemplate><PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+            }
+        }
+        @if(Review.Receipts is {} receipts)
+        {
+            <MudText Typo="Typo.h6" Class="mt-4">Recorded receipt history (active and inactive)</MudText>
+            <MudText>Receiver and warehouse evidence queues for this order</MudText>
+            <MudText>Receipt counts use this reviewed order only. A receipt with both accepted and rejected goods appears in both queues. Quantities are not summed across units.</MudText>
+            <MudSelect T="PurchaseOrderWorkspaceState.ReceivingQueue" Value="Review.ReceiptFilter" ValueChanged="ReceiptQueueChanged" Label="Receiving evidence queue">
+                <MudSelectItem T="PurchaseOrderWorkspaceState.ReceivingQueue" Value="PurchaseOrderWorkspaceState.ReceivingQueue.All">All recorded receipts (@Review.ReceiptCount(PurchaseOrderWorkspaceState.ReceivingQueue.All))</MudSelectItem>
+                <MudSelectItem T="PurchaseOrderWorkspaceState.ReceivingQueue" Value="PurchaseOrderWorkspaceState.ReceivingQueue.NeedsDecision">Active receipts needing a verified decision (@Review.ReceiptCount(PurchaseOrderWorkspaceState.ReceivingQueue.NeedsDecision))</MudSelectItem>
+                <MudSelectItem T="PurchaseOrderWorkspaceState.ReceivingQueue" Value="PurchaseOrderWorkspaceState.ReceivingQueue.Accepted">Active receipts with accepted goods (@Review.ReceiptCount(PurchaseOrderWorkspaceState.ReceivingQueue.Accepted))</MudSelectItem>
+                <MudSelectItem T="PurchaseOrderWorkspaceState.ReceivingQueue" Value="PurchaseOrderWorkspaceState.ReceivingQueue.Rejected">Active receipts with rejected goods (@Review.ReceiptCount(PurchaseOrderWorkspaceState.ReceivingQueue.Rejected))</MudSelectItem>
+                <MudSelectItem T="PurchaseOrderWorkspaceState.ReceivingQueue" Value="PurchaseOrderWorkspaceState.ReceivingQueue.InactiveOrUnconfirmed">Inactive or unconfirmed active indicator (@Review.ReceiptCount(PurchaseOrderWorkspaceState.ReceivingQueue.InactiveOrUnconfirmed))</MudSelectItem>
+            </MudSelect>
+            <MudAlert Severity="Severity.Info">Accepted goods provide receipt evidence for downstream review. Rejected goods need disposition review. Warehouse/location, stock movement and supplier return evidence remain unconfirmed.</MudAlert>
+            @if(receipts.Count==0){<MudAlert Severity="Severity.Info">No recorded receipts were returned for this order. Stock and receiving completion are unconfirmed.</MudAlert>}
+            else if(Review.VisibleReceipts?.Count==0){<MudAlert Severity="Severity.Info">No receipts match this evidence queue on the reviewed order.</MudAlert>}
+            else
+            {
+                <MudTable T="PurchaseOrderWorkspaceState.ReceiptItem" Items="Review.VisibleReceipts" Dense="true">
+                    <HeaderContent><MudTh>Receipt / line</MudTh><MudTh>Date / quantity</MudTh><MudTh>Receiver / status</MudTh><MudTh>Receiver decision</MudTh><MudTh>Description / active indicator</MudTh><MudTh>Recorded / changed</MudTh></HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Receipt / line">
+                            @context.Id · Line: @context.LineId · @(context.LineNumber?.ToString() ?? "Unavailable")
+                            @if(OnReviewReceipt.HasDelegate && context.ActiveIndicator=="Y" && context.Decision is null)
+                            {<MudButton OnClick="@(()=>OnReviewReceipt.InvokeAsync(context.Id))" Disabled="ReceivingDisabled" Size="Size.Small">Review receiver decision</MudButton>}
+                            @if(OnReviewInventory.HasDelegate && context.ActiveIndicator=="Y" && context.Decision is not null)
+                            {<MudButton OnClick="@(()=>OnReviewInventory.InvokeAsync(context.Id))" Disabled="InventoryDisabled" Size="Size.Small">Review receipt inventory linkage</MudButton>}
+                        </MudTd>
+                        <MudTd DataLabel="Date / quantity">@(context.ReceiptDate?.ToString("O") ?? "Unavailable") · @Amount(context.Quantity) · Unit: @(string.IsNullOrWhiteSpace(context.QuantityUnit) ? "unavailable" : context.QuantityUnit)</MudTd>
+                        <MudTd DataLabel="Receiver / status">@Text(context.ReceivedBy) · @Text(context.Status)</MudTd>
+                        <MudTd DataLabel="Receiver decision">
+                            @if(context.Decision is {} decision)
+                            {
+                                <MudText>Verified accepted: @Amount(decision.Accepted) · Rejected: @Amount(decision.Rejected) · Unit: @Text(context.QuantityUnit)</MudText>
+                                <MudText>Decision by: @decision.Actor · @decision.RecordedAt.ToString("O")</MudText>
+                                <MudText>@decision.Reason</MudText>
+                            }
+                            else{<MudText>Receiver decision unavailable or unconfirmed. Received quantity and status do not establish acceptance.</MudText>}
+                        </MudTd>
+                        <MudTd DataLabel="Description / active indicator">@context.Description · Active indicator: @Text(context.ActiveIndicator)</MudTd>
+                        <MudTd DataLabel="Recorded / changed">@Text(context.RecordedBy) · @(context.RecordedAt?.ToString("O") ?? "Unavailable") · Changed: @Text(context.ChangedBy) · @(context.ChangedAt?.ToString("O") ?? "Unavailable")</MudTd>
+                    </RowTemplate><PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+            }
+        }
+        <MudText Typo="Typo.caption">Source content review: @Review.SourceRevision</MudText>
+    </MudPaper>
+}
+else if(Review?.Rows is {} rows)
+{
+    <MudText Typo="Typo.h6">Recorded company purchase-order queue</MudText>
+    <MudText>Supplier restriction: @(Review.SupplierFilter ?? "All suppliers") · Recorded active orders: @rows.Count · Showing: @(Review.VisibleRows?.Count ?? 0)</MudText>
+    <MudAlert Severity="Severity.Info">Counts cover this returned company query. Recorded status does not verify approval, receipt completion, inventory availability or invoice matching.</MudAlert>
+    @if(rows.Count>0)
+    {
+        <MudSelect T="string" Value='@(Review.StatusFilter ?? "")' ValueChanged="StatusChanged" Label="Recorded order status">
+            <MudSelectItem T="string" Value="@string.Empty">All recorded statuses (including unavailable)</MudSelectItem>
+            @foreach(var status in Review.RecordedStatuses){<MudSelectItem T="string" Value="@status">@status</MudSelectItem>}
+        </MudSelect>
+    }
+    @if(rows.Count==0){<MudAlert Severity="Severity.Info">No company-owned purchase orders were returned for this query. Orders without reviewed company ownership are outside this result.</MudAlert>}
+    else
+    {
+        <MudTable T="PurchaseOrderWorkspaceState.Item" Items="Review.VisibleRows" Dense="true" Hover="true">
+            <HeaderContent><MudTh>Order</MudTh><MudTh>Supplier</MudTh><MudTh>Status</MudTh><MudTh>Order date / expected delivery</MudTh><MudTh>Recorded amount / currency</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order"><MudLink Href="@context.Route">@(string.IsNullOrWhiteSpace(context.Number) ? context.Id : context.Number)</MudLink></MudTd>
+                <MudTd DataLabel="Supplier">@context.VendorId</MudTd><MudTd DataLabel="Status">@(string.IsNullOrWhiteSpace(context.Status) ? "Unavailable" : context.Status)</MudTd>
+                <MudTd DataLabel="Order date / expected delivery">@(context.OrderDate?.ToString("O") ?? "Unavailable") · Expected delivery: @(context.ExpectedDeliveryDate?.ToString("O") ?? "Unavailable")</MudTd>
+                <MudTd DataLabel="Recorded amount / currency">@Amount(context.RecordedAmount) · @Text(context.CurrencyCode)</MudTd>
+            </RowTemplate>
+            <PagerContent><MudTablePager /></PagerContent>
+        </MudTable>
+    }
+}
+else {<MudAlert Severity="Severity.Info">No company-owned purchase-order source is confirmed. Select a company and review an explicit supplier or order.</MudAlert>}
+@if(Review?.RetrievedAtUtc is {} retrieved){<MudText Typo="Typo.caption">Retrieved: @retrieved.ToString("O")</MudText>}
+@code{
+    [Microsoft.AspNetCore.Components.Parameter] public PurchaseOrderWorkspaceState? Review {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public EventCallback<string> OnReviewReceipt {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool ReceivingDisabled {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public EventCallback<string> OnReviewInventory {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool InventoryDisabled {get;set;}
+    private void StatusChanged(string status)=>Review?.SetStatusFilter(string.IsNullOrEmpty(status)?null:status);
+    private void ReceiptQueueChanged(PurchaseOrderWorkspaceState.ReceivingQueue queue)=>Review?.SetReceiptFilter(queue);
+    private static string Amount(decimal? value)=>value?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable";
+    private static string Text(string? value)=>string.IsNullOrWhiteSpace(value)?"Unavailable":value;
+}

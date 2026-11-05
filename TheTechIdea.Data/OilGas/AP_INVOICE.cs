@@ -1,0 +1,118 @@
+#nullable disable
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data;
+
+namespace Beep.OilandGas.Models.Data.ProductionAccounting
+{
+    public partial class AP_INVOICE : ModelEntityBase {
+#nullable enable
+        private string? VARIANCE_PROPOSAL_JSONValue;
+        [System.ComponentModel.DataAnnotations.MaxLength(32768)]
+        public string? VARIANCE_PROPOSAL_JSON { get => VARIANCE_PROPOSAL_JSONValue; set => SetProperty(ref VARIANCE_PROPOSAL_JSONValue,value); }
+        private string? VARIANCE_DECISION_JSONValue;
+        [System.ComponentModel.DataAnnotations.MaxLength(65536)]
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public string? VARIANCE_DECISION_JSON { get => VARIANCE_DECISION_JSONValue; set => SetProperty(ref VARIANCE_DECISION_JSONValue,value); }
+        private string? CORRECTION_HISTORY_JSONValue;
+        [System.ComponentModel.DataAnnotations.MaxLength(262144)]
+        [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public string? CORRECTION_HISTORY_JSON { get => CORRECTION_HISTORY_JSONValue; set => SetProperty(ref CORRECTION_HISTORY_JSONValue,value); }
+#nullable disable
+#nullable enable
+        private string? OWNER_TENANT_IDValue;
+        [System.ComponentModel.DataAnnotations.MaxLength(64)]
+        public string? OWNER_TENANT_ID { get => OWNER_TENANT_IDValue; set => SetProperty(ref OWNER_TENANT_IDValue,value); }
+#nullable disable
+
+#nullable enable
+        private string? OWNER_COMPANY_BA_IDValue;
+        [System.ComponentModel.DataAnnotations.MaxLength(128)]
+        public string? OWNER_COMPANY_BA_ID { get => OWNER_COMPANY_BA_IDValue; set => SetProperty(ref OWNER_COMPANY_BA_IDValue,value); }
+#nullable disable
+
+#nullable enable
+        private string? CURRENCY_CODEValue;
+        [System.ComponentModel.DataAnnotations.MaxLength(32)]
+        public string? CURRENCY_CODE { get => CURRENCY_CODEValue; set => SetProperty(ref CURRENCY_CODEValue,value); }
+#nullable disable
+
+        private System.String AP_INVOICE_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
+        public System.String AP_INVOICE_ID
+        {
+            get { return this.AP_INVOICE_IDValue; }
+            set { SetProperty(ref AP_INVOICE_IDValue, value); }
+        }
+
+        private System.String INVOICE_NUMBERValue;
+        public System.String INVOICE_NUMBER
+        {
+            get { return this.INVOICE_NUMBERValue; }
+            set { SetProperty(ref INVOICE_NUMBERValue, value); }
+        }
+
+        private System.String VENDOR_BA_IDValue;
+        public System.String VENDOR_BA_ID
+        {
+            get { return this.VENDOR_BA_IDValue; }
+            set { SetProperty(ref VENDOR_BA_IDValue, value); }
+        }
+
+        private System.DateTime? INVOICE_DATEValue;
+        public System.DateTime? INVOICE_DATE
+        {
+            get { return this.INVOICE_DATEValue; }
+            set { SetProperty(ref INVOICE_DATEValue, value); }
+        }
+
+        private System.DateTime? DUE_DATEValue;
+        public System.DateTime? DUE_DATE
+        {
+            get { return this.DUE_DATEValue; }
+            set { SetProperty(ref DUE_DATEValue, value); }
+        }
+
+        private System.Decimal? TOTAL_AMOUNTValue;
+        public System.Decimal? TOTAL_AMOUNT
+        {
+            get { return this.TOTAL_AMOUNTValue; }
+            set { SetProperty(ref TOTAL_AMOUNTValue, value); }
+        }
+
+        private System.Decimal? PAID_AMOUNTValue;
+        public System.Decimal? PAID_AMOUNT
+        {
+            get { return this.PAID_AMOUNTValue; }
+            set { SetProperty(ref PAID_AMOUNTValue, value); }
+        }
+
+        private System.Decimal? BALANCE_DUEValue;
+        public System.Decimal? BALANCE_DUE
+        {
+            get { return this.BALANCE_DUEValue; }
+            set { SetProperty(ref BALANCE_DUEValue, value); }
+        }
+
+        private System.String STATUSValue;
+        public System.String STATUS
+        {
+            get { return this.STATUSValue; }
+            set { SetProperty(ref STATUSValue, value); }
+        }
+
+        // Standard PPDM columns
+
+        private System.String REMARKValue;
+
+        private System.String SOURCEValue;
+
+        private System.String ROW_IDValue;
+        public System.String ROW_ID
+        {
+            get { return this.ROW_IDValue; }
+            set { SetProperty(ref ROW_IDValue, value); }
+        }
+    }
+}

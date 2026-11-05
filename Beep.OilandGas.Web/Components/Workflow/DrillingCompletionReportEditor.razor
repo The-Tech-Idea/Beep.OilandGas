@@ -1,0 +1,60 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+<MudPaper Outlined="true" Class="pa-3 my-3">
+    <MudText Typo="Typo.h6" HtmlTag="h3">Report completed work and supporting tests</MudText>
+    <MudAlert Severity="Severity.Info">Use the actual completion time and the supporting references you inspected. Results remain reported evidence pending independent acceptance.</MudAlert>
+    <MudTextField T="string" Label="Actual completion UTC" @bind-Value="completedAt" Required="true" Disabled="Disabled" HelperText="Explicit completed event with Z or +00:00, at or after the latest observed period end." />
+    <MudTextField T="string" Label="Work reported complete" @bind-Value="workCompleted" Required="true" Lines="3" MaxLength="1600" Disabled="Disabled" />
+    @for (var index = 0; index < tests.Count; index++)
+    {
+        var position = index + 1; var test = tests[index];
+        <MudPaper @key="test" Outlined="true" Class="pa-3 my-3">
+            <MudText Typo="Typo.subtitle1">Supporting test @position</MudText>
+            <MudTextField T="string" Label="@($"Test type {position}")" @bind-Value="test.Type" Required="true" MaxLength="128" Disabled="Disabled" />
+            <MudTextField T="string" Label="@($"Test reference {position}")" @bind-Value="test.Reference" Required="true" MaxLength="1600" Disabled="Disabled" HelperText="Exact report, certificate or site-log reference. A reference alone is not independent verification." />
+            <MudTextField T="string" Label="@($"Test performed UTC {position}")" @bind-Value="test.At" Required="true" Disabled="Disabled" HelperText="Actual performed UTC with Z or +00:00; no future date." />
+            <MudSelect T="string" Label="@($"Reported result for test {position}")" @bind-Value="test.Result" Required="true" Disabled="Disabled">
+                <MudSelectItem T="string" Value='@("REPORTED_PASS")'>Pass (reported)</MudSelectItem>
+                <MudSelectItem T="string" Value='@("REPORTED_FAIL")'>Fail (reported)</MudSelectItem>
+                <MudSelectItem T="string" Value='@("INCONCLUSIVE")'>Inconclusive (reported)</MudSelectItem>
+            </MudSelect>
+            <MudTextField T="string" Label="@($"Test provenance {position}")" @bind-Value="test.Provenance" Required="true" MaxLength="1600" Disabled="Disabled" />
+            <MudTextField T="string" Label="@($"Test result notes {position}")" @bind-Value="test.Notes" Required="true" Lines="2" MaxLength="1600" Disabled="Disabled" />
+            <MudButton OnClick="@(() => tests.Remove(test))" Disabled="@(Disabled || tests.Count == 1)" Variant="Variant.Outlined">Remove supporting test @position</MudButton>
+        </MudPaper>
+    }
+    <MudButton OnClick="@(() => tests.Add(new()))" Disabled="@(Disabled || tests.Count >= 64)" Variant="Variant.Outlined">Add supporting test</MudButton>
+    <MudTextField T="string" Label="Known outstanding work and defects" @bind-Value="outstanding" Lines="3" Disabled="Disabled" HelperText="One item per line. Leave empty only after explicitly reviewing and declaring that no items are known." />
+    <MudCheckBox T="bool" @bind-Value="reviewed" Disabled="Disabled" Label="I have explicitly reviewed and listed all known outstanding work and defects" />
+</MudPaper>
+@code {
+    [Parameter, EditorRequired] public string TargetId { get; set; } = "";
+    [Parameter] public DrillingCompletionReport? Initial { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    private string? loadedTarget;
+    private string completedAt = "", workCompleted = "", outstanding = "";
+    private bool reviewed;
+    private List<TestDraft> tests = [new()];
+    private sealed class TestDraft { public string Type = "", Reference = "", At = "", Result = "", Provenance = "", Notes = ""; }
+    protected override void OnParametersSet()
+    {
+        if (loadedTarget == TargetId) return; loadedTarget = TargetId;
+        completedAt = Initial?.CompletedAtUtc.ToString("O") ?? ""; workCompleted = Initial?.WorkCompleted ?? "";
+        outstanding = Initial is null ? "" : string.Join(Environment.NewLine, Initial.OutstandingItems); reviewed = Initial?.OutstandingItemsReviewed ?? false;
+        tests = Initial is null ? [new()] : Initial.Tests.Select(test => new TestDraft { Type = test.TestType, Reference = test.Reference,
+            At = test.TestedAtUtc.ToString("O"), Result = test.ReportedResult, Provenance = test.Provenance, Notes = test.ResultNotes }).ToList();
+    }
+    public DrillingCompletionReport Create(DateTimeOffset spud, DateTimeOffset observedEnd)
+    {
+        if (!ExplicitUtcInput.TryParse(completedAt, out var completed)) throw new InvalidOperationException("Enter actual completion UTC with Z or +00:00.");
+        var references = tests.Select(test =>
+        {
+            if (!ExplicitUtcInput.TryParse(test.At, out var at)) throw new InvalidOperationException("Enter each performed test UTC with Z or +00:00.");
+            return new DrillingCompletionTestReference(test.Type.Trim(), test.Reference.Trim(), new(at), test.Result, test.Provenance.Trim(), test.Notes.Trim());
+        }).ToArray();
+        var result = new DrillingCompletionReport(new(completed), workCompleted.Trim(), references,
+            outstanding.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).Select(value => value.Trim()).Where(value => value.Length > 0).ToArray(), reviewed);
+        result.Require(spud, observedEnd, DateTimeOffset.UtcNow); return result;
+    }
+}

@@ -30,36 +30,6 @@ public sealed partial class FacilityManagementService
         return (await repo.GetAsync(filters)).Cast<FACILITY_EQUIPMENT>().OrderBy(e => e.INSTALL_OBS_NO).ToList();
     }
 
-    public async Task<FACILITY_EQUIPMENT> LinkEquipmentToFacilityAsync(string facilityId, string? facilityType, string equipmentId, string userId, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(equipmentId)) throw RefusalException.Invalid("Equipment ID is required.");
-        var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false)
-                ?? throw RefusalException.NotFound("Facility not found.");
-
-        var repo = await RepoAsync<FACILITY_EQUIPMENT>("FACILITY_EQUIPMENT");
-        var existing = (await repo.GetAsync(new List<AppFilter>
-        {
-            new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = f.FACILITY_ID },
-            new AppFilter { FieldName = "FACILITY_TYPE", Operator = "=", FilterValue = f.FACILITY_TYPE },
-            new AppFilter { FieldName = "EQUIPMENT_ID", Operator = "=", FilterValue = equipmentId },
-            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-        })).Cast<FACILITY_EQUIPMENT>().ToList();
-
-        var nextObs = existing.Count == 0 ? 1m : existing.Max(x => x.INSTALL_OBS_NO) + 1m;
-        var row = new FACILITY_EQUIPMENT
-        {
-            FACILITY_ID = f.FACILITY_ID,
-            FACILITY_TYPE = f.FACILITY_TYPE,
-            EQUIPMENT_ID = equipmentId,
-            INSTALL_OBS_NO = nextObs,
-            ACTIVE_IND = "Y",
-            EFFECTIVE_DATE = DateTime.UtcNow.Date
-        };
-        if (row is IPPDMEntity e)
-            _commonColumnHandler.PrepareForInsert(e, userId);
-        return (await repo.InsertAsync(row, userId) as FACILITY_EQUIPMENT)!;
-    }
-
     public async Task<IReadOnlyList<FACILITY_MAINTAIN>> ListFacilityMaintenanceAsync(string facilityId, string? facilityType, DateTime? startDate, DateTime? endDate, CancellationToken cancellationToken = default)
     {
         var f = await ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken).ConfigureAwait(false);

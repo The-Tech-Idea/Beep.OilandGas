@@ -11,6 +11,9 @@ public interface IWorkOrderService
     Task<List<WorkOrderSummary>> GetByFieldAsync(
         string fieldId, string? state = null, string? woSubType = null);
 
+    /// <summary>Returns a bounded sample of recorded FIELD orders, not a complete population.</summary>
+    Task<List<WorkOrderSummary>> GetByFieldSampleAsync(string fieldId, int limit, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Transition the work order to a new state, enforcing guards.
     /// </summary>

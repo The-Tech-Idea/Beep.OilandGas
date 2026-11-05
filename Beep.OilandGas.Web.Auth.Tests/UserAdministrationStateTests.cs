@@ -34,7 +34,7 @@ public class UserAdministrationStateTests
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.example") };
         var page = new UsersPage();
         typeof(UsersPage).GetProperty("Accounts", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(page, new UserAdministrationClient(new ApiClient(http, new RecordingFailureReporter())));
+            .SetValue(page, new UserAdministrationClient(new ApiClient(http, new RecordingFailureReporter(), TestCompany.Selected())));
         var user = new RepositoryUserSummary("user", "user", null, "Name", true, "version");
         Field("_users").SetValue(page, new List<RepositoryUserSummary> { user });
         Field("_selected").SetValue(page, user);

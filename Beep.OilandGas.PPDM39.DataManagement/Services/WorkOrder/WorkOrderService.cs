@@ -2,7 +2,8 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
@@ -22,7 +23,8 @@ public class WorkOrderService : IWorkOrderService
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository _metadata;
     private readonly IInspectionService      _inspection;
-    private readonly string                  _connectionName;
+    private readonly Func<string,string,string?,string?,Task> _requireCreateAccess;
+    private readonly WorkOrderDatabaseBinding _database;
     private readonly ILogger<WorkOrderService> _logger;
 
     public WorkOrderService(
@@ -31,171 +33,175 @@ public class WorkOrderService : IWorkOrderService
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
         IInspectionService inspection,
-        string connectionName,
-        ILogger<WorkOrderService> logger)
+        Func<Task<(CompanyScope Company,string Actor,AssetDatabaseScope Database)>> resolveDatabase,
+        ILogger<WorkOrderService> logger,
+        Func<string,string,string?,string?,Task> requireCreateAccess)
     {
         _editor              = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults            = defaults;
         _metadata            = metadata;
         _inspection          = inspection;
-        _connectionName      = connectionName;
+        _database = new(resolveDatabase ?? throw new ArgumentNullException(nameof(resolveDatabase)));
         _logger              = logger;
+        _requireCreateAccess=requireCreateAccess ?? throw new ArgumentNullException(nameof(requireCreateAccess));
     }
 
     // ── CREATE ───────────────────────────────────────────────────────────────
 
     public async Task<WorkOrderSummary> CreateAsync(CreateWorkOrderRequest request, string userId)
     {
-        _logger.LogInformation("Creating work order {Name} type {Type} for field {Field}",
-            request.InstanceName, request.WoSubType, request.FieldId);
-        try
+        var id=Guid.NewGuid().ToString("N");
+        var prepared=RecordedWorkOrderCreation.Prepare(request,userId,id,DateTime.UtcNow);
+        var connection=await _database.RequireAsync(userId);
+        await _requireCreateAccess(userId,request.FieldId,request.EquipmentId,request.WellId);
+        var headerRepo=await BuildRepoAsync(typeof(Beep.OilandGas.PPDM39.Models.WORK_ORDER),"WORK_ORDER");
+        var componentRepo=await BuildRepoAsync(typeof(Beep.OilandGas.PPDM39.Models.WORK_ORDER_COMPONENT),"WORK_ORDER_COMPONENT");
+        var fieldRepo=await BuildRepoAsync(typeof(Beep.OilandGas.PPDM39.Models.FIELD),"FIELD");
+        var fieldFilters=new List<AppFilter>{new(){FieldName="FIELD_ID",Operator="=",FilterValue=request.FieldId},new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
+        var fields=(await _database.ReadAsync(()=>fieldRepo.GetAsync(fieldFilters))).ToList();
+        if(fields.Count!=1 || fields[0] is not Beep.OilandGas.PPDM39.Models.FIELD field || field.FIELD_ID!=request.FieldId)
+            throw RefusalException.Conflict("The recorded FIELD reference is unavailable or ambiguous.");
+        var typeRepo=await BuildRepoAsync(typeof(Beep.OilandGas.PPDM39.Models.R_WO_TYPE),"R_WO_TYPE");
+        var typeFilters=new List<AppFilter>{new(){FieldName="WORK_ORDER_TYPE",Operator="=",FilterValue=request.WoSubType},new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
+        var types=(await _database.ReadAsync(()=>typeRepo.GetAsync(typeFilters))).ToList();
+        if(types.Count!=1 || types[0] is not Beep.OilandGas.PPDM39.Models.R_WO_TYPE type || type.WORK_ORDER_TYPE!=request.WoSubType)
+            throw RefusalException.Conflict("Choose an existing active recorded work-order type. No type is seeded automatically.");
+        PPDMGenericRepository? wellRepo=null;
+        List<AppFilter>? wellFilters=null;
+        if(!string.IsNullOrWhiteSpace(request.WellId))
         {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT");
-
-            var instanceId = Guid.NewGuid().ToString("N").ToUpperInvariant()[..20];
-            dynamic entity = Activator.CreateInstance(entityType!)!;
-            entity.PROJECT_ID       = instanceId;
-            entity.FIELD_ID         = request.FieldId;
-            entity.PROJECT_TYPE     = "WORK_ORDER";
-            entity.WO_SUBTYPE       = request.WoSubType;
-            entity.PROJECT_NAME     = request.InstanceName;
-            entity.PROJECT_DESC     = request.Description;
-            entity.EQUIPMENT_ID     = request.EquipmentId;
-            entity.JURISDICTION     = request.Jurisdiction;
-            entity.PROJECT_STATUS   = WorkOrderState.Draft;
-            entity.ACTIVE_IND       = "Y";
-
-            await repo.InsertAsync(entity, userId);
-
-            // Seed inspection checklist when WO is created in PLANNED state
-            if (request.ProposedStart.HasValue)
-                await _inspection.SeedChecklistAsync(
-                    instanceId, request.WoSubType, request.Jurisdiction, userId);
-
-            _logger.LogInformation("Work order {InstanceId} created", instanceId);
-            return MapToSummary(entity, instanceId);
+            wellRepo=await BuildRepoAsync(typeof(Beep.OilandGas.PPDM39.Models.WELL),"WELL");
+            wellFilters=[new(){FieldName="UWI",Operator="=",FilterValue=request.WellId},new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}];
         }
-        catch (Exception ex)
+        var source=_editor.GetDataSource(connection) ?? throw RefusalException.Conflict("The work-order provider is unavailable.");
+        WorkOrderSummary? readback=null;
+        await PPDMDataSourceTransaction.ExecuteAsync(source,async()=>
         {
-            _logger.LogError(ex, "Failed to create work order {Name}", request.InstanceName);
-            throw;
-        }
+            PPDMDataSourceTransaction.RequireOwned(source,System.Data.IsolationLevel.Serializable);
+            await _database.RequireAsync(userId);
+            await _requireCreateAccess(userId,request.FieldId,request.EquipmentId,request.WellId);
+            var currentFields=(await _database.ReadAsync(()=>fieldRepo.GetAsync(fieldFilters))).ToList();
+            if(currentFields.Count!=1 || currentFields[0] is not Beep.OilandGas.PPDM39.Models.FIELD currentField || currentField.FIELD_ID!=request.FieldId)
+                throw RefusalException.Conflict("The recorded FIELD changed before creation.");
+            var currentTypes=(await _database.ReadAsync(()=>typeRepo.GetAsync(typeFilters))).ToList();
+            if(currentTypes.Count!=1 || currentTypes[0] is not Beep.OilandGas.PPDM39.Models.R_WO_TYPE currentType || currentType.WORK_ORDER_TYPE!=request.WoSubType)
+                throw RefusalException.Conflict("The recorded work-order type changed before creation.");
+            if(wellRepo is not null)
+            {
+                var wells=(await _database.ReadAsync(()=>wellRepo.GetAsync(wellFilters!))).ToList();
+                RecordedWorkOrderCreation.RequireWellReference(request.WellId,wells);
+            }
+            var recorded=await ReadRecordedAsync(request.FieldId,null);
+            if(recorded.Any(row=>row.InstanceName==request.WorkOrderNumber))
+                throw RefusalException.Conflict("The recorded order number is already in use in this FIELD. Review before creating another header.");
+            await _database.RequireAsync(userId);
+            await headerRepo.InsertAsync(prepared.Header,userId);
+            await _database.RequireAsync(userId);
+            await _requireCreateAccess(userId,request.FieldId,request.EquipmentId,request.WellId);
+            await componentRepo.InsertAsync(prepared.Component,userId);
+            readback=await GetByIdAsync(request.FieldId,id);
+            RecordedWorkOrderCreation.RequireReadback(request,id,readback);
+            await _database.RequireAsync(userId);
+            await _requireCreateAccess(userId,request.FieldId,request.EquipmentId,request.WellId);
+        });
+        await _database.RequireAsync(userId);
+        await _requireCreateAccess(userId,request.FieldId,request.EquipmentId,request.WellId);
+        var committed=await GetByIdAsync(request.FieldId,id);
+        RecordedWorkOrderCreation.RequireReadback(request,id,committed);
+        return committed!;
     }
 
     // ── READ ─────────────────────────────────────────────────────────────────
 
     public async Task<WorkOrderDetailModel?> GetByIdAsync(string fieldId, string instanceId)
     {
-        var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
-        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT");
-
-        var filters = new List<AppFilter>
-        {
-            new() { FieldName = "PROJECT_ID",   Operator = "=", FilterValue = instanceId },
-            new() { FieldName = "FIELD_ID",     Operator = "=", FilterValue = fieldId    },
-            new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER"},
-            new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"        }
-        };
-        var rows = (await repo.GetAsync(filters)).ToList();
-        if (rows.Count == 0) return null;
-
-        dynamic row     = rows[0];
-        var detail      = new WorkOrderDetailModel();
-        MapDynamicToSummary(row, detail, instanceId);
-
-        // Load steps, checklist
-        detail.Steps     = await GetStepsAsync(instanceId);
-        detail.Checklist = await _inspection.GetChecklistAsync(instanceId);
-
-        return detail;
+        if(string.IsNullOrWhiteSpace(instanceId))throw RefusalException.Invalid("A recorded work-order identity is required.");
+        var rows=await ReadRecordedAsync(fieldId,instanceId);
+        if(rows.Count==0)return null;
+        var row=rows.Single();
+        return new WorkOrderDetailModel{InstanceId=row.InstanceId,InstanceName=row.InstanceName,FieldId=row.FieldId,
+            WoSubType=row.WoSubType,State=row.State,Source=row.Source,EvidenceUnavailableReason=row.EvidenceUnavailableReason,
+            Components=row.Components,RequestDate=row.RequestDate,DueDate=row.DueDate,ActualEnd=row.ActualEnd,Instructions=row.Instructions};
     }
 
-    public async Task<List<WorkOrderSummary>> GetByFieldAsync(
-        string fieldId, string? state = null, string? woSubType = null)
+    public async Task<List<WorkOrderSummary>> GetByFieldAsync(string fieldId,string? state=null,string? woSubType=null)
     {
-        var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
-        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT");
+        var rows=await ReadRecordedAsync(fieldId,null);
+        if(!string.IsNullOrWhiteSpace(woSubType))rows=rows.Where(x=>x.WoSubType==woSubType).ToList();
+        if(!string.IsNullOrWhiteSpace(state))throw RefusalException.Conflict("Recorded work-order headers do not establish workflow state. State filtering is unavailable until the workflow relationship is confirmed.");
+        return rows;
+    }
 
-        var filters = new List<AppFilter>
+    public async Task<List<WorkOrderSummary>> GetByFieldSampleAsync(string fieldId, int limit, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(fieldId) || limit is < 1 or > 20)
+            throw RefusalException.Invalid("Choose a FIELD and a sample limit between one and twenty.");
+        cancellationToken.ThrowIfCancellationRequested();
+        var connection = await _database.RequireAsync();
+        var source = _editor.GetDataSource(connection) ?? throw RefusalException.Conflict("The work-order provider is unavailable.");
+        var filters = new List<AppFilter> { new() { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" } };
+        var page = await _database.ReadAsync(() => PPDMDataSourceTransaction.WithSourceAsync(source,
+            () => Task.FromResult(source.GetEntity("WORK_ORDER_COMPONENT", filters, 1, limit + 1))));
+        cancellationToken.ThrowIfCancellationRequested();
+        if (page is null || page.Data is null || page.PageNumber != 1 || page.PageSize != limit + 1 ||
+            source.ErrorObject?.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Failed)
+            throw RefusalException.Conflict("The provider did not confirm a bounded work-order sample.");
+        var repo = new WorkOrderSampleRepository(_editor, _commonColumnHandler, _defaults, _metadata, connection);
+        var components = repo.Convert(page.Data).ToList();
+        if (components.Count > limit + 1) throw RefusalException.Conflict("The provider exceeded the work-order sample bound.");
+        RecordedWorkOrderRows.ValidateComponents(fieldId, components);
+        var result = new List<WorkOrderSummary>();
+        foreach (var id in components.Take(limit).Cast<Beep.OilandGas.PPDM39.Models.WORK_ORDER_COMPONENT>()
+                     .Select(row => row.WORK_ORDER_ID).Distinct(StringComparer.Ordinal))
         {
-            new() { FieldName = "FIELD_ID",     Operator = "=", FilterValue = fieldId      },
-            new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER" },
-            new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"          }
-        };
-        if (!string.IsNullOrWhiteSpace(state))
-            filters.Add(new AppFilter { FieldName = "PROJECT_STATUS", Operator = "=", FilterValue = state });
-        if (!string.IsNullOrWhiteSpace(woSubType))
-            filters.Add(new AppFilter { FieldName = "WO_SUBTYPE", Operator = "=", FilterValue = woSubType });
+            cancellationToken.ThrowIfCancellationRequested();
+            var rows = await ReadRecordedAsync(fieldId, id);
+            if (source.ErrorObject?.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Failed || rows.Count != 1 || rows[0].InstanceId != id)
+                throw RefusalException.Conflict("A sampled order is unavailable or changed.");
+            result.Add(rows[0]);
+        }
+        await _database.RequireAsync();
+        return result;
+    }
 
-        var rows = (await repo.GetAsync(filters)).ToList();
-        return rows.Select(r =>
+    private sealed class WorkOrderSampleRepository(IDMEEditor editor, ICommonColumnHandler columns, IPPDM39DefaultsRepository defaults,
+        IPPDMMetadataRepository metadata, string connection) : PPDMGenericRepository(editor, columns, defaults, metadata,
+            typeof(Beep.OilandGas.PPDM39.Models.WORK_ORDER_COMPONENT), connection, "WORK_ORDER_COMPONENT",
+            requiredReadColumns: ["WORK_ORDER_ID", "COMPONENT_ID", "FIELD_ID", "ACTIVE_IND"])
+    {
+        public IEnumerable<object> Convert(object data) => ConvertToTypedList(data, typeof(Beep.OilandGas.PPDM39.Models.WORK_ORDER_COMPONENT));
+    }
+
+    private async Task<List<WorkOrderSummary>> ReadRecordedAsync(string field,string? id)
+    {
+        if(string.IsNullOrWhiteSpace(field))throw RefusalException.Invalid("A confirmed FIELD is required.");
+        var componentsRepo=await BuildRepoAsync(typeof(Beep.OilandGas.PPDM39.Models.WORK_ORDER_COMPONENT),"WORK_ORDER_COMPONENT", ["WORK_ORDER_ID", "COMPONENT_ID", "FIELD_ID", "ACTIVE_IND"]);
+        var filters=new List<AppFilter>{new(){FieldName="FIELD_ID",Operator="=",FilterValue=field},new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
+        if(id is not null)filters.Add(new(){FieldName="WORK_ORDER_ID",Operator="=",FilterValue=id});
+        var components=(await _database.ReadAsync(()=>componentsRepo.GetAsync(filters))).ToList();
+        RecordedWorkOrderRows.ValidateComponents(field,components);
+        var headersRepo=await BuildRepoAsync(typeof(Beep.OilandGas.PPDM39.Models.WORK_ORDER),"WORK_ORDER", ["WORK_ORDER_ID", "ACTIVE_IND"]);
+        var headers=new List<object>();
+        foreach(var key in components.Cast<Beep.OilandGas.PPDM39.Models.WORK_ORDER_COMPONENT>().Select(x=>x.WORK_ORDER_ID).Distinct(StringComparer.Ordinal))
         {
-            dynamic d = r;
-            var s = new WorkOrderSummary();
-            MapDynamicToSummary(d, s, WorkOrderRowValues.Str(d, "PROJECT_ID"));
-            return s;
-        }).ToList();
+            var headerFilters=new List<AppFilter>{new(){FieldName="WORK_ORDER_ID",Operator="=",FilterValue=key},new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
+            var found=(await _database.ReadAsync(()=>headersRepo.GetAsync(headerFilters))).ToList();
+            if(found.Count!=1)throw RefusalException.Conflict("A recorded FIELD component has no unique active work-order header.");
+            headers.AddRange(found);
+        }
+        return RecordedWorkOrderRows.Project(field,components,headers);
     }
 
     // ── TRANSITION ───────────────────────────────────────────────────────────
 
     public async Task<WorkOrderSummary> TransitionStateAsync(
-        string fieldId, string instanceId, string toState,
-        string userId, string? notes = null)
+        string fieldId,string instanceId,string toState,string userId,string? notes=null)
     {
-        _logger.LogInformation("Transitioning WO {InstanceId} to {State}", instanceId, toState);
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT");
-
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "PROJECT_ID",   Operator = "=", FilterValue = instanceId  },
-                new() { FieldName = "FIELD_ID",     Operator = "=", FilterValue = fieldId     },
-                new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER"},
-                new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"         }
-            };
-            var rows = (await repo.GetAsync(filters)).ToList();
-            if (rows.Count == 0) throw RefusalException.NotFound($"Work order {instanceId} was not found in field {fieldId}.");
-
-            dynamic entity       = rows[0];
-            string  currentState = WorkOrderRowValues.Str(entity, "PROJECT_STATUS");
-            string  woSubType    = WorkOrderRowValues.Str(entity, "WO_SUBTYPE");
-
-            ValidateTransition(currentState, toState, woSubType);
-
-            entity.PROJECT_STATUS = toState;
-            if (toState == WorkOrderState.InProgress)
-                entity.ACTUAL_DATE = DateTime.UtcNow;
-            else if (toState == WorkOrderState.Completed)
-                entity.ACTUAL_END_DATE = DateTime.UtcNow;
-
-            await repo.UpdateAsync(entity, userId);
-
-            // Seed checklist on PLANNED transition
-            if (toState == WorkOrderState.Planned)
-            {
-                string jurisdiction = WorkOrderRowValues.Str(entity, "JURISDICTION");
-                if (string.IsNullOrWhiteSpace(jurisdiction)) jurisdiction = "USA";
-                await _inspection.SeedChecklistAsync(instanceId, woSubType, jurisdiction, userId);
-            }
-
-            var summary = new WorkOrderSummary();
-            MapDynamicToSummary(entity, summary, instanceId);
-            return summary;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to transition WO {InstanceId} to {State}", instanceId, toState);
-            throw;
-        }
+        await _database.RequireAsync(userId);
+        if(string.IsNullOrWhiteSpace(fieldId) || string.IsNullOrWhiteSpace(instanceId) || string.IsNullOrWhiteSpace(toState))throw RefusalException.Invalid("The original FIELD/order and explicit transition are required.");
+        throw RefusalException.Conflict("A native work-order header does not establish operational state. Use the controlled execution, verification and return workflow with its original approved evidence.");
     }
 
     // ── DELETE ───────────────────────────────────────────────────────────────
@@ -206,7 +212,8 @@ public class WorkOrderService : IWorkOrderService
         {
             var meta       = await _metadata.GetTableMetadataAsync("PROJECT");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT");
+            var repo       = await BuildRepoAsync(entityType, "PROJECT");
+            await _database.RequireAsync(userId);
             await repo.SoftDeleteAsync(instanceId, userId);
             _logger.LogInformation("Soft-deleted work order {InstanceId}", instanceId);
         }
@@ -219,42 +226,29 @@ public class WorkOrderService : IWorkOrderService
 
     // ── TRANSITIONS ──────────────────────────────────────────────────────────
 
-    public List<string> GetAvailableTransitions(string currentState, string woSubType)
-    {
-        // Safety-critical WOs add UNDER_REVIEW before COMPLETED
-        bool isSafety = woSubType == WorkOrderSubType.Safety;
-
-        return currentState switch
-        {
-            WorkOrderState.Draft       => new() { WorkOrderState.Scoped, WorkOrderState.Planned },
-            WorkOrderState.Scoped      => new() { WorkOrderState.Planned, WorkOrderState.Cancelled },
-            WorkOrderState.Planned     => new() { WorkOrderState.InProgress, WorkOrderState.Cancelled },
-            WorkOrderState.InProgress  => isSafety
-                ? new() { WorkOrderState.UnderReview, WorkOrderState.Cancelled }
-                : new() { WorkOrderState.Completed, WorkOrderState.Cancelled },
-            WorkOrderState.UnderReview => new() { WorkOrderState.Completed, WorkOrderState.InProgress },
-            _                          => new()
-        };
-    }
+    public List<string> GetAvailableTransitions(string currentState, string woSubType) =>
+        WorkOrderWorkflow.Available(currentState, woSubType);
 
     // ── PRIVATE HELPERS ───────────────────────────────────────────────────────
 
-    private PPDMGenericRepository BuildRepo(Type? entityType, string tableName) =>
-        new(_editor, _commonColumnHandler, _defaults, _metadata,
-            entityType, _connectionName, tableName);
+    private async Task<PPDMGenericRepository> BuildRepoAsync(Type? entityType, string tableName, IReadOnlyList<string>? requiredReadColumns = null)
+    {
+        var connection = await _database.RequireAsync();
+        return new(_editor, _commonColumnHandler, _defaults, _metadata, entityType, connection, tableName, requiredReadColumns: requiredReadColumns);
+    }
 
     private async Task<List<WorkOrderStep>> GetStepsAsync(string instanceId)
     {
         var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP");
         var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT_STEP");
+        var repo       = await BuildRepoAsync(entityType, "PROJECT_STEP");
 
         var filters = new List<AppFilter>
         {
             new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
             new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
         };
-        return (await repo.GetAsync(filters)).Select(r => new WorkOrderStep
+        return (await _database.ReadAsync(() => repo.GetAsync(filters))).Select(r => new WorkOrderStep
         {
             InstanceId  = instanceId,
             StepSeq     = WorkOrderRowValues.Int(r, "STEP_SEQ"),
@@ -289,14 +283,7 @@ public class WorkOrderService : IWorkOrderService
 
     private static void ValidateTransition(string from, string to, string woSubType)
     {
-        // Completed and Cancelled WOs cannot be transitioned further
-        if (from == WorkOrderState.Completed || from == WorkOrderState.Cancelled)
-            throw RefusalException.Conflict(
-                $"Work order in state '{from}' cannot be transitioned to '{to}'.");
-
-        // UNDER_REVIEW only valid for Safety-critical WOs
-        if (to == WorkOrderState.UnderReview && woSubType != WorkOrderSubType.Safety)
-            throw RefusalException.Conflict(
-                "UNDER_REVIEW state is only valid for Safety-Critical work orders [SEMS §250.1917].");
+        if (!WorkOrderWorkflow.Available(from, woSubType).Contains(to, StringComparer.Ordinal))
+            throw RefusalException.Conflict("The requested transition is not available from the recorded work-order state and subtype.");
     }
 }

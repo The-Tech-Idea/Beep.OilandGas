@@ -1,5 +1,7 @@
+using Beep.OilandGas.Models.Data.WorkOrder;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
@@ -27,7 +29,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Modules
         public override string ModuleId => "PPDM_CORE";
         public override string ModuleName => "PPDM Core References";
         public override int Order => 0;
-        public override IReadOnlyList<Type> EntityTypes => Array.Empty<Type>();
+        private static readonly IReadOnlyList<Type> CoreExtensions = Array.AsReadOnly(WorkOrderSchema.EntityTypes
+            .Concat(TheTechIdea.Data.OilGas.ProductionInterventionNativeSchema.EntityTypes)
+            .Append(typeof(TheTechIdea.Data.OilGas.HSE_INCIDENT_REPORT_INTENT))
+            .Append(typeof(TheTechIdea.Data.OilGas.HSE_INCIDENT_RCA_INTENT))
+            .Append(typeof(TheTechIdea.Data.OilGas.HSE_CA_VERIFICATION))
+            .Append(typeof(TheTechIdea.Data.OilGas.HSE_INCIDENT_CLOSURE)).ToArray());
+        public override IReadOnlyList<Type> EntityTypes => CoreExtensions;
 
         public override async Task<ModuleSetupResult> SeedAsync(
             string connectionName,

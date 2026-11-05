@@ -26,4 +26,20 @@
     <ProjectReference Include="..\Beep.OilandGas.ProspectIdentification\Beep.OilandGas.ProspectIdentification.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Same active guard evidence in normal API and bounded focused targets. -->
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs" Link="Infrastructure/CompanyPPDMTestFixture.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.cs" Link="CurrentFieldLifecycleGateTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyRetirementBoundaryTests.cs" Link="CompanyRetirementBoundaryTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyProductionBoundaryTests.cs" Link="CompanyProductionBoundaryTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyDevelopmentBoundaryTests.cs" Link="CompanyDevelopmentBoundaryTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyHseBoundaryTests.cs" Link="CompanyHseBoundaryTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyHseRowAccessTests.cs" Link="CompanyHseRowAccessTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyHazopAuthorityTests.cs" Link="CompanyHazopAuthorityTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyCorrectiveActionCommandTests.cs" Link="CompanyCorrectiveActionCommandTests.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyCorrectiveActionAuthorityTests.cs" Link="CompanyCorrectiveActionAuthorityTests.cs" />
+    <None Include="../Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/PPDM39Metadata.json" Link="PPDM39Metadata.json" CopyToOutputDirectory="PreserveNewest" />
+    <Using Include="Beep.OilandGas.PPDM.Models" />
+  </ItemGroup>
+
 </Project>

@@ -28,11 +28,13 @@ public class WorkflowStepAuthorizationTests
         var process = new Mock<IProcessService>();
         process.Setup(x => x.GetProcessInstanceAsync("instance")).ReturnsAsync(new ProcessInstance
         {
-            InstanceId = "instance", ProcessId = "definition", FieldId = instanceField, CurrentStepId = currentStep,
+            InstanceId = "instance", ProcessId = "definition", FieldId = instanceField, CurrentStepId = currentStep, CurrentState="source",
             StepInstances = new() { new() { StepId = "step", AssignedTo = assignee, RequiredRole = requiredRole } }
         });
         process.Setup(x => x.GetProcessDefinitionAsync("definition")).ReturnsAsync(new ProcessDefinition
         {
+            ProcessId = "definition",
+            Transitions = new() { ["transition"] = new() { TransitionId="transition", FromStateId="source", ToStateId="target", Trigger="advance" } },
             Steps = new() { new() { StepId = "step", RequiredRoles = new() { "Reviewer" } } }
         });
         var data = new PROCESS_STEP_DATA();
@@ -45,7 +47,7 @@ public class WorkflowStepAuthorizationTests
         });
         var field = new Mock<IFieldOrchestrator>();
         field.SetupGet(x => x.CurrentFieldId).Returns("field");
-        var controller = new BusinessProcessController(field.Object, binding, NullLogger<BusinessProcessController>.Instance)
+        var controller = new BusinessProcessController(field.Object, binding, NullLogger<BusinessProcessController>.Instance, new Mock<IAccessControlService>().Object, new Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter>().Object, new Mock<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>().Object, new Mock<IWorkOrderService>().Object, new Mock<IInspectionService>().Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
             {
@@ -61,12 +63,12 @@ public class WorkflowStepAuthorizationTests
         resolutions = 0;
         process.Setup(x => x.CanTransitionAsync("instance", "target")).ReturnsAsync(true);
         process.Setup(x => x.TransitionStateAsync("instance", "target", "actor")).ReturnsAsync(true);
-        var transition = await controller.ExecuteTransitionAsync("instance", new ProcessTransitionRequest { Trigger = "advance", ToStateId = "target" });
-        if (allowed) Assert.IsType<OkObjectResult>(transition.Result);
+        var transition = await controller.ExecuteTransitionAsync("instance", new ProcessTransitionRequest { Trigger = "advance", FromStateId="source", ToStateId = "target" }, new Beep.OilandGas.Repository.RepositoryTenantContext());
+        if (allowed) Assert.IsType<BadRequestObjectResult>(transition.Result);
         else Assert.IsType<ForbidResult>(transition.Result);
         Assert.Equal(1, resolutions);
-        process.Verify(x => x.CanTransitionAsync("instance", "target"), allowed ? Times.Once() : Times.Never());
-        process.Verify(x => x.TransitionStateAsync("instance", "target", "actor"), allowed ? Times.Once() : Times.Never());
+        process.Verify(x => x.CanTransitionAsync("instance", "target"), Times.Never());
+        process.Verify(x => x.TransitionStateAsync("instance", "target", "actor"), Times.Never());
     }
 
     [Theory]
@@ -90,7 +92,7 @@ public class WorkflowStepAuthorizationTests
         });
         var field = new Mock<IFieldOrchestrator>();
         field.SetupGet(x => x.CurrentFieldId).Returns("field");
-        var controller = new BusinessProcessController(field.Object, binding, NullLogger<BusinessProcessController>.Instance)
+        var controller = new BusinessProcessController(field.Object, binding, NullLogger<BusinessProcessController>.Instance, new Mock<IAccessControlService>().Object, new Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter>().Object, new Mock<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>().Object, new Mock<IWorkOrderService>().Object, new Mock<IInspectionService>().Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
             {

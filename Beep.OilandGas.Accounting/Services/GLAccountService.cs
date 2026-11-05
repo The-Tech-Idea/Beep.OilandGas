@@ -3,8 +3,9 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Accounting.Models;
-using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.Models.Core.Interfaces;
+using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -14,7 +15,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// Manages GL Account master data and account balance calculations
     /// </summary>
-    public class GLAccountService
+    public partial class GLAccountService : TheTechIdea.Data.OilGas.ICompanyLedgerBookReader
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -61,7 +62,9 @@ namespace Beep.OilandGas.Accounting.Services
                 };
 
                 var accounts = await repo.GetAsync(filters);
-                return accounts?.FirstOrDefault() as GL_ACCOUNT;
+                var rows = RequireLegacyAccounts(accounts);
+                if (rows.Count > 1) throw new InvalidOperationException("The legacy account number is ambiguous.");
+                return rows.SingleOrDefault();
             }
             catch (Exception ex)
             {
@@ -87,7 +90,7 @@ namespace Beep.OilandGas.Accounting.Services
                 };
 
                 var accounts = await repo.GetAsync(filters);
-                return accounts?.Cast<GL_ACCOUNT>().ToList() ?? new List<GL_ACCOUNT>();
+                return RequireLegacyAccounts(accounts);
             }
             catch (Exception ex)
             {
@@ -117,7 +120,7 @@ namespace Beep.OilandGas.Accounting.Services
                 };
 
                 var accounts = await repo.GetAsync(filters);
-                return accounts?.Cast<GL_ACCOUNT>().ToList() ?? new List<GL_ACCOUNT>();
+                return RequireLegacyAccounts(accounts);
             }
             catch (Exception ex)
             {
@@ -148,7 +151,7 @@ namespace Beep.OilandGas.Accounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "GL_ACCOUNT_ID", Operator = "=", FilterValue = accountNumber },
+                    new AppFilter { FieldName = "GL_ACCOUNT_ID", Operator = "=", FilterValue = account.GL_ACCOUNT_ID },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
                 if (!string.IsNullOrWhiteSpace(bookId))
@@ -168,6 +171,7 @@ namespace Beep.OilandGas.Accounting.Services
                 decimal balance = 0m;
                 foreach (var entry in entries?.Cast<GL_ENTRY>() ?? Enumerable.Empty<GL_ENTRY>())
                 {
+                    JournalEntryService.RequireUnownedGLEntry(entry);
                     decimal debit = entry.DEBIT_AMOUNT ?? 0m;
                     decimal credit = entry.CREDIT_AMOUNT ?? 0m;
 
@@ -218,6 +222,7 @@ namespace Beep.OilandGas.Accounting.Services
             try
             {
                 // Check if account already exists
+                _ = await GetAllAccountsAsync();
                 var existing = await GetAccountByNumberAsync(accountNumber);
                 if (existing != null)
                     throw RefusalException.Conflict($"GL account {accountNumber} already exists.");
@@ -283,6 +288,7 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task GenerateDefaultAccountsAsync(string userId)
         {
             _logger?.LogInformation("Starting default GL account generation.");
+            _ = await GetAllAccountsAsync();
             var defaults = GetDefaultAccountDefinitions();
 
             foreach (var def in defaults)
@@ -410,12 +416,22 @@ namespace Beep.OilandGas.Accounting.Services
         }
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
+            if (_resolveConnection is not null)
+                throw new InvalidOperationException("Selected-company accounts require a complete company/book/currency review; legacy defaults and unscoped balances are unavailable.");
             var connection = _resolveConnection is null ? ConnectionName : await _resolveConnection();
             if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
             
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 typeof(T), connection, tableName);
+        }
+        private static List<GL_ACCOUNT> RequireLegacyAccounts(IEnumerable<object>? accounts)
+        {
+            if (accounts is null) throw new InvalidOperationException("The legacy account source is unavailable.");
+            var rows = accounts.ToArray();
+            if (rows.Any(row => row is not GL_ACCOUNT || TheTechIdea.Data.OilGas.CompanyGLAccountReview.HasCompanyMarkers((GL_ACCOUNT)row)))
+                throw new InvalidOperationException("Company/book/currency accounts cannot be borrowed through a companyless legacy path.");
+            return rows.Cast<GL_ACCOUNT>().ToList();
         }
     }
 }

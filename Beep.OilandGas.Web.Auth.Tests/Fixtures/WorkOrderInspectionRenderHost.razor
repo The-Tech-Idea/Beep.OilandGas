@@ -1,0 +1,11 @@
+@namespace Beep.OilandGas.Web.Auth.Tests
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Web.Services
+<MudPopoverProvider />
+<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderInspectionPanel Source="Source" Review="Review" />
+@code {
+    [Parameter] public WorkOrderDetailModel Source {get;set;}=null!;
+    [Parameter] public WorkOrderInspectionState Review {get;set;}=null!;
+}

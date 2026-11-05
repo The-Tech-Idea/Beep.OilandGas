@@ -78,8 +78,8 @@ private  System.DateTime? EXPIRY_DATEValue;
 
           set { SetProperty(ref  EXPIRY_DATEValue, value); }
         } 
-private  System.Decimal PERCENT_CAPABILITYValue; 
- public System.Decimal PERCENT_CAPABILITY
+private  System.Decimal? PERCENT_CAPABILITYValue;
+ public System.Decimal? PERCENT_CAPABILITY
         {  
             get  
             {  

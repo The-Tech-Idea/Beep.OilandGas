@@ -13,7 +13,6 @@ using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.Accounting.Services
@@ -23,7 +22,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// Uses INVOICE/INVOICE_LINE_ITEM/INVOICE_PAYMENT entities.
     /// Usage: Use for general billing workflows tied to INVOICE tables.
     /// </summary>
-    public class InvoiceService : IInvoiceService
+    public partial class InvoiceService : IInvoiceService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -33,6 +32,7 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<InvoiceService> _logger;
         private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>>? _resolveConnection;
 
         public InvoiceService(
             IDMEEditor editor,
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDMMetadataRepository metadata,
             AccountingBasisPostingService basisPosting,
             ILogger<InvoiceService> logger = null,
-            IAccountMappingService? accountMapping = null)
+            IAccountMappingService? accountMapping = null,Func<Task<string>>? resolveConnection = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -50,10 +50,12 @@ namespace Beep.OilandGas.Accounting.Services
             _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger;
             _accountMapping = accountMapping;
+            _resolveConnection = resolveConnection;
         }
 
         public async Task<INVOICE> CreateInvoiceAsync(CreateInvoiceRequest request, string userId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.CustomerBaId))
@@ -93,16 +95,19 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<INVOICE?> GetInvoiceAsync(string invoiceId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
 
             var repo = await GetRepoAsync<INVOICE>("INVOICE", cn);
             var invoice = await repo.GetByIdAsync(invoiceId);
+            if(invoice is INVOICE row)RequireUnownedLegacyInvoice(row);
             return invoice as INVOICE;
         }
 
         public async Task<List<INVOICE>> GetInvoicesByCustomerAsync(string customerId, DateTime? startDate, DateTime? endDate, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             if (string.IsNullOrWhiteSpace(customerId))
                 throw new ArgumentNullException(nameof(customerId));
 
@@ -119,11 +124,14 @@ namespace Beep.OilandGas.Accounting.Services
                 filters.Add(new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = endDate.Value.ToString("yyyy-MM-dd") });
 
             var results = await repo.GetAsync(filters);
-            return results?.Cast<INVOICE>().ToList() ?? new List<INVOICE>();
+            var invoices=results?.Cast<INVOICE>().ToList() ?? new List<INVOICE>();
+            foreach(var invoice in invoices)RequireUnownedLegacyInvoice(invoice);
+            return invoices;
         }
 
         public async Task<INVOICE> UpdateInvoiceAsync(UpdateInvoiceRequest request, string userId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.InvoiceId))
@@ -166,6 +174,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<bool> DeleteInvoiceAsync(string invoiceId, string userId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
                 return false;
@@ -181,6 +190,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<INVOICE_PAYMENT> RecordPaymentAsync(CreateInvoicePaymentRequest request, string userId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.InvoiceId))
@@ -235,6 +245,8 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<List<INVOICE_PAYMENT>> GetInvoicePaymentsAsync(string invoiceId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
+            _=await GetInvoiceAsync(invoiceId,cn) ??throw new InvalidOperationException("The original unowned legacy invoice parent is required.");
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
 
@@ -251,6 +263,8 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<List<INVOICE_LINE_ITEM>> GetInvoiceLineItemsAsync(string invoiceId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
+            _=await GetInvoiceAsync(invoiceId,cn) ??throw new InvalidOperationException("The original unowned legacy invoice parent is required.");
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
 
@@ -267,6 +281,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<InvoiceApprovalResult> ApproveInvoiceAsync(string invoiceId, string approverId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
             if (string.IsNullOrWhiteSpace(approverId))
@@ -313,6 +328,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<List<InvoiceAgingSummary>> GetInvoiceAgingAsync(string? customerId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             var repo = await GetRepoAsync<INVOICE>("INVOICE", cn);
             var filters = new List<AppFilter>
             {
@@ -323,6 +339,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var results = await repo.GetAsync(filters);
             var invoices = results?.Cast<INVOICE>().ToList() ?? new List<INVOICE>();
+            foreach(var invoice in invoices)RequireUnownedLegacyInvoice(invoice);
             var today = DateTime.UtcNow.Date;
 
             return invoices.Select(invoice =>
@@ -356,6 +373,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<InvoicePaymentStatus> GetInvoicePaymentStatusAsync(string invoiceId, string cn = "PPDM39")
         {
+            RequireLegacyInvoiceAccess();
             var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
                 throw RefusalException.NotFound($"Invoice {invoiceId} was not found.");
@@ -418,6 +436,15 @@ namespace Beep.OilandGas.Accounting.Services
                 typeof(T), cn ?? ConnectionName, tableName);
         }
 
+        private void RequireLegacyInvoiceAccess()
+        {
+            if(_resolveConnection is not null)throw new InvalidOperationException("The selected-company invoice service requires the owned source-bound billing workflow.");
+        }
+        private static void RequireUnownedLegacyInvoice(INVOICE invoice)
+        {
+            if(invoice.OWNER_TENANT_ID is not null || invoice.OWNER_COMPANY_BA_ID is not null || invoice.FIELD_ID is not null || invoice.SOURCE_RUN_TICKET_ID is not null || invoice.BILLING_SOURCE_KEY is not null || invoice.BILLING_WORKFLOW_JSON is not null || invoice.REVIEW_WORKFLOW_JSON is not null)
+                throw new InvalidOperationException("Company-owned invoice evidence cannot be read or mutated through a companyless legacy command.");
+        }
         private string GetAccountId(string key, string fallback)
         {
             return _accountMapping?.GetAccountId(key) ?? fallback;

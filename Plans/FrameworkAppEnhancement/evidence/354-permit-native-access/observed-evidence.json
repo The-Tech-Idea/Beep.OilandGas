@@ -1,0 +1,86 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md, phase 2 native access foundation only",
+  "observed_date": "2026-10-29",
+  "result": {
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "1m12s",
+    "exit_code": 0,
+    "terminal": "Passed!  - Failed:     0, Passed:    24, Skipped:     0, Total:    24, Duration: 1 m 12 s - Beep.OilandGas.Repository.Tests.dll (net10.0)"
+  },
+  "methods": {
+    "PermitScopeUsesCurrentModuleAndRefusesAuthorityOrBindingDrift": {
+      "inputs": 9,
+      "criterion": "Fresh current account permission/FIELD and PERMITS binding; refuse changed module, physical or runtime datasource target and missing driver."
+    },
+    "NativePermitReadUsesBoundModuleAndRefusesIgnoredFieldFilters": {
+      "inputs": 2,
+      "criterion": "Actual native lifecycle preserves exact Data entity identity/company/FIELD and rejects provider-ignored FIELD constraints."
+    },
+    "PermitChildrenRequireExactVisibleApplicationAndInjectionParent": {
+      "inputs": 4,
+      "criterion": "Exact visible permit parent and injection subtype before child/history/MIT release; ignored child filters refuse."
+    },
+    "PermitReadPolicyNeverAuthorizesGenericMutation": {
+      "inputs": 3,
+      "criterion": "Read policy refuses insert/update/delete; reviewed mutation owner remains pending."
+    },
+    "PermitFactoriesRejectMissingParentOrWrongCanonicalTypeBeforeReads": {
+      "inputs": 1,
+      "criterion": "Only exact module manifest types; no missing child parent or type-name fallback."
+    },
+    "PermitSharedFieldNeverAdoptsAnotherCompanyOrUnownedApplication": {
+      "inputs": 3,
+      "criterion": "Same FIELD does not expose another tenant/company or blank ownership, including ignored filters/child traversal."
+    },
+    "PermitReadRefusesAuthorityRevokedDuringProviderRead": {
+      "inputs": 2,
+      "criterion": "Permission/FIELD revocation after provider read prevents result publication."
+    }
+  },
+  "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute current TheTechIdea.Data.dll> -p:BuildProjectReferences=false --filter \"FullyQualifiedName~PermitScopeUsesCurrentModuleAndRefusesAuthorityOrBindingDrift|FullyQualifiedName~NativePermitReadUsesBoundModuleAndRefusesIgnoredFieldFilters|FullyQualifiedName~PermitChildrenRequireExactVisibleApplicationAndInjectionParent|FullyQualifiedName~PermitReadPolicyNeverAuthorizesGenericMutation|FullyQualifiedName~PermitFactoriesRejectMissingParentOrWrongCanonicalTypeBeforeReads|FullyQualifiedName~PermitSharedFieldNeverAdoptsAnotherCompanyOrUnownedApplication|FullyQualifiedName~PermitReadRefusesAuthorityRevokedDuringProviderRead\" --logger \"console;verbosity=minimal\"",
+  "builds": {
+    "Data": "passed, 4.07s, zero errors, existing missing sibling analyzer warning",
+    "native permits": "passed, 3.67s, zero errors, existing missing analyzer and duplicate using warnings"
+  },
+  "prior_attempts": [
+    {
+      "result": "0 passed/19 failed",
+      "cause": "Incorrect async mock return signature"
+    },
+    {
+      "result": "4 passed/15 failed",
+      "cause": "HTTP AsyncLocal context did not flow out of async fixture and duplicate source-linked root type"
+    },
+    {
+      "result": "21 passed/1 failed",
+      "duration": "1m9s",
+      "cause": "Existing lossy same-type mapper dropped FIELD and identity; mapper removed"
+    }
+  ],
+  "sha256": {
+    "TheTechIdea.Data/OilGas/PERMIT_APPLICATION.cs": "c0f10a8ef4874eed3396669a8e870da7cb58815e9b060062fd4fe8e777b01c7b",
+    "TheTechIdea.Data/OilGas/PermitApplicationDataAccess.cs": "a51b5d97e621dcf5c7a44b28f2ecf32588f1437dd9d991388e5bc4c6e7050246",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "c79f5beff47dc23c21c806083d831b161cd89bdb15b9777649f278ce53421b29",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "8ccdde42f1f23bd28073737ffd37e9d678210778fe66c7539f0e452dbe0e3759",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitsServiceBase.cs": "4803071521ef99dc0a92ca1c74d354a4d37d0d800e570471bdf044e9408310b7",
+    "Beep.OilandGas.PermitsAndApplications/Modules/PermitsModule.cs": "616439deb9b87bed0c360ffe04a53244881648e8b681a9d93ec06d64189a00cd",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "7be6afa87bfedd4c8b03d3f28f29272c1f6f30652c1ab14e2c3e92ba1d8c4df9",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "790d538d4607868c96cfeef437f8e922c75252be21251c4d1709135abfdbb26b",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "d699b59c50a41e74ec58a7841ab74e5619de26786af959e380e3a621dd507a87",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "50ef806758f7d17605946b4d3f3e18aef09e06a3ca66e30463d1118150498db3",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "af7c18b3bbe0427ace75883c532ec57476dd5ccc23116af21cc1d7083852ee6b"
+  },
+  "terminal_log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-owned-access-final.log",
+  "terminal_log_sha256": "272931f584e409f2756fcea688695f6d6ad907b9f3d90f3bb5b510f75ef0493d",
+  "scope": "Actual app registry/auth DB, current company/profile/FIELD/module resolver and standard native repository policies with mock Beep datasource. Source-linked API service and current built native module/Data; not full ApiService host.",
+  "open": [
+    "Reviewed recoverable create/update/submission/independent decision owners and exact audit/readback",
+    "Stamp stored tenant/company from current authority in reviewed creation; no adoption of old unowned rows",
+    "Replace direct API/client mutation lanes and provide retained persona forms/inbox/outcomes/correction",
+    "Apply and qualify owner columns through existing entity-driven Beep Migration module against an actual provider",
+    "Protected HTTP/OIDC and actual application browser journey, regional policy/RTL/multinational qualification"
+  ],
+  "migration": "Existing PERMITS ModuleSetupBase/Beep Migration manifest now uses the single Data-owned root with OWNER_TENANT_ID/OWNER_COMPANY_ID. No handwritten SQL, EF migration, type forwarder or legacy fallback."
+}

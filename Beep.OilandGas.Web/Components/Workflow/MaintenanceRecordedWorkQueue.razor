@@ -1,0 +1,85 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Class="pa-4 mb-4" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Recorded maintenance work</MudText>
+        <MudText>Discover the original work reports and open their workflow and return evidence. A reported completion is separate from accepted closure, asset condition and financial close.</MudText>
+        <MudTextField @bind-Value="_from" @bind-Value:after="InputsChanged" Label="Recorded from UTC (inclusive, ISO 8601)" Disabled="@Busy" />
+        <MudTextField @bind-Value="_to" @bind-Value:after="InputsChanged" Label="Recorded to UTC (exclusive, ISO 8601)" HelperText="Use Z or +00:00 and a period of at most 31 days." Disabled="@Busy" />
+        <MudTextField @bind-Value="_order" @bind-Value:after="InputsChanged" Label="Exact work-order identity (optional)" Disabled="@Busy" />
+        <MudButton OnClick="ReloadAsync" Disabled="@Busy">Reload recorded work</MudButton>
+        @if(Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading authorized recorded maintenance reports" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_state?.Current is {} records)
+        {
+            <MudText>Company @records.Context.Company.BusinessAssociateId · FIELD @records.Window.FieldId · compared UTC @records.ComparedAtUtc.ToString("O")</MudText>
+            <MudText>Authorized work reports in this UTC period: @records.TotalRecords · page @records.PageNumber of @records.TotalPages</MudText>
+            <MudText Typo="Typo.caption">This count describes the reviewed report population, separately from assigned-task counts.</MudText>
+            <MudStack Row="true" Spacing="2">
+                <MudButton OnClick="@(()=>LoadAsync(records.PageNumber-1))" Disabled="@(Busy || !records.HasPrevious)">Previous reports</MudButton>
+                <MudButton OnClick="@(()=>LoadAsync(records.PageNumber+1))" Disabled="@(Busy || !records.HasNext)">Next reports</MudButton>
+            </MudStack>
+            @if(records.Rows.Count==0){<MudAlert Severity="Severity.Info">No authorized recorded work reports were found in this reviewed period.</MudAlert>}
+            else
+            {
+                <MudTable Items="@records.Rows" Dense="true" aria-label="Authorized recorded maintenance work">
+                    <HeaderContent><MudTh>Original work</MudTh><MudTh>Reported work and defects</MudTh><MudTh>Executor and UTC</MudTh><MudTh>Evidence</MudTh></HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Original work">@context.Query.Task.WorkOrderId · report @context.Query.SubmissionId</MudTd>
+                        <MudTd DataLabel="Reported work and defects">@context.WorkPerformed · reported outstanding defects @context.OutstandingDefects</MudTd>
+                        <MudTd DataLabel="Executor and UTC">@context.ExecutorUserId · role @context.ExecutionRole · completed UTC @context.CompletedAtUtc.ToString("O") · recorded UTC @context.RecordedAtUtc.ToString("O")</MudTd>
+                        <MudTd DataLabel="Evidence"><MudButton OnClick="@(()=>ShowEvidence(context.Query))" Disabled="@Busy" aria-expanded='@(_selectedReport==context.Query ? "true" : "false")' aria-label="@("Review asset evidence for work order "+context.Query.Task.WorkOrderId+", report "+context.Query.SubmissionId)">Review asset evidence here</MudButton><MudButton Href="@context.DetailRoute(records.Context.Company)">Open original report and return evidence</MudButton></MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            @if(_selectedReport is {} selectedReport)
+            {
+                <MudText Typo="Typo.subtitle2">Selected work order @selectedReport.Task.WorkOrderId · original report @selectedReport.SubmissionId</MudText>
+                <MudButton OnClick="CloseEvidence">Close asset evidence</MudButton>
+                <Beep.OilandGas.Web.Components.BusinessProcess.MaintenanceAssetEvidencePanel Query="@selectedReport" />
+            }
+        }
+    </MudStack>
+</MudPaper>
+@code {
+    private MaintenanceRecordedWorkState? _state;
+    private string _from=DateTime.UtcNow.Date.AddDays(-13).ToString("O"),_to=DateTime.UtcNow.Date.AddDays(1).ToString("O"),_order="";
+    private string? _error;
+    private CompanyWorkOrderCompletionQuery? _selectedReport;
+    private bool _disposed;
+    private int _generation;
+    private bool Busy=>_state?.Busy==true;
+    protected override async Task OnInitializedAsync(){_state=new(Company);_state.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;await ReloadAsync();}
+    private Task ReloadAsync()=>LoadAsync(1);
+    private async Task LoadAsync(int page)
+    {
+        if(_disposed || Busy || _state is null)return;_error=null;CloseEvidence();var generation=_generation;var snapshot=Company.Snapshot;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;var selected=snapshot.Selection;var field=await Fields.GetCurrentFieldIdAsync();
+            if(selected is null || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) || !LeaseSummaryValidator.Identifier(field) || snapshot!=Company.Snapshot || generation!=_generation)throw new UnauthorizedAccessException("Current company/account, standard read role and confirmed FIELD are required for recorded work.");
+            if(!ExplicitUtcInput.TryParse(_from,out var from) || !ExplicitUtcInput.TryParse(_to,out var to))throw new ArgumentException("Enter the recorded period as explicit ISO 8601 UTC instants.");
+            var window=new CompanyMaintenanceRecordedWorkWindow(field!,from,to,string.IsNullOrWhiteSpace(_order)?null:_order.Trim());await _state.ReadAsync(Workflows,window,page,8);
+        }
+        catch(Exception error){if(!_disposed && snapshot==Company.Snapshot && generation==_generation){_state.Clear();_error=Calls.Explain(error,"discovering original recorded maintenance work","Recorded work could not be confirmed");}}
+    }
+    private void ShowEvidence(CompanyWorkOrderCompletionQuery query)
+    {
+        if(_disposed || Busy || _state?.Current is not {} page || Company.Selection is not {} selected || selected.Scope!=page.Context.Company || selected.UserId!=page.Context.ActorUserId || !selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) || !page.Rows.Any(row=>row.Query==query))return;
+        _selectedReport=query;
+    }
+    private void CloseEvidence()=>_selectedReport=null;
+    private void InputsChanged(){_generation++;CloseEvidence();_state?.Clear();_error=null;}
+    private void Invalidate(){_generation++;CloseEvidence();_state?.Clear();_order="";_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

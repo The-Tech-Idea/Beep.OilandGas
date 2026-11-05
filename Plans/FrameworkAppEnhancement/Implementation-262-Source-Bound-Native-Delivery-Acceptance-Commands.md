@@ -1,0 +1,37 @@
+# Implementation 262 — Source-bound native delivery acceptance commands
+
+## Company workflow design
+
+The existing company revenue owner now exposes acceptance read, preparation and independent decision endpoints under api/fields/{fieldId}/accounting/revenue-source/delivery/acceptance. The typed accounting client consumes these endpoints. Preparation binds the original company/account, transaction, seller/buyer contract, allocation and certified measured ticket to an explicit UTC acceptance timestamp, receiving buyer, external evidence reference and review notes. No title-transfer default or automatic acceptance is used.
+
+The canonical preparation requires positive certified net quantity, an explicit recorded volume unit and ticket timestamp. It validates the original commercial native proof and independently approved terms against the recorded revenue date/currency using implementation 260. It does not infer company timezone interpretation, price/unit conversion, actual performance obligation completion, tax, FX, recognition policy or billing readiness. Ticket date and actual UTC acceptance remain separate recorded facts. Exact price/unit compatibility and policy review remain financial prerequisites.
+
+The decision identifies the complete original preparation revision and intent and requires a separate reviewer from the preparation, measurement, allocation and revenue makers. Missing maker identity blocks decision. Current API company binding, standard app roles, Accounting.View, ProductionAccounting.Adjust or ProductionAccounting.Approve and FIELD WRITE access are checked independently of the client through the existing authority owner. Read uses current Accounting.View/FIELD READ and refuses changed source.
+
+## Existing native ownership and recovery
+
+RUN_TICKET gains one nullable bounded DELIVERY_WORKFLOW_JSON field in canonical Data. Existing PRODUCTION Beep module registration owns schema evolution; the field is checked before commands. No new delivery entity, EF business migration, handwritten SQL, live provisioning or production business write is introduced by this implementation run.
+
+The native envelope retains the complete original source, receiving evidence, UTC preparation/decision audit, immutable intent and native row revision. Exact quantity, unit, status, identity, FIELD, allocation, commercial proof, date window and datasource/binding changes refuse mutation. Only the delivery envelope and ordinary native change-audit fields may change. The native mutation policy restricts writes to the exact run ticket and complete preimage.
+
+Preparation and decision own a serializable Beep transaction, check current authority/schema/datasource and exact source inside it, and verify complete native audit/read-back before and after commit. Same-intent retry returns the original outcome without another write; a competing preparation or decision refuses. Unknown commit is reported as uncertain and subsequently reconciles from the original recorded intent. Precommit write/read-back/authority failures roll back. Borrowed or weaker-isolation transactions are refused. No LIFECYCLE read is introduced inside the owned PRODUCTION transaction.
+
+One original acceptance preparation and one independent decision are supported per ticket. Rejected/corrected acceptance is not overwritten; correction/version history, split/partial delivery applicability and configured process handoff remain required follow-on work. This is the command/API foundation, not a completed persona screen or end-to-end billing journey. Retained preparer/reviewer forms and inbox/handoff delivery remain open.
+
+## Canonical model validation
+
+Optional legacy strings in the canonical ticket/allocation/detail models and their aliases are nullable. Moving the models into Data had exposed their old null defaults as implicitly required ASP.NET nested input fields. Nullability now preserves unavailable notes, lease/well references and other optional data rather than fabricating defaults. Native identities remain nonnullable bounded keys; workflow prerequisites are validated explicitly. Existing C# alias accessors and enum values are preserved.
+
+The new read/command/proof contracts are owned by TheTechIdea.Data. The native service, API/controller and typed client extend existing module owners. Scripts/Test-PurchaseOrderOwnership.ps1 includes the current native acceptance service in focused source composition. Installed migration guidance is used for entity metadata; actual provider migration/dry-run/preflight/rollback evidence remains open.
+
+## Focused evidence
+
+Canonical Data builds with zero warnings/errors. Fifteen canonical receiving/maker/quantity/unit/status/timestamp/buyer/reference/source/tamper cases and twelve native transaction/retry/uncertain/schema/authority/rollback/borrowed/isolation cases cover the new boundary. Six actual local HTTP/typed-client/native cases exercise preparation, approve/reject, original-intent retry, uncertain commit, missing grant, same maker and changed source, and closing read-back. The metadata cases verify the nullable Beep envelope and its bound. The combined focused acceptance gate passes 36 cases, zero failures/skips, in five seconds, terminal exit 0.
+
+Initial native tests incorrectly asserted that deliberately competing intents must never roll back; assertions now distinguish unknown committed outcomes from refusals in later owned transactions. Initial HTTP checks exposed implicit required validation of optional legacy strings; model nullability corrected that behavior. The diagnostic HTTP test had a local-variable naming collision, which was fixed. Earlier failed logs remain diagnostics, not acceptance.
+
+The final affected source/Razor/local HTTP/native/migration-metadata gate passes 516 cases, zero failures/skips, in two minutes one second, terminal exit 0. After strengthening the direct HTTP maker/source refusal assertions, the six-case HTTP subset passes again, zero failures/skips, in four seconds, terminal exit 0. These checks overlap and are not summed. Logs: oilgas-262-data.log, oilgas-262-acceptance.log, oilgas-262-native.log, oilgas-262-current-acceptance.log, oilgas-262-http-validation.log, oilgas-262-corrected-data.log, oilgas-262-corrected-acceptance.log, oilgas-262-final-data.log oilgas-262-final-source.log and oilgas-262-final-http.log. Reproduce with Scripts/Test-PurchaseOrderOwnership.ps1, canonical Data DLL, IncludeWorkflowInbox and FieldRevenueSourceTests|CompanyProcessStart|CompanyStep|PersonaInbox|CommercialIntentMigration|ModuleSchemaVerification. Scopes overlap and are not summed; existing focused source/dependency warnings remain.
+
+## Remaining delivery
+
+Deliver retained source-bound preparer and independent reviewer acceptance forms in the current revenue persona screen; reconcile uncertain intents before another command. Connect current configured process/inbox handoffs, acceptance corrections and explicit price/unit compatibility to invoice/receivable, recognition policy and ledger read-back. Continue disputes/partial settlement, royalty/partner/project cost, all thirteen personas and multinational requirements. Native provider/provisioning, browser/OIDC/circuit, accessibility/RTL and external binary-consumer acceptance remain open. No phase or overall goal closes. Commit and push remain authorized after the complete goal and plan pass their completion audit.

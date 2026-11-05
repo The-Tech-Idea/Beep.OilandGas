@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Text.Json;
+using Beep.OilandGas.Client.App;
 using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.Web.Services
@@ -24,6 +25,8 @@ namespace Beep.OilandGas.Web.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IFailureReporter _failures;
+        private readonly CompanyClientContext _company;
+        internal (long Version, CompanyClientSelection? Selection) CompanySnapshot => _company.Snapshot;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -31,15 +34,16 @@ namespace Beep.OilandGas.Web.Services
             PropertyNameCaseInsensitive = true
         };
 
-        public ApiClient(HttpClient httpClient, IFailureReporter failures)
+        public ApiClient(HttpClient httpClient, IFailureReporter failures, CompanyClientContext company)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _failures = failures ?? throw new ArgumentNullException(nameof(failures));
+            _company = company;
         }
 
         public async Task<T?> GetAsync<T>(string endpoint, CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+            using var response = await SendAsync(HttpMethod.Get, endpoint, null, cancellationToken);
             return await ReadAsync<T>(response, cancellationToken);
         }
 
@@ -48,7 +52,7 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.PostAsync(endpoint, Json(data), cancellationToken);
+            using var response = await SendAsync(HttpMethod.Post, endpoint, Json(data), cancellationToken);
             return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
@@ -57,7 +61,7 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.PostAsync(endpoint, Json(data), cancellationToken);
+            using var response = await SendAsync(HttpMethod.Post, endpoint, Json(data), cancellationToken);
             await EnsureSuccessAsync(response, cancellationToken);
         }
 
@@ -66,7 +70,7 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.PutAsync(endpoint, Json(data), cancellationToken);
+            using var response = await SendAsync(HttpMethod.Put, endpoint, Json(data), cancellationToken);
             return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
@@ -75,7 +79,7 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.PutAsync(endpoint, Json(data), cancellationToken);
+            using var response = await SendAsync(HttpMethod.Put, endpoint, Json(data), cancellationToken);
             await EnsureSuccessAsync(response, cancellationToken);
         }
 
@@ -84,8 +88,7 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = Json(data) };
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            using var response = await SendAsync(HttpMethod.Patch, endpoint, Json(data), cancellationToken);
             return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
@@ -94,20 +97,19 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = Json(data) };
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            using var response = await SendAsync(HttpMethod.Patch, endpoint, Json(data), cancellationToken);
             await EnsureSuccessAsync(response, cancellationToken);
         }
 
         public async Task DeleteAsync(string endpoint, CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
+            using var response = await SendAsync(HttpMethod.Delete, endpoint, null, cancellationToken);
             await EnsureSuccessAsync(response, cancellationToken);
         }
 
         public async Task<TResult?> DeleteAsync<TResult>(string endpoint, CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.DeleteAsync(endpoint, cancellationToken);
+            using var response = await SendAsync(HttpMethod.Delete, endpoint, null, cancellationToken);
             return await ReadAsync<TResult>(response, cancellationToken);
         }
 
@@ -119,7 +121,7 @@ namespace Beep.OilandGas.Web.Services
             HttpContent? content,
             CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+            using var response = await SendAsync(HttpMethod.Post, endpoint, content, cancellationToken);
             return await ReadAsync<TResponse>(response, cancellationToken);
         }
 
@@ -131,7 +133,7 @@ namespace Beep.OilandGas.Web.Services
             TRequest data,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsync(endpoint, Json(data), cancellationToken);
+            var response = await SendAsync(HttpMethod.Post, endpoint, Json(data), cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 using (response)
@@ -140,7 +142,20 @@ namespace Beep.OilandGas.Web.Services
                 }
             }
 
-            return await response.Content.ReadAsStreamAsync(cancellationToken);
+            try
+            {
+                var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                _company.EnsureCurrent(response);
+                return new CompanyResponseStream(stream, response, _company);
+            }
+            catch { response.Dispose(); throw; }
+        }
+
+        private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, HttpContent? content, CancellationToken token)
+        {
+            using var request = new HttpRequestMessage(method, endpoint) { Content = content };
+            _company.Prepare(request);
+            return await _company.SendAsync(_httpClient, request, token);
         }
 
         private static StringContent Json<TRequest>(TRequest data) =>
@@ -150,11 +165,14 @@ namespace Beep.OilandGas.Web.Services
         {
             await EnsureSuccessAsync(response, cancellationToken);
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            return JsonSerializer.Deserialize<T>(content, JsonOptions);
+            var result = JsonSerializer.Deserialize<T>(content, JsonOptions);
+            _company.EnsureCurrent(response);
+            return result;
         }
 
         private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {
+            _company.EnsureCurrent(response);
             if (!response.IsSuccessStatusCode)
             {
                 throw await OilGasApiException.ReadAsync(response, _failures, cancellationToken);

@@ -1,0 +1,13 @@
+Test run for C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.Repository.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.49]   Discovering: Beep.OilandGas.Repository.Tests
+[xUnit.net 00:00:01.34]   Discovered:  Beep.OilandGas.Repository.Tests
+[xUnit.net 00:00:01.37]   Starting:    Beep.OilandGas.Repository.Tests
+[xUnit.net 00:05:01.10]   Finished:    Beep.OilandGas.Repository.Tests
+  Passed Beep.OilandGas.Repository.Tests.CurrentFieldLifecycleGateTests.InstalledSqliteDifferentAccountsCompeteForOneFinalClosure [4 m 59 s]
+
+Test Run Successful.
+Total tests: 1
+     Passed: 1
+ Total time: 5.0295 Minutes

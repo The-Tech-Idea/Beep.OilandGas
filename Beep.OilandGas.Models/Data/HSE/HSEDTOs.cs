@@ -68,7 +68,7 @@ public class HSEIncidentRecord : ModelEntityBase
     public DateTime IncidentDate    { get; set; } = DateTime.UtcNow;
     public string   Location        { get; set; } = string.Empty;
     public string   Description     { get; set; } = string.Empty;
-    public string   Jurisdiction    { get; set; } = "USA";
+    public string   Jurisdiction    { get; set; } = string.Empty;
     public string   CurrentState    { get; set; } = IncidentState.Reported;
     public string?  InvestigatorId  { get; set; }
 }
@@ -80,7 +80,9 @@ public record ReportIncidentRequest(
     DateTime IncidentDate,
     string   Location,
     string   Description,
-    string   Jurisdiction);
+    string   Jurisdiction,
+    string   IncidentSetId,
+    string   OptionsRevision);
 
 public class TransitionIncidentRequest
 {
@@ -128,12 +130,6 @@ public record AddBarrierRequest(
     string? FailureDesc);
 
 // ── Corrective Action DTOs ─────────────────────────────────────────────────────
-public record AddCARequest(
-    string   CADescription,
-    string   CAType,
-    DateTime DueDate,
-    string   ResponsibleBaId);
-
 public record CAStatus(
     int       StepSeq,
     string    Description,

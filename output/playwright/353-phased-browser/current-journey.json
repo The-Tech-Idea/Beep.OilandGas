@@ -1,0 +1,127 @@
+{
+  "status": "pass",
+  "observations": [
+    {
+      "stage": "initial",
+      "url": "http://127.0.0.1:51825/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "origin": 1793325544180.4,
+      "keys": [],
+      "text": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 Recorded assigned incident\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 01:59 \u00b7 North FIELD \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 01:59\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nNorth FIELD\n\n\nReported jurisdiction\t\n\nKUWAIT\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\n\nReview and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.\n\nREVIEW ASSIGNED CLOSURE STAGE\n \nREVIEW REJECTED VERIFICATION FOR CORRECTION\nRECOVER RECORDED CLOSURE APPROVAL\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nInspect valve\tworker\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "state": "PENDING_CLOSE_OUT",
+        "approvalAttempts": 0,
+        "approvals": 0,
+        "nativeAttempts": 0,
+        "nativeWrites": 0,
+        "sourceReads": 0,
+        "incidentReads": 2,
+        "genericActionReads": 0,
+        "approvedIntent": null,
+        "recorded": false
+      }
+    },
+    {
+      "stage": "approval-lost",
+      "url": "http://127.0.0.1:51825/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "origin": 1793325544180.4,
+      "keys": [
+        "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+      ],
+      "text": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 Recorded assigned incident\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 01:59 \u00b7 North FIELD \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 01:59\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nNorth FIELD\n\n\nReported jurisdiction\t\n\nKUWAIT\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nThe original final incident closure approval request awaits confirmation.\n\nReviewed final independent evidence; preserve this exact original through both acknowledgements.\n\nRECONCILE ORIGINAL CLOSURE STAGE\nREVIEW CHANGED NATIVE INCIDENT HISTORY\n\nThe stage outcome is unconfirmed. Reload and reconcile the retained original; the incident has not been confirmed closed.\n\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nInspect valve\tworker\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "state": "PENDING_CLOSE_OUT",
+        "approvalAttempts": 1,
+        "approvals": 1,
+        "nativeAttempts": 0,
+        "nativeWrites": 0,
+        "sourceReads": 0,
+        "incidentReads": 2,
+        "genericActionReads": 0,
+        "approvedIntent": "f22f7d19-4ea6-4c76-a142-7c349bba28f6",
+        "recorded": false
+      }
+    },
+    {
+      "stage": "approval-reload",
+      "url": "http://127.0.0.1:51825/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "origin": 1793325599986.2,
+      "keys": [
+        "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+      ],
+      "text": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 Recorded assigned incident\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 02:00 \u00b7 North FIELD \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 02:00\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nNorth FIELD\n\n\nReported jurisdiction\t\n\nKUWAIT\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nThe original final incident closure approval request awaits confirmation.\n\nReviewed final independent evidence; preserve this exact original through both acknowledgements.\n\nRECONCILE ORIGINAL CLOSURE STAGE\nREVIEW CHANGED NATIVE INCIDENT HISTORY\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nInspect valve\tworker\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "state": "PENDING_CLOSE_OUT",
+        "approvalAttempts": 1,
+        "approvals": 1,
+        "nativeAttempts": 0,
+        "nativeWrites": 0,
+        "sourceReads": 0,
+        "incidentReads": 4,
+        "genericActionReads": 0,
+        "approvedIntent": "f22f7d19-4ea6-4c76-a142-7c349bba28f6",
+        "recorded": false
+      }
+    },
+    {
+      "stage": "native-lost",
+      "url": "http://127.0.0.1:51825/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "origin": 1793325599986.2,
+      "keys": [
+        "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+      ],
+      "text": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 Recorded assigned incident\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 02:00 \u00b7 North FIELD \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 02:00\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nNorth FIELD\n\n\nReported jurisdiction\t\n\nKUWAIT\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nThe original final incident closure approval request awaits confirmation.\n\nReviewed final independent evidence; preserve this exact original through both acknowledgements.\n\nRECONCILE ORIGINAL CLOSURE STAGE\nREVIEW CHANGED NATIVE INCIDENT HISTORY\n\nThe original outcome is still unconfirmed. Its evidence is retained; the incident has not been confirmed closed.\n\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nInspect valve\tworker\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "state": "CLOSED",
+        "approvalAttempts": 2,
+        "approvals": 1,
+        "nativeAttempts": 1,
+        "nativeWrites": 1,
+        "sourceReads": 0,
+        "incidentReads": 4,
+        "genericActionReads": 0,
+        "approvedIntent": "f22f7d19-4ea6-4c76-a142-7c349bba28f6",
+        "recorded": true
+      }
+    },
+    {
+      "stage": "native-reload",
+      "url": "http://127.0.0.1:51825/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "origin": 1793325600292,
+      "keys": [
+        "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+      ],
+      "text": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 Recorded assigned incident\nTier 4\nCLOSED\n29-Oct-2026 02:00 \u00b7 North FIELD \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 02:00\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nNorth FIELD\n\n\nReported jurisdiction\t\n\nKUWAIT\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nThe original final incident closure approval request awaits confirmation.\n\nReviewed final independent evidence; preserve this exact original through both acknowledgements.\n\nRECONCILE ORIGINAL CLOSURE STAGE\nREVIEW CHANGED NATIVE INCIDENT HISTORY\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nInspect valve\tworker\t31-Oct-26\t\nCOMPLETED\n\n",
+      "metadata": {
+        "state": "CLOSED",
+        "approvalAttempts": 2,
+        "approvals": 1,
+        "nativeAttempts": 1,
+        "nativeWrites": 1,
+        "sourceReads": 0,
+        "incidentReads": 6,
+        "genericActionReads": 0,
+        "approvedIntent": "f22f7d19-4ea6-4c76-a142-7c349bba28f6",
+        "recorded": true
+      }
+    },
+    {
+      "stage": "confirmed",
+      "url": "http://127.0.0.1:51825/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "origin": 1793325600292,
+      "keys": [],
+      "text": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 Recorded assigned incident\nTier 4\nCLOSED\n29-Oct-2026 02:00 \u00b7 North FIELD \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 02:00\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nNorth FIELD\n\n\nReported jurisdiction\t\n\nKUWAIT\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nNew lifecycle approvals and correction returns are unavailable for a closed, cancelled or unconfirmed incident state. Recover recorded approval evidence to confirm an earlier outcome.\nRECOVER RECORDED CLOSURE APPROVAL\n\nIncident closure confirmed: lifecycle approval and native CLOSED status are recorded.\n\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nInspect valve\tworker\t31-Oct-26\t\nCOMPLETED\n\n",
+      "metadata": {
+        "state": "CLOSED",
+        "approvalAttempts": 3,
+        "approvals": 1,
+        "nativeAttempts": 2,
+        "nativeWrites": 1,
+        "sourceReads": 0,
+        "incidentReads": 7,
+        "genericActionReads": 0,
+        "approvedIntent": "f22f7d19-4ea6-4c76-a142-7c349bba28f6",
+        "recorded": true
+      }
+    }
+  ]
+}

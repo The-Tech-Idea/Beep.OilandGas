@@ -1,0 +1,35 @@
+### Page
+- Page URL: http://127.0.0.1:65079/
+### Snapshot
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e3]
+    - paragraph [ref=f1e4]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e5]:
+      - button "Use read-only unmapped profile" [ref=f1e6] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e8] [cursor=pointer]
+      - button "Switch other company" [ref=f1e10] [cursor=pointer]
+      - button "Switch other account" [ref=f1e12] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e14] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e16] [cursor=pointer]
+      - button "Retain an unrecorded competing start" [ref=f1e18] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f1e20] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e22] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f1e24] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=f1e26]:
+    - heading "Observed drilling progress" [level=1] [ref=f1e27]
+    - group [ref=f1e28]:
+      - link "Original execution" [ref=f1e29] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-07085CC1382C8EC5FDE36D2C8FE336C255583BAFA18818F4F3A587266BA4AFCE
+      - button "Reload original report history" [ref=f1e31] [cursor=pointer]
+    - generic [ref=f1e33]:
+      - heading "Recorded execution and report history" [level=2] [ref=f1e34]
+      - paragraph [ref=f1e35]: Original drilling program · Version 1 · Operation drilling-execution-50156EFAC9544628206470EEF6508ABBE04DB157C3E5E84A0AEE9452A55F8B4B
+      - paragraph [ref=f1e36]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=f1e37]: 0 recorded observed reports · History checked 2026-10-26 16:41:17Z UTC
+      - paragraph [ref=f1e38]: No observed reports are recorded for this exact execution.
+      - button "Inspect current report basis" [ref=f1e39] [cursor=pointer]
+    - generic [ref=f1e41]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

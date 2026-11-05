@@ -10,11 +10,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IPermitApplicationLifecycleService
     {
-        Task<PermitApplicationModel> CreateAsync(PermitApplicationModel application, string userId);
-        Task<PermitApplicationModel> UpdateAsync(string applicationId, PermitApplicationModel application, string userId);
+        Task<TheTechIdea.Data.OilGas.PermitDocumentStagingProof> StageDocumentAsync(TheTechIdea.Data.OilGas.PermitDocumentStageOriginal original,byte[] content);
+        Task<TheTechIdea.Data.OilGas.PermitDocumentStagingProof?> RecoverDocumentStageAsync(TheTechIdea.Data.OilGas.PermitDocumentStageOriginal original);
+        Task<TheTechIdea.Data.OilGas.PermitAttachmentContent> ReadAttachmentContentAsync(TheTechIdea.Data.OilGas.PermitAttachmentContentQuery query);
         Task<PermitApplicationModel?> GetByIdAsync(string applicationId);
+        Task<TheTechIdea.Data.OilGas.PermitApplicationSourceReview> ReviewSourceAsync(string applicationId);
+        Task<TheTechIdea.Data.OilGas.PermitApplicationCommandOutcome> RecordCommandAsync(TheTechIdea.Data.OilGas.PermitApplicationCommand original);
+        Task<TheTechIdea.Data.OilGas.PermitApplicationCommandOutcome?> RecoverCommandAsync(TheTechIdea.Data.OilGas.PermitApplicationCommand original);
+        Task<IReadOnlyList<PermitApplicationModel>> GetApplicationsAsync();
         Task<IReadOnlyList<PermitApplicationModel>> GetByStatusAsync(PermitApplicationStatus status);
-        Task<PermitApplicationModel> SubmitAsync(string applicationId, string userId);
-        Task<PermitApplicationModel> ProcessDecisionAsync(string applicationId, string decision, string decisionRemarks, string userId);
     }
 }

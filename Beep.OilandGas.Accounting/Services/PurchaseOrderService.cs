@@ -1,4 +1,8 @@
 using Beep.OilandGas.Models.Constants;
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdea.Data.OilGas;
+using TheTechIdea.Beep.DataBase;
+using TheTechIdea.Beep.Report;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +11,7 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PPDM39.Core;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -19,14 +22,13 @@ namespace Beep.OilandGas.Accounting.Services
     /// Manages purchase orders, goods receipt, and 3-way matching
     /// Uses: PURCHASE_ORDER, PO_RECEIPT entities
     /// </summary>
-    public class PurchaseOrderService
+    public partial class PurchaseOrderService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<PurchaseOrderService> _logger;
-        private const string ConnectionName = "PPDM39";
         private readonly Func<Task<string>>? _resolveConnection;
 
         public PurchaseOrderService(
@@ -49,7 +51,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// Create a new purchase order (DRAFT status)
         /// </summary>
         public async Task<PURCHASE_ORDER> CreatePOAsync(
-            string vendorBaId,
+            CompanyScope company, string vendorBaId,
             decimal totalAmount,
             DateTime poDate,
             DateTime? expectedDeliveryDate = null,
@@ -57,6 +59,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? description = null,
             string userId = "SYSTEM")
         {
+            PurchaseOrderOwnership.RequireScope(company);
             if (string.IsNullOrWhiteSpace(vendorBaId))
                 throw new ArgumentNullException(nameof(vendorBaId));
             if (totalAmount <= 0)
@@ -69,6 +72,8 @@ namespace Beep.OilandGas.Accounting.Services
                 var po = new PURCHASE_ORDER
                 {
                     PURCHASE_ORDER_ID = Guid.NewGuid().ToString(),
+                    OWNER_TENANT_ID = company.TenantId,
+                    OWNER_COMPANY_BA_ID = company.BusinessAssociateId,
                     PO_NUMBER = poNumber ?? await GeneratePONumberAsync(),
                     VENDOR_BA_ID = vendorBaId,
                     PO_DATE = poDate,
@@ -82,7 +87,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER");
 
                 await repo.InsertAsync(po, userId);
                 _logger?.LogInformation("PO {PONumber} created (DRAFT)", po.PO_NUMBER);
@@ -98,7 +103,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Approve a purchase order (DRAFT -> APPROVED)
         /// </summary>
-        public async Task<PURCHASE_ORDER> ApprovePOAsync(string poId, string userId = "SYSTEM")
+        public async Task<PURCHASE_ORDER> ApprovePOAsync(CompanyScope company, string poId, string userId = "SYSTEM")
         {
             if (string.IsNullOrWhiteSpace(poId))
                 throw new ArgumentNullException(nameof(poId));
@@ -107,7 +112,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var po = await GetPOByIdAsync(poId);
+                var po = await GetPOByIdAsync(company,poId);
                 if (po == null)
                     throw RefusalException.NotFound($"Purchase order {poId} was not found.");
 
@@ -118,7 +123,7 @@ namespace Beep.OilandGas.Accounting.Services
                 po.ROW_CHANGED_BY = userId;
                 po.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER");
 
                 await repo.UpdateAsync(po, userId);
                 _logger?.LogInformation("PO {PONumber} approved", po.PO_NUMBER);
@@ -135,13 +140,14 @@ namespace Beep.OilandGas.Accounting.Services
         /// Record goods receipt for a PO line item (creates PO_RECEIPT)
         /// </summary>
         public async Task<PO_RECEIPT> ReceiveGoodsAsync(
-            string poLineItemId,
+            CompanyScope company, string poLineItemId,
             decimal receivedQuantity,
             DateTime receiptDate,
             string receivedBy,
             string? description = null,
             string userId = "SYSTEM")
         {
+            PurchaseOrderOwnership.RequireScope(company);
             if (string.IsNullOrWhiteSpace(poLineItemId))
                 throw new ArgumentNullException(nameof(poLineItemId));
             if (receivedQuantity <= 0)
@@ -153,9 +159,10 @@ namespace Beep.OilandGas.Accounting.Services
             try
             {
                 var lineItem = await GetPoLineItemAsync(poLineItemId);
-                if (lineItem == null || string.IsNullOrWhiteSpace(lineItem.PURCHASE_ORDER_ID))
+                if (lineItem == null || lineItem.PO_LINE_ITEM_ID!=poLineItemId || string.IsNullOrWhiteSpace(lineItem.PURCHASE_ORDER_ID))
                     throw RefusalException.NotFound($"Purchase order line item {poLineItemId} was not found, or names no purchase order.");
 
+                _ = await GetPOByIdAsync(company,lineItem.PURCHASE_ORDER_ID) ?? throw RefusalException.NotFound("The owning purchase order is unavailable.");
                 var receipt = new PO_RECEIPT
                 {
                     PO_RECEIPT_ID = Guid.NewGuid().ToString(),
@@ -172,7 +179,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT", ConnectionName);
+                var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT");
 
                 await repo.InsertAsync(receipt, userId);
 
@@ -191,17 +198,26 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Get PO by ID
         /// </summary>
-        public async Task<PURCHASE_ORDER?> GetPOByIdAsync(string poId)
+        public async Task<PURCHASE_ORDER?> GetPOByIdAsync(CompanyScope company, string poId)
         {
+            PurchaseOrderOwnership.RequireScope(company);
             if (string.IsNullOrWhiteSpace(poId))
                 return null;
 
             try
             {
-                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER");
 
-                var po = await repo.GetByIdAsync(poId);
-                return po as PURCHASE_ORDER;
+                var matches = await repo.GetAsync(new List<AppFilter>
+                {
+                    new(){FieldName="PURCHASE_ORDER_ID",Operator="=",FilterValue=poId},
+                    new(){FieldName="OWNER_TENANT_ID",Operator="=",FilterValue=company.TenantId},
+                    new(){FieldName="OWNER_COMPANY_BA_ID",Operator="=",FilterValue=company.BusinessAssociateId}
+                });
+                if(matches is null)throw new InvalidOperationException("The recorded purchase-order read is unavailable.");
+                var records=matches.ToList();if(records.Count==0)return null;
+                if(records.Count!=1 || records[0] is not PURCHASE_ORDER order)throw new InvalidOperationException("The provider returned an incompatible or ambiguous purchase-order header.");
+                PurchaseOrderOwnership.Require(company,poId,order);return order;
             }
             catch (Exception ex)
             {
@@ -213,56 +229,80 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Get all POs for a vendor
         /// </summary>
-        public async Task<List<PURCHASE_ORDER>> GetVendorPOsAsync(string vendorBaId)
+        public async Task<List<PURCHASE_ORDER>> GetVendorPOsAsync(CompanyScope company, string vendorBaId)
         {
-            if (string.IsNullOrWhiteSpace(vendorBaId))
-                return new List<PURCHASE_ORDER>();
+            PurchaseOrderOwnership.RequireScope(company);
+            if(string.IsNullOrWhiteSpace(vendorBaId))return new List<PURCHASE_ORDER>();
+            return await GetCompanyPOsAsync(company,vendorBaId);
+        }
+        /// <summary>Recorded active company orders, optionally restricted to an exact supplier.</summary>
+        public async Task<List<PURCHASE_ORDER>> GetCompanyPOsAsync(CompanyScope company,string? vendorBaId=null)
+        {
+            PurchaseOrderOwnership.RequireScope(company);
+            if(vendorBaId is not null && string.IsNullOrWhiteSpace(vendorBaId))throw new InvalidOperationException("A supplied PO supplier restriction cannot be empty.");
+            var repo=await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER");
+            var filters=new List<AppFilter>{
+                new(){FieldName="OWNER_TENANT_ID",Operator="=",FilterValue=company.TenantId},
+                new(){FieldName="OWNER_COMPANY_BA_ID",Operator="=",FilterValue=company.BusinessAssociateId},
+                new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
+            if(vendorBaId is not null)filters.Add(new(){FieldName="VENDOR_BA_ID",Operator="=",FilterValue=vendorBaId});
+            var pos=await repo.GetAsync(filters);
+            if(pos is null || pos.Any(row=>row is not PURCHASE_ORDER))throw new InvalidOperationException("The recorded purchase-order list is unavailable.");
+            var orders=pos.Cast<PURCHASE_ORDER>().ToList();PurchaseOrderOwnership.RequireRows(company,orders);
+            if(vendorBaId is not null)PurchaseOrderOwnership.RequireVendorRows(company,vendorBaId,orders);
+            return orders;
+        }
 
-            // A failed read propagates rather than reading as "this vendor has no purchase orders".
-            var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
-
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "VENDOR_BA_ID", Operator = "=", FilterValue = vendorBaId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
-
-            var pos = await repo.GetAsync(filters);
-            return pos?.Cast<PURCHASE_ORDER>().ToList() ?? new List<PURCHASE_ORDER>();
+        /// <summary>Read recorded lines, including inactive records needed to establish receipt history membership.</summary>
+        public async Task<List<PO_LINE_ITEM>> GetLinesForPOAsync(CompanyScope company,string poId)
+        {
+            _ = await GetPOByIdAsync(company,poId) ?? throw RefusalException.NotFound("The owning purchase order is unavailable.");
+            var repo=await GetRepoAsync<PO_LINE_ITEM>("PO_LINE_ITEM");
+            var raw=await repo.GetAsync(new List<AppFilter>{new(){FieldName="PURCHASE_ORDER_ID",Operator="=",FilterValue=poId}})
+                ?? throw new InvalidOperationException("Recorded purchase-order lines are unavailable.");
+            var rows=raw.ToList();if(rows.Any(row=>row is not PO_LINE_ITEM))throw new InvalidOperationException("The provider returned incompatible purchase-order lines.");
+            var lines=rows.Cast<PO_LINE_ITEM>().ToList();PurchaseOrderOwnership.RequireLines(poId,lines);return lines;
+        }
+        public async Task<PurchaseOrderSourceReview?> GetSourceReviewAsync(CompanyScope company,string poId,string actor)
+        {
+            var header=await GetPOByIdAsync(company,poId);if(header is null)return null;
+            var lines=await GetLinesForPOAsync(company,poId);var receipts=await GetReceiptsForPOAsync(company,poId);
+            return PurchaseOrderSourceReview.Create(company,actor,header,lines,receipts);
         }
 
         /// <summary>
         /// Get all receipts for a PO
         /// </summary>
-        public async Task<List<PO_RECEIPT>> GetReceiptsForPOAsync(string poId)
+        public async Task<List<PO_RECEIPT>> GetReceiptsForPOAsync(CompanyScope company, string poId)
         {
             if (string.IsNullOrWhiteSpace(poId))
                 return new List<PO_RECEIPT>();
 
+            _ = await GetPOByIdAsync(company,poId) ?? throw RefusalException.NotFound("The owning purchase order is unavailable.");
             // A failed read propagates rather than reading as "nothing was received".
-            var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT", ConnectionName);
+            var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT");
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "PURCHASE_ORDER_ID", Operator = "=", FilterValue = poId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                new AppFilter { FieldName = "PURCHASE_ORDER_ID", Operator = "=", FilterValue = poId }
             };
 
             var receipts = await repo.GetAsync(filters);
-            return receipts?.Cast<PO_RECEIPT>().ToList() ?? new List<PO_RECEIPT>();
+            if(receipts is null || receipts.Any(row=>row is not PO_RECEIPT))throw new InvalidOperationException("The recorded receipt list is unavailable.");
+            var rows=receipts.Cast<PO_RECEIPT>().ToList();PurchaseOrderOwnership.RequireReceipts(poId,rows);return rows;
         }
 
         /// <summary>
         /// Close a PO (mark as CLOSED)
         /// </summary>
-        public async Task<PURCHASE_ORDER> ClosePOAsync(string poId, string userId = "SYSTEM")
+        public async Task<PURCHASE_ORDER> ClosePOAsync(CompanyScope company, string poId, string userId = "SYSTEM")
         {
             if (string.IsNullOrWhiteSpace(poId))
                 throw new ArgumentNullException(nameof(poId));
 
             try
             {
-                var po = await GetPOByIdAsync(poId);
+                var po = await GetPOByIdAsync(company,poId);
                 if (po == null)
                     throw RefusalException.NotFound($"Purchase order {poId} was not found.");
 
@@ -270,7 +310,7 @@ namespace Beep.OilandGas.Accounting.Services
                 po.ROW_CHANGED_BY = userId;
                 po.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER");
 
                 await repo.UpdateAsync(po, userId);
                 _logger?.LogInformation("PO {PONumber} closed", po.PO_NUMBER);
@@ -320,16 +360,29 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(poLineItemId))
                 return null;
 
-            var repo = await GetRepoAsync<PO_LINE_ITEM>("PO_LINE_ITEM", ConnectionName);
+            var repo = await GetRepoAsync<PO_LINE_ITEM>("PO_LINE_ITEM");
 
             var lineItem = await repo.GetByIdAsync(poLineItemId);
             return lineItem as PO_LINE_ITEM;
         }
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn = "PPDM39")
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-            var connection = _resolveConnection is null ? cn : await _resolveConnection();
+            if(_resolveConnection is null)throw new InvalidOperationException("A reviewed request-bound PRODUCTION connection resolver is required.");
+            var connection = await _resolveConnection();
             if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
 
+            if(tableName is "PURCHASE_ORDER" or "PO_LINE_ITEM" or "PO_RECEIPT")
+            {
+                var source=_editor.GetDataSource(connection) ?? throw new InvalidOperationException("The procurement datasource is unavailable.");
+                var schema=source.GetEntityStructure(new EntityStructure{EntityName=tableName,DatasourceEntityName=tableName},true);
+                var keys=schema?.Fields?.Where(field=>field.IsKey).ToArray();
+                if(keys is not {Length:1} || !string.Equals(keys[0].FieldName,tableName+"_ID",StringComparison.OrdinalIgnoreCase) || keys[0].AllowDBNull)
+                    throw new InvalidOperationException("The procurement record key is unconfirmed. A unique nonnullable identity is required for recorded ownership and history.");
+                var required=tableName=="PURCHASE_ORDER" ? new[]{"OWNER_TENANT_ID","OWNER_COMPANY_BA_ID","CURRENCY_CODE"} : tableName=="PO_LINE_ITEM"?new[]{"PURCHASE_ORDER_ID","QUANTITY_UOM","INVENTORY_ITEM_ID"}:new[]{"PURCHASE_ORDER_ID","QUANTITY_UOM"};
+                foreach(var column in required)
+                    if(schema?.Fields is null || schema.Fields.Count(field=>string.Equals(field.FieldName,column,StringComparison.OrdinalIgnoreCase))!=1)
+                        throw new InvalidOperationException("The procurement ownership or measurement schema is unavailable. Review the PRODUCTION Beep migration before using procurement.");
+            }
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 typeof(T), connection, tableName);

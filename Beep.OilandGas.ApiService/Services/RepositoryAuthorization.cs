@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Microsoft.AspNetCore.Authorization;
+using Beep.OilandGas.Models.Data.Security;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -25,6 +26,8 @@ public static class RepositoryAuthorization
         options.AddPolicy(SignedIn, policy => policy.RequireAuthenticatedUser());
         options.AddPolicy("Admin.ManageUsers", policy => policy.Combine(activeAccount).RequireRole("Administrator"));
         options.AddPolicy("Admin.AssignRoles", policy => policy.Combine(activeAccount).RequireRole("Administrator"));
+        options.AddPolicy(PermissionConstants.HSE.ManageIncidents, policy => policy.Combine(activeAccount).RequireClaim("permission", PermissionConstants.HSE.ManageIncidents));
+        options.AddPolicy(PermissionConstants.HSE.ReportIncident, policy => policy.Combine(activeAccount).RequireClaim("permission", PermissionConstants.HSE.ReportIncident));
     }
 
     /// <summary>Whether <paramref name="user"/> is an active OilGas account — both claims issued by this API, never a token.</summary>

@@ -1,0 +1,99 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderReturnAcceptanceState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Class="pa-3 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Accept observed physical return to service</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        @if(Query is null)
+        {
+            <MudTextField @bind-Value="_process" @bind-Value:after="InputsChanged" Label="Original maintenance process identity" Disabled="@(State.Busy || _discovering)" Required="true" />
+            <MudTextField @bind-Value="_submission" @bind-Value:after="InputsChanged" Label="Original recorded work report identity" Disabled="@(State.Busy || _discovering)" Required="true" />
+        }
+        <MudButton OnClick="ReadStatusAsync" Disabled="@(State.Busy || _discovering)">Read recorded return acceptance outcome</MudButton>
+        @if(OriginalTask is not null){<MudButton OnClick="DiscoverAsync" Disabled="@(State.Busy || _discovering)">Discover the report for this return assignment</MudButton>}
+        @if(State.Status is {} status)
+        {
+            @if(status.Recorded is {} recorded)
+            {<MudAlert Severity="Severity.Success">Recorded physical return acceptance · actual returned UTC @recorded.ReturnedAtUtc.ToString("O")</MudAlert><MudText>Approver @recorded.ApproverUserId · native person @recorded.ApproverPersonBaId · role @recorded.Role · recorded UTC @recorded.RecordedAtUtc.ToString("O")</MudText><MudText Typo="Typo.caption">Approval @recorded.ApprovalId · history @recorded.HistoryId · source @recorded.EvidenceRevision</MudText>}
+            else{<MudAlert Severity="Severity.Info">No recorded physical return acceptance was found for this original report.</MudAlert>}
+        }
+        @if(CanApprove)
+        {
+            <MudButton OnClick="ReviewAsync" Disabled="@(!State.CanReview || _discovering)">Review return assignment, inspections and independent people</MudButton>
+            @if(State.Review is {} review)
+            {
+                <MudText>Original report @review.Completion.Report.Query.SubmissionId · @review.Completion.Report.WorkPerformed</MudText>
+                <MudText>Return role @review.Assignment.Stage.AssignedRole · step @review.Assignment.Stage.StepName · native approver @review.Completion.ReviewerPerson?.PersonBaId</MudText>
+                <MudText>Verified by @review.Assignment.Verification.ReviewerUserId · native person @review.Assignment.Verification.ReviewerPersonBaId · verification UTC @review.Assignment.Verification.RecordedAtUtc.ToString("O")</MudText>
+                <MudText Typo="Typo.caption">Recorded verification @review.Assignment.Verification.ApprovalId · handoff @review.Assignment.HandoffHistoryId · original report revision @review.Completion.Report.Revision</MudText>
+                <MudTable Items="@review.Completion.Requirements.Where(row=>row.ApplicableStage=="RETURN_TO_SERVICE").ToArray()" Dense="true" Hover="true">
+                    <HeaderContent><MudTh>Approved return condition</MudTh><MudTh>Actual observation</MudTh><MudTh>Inspector and UTC</MudTh></HeaderContent>
+                    <RowTemplate><MudTd DataLabel="Approved return condition">@context.RequiredText · @context.Jurisdiction</MudTd><MudTd DataLabel="Actual observation">@context.Status · @context.ResultText</MudTd><MudTd DataLabel="Inspector and UTC">@context.Inspector · @context.InspectDate?.ToString("O")</MudTd></RowTemplate>
+                </MudTable>
+                @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+                <MudTextField @bind-Value="_returned" Label="Actual returned-at UTC (ISO 8601 ending in Z)" Required="true" Disabled="@(State.Busy || _discovering)" />
+                <MudTextField @bind-Value="_reason" Label="Explicit physical return acceptance reason" Lines="3" Required="true" Disabled="@(State.Busy || _discovering)" />
+                <MudCheckBox @bind-Value="_confirm" Label="I confirm the original verified work, actual return observations, my independent identity and explicit actual return UTC" Disabled="@(State.Busy || _discovering)" />
+                <MudButton OnClick="RecordAsync" Disabled="@(!State.CanRecord || !_confirm)" Color="Color.Primary">Retain reference and record physical return acceptance</MudButton>
+            }
+            <MudTextField @bind-Value="_reference" Label="Original physical return acceptance intent" Disabled="@(State.Busy || _discovering)" />
+            <MudButton OnClick="RecoverAsync" Disabled="@(State.Busy || _discovering)">Recover original return acceptance without another write</MudButton>
+            @if(State.VisibleReference is {} id){<MudText>Retained original return acceptance @id</MudText>}
+            @if(State.Receipt is {} saved)
+            {<MudAlert Severity="Severity.Success">Recorded independent physical return acceptance</MudAlert><MudText>Approver @saved.Receipt.ApproverUserId · role @saved.Command.Review.Assignment.Stage.AssignedRole · actual returned UTC @saved.Receipt.ReturnedAtUtc.ToString("O") · recorded UTC @saved.Receipt.RecordedAtUtc.ToString("O")</MudText><MudText Typo="Typo.caption">Approval @saved.Receipt.ApprovalId · history @saved.Receipt.HistoryId</MudText><MudButton Href="@("/ppdm39/process/instances/"+Uri.EscapeDataString(saved.Command.Reference().Query.Task.InstanceId))">Open recorded process</MudButton>}
+        }
+        <MudText>This records the independent acceptance of observed physical return. Workflow closure and asset lifecycle advancement require their separate recorded transition.</MudText>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public CompanyWorkOrderCompletionQuery? Query{get;set;}
+    [Parameter] public CompanyMaintenanceReceivingQuery? OriginalTask{get;set;}
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    private CompanyWorkOrderCompletionQuery? _attached;
+    private string _resource="",_reason="",_returned="",_reference="",_process="",_submission="";
+    private bool _confirm,_disposed,_discovering;
+    private int _generation;
+    private string? _error;
+    private bool CanApprove=>Company.Selection?.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal)==true;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet()
+    {
+        var resource=WorkOrderId+"\n"+FieldId+"\n"+OriginalTask?.InstanceId;if(_attached!=Query || _resource!=resource){Invalidate();_attached=Query;_resource=resource;_process=OriginalTask?.InstanceId??"";}if(Query is not null)State.Attach(Query);
+        var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);if(values.TryGetValue("returnAcceptance",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        if(values.TryGetValue("acceptanceProcess",out var process) && process.Count==1)_process=process[0]??"";if(values.TryGetValue("acceptanceSubmission",out var submission) && submission.Count==1)_submission=submission[0]??"";
+    }
+    private CompanyWorkOrderCompletionQuery CurrentQuery()=>Query??new(new(_process,FieldId,WorkOrderId),_submission);
+    private void InputsChanged(){_generation++;State.Attach(null);_confirm=false;_error=null;}
+    private async Task Authority(bool approve=true,bool discover=false)
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;var task=discover?OriginalTask??throw new InvalidOperationException("Original return assignment is required."):CurrentQuery().Task;task.Require();if(!discover)CurrentQuery().Require();
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) || approve && (!selected.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal) || State.Review is {} review && !user.IsInRole(review.Assignment.Stage.AssignedRole)) || task.WorkOrderId!=WorkOrderId || task.FieldId!=FieldId || await Fields.GetCurrentFieldIdAsync()!=task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Original standard return role/company/account/FIELD and explicit return/approval capabilities are required.");
+    }
+    private Task Retain(Guid id){var query=State.VisibleCommand?.Reference().Query??CurrentQuery();_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"returnAcceptance",_reference},{"acceptanceProcess",query.Task.InstanceId},{"acceptanceSubmission",query.SubmissionId}}),replace:true);return Task.CompletedTask;}
+    private Task ReviewAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());await State.ReviewAsync(Workflows);_reason="";_returned="";_confirm=false;},"reviewing original physical return evidence");
+    private Task RecordAsync()=>Run(async()=>{await Authority();if(!_confirm || State.Review?.Completion.Report.Query!=CurrentQuery())throw new ArgumentException("Confirm the exact reviewed work, inspections and independent return role.");if(!DateTime.TryParse(_returned,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out var utc) || utc.Kind!=DateTimeKind.Utc)throw new ArgumentException("Enter the explicit actual returned UTC in ISO 8601 ending in Z.");await State.RecordAsync(Workflows,utc,_reason,Retain);},"recording original physical return acceptance");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Use the original physical return acceptance intent.");await State.RecoverAsync(Workflows,id,Retain);},"recovering original physical return acceptance");
+    private Task ReadStatusAsync()=>Run(async()=>{await Authority(false);State.Attach(CurrentQuery());await State.ReadStatusAsync(Workflows);},"reading original physical return status");
+    private Task DiscoverAsync()=>Run(async()=>
+    {
+        await Authority(false,true);var snapshot=Company.Snapshot;var generation=_generation;var task=OriginalTask!;_discovering=true;
+        try{var query=await Workflows.DiscoverReturnAcceptanceReportAsync(task);if(_disposed || generation!=_generation || snapshot!=Company.Snapshot)return;if(query.Task!=task)throw new InvalidOperationException("Discovered report differs from the original return assignment.");_process=query.Task.InstanceId;_submission=query.SubmissionId;State.Attach(query);}
+        finally{_discovering=false;}
+    },"discovering original return report");
+    private async Task Run(Func<Task> action,string operation){if(State.Busy || _discovering || _disposed)return;_error=null;var snapshot=Company.Snapshot;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original physical return acceptance is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}}
+    private void Invalidate(){_generation++;State.Attach(null);_process="";_submission="";_reason="";_returned="";_reference="";_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

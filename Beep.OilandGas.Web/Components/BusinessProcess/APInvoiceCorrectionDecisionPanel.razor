@@ -1,0 +1,75 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+@if(_authorized && Review?.CanViewCorrectionDecision==true)
+{
+    <MudPaper Outlined="true" Class="pa-4 mt-3">
+        <MudText Typo="Typo.h6">Independent corrected invoice review</MudText>
+        <MudAlert Severity="Severity.Info">Review the latest recorded correction against current receipt and policy evidence. Viewing diagnostics does not record acknowledgement, financial approval or correction task completion.</MudAlert>
+        <MudButton OnClick="ReviewCorrection" Disabled="@(Review.CorrectionDecisionReviewBusy || Review.CorrectionCommandUnsettled)" Variant="Variant.Outlined">Review latest correction and current evidence</MudButton>
+        @if(Review.CorrectionDecisionReviewBusy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing latest invoice correction" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(Review.CorrectionDecisionReview is {} result)
+        {
+            <MudText>Correction version: @result.CorrectionVersion · Correction intent: @result.CorrectionIntentId</MudText>
+            <MudText>Reviewer: @result.Current.Invoice.ActorUserId · Correction preparer: @result.RecordedHistory.Versions[^1].Command.ActorUserId</MudText>
+            <MudText>Original billed total: @result.RecordedHistory.OriginalInvoice.TOTAL_AMOUNT · Current corrected total: @result.Current.Invoice.Invoice.TOTAL_AMOUNT · Currency: @result.Current.Invoice.Invoice.CURRENCY_CODE</MudText>
+            <MudText>Correction reason: @result.RecordedHistory.Versions[^1].Command.Draft.Reason</MudText>
+            <MudText>Current financial revision: @result.Current.Revision · Review revision: @result.Revision · Reviewed at UTC: @result.RetrievedAtUtc.ToString("O")</MudText>
+            <MudTable T="APSourceComparison" Items="result.Current.Checks" Dense="true">
+                <HeaderContent><MudTh>Current check</MudTh><MudTh>Recorded result</MudTh><MudTh>Evidence</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="Current check">@context.Label</MudTd><MudTd DataLabel="Recorded result">@context.OutcomeText</MudTd><MudTd DataLabel="Evidence">@context.Evidence</MudTd></RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+            <MudAlert Severity="Severity.Warning">This diagnostic review does not confirm acknowledgement or configured task completion. Check the source process for its recorded workflow state. Unavailable checks require their own evidence.</MudAlert>
+        }
+    </MudPaper>
+}
+@code {
+    [Parameter] public APInvoiceWorkspaceState? Review {get;set;}
+    private APInvoiceWorkspaceState? subscribed;
+    private bool _authorized,_disposed;
+    private string? _error;
+    protected override void OnInitialized(){Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        if(subscribed!=Review){if(subscribed is not null)subscribed.CorrectionDecisionChanged-=Render;subscribed=Review;if(subscribed is not null)subscribed.CorrectionDecisionChanged+=Render;}
+        _authorized=false;var original=Company.Snapshot;var version=Review?.Version;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(!_disposed && original==Company.Snapshot && version==Review?.Version && original.Selection is {} selected)
+            _authorized=user.Identity?.IsAuthenticated==true && Subject(user)==selected.UserId && selected.Roles.Any(user.IsInRole);
+    }
+    private static string? Subject(System.Security.Claims.ClaimsPrincipal user)=>user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value??user.FindFirst("sub")?.Value;
+    private async Task ReviewCorrection()
+    {
+        if(_disposed || Review is null || Review.CorrectionDecisionReviewBusy)return;
+        _error=null;var original=Company.Snapshot;var version=Review.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=Review.Version || original.Selection is not {} selected ||
+                user.Identity?.IsAuthenticated!=true || Subject(user)!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !Review.CanViewCorrectionDecision)
+                throw new UnauthorizedAccessException("Current independent company reviewer roles and account are required.");
+            await Review.LoadCorrectionDecisionReviewAsync(Accounting.GetAPInvoiceCorrectionDecisionReviewAsync);
+        }
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"reviewing latest invoice correction","Reload the latest correction and complete current receipt and policy evidence");
+            if(!_disposed && original==Company.Snapshot && version==Review.Version)
+            {
+                _error=message;
+                if(failure is UnauthorizedAccessException || failure is OilGasApiException{StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized})
+                {_authorized=false;Review.ClearCorrectionDecisionReview();}
+            }
+        }
+    }
+    private void ContextChanged(){_authorized=false;_error=null;Review?.ClearCorrectionDecisionReview();Render();}
+    private void AuthenticationChanged(Task<AuthenticationState> changed){_authorized=false;_error=null;Review?.Clear();Render();}
+    private void Render(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;Review?.ClearCorrectionDecisionReview();Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;if(subscribed is not null)subscribed.CorrectionDecisionChanged-=Render;}
+}

@@ -12,12 +12,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Identity;
 [ApiController]
 [Route("api/identity/roles")]
 [Authorize(Roles = "Administrator")]
-public sealed class RepositoryRolesController(RepositoryRoleCatalogService catalog, ILogger<RepositoryRolesController> logger,
-    IFailureReporter failures) : ControllerBase
+public sealed class RepositoryRolesController(RepositoryRoleCatalogService catalog,
+    IFailureReporter failures, RepositoryRoleAssignmentService assignments) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken) =>
-        Ok(await catalog.GetAllAsync(cancellationToken));
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        await assignments.RequireRepositoryAdministratorAsync(User.ActingUserId(), cancellationToken);
+        return Ok(await catalog.GetAllAsync(cancellationToken));
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create(RepositoryRoleRequest request, CancellationToken cancellationToken)
@@ -25,8 +28,7 @@ public sealed class RepositoryRolesController(RepositoryRoleCatalogService catal
         var actor = User.ActingUserId();
         try
         {
-            var role = await catalog.CreateAsync(request, cancellationToken);
-            logger.LogInformation("Role created: Actor={Actor} Role={Role}", actor, role.RoleId);
+            var role = await assignments.CreateRoleAsync(request, actor, cancellationToken);
             return Ok(role);
         }
         // A role of the same name saved by somebody else first is the administrator's to reload; the catalog's own refusals

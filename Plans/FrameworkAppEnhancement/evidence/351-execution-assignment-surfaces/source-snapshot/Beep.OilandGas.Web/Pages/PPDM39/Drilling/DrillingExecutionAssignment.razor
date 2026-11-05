@@ -1,0 +1,114 @@
+@page "/drilling/program-execution/assignment"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+<PageTitle>Execution reporting responsibility</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Execution reporting responsibility</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        <MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload source and recipients</MudButton>
+    </MudStack>
+    <MudAlert Severity="Severity.Info">Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.</MudAlert>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming original reporting responsibility" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(_state?.Confirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
+    @if(_state?.Pending is {} pending)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">@_state.PendingTitle</MudText>
+            <MudAlert Severity="@(_state.Busy || _state.PendingTabCopyConfirmed?Severity.Info:Severity.Warning)" role="status">@_state.PendingExplanation</MudAlert>
+            <MudText>@pending.Source.Basis.Source.Program.PROGRAM_NAME · Operation @pending.OperationId · FIELD @pending.Scope().FieldId</MudText>
+            <MudText>Original sender @pending.Scope().ActorUserId · Role @pending.SenderRole · Workspace @pending.SenderPersonaCode</MudText>
+            <MudText>Receiving role @pending.Workflow.Step.AssignedRole · @pending.Workflow.Step.PersonaCodes.Count configured persona destinations</MudText>
+            <MudText Class="development-draft-description">@pending.Reason</MudText>
+            <MudButton OnClick="_state.RecoverAsync" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined">Recover original reporting assignment</MudButton>
+        </MudPaper>
+    }
+    else if(_state?.RetainedReviewId is {} other)
+    {
+        <MudAlert Severity="Severity.Warning">Recover the retained reporting assignment before preparing another.</MudAlert>
+        <MudButton Href="@AssignmentUrl(other)">Open retained reporting assignment</MudButton>
+    }
+    @if(_state?.Receipt is {} receipt)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original reporting assignment outcome</MudText>
+            <MudText>Outcome checked @receipt.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            @if(receipt.Recorded){<MudText>Recorded responsibility @receipt.InstanceId · @receipt.TaskIds.Count configured persona tasks</MudText>}
+            else{<MudText>This original reporting assignment was confirmed absent.</MudText>}
+        </MudPaper>
+    }
+    @if(_state?.Review is {} review)
+    {
+        var scope=review.Source.Basis.Scope();var operation=review.Source.Recorded!;var start=DrillingExecutionStart.FromRecord(operation);
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Recorded execution source</MudText>
+            <MudText>Company @scope.Company.TenantId / @scope.Company.BusinessAssociateId · Sender @scope.ActorUserId · Original FIELD @scope.FieldId</MudText>
+            <MudText>@review.Source.Basis.Source.Program.PROGRAM_NAME · Version @review.Source.Basis.Source.Program.PROGRAM_VERSION · Well @operation.WELL_UWI</MudText>
+            <MudText>Operation @operation.DRILLING_OPERATION_ID · Actual reported spud @start.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC · Original recorder @operation.ROW_CREATED_BY</MudText>
+            <MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(review.Source.Basis.ReviewInstanceId))" Variant="Variant.Outlined">Open observed drilling progress</MudButton>
+        </MudPaper>
+        @if(review.ExistingInstanceId is {} existing){<MudAlert Severity="Severity.Info">Reporting responsibility already recorded: @existing. Open your company inbox to view an eligible assigned task. A second assignment cannot replace its original.</MudAlert>}
+        else if(_state.CanPrepare && _state.Prepared is null)
+        {
+            <MudPaper Outlined="true" Class="pa-4 my-3">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Configured reporting destinations</MudText>
+                @if(review.Options.Count==0){<MudAlert Severity="Severity.Info">No configured execution reporting workflow is available. No default role or workflow will be created.</MudAlert>}
+                else
+                {
+                    <MudSelect T="string" Label="Configured reporting workflow" @bind-Value="workflow" Disabled="@_state.Busy">
+                        @foreach(var option in review.Options){<MudSelectItem T="string" Value="@option.ProcessId" Disabled="@(!option.Ready)">@option.ProcessName · @option.Step.AssignedRole</MudSelectItem>}
+                    </MudSelect>
+                    @foreach(var option in review.Options)
+                    {
+                        <MudText>@option.ProcessName · Version @option.Version · Step @option.Step.StepName · Receiving role @option.Step.AssignedRole</MudText>
+                        <MudText>@option.Authority.Recipients.Count eligible company accounts · @option.Step.PersonaCodes.Count persona destinations: @string.Join(", ",option.Step.PersonaCodes)</MudText>
+                        @foreach(var recipient in option.Authority.Recipients){<MudText>Recipient @recipient.UserId · Workspace @recipient.PersonaCode</MudText>}
+                        @if(!option.Ready){<MudAlert Severity="Severity.Warning">No current reporting recipient with this role, mapped workspace and original FIELD WRITE access.</MudAlert>}
+                    }
+                    <MudSelect T="string" Label="Your assignment sender role" @bind-Value="role" Disabled="@_state.Busy">
+                        @foreach(var senderRole in review.SenderRoles){<MudSelectItem T="string" Value="@senderRole">@senderRole</MudSelectItem>}
+                    </MudSelect>
+                    <MudTextField T="string" Label="Assignment reason" @bind-Value="reason" Lines="3" MaxLength="1600" Required="true" Disabled="@_state.Busy" />
+                    <MudButton OnClick="Prepare" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Review reporting assignment</MudButton>
+                }
+            </MudPaper>
+        }
+        else if(_state.Prepared is null && _state.RetainedReviewId is null && _state.Receipt is null){<MudAlert Severity="Severity.Info">Read-only source. Current reporting edit/manage, workflow-start, configured sender workspace and original FIELD WRITE rights are required for a new assignment.</MudAlert>}
+    }
+    @if(_state?.Prepared is {} prepared)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Confirm original reporting assignment</MudText>
+            <MudText>@prepared.Source.Basis.Source.Program.PROGRAM_NAME · Operation @prepared.OperationId · Original FIELD @prepared.Scope().FieldId</MudText>
+            <MudText>Sender role @prepared.SenderRole · Receiving role @prepared.Workflow.Step.AssignedRole · @prepared.Workflow.Step.PersonaCodes.Count persona destinations</MudText>
+            @foreach(var recipient in prepared.Workflow.Authority.Recipients){<MudText>Frozen recipient @recipient.UserId · Workspace @recipient.PersonaCode</MudText>}
+            <MudText Class="development-draft-description">@prepared.Reason</MudText>
+            <MudButton OnClick="_state.SubmitAsync" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Confirm and retain reporting assignment</MudButton>
+            <MudButton OnClick="_state.Cancel" Disabled="@_state.Busy" Variant="Variant.Outlined">Back to assignment</MudButton>
+        </MudPaper>
+    }
+    @if(Company.Selection is null){<MudAlert Severity="Severity.Info">Choose a company before opening execution reporting responsibility.</MudAlert>}
+    else if(_state?.CanView==false){<MudAlert Severity="Severity.Warning">Current company drilling, report and workflow view access is required.</MudAlert>}
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="reviewId")]public string? ReviewId{get;set;}
+    private DrillingExecutionAssignmentState? _state;private bool disposed,interactive;private string workflow="",role="",reason="";
+    private static string AssignmentUrl(string id)=>"/drilling/program-execution/assignment?reviewId="+Uri.EscapeDataString(id);
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
+    private Task Reload(){workflow="";role="";reason="";return _state!.LoadAsync(ReviewId);}
+    private void Prepare()=>_state!.Prepare(workflow,role,reason);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

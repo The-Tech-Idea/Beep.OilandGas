@@ -479,7 +479,7 @@ public sealed class LedgerRoutingTests
         var payments = new APPaymentService(editor.Object, columns, defaults, metadata.Object, posting,
             NullLogger<APPaymentService>.Instance, resolveConnection: Resolve);
         await Assert.ThrowsAsync<InvalidOperationException>(() => payment
-            ? (Task)payments.GetPaymentByIdAsync("payment") : invoices.GetBillByIdAsync("invoice"));
+            ? (Task)payments.GetPaymentByIdAsync("payment") : invoices.GetBillByIdAsync(new TheTechIdea.Data.OilGas.CompanyScope("tenant","company"),"invoice"));
         Assert.Equal(1, calls);
         editor.VerifyNoOtherCalls();
         metadata.VerifyNoOtherCalls();

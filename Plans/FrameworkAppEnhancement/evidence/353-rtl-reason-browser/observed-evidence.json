@@ -1,0 +1,86 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md; Persona09 multinational screen usability",
+  "status": "Selected current final-approval RTL/keyboard/protected-reload journey passed; full roadmap incomplete.",
+  "recorded_at": "2026-10-30T03:31:52.825770+00:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "Existing dirty implementation preserved. Three actual app files changed for date bidi isolation and preserved multiline evidence text.",
+  "changes": [
+    "Incident header/detail date-time values and corrective action due dates use bdi dir=ltr inside RTL. Existing date formats and Due PropertyColumn/date sorting metadata remain. No timestamp/calendar/unit conversion introduced.",
+    "Recorded HSE reasons use dir=auto and one workflow-evidence-text class in app.css: pre-wrap, plaintext paragraph bidi, wrapping and start alignment. No inline/page-local CSS or hardcoded colors."
+  ],
+  "browser": {
+    "tool": "Installed cached playwright-cli via user skill wrapper, installed Microsoft Edge, owned session hse353reason.",
+    "result": "pass",
+    "selected_journeys": 1,
+    "recorded_states": 5,
+    "viewport_widths": [
+      1280,
+      390
+    ],
+    "checks": [
+      "Tab from reason reaches approval button; Enter submits; Shift+Tab returns to reason.",
+      "Short reason shows aria-invalid and its associated explanatory error; zero approval/native attempts and no retained intent.",
+      "Desktop1280 and narrow390 RTL document widths equal viewport widths. Both incident timestamps and due date have computed ltr direction.",
+      "Exact Arabic/English multiline reason is retained after one valid approval request loses its controlled reply. ApprovalAttempts=1, Approvals=1, NativeAttempts=0, NativeWrites=0.",
+      "Full reload restores exact Unicode/newline from existing protected session store, with no automatic submission and unchanged encoded incident/workflow URL. Computed pre-wrap/plaintext and dir=auto confirmed.",
+      "Final narrow screenshots visually inspected: due date punctuation reads31-Oct-26 and Arabic/English reasons render on separate lines."
+    ],
+    "not_additive": "Two earlier executions passed their automatic checks but manual screenshot review exposed date bidi reordering, then collapsed evidence line breaks. Each prompted an actual app fix and this final same-journey rerun. They are not counted as additional distinct journeys.",
+    "before_fix_artifacts": [
+      "before-date-isolation.png",
+      "before-multiline-layout.png"
+    ]
+  },
+  "build": {
+    "seconds": 2.11,
+    "errors": 0,
+    "warnings": "Existing support reference conflicts/ancillary namespace resolution warnings. No compile errors.",
+    "scope": "Existing isolated Razor host; no project-reference builds. Current Data assembly and actual current closure/detail/CSS/typed-client sources as described below. Existing support assembly supplies ancillary widgets/interfaces/store."
+  },
+  "construction": [
+    "Current closure component and app.css fixture copies match workspace bytes exactly. Current incident detail differs only in one component tag type qualification to select current local closure type; code/date markup otherwise matches after newline normalization.",
+    "Actual current HSEServiceClient/ApiClient source-linked into isolated host. Existing protected session intent-store implementation comes from prior support assembly, retained and not independently rebuilt in this gate.",
+    "Fixture sets html lang=ar/dir=rtl and MudRTLProvider true. It controls authentication, incident/workflow/action reads and transport backend. It is not full app startup/OIDC/API/provider acceptance.",
+    "Initial HTTP path used an unrelated workflow query name before assertions. The selected journey uses the actual workflowInstanceId parameter, and all recorded observations keep the correct encoded incident/workflow URL.",
+    "No correction-return/native-resolution browser path, live native mutation, xUnit/provider/permit/class/full suite ran. Earlier component tests remain separate evidence."
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidentDetail.razor": "10A33577A694FFFB7313117E5BABB17863FC63CF573F6DAEBED2B035AD31C04B",
+    "Beep.OilandGas.Web/Components/Workflow/HseClosureWorkflow.razor": "60EAC013F4EBE48CE79BC463CF626860F17476D552F8C00C50F8BBE7F5922E8A",
+    "Beep.OilandGas.Web/wwwroot/css/app.css": "36874E26EC8899E883A5DC2924AD357B1A3FAFC356F0A40D36E0E59D0F96870F",
+    "Beep.OilandGas.Web\\Services\\HSEServiceClient.cs": "439D6FE08C5FB173130EE500331286DADDB79B66119C6B4CEAFF8FCFAF13C46B",
+    "Beep.OilandGas.Web\\Services\\HSEServiceClient.Closure.cs": "48360A8480010949B5D94AA28A0353D41F3B36C688D73CC0D2A2B971C4A46E61",
+    "Beep.OilandGas.Client\\App\\Services\\Field\\IFieldService.cs": "108AA664E900F9313201D1839908B187223AC7CFDF508763906B3FBDC06EFD3B",
+    "Beep.OilandGas.Web\\Services\\ApiClient.cs": "7A434BD3A27E29B377156FBDFAA544F42D6DF0C3487AFCE3D10F9664BB8F8125",
+    "Beep.OilandGas.Models\\Data\\Security\\PermissionConstants.cs": "0750B42A4005FCB779C1804D37AA88DD92850F37B6F7D72CE627B98591C40064"
+  },
+  "runtime_sha256": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\bin\\Debug\\net10.0\\HseBrowser.dll": "19889E99E9E4E116AFFE7CB9BBA156A9A97770DE56026397F5FEE53BB10B42A6",
+    "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll": "E3D394C50B556E982380A1A8A0C4BA06420A7FCCF9372B61379E9AB05BF9D40C",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\bin\\Debug\\net10.0\\PurchaseOwnership.dll": "C850F9EA4A9DD99CF57AB7E5EE93A1226C650A3D998567985667011235300AB7"
+  },
+  "fixture_sha256": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\HseBrowser.csproj": "6004A3C6BB7C67B1BDD75849075B55128E06B58B53FEECB49A79D19E54EE8B1B",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\App.razor": "831F98619613BB88DEB4D2151AD596F34D0B394308ED43310CBCABD6334B23D7",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\Routes.razor": "250702E3F847C034C7C3E9637B1ABDFFC3C3A21867390D0DB0AC472EE5D8A341",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\Host.cs": "B877A047F200158133E74814EE81050BE7F0697B88988C3F2B98027C0FC49AD3",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\CurrentIncident\\HSEIncidentDetail.razor": "51367FB419BED497C8D1EE98DDAF65414FE18DB5BB9DC47834B22038173AD44C",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\CurrentClosure\\HseClosureWorkflow.razor": "60EAC013F4EBE48CE79BC463CF626860F17476D552F8C00C50F8BBE7F5922E8A",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\wwwroot\\css\\app.css": "36874E26EC8899E883A5DC2924AD357B1A3FAFC356F0A40D36E0E59D0F96870F",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-78ea05cd6e5e4b699dc1800dc1908e63\\reason-journey-code.txt": "4AD5D73D1964298056B406F070BD91BCEBE75C87FB00CB137AB808ED58B4980A"
+  },
+  "logs": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-build.log": "CEA87F1655C578F74A0A58A10C68E026AFF0E506EF274164ADA703C7D478E8C2",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-journey.log": "723250A68334CA6389A6F18414674A8DFD3A4D935B4376E77585C67344DA65AF",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-browser-host.log": "0357298B1E7EFA66F837DAA265306535B652A9E0CBAC261644614A5430456928"
+  },
+  "teardown": {
+    "browser": "Owned session hse353reason closed successfully.",
+    "host": "Exact executable path selected; Stop-Process requested, immediate CIM check raced process termination, subsequent CIM confirmed absence. All3 owned host exec sessions reported terminal exit1 from deliberate stop. No unrelated process terminated."
+  },
+  "limits": [
+    "Selected final-approval reason only, not complete Arabic localization, all RTL screens, assistive-technology qualification or country-specific date/time policy.",
+    "No actual native closure or native commit uncertainty in this browser gate; transport backend records controlled approval only.",
+    "Production host/OIDC, competing-account concurrency, additional providers and performance remain open. Full goal not complete; no commit/push."
+  ]
+}

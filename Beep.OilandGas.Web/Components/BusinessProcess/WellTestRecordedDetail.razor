@@ -1,0 +1,33 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using MudBlazor
+@using Beep.OilandGas.Models.Data
+@if(Source is null){<MudAlert Severity="Severity.Info">Select a recorded test to review its evidence.</MudAlert>}
+else
+{
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudText Typo="Typo.h6">Recorded test @Source.TestNumber</MudText>
+        <MudText>Record identity: @Source.TestId</MudText>
+        <MudText>Well: @Source.Uwi · Source: @(Source.Source ?? "Unavailable") · Run: @(Source.RunNumber ?? "Unavailable")</MudText>
+        <MudText>Test date: @(Source.TestDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Unavailable") · Source timezone unavailable</MudText>
+        <MudText>Recorded status: @(string.IsNullOrWhiteSpace(Source.TestStatus)?"Unavailable":Source.TestStatus)</MudText>
+        <MudText>Preparer: @(string.IsNullOrWhiteSpace(Source.CreateUser)?"Unavailable":Source.CreateUser)</MudText>
+        <MudText>Recorded updater: @(string.IsNullOrWhiteSpace(Source.UpdateUser)?"Unavailable":Source.UpdateUser)</MudText>
+        <MudText>Recorded note: @(string.IsNullOrWhiteSpace(Source.Description)?"Unavailable":Source.Description)</MudText>
+        <MudTable T="string" Items='@(new[]{"Oil","Gas","Water"})' Dense="true" Hover="true">
+            <HeaderContent><MudTh>Measurement</MudTh><MudTh>Recorded amount</MudTh><MudTh>Current UOM</MudTh><MudTh>Original OUOM</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Measurement">@context</MudTd>
+                <MudTd DataLabel="Recorded amount">@Amount(context)</MudTd>
+                <MudTd DataLabel="Current UOM">@Unit(context,false)</MudTd>
+                <MudTd DataLabel="Original OUOM">@Unit(context,true)</MudTd>
+            </RowTemplate>
+        </MudTable>
+        <MudText>BSW: @(Source.BswPercent?.ToString("N2") ?? "Unavailable") % · Water cut: @(Source.WaterCutPercent?.ToString("N2") ?? "Unavailable") %</MudText>
+        <MudAlert Severity="Severity.Info">Independent approval, correction reasons and revision history have not been returned. This review does not confirm acceptance or shift handover.</MudAlert>
+    </MudPaper>
+}
+@code{
+    [Parameter] public WellTestResponse? Source { get; set; }
+    private string Amount(string name)=>(name switch{"Oil"=>Source!.OilFlowAmount,"Gas"=>Source!.GasFlowAmount,_=>Source!.WaterFlowAmount})?.ToString("N2") ?? "Unavailable";
+    private string Unit(string name,bool original){var value=(name,original) switch{("Oil",false)=>Source!.OilFlowAmountUom,("Gas",false)=>Source!.GasFlowAmountUom,("Water",false)=>Source!.WaterFlowAmountUom,("Oil",true)=>Source!.OilFlowAmountOuom,("Gas",true)=>Source!.GasFlowAmountOuom,_=>Source!.WaterFlowAmountOuom};return string.IsNullOrWhiteSpace(value)?"Unavailable":value;}
+}

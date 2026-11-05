@@ -1,0 +1,282 @@
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.Security
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IBusinessProcessServiceClient Client
+@inject IIncidentRcaIntentStore Intents
+@inject IIncidentRcaHandoffIntentStore Handoffs
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<HseCauseReview> Logger
+
+@if (_unavailable)
+{ <MudText Typo="Typo.body2">Cause recovery is unavailable. Reload before recording another cause.</MudText> }
+else if (_checked && HandoffOriginal is not null)
+{ <MudButton Variant="Variant.Outlined" Disabled="@(!CanManage || Busy)" OnClick="RetryHandoffAsync">Reconcile original RCA handoff</MudButton> }
+else if (_checked && Original is not null)
+{ <MudButton Variant="Variant.Outlined" Disabled="@(!CanManage || Busy)" OnClick="RetryAsync">Reconcile original cause</MudButton> }
+else if (_checked)
+{
+    <MudButton Variant="Variant.Outlined" Disabled="@(!CanManage || Busy)" OnClick="ReviewAsync">Review recorded causes and classifications</MudButton>
+    @if (Review is not null)
+    {
+        <MudText Typo="Typo.body2">Recorded cause observations: @Review.Findings.Count</MudText>
+        @foreach (var finding in Review.Findings)
+        { <MudText Typo="Typo.body2">@finding.Observation · @finding.Category · @finding.Description (@(finding.Active ? "active" : "inactive"))</MudText> }
+        <MudText Typo="Typo.body2">Available root-cause classifications: @Review.Options.Count</MudText>
+        @if (CanRecord && Review.Options.Count > 0)
+        {
+            <MudSelect T="string" @bind-Value="SelectedCode" Label="Root-cause classification" Disabled="@Busy">
+                @foreach (var option in Review.Options) { <MudSelectItem T="string" Value="@option.CauseCode">@option.CauseCode · @option.Name</MudSelectItem> }
+            </MudSelect>
+            <MudTextField T="string" @bind-Value="Summary" Label="Root-cause observation" Lines="4" Disabled="@Busy" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanManage || Busy || string.IsNullOrWhiteSpace(SelectedCode))" OnClick="RecordAsync">Record reviewed cause</MudButton>
+        }
+        else { @foreach (var option in Review.Options) { <MudText Typo="Typo.body2">@option.CauseCode · @option.Name</MudText> } }
+    }
+}
+@if (Message is not null) { <MudText Typo="Typo.body2" role="status">@Message</MudText> }
+@if (_checked && CanManage && HandoffOriginal is null)
+{
+    <MudButton Variant="Variant.Text" Disabled="@Busy" OnClick="FindRecordedAsync">Find my recorded causes</MudButton>
+    <MudButton Variant="Variant.Text" Disabled="@Busy" OnClick="FindSharedAsync">View shared recorded causes</MudButton>
+    <MudButton Variant="Variant.Text" Disabled="@Busy" OnClick="RecoverHandoffAsync">Find my recorded RCA handoff</MudButton>
+    @if (Shared is not null)
+    {
+        <MudText Typo="Typo.body2">Select a shared cause to review the assigned RCA workflow step.</MudText>
+        @if (Shared.Count == 0) { <MudText Typo="Typo.body2">No verified shared causes were found.</MudText> }
+        @foreach (var cause in Shared)
+        {
+            <MudText Typo="Typo.body2">@cause.Observation · @cause.CauseCode · @cause.Summary (recorded by @cause.RecordedBy)</MudText>
+            <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="@Busy" OnClick="@(() => ReviewHandoffAsync(cause))">Check workflow readiness</MudButton>
+        }
+    }
+    @if (Recovered is not null)
+    { <MudText Typo="Typo.body2">RCA handoff confirmed for cause @Recovered.Original.Review.Cause.Observation. Next task is ready.</MudText> }
+    @if (Recorded is not null)
+    {
+        @if (Recorded.Count == 0) { <MudText Typo="Typo.body2">No recorded causes were found for this account.</MudText> }
+        @foreach (var original in Recorded)
+        {
+            <MudText Typo="Typo.body2">@original.Source.NextObservation · @original.Option.CauseCode · @original.Summary</MudText>
+        }
+    }
+    @if (Handoff is not null)
+    {
+        <MudText Typo="Typo.body2">RCA step assigned to @Handoff.AssignedRole.</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanManage || Busy)" OnClick="SubmitHandoffAsync">Submit reviewed RCA handoff</MudButton>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public FieldSelectionReview Context { get; set; } = null!;
+    [Parameter, EditorRequired] public string IncidentId { get; set; } = "";
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public bool CanRecord { get; set; }
+    private FieldSelectionReview? _context;
+    private string? _incident;
+    private bool _needsRead, _checked, _unavailable, _disposed, Busy;
+    private long _generation;
+    private string? Message, SelectedCode;
+    private string Summary = "";
+    private IncidentRcaSourceReview? Review;
+    private IncidentRcaIntent? Original;
+    private IReadOnlyList<IncidentRcaIntent>? Recorded;
+    private IReadOnlyList<IncidentRcaRecordedCause>? Shared;
+    private CompanyHseRcaHandoffReview? Handoff;
+    private CompanyHseRcaHandoffCommand? HandoffOriginal;
+    private CompanyHseRcaRecoveredHandoff? Recovered;
+
+    protected override void OnParametersSet()
+    {
+        if (_context == Context && _incident == IncidentId) return;
+        _context = Context; _incident = IncidentId; ++_generation;
+        _needsRead = true; _checked = false; _unavailable = false; Review = null; Original = null; Recorded = null; Shared = null; Handoff = null; HandoffOriginal = null; Recovered = null; Message = null; SelectedCode = null; Summary = "";
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsRead || _disposed) return;
+        _needsRead = false; var generation = _generation; var context = Context; var incident = IncidentId;
+        try
+        {
+            var original = await Intents.ReadRcaAsync(context, incident); var handoff = await Handoffs.ReadHandoffAsync(context, incident);
+            if (_disposed || generation != _generation) return;
+            if (original is not null && handoff is not null) throw new InvalidOperationException("Both a cause and a handoff require reconciliation.");
+            Original = original; HandoffOriginal = handoff; _checked = true;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Incident cause recovery could not be read"); if (_disposed || generation != _generation) return; _unavailable = true; }
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task RequireContextAsync(long generation, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        void Current() { if (_disposed || generation != _generation || snapshot != Company.Snapshot) throw new InvalidOperationException("The incident context changed."); }
+        Current(); var selected = snapshot.Selection ?? throw new UnauthorizedAccessException();
+        var user = (await Authentication.GetAuthenticationStateAsync()).User; Current();
+        if (!CanManage || user.Identity?.IsAuthenticated != true || user.FindFirst("party_id")?.Value != selected.UserId ||
+            selected.Scope != Context.Company || selected.UserId != Context.ActorUserId || !selected.Roles.Any(user.IsInRole) ||
+            !selected.Permissions.Contains(PermissionConstants.HSE.ManageIncidents, StringComparer.Ordinal)) throw new UnauthorizedAccessException();
+        var current = await Fields.GetCurrentFieldSelectionAsync(); Current();
+        FieldSelectionReviewValidator.RequireCurrent(current, selected.Scope, selected.UserId);
+        if (!current.SelectionAvailable || current.SelectionContext != Context) throw new InvalidOperationException("The selected FIELD changed.");
+    }
+    private async Task ReviewAsync()
+    {
+        if (Busy || !_checked || Original is not null) return;
+        Busy = true; Message = null; Review = null; var generation = _generation; var snapshot = Company.Snapshot;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var review = await Client.ReviewHseIncidentRcaAsync(IncidentId);
+            await RequireContextAsync(generation, snapshot);
+            if (review.Context != Context || review.IncidentId != IncidentId) throw new InvalidOperationException("The reviewed incident changed.");
+            review.Require(); Review = review; SelectedCode = null; Summary = "";
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Incident cause review failed"); if (!_disposed && generation == _generation) Message = "Could not confirm recorded causes and classifications. Check access and retry."; }
+        finally { Busy = false; }
+    }
+    private async Task FindSharedAsync()
+    {
+        if (Busy || !_checked) return;
+        Busy = true; Message = null; Shared = null; Handoff = null; var generation = _generation; var snapshot = Company.Snapshot;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var causes = await Client.ReadSharedHseCausesAsync(IncidentId);
+            await RequireContextAsync(generation, snapshot);
+            foreach (var cause in causes)
+            {
+                cause.Require();
+                if (cause.Company != Context.Company || cause.Database != Context.Database || cause.FieldId != Context.FieldId || cause.IncidentId != IncidentId)
+                    throw new InvalidOperationException("A shared cause belongs to another incident or FIELD.");
+            }
+            Shared = causes;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Shared incident causes could not be reviewed"); if (!_disposed && generation == _generation) Message = "Shared causes could not be confirmed. Check access and retry."; }
+        finally { Busy = false; }
+    }
+    private async Task FindRecordedAsync()
+    {
+        if (Busy || !_checked) return;
+        Busy = true; Message = null; Recorded = null; Handoff = null; var generation = _generation; var snapshot = Company.Snapshot;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var originals = await Client.ReadRecordedHseCausesAsync(IncidentId);
+            await RequireContextAsync(generation, snapshot);
+            foreach (var original in originals)
+            {
+                original.Require(); var context = original.Source.Context;
+                if (context.Company != Context.Company || context.ActorUserId != Context.ActorUserId || context.Database != Context.Database ||
+                    context.FieldId != Context.FieldId || original.Source.IncidentId != IncidentId)
+                    throw new InvalidOperationException("The recorded cause belongs to another incident or FIELD.");
+            }
+            Recorded = originals;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Recorded incident causes could not be recovered"); if (!_disposed && generation == _generation) Message = "Recorded causes could not be confirmed. Check access and retry."; }
+        finally { Busy = false; }
+    }
+    private async Task ReviewHandoffAsync(IncidentRcaRecordedCause original)
+    {
+        if (Busy || Shared is null || !Shared.Contains(original)) return;
+        Busy = true; Message = null; Handoff = null; var generation = _generation; var snapshot = Company.Snapshot;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var review = await Client.ReviewHseRcaHandoffAsync(original);
+            await RequireContextAsync(generation, snapshot); review.Require();
+            if (review.Context != Context || System.Text.Json.JsonSerializer.Serialize(review.Cause) != System.Text.Json.JsonSerializer.Serialize(original))
+                throw new InvalidOperationException("The reviewed workflow differs from the recorded cause or FIELD.");
+            Handoff = review;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "RCA workflow readiness could not be confirmed"); if (!_disposed && generation == _generation) Message = "Workflow readiness could not be confirmed. Check the current RCA assignment and access."; }
+        finally { Busy = false; }
+    }
+    private async Task RecoverHandoffAsync()
+    {
+        if (Busy || !_checked || HandoffOriginal is not null) return;
+        Busy = true; Message = null; Recovered = null; var generation = _generation; var snapshot = Company.Snapshot;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var result = await Client.RecoverHseRcaHandoffAsync(IncidentId);
+            await RequireContextAsync(generation, snapshot);
+            if (result is null) { Message = "No confirmed RCA handoff was found for this account."; return; }
+            result.Require(); var prior = result.Original.Review.Context;
+            if (prior.Company != Context.Company || prior.ActorUserId != Context.ActorUserId || prior.Database != Context.Database || prior.FieldId != Context.FieldId || result.Original.Review.Cause.IncidentId != IncidentId)
+                throw new InvalidOperationException("The recorded RCA handoff belongs to another FIELD or incident.");
+            Recovered = result;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "RCA handoff recovery could not be confirmed"); if (!_disposed && generation == _generation) Message = "The recorded RCA handoff could not be confirmed. Check access and retry."; }
+        finally { Busy = false; }
+    }
+    private async Task SubmitHandoffAsync()
+    {
+        if (Busy || !_checked || Handoff is null || HandoffOriginal is not null || Original is not null) return;
+        var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var original = new CompanyHseRcaHandoffCommand(Guid.NewGuid(), Handoff); original.Require();
+            await Handoffs.RetainAsync(original);
+            if (_disposed || generation != _generation || snapshot != Company.Snapshot) return;
+            HandoffOriginal = original; Handoff = null;
+            await SendHandoffAsync(original, generation, snapshot);
+        }
+        catch (Exception error) { Logger.LogWarning(error, "RCA handoff was not confirmed"); if (!_disposed && generation == _generation) { Handoff = null; _needsRead = true; _checked = false; Message = "Handoff was not confirmed. Reconcile the original before submitting another."; } }
+        finally { Busy = false; }
+    }
+    private async Task RetryHandoffAsync()
+    {
+        if (Busy || HandoffOriginal is not { } original) return;
+        var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
+        try { await SendHandoffAsync(original, generation, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "RCA handoff reconciliation failed"); if (!_disposed && generation == _generation) Message = "The original handoff could not be reconciled. Check access and retry."; }
+        finally { Busy = false; }
+    }
+    private async Task SendHandoffAsync(CompanyHseRcaHandoffCommand original, long generation, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await RequireContextAsync(generation, snapshot);
+        if (original.Review.Context != Context || original.Review.Cause.IncidentId != IncidentId) throw new InvalidOperationException("The original incident handoff changed.");
+        var receipt = await Client.CompleteHseRcaHandoffAsync(original); await RequireContextAsync(generation, snapshot); receipt.Require(original);
+        await Handoffs.ClearAsync(original); await RequireContextAsync(generation, snapshot);
+        HandoffOriginal = null; Recorded = null; Shared = null; Message = "RCA handoff confirmed. The next workflow task is ready.";
+    }
+    private async Task RecordAsync()
+    {
+        if (Busy || !_checked || !CanRecord || Review is null || Original is not null) return;
+        var option = Review.Options.SingleOrDefault(value => value.CauseCode == SelectedCode);
+        if (option is null || Summary.Trim().Length is < 20 or > 4000 || Summary.Any(value => char.IsControl(value) && value is not ('\r' or '\n')))
+        { Message = "Choose a classification and enter a cause observation of 20 to 4000 characters."; return; }
+        var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
+        try
+        {
+            await RequireContextAsync(generation, snapshot);
+            var original = new IncidentRcaIntent(Guid.NewGuid(), Review, option, Summary.Trim()); original.Require();
+            await Intents.RetainAsync(original);
+            if (_disposed || generation != _generation || snapshot != Company.Snapshot) return;
+            Original = original; Review = null;
+            await SendAsync(original, generation, snapshot);
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Incident cause was not confirmed"); if (!_disposed && generation == _generation) { Review = null; _needsRead = true; _checked = false; Message = "Cause request was not confirmed. Reconcile the original before recording another."; } }
+        finally { Busy = false; }
+    }
+    private async Task RetryAsync()
+    {
+        if (Busy || Original is not { } original) return;
+        var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
+        try { await SendAsync(original, generation, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Incident cause reconciliation failed"); if (!_disposed && generation == _generation) Message = "The original cause could not be reconciled. Check access and retry."; }
+        finally { Busy = false; }
+    }
+    private async Task SendAsync(IncidentRcaIntent original, long generation, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await RequireContextAsync(generation, snapshot);
+        if (original.Source.Context != Context || original.Source.IncidentId != IncidentId) throw new InvalidOperationException("The original incident changed.");
+        var receipt = await Client.RecordHseIncidentCauseAsync(original);
+        await RequireContextAsync(generation, snapshot); receipt.Require(original);
+        await Intents.ClearAsync(original); await RequireContextAsync(generation, snapshot);
+        Original = null; SelectedCode = null; Summary = ""; Message = "Cause recorded. Workflow completion requires a separate lifecycle step.";
+    }
+    public void Dispose() { _disposed = true; ++_generation; }
+}

@@ -1,0 +1,31 @@
+# Implementation 243 — Explicit commercial terms preparation and independent decision contracts
+
+## Requirement and current delivery boundary
+
+The commercial persona path requires source -> versioned effective terms -> independent approval before invoicing or recognition. Implementation 242 provides exact selected-company native sales-contract evidence, but its read digest is not approval. The existing CompanyAccountingProcessStart and CompanyAccountingProcessBinding accept only AP_INVOICE and PURCHASE_ORDER; the existing process source reader separately supports only those types. Extending one type discriminator without its source/read/command/task owners would create an incomplete commercial workflow.
+
+This slice implements the canonical frozen preparation and independent-decision contracts in TheTechIdea.Data/OilGas/SalesContractTermsWorkflow.cs. It is source-level domain delivery, not persisted preparation, an API authorization decision, an assigned approval task or a new persona screen. Existing commercial/revenue source and contract screens remain the verified visible entry point. The overall implementation goal remains active.
+
+## Effective-term and source invariants
+
+SalesContractEffectiveTerms requires an explicit bounded version, currency text, nonnegative decimal price, price-unit/basis description, pricing method and review notes. EffectiveFrom and optional EffectiveThrough use midnight DateTime values with Unspecified kind for the recorded calendar convention; expiry cannot precede effective date. No UTC/local zone is invented for commercial effective dates. Preparation/decision command timestamps independently require UTC and decision cannot predate preparation. No missing units, currency, price, date or version are defaulted. Currency/unit text is explicit proposal evidence, not validation against a currency or measurement catalog, legal interpretation, FX conversion or certified physical basis.
+
+SalesContractTermsPreparation carries the original company/account, nonempty canonical intent UUID, exact RevenueSalesContractReview and proposed terms. It validates original actor, company, native contract/revenue reference, window and complete source digest using the existing canonical review owner. Proposed terms remain separate from the recorded native price; a source with an unavailable base price is not silently populated.
+
+SalesContractTermsRecord freezes a copy of preparation at recorded UTC and hashes complete preparation/time/optional decision evidence. SalesContractTermsDecisionCommand identifies the exact undecided preparation revision, company, independent actor, unique decision intent, explicit Approve or Reject and bounded nonempty reason. Unknown enum values, changed company/revision, missing reason and repeat decision against a decided record refuse. Exact durable retry/reconciliation belongs to the upcoming native command owner; this pure domain transition does not substitute for it.
+
+Independent decisions exclude the preparation actor, native contract ROW_CREATED_BY and selected revenue transaction ROW_CREATED_BY. Missing recorded maker identities refuse a decision rather than silently treating an unknown source maker as independent. Current standard ASP.NET role, grant, FIELD and database authority remain API checks; these immutable contracts grant no access.
+
+Before deciding, the domain owner validates the fresh exact source review. The reviewer legitimately has different actor provenance. It normalizes only that capture actor to the original preparer, then compares complete revenue/contract facts, company, field/window and binding to the frozen preparation. A different buyer, revenue amount or binding still refuses. The resulting preparation and decision remain copied snapshots; tampered nested evidence fails validation after JSON transport. The transition never updates SALES_CONTRACT or a ledger.
+
+## Focused verification
+
+Actual canonical Data builds with zero warnings/errors in 1.56 seconds. Seventy-three focused cases pass, zero failures/skips, final duration three seconds. Twenty-one new domain cases cover approve/reject with fresh independent reviewer capture, exact copied decimal/null source facts, serialized read-back, mutation rejection, repeat decision, preparation/contract/revenue maker exclusion, missing maker, foreign company, stale revision, missing reason, invalid decision value, revenue/contract/binding drift, decision-before-preparation, missing price basis/version/date/intent, negative price, wrong effective-date kind and reversed dates. The preceding 52 native/API/SDK/rendered revenue/contract tests remain green. Focused cached dependency/source composition warnings remain.
+
+Reproduce with Scripts/Test-PurchaseOrderOwnership.ps1 using the actual canonical Data DLL, IncludeWorkflowInbox and FullyQualifiedName~FieldRevenueSourceTests. This proves domain behavior and continued source-review behavior. It does not prove commercial command persistence, independent API authorization, native transaction rollback/retry, assigned task routing, a commercial approval screen, browser/OIDC/provider acceptance or production deployment.
+
+## Required next work
+
+Connect these contracts to the existing native sales-contract and process/command owners. Freeze submitted intent before awaits; independently revalidate app-owned preparation/approval grants, actor/company/FIELD and module bindings. Provision any persisted evidence columns/types only through Beep MigrationManager with native schema preflight. Preserve immutable original preparation and decision history, native audit, distinct-maker rules, retained intent, exact uncertain-commit reconciliation and persisted read-back. Expose API-first preparation/decision clients and persona screens, then route actual approval work through the existing configured persona task owner. Do not represent a constructed domain record as a persisted approved contract.
+
+Invoice/recognition preparation and persisted outcome, royalty/partner queues, wider thirteen-persona delivery and multinational/native/provider/browser gates remain open. No SQL, business EF lane, live schema execution, permission assignment, native business write, deployment or commit/push occurs. No CA/FG phase or overall goal closes.

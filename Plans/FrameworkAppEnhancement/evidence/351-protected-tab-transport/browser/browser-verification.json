@@ -1,0 +1,134 @@
+{
+  "status": "passed",
+  "scope": "Actual components/state/encrypted storage/native component protocol in isolated host with controlled approved-source and typed-client outcomes; no full production auth/API/provider claim.",
+  "checks": [
+    {
+      "name": "default_component_channel_disconnects_on_large_protected_read",
+      "status": "passed",
+      "evidence": [
+        "baseline-read-failed.yml",
+        "baseline-console.log"
+      ]
+    },
+    {
+      "name": "large_report_is_encrypted_and_retained_before_controlled_lost_ack",
+      "status": "passed",
+      "evidence": [
+        "encrypted-report-metadata.txt",
+        "frozen-confirmation.txt",
+        "lost-ack-retained.txt",
+        "metadata-after-first-submit.json"
+      ]
+    },
+    {
+      "name": "new_owner_readonly_unmapped_loads_original_before_source_or_profile",
+      "status": "passed",
+      "evidence": [
+        "new-owner-readonly-pending.txt",
+        "metadata-readonly-new-owner.json"
+      ]
+    },
+    {
+      "name": "start_and_report_protected_keys_are_independent",
+      "status": "passed",
+      "evidence": [
+        "two-protected-command-kinds.txt",
+        "start-recovered.txt",
+        "report-survives-start-clear.txt",
+        "after-both-exact-clears.txt"
+      ]
+    },
+    {
+      "name": "company_and_account_changes_hide_private_report_and_refuse_reload",
+      "status": "passed",
+      "evidence": [
+        "foreign-company-clears-private-ui.txt",
+        "foreign-company-refused.txt",
+        "other-account-refused.txt",
+        "original-report-recovered-scope.txt"
+      ]
+    },
+    {
+      "name": "exact_readonly_recovery_does_not_resubmit_or_load_workspace",
+      "status": "passed",
+      "evidence": [
+        "metadata-readonly-recovered.json",
+        "report-recovered-readonly.txt",
+        "read-only-recorded-history.txt"
+      ]
+    },
+    {
+      "name": "actual_browser_quota_blocks_typed_record_before_transport",
+      "status": "passed",
+      "evidence": [
+        "actual-browser-quota-filled.txt",
+        "metadata-after-quota-submit.json",
+        "quota-retention-refused.txt"
+      ]
+    },
+    {
+      "name": "quota_memory_original_confirms_absence_without_blind_retry",
+      "status": "passed",
+      "evidence": [
+        "metadata-quota-absence-confirmed.json",
+        "quota-original-confirmed-absent.txt",
+        "quota-owned-fillers-removed.txt"
+      ]
+    },
+    {
+      "name": "corrupt_proof_is_unavailable_without_source_profile_or_write",
+      "status": "passed",
+      "evidence": [
+        "cipher-corrupted.txt",
+        "corrupt-proof-unavailable.txt",
+        "metadata-before-corruption.json",
+        "metadata-after-corruption.json"
+      ]
+    },
+    {
+      "name": "restored_encrypted_proof_recovers_only_its_original",
+      "status": "passed",
+      "evidence": [
+        "cipher-restored.txt",
+        "restored-proof-pending.txt",
+        "restored-original-recovered.txt",
+        "metadata-after-restored-recovery.json"
+      ]
+    },
+    {
+      "name": "new_tab_without_opener_does_not_receive_parent_original",
+      "status": "passed",
+      "evidence": [
+        "tab-isolation-new-tab-storage.txt",
+        "tab-isolation-new-tab-start-status.txt",
+        "tab-isolation-parent-start-pending.txt",
+        "tab-isolation-parent-start-recovered.txt"
+      ]
+    },
+    {
+      "name": "final_history_and_owned_storage_are_consistent",
+      "status": "passed",
+      "evidence": [
+        "metadata-final.json",
+        "parent-final-browser-metadata.txt",
+        "final-report-history.txt",
+        "final-console-errors.txt"
+      ]
+    }
+  ],
+  "browser": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "remainingOwnedIntents": [],
+    "remainingQuotaFillers": []
+  },
+  "limits": [
+    "No full Web/OIDC/production route guard, browser engine matrix, RTL/keyboard/a11y or provider qualification.",
+    "Native/provider/business persistence qualifies separately; browser typed-client outcomes are controlled seams.",
+    "Quota failure preserves only memory input when storage cannot retain it; durable-retention feedback still uses generic recovery wording and remains an app UX gap.",
+    "No-opener tab behavior only; duplicated tabs, opener cloning and concurrent circuits not qualified."
+  ]
+}

@@ -1,0 +1,559 @@
+{
+  "AllSamples": 477409,
+  "ExcludedWaitSamples": 447981,
+  "RemainingSamples": 29428,
+  "EventKinds": {
+    "Type=Managed": 25705,
+    "Type=External": 3723
+  },
+  "EventsLost": 0,
+  "Leaves": [
+    {
+      "Key": "System.IO.File.GetAttributes(class System.String)",
+      "Value": 7064
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CPrepareAndEnumerateStatements\u003Ed__64.MoveNext()",
+      "Value": 6280
+    },
+    {
+      "Key": "System.Threading.Thread.\u003CPollGC\u003Eg__PollGCWorker|70_0()",
+      "Value": 4495
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Step(class System.Data.SQLite.SQLiteStatement)",
+      "Value": 1421
+    },
+    {
+      "Key": "System.Threading.Monitor.Enter_Slowpath(class System.Object)",
+      "Value": 1257
+    },
+    {
+      "Key": "System.Object.MemberwiseClone()",
+      "Value": 1092
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.NextResult()",
+      "Value": 986
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Prepare(class System.Data.SQLite.SQLiteConnection,class System.Data.SQLite.SQLiteCommand,class System.String,class System.Data.SQLite.SQLiteStatement,unsigned int32,class System.String\u0026)",
+      "Value": 820
+    },
+    {
+      "Key": "System.Security.Cryptography.SHA256.HashData(unsigned int8[])",
+      "Value": 629
+    },
+    {
+      "Key": "System.Reflection.Emit.DynamicMethod.CreateDelegate(class System.Type,class System.Object)",
+      "Value": 620
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataRecord.Read()",
+      "Value": 442
+    },
+    {
+      "Key": "System.GC.\u003CAllocateUninitializedArray\u003Eg__AllocateNewArrayWorker|77_0(int32,bool)",
+      "Value": 365
+    },
+    {
+      "Key": "System.Reflection.RuntimeMethodInfo.MakeGenericMethod(class System.Type[])",
+      "Value": 359
+    },
+    {
+      "Key": "System.IO.PathHelper.Normalize(class System.String)",
+      "Value": 334
+    },
+    {
+      "Key": "System.Guid.NewGuid()",
+      "Value": 291
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.RuntimeHelpers.\u003CGetHashCode\u003Eg__GetHashCodeWorker|15_0(class System.Object)",
+      "Value": 244
+    },
+    {
+      "Key": "SQLitePCL.raw.sqlite3_bind_text(class SQLitePCL.sqlite3_stmt,int32,class System.String)",
+      "Value": 137
+    },
+    {
+      "Key": "System.Reflection.RuntimeMethodInfo.GetBaseDefinition()",
+      "Value": 136
+    },
+    {
+      "Key": "SQLitePCL.sqlite3_stmt.ReleaseHandle()",
+      "Value": 123
+    },
+    {
+      "Key": "System.RuntimeMethodHandle.\u003CGetStubIfNeeded\u003Eg__GetStubIfNeededWorker|47_0(value class System.RuntimeMethodHandleInternal,class System.RuntimeType,class System.RuntimeType[])",
+      "Value": 119
+    },
+    {
+      "Key": "Microsoft.EntityFrameworkCore.Query.Internal.ExpressionTreeFuncletizer.VisitConstant(class System.Linq.Expressions.ConstantExpression)",
+      "Value": 110
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BWorkerThread.MaybeAddWorkingWorker(class System.Threading.PortableThreadPool)",
+      "Value": 110
+    },
+    {
+      "Key": "System.Enum.\u003CGetEnumInfo\u003Eg__InitializeEnumInfo|5_0(class System.RuntimeType,bool)",
+      "Value": 106
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.GetString(int32)",
+      "Value": 101
+    },
+    {
+      "Key": "System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(class System.Object,value class System.Reflection.BindingFlags)",
+      "Value": 100
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.IsDBNull(int32)",
+      "Value": 96
+    },
+    {
+      "Key": "System.Reflection.RuntimeMethodInfo.Invoke(class System.Object,value class System.Reflection.BindingFlags,class System.Reflection.Binder,class System.Object[],class System.Globalization.CultureInfo)",
+      "Value": 91
+    },
+    {
+      "Key": "System.DefaultBinder.SelectMethod(value class System.Reflection.BindingFlags,class System.Reflection.MethodBase[],class System.Type[],value class System.Reflection.ParameterModifier[])",
+      "Value": 88
+    },
+    {
+      "Key": "System.Buffer.MemmoveInternal(unsigned int8\u0026,unsigned int8\u0026,unsigned int)",
+      "Value": 82
+    },
+    {
+      "Key": "",
+      "Value": 79
+    },
+    {
+      "Key": "System.Data.SQLite.SQLiteStatementHandle.ReleaseHandle()",
+      "Value": 77
+    },
+    {
+      "Key": "System.Data.SQLite.SQLiteDataReader.GetName(int32)",
+      "Value": 68
+    },
+    {
+      "Key": "System.RuntimeType.MakeGenericType(class System.Type[])",
+      "Value": 61
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.GetInt32(int32)",
+      "Value": 54
+    },
+    {
+      "Key": "System.Reflection.RuntimePropertyInfo.SetValue(class System.Object,class System.Object,value class System.Reflection.BindingFlags,class System.Reflection.Binder,class System.Object[],class System.Globalization.CultureInfo)",
+      "Value": 54
+    }
+  ],
+  "Owners": [
+    {
+      "Key": "Beep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()",
+      "Value": 7691
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Sqlite(class System.String,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties,class System.String)",
+      "Value": 7460
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleBindingService\u002B\u003CRequireActiveTenantAsync\u003Ed__4.MoveNext()",
+      "Value": 2585
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()",
+      "Value": 2487
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CReadAsync\u003Ed__8\u00601[System.__Canon].MoveNext()",
+      "Value": 1982
+    },
+    {
+      "Key": "TheTechIdea.Beep.Editor.Entity.CopyWithoutObservers()",
+      "Value": 1105
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveBindingSnapshotAsync\u003Ed__11.MoveNext()",
+      "Value": 694
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.MigrationConnectionTarget.Fingerprint(class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)",
+      "Value": 627
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.BuildKey(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)",
+      "Value": 622
+    },
+    {
+      "Key": "TheTechIdea.Beep.Tools.Helpers.PocoClassGeneratorHelper.CreateClassFromTemplate(class System.String,class TheTechIdea.Beep.DataBase.EntityStructure,class System.String,class System.String,class System.String,class System.String,class System.String,class System.String,bool)",
+      "Value": 467
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository.MapDataSourceRow(class System.Object,class System.Type)",
+      "Value": 361
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.RepositoryAssetAccessStore\u002B\u003CReadAsync\u003Ed__14.MoveNext()",
+      "Value": 318
+    },
+    {
+      "Key": "\u003Cno application frame\u003E",
+      "Value": 241
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CDefinitionAsync\u003Ed__12.MoveNext()",
+      "Value": 221
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.Helpers.DataStreamer\u002B\u003CStream\u003Ed__0.MoveNext()",
+      "Value": 217
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()",
+      "Value": 156
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003C\u003Ec__DisplayClass45_0.\u003CMapDataSourceRow\u003Eg__AddColumn|0(class System.String,class System.Object)",
+      "Value": 151
+    },
+    {
+      "Key": "TheTechIdea.Beep.Report.AppFilter..ctor()",
+      "Value": 130
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.CanonicalRecord(class System.Object)",
+      "Value": 124
+    },
+    {
+      "Key": "TheTechIdea.Beep.Roslyn.RoslynCompiler.GeneratedSourceHash(class System.String)",
+      "Value": 115
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)",
+      "Value": 110
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource.GetEntityAsync(class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.Report.AppFilter\u003E)",
+      "Value": 109
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource.GetDataCommand()",
+      "Value": 108
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.RepositoryUserProfileService\u002B\u003C\u003Ec__DisplayClass20_0\u002B\u003C\u003CRequireStoredSelectionAsync\u003Eg__Check|0\u003Ed.MoveNext()",
+      "Value": 89
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource.GetTableSchema(class System.String,bool)",
+      "Value": 84
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.EntityStructure.init()",
+      "Value": 82
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup.MigrationConnectionTarget.Validate(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.IDataSource,class System.String)",
+      "Value": 82
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.\u003C\u003Em__Finally1()",
+      "Value": 80
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.Range(value class System.Nullable\u00601\u003Cvalue class System.DateTime\u003E,value class System.Nullable\u00601\u003Cvalue class System.DateTime\u003E,class System.TimeZoneInfo,class System.TimeProvider,bool)",
+      "Value": 78
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()",
+      "Value": 69
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass220_0.\u003CReadOwnedEntityAsync\u003Eb__0()",
+      "Value": 66
+    },
+    {
+      "Key": "Beep.OilandGas.Repository.RepositoryCompanyContext..ctor(class System.String,class TheTechIdea.Data.OilGas.RepositoryCompanyAccess)",
+      "Value": 59
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyValue(class System.Object,class System.Type,int32)",
+      "Value": 51
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMDataSourceTransaction\u002B\u003CWithSourceAsync\u003Ed__5\u00601[System.__Canon].MoveNext()",
+      "Value": 49
+    },
+    {
+      "Key": "Beep.OilandGas.Repository.RepositoryAccessService.IsAccountActiveAsync(class System.String,value class System.Threading.CancellationToken)",
+      "Value": 42
+    }
+  ],
+  "Inclusive": [
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CReadProviderRowsAsync\u003Ed__37.MoveNext()",
+      "Value": 23951
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetAsync\u003Ed__62.MoveNext()",
+      "Value": 23528
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetEntitiesWithFiltersAsync\u003Ed__36.MoveNext()",
+      "Value": 23517
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMDataSourceTransaction\u002B\u003CWithSourceAsync\u003Ed__5\u00601[System.__Canon].MoveNext()",
+      "Value": 23462
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()",
+      "Value": 23444
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()",
+      "Value": 21020
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)",
+      "Value": 21020
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()",
+      "Value": 17563
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()",
+      "Value": 17563
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveBindingSnapshotAsync\u003Ed__11.MoveNext()",
+      "Value": 13836
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveBindingSnapshotAsync(class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E,class System.String)",
+      "Value": 13836
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveAssetScopeAsync\u003Ed__9.MoveNext()",
+      "Value": 13831
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveAssetScopeAsync()",
+      "Value": 13831
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility\u002B\u003CGetMaximumLevelAsync\u003Ed__8.MoveNext()",
+      "Value": 9188
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.BuildKey(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)",
+      "Value": 8121
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Key(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)",
+      "Value": 8121
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CRefreshCompanyAsync\u003Ed__10.MoveNext()",
+      "Value": 7752
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(value class System.Threading.CancellationToken)",
+      "Value": 7752
+    },
+    {
+      "Key": "Beep.OilandGas.Repository.RepositoryCompanyContextResolver\u002B\u003CResolveAsync\u003Ed__2.MoveNext()",
+      "Value": 7750
+    },
+    {
+      "Key": "Beep.OilandGas.Repository.RepositoryCompanyContextResolver.ResolveAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)",
+      "Value": 7750
+    },
+    {
+      "Key": "Beep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()",
+      "Value": 7691
+    },
+    {
+      "Key": "Beep.OilandGas.Repository.RepositoryAccessService.GetCompanyAccessAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)",
+      "Value": 7691
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Sqlite(class System.String,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties,class System.String)",
+      "Value": 7460
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CGrantsAsync\u003Ed__25.MoveNext()",
+      "Value": 7177
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.ReadAsync(class System.Type,class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass TheTechIdea.Beep.Report.AppFilter\u003E,class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E,class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E)",
+      "Value": 7133
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility\u002B\u003C\u003Ec__DisplayClass8_0\u002B\u003C\u003CGetMaximumLevelAsync\u003Eg__Reference|4\u003Ed.MoveNext()",
+      "Value": 6934
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CReadPredicatesAsync\u003Ed__33.MoveNext()",
+      "Value": 6269
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()",
+      "Value": 5024
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()",
+      "Value": 5007
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy.GrantsAsync(class Path[])",
+      "Value": 3733
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CReadIncidentRestrictionsAsync\u003Ed__46.MoveNext()",
+      "Value": 3406
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility\u002B\u003C\u003Ec__DisplayClass8_0.\u003CGetMaximumLevelAsync\u003Eg__Read|3(class System.Type,class TheTechIdea.Beep.Report.AppFilter[])",
+      "Value": 3396
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleBindingService\u002B\u003CRequireActiveTenantAsync\u003Ed__4.MoveNext()",
+      "Value": 2585
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleBindingService.RequireActiveTenantAsync(class System.String,value class System.Threading.CancellationToken)",
+      "Value": 2585
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CRequireTenantAsync\u003Ed__15.MoveNext()",
+      "Value": 2585
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver.RequireTenantAsync(value class System.Threading.CancellationToken)",
+      "Value": 2585
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility.GetMaximumLevelAsync(class System.String)",
+      "Value": 2343
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility\u002B\u003C\u003Ec__DisplayClass8_0.\u003CGetMaximumLevelAsync\u003Eg__Reference|4(class System.Type,class System.String,class System.String)",
+      "Value": 2266
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003COpenAsync\u003Ed__9.MoveNext()",
+      "Value": 2155
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.OpenAsync()",
+      "Value": 2155
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource.GetEntityType(class System.String)",
+      "Value": 2001
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CReadAsync\u003Ed__8\u00601[System.__Canon].MoveNext()",
+      "Value": 1982
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver.ReadAsync(class System.Collections.Generic.IAsyncEnumerable\u00601\u003C!!0\u003E,value class System.Threading.CancellationToken)",
+      "Value": 1982
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.RDBSource.ReadEntityTypeCore(class System.String)",
+      "Value": 1982
+    },
+    {
+      "Key": "TheTechIdea.Beep.Utilities.DMTypeBuilder.CreateNewObject(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)",
+      "Value": 1981
+    },
+    {
+      "Key": "TheTechIdea.Beep.Utilities.DMTypeBuilder.GetOrCreateType(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)",
+      "Value": 1979
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.RepositoryAssetAccessStore\u002B\u003CReadAsync\u003Ed__14.MoveNext()",
+      "Value": 1965
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.RepositoryAssetAccessStore.ReadAsync(class System.String,class System.String,class System.String)",
+      "Value": 1965
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CCorrectivePredicatesAsync\u003Ed__51.MoveNext()",
+      "Value": 1951
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CValidateRowsAsync\u003Ed__20.MoveNext()",
+      "Value": 1761
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CReferenceAsync\u003Ed__57.MoveNext()",
+      "Value": 1496
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CGetEffectiveAccessLevelAsync\u003Ed__18.MoveNext()",
+      "Value": 1477
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CCaptureHseIncidentAuthorityAsync\u003Ed__43.MoveNext()",
+      "Value": 1397
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)",
+      "Value": 1272
+    },
+    {
+      "Key": "TheTechIdea.Beep.DataBase.EntityMetadataSnapshot.Capture(class TheTechIdea.Beep.DataBase.EntityStructure)",
+      "Value": 1272
+    }
+  ],
+  "Stacks": [
+    {
+      "Key": "System.IO.File.GetAttributes(class System.String)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Sqlite(class System.String,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties,class System.String)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.BuildKey(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Key(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveBindingSnapshotAsync\u003Ed__11.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.ValueTuple\u00602[System.__Canon,System.__Canon]].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveBindingSnapshotAsync(class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E,class System.String)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveAssetScopeAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveAssetScopeAsync()\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()\nSystem.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)\nSystem.Threading.Tasks.Task.RunContinuations(class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task\u00601\u003C!0\u003E,!0)\nBeep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetAsync\u003Ed__62.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()\nSystem.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)\nSystem.Threading.Tasks.Task.RunContinuations(class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task\u00601\u003C!0\u003E,!0)\nBeep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetEntitiesWithFiltersAsync\u003Ed__36.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 2547
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CPrepareAndEnumerateStatements\u003Ed__64.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CGetStatements\u003Ed__54.MoveNext()\nMicrosoft.Data.Sqlite.SqliteDataReader.NextResult()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CExecuteDbDataReaderAsync\u003Ed__60.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(value class System.Data.CommandBehavior,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Storage.RelationalCommand\u002B\u003CExecuteReaderAsync\u003Ed__22.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CInitializeReaderAsync\u003Ed__21[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].InitializeReaderAsync(class AsyncEnumerator\u003C!0\u003E,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CMoveNextAsync\u003Ed__20[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].MoveNextAsync()\nSystem.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable\u00601\u002BEnumerator[System.__Canon].MoveNextAsync()\nBeep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryAccessService.GetCompanyAccessAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver\u002B\u003CResolveAsync\u003Ed__2.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver.ResolveAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CRefreshCompanyAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 1855
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CPrepareAndEnumerateStatements\u003Ed__64.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CGetStatements\u003Ed__54.MoveNext()\nMicrosoft.Data.Sqlite.SqliteDataReader.NextResult()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CExecuteDbDataReaderAsync\u003Ed__60.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(value class System.Data.CommandBehavior,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Storage.RelationalCommand\u002B\u003CExecuteReaderAsync\u003Ed__22.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CInitializeReaderAsync\u003Ed__21[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].InitializeReaderAsync(class AsyncEnumerator\u003C!0\u003E,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CMoveNextAsync\u003Ed__20[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].MoveNextAsync()\nSystem.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable\u00601\u002BEnumerator[System.__Canon].MoveNextAsync()\nBeep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryAccessService.GetCompanyAccessAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver\u002B\u003CResolveAsync\u003Ed__2.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver.ResolveAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CRefreshCompanyAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)",
+      "Value": 1612
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Step(class System.Data.SQLite.SQLiteStatement)\nSystem.Data.SQLite.SQLiteDataReader.NextResult()\nSystem.Data.SQLite.SQLiteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()\nSystem.Collections.Generic.List\u00601[System.__Canon]..ctor(class System.Collections.Generic.IEnumerable\u00601\u003C!0\u003E)\nSystem.Linq.Enumerable.ToList(class System.Collections.Generic.IEnumerable\u00601\u003C!!0\u003E)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 1336
+    },
+    {
+      "Key": "System.Object.MemberwiseClone()\nTheTechIdea.Beep.Editor.Entity.CopyWithoutObservers()\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyModel(class TheTechIdea.Beep.Editor.Entity,class System.Type)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyValue(class System.Object,class System.Type,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyValue(class System.Object,class System.Type,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyValue(class System.Object,class System.Type,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot.Capture(class TheTechIdea.Beep.DataBase.EntityStructure)\nTheTechIdea.Beep.Utilities.DMTypeBuilder.GetOrCreateType(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)\nTheTechIdea.Beep.Utilities.DMTypeBuilder.CreateNewObject(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)\nTheTechIdea.Beep.DataBase.RDBSource.ReadEntityTypeCore(class System.String)\nTheTechIdea.Beep.DataBase.RDBSource.GetEntityType(class System.String)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()\nSystem.Collections.Generic.List\u00601[System.__Canon]..ctor(class System.Collections.Generic.IEnumerable\u00601\u003C!0\u003E)\nSystem.Linq.Enumerable.ToList(class System.Collections.Generic.IEnumerable\u00601\u003C!!0\u003E)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 1039
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Prepare(class System.Data.SQLite.SQLiteConnection,class System.Data.SQLite.SQLiteCommand,class System.String,class System.Data.SQLite.SQLiteStatement,unsigned int32,class System.String\u0026)\nSystem.Data.SQLite.SQLiteCommand.BuildNextCommand()\nSystem.Data.SQLite.SQLiteDataReader.NextResult()\nSystem.Data.SQLite.SQLiteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()\nSystem.Collections.Generic.List\u00601[System.__Canon]..ctor(class System.Collections.Generic.IEnumerable\u00601\u003C!0\u003E)\nSystem.Linq.Enumerable.ToList(class System.Collections.Generic.IEnumerable\u00601\u003C!!0\u003E)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 794
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CPrepareAndEnumerateStatements\u003Ed__64.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CGetStatements\u003Ed__54.MoveNext()\nMicrosoft.Data.Sqlite.SqliteDataReader.NextResult()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CExecuteDbDataReaderAsync\u003Ed__60.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(value class System.Data.CommandBehavior,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Storage.RelationalCommand\u002B\u003CExecuteReaderAsync\u003Ed__22.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CInitializeReaderAsync\u003Ed__21[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].InitializeReaderAsync(class AsyncEnumerator\u003C!0\u003E,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CMoveNextAsync\u003Ed__20[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].MoveNextAsync()\nSystem.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable\u00601\u002BEnumerator[System.__Canon].MoveNextAsync()\nBeep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryAccessService.GetCompanyAccessAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver\u002B\u003CResolveAsync\u003Ed__2.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver.ResolveAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CRefreshCompanyAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003COpenAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)",
+      "Value": 483
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.NextResult()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CExecuteDbDataReaderAsync\u003Ed__60.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(value class System.Data.CommandBehavior,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Storage.RelationalCommand\u002B\u003CExecuteReaderAsync\u003Ed__22.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CInitializeReaderAsync\u003Ed__21[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].InitializeReaderAsync(class AsyncEnumerator\u003C!0\u003E,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CMoveNextAsync\u003Ed__20[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].MoveNextAsync()\nSystem.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable\u00601\u002BEnumerator[System.__Canon].MoveNextAsync()\nBeep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryAccessService.GetCompanyAccessAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver\u002B\u003CResolveAsync\u003Ed__2.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver.ResolveAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CRefreshCompanyAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()\nSystem.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)",
+      "Value": 331
+    },
+    {
+      "Key": "System.IO.File.GetAttributes(class System.String)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Sqlite(class System.String,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties,class System.String)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.BuildKey(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Key(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveBindingSnapshotAsync\u003Ed__11.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.ValueTuple\u00602[System.__Canon,System.__Canon]].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveBindingSnapshotAsync(class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E,class System.String)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveAssetScopeAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveAssetScopeAsync()\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.ReadAsync(class System.Type,class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass TheTechIdea.Beep.Report.AppFilter\u003E,class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E,class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E)\nBeep.OilandGas.ApiService.Services.CompanyPPDMRowAccessPolicy\u002B\u003CReadPredicatesAsync\u003Ed__33.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()\nSystem.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)\nSystem.Threading.Tasks.Task.RunContinuations(class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task\u00601\u003C!0\u003E,!0)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()\nSystem.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)\nSystem.Threading.Tasks.Task.RunContinuations(class System.Object)",
+      "Value": 314
+    },
+    {
+      "Key": "System.GC.\u003CAllocateUninitializedArray\u003Eg__AllocateNewArrayWorker|77_0(int32,bool)\nSystem.Text.StringBuilder.AppendWithExpansion(wchar\u0026,int32)\nSystem.Text.StringBuilder\u002BAppendInterpolatedStringHandler.AppendFormatted(class System.String)\nTheTechIdea.Beep.Tools.Helpers.PocoClassGeneratorHelper.CreateClassFromTemplate(class System.String,class TheTechIdea.Beep.DataBase.EntityStructure,class System.String,class System.String,class System.String,class System.String,class System.String,class System.String,bool)\nTheTechIdea.Beep.Tools.Helpers.PocoClassGeneratorHelper.CreateEntityClass(class TheTechIdea.Beep.DataBase.EntityStructure,class System.String,class System.String,class System.String,class System.String,bool)\nTheTechIdea.Beep.Tools.ClassCreator.CreateEntityClass(class TheTechIdea.Beep.DataBase.EntityStructure,class System.String,class System.String,class System.String,class System.String,bool)\nTheTechIdea.Beep.Utilities.DMTypeBuilder.ConvertPOCOClassToEntity(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.DataBase.EntityStructure,class System.String)\nTheTechIdea.Beep.Utilities.DMTypeBuilder.GetOrCreateType(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)\nTheTechIdea.Beep.Utilities.DMTypeBuilder.CreateNewObject(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)\nTheTechIdea.Beep.DataBase.RDBSource.ReadEntityTypeCore(class System.String)\nTheTechIdea.Beep.DataBase.RDBSource.GetEntityType(class System.String)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()\nSystem.Collections.Generic.List\u00601[System.__Canon]..ctor(class System.Collections.Generic.IEnumerable\u00601\u003C!0\u003E)\nSystem.Linq.Enumerable.ToList(class System.Collections.Generic.IEnumerable\u00601\u003C!!0\u003E)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 305
+    }
+  ],
+  "Limits": "Known blocking/polling leaf frames excluded explicitly; remaining sample weights include managed/native work, contention and GC. This is a diagnostic attribution heuristic, not exact CPU or wall-time per method."
+}

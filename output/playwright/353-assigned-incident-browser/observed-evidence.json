@@ -1,0 +1,94 @@
+{
+  "status": "verified-selected-browser",
+  "observations": [
+    {
+      "name": "real-field-selector",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\source-snapshot.txt",
+      "observation": "Actual FIELD selector loads North FIELD through the controlled IFieldSelectionContext; no selector stub."
+    },
+    {
+      "name": "reviewed-source-destination",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\incident-snapshot.txt",
+      "observation": "Browser follows actual source-panel link with encoded incident identity and expected workflow instance to actual incident detail."
+    },
+    {
+      "name": "generic-action-refusal",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\metadata-source.json",
+      "observation": "Generic HSE action controls absent and generic action transport count stays zero."
+    },
+    {
+      "name": "wrong-workflow",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\wrong-workflow-snapshot.txt",
+      "observation": "Full browser navigation with a mismatched expected workflow withholds incident content."
+    },
+    {
+      "name": "company-clearing",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\company-switch-snapshot.txt",
+      "observation": "Current company switch removes previous incident details and approval controls."
+    },
+    {
+      "name": "foreign-reload",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\metadata-after-other-company-reload.json",
+      "observation": "Reload in other company fails current FIELD/context validation before another incident read."
+    },
+    {
+      "name": "explicit-return-reload",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\valid-reload-snapshot.txt",
+      "observation": "Restore original company and explicitly reload the recorded incident."
+    },
+    {
+      "name": "lost-ack-original",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\lost-ack-snapshot.txt",
+      "observation": "One controlled effect followed by lost acknowledgement remains unconfirmed and retains the exact protected original."
+    },
+    {
+      "name": "protected-full-reload",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\reload-snapshot.txt",
+      "observation": "Exact URL and original survive full reload under native CLOSED state; new operational controls withheld."
+    },
+    {
+      "name": "confirmed-reconciliation",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\metadata-final.json",
+      "observation": "Second exact submission confirms the same one controlled effect, with zero generic action lookups and cleared session original."
+    },
+    {
+      "name": "terminal-controls",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\reconciled-snapshot.txt",
+      "observation": "Confirmed closure message, recorded recovery and terminal-state notice remain; new stage review is absent."
+    },
+    {
+      "name": "narrow-real-css",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\narrow-dimensions.txt",
+      "observation": "390px viewport equals document width and real app CSS loaded; screenshots visually inspected."
+    }
+  ],
+  "controlled_backend": {
+    "state": "CLOSED",
+    "attempts": 2,
+    "writes": 1,
+    "sourceReads": 2,
+    "incidentReads": 4,
+    "genericActionReads": 0,
+    "recorded": true
+  },
+  "limitations": [
+    "Host route wrappers embed actual process/incident components; a diagnostic Router/RouteView is used. Production RouteView/auth middleware/OIDC/startup are not qualified.",
+    "Authentication, FIELD service, typed recorded/incident clients, native source evidence and one-effect outcome persistence are controlled fixtures. No actual domain database write or provider/transaction qualification is inferred.",
+    "Shared StatusBadge and unrelated maintenance/journal/work-order/transition components are not source-linked in this component runtime. Their visuals and branches are not qualified; the terminal confirmation text and relevant HSE controls were observed.",
+    "The browser mismatch check uses full navigation. Same-page query-change handling remains covered by the recorded focused component gate, not a new browser observation.",
+    "Selected navigation/recovery/narrow viewport only; no full accessibility/screen-reader/keyboard/RTL/browser matrix or production branding acceptance.",
+    "No SQL, EF, schema, task persistence or application source change in this qualification turn. Overall plan/goal and commit/push remain pending."
+  ]
+}

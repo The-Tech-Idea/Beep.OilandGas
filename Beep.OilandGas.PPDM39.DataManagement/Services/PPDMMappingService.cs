@@ -104,6 +104,18 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 }
             }
 
+            if(dto is Beep.OilandGas.Models.Data.WellTestResponse test && ppdmEntity is Beep.OilandGas.PPDM39.Models.WELL_TEST recorded)
+            {
+                if(string.IsNullOrWhiteSpace(recorded.UWI) || string.IsNullOrWhiteSpace(recorded.SOURCE) || string.IsNullOrWhiteSpace(recorded.TEST_TYPE) || string.IsNullOrWhiteSpace(recorded.RUN_NUM) || string.IsNullOrWhiteSpace(recorded.TEST_NUM))
+                    throw new InvalidOperationException("Recorded WELL_TEST composite identity is incomplete.");
+                test.OilFlowAmountUom=recorded.OIL_FLOW_AMOUNT_UOM;test.GasFlowAmountUom=recorded.GAS_FLOW_AMOUNT_UOM;test.WaterFlowAmountUom=recorded.WATER_FLOW_AMOUNT_UOM;
+                test.OilFlowAmountOuom=recorded.OIL_FLOW_AMOUNT_OUOM;test.GasFlowAmountOuom=recorded.GAS_FLOW_AMOUNT_OUOM;test.WaterFlowAmountOuom=recorded.WATER_FLOW_AMOUNT_OUOM;
+                test.Source=recorded.SOURCE;test.RunNumber=recorded.RUN_NUM;test.TestNumber=recorded.TEST_NUM;
+                test.TestId=System.Text.Json.JsonSerializer.Serialize(new[]{recorded.UWI,recorded.SOURCE,recorded.TEST_TYPE,recorded.RUN_NUM,recorded.TEST_NUM});
+                test.CreateUser=recorded.ROW_CREATED_BY;test.CreateDate=recorded.ROW_CREATED_DATE;
+                test.UpdateUser=recorded.ROW_CHANGED_BY;test.UpdateDate=recorded.ROW_CHANGED_DATE;
+            }
+
             return dto;
         }
 

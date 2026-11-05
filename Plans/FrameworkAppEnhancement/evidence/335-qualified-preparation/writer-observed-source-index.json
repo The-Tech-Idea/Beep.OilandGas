@@ -1,0 +1,50 @@
+{
+  "observed_at_utc": "2026-10-20T08:02:11.014822+00:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "branch": "master",
+  "dirty_tree": true,
+  "scope": "Native qualified participant component only; no complete mixed command/ledger/API or real-provider completion claim. Source hashes describe the current authored writer/test inputs.",
+  "focused_output": {
+    "path": "oilgas-335-qualified-write-first.log",
+    "sha256": "62f7412c429bc2dbff659962bb9a8d015eaa8284d9791a146ef8f4ac68e70a93",
+    "result": "16 passed; exit 0 observed from the collected test process"
+  },
+  "source_files": [
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "257e230b56e946b5cda5bbfd3fb9a72afa39008f1439dab0a8e4df4ccb5b5165"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "f6676e306a57ae2373acfc6b28818db6a3da3c42c5325aa37baaaba23f1720b9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnTests.cs",
+      "sha256": "47ba8e072d152e76bbbacb2d6df2094ad52e79271dc73524f5e1647d5b7d13dd"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "a23708df24c7ef3d00701422730ebe6ffd3963a0279886b88be03284a6a5e184"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs",
+      "sha256": "1bd9af47717c2462eb18b6b1faf47bbbdf22d522288e8f5fb56c62cac99524f5"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+      "sha256": "cb0969156f3db1f4c87640e75cebea7bde2717a86218ea2251504c94cef054df"
+    }
+  ],
+  "final_native_output": {
+    "path": "oilgas-335-qualified-write-native-final.log",
+    "sha256": "d99c8160db0e8a0defc2ec4c2cffcc90e89225e66b45dfaccb5369d3fdebca48",
+    "output_modified_utc": "2026-10-20T08:04:29.586521+00:00",
+    "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj -p:FocusedCompanyTests=true -p:FocusedDataAssemblyPath=<isolated canonical Data DLL> -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --no-build --filter <qualified asset/operating/licensing/policy/status-boundary/company-row-policy classes> --logger console;verbosity=normal",
+    "result": "379 passed; exit 0 observed from collected process; no failures or skips",
+    "limitations": [
+      "Native participant and rollback-aware provider fixture only.",
+      "No complete mixed ledger/closure/private-public recovery/API acceptance.",
+      "No real-provider, browser/OIDC, full solution/consumer/release certification."
+    ]
+  }
+}

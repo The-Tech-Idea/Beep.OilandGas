@@ -1,0 +1,47 @@
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IAfeServiceClient AfeClient
+@inject OilGasCallFailures Calls
+@if(_state?.CanView==true)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h4">Investment assignment readiness</MudText>
+        <MudText>Review the configured approval stages and the people currently eligible to receive this company/FIELD request.</MudText>
+        <MudButton OnClick="Read" Disabled="@(!_state.CanRead)" Variant="Variant.Outlined" Class="my-3">Review investment routing</MudButton>
+        @if(_state.Busy){<MudProgressLinear Indeterminate="true" aria-label="Checking configured investment reviewers" />}
+        @if(_state.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+        @if(_state.Current is {} review)
+        {
+            @if(review.ExistingHandoffId is {} handoff){<MudAlert Severity="Severity.Info">An original investment handoff is recorded: @handoff. Read its recorded status below before requesting more work.</MudAlert>}
+            else if(review.Source.Recorded is {} recorded){<MudAlert Severity="Severity.Info">The request already has a recorded @recorded.Decision investment decision. No new review assignment is proposed.</MudAlert>}
+            else if(review.Source.BlocksRouting()){@foreach(var blocker in review.Source.Blockers.Where(text=>text!=DevelopmentInvestmentReview.MakerDecisionBlocker)){<MudAlert Severity="Severity.Info">@blocker</MudAlert>}}
+            else if(review.Options.Count==0){<MudAlert Severity="Severity.Info">No investment approval workflow is configured for AFE requests. Configure its approval stages and company roles before assigning work.</MudAlert>}
+            @foreach(var option in review.Options)
+            {
+                <MudPaper Outlined="true" Class="pa-3 my-3">
+                    <MudText Typo="Typo.subtitle1">@option.Name · Version @option.Version</MudText>
+                    @foreach(var stage in option.Stages)
+                    {
+                        <MudText>Stage @stage.StepId · Role @stage.AssignedRole</MudText>
+                        @foreach(var recipient in stage.Recipients){<MudText>Reviewer @recipient.UserId · Workspace @recipient.PersonaCode</MudText>}
+                    }
+                    @foreach(var blocker in option.Blockers){<MudAlert Severity="Severity.Info">@blocker</MudAlert>}
+                    @if(option.Ready){<MudText>Current independent recipients are confirmed for every configured stage.</MudText>}
+                </MudPaper>
+            }
+            <MudAlert Severity="Severity.Info">Routing inspection does not record an assignment or notification. Confirm a handoff separately.</MudAlert>
+        }
+    </MudPaper>
+}
+<DevelopmentInvestmentHandoffPanel ProcessId="@ProcessId" AfeId="@AfeId" Review="@_state?.Current" />
+@code{
+    [Parameter,EditorRequired]public string ProcessId{get;set;}=default!;[Parameter,EditorRequired]public string AfeId{get;set;}=default!;
+    private DevelopmentInvestmentRoutingState? _state;private string? process,afe;private bool disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnParametersSet(){if(process!=ProcessId || afe!=AfeId){process=ProcessId;afe=AfeId;_state!.SetSource(ProcessId,AfeId);}}
+    private Task Read()=>_state!.ReadAsync();private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

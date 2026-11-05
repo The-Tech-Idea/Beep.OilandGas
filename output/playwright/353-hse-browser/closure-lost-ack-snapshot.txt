@@ -1,0 +1,23 @@
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 2 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e113]:
+    - heading "Isolated HSE browser fixture" [level=1] [ref=e114]
+    - paragraph [ref=e115]: Actual HSE components and protected tab storage. Controlled clients and authentication; production API/provider qualification is separate.
+    - group [ref=e116]:
+      - button "Show HSE landing" [ref=e117] [cursor=pointer]
+      - button "Show closure workflow" [ref=e119] [cursor=pointer]
+      - button "Switch other company" [ref=e121] [cursor=pointer]
+      - button "Restore original company" [ref=e123] [cursor=pointer]
+  - generic [ref=e246]:
+    - heading "Controlled incident field / case · PENDING_CLOSE_OUT" [level=2] [ref=e247]
+    - heading "Lifecycle approval and incident closure" [level=6] [ref=e248]
+    - generic [ref=e265]: The original final incident closure approval request awaits confirmation.
+    - paragraph [ref=e272]: Independent browser-reviewed evidence confirms the repaired valve and final incident closure.
+    - button "Reconcile original closure stage" [ref=e273] [cursor=pointer]
+    - button "Review changed native incident history" [ref=e275] [cursor=pointer]
+    - status [ref=e277]: The stage outcome is unconfirmed. Reload and reconcile the retained original; the incident has not been confirmed closed.
+```

@@ -1,0 +1,315 @@
+@page "/ppdm39/hse/incident-detail"
+@attribute [Authorize]
+@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
+@inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
+@inject NavigationManager NavigationManager
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject TheTechIdea.Data.OilGas.IFieldSelectionContext Fields
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject ILogger<HSEIncidentDetail> Logger
+@implements IDisposable
+
+<PageTitle>HSE Incident — @Id</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+
+    @if (!string.IsNullOrWhiteSpace(_loadError))
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">@_loadError</MudAlert>
+        <MudButton OnClick="LoadDetailAsync">Reload incident</MudButton>
+    }
+    @if (_loaded)
+    {
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/hse/incidents")' />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@_incidentType — @_description</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <HSEIncidentSeverityBadge Tier="@_tier" />
+                <StatusBadge Status="@_status" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@_incidentDate.ToString("dd-MMM-yyyy HH:mm") · @_location · @_reportedBy</MudText>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudDivider Class="mb-4" />
+
+    @if (!_workflowAvailable && !string.IsNullOrWhiteSpace(_workflowWarning))
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                <MudText Typo="Typo.body2">@_workflowWarning</MudText>
+            </MudStack>
+        </MudAlert>
+    }
+    @if (_loadedReview is not null && _canManage)
+    {
+        <HseWorkflowStart CanStart="@CanRecordIncidentWork" Context="_loadedReview" IncidentId="@Id" HasWorkflow="_workflowAvailable" CanManage="@(_canManage)" OnConfirmed="LoadDetailAsync" />
+    }
+
+    <MudGrid Spacing="3">
+
+        @* ── Incident details ─────────────────────────────────────────── *@
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2" Class="mb-3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Incident Details</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudSimpleTable Dense="true">
+                        <tbody>
+                            <tr><td><MudText Typo="Typo.caption">Date/Time</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_incidentDate.ToString("dd-MMM-yyyy HH:mm")</MudText></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Type</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_incidentType</MudText></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Tier</MudText></td>
+                                <td><HSEIncidentSeverityBadge Tier="@_tier" /></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Location</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_location</MudText></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Reported jurisdiction</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_jurisdiction</MudText></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Reported By</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_reportedBy</MudText></td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+                </MudCardContent>
+            </MudCard>
+
+            @* RCA section *@
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Info" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Root Cause Analysis</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_canManage && _loadedReview is not null)
+                    {
+                        <HseCauseReview Context="_loadedReview" IncidentId="@Id" CanManage="@(_canManage)" CanRecord="@_canEditRca" />
+                    }
+                    @if (string.IsNullOrWhiteSpace(_rcaSummary))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">No root cause is displayed in the incident detail.</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mb-3">@_rcaSummary</MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* ── Corrective actions ───────────────────────────────────────── *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2" Class="mb-3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Corrective Actions</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_canManage && _loadedReview is not null)
+                    {
+                        <HseCorrectiveAction CanRecord="@CanRecordIncidentWork" Context="_loadedReview" IncidentId="@Id" CanManage="@(_canManage)" OpenSequences="@OpenActionSequences" OnConfirmed="LoadDetailAsync" />
+                        <HseBrowser.CurrentClosure.HseClosureWorkflow CurrentIncidentState="@_status" Context="_loadedReview" IncidentId="@Id" CanApprove="@(_canManage && Company.Snapshot.Selection?.Permissions.Contains(PermissionConstants.Workflow.Approve) == true)" OnConfirmed="LoadDetailAsync" />
+                    }
+                    <MudDataGrid T="ActionRow" Items="@_correctiveActions" Dense="true" Hover="true" Striped="true">
+                        <Columns>
+                            <PropertyColumn Property="a => a.Description" Title="Action" />
+                            <PropertyColumn Property="a => a.AssignedTo"  Title="Assigned To" />
+                            <PropertyColumn Property="a => a.DueDate"     Title="Due"    Format="dd-MMM-yy" />
+                            <TemplateColumn Title="Status" Sortable="false">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Status" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+
+            @if (CanRecordIncidentWork)
+            {
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudText Typo="Typo.subtitle1">Incident close-out</MudText>
+                        <MudText Typo="Typo.body2">Recorded corrective actions: @_correctiveActions.Count; not completed: @(_correctiveActions.Count(action => action.Status != "COMPLETED")).</MudText>
+                        <MudText Typo="Typo.body2">Independent verification and reviewed closure are required before this incident can be closed.</MudText>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudItem>
+
+    </MudGrid>
+
+    }
+</MudContainer>
+
+@using Microsoft.AspNetCore.Authorization
+@using Beep.OilandGas.Models.Processes
+@using Beep.OilandGas.Models.Data.HSE
+@using Beep.OilandGas.Models.Data.Process
+@using Beep.OilandGas.Models.Data.Security
+@using TheTechIdea.Data.OilGas
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name = "incidentId")] public string Id { get; set; } = string.Empty;
+    [SupplyParameterFromQuery(Name = "workflowInstanceId")] public string? WorkflowInstanceId { get; set; }
+    private string? _loadedWorkflowId;
+
+    private string   _loadedId     = string.Empty;
+    private string   _incidentType = string.Empty;
+    private string   _description  = string.Empty;
+    private string   _tier         = string.Empty;
+    private string   _status       = string.Empty;
+    private string   _location     = string.Empty;
+    private string   _jurisdiction = string.Empty;
+    private string   _reportedBy   = string.Empty;
+    private DateTime _incidentDate;
+    private string   _rcaSummary   = string.Empty;
+    private bool CanRecordIncidentWork => _loaded && _status is (IncidentState.Reported or IncidentState.UnderInvestigation or IncidentState.PendingRCA or IncidentState.PendingCorrectiveAction or IncidentState.PendingCloseOut);
+    private bool     _canEditRca;
+    private bool     _workflowAvailable;
+    private bool     _canManage;
+    private string   _workflowWarning = string.Empty;
+    private bool _loaded;
+    private bool _disposed;
+    private long _generation;
+    private string? _loadError;
+    private FieldSelectionReview? _loadedReview;
+
+    private List<ActionRow> _correctiveActions = new();
+
+    protected override void OnInitialized()
+    {
+        Company.Changed += ContextChanged;
+        Fields.CurrentFieldChanged += FieldChanged;
+        Authentication.AuthenticationStateChanged += AuthenticationChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == _loadedId && WorkflowInstanceId == _loadedWorkflowId) return;
+        _loadedId = Id; _loadedWorkflowId = WorkflowInstanceId;
+        await LoadDetailAsync();
+    }
+
+    private async Task LoadDetailAsync()
+    {
+        _loaded = false; _canManage = false; _canEditRca = false; _loadedReview = null; _correctiveActions = new();
+        _loadError = null;
+        var generation = ++_generation; var selected = Company.Snapshot; var incidentId = Id; var expectedWorkflow = WorkflowInstanceId;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot && Id == incidentId && WorkflowInstanceId == expectedWorkflow;
+        try
+        {
+            if (selected.Selection is null) throw new InvalidOperationException("Choose a company and FIELD before reviewing an incident.");
+            if (!LeaseSummaryValidator.Identifier(incidentId)) throw new InvalidOperationException("Choose an exact incident.");
+            if (expectedWorkflow is not null && !LeaseSummaryValidator.Identifier(expectedWorkflow)) throw new InvalidOperationException("Choose an exact recorded workflow instance.");
+            var user = (await Authentication.GetAuthenticationStateAsync()).User; if (!Current()) return;
+            if (!CanUse(user, selected.Selection, PermissionConstants.HSE.View)) throw new UnauthorizedAccessException("The current company HSE view authority is unavailable.");
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, selected.Selection.Scope, selected.Selection.UserId);
+            if (!before.SelectionAvailable) throw new InvalidOperationException("Choose an available FIELD before reviewing an incident.");
+
+            var incidentTask = HSEClient.GetIncidentAsync(incidentId);
+            var causesTask = HSEClient.GetIncidentCausesAsync(incidentId);
+            var correctiveActionsTask = HSEClient.GetIncidentCorrectiveActionsAsync(incidentId);
+            var processTask = TryGetWorkflowIncidentAsync(incidentId);
+
+            await Task.WhenAll(incidentTask, causesTask, correctiveActionsTask, processTask);
+
+            if (!Current()) return;
+            var incident = await incidentTask ?? throw new InvalidOperationException("The incident is unavailable.");
+            var causes = await causesTask ?? throw new InvalidOperationException("Incident causes are unavailable.");
+            var correctiveActions = await correctiveActionsTask ?? throw new InvalidOperationException("Corrective actions are unavailable.");
+            var inst = await processTask;
+            if (expectedWorkflow is not null && (inst is null || inst.InstanceId != expectedWorkflow))
+                throw new InvalidOperationException("The incident no longer matches the linked workflow instance.");
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, selected.Selection.Scope, selected.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext || incident.IncidentId != incidentId || incident.FieldId != before.FieldId ||
+                inst is not null && (inst.EntityId != incidentId || inst.EntityType != "HSE_INCIDENT" || inst.FieldId != before.FieldId || inst.ProcessId != "HSE_INCIDENT_REPORTING"))
+                throw new InvalidOperationException("The incident, workflow or FIELD changed during review.");
+            user = (await Authentication.GetAuthenticationStateAsync()).User; if (!Current()) return;
+            if (!CanUse(user, selected.Selection, PermissionConstants.HSE.View)) throw new UnauthorizedAccessException("The current company HSE view authority changed.");
+            _canManage = CanUse(user, selected.Selection, PermissionConstants.HSE.ManageIncidents);
+            _workflowAvailable = inst is not null;
+            _workflowWarning = inst is null ? "No workflow instance was found for this incident. The incident record is available, but workflow actions are disabled." : string.Empty;
+
+            if (incident != null)
+            {
+                _incidentType = incident.IncidentType;
+                _description = incident.Description;
+                _tier = incident.Tier.ToString();
+                _status = incident.CurrentState;
+                _location = incident.Location;
+                _jurisdiction = incident.Jurisdiction;
+                _incidentDate = incident.IncidentDate;
+                _reportedBy = string.IsNullOrWhiteSpace(inst?.StartedBy) ? "Not recorded" : inst.StartedBy;
+                _canEditRca = _workflowAvailable && _canManage
+                    && incident.CurrentState is (IncidentState.Reported or IncidentState.UnderInvestigation or IncidentState.PendingRCA or IncidentState.PendingCorrectiveAction or IncidentState.PendingCloseOut);
+
+            }
+
+            _correctiveActions = correctiveActions
+                .OrderBy(action => action.StepSeq)
+                .Select(action => new ActionRow(
+                    action.StepSeq.ToString(),
+                    action.Description,
+                    action.ResponsiblePerson ?? string.Empty,
+                    action.DueDate,
+                    action.Status))
+                .ToList();
+
+            _rcaSummary = causes
+                .Where(cause => string.Equals(cause.CauseType, CauseType.Root, StringComparison.OrdinalIgnoreCase))
+                .Select(cause => cause.Description)
+                .FirstOrDefault(description => !string.IsNullOrWhiteSpace(description))
+                ?? string.Empty;
+
+            _loadedReview = before.SelectionContext; _loaded = true;
+        }
+        catch (Exception error)
+        {
+            if (Current()) { Logger.LogWarning(error, "HSE incident detail could not be confirmed for the current selection"); _loadError = "Could not confirm incident detail for the current company and FIELD."; }
+        }
+    }
+
+    private void FieldChanged(string _) => ContextChanged();
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> _) => ContextChanged();
+    private static bool CanUse(System.Security.Claims.ClaimsPrincipal user, Beep.OilandGas.Client.App.CompanyClientSelection selected, string permission) =>
+        user.Identity?.IsAuthenticated == true && user.FindFirst("party_id")?.Value == selected.UserId &&
+        selected.Roles.Any(user.IsInRole) && selected.Permissions.Contains(permission, StringComparer.Ordinal);
+    private void ContextChanged()
+    {
+        ++_generation; _loaded = false; _canManage = false; _canEditRca = false; _loadedReview = null; _correctiveActions = new();
+        _loadError = "Company or FIELD changed. Reload the incident for the current selection.";
+        if (!_disposed) _ = InvokeAsync(StateHasChanged);
+    }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }
+
+
+    private async Task<ProcessInstance?> TryGetWorkflowIncidentAsync(string incidentId)
+    {
+        try
+        {
+            return await BusinessProcessClient.GetHseIncidentAsync(incidentId) ?? throw new InvalidOperationException("The workflow response was unavailable.");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    private IReadOnlyList<int> OpenActionSequences => _correctiveActions.Where(a => a.Status == "OPEN").Select(a => int.Parse(a.ActionId)).ToArray();
+    private record ActionRow(string ActionId, string Description, string AssignedTo, DateTime DueDate, string Status);
+
+}

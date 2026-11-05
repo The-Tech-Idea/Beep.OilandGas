@@ -1,0 +1,83 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderCompletionDecisionState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Class="pa-3 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Record independent completion verification or rejection</MudText>
+        <MudText Typo="Typo.caption">Completion decision source: @WorkOrderId · FIELD @FieldId</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        @if(Query is null)
+        {
+            <MudTextField @bind-Value="_process" @bind-Value:after="InputsChanged" Label="Original maintenance process identity" Disabled="@State.Busy" Required="true" />
+            <MudTextField @bind-Value="_submission" @bind-Value:after="InputsChanged" Label="Original recorded work report identity" Disabled="@State.Busy" Required="true" />
+        }
+        <MudButton OnClick="ReviewAsync" Disabled="@(!State.CanReview)">Review assigned role and current completion evidence</MudButton>
+        @if(State.Review is {} review)
+        {
+            <MudText>Original report @review.Completion.Report.Query.SubmissionId · completed UTC @review.Completion.Report.CompletedAtUtc.ToString("O")</MudText>
+            <MudText>Current independent reviewer role @review.Stage.AssignedRole · native person @review.Completion.ReviewerPerson?.PersonBaId</MudText>
+            @foreach(var blocker in review.Completion.Blockers.Where(value=>value!=CompanyWorkOrderCompletionReview.PendingVerification)){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            <MudSelect T="string" @bind-Value="_decision" Label="Explicit independent decision" Required="true" Disabled="@State.Busy"><MudSelectItem T="string" Value='@("VERIFIED")' Disabled="@(review.Completion.Blockers.Any(value=>value!=CompanyWorkOrderCompletionReview.PendingVerification))">Verified</MudSelectItem><MudSelectItem T="string" Value='@("REJECTED")'>Rejected</MudSelectItem></MudSelect>
+            <MudTextField @bind-Value="_reason" Label="Explicit independent decision reason" Lines="3" Required="true" Disabled="@State.Busy" />
+            <MudCheckBox @bind-Value="_confirm" Label="I confirm the displayed original report, current evidence and my independent reviewer identity" Disabled="@State.Busy" />
+            <MudButton OnClick="RecordAsync" Disabled="@(!State.CanRecord || !_confirm || !CanDecide || _decision is not ("VERIFIED" or "REJECTED"))" Color="Color.Primary">Retain reference and record independent decision</MudButton>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original completion decision intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@State.Busy">Recover original completion decision without another write</MudButton>
+        @if(State.VisibleReference is {} id){<MudText>Retained original completion decision @id</MudText>}
+        @if(State.Receipt is {} saved)
+        {
+            <MudAlert Severity="Severity.Success">Recorded completion decision · reviewer role @saved.Command.Review.Stage.AssignedRole · outcome @saved.Receipt.Decision</MudAlert>
+            <MudText>Reviewer @saved.Receipt.ReviewerUserId · native person @saved.Command.Review.Completion.ReviewerPerson?.PersonBaId · recorded UTC @saved.Receipt.RecordedAtUtc.ToString("O")</MudText>
+            <MudText Typo="Typo.caption">Decision @saved.Receipt.ApprovalId · history @saved.Receipt.HistoryId · original evidence @saved.Command.Review.Completion.SourceRevision()</MudText>
+            <MudButton Href="@("/ppdm39/process/instances/"+Uri.EscapeDataString(saved.Command.Review.Stage.Task.InstanceId))">Open recorded process</MudButton>
+            <MudButton Href="/tasks/inbox">Open current assigned work</MudButton>
+        }
+        <MudText>This records the independent decision. Configured return handoff, physical return acceptance and lifecycle advancement require their own recorded evidence.</MudText>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public CompanyWorkOrderCompletionQuery? Query{get;set;}
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    private CompanyWorkOrderCompletionQuery? _attached;
+    private string _decision="",_resource="",_reason="",_reference="",_process="",_submission="";
+    private bool _confirm,_disposed;
+    private string? _error;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet()
+    {
+        var resource=WorkOrderId+"\n"+FieldId;if(_attached!=Query || _resource!=resource){Invalidate();_attached=Query;_resource=resource;}if(Query is not null)State.Attach(Query);
+        var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);if(values.TryGetValue("completionDecision",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        if(values.TryGetValue("completionProcess",out var process) && process.Count==1)_process=process[0]??"";if(values.TryGetValue("completionSubmission",out var submission) && submission.Count==1)_submission=submission[0]??"";
+    }
+    private CompanyWorkOrderCompletionQuery CurrentQuery()=>Query??new(new(_process,FieldId,WorkOrderId),_submission);
+    private bool CanDecide{get{try{State.Review?.RequireIndependentReviewer();return State.Review is not null;}catch(UnauthorizedAccessException){return false;}}}
+    private void InputsChanged(){State.Attach(null);_decision="";_confirm=false;_error=null;}
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        var query=CurrentQuery();query.Require();
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) ||
+            !selected.Permissions.Contains("Maintenance.VerifyCompletion",StringComparer.Ordinal) || !selected.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal) ||
+            State.Review is {} review && !user.IsInRole(review.Stage.AssignedRole) || await Fields.GetCurrentFieldIdAsync()!=query.Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Original standard independent reviewer role/company/account/FIELD and verification/approval capabilities are required.");
+    }
+    private Task Retain(Guid id){var query=State.VisibleCommand?.Review.Completion.Report.Query??CurrentQuery();_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"completionDecision",_reference},{"completionProcess",query.Task.InstanceId},{"completionSubmission",query.SubmissionId}}),replace:true);return Task.CompletedTask;}
+    private Task ReviewAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());await State.ReviewAsync(Workflows);_reason="";_decision="";_confirm=false;},"reviewing the original completion decision");
+    private Task RecordAsync()=>Run(async()=>{await Authority();if(!_confirm || State.Review?.Completion.Report.Query!=CurrentQuery())throw new ArgumentException("Confirm the exact reviewed report and configured independent reviewer role; reload changed source identities.");await State.RecordAsync(Workflows,_decision,_reason,Retain);},"recording the original completion decision");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Use the original completion decision intent reference.");await State.RecoverAsync(Workflows,id,Retain);},"reading the original completion decision");
+    private async Task Run(Func<Task> action,string operation){if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original completion decision is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}}
+    private void Invalidate(){State.Attach(null);_process="";_submission="";_reason="";_decision="";_reference="";_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

@@ -1,0 +1,25 @@
+# Implementation 236 — Beep-paged stock discovery and warehouse navigation
+
+## Page contract and existing native owner
+
+Canonical Data adds a stock intent page around the existing compact validated index. It binds original company/account, requested page/size, provider total and complete page revision. Requests require positive page numbers, a size of 1–50 and bounded offsets; expected page length, total pages and next/previous vocabulary are checked without integer overflow. The warehouse uses 25 entries per read. The earlier complete-index endpoint retains its bounded compatibility behavior; production landing discovery now uses pages.
+
+The existing InventoryService uses IDataSource.GetEntity(entity, filters, pageNumber, pageSize) through a private PPDM repository wrapper. Native owner/account/active filters are fixed server-side, and existing typed row mapping handles provider results. Beep operation error state is checked inside the datasource coordination boundary. Fresh canonical recovery metadata, exact request/returned page metadata, total/flag/length agreement, row ownership and unique identities are required. No handwritten query or SQL is introduced.
+
+Each returned entry is still verified by the complete original recovery owner. Closing page membership/total and a second full page/current-source capture must match under repeated original authority, connection and source-object checks. This limits original recovery reconstruction to the requested page instead of processing the whole index. A missing paging implementation, error, partial page, foreign row, duplicate identity, inconsistent metadata or page/source drift refuses publication.
+
+The existing company API exposes a paged stock-intents route under authentication, standard app roles and both read grants. Invalid page bounds return 400; authority failure returns 403; unconfirmed provider/evidence returns 409. The typed client validates the exact original page and full canonical index and rejects late company/account changes. The existing inventory workspace publishes copied page/index evidence under lifecycle/version/generation guards and clears it during reset. The warehouse landing has previous/next controls, provider total and a clear statement that pages are fresh reviews and history may change between reads. Recovery links and the physical/financial boundary remain unchanged.
+
+## Focused verification
+
+The actual canonical Data build passes with zero warnings/errors in 2.19 seconds. The focused native/API/landing gate passes 15 tests in 1.6458 minutes, including an actual writer-built 201-movement/intent history whose final Beep page is read without another write. The final rendered paging/client/workspace gate passes 16 tests in 30.7512 seconds. The final page/API/client/workspace gate passes 21 tests in 40.6603 seconds. The source gate passes 566 tests in 14.4567 seconds. The preceding expanded affected procurement/warehouse/receiver/handoff/screen gate passes 869 tests in 3.9646 minutes. All final runs reach terminal exit 0 without failed or skipped tests, and whitespace checks pass. Counts overlap and are not summed; focused composition warnings remain.
+
+Native cases cover first/final pages, inconsistent counts, foreign rows, provider failure, changing total and invalid requests. HTTP/typed-client cases check distinct requested pages, denied read grants and malformed page bounds, with no added writes. Fake-response client cases reject changed page/size/total/revision, null data and late company/account changes. Four workspace cases discard late results after account/company/clear/disposal changes. The rendered landing uses actual native writer evidence for 26 movements and navigates 25 entries on page one, one on page two and back, checking disjoint/stable fixture identities and no native writes.
+
+## Remaining acceptance and next delivery
+
+This proves use of Beep's paged API and its contract in native fixtures. Actual datasource implementations still require paging-efficiency, ordering and concurrency conformance; the interface alone does not prove server-side query efficiency. Pages are individually revalidated, not a frozen cross-page dataset snapshot. Unsupported or inconsistent providers fail closed. Actual browser navigation/reconnect/OIDC and accessibility/RTL/responsive acceptance remain open.
+
+Unavailable referenced historical source still prevents complete recovery validation; an evidence-governed historical discovery approach is required. Commands never recorded by the server cannot be inferred as committed effects or replayed to repair stock. Next address those historical read states and full procurement/warehouse/configured-inbox journeys across receipts, partial returns and later link cycles, then continue wider company persona landing/screens and multinational acceptance. No phase closes.
+
+No live database mutation, migration, grant assignment, deployment or commit/push is executed. Persistence stays API-first and Beep-owned, without a new business EF migration lane.

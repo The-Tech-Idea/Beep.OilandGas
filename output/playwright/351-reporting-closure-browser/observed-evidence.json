@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "observations": 9,
+  "scope": [
+    "explicit required preparation refusal before transport",
+    "keyboard entry and frozen confirmation",
+    "company-switch privacy and reload guidance",
+    "390-pixel wrapping without horizontal overflow",
+    "actual encrypted protected-tab retention,531355 characters,no plaintext rationale",
+    "lost-ack controlled submission once",
+    "whole-page reload and read-only recovery without source/profile lookup",
+    "exact input cleanup after validated receipt",
+    "closed history with zero pending tasks and explicit historical acceptance scope"
+  ],
+  "screenshot_visually_inspected": true,
+  "controlled_backend_writes": 1,
+  "controlled_backend_recoveries": 1,
+  "readonly_profile_loads": 0,
+  "readonly_source_reads_before_explicit_history_reload": 0,
+  "construction": [
+    "Initial browser default Chrome channel was unavailable; existing installed Chromium was used.",
+    "Initial narrow view clipped long source identifiers; existing canonical wrapping class and stylesheet integration repaired.",
+    "One early keyboard script advanced while readiness was still loading; it was repeated after observing the fields, without transport."
+  ],
+  "limits": [
+    "Isolated actual Blazor page/state/protected storage/component transport with controlled typed-client outcomes; no production auth/API/provider claim.",
+    "Selected keyboard and responsive checks only; no full a11y/screen-reader/RTL/browser-matrix qualification.",
+    "One favicon404 in initial browser console; no application/circuit exception observed."
+  ]
+}

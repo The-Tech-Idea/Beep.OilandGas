@@ -1,0 +1,260 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@if(Review?.RecordedVarianceDecision is {} decision)
+{
+    <MudPaper Outlined="true" Class="pa-3 mt-3">
+        <MudText Typo="Typo.h6">Verified recorded controller variance disposition</MudText>
+        <MudAlert Severity="Severity.Info">This records the first variance disposition. Task handoff/completion, invoice financial matching, posting and payment require separate evidence.</MudAlert>
+        <MudText>Controller account: @decision.Command.ActorUserId · Disposition: @decision.Command.Disposition · Original intent: @decision.Command.IntentId</MudText>
+        <MudText>Reason: @decision.Command.Reason · Proposal intent: @decision.Command.ProposalIntentId</MudText>
+        <MudText>Reviewed source revision: @decision.Command.ExpectedInvoiceRevision · Review revision: @decision.Command.ExpectedReviewRevision · Production binding: @decision.Command.BindingRevision</MudText>
+        <MudText>Recorded row revision: @decision.RowRevision · Recorded at UTC: @Review.Detail?.ChangedAt?.ToString("O")</MudText>
+    </MudPaper>
+}
+else if(Review?.HasRecordedVarianceDecisionSource==true){<MudAlert Severity="Severity.Warning">Recorded controller disposition verification: Unavailable. Review the original recorded intent and proof; no controller outcome is confirmed.</MudAlert>}
+@if(Review?.RecordedVariance is {} recorded)
+{
+    <MudPaper Outlined="true" Class="pa-3 mt-3">
+        <MudText Typo="Typo.h6">Verified recorded invoice variance proposal</MudText>
+        <MudAlert Severity="Severity.Info">Recorded proposal evidence does not establish independent controller disposition, task handoff, matching approval, posting or payment.</MudAlert>
+        <MudText>Prepared by account: @recorded.Command.ActorUserId · Disposition requested: @recorded.Command.Proposal.Disposition · Intent: @recorded.Command.IntentId</MudText>
+        <MudText>Reason: @recorded.Command.Proposal.Reason</MudText>
+        @foreach(var explanation in recorded.Command.Proposal.Explanations){<MudText>Check: @explanation.CheckCode · Explanation: @explanation.Reason</MudText>}
+        <MudText>Original invoice revision: @recorded.Command.Proposal.ExpectedInvoiceRevision · Financial evidence revision: @recorded.Command.Proposal.ExpectedFinancialRevision · Preparation revision: @recorded.Command.ExpectedPreparationRevision · Recorded row revision: @recorded.RowRevision</MudText>
+    </MudPaper>
+}
+else if(Review?.HasRecordedVarianceSource==true){<MudAlert Severity="Severity.Warning">Recorded variance proposal verification: Unavailable. Review the original recorded source and command proof; no recorded proposal outcome is confirmed.</MudAlert>}
+@if(Review is not null)
+{
+        <MudText Typo="Typo.h6" Class="mt-4">Company matching-policy history</MudText>
+        @if(ReviewMatchingPolicies.HasDelegate){<MudButton OnClick="@(()=>ReviewMatchingPolicies.InvokeAsync())" Disabled="PolicyLoading || Review.CorrectionCommandUnsettled" Variant="Variant.Outlined">Review company matching policies</MudButton>}
+        @if(PolicyLoading){<MudProgressLinear Indeterminate="true" aria-label="Reviewing company matching policies" />}
+        else if(Review.MatchingPolicies is {} policies)
+        {
+            <MudAlert Severity="Severity.Info">Recorded policy statuses do not prove independent approval. No effective policy is selected and no financial matching or payment is authorized by this history.</MudAlert>
+            @if(policies.Records.Count==0){<MudAlert Severity="Severity.Info">No company matching-policy records were returned. Matching rules remain unavailable.</MudAlert>}
+            else
+            {
+                @foreach(var policy in policies.Records)
+                {
+                    var rules=TheTechIdea.Data.OilGas.CompanyMatchingPolicyReview.Rules(policy);
+                    var proof=Review.VerifiedPolicyProof(policy.ACCOUNTING_METHOD_ID);
+                    <MudPaper Outlined="true" Class="pa-3 mt-2">
+                        <MudText>Policy: @policy.ACCOUNTING_METHOD_ID · Version: @rules.PolicyVersion · Recorded status: @policy.MATCHING_POLICY_STATUS · Activity: @policy.ACTIVE_IND</MudText>
+                        <MudText>Effective: @Date(policy.EFFECTIVE_DATE) · Expires: @Date(policy.EXPIRY_DATE)</MudText>
+                        <MudText>Currency: @rules.CurrencyCode · Quantity tolerance (%): @Amount(rules.QuantityTolerancePercent) · Price tolerance (%): @Amount(rules.PriceTolerancePercent)</MudText>
+                        <MudText>Units: @rules.UnitRule · Currency rule: @rules.CurrencyRule</MudText>
+                        <MudText>Tax: @rules.TaxTreatment · Rounding: @rules.RoundingRule · Non-PO invoices: @rules.NonPurchaseInvoiceRule</MudText>
+                        @if(proof is null){<MudText>Verified preparation or independent approval evidence: Unavailable</MudText>}
+                        else if(proof.Command.Action=="DRAFT"){<MudText>Verified draft preparer: @proof.Command.ActorUserId · Intent: @proof.Command.IntentId</MudText>}
+                        else{<MudText>Verified independent policy reviewer: @proof.Command.ActorUserId · Original preparer: @proof.Original!.ROW_CREATED_BY · Review reason: @proof.Command.Reason</MudText>}
+                        <MudText Typo="Typo.caption">Recorded by: @Text(policy.ROW_CREATED_BY) · @Date(policy.ROW_CREATED_DATE) · Changed by: @Text(policy.ROW_CHANGED_BY) · @Date(policy.ROW_CHANGED_DATE)</MudText>
+                    </MudPaper>
+                }
+            }
+            <MudText Typo="Typo.caption">Policy history retrieved: @policies.RetrievedAtUtc.ToString("O") · Revision: @policies.Revision</MudText>
+        }
+        else{<MudAlert Severity="Severity.Info">Company matching-policy evidence has not been confirmed. Review the recorded history before evaluating matching rules.</MudAlert>}
+}
+@if(Review?.Detail is {} invoice)
+{
+    <MudPaper Outlined="true" Class="pa-4">
+        <MudText Typo="Typo.h6">Recorded vendor invoice header</MudText>
+        <MudText>Invoice: @invoice.Id · Number: @Text(invoice.Number)</MudText>
+        <MudText>Supplier: @Text(invoice.Vendor) · Status: @Text(invoice.Status) · Active indicator: @Text(invoice.ActiveIndicator)</MudText>
+        <MudText>Invoice date: @Date(invoice.InvoiceDate) · Due date: @Date(invoice.DueDate)</MudText>
+        <MudText>Recorded amount: @Amount(invoice.Amount) · Recorded paid amount: @Amount(invoice.PaidAmount) · Recorded balance: @Amount(invoice.BalanceDue)</MudText>
+        <MudText>Currency: @Text(invoice.Currency)</MudText>
+        <MudText>@invoice.Remarks</MudText>
+        <MudText Typo="Typo.caption">Recorded by: @Text(invoice.RecordedBy) · @Date(invoice.RecordedAt) · Changed by: @Text(invoice.ChangedBy) · @Date(invoice.ChangedAt)</MudText>
+        <MudAlert Severity="Severity.Info">Recorded header and line values do not verify actual payment, ledger posting or independent approval. Review the whole invoice and exact PO/receipt links below. Currency/unit catalog validity and financial matching remain unconfirmed.</MudAlert>
+        @if(Review.Lines is {} lines)
+        {
+            <MudText Typo="Typo.h6" Class="mt-4">Recorded vendor invoice lines (active and inactive)</MudText>
+            @if(lines.Count==0){<MudAlert Severity="Severity.Info">No recorded invoice lines were returned. This does not establish completed matching or a valid invoice total.</MudAlert>}
+            else
+            {
+                <MudTable T="APInvoiceWorkspaceState.LineItem" Items="lines" Dense="true">
+                    <HeaderContent><MudTh>Line / description</MudTh><MudTh>Quantity / unit</MudTh><MudTh>Price / amount / currency</MudTh><MudTh>Recorded PO reference</MudTh><MudTh>Activity / provenance</MudTh></HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Line / description">@context.Id · @(context.Number?.ToString() ?? "Unavailable") · @context.Description</MudTd>
+                        <MudTd DataLabel="Quantity / unit">@Amount(context.Quantity) · Unit: @Text(context.Unit)</MudTd>
+                        <MudTd DataLabel="Price / amount / currency">Price: @Amount(context.UnitPrice) · Amount: @Amount(context.Amount) · Currency: @Text(context.Currency)</MudTd>
+                        <MudTd DataLabel="Recorded PO reference">Order: @Text(context.OrderId) · Line: @Text(context.OrderLineId) · Ownership and matching: unconfirmed
+                            @if(AllowPurchaseSource && ReviewPurchaseSource.HasDelegate && !string.IsNullOrWhiteSpace(context.OrderId) && !string.IsNullOrWhiteSpace(context.OrderLineId))
+                            {<MudButton OnClick="@(()=>ReviewPurchaseSource.InvokeAsync(context.Id))" Disabled="PurchaseSourceLoading || Review.CorrectionCommandUnsettled" Variant="Variant.Outlined">Review owned PO source</MudButton>}
+                        </MudTd>
+                        <MudTd DataLabel="Activity / provenance">Active indicator: @Text(context.ActiveIndicator) · Recorded by: @Text(context.RecordedBy) · @Date(context.RecordedAt) · Changed by: @Text(context.ChangedBy) · @Date(context.ChangedAt)</MudTd>
+                    </RowTemplate><PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+            }
+        }
+        <MudText Typo="Typo.caption">Source content revision: @Review.SourceRevision</MudText>
+        @if(ReviewFinancialEvidence.HasDelegate)
+        {<MudButton OnClick="@(()=>ReviewFinancialEvidence.InvokeAsync())" Disabled="FinancialLoading || Review.CorrectionCommandUnsettled" Variant="Variant.Outlined">Review whole invoice financial evidence</MudButton>}
+        @if(Review.FinancialReview is {} financial)
+        {
+            <MudText Typo="Typo.h6" Class="mt-4">Whole invoice financial evidence</MudText>
+            <MudText Typo="Typo.caption">Invoice revision: @financial.Invoice.Revision · Financial review revision: @financial.Revision · Loaded at UTC: @financial.RetrievedAtUtc.ToString("O")</MudText>
+            <MudAlert Severity="Severity.Info">These recorded comparisons do not approve matching, reserve receipts or authorize posting/payment. Review unavailable evidence and recorded differences before requesting a financial decision.</MudAlert>
+            <MudTable T="TheTechIdea.Data.OilGas.APSourceComparison" Items='@financial.Checks.Where(row=>!row.Code.StartsWith("policy",StringComparison.Ordinal) && !row.Code.StartsWith("global-consumption",StringComparison.Ordinal))' Dense="true">
+                <HeaderContent><MudTh>Check</MudTh><MudTh>Recorded result</MudTh><MudTh>Evidence</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="Check">@context.Label</MudTd><MudTd DataLabel="Recorded result">@context.OutcomeText</MudTd><MudTd DataLabel="Evidence">@context.Evidence</MudTd></RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+            <MudText Typo="Typo.h6" Class="mt-4">Verified effective company matching policy</MudText>
+            <MudText>@financial.PolicySelection.Evidence</MudText>
+            <MudTable T="TheTechIdea.Data.OilGas.APSourceComparison" Items='@financial.Checks.Where(row=>row.Code.StartsWith("policy",StringComparison.Ordinal))' Dense="true">
+                <HeaderContent><MudTh>Policy / variance check</MudTh><MudTh>Diagnostic result</MudTh><MudTh>Evidence / required separate review</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="Policy / variance check">@context.Label</MudTd><MudTd DataLabel="Diagnostic result">@context.OutcomeText</MudTd><MudTd DataLabel="Evidence / required separate review">@context.Evidence</MudTd></RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+            @foreach(var purchase in financial.PurchaseLines)
+            {<MudButton Href="@("/procurement/orders/"+Uri.EscapeDataString(purchase.Source.Order.Header.PURCHASE_ORDER_ID))" Variant="Variant.Outlined">Open owned PO for invoice line @purchase.Source.InvoiceLineId</MudButton>}
+            <MudText Typo="Typo.h6" Class="mt-4">Complete receipt consumption across invoices</MudText>
+            <MudTable T="TheTechIdea.Data.OilGas.APSourceComparison" Items="financial.ReceiptConsumptionChecks" Dense="true">
+                <HeaderContent><MudTh>Receipt check</MudTh><MudTh>Diagnostic result</MudTh><MudTh>Complete consumption evidence</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="Receipt check">@context.Label</MudTd><MudTd DataLabel="Diagnostic result">@context.OutcomeText</MudTd><MudTd DataLabel="Complete consumption evidence">@context.Evidence</MudTd></RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+            @foreach(var receipt in financial.ReceiptConsumption ?? [])
+            {
+                <MudText>Receipt: @receipt.ReceiptId · Invoice line: @receipt.Source.InvoiceLineId · Contributor revision: @receipt.Revision · Loaded at UTC: @receipt.RetrievedAtUtc.ToString("O")</MudText>
+                @foreach(var contributor in receipt.Contributors)
+                {
+                    <MudButton Href="@("/accounting/payables/invoices/"+Uri.EscapeDataString(contributor.Source.Invoice.Invoice.AP_INVOICE_ID))" Variant="Variant.Outlined">Open contributor invoice @contributor.Source.Invoice.Invoice.AP_INVOICE_ID</MudButton>
+                    <MudText>Contributor line: @contributor.Source.InvoiceLineId · Source revision: @contributor.Source.Invoice.Revision · Allocation revision: @contributor.Revision</MudText>
+                    @foreach(var allocation in contributor.Allocations)
+                    {<MudText>Allocation: @allocation.AP_RECEIPT_ALLOCATION_ID · Quantity: @Amount(allocation.ALLOCATED_QUANTITY) · Unit: @Text(allocation.QUANTITY_UOM) · Activity: @Text(allocation.ACTIVE_IND) · Recorded by: @Text(allocation.ROW_CREATED_BY) · @Date(allocation.ROW_CREATED_DATE) · Changed by: @Text(allocation.ROW_CHANGED_BY) · @Date(allocation.ROW_CHANGED_DATE)</MudText>}
+                }
+            }
+        }
+        @if(AllowPurchaseSource && Review.SelectedPurchaseLineId is {} selected && Review.LinkedOrder.Detail is not null)
+        {
+            <MudText Typo="Typo.h6" Class="mt-4">Owned purchase source for invoice line: @selected</MudText>
+            @if(Review.Allocations is null)
+            {
+            <MudAlert Severity="Severity.Info">The recorded reference resolves to an owned order and line for this supplier. Order receipt history covers all recorded order lines; no allocation to this invoice line is established. Quantity/unit/currency comparison, matching approval and payment remain unconfirmed.</MudAlert>
+            }
+            else
+            {<MudAlert Severity="Severity.Info">The recorded reference resolves to an owned order and line for this supplier. Order receipt history covers all recorded order lines; the separate allocation history is shown below. Quantity/unit/currency comparison, matching approval and payment remain unconfirmed.</MudAlert>}
+            <PurchaseOrderSourcePanel Review="Review.LinkedOrder" />
+            @if(ReviewReceiptAllocations.HasDelegate)
+            {<MudButton OnClick="@(()=>ReviewReceiptAllocations.InvokeAsync())" Disabled="AllocationLoading || Review.CorrectionCommandUnsettled || PurchaseSourceLoading" Variant="Variant.Outlined">Review recorded receipt allocations</MudButton>}
+            @if(Review.Allocations is {} allocations)
+            {
+                <MudText Typo="Typo.h6" Class="mt-4">Recorded receipt allocations for invoice line: @selected</MudText>
+                <MudAlert Severity="Severity.Info">Exact receipt membership is confirmed for these recorded allocation rows. Activity and quantities are source values; effective allocation, receipt acceptance, global receipt consumption, unit equivalence and matching approval remain unconfirmed.</MudAlert>
+                @if(allocations.Count==0){<MudAlert Severity="Severity.Info">No recorded receipt allocations were returned for this invoice line. This does not establish completed matching.</MudAlert>}
+                else
+                {
+                    <MudTable T="APInvoiceWorkspaceState.AllocationItem" Items="allocations" Dense="true">
+                        <HeaderContent><MudTh>Allocation / receipt / order line</MudTh><MudTh>Recorded allocated quantity / unit</MudTh><MudTh>Activity / provenance</MudTh></HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Allocation / receipt / order line">@context.Id · Receipt: @context.ReceiptId · Order line: @context.OrderLineId</MudTd>
+                            <MudTd DataLabel="Recorded allocated quantity / unit">@Amount(context.Quantity) · Unit: @Text(context.Unit)</MudTd>
+                            <MudTd DataLabel="Activity / provenance">@Text(context.ActiveIndicator) · Recorded by: @Text(context.RecordedBy) · @Date(context.RecordedAt) · Changed by: @Text(context.ChangedBy) · @Date(context.ChangedAt)</MudTd>
+                        </RowTemplate><PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                }
+                @if(AllowAllocationPreparation && ReviewProposal.HasDelegate)
+                {
+                    <MudText Typo="Typo.h6" Class="mt-4">Prepare receipt allocation proposal</MudText>
+                    @if(Review.ProposalReceipts.Count==0){<MudAlert Severity="Severity.Info">No active receipt on this invoice's recorded PO line has a positive recorded quantity and unit for proposal review.</MudAlert>}
+                    else
+                    {
+                        <MudSelect T="string" Value="Review.ProposalReceiptId" ValueChanged="Review.SetProposalReceipt" Label="Recorded receipt" Disabled="ProposalLoading || Review.CorrectionCommandUnsettled">
+                            @foreach(var receipt in Review.ProposalReceipts){<MudSelectItem T="string" Value="@receipt.Id">@receipt.Id · Recorded quantity: @Amount(receipt.Quantity) · Unit: @receipt.QuantityUnit</MudSelectItem>}
+                        </MudSelect>
+                        <MudNumericField T="decimal?" Value="Review.ProposalQuantity" ValueChanged="Review.SetProposalQuantity" Label="Proposed allocated quantity" Required="true" Disabled="ProposalLoading || Review.CorrectionCommandUnsettled" />
+                        <MudText>Recorded receipt unit: @Text(Review.ProposalUnit)</MudText>
+                        <MudButton OnClick="@(()=>ReviewProposal.InvokeAsync())" Disabled="ProposalLoading || Review.CorrectionCommandUnsettled || Review.ProposalQuantity is not >0 || string.IsNullOrWhiteSpace(Review.ProposalUnit)">Review proposal sources</MudButton>
+                    }
+                    @if(Review.ReviewedProposal is {} proposal)
+                    {
+                        <MudText>Reviewed proposal: @proposal.ReceiptId · Quantity: @Amount(proposal.Quantity) · Unit: @proposal.Unit</MudText>
+                        <MudText>Verified accepted quantity: @Amount(proposal.AcceptedQuantity) · Rejected quantity: @Amount(proposal.RejectedQuantity) · Receiver decision by: @Text(proposal.DecisionActor)</MudText>
+                        <MudText Typo="Typo.caption">Proposal content revision: @proposal.Revision · Retrieved: @proposal.RetrievedAtUtc.ToString("O")</MudText>
+                        @if(proposal.Contributors is {} contributors)
+                        {
+                            <MudText>Receipt allocations across invoice lines: @contributors.Count · Recorded active quantity: @Amount(proposal.RecordedActiveQuantity) · Unit: @proposal.Unit</MudText>
+                            @if(contributors.Count==0){<MudAlert Severity="Severity.Info">No recorded allocations were returned for this receipt.</MudAlert>}
+                            else
+                            {
+                                <MudSimpleTable>
+                                    <thead><tr><th>Invoice</th><th>Invoice line</th><th>Allocation</th><th>Quantity</th><th>Unit</th><th>Activity</th></tr></thead>
+                                    <tbody>@foreach(var contributor in contributors){<tr><td><MudLink Href="@contributor.Route">@contributor.InvoiceId</MudLink></td><td>@contributor.InvoiceLineId</td><td>@contributor.AllocationId</td><td>@Amount(contributor.Quantity)</td><td>@Text(contributor.Unit)</td><td>@Text(contributor.Activity)</td></tr>}</tbody>
+                                </MudSimpleTable>
+                            }
+                            @if(proposal.RecordedActiveQuantity is null){<MudAlert Severity="Severity.Warning">Recorded quantity total is unavailable: activity or unit evidence is unconfirmed.</MudAlert>}
+                        }
+                        else{<MudAlert Severity="Severity.Warning">Receipt allocations across invoice lines have not been reviewed.</MudAlert>}
+                        @if(proposal.Comparisons is {} comparisons)
+                        {
+                            <MudText Typo="Typo.h6">Invoice / PO / receipt source comparisons</MudText>
+                            <MudSimpleTable>
+                                <thead><tr><th>Comparison</th><th>Recorded result</th><th>Source evidence</th></tr></thead>
+                                <tbody>@foreach(var comparison in comparisons){<tr><td>@comparison.Label</td><td>@comparison.OutcomeText</td><td>@comparison.Evidence</td></tr>}</tbody>
+                            </MudSimpleTable>
+                        }
+                        <MudAlert Severity="Severity.Info">This proposal review records no allocation. Recorded active quantities are not an available balance. A separate recording action rechecks quantity/unit and all receipt contributors in the Beep transaction. Acceptance, matching tolerances and independent financial approval remain separate unresolved decisions.</MudAlert>
+                    }
+                }
+                <MudText Typo="Typo.caption">Allocation content revision: @Review.AllocationRevision · Retrieved: @Review.AllocationsRetrievedAtUtc?.ToString("O")</MudText>
+            }
+            <MudButton Href="@Review.LinkedOrder.Detail.Route" Variant="Variant.Outlined">Open owned purchase-order workbench</MudButton>
+        }
+    </MudPaper>
+}
+else if(Review?.Rows is {} rows)
+{
+    <MudText>Supplier restriction: @(Review.SupplierFilter ?? "All suppliers") · Recorded active invoices: @rows.Count · Showing: @(Review.VisibleRows?.Count ?? 0)</MudText>
+    <MudAlert Severity="Severity.Info">Counts cover this returned company query. Recorded status does not verify matching, approval, posting or payment. No cross-currency liability total is calculated.</MudAlert>
+    @if(rows.Count>0)
+    {
+        <MudText Typo="Typo.h6">Recorded invoice status counts</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="mb-3">
+            <MudButton OnClick="@(()=>Review.SetStatusFilter(null))" Variant="Variant.Outlined">All returned statuses: @rows.Count</MudButton>
+            @foreach(var bucket in Review.StatusCounts)
+            {
+                <MudButton OnClick="@(()=>Review.SetStatusFilter(bucket.Status,bucket.Unavailable))" Variant="Variant.Outlined">@(bucket.Unavailable?"Unavailable recorded status":bucket.Status): @bucket.Count</MudButton>
+            }
+        </MudStack>
+        <MudText>Selected recorded status: @(Review.UnavailableStatusOnly?"Unavailable":Review.StatusFilter ?? "All returned statuses")</MudText>
+        @if(Review.VisibleRows?.Count==0){<MudAlert Severity="Severity.Info">No invoices match the selected recorded status.</MudAlert>}
+    }
+    @if(rows.Count==0){<MudAlert Severity="Severity.Info">No active company-owned invoices were returned for this query. This does not establish no historical bills or no liability.</MudAlert>}
+    else
+    {
+        <MudText Typo="Typo.h6">Recorded company-owned invoice queue</MudText>
+        <MudTable T="APInvoiceWorkspaceState.Item" Items="Review.VisibleRows" Dense="true">
+            <HeaderContent><MudTh>Invoice</MudTh><MudTh>Supplier</MudTh><MudTh>Status</MudTh><MudTh>Due date</MudTh><MudTh>Recorded amount / currency</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Invoice"><MudLink Href="@context.Route">@(string.IsNullOrWhiteSpace(context.Number)?context.Id:context.Number)</MudLink></MudTd>
+                <MudTd DataLabel="Supplier">@Text(context.Vendor)</MudTd><MudTd DataLabel="Status">@Text(context.Status)</MudTd>
+                <MudTd DataLabel="Due date">@Date(context.DueDate)</MudTd><MudTd DataLabel="Recorded amount / currency">@Amount(context.Amount) · @Text(context.Currency)</MudTd>
+            </RowTemplate><PagerContent><MudTablePager /></PagerContent>
+        </MudTable>
+    }
+}
+else{<MudAlert Severity="Severity.Info">No company-owned AP invoice source is confirmed. Select a company and review an explicit supplier or invoice.</MudAlert>}
+@if(Review?.RetrievedAtUtc is {} retrieved){<MudText Typo="Typo.caption">Retrieved: @retrieved.ToString("O")</MudText>}
+@code {
+    [Microsoft.AspNetCore.Components.Parameter] public APInvoiceWorkspaceState? Review {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool PolicyLoading {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback ReviewMatchingPolicies {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool FinancialLoading {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback ReviewFinancialEvidence {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool AllowPurchaseSource {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool PurchaseSourceLoading {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback<string> ReviewPurchaseSource {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool AllocationLoading {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback ReviewReceiptAllocations {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool AllowAllocationPreparation {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool ProposalLoading {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback ReviewProposal {get;set;}
+    private static string Text(string? value)=>string.IsNullOrWhiteSpace(value)?"Unavailable":value;
+    private static string Amount(decimal? value)=>value?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable";
+    private static string Date(DateTime? value)=>value?.ToString("O",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable";
+}

@@ -1,0 +1,10 @@
+### Result
+{
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+  "ownedOriginals": [],
+  "quotaFillers": []
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({browser:navigator.userAgent,ownedOriginals:Object.keys(sessionStorage).filter(k=>k.endsWith(".drilling-execution-assignment")),quotaFillers:Object.keys(sessionStorage).filter(k=>k.startsWith("oilgas351-assignment-quota-"))})');
+```

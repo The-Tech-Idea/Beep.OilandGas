@@ -103,7 +103,7 @@ public class RequireAssetAccessAttributeTests
         public string? LastAssetId { get; private set; }
         public string? LastAssetType { get; private set; }
 
-        public Task<AccessCheckResponse> CheckAssetAccessAsync(string userId, string assetId, string assetType, string? requiredPermission = null)
+        public Task<AccessCheckResponse> CheckAssetAccessAsync(string userId, string assetId, string assetType, string? requiredPermission = null, string? facilityType = null)
         {
             LastUserId = userId;
             LastAssetId = assetId;
@@ -120,12 +120,16 @@ public class RequireAssetAccessAttributeTests
         public Task<bool> HasPermissionAsync(string userId, string permissionId, string? organizationId = null)
             => Task.FromResult(true);
 
-        public Task<bool> GrantAssetAccessAsync(string userId, string assetId, string assetType, string accessLevel = "READ", bool inherit = true, string? organizationId = null)
+        public Task<bool> GrantAssetAccessAsync(string userId, string assetId, string assetType, string accessLevel = "READ", bool inherit = true, string? organizationId = null, string? facilityType = null)
             => Task.FromResult(true);
 
-        public Task<bool> RevokeAssetAccessAsync(string userId, string assetId, string assetType)
+        public Task<bool> RevokeAssetAccessAsync(string userId, string assetId, string assetType, string? facilityType = null)
             => Task.FromResult(true);
 
+        public Task<TheTechIdea.Data.OilGas.FieldInterestReview> GetFieldInterestReviewAsync(string fieldId) => throw new NotSupportedException("Unexpected field interest review in authorization-filter tests.");
+        public Task<TheTechIdea.Data.OilGas.AssetGrantReviewPage> ReviewStoredGrantsAsync(string userId, int offset = 0, int limit = 50, CancellationToken token = default) => throw new NotSupportedException("Unexpected stored-grant review in authorization-filter tests.");
+        public Task<TheTechIdea.Data.OilGas.AssetGrantRetirement> RetireStoredGrantAsync(string grantId, TheTechIdea.Data.OilGas.RetireAssetGrantRequest request, CancellationToken token = default) => throw new NotSupportedException("Unexpected grant retirement in authorization-filter tests.");
+        public Task<TheTechIdea.Data.OilGas.AssetGrantRetirementPage> GetGrantRetirementsAsync(string grantId, int offset = 0, int limit = 50, CancellationToken token = default) => throw new NotSupportedException("Unexpected retirement history in authorization-filter tests.");
         public Task<List<string>> GetRolePermissionsAsync(string roleId, string? organizationId = null)
             => Task.FromResult(new List<string>());
 

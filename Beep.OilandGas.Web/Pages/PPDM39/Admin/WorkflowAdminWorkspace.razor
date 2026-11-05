@@ -1,0 +1,12 @@
+@page "/lifecycle/workflow/admin"
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+
+<PageTitle>Workflow administration</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-3">Workflow administration</MudText>
+    <MudText Class="mb-3">Review your company assignments and manage recorded process configuration through the authorized source screens.</MudText>
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/lifecycle/workflow/admin"})' />
+    <MudAlert Severity="Severity.Info" Class="mb-4">Workflow totals are unavailable here until the current company, FIELD and source population are confirmed.</MudAlert>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2"><MudButton Href="/ppdm39/process/definitions" Variant="Variant.Outlined">Process definitions</MudButton><MudButton Href="/ppdm39/process/instances" Variant="Variant.Outlined">Process instances</MudButton><MudButton Href="/admin/dashboard" Variant="Variant.Outlined">Company administration</MudButton><MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton></MudStack>
+</MudContainer>

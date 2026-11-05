@@ -15,17 +15,20 @@ internal static class PersonaMapping
         builder.Entity<AppUserPersona>(entity =>
         {
             entity.ToTable("APP_USER_PERSONA");
-            entity.HasKey(x => x.UserId);
+            entity.HasKey(x => new { x.UserId, x.TenantId, x.BusinessAssociateId });
             entity.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
-            entity.HasOne<OilGasUser>().WithOne().HasForeignKey<AppUserPersona>(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OilGasUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<AppCompany>().WithMany().HasForeignKey(x => new { x.TenantId, x.BusinessAssociateId }).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<AppPersona>().WithMany().HasForeignKey(x => x.PersonaCode).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<AppPersonaPreference>(entity =>
         {
             entity.ToTable("APP_PERSONA_PREFERENCE");
-            entity.HasKey(x => new { x.UserId, x.PersonaCode, x.ViewKey });
+            // The full company/view key can exceed SQL Server's clustered-key limit.
+            entity.HasKey(x => new { x.UserId, x.TenantId, x.BusinessAssociateId, x.PersonaCode, x.ViewKey }).IsClustered(false);
             entity.Property(x => x.ConcurrencyStamp).IsConcurrencyToken();
             entity.HasOne<OilGasUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<AppCompany>().WithMany().HasForeignKey(x => new { x.TenantId, x.BusinessAssociateId }).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<AppPersona>().WithMany().HasForeignKey(x => x.PersonaCode).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<AppPersonaAudit>(entity =>

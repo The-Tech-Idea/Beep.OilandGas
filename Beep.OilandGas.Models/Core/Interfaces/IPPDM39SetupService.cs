@@ -22,16 +22,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<OperationStartResponse> StartSchemaMigrationExecutionAsync(SchemaMigrationExecuteRequest request);
         Task<SchemaMigrationProgressResult> GetSchemaMigrationProgressAsync(string executionToken);
         Task<SchemaMigrationArtifactsResult> GetSchemaMigrationArtifactsAsync(string planId);
-        DatabaseDriverInfo? GetDriverInfo(string databaseType);
         List<string> GetAvailableDatabaseTypes();
-        DriverInfo CheckDriver(string databaseType);
-        Task<SchemaPrivilegeCheckResult> CheckSchemaPrivilegesAsync(ConnectionConfig config, string? schemaName = null);
-        Task<CreateSchemaResult> CreateSchemaAsync(ConnectionConfig config, string schemaName);
         Task<ConnectionTestResult> TestConnectionAsync(ConnectionConfig config);
-        Task<List<ScriptInfo>> GetAvailableScriptsAsync(string databaseType);
-        List<ScriptInfo> GetAvailableScripts(string databaseType);
-        Task<ScriptExecutionResult> ExecuteScriptAsync(ConnectionConfig config, string scriptName, string? operationId = null);
-        Task<Beep.OilandGas.Models.Data.AllScriptsExecutionResult> ExecuteAllScriptsAsync(ConnectionConfig config, List<string> scriptNames, string? operationId = null);
         List<DatabaseConnectionListItem> GetAllConnections();
         string? GetCurrentConnectionName();
         SetCurrentDatabaseResult SetCurrentConnection(string connectionName);
@@ -39,8 +31,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         DeleteConnectionResult DeleteConnection(string connectionName);
         ConnectionConfig? GetConnectionByName(string connectionName);
         SaveConnectionResult SaveConnection(ConnectionConfig config, bool testAfterSave = true, bool openAfterSave = false);
-        Task<DropDatabaseResult> DropDatabaseAsync(string connectionName, string? schemaName, bool dropIfExists = true);
-        Task<RecreateDatabaseResult> RecreateDatabaseAsync(string connectionName, string? schemaName, bool backupFirst = false, string? backupPath = null);
         Task<CopyDatabaseResult> CopyDatabaseAsync(CopyDatabaseRequest request, string? operationId = null);
 
         // ── Reference Data Seeding ──────────────────────────────────────────

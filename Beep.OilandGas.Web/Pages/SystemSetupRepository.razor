@@ -1,0 +1,441 @@
+@page "/setup/system-repository"
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Models.Data
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject ApiClient Api
+@inject ILogger<SystemSetupRepository> Logger
+@inject CompanyEnvironmentChangeSignal EnvironmentChanges
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject ISystemSetupIntentStore SystemIntents
+@implements IDisposable
+
+<PageTitle>System setup repository</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">System setup repository</MudText>
+    <MudText Class="my-3">The system repository holds shared PPDM and tools setup and company-specific environment settings. It is separate from each company's operational PPDM database.</MudText>
+    <MudAlert Severity="Severity.Info" Class="my-3">Create and test a Beep connection on the API server, then select it for shared system setup. Selection also checks that the driver can own a serializable transaction. Credentials stay in the server's connection configuration.</MudAlert>
+    <MudButton Href="/setup/drivers" Variant="Variant.Outlined">Install drivers</MudButton>
+    <MudButton Href="/ppdm39/database-management" Variant="Variant.Outlined" Class="mx-2">Create and test connections</MudButton>
+    @if (_message is not null) { <MudAlert Severity="Severity.Warning" Class="my-3">@_message</MudAlert> }
+    <MudButton OnClick="Refresh" Disabled="@_busy" Variant="Variant.Outlined">Check repository</MudButton>
+    @if (_status is not null)
+    {
+        <MudText Class="my-3">Schema status: @_status.Status</MudText>
+        @if (_status.Status == "Unavailable")
+        {
+            <MudAlert Severity="Severity.Warning" Class="my-2">The system repository cannot be verified. Ask the server operator to check that the selected Beep connection still points to the reviewed database and that its saved target identity is present.</MudAlert>
+        }
+        <MudText>Shared tool defaults: @_defaultsStatus</MudText>
+        @if (_status.Status == "Unconfigured")
+        {
+            @if (_connections.Count == 0)
+            { <MudAlert Severity="Severity.Info" Class="my-2">No eligible Beep connections are available. Install the matching driver, then create and test a connection with a unique name and a concrete supported database target before checking again.</MudAlert> }
+            <MudText Typo="Typo.body2">Only uniquely named connections with a concrete supported database target are listed. Selection checks connectivity and transaction support.</MudText>
+            <MudSelect T="string" @bind-Value="_connection" Label="System repository connection" Disabled="@_busy" Class="my-3">
+                @foreach (var name in _connections) { <MudSelectItem T="string" Value="@name">@name</MudSelectItem> }
+            </MudSelect>
+            <MudButton OnClick="SelectConnection" Disabled="@(_busy || string.IsNullOrWhiteSpace(_connection))" Variant="Variant.Filled" Color="Color.Primary">Verify and select connection</MudButton>
+        }
+        @if (_status.Status is "MigrationRequired" or "SchemaReady")
+        {
+            <MudSelect T="string" Value="@_tier" ValueChanged="ChangeTier" Label="Environment" Disabled="@_busy" Class="my-3">
+                @foreach (var tier in new[] { "Development", "Test", "Staging", "Production", "Protected" }) { <MudSelectItem T="string" Value="@tier">@tier</MudSelectItem> }
+            </MudSelect>
+            <MudCheckBox T="bool" Value="@_backup" ValueChanged="ChangeBackup" Label="Backup confirmed" Disabled="@_busy" />
+            <MudCheckBox T="bool" Value="@_restore" ValueChanged="ChangeRestore" Label="Restore test evidence available" Disabled="@_busy" />
+            @if (_restore) { <MudTextField T="string" Value="@_evidence" ValueChanged="ChangeEvidence" Label="Restore test evidence" Disabled="@_busy" /> }
+            <MudButton OnClick="Plan" Disabled="@(_busy || (_restore && string.IsNullOrWhiteSpace(_evidence)))" Variant="Variant.Outlined">Generate Beep migration plan</MudButton>
+        }
+        @if (_plan is not null)
+        {
+            <MudText Class="my-3">Policy: @_plan.PolicyDecision. Tables to create: @_plan.TablesToCreate; columns to add: @_plan.ColumnsToAdd; high-risk operations: @_plan.HighRiskOperationCount.</MudText>
+            @foreach (var check in _plan.PreflightChecks) { <MudText Typo="Typo.body2">@check.Code: @check.Decision — @check.Message @check.Recommendation</MudText> }
+            @foreach (var finding in _plan.PolicyFindings) { <MudText Typo="Typo.body2">@finding.RuleId: @finding.Decision — @finding.Message @finding.Recommendation</MudText> }
+            @foreach (var operation in _plan.DryRunOperations) { <MudText Typo="Typo.body2">@operation.EntityName: @operation.Kind (@operation.RiskLevel)</MudText> }
+            <MudCheckBox T="bool" @bind-Value="_reviewed" Label="I reviewed this plan" Disabled="@_busy" />
+            @if (_plan.HighRiskOperationCount > 0) { <MudCheckBox T="bool" @bind-Value="_risk" Label="Acknowledge high-risk operations" Disabled="@_busy" /> }
+            <MudButton OnClick="Approve" Disabled="@(!CanAct || _approved)" Variant="Variant.Outlined">Approve plan</MudButton>
+            <MudButton OnClick="Execute" Disabled="@(!CanAct || !_approved || _attempted)" Variant="Variant.Filled" Color="Color.Primary">Execute approved plan</MudButton>
+        }
+        @if (_status.Status == "SchemaReady")
+        {
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h6" HtmlTag="h2">Shared setup record</MudText>
+            <MudText Class="my-2">Shared records are readable by active app users. Create TOOLS / DEFAULT with an OilandGasTools settings object before resolving company environments. Optional COUNTRY records use the uppercase country code as the key. Do not include credentials, connection strings or server paths.</MudText>
+            @if (_defaultsStatus == "missing" && !_recordLoaded && _recordPending is null && _category == "TOOLS" && _key == "DEFAULT")
+            {
+                <MudButton OnClick="PrepareFirstRunDefaults" Disabled="@(_busy || !_recoveryReady)" Variant="Variant.Filled" Color="Color.Primary" Class="my-2">Prepare shared tool defaults</MudButton>
+                <MudText Typo="Typo.body2">Load the current record and prepare installed tool settings for review. Nothing is saved until you choose Save shared record.</MudText>
+            }
+            <MudText Class="my-2">For GHG factor setup use category GHG_FACTORS and an uppercase jurisdiction key. Each factor requires an ID, source category, input and output units, explicit nonnegative value, effective dates and source reference. Saving factors does not enable or approve reporting.</MudText>
+            <MudButton Href="/setup/ghg-factors" Variant="Variant.Outlined" Class="my-2">Configure GHG factors</MudButton>
+            @if (_category == "GHG_FACTORS")
+            { <MudText Typo="Typo.body2">Use a JSON object with jurisdiction and factors. Each factors entry uses id, sourceCategory, inputUnit, outputUnit, factor, effectiveFrom, effectiveThrough and sourceReference; dates use YYYY-MM-DD.</MudText> }
+            <MudTextField T="string" Value="@_category" ValueChanged="ChangeCategory" Label="Category" Disabled="@(_busy || _recordPending is not null)" />
+            <MudTextField T="string" Value="@_key" ValueChanged="ChangeKey" Label="Key" Disabled="@(_busy || _recordPending is not null)" />
+            <MudButton OnClick="LoadRecord" Disabled="@(_busy || !_recoveryReady)" Variant="Variant.Outlined" Class="my-2">Load shared record</MudButton>
+            @if (_recordPending is not null) { <MudAlert Severity="Severity.Warning" Class="my-2">A previous shared setup save is awaiting confirmation. Load the record or retry the same save.</MudAlert> }
+            @if (_recordLoaded)
+            {
+                <MudTextField T="string" @bind-Value="_recordVersion" Label="Version" Disabled="@(_busy || _recordPending is not null)" />
+                @if (_category == "TOOLS" && _key == "DEFAULT" && _recordRevision.Length == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="my-2">Start with defaults from the installed OilandGasTools build, then review them before saving. Country presets and company overrides are applied separately.</MudText>
+                    <MudButton OnClick="LoadToolsDraft" Disabled="@(_busy || _recordPending is not null || !_recoveryReady || _recordJson.Trim() != "{}")" Variant="Variant.Outlined" Class="my-2">Prepare tool defaults</MudButton>
+                }
+                @if (_category is "TOOLS" or "COUNTRY")
+                {
+                    <MudText Typo="Typo.h6" HtmlTag="h3" Class="mt-3">Add a shared Beep source</MudText>
+                    <MudText Typo="Typo.body2">Add a named source to the draft using an existing Beep module. Company settings can override it. Review the binding after saving; this does not test the connection.</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_sourceName" Label="Source name" Disabled="@(_busy || _recordPending is not null)" /></MudItem>
+                        <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_sourceModule" Label="Beep module, for example PPDM_CORE" Disabled="@(_busy || _recordPending is not null)" /></MudItem>
+                    </MudGrid>
+                    <MudButton OnClick="AddSharedSource" Disabled="@(_busy || _recordPending is not null || !_recoveryReady)" Variant="Variant.Outlined" Class="my-2">Add source to draft</MudButton>
+                    <MudButton OnClick="ChangeSharedSource" Disabled="@(_busy || _recordPending is not null || !_recoveryReady)" Variant="Variant.Outlined" Class="my-2">Change module for existing draft source</MudButton>
+                    <MudButton OnClick="RemoveSharedSource" Disabled="@(_busy || _recordPending is not null || !_recoveryReady)" Variant="Variant.Outlined" Class="my-2">Remove source from draft</MudButton>
+                    <MudText Typo="Typo.body2">Changes to shared sources require affected companies to review their environments again.</MudText>
+                }
+                <MudTextField T="string" @bind-Value="_recordJson" Label="Shared settings (JSON object)" Lines="6" Disabled="@(_busy || _recordPending is not null)" />
+                <MudButton OnClick="SaveRecord" Disabled="@(_busy || !_recoveryReady)" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">@(_recordPending is null ? "Save shared record" : "Retry the same save")</MudButton>
+            }
+        }
+    }
+    <MudButton Href="/setup/repository" Variant="Variant.Text" Class="mt-4">Back to setup</MudButton>
+</MudContainer>
+
+@code {
+    private SystemSetupRepositoryStatus? _status;
+    private SchemaMigrationPlanResult? _plan;
+    private string _tier = "Development", _evidence = "";
+    private bool _busy, _backup, _restore, _reviewed, _risk, _approved, _attempted;
+    private string? _message;
+    private string _defaultsStatus = "not checked";
+    private List<string> _connections = [];
+    private string _connection = "";
+    private string _category = "TOOLS", _key = "DEFAULT", _recordVersion = "1", _recordJson = "{}", _recordRevision = "";
+    private string _sourceName = "", _sourceModule = "";
+    private bool _recordLoaded;
+    private SystemSetupRequest? _recordPending;
+    private bool CanAct => !_busy && _reviewed && _plan is { Success: true, CanApply: true } &&
+        !string.IsNullOrWhiteSpace(_plan.PlanId) && !string.IsNullOrWhiteSpace(_plan.PlanHash) && !string.IsNullOrWhiteSpace(_plan.ManifestHash) &&
+        (_plan.HighRiskOperationCount == 0 || _risk);
+    private string? _actor;
+    private long _authGeneration;
+    private bool _recoveryReady, _disposed, _interactive;
+    protected override async Task OnInitializedAsync()
+    {
+        Authentication.AuthenticationStateChanged += AuthenticationChanged;
+        await Refresh();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) { _interactive = true; await RestoreIntent(Interlocked.Read(ref _authGeneration)); }
+    }
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)
+    {
+        var generation = Interlocked.Increment(ref _authGeneration);
+        _ = InvokeAsync(async () =>
+        {
+            if (!SameGeneration(generation)) return;
+            _actor = null; _recoveryReady = false; _recordPending = null; _recordLoaded = false;
+            _recordJson = "{}"; _recordVersion = "1"; _recordRevision = ""; _category = "TOOLS"; _key = "DEFAULT";
+            _sourceName = _sourceModule = "";
+            Invalidate(); _status = null; _connections = []; _connection = ""; _defaultsStatus = "not checked";
+            _busy = false; _message = null; StateHasChanged();
+            if (_interactive) await RestoreIntent(generation);
+            if (SameGeneration(generation)) await Refresh();
+        });
+    }
+    private bool SameGeneration(long generation) => !_disposed && generation == Interlocked.Read(ref _authGeneration);
+    private bool Current(long generation, string? actor) => !_disposed && generation == Interlocked.Read(ref _authGeneration) && actor is not null && actor == _actor;
+    private async Task RestoreIntent(long generation)
+    {
+        try
+        {
+            var principal = (await Authentication.GetAuthenticationStateAsync()).User;
+            var actor = principal.Identity?.IsAuthenticated == true && principal.IsInRole("Administrator")
+                ? Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find(principal) : null;
+            if (generation != Interlocked.Read(ref _authGeneration) || _disposed) return;
+            if (string.IsNullOrWhiteSpace(actor)) throw new InvalidOperationException("The administrator identity is unavailable.");
+            _actor = actor;
+            var retained = await SystemIntents.ReadSystemAsync(actor);
+            if (!Current(generation, actor)) return;
+            if (retained is not null)
+            {
+                var request = retained.Request;
+                _recordPending = request; _category = request.Category; _key = request.Key;
+                _recordVersion = request.Version; _recordJson = request.SettingsJson; _recordRevision = request.ExpectedRevision; _recordLoaded = true;
+            }
+            _recoveryReady = true;
+        }
+        catch (Exception error)
+        {
+            if (generation != Interlocked.Read(ref _authGeneration) || _disposed) return;
+            Logger.LogWarning(error, "Shared setup recovery is unavailable");
+            _message = "Shared setup recovery is unavailable. Reload this page before saving a record.";
+        }
+        if (!_disposed) await InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        _disposed = true; Interlocked.Increment(ref _authGeneration);
+        Authentication.AuthenticationStateChanged -= AuthenticationChanged;
+    }
+    private void Invalidate() { _plan = null; _reviewed = false; _risk = false; _approved = false; _attempted = false; }
+    private void ChangeTier(string value) { _tier = value; Invalidate(); }
+    private void ChangeBackup(bool value) { _backup = value; Invalidate(); }
+    private void ChangeRestore(bool value) { _restore = value; Invalidate(); }
+    private void ChangeEvidence(string value) { _evidence = value; Invalidate(); }
+    private void ChangeCategory(string value) { _category = value; _recordLoaded = false; }
+    private void ChangeKey(string value) { _key = value; _recordLoaded = false; }
+
+    private void AddSharedSource()
+        => EditSharedSource(change: false);
+    private void ChangeSharedSource()
+        => EditSharedSource(change: true);
+    private void RemoveSharedSource()
+    {
+        if (_busy || !_recordLoaded || !_recoveryReady || _recordPending is not null || _category is not ("TOOLS" or "COUNTRY")) return;
+        try
+        {
+            _recordJson = CompanyEnvironmentOverrideEditor.RemoveSourceOverride(_recordJson, _sourceName, EnvironmentSettingsScope.Shared);
+            _sourceName = _sourceModule = "";
+            _message = "Source removed from the draft. Save the shared record, then review affected company environments.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Shared source could not be removed from the setup draft"); _message = "The source could not be removed. Check that it is defined in this shared draft."; }
+    }
+    private void EditSharedSource(bool change)
+    {
+        if (_busy || !_recordLoaded || !_recoveryReady || _recordPending is not null || _category is not ("TOOLS" or "COUNTRY")) return;
+        try
+        {
+            _recordJson = change ? CompanyEnvironmentOverrideEditor.ChangeBeepSourceModule(_recordJson, _sourceName, _sourceModule, EnvironmentSettingsScope.Shared)
+                : CompanyEnvironmentOverrideEditor.AddBeepSource(_recordJson, _sourceName, _sourceModule, EnvironmentSettingsScope.Shared);
+            _sourceName = _sourceModule = "";
+            _message = "Source draft updated. Save the shared record, then review company bindings.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Shared source could not be edited in the setup draft"); _message = "The source could not be updated. Check the name, uppercase module and existing settings."; }
+    }
+
+    private async Task Refresh()
+    {
+        var generation = Interlocked.Read(ref _authGeneration);
+        if (_busy) return;
+        _busy = true; _message = null; _defaultsStatus = "not checked";
+        Invalidate(); _connections = [];
+        try
+        {
+            var status = await Api.GetAsync<SystemSetupRepositoryStatus>("/api/setup/system-repository/status") ?? throw new InvalidOperationException("Empty status.");
+            if (!SameGeneration(generation)) return;
+            _status = status;
+            if (status.Status == "Unconfigured")
+            {
+                var connections = await Api.GetAsync<List<string>>("/api/setup/system-repository/connection") ?? throw new InvalidOperationException("Empty connection list.");
+                if (!SameGeneration(generation)) return;
+                _connections = connections;
+                if (!_connections.Contains(_connection)) _connection = "";
+            }
+            else _connection = "";
+            if (status.Status == "SchemaReady") await RefreshDefaults();
+        }
+        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System repository status could not be confirmed"); _status = null; _message = "The system repository status could not be confirmed."; } }
+        finally { if (SameGeneration(generation)) _busy = false; }
+    }
+
+    private async Task SelectConnection()
+    {
+        var generation = Interlocked.Read(ref _authGeneration);
+        if (_busy || string.IsNullOrWhiteSpace(_connection) || !_connections.Contains(_connection)) return;
+        _busy = true; _message = null;
+        try
+        {
+            var result = await Api.PostAsync<SystemSetupConnectionSelection, SystemSetupConnectionSelection>("/api/setup/system-repository/connection", new(_connection));
+            if (!SameGeneration(generation)) return;
+            if (result is null || result.ConnectionName != _connection) throw new InvalidOperationException("The selected connection was not confirmed.");
+            _busy = false; await Refresh();
+            if (SameGeneration(generation) && _status is not null && _status.Status != "Unconfigured")
+                _message = "System connection selected. Review the schema status before continuing.";
+        }
+        catch (Exception error)
+        {
+            if (SameGeneration(generation))
+            {
+                Logger.LogWarning(error, "System connection selection was not confirmed");
+                // The server may have persisted the selection before the response was lost.
+                // Discard the old catalog and check the repository before another attempt.
+                _status = null; _connections = []; _connection = ""; Invalidate();
+                _message = "The selection outcome is unconfirmed. Check the repository again before selecting a connection. If it is still unconfigured, check connectivity, driver transaction support and the system target.";
+            }
+        }
+        finally { if (SameGeneration(generation)) _busy = false; }
+    }
+
+    private async Task RefreshDefaults()
+    {
+        var generation = Interlocked.Read(ref _authGeneration);
+        try
+        {
+            var hasDefaults = await SystemSetupReadinessReader.HasDefaultsAsync(Api);
+            if (SameGeneration(generation)) _defaultsStatus = hasDefaults ? "present; verify each company environment" : "missing";
+        }
+        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "Shared tool defaults could not be checked"); _defaultsStatus = "unavailable; check the repository"; } }
+    }
+
+    private async Task Plan()
+    {
+        var generation = Interlocked.Read(ref _authGeneration);
+        Invalidate(); _busy = true; _message = null;
+        try
+        {
+            var plan = await Api.PostAsync<ModulePlanRequest, SchemaMigrationPlanResult>("/api/setup/system-repository/plan", new(_tier, _backup, _restore, _restore ? _evidence : null));
+            if (!SameGeneration(generation)) return;
+            _plan = plan;
+            if (_plan is null || !_plan.Success || _plan.PreflightChecks is null || _plan.PolicyFindings is null || _plan.DryRunOperations is null)
+            { _plan = null; _message = "The system repository migration plan was not confirmed."; }
+        }
+        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration planning failed"); _message = "The migration plan could not be generated. Check the system connection and setup policy."; } }
+        finally { if (SameGeneration(generation)) _busy = false; }
+    }
+
+    private async Task Approve()
+    {
+        var generation = Interlocked.Read(ref _authGeneration);
+        if (!CanAct || _plan is null) return; _busy = true; _message = null;
+        try
+        {
+            var result = await Api.PostAsync<SchemaMigrationApprovalRequest, SchemaMigrationApprovalResult>("/api/ppdm39/setup/schema/approve", new() { PlanId = _plan.PlanId, ExpectedPlanHash = _plan.PlanHash, ExpectedManifestHash = _plan.ManifestHash });
+            if (!SameGeneration(generation)) return;
+            if (result is null || !result.Success || result.PlanId != _plan.PlanId || result.PlanHash != _plan.PlanHash || result.ManifestHash != _plan.ManifestHash)
+                throw new InvalidOperationException("Plan approval did not match the reviewed plan.");
+            _approved = true;
+        }
+        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration approval failed"); _message = "Plan approval could not be confirmed. Generate a new plan."; Invalidate(); } }
+        finally { if (SameGeneration(generation)) _busy = false; }
+    }
+
+    private async Task Execute()
+    {
+        var generation = Interlocked.Read(ref _authGeneration);
+        if (!CanAct || !_approved || _attempted || _plan is null) return; _busy = true; _attempted = true; _message = null;
+        try
+        {
+            var result = await Api.PostAsync<SchemaMigrationExecuteRequest, SchemaMigrationExecuteResult>("/api/ppdm39/setup/schema/execute", new()
+            { PlanId = _plan.PlanId, ExpectedPlanHash = _plan.PlanHash, ExpectedManifestHash = _plan.ManifestHash, AcknowledgeHighRisk = _risk });
+            if (!SameGeneration(generation)) return;
+            if (result is null || !result.Success || result.PlanId != _plan.PlanId || result.PlanHash != _plan.PlanHash || result.ManifestHash != _plan.ManifestHash)
+                throw new InvalidOperationException("Migration outcome did not match the reviewed plan.");
+            _message = "Migration reported success. Check repository status before continuing.";
+        }
+        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration outcome is unconfirmed"); _message = "Migration outcome is unconfirmed. Check repository status and migration artifacts before another attempt."; } }
+        finally { if (SameGeneration(generation)) _busy = false; }
+    }
+
+    private string RecordPath() => $"/api/setup/system-repository/records/{Uri.EscapeDataString(_category)}/{Uri.EscapeDataString(_key)}";
+    private async Task PrepareFirstRunDefaults()
+    {
+        if (_busy || !_recoveryReady || _status?.Status != "SchemaReady" || _defaultsStatus != "missing" ||
+            _recordLoaded || _recordPending is not null || _category != "TOOLS" || _key != "DEFAULT") return;
+        await LoadRecord();
+        await LoadToolsDraft();
+    }
+    private async Task LoadToolsDraft()
+    {
+        var generation = Interlocked.Read(ref _authGeneration); var actor = _actor;
+        if (_busy || !_recoveryReady || !Current(generation, actor) || !_recordLoaded || _recordPending is not null ||
+            _category != "TOOLS" || _key != "DEFAULT" || _recordRevision.Length != 0 || _recordJson.Trim() != "{}") return;
+        _busy = true; _message = null;
+        try
+        {
+            var draft = await Api.GetAsync<SystemSetupToolsDefaultDraft>("/api/setup/system-repository/records/tools-default-draft");
+            if (!Current(generation, actor)) return;
+            if (draft is null || !Guid.TryParseExact(draft.ToolsVersion, "N", out var version) || version == Guid.Empty ||
+                string.IsNullOrWhiteSpace(draft.SettingsJson) || draft.SettingsJson.Length > SystemSetupIdentity.MaximumSettingsLength)
+                throw new InvalidOperationException("The installed tool defaults were not confirmed.");
+            using var document = System.Text.Json.JsonDocument.Parse(draft.SettingsJson);
+            if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object) throw new InvalidOperationException("The tool defaults are not an object.");
+            if (_category != "TOOLS" || _key != "DEFAULT" || _recordPending is not null || _recordRevision.Length != 0 || _recordJson.Trim() != "{}")
+                throw new InvalidOperationException("The draft changed while tool defaults were being prepared.");
+            _recordJson = draft.SettingsJson; _recordVersion = draft.ToolsVersion;
+            _message = "Tool defaults prepared as a draft. Review them before saving.";
+        }
+        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Tool default draft could not be prepared"); _message = "The installed tool defaults could not be prepared. Check the API server."; } }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    private async Task LoadRecord()
+    {
+        var generation = Interlocked.Read(ref _authGeneration); var actor = _actor;
+        if (_busy || !_recoveryReady || !Current(generation, actor)) return;
+        _busy = true; _message = null;
+        try
+        {
+            _ = SystemSetupIdentity.ForKey(_category, _key);
+            var result = await Api.GetAsync<SystemSetupReadResult>(RecordPath());
+            if (!Current(generation, actor)) return;
+            if (result is null || result.Category != _category || result.Key != _key) throw new InvalidOperationException("The shared record identity is unconfirmed.");
+            if (result.Configuration is { } saved) SystemSetupIdentity.RequireValid(saved, _category, _key);
+            if (_recordPending is not null)
+            {
+                var pending = _recordPending;
+                if (result.Configuration is { } current && Matches(current, pending))
+                {
+                    await SystemIntents.ClearSystemAsync(new(actor!, pending));
+                    if (!Current(generation, actor)) return;
+                    if (pending.Category is "TOOLS" or "COUNTRY") EnvironmentChanges.Notify();
+                    _recordPending = null; _recordRevision = current.Revision; _recordLoaded = true; _message = "The original shared record save was confirmed.";
+                }
+                else _message = "The previous save outcome is unconfirmed. Retry the same save or review the original record.";
+                return;
+            }
+            _recordRevision = result.Configuration?.Revision ?? ""; _recordVersion = result.Configuration?.Version ?? "1";
+            _recordJson = result.Configuration?.SettingsJson ?? "{}"; _recordLoaded = true;
+            _message = result.Configuration is null ? "No shared record exists for this category and key." : "Shared record loaded.";
+        }
+        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "The shared system record could not be loaded"); if (_recordPending is null) _recordLoaded = false; _message = "The shared record could not be confirmed. Check the category, key and system repository."; } }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+
+    private async Task SaveRecord()
+    {
+        var generation = Interlocked.Read(ref _authGeneration); var actor = _actor;
+        if (_busy || !_recordLoaded || !_recoveryReady || !Current(generation, actor)) return;
+        var request = _recordPending ?? new SystemSetupRequest(_category, _key, _recordVersion, _recordJson, _recordRevision, Guid.NewGuid().ToString("N"));
+        var intent = new SystemSetupIntent(actor!, request); _busy = true; _message = null;
+        try
+        {
+            await SystemIntents.RetainSystemAsync(intent);
+            if (!Current(generation, actor)) return;
+            _recordPending = request;
+        }
+        catch (Exception error)
+        {
+            if (Current(generation, actor)) { Logger.LogWarning(error, "Shared setup request could not be retained"); _message = "The original save could not be retained; no save was sent. Reload this page to recover it."; _recoveryReady = false; _busy = false; }
+            return;
+        }
+        try
+        {
+            var result = await Api.PutAsync<SystemSetupRequest, SystemSetupConfiguration>(RecordPath(), request);
+            if (!Current(generation, actor)) return;
+            if (result is null || !Matches(result, request)) throw new InvalidOperationException("The shared save response is unconfirmed.");
+            await SystemIntents.ClearSystemAsync(intent);
+            if (!Current(generation, actor)) return;
+            if (request.Category is "TOOLS" or "COUNTRY") EnvironmentChanges.Notify();
+            _recordRevision = result.Revision; _recordPending = null; _message = "Shared record saved. Review effective company settings to verify how they apply.";
+            if (request.Category == "TOOLS" && request.Key == "DEFAULT") await RefreshDefaults();
+        }
+        catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            try { await SystemIntents.ClearSystemAsync(intent); if (Current(generation, actor)) { _recordPending = null; _message = "The record was refused. Review the identifiers and JSON."; } }
+            catch (Exception clearError) { if (Current(generation, actor)) { Logger.LogWarning(clearError, "Refused setup request could not be cleared"); _message = "The record was refused, but recovery storage could not be cleared. Reload this page."; } }
+        }
+        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Shared record save outcome is unconfirmed"); _message = "The save outcome is unconfirmed. Retry the same save or reload the record."; } }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    private static bool Matches(SystemSetupConfiguration value, SystemSetupRequest request)
+    {
+        SystemSetupIdentity.RequireValid(value, request.Category, request.Key);
+        return value.IntentId == request.IntentId && value.Version == request.Version && value.SettingsJson == request.SettingsJson && value.PreviousRevision == request.ExpectedRevision;
+    }
+}

@@ -1,0 +1,222 @@
+{
+  "plan": "Plan353 / Persona09 overdue assigned actions",
+  "date": "2026-10-30",
+  "result": "24 selected cases pass; source-coverage gap repaired",
+  "nativeRunDuration": "47 seconds",
+  "queueRunDuration": "192 ms",
+  "runs": [
+    {
+      "artifact": "native-action-coverage.trx",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Confirmed_plan_absence_is_readable_only_before_corrective_work_and_never_establishes_completion(state: \"PENDING_CLOSE_OUT\")",
+          "outcome": "Passed",
+          "duration": "00:00:04.8460643"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"missing-code\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.8089714"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Confirmed_plan_absence_is_readable_only_before_corrective_work_and_never_establishes_completion(state: \"PENDING_CORRECTIVE_ACTION\")",
+          "outcome": "Passed",
+          "duration": "00:00:03.0133102"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Confirmed_plan_absence_is_readable_only_before_corrective_work_and_never_establishes_completion(state: \"CLOSED\")",
+          "outcome": "Passed",
+          "duration": "00:00:03.0909080"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"duplicate\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.8145442"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"future\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.8241245"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"expired\")",
+          "outcome": "Passed",
+          "duration": "00:00:01.0204761"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Confirmed_plan_absence_is_readable_only_before_corrective_work_and_never_establishes_completion(state: \"UNDER_INVESTIGATION\")",
+          "outcome": "Passed",
+          "duration": "00:00:06.4853629"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"inactive\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.7281106"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"unknown-zone\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.7922764"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Confirmed_plan_absence_is_readable_only_before_corrective_work_and_never_establishes_completion(state: \"CANCELLED\")",
+          "outcome": "Passed",
+          "duration": "00:00:02.9827211"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"wrong-type\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.9112027"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"extra-incident\")",
+          "outcome": "Passed",
+          "duration": "00:00:03.2685127"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Confirmed_plan_absence_is_readable_only_before_corrective_work_and_never_establishes_completion(state: \"REPORTED\")",
+          "outcome": "Passed",
+          "duration": "00:00:05.7416188"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Invalid_or_ambiguous_incident_project_links_refuse_CA_interpretation(fault: \"foreign\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.7553372"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Actual_CA_owner_reuses_actual_project_and_reports_recorded_evidence_without_ID_or_number_inference",
+          "outcome": "Passed",
+          "duration": "00:00:05.2620650"
+        },
+        {
+          "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionAuthorityTests.Confirmed_plan_absence_is_readable_only_before_corrective_work_and_never_establishes_completion(state: \"PENDING_RCA\")",
+          "outcome": "Passed",
+          "duration": "00:00:06.1626126"
+        }
+      ]
+    },
+    {
+      "artifact": "all-stage-reader.trx",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsIncludeRecordedPlansInEveryOpenIncidentStage(state: \"CLOSED\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0021126"
+        },
+        {
+          "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsIncludeRecordedPlansInEveryOpenIncidentStage(state: \"CANCELLED\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.1621343"
+        },
+        {
+          "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsIncludeRecordedPlansInEveryOpenIncidentStage(state: \"PENDING_CLOSE_OUT\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0131127"
+        },
+        {
+          "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsIncludeRecordedPlansInEveryOpenIncidentStage(state: \"REPORTED\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0020689"
+        },
+        {
+          "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsIncludeRecordedPlansInEveryOpenIncidentStage(state: \"PENDING_RCA\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019516"
+        },
+        {
+          "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsIncludeRecordedPlansInEveryOpenIncidentStage(state: \"UNDER_INVESTIGATION\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019043"
+        },
+        {
+          "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsIncludeRecordedPlansInEveryOpenIncidentStage(state: \"PENDING_CORRECTIVE_ACTION\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0019212"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/ICompanyCorrectiveActionCommands.cs",
+      "sha256": "c4a7b7e1873d3699d8512f85a4de9ed5bf154f69dbbf1b27428f7cd49189971f"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Plan.cs",
+      "sha256": "b52ed173c056d59565cd5a043cc213639a3dfdea33b9f8b4ca710c3625d95a2f"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/CorrectiveActionService.cs",
+      "sha256": "19f0338336e61cb46bbffb74260a91a084e8fd07df681ea81a9cb77153e3cae1"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.Closure.cs",
+      "sha256": "b4a5c847cea32c8188560b3c499218302edde55106f9ec795689c80e20bdd06c"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyHseAssignedActionReader.cs",
+      "sha256": "83cbe002f90fbfa942699b31ec99def6c2047c8dd8af7587e89f63c32b8203a6"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/Workflow/HseAssignedActions.razor",
+      "sha256": "9f1fc58a715c606f14e02f485b0f6eda5b1f1fdd8768a6bc0b1f909b3db88c43"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/HseAssignedActionReaderTests.cs",
+      "sha256": "ee457bd4398d2738d0e5b0da8478809aa4b76fa7eba43d3215e7eb0e627a6295"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyCorrectiveActionAuthorityTests.cs",
+      "sha256": "6ca0a2f891026b110a2a8f5c617e3040b6184c2ef37894f1dc33186891848d62"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+      "sha256": "58c058598d41b39afe3ce0b0770e9f81de3f5aac9c1f9bf1fd02656e9ef187d6"
+    }
+  ],
+  "runtime": [
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+      "sha256": "68592cc26ff0742446d7fac7688d207c6a193e01e73b9b580c3d76455383edca"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "5cd23c3527bf4ab0af072f409469e0d1dbd83e87c3810c3858fdd43599d51d1f"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-focused\\bin\\Debug\\net10.0\\HseAssigned.dll",
+      "sha256": "1414ee6b0aee40c36f763a88d16ea67388cd292180cf78c374d945d93ef6b7e0"
+    }
+  ],
+  "change": [
+    "Canonical plan resolver returns explicit null only after matching current reads confirm no project link in active or retired incident response history. Retired, dangling, foreign, wrong-type and ambiguous links continue to refuse.",
+    "Canonical action reader allows absent plan only before corrective work, rechecks incident and scope, and returns no actions without inferring any unlinked/name-derived project. Corrective/close-out/terminal incidents still require a plan.",
+    "GetCAPlan and completion cannot turn empty action evidence into success. Closure coordinators explicitly refuse a missing plan.",
+    "Assigned queue queries native actions for all five open incident stages and excludes CLOSED/CANCELLED. Current UI source coverage text updated.",
+    "Existing focused test project now includes the current typed client partial introduced by the preceding queue slice."
+  ],
+  "verificationScope": [
+    "17 exact native cases execute actual canonical command/repository/profile/registry/action owners against controlled recording datasource plus existing identity fixture. Not live driver qualification.",
+    "7 exact queue inputs source-link current projection and use controlled native/person/authority reads; this is not production API/OIDC.",
+    "No full/class/permit/provider or previous closure journey ran.",
+    "Data build4.44s with1 missing analyzer warning; focused native build22.33s with664 existing/support/nullable warnings,0errors; isolated reader build1.67s with6 support/reference warnings,0errors.",
+    "Initial focused native build failed because its source-link list omitted the new typed-client partial. Fixed the project source list; no test ran from the failed build."
+  ],
+  "history": [
+    "Earlier missing and name-derived-only cases no longer belong to invalid-link expectations: confirmed no link permits an empty early-stage read, while name inference, required-plan operation and completion remain refused. New seven-state case explicitly preserves those safety expectations.",
+    "Prior 19-case panel/mapping evidence remains separately scoped at ../353-assigned-action-landing/observed-evidence.json; no automatic rerun."
+  ],
+  "remaining": [
+    "64 returned incident /4096 selected action bounds and client-side paging; server paging/large FIELD performance remains open.",
+    "Production API/FIELD authorization pipeline, OIDC, live provider, browser/keyboard/RTL/assistive-technology acceptance of the new queue.",
+    "This read-only before/after comparison does not establish a single atomic cross-owner snapshot.",
+    "Overall approved roadmap is incomplete; no completion/commit/push."
+  ],
+  "schema": "No schema change, SQL, EF migration, compatibility fallback or second plan/action owner."
+}

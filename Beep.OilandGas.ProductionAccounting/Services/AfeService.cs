@@ -8,7 +8,6 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.ProductionAccounting.Constants;
@@ -20,7 +19,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// <summary>
     /// AFE Service - Manages Authorization for Expenditure budgets and actuals.
     /// </summary>
-    public class AfeService : IAfeService
+    public partial class AfeService : IAfeService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -55,6 +54,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(afe.AFE_NUMBER))
                 throw new ProductionAccountingException("AFE_NUMBER is required");
 
+            if ((afe.WORK_ORDER_BUDGET_JSON is not null || afe.DEVELOPMENT_BUDGET_JSON is not null || afe.FDP_BASELINE_ID is not null) || afe.WORK_ORDER_ID is not null || afe.OWNER_TENANT_ID is not null || afe.OWNER_COMPANY_BA_ID is not null)
+                throw new InvalidOperationException("Owned company AFE budgets require their reviewed native command.");
             afe.AFE_ID ??= Guid.NewGuid().ToString();
             afe.STATUS ??= AfeStatusCodes.Draft;
             afe.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
@@ -85,6 +86,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ArgumentNullException(nameof(userId));
             if (string.IsNullOrWhiteSpace(lineItem.AFE_ID))
                 throw new ProductionAccountingException("AFE_ID is required");
+
+            var originalAfe = await GetAfeAsync(lineItem.AFE_ID, connectionName);
+            if ((originalAfe?.WORK_ORDER_BUDGET_JSON is not null || originalAfe?.DEVELOPMENT_BUDGET_JSON is not null || originalAfe?.FDP_BASELINE_ID is not null))
+                throw new InvalidOperationException("Owned company AFE budget lines require their reviewed native source and currency command.");
 
             lineItem.AFE_LINE_ITEM_ID ??= Guid.NewGuid().ToString();
             lineItem.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
@@ -117,6 +122,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
+            if ((afe.WORK_ORDER_BUDGET_JSON is not null || afe.DEVELOPMENT_BUDGET_JSON is not null || afe.FDP_BASELINE_ID is not null))
+                throw new InvalidOperationException("Owned company AFE approval requires its independent reviewed decision.");
             afe.STATUS = AfeStatusCodes.Approved;
             afe.APPROVAL_DATE = approvalDate;
             afe.ROW_CHANGED_BY = userId;
@@ -152,6 +159,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var afe = await GetAfeAsync(afeId, connectionName);
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
+            if ((afe.WORK_ORDER_BUDGET_JSON is not null || afe.DEVELOPMENT_BUDGET_JSON is not null || afe.FDP_BASELINE_ID is not null))
+                throw new InvalidOperationException("Owned company AFE actual costs require their reviewed source, currency and valuation command.");
             if (!string.Equals(afe.STATUS, AfeStatusCodes.Approved, StringComparison.OrdinalIgnoreCase))
                 throw new ProductionAccountingException("AFE must be approved before recording costs");
 
@@ -304,6 +313,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var afe = await GetAfeAsync(afeId, connectionName);
             if (afe == null)
                 return;
+
+            if ((afe.WORK_ORDER_BUDGET_JSON is not null || afe.DEVELOPMENT_BUDGET_JSON is not null || afe.FDP_BASELINE_ID is not null))
+                throw new InvalidOperationException("Owned work-order actual totals require complete reviewed source amounts; missing amounts are not zero.");
 
             var lineItems = await GetLineItemsAsync(afeId, connectionName);
             var lineItemTotal = lineItems.Sum(li => li.ACTUAL_AMOUNT ?? 0m);

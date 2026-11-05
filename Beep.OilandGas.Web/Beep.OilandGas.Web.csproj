@@ -20,7 +20,8 @@
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="$(BeepDMVersion)" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="$(BeepDMVersion)" />
     <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
-    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.56" />
+    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.58" />
+    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.1.1" />
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
     <PackageReference Include="TheTechIdea.Beep.Vis.Loader" Version="1.0.7" />
   </ItemGroup>

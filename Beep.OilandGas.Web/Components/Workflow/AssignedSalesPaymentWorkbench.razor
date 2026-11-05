@@ -1,0 +1,21 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject CompanySalesReceivableWorkspaceState State
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@implements IDisposable
+@if(AssignedSource is {} source && Company.Selection is {} selection && source.Company==selection.Scope && source.ActorUserId==selection.UserId)
+{
+    <MudText>Original payment @source.Payment.Payment.Number · @source.Payment.PaymentId · @source.Payment.Payment.Status · @source.Payment.Payment.Amount @source.Payment.Payment.Currency</MudText>
+    <MudText>Maker @source.Payment.Payment.CreatedBy · Book @source.Payment.Current.Ledger.BookId · FIELD @source.Payment.Current.Ledger.FieldId · Receivable @source.Payment.Current.Ledger.ReceivableId</MudText>
+    @if(source.Payment.Payment.Review is {} review){<MudText>Recorded reviewer @review.Reviewer · @review.Decision · @review.FinancialDisposition · @review.FinancialEvidence · @review.ReceiptDisposition · @review.ReceiptEvidence · @review.Reason</MudText>}
+    @if(selection.Permissions.Contains("Accounting.ReviewSalesPayment",StringComparer.Ordinal))
+    {<SalesPaymentReviewWorkbench AssignedSource="source" RecordedOutcomeChanged="RecordedOutcomeChanged" />}
+    <MudAlert Severity="Severity.Info">Complete the assigned review only after its native decision is confirmed. Rejection acknowledgement does not correct, release or settle this payment.</MudAlert>
+}
+@code{
+    [Parameter,EditorRequired]public CompanySalesPaymentProcessSourceReview? AssignedSource{get;set;}
+    [Parameter]public EventCallback RecordedOutcomeChanged{get;set;}
+    protected override void OnInitialized()=>State.AttachOwner(this);
+    public void Dispose()=>State.DetachOwner(this);
+}

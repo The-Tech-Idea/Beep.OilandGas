@@ -1,0 +1,274 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject MaintenanceAssetEvidenceState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-3 my-3">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Review affected assets after maintenance closure</MudText>
+        <MudText>Review recorded operating evidence separately from completed maintenance tasks.</MudText>
+        <MudButton OnClick="ReadStatusAsync" Disabled="@State.Busy">Read recorded asset return and current asset evidence</MudButton>
+        <MudButton OnClick="ReadAsync" Disabled="@State.Busy">Read original components and current native asset evidence</MudButton>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reading affected maintenance assets" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(State.ReturnStatus is {} status)
+        {
+            <MudText>Original report @status.Query.SubmissionId · FIELD @status.Query.Task.FieldId</MudText>
+            @if(status.Recorded is {} recorded)
+            {
+                <MudAlert Severity="Severity.Info">Recorded asset return</MudAlert>
+                <MaintenanceAssetReturnOutcome Facts="@recorded" />
+            }
+            else{<MudAlert Severity="Severity.Info">No recorded asset return was found for this original closed report.</MudAlert>}
+            @if(status.CurrentWells.Count>0){<MudText Typo="Typo.subtitle2">Current native well conditions</MudText>}
+            @foreach(var well in status.CurrentWells)
+            {
+                <MudText>Well @well.WellId · compared UTC @well.ComparedAtUtc.ToString("O") · source date zone @well.DateTimeZoneId</MudText>
+                @foreach(var facet in CompanyMaintenanceWellEvidence.RequiredFacets)
+                {
+                    var rows=well.Facets.Where(row=>row.Facet==facet && row.ActiveIndicator=="Y" && row.Covers(well.ComparedAtUtc)).ToArray();
+                    @if(rows.Length==1)
+                    {
+                        var row=rows[0];
+                        @if(well.References.Any(reference=>reference.Facet==facet && reference.Value==row.Value && reference.Covers(well.ComparedAtUtc)))
+                        {<MudText>@facet: @row.Value @row.Qualifier @row.QualifierValue · source @row.Source · status @row.StatusId · effective UTC @row.EffectiveAtUtc?.ToString("O")</MudText>}
+                        else{<MudAlert Severity="Severity.Warning">Current @facet reference is unresolved for @row.Value.</MudAlert>}
+                    }
+                    else{<MudAlert Severity="Severity.Warning">Current @facet is unresolved: @rows.Length matching native source rows.</MudAlert>}
+                }
+            }
+            @if(status.CurrentQualifiedAssets is {} qualifiedStatus && status.OriginalComponents is {} originalComponents)
+            {
+                <MudText Typo="Typo.subtitle2">Current native facility and equipment evidence</MudText>
+                <MudText>Identity compared UTC @qualifiedStatus.ComparedAtUtc.ToString("O") · status compared UTC @qualifiedStatus.Operating!.ComparedAtUtc.ToString("O") · source date zone @qualifiedStatus.DateTimeZoneId</MudText>
+                @foreach(var facility in qualifiedStatus.Facilities)
+                {
+                    var affected=originalComponents.Any(component=>component.FacilityId==facility.FacilityId && component.FacilityType==facility.FacilityType);
+                    <MudText>Facility @facility.FacilityId / @facility.FacilityType · @(affected?"Affected facility":"Installation parent (read only)") · access @facility.AccessLevel</MudText>
+                }
+                @foreach(var equipment in qualifiedStatus.Equipment)
+                {<MudText>Equipment @equipment.EquipmentId · installation @equipment.Installation.FacilityId / @equipment.Installation.FacilityType · observation @equipment.Installation.InstallationObservation · access @equipment.AccessLevel</MudText>}
+                @foreach(var target in qualifiedStatus.Facilities.Select(row=>(Type:"FACILITY",Id:row.FacilityId,Qualifier:(string?)row.FacilityType)).Concat(qualifiedStatus.Equipment.Select(row=>(Type:"EQUIPMENT",Id:row.EquipmentId,Qualifier:(string?)null))))
+                {
+                    var operating=qualifiedStatus.Operating!;
+                    var population=operating.Statuses.Where(row=>row.AssetType==target.Type && row.AssetId==target.Id && row.FacilityType==target.Qualifier).ToArray();
+                    @if(population.Length==0){<MudAlert Severity="Severity.Warning">@target.Type @target.Id @target.Qualifier: current native status is unresolved.</MudAlert>}
+                    @foreach(var facet in population.GroupBy(row=>row.StatusType,StringComparer.Ordinal))
+                    {
+                        var current=facet.Where(row=>row.Covers(operating.ComparedAtUtc)).ToArray();
+                        @if(current.Length==1 && operating.References.Any(row=>row.AssetType==target.Type && row.StatusType==facet.Key && row.Value==current[0].Value && row.Covers(operating.ComparedAtUtc)))
+                        {<MudText>@target.Type @target.Id @target.Qualifier · @facet.Key: @current[0].Value · source @current[0].Source · status @current[0].StatusId · effective UTC @current[0].EffectiveAtUtc?.ToString("O")</MudText>}
+                        else{<MudAlert Severity="Severity.Warning">@target.Type @target.Id @target.Qualifier / @facet.Key: current assignment or native reference is unresolved.</MudAlert>}
+                    }
+                }
+                @foreach(var finding in qualifiedStatus.Operating!.Blockers){<MudAlert Severity="Severity.Warning">@finding</MudAlert>}
+            }
+            <MudText Typo="Typo.caption">The recorded transition and current source rows are separate evidence. Task completion alone does not establish operating condition or financial close.</MudText>
+        }
+        @if(State.Current is {} review)
+        {
+            <MudText>Company @review.Context.Company.BusinessAssociateId · FIELD @review.Context.FieldId · original report @review.Report.Query.SubmissionId</MudText>
+            <MudText Typo="Typo.caption">Closure @review.Closure.HistoryId · compared UTC @review.ComparedAtUtc.ToString("O") · source report @review.Report.Revision</MudText>
+            @if(review.Report.QualifiedWorkAssets is {} originalScope)
+            {
+                <MudText Typo="Typo.subtitle1">Original work-start asset scope</MudText>
+                <MudText>Work started UTC @review.Report.WorkStartedAtUtc?.ToString("O") · captured UTC @originalScope.ComparedAtUtc.ToString("O") · executor @originalScope.Context.ActorUserId · source date zone @originalScope.DateTimeZoneId</MudText>
+                @foreach(var equipment in originalScope.Equipment)
+                {
+                    <MudText>Original equipment @equipment.EquipmentId · installation @equipment.Installation.FacilityId / @equipment.Installation.FacilityType · observation @equipment.Installation.InstallationObservation · source @equipment.Installation.Source</MudText>
+                }
+                @foreach(var facility in originalScope.Facilities)
+                {
+                    <MudText>Original facility @facility.FacilityId / @facility.FacilityType · FIELD @facility.FieldId</MudText>
+                }
+            }
+            <MudTable Items="@review.Order.Components" Dense="true">
+                <HeaderContent><MudTh>Work-order component</MudTh><MudTh>Well UWI</MudTh><MudTh>Equipment identity</MudTh><MudTh>Qualified facility</MudTh><MudTh>Document source</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="Original component">@context.ComponentId</MudTd><MudTd DataLabel="Well UWI">@context.WellId</MudTd><MudTd DataLabel="Equipment identity">@context.EquipmentId</MudTd><MudTd DataLabel="Qualified facility">@context.FacilityId @context.FacilityType</MudTd><MudTd DataLabel="Document source">@context.InformationItemId @context.InformationItemSubtype</MudTd></RowTemplate>
+                <PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+            @if(review.QualifiedAssets is {} qualified)
+            {
+                <MudText Typo="Typo.subtitle1">Current qualified facility and equipment relationships</MudText>
+                <MudText>Compared UTC @qualified.ComparedAtUtc.ToString("O") · source date zone @qualified.DateTimeZoneId</MudText>
+                @if(qualified.Facilities.Any(facility => !string.Equals(facility.OperatorBaId, review.Context.Company.BusinessAssociateId, StringComparison.Ordinal)))
+                {
+                    <MudAlert Severity="Severity.Info">A facility has a different recorded operator. Current FIELD and direct facility access were checked; this evidence does not establish operating authority.</MudAlert>
+                }
+                <MudTable Items="@qualified.Facilities" Dense="true" aria-label="Reviewed qualified facility identities">
+                    <HeaderContent><MudTh>Qualified facility</MudTh><MudTh>FIELD and operator</MudTh><MudTh>Current authority</MudTh><MudTh>Native UTC period</MudTh></HeaderContent>
+                    <RowTemplate><MudTd DataLabel="Qualified facility">@context.FacilityId / @context.FacilityType</MudTd><MudTd DataLabel="FIELD and operator">@context.FieldId · @context.OperatorBaId</MudTd><MudTd DataLabel="Current authority">@context.AccessLevel</MudTd><MudTd DataLabel="Native UTC period">@context.EffectiveAtUtc.ToString("O") / @(context.ExpiresAtUtc?.ToString("O") ?? "No recorded expiry")</MudTd></RowTemplate>
+                </MudTable>
+                <MudTable Items="@qualified.Equipment" Dense="true" aria-label="Reviewed current equipment installations">
+                    <HeaderContent><MudTh>Equipment and owner</MudTh><MudTh>Current installation</MudTh><MudTh>Native installation UTC</MudTh><MudTh>Source membership</MudTh></HeaderContent>
+                    <RowTemplate><MudTd DataLabel="Equipment and owner">@context.EquipmentId · @context.OwnerBaId · @context.AccessLevel</MudTd><MudTd DataLabel="Current installation">@context.Installation.FacilityId / @context.Installation.FacilityType · observation @context.Installation.InstallationObservation</MudTd><MudTd DataLabel="Native installation UTC">@context.Installation.InstalledAtUtc.ToString("O") · effective @context.Installation.EffectiveAtUtc.ToString("O")</MudTd><MudTd DataLabel="Source membership">@context.Installation.Source · @context.Installation.ReviewedPopulation reviewed native installation records</MudTd></RowTemplate>
+                </MudTable>
+                @if(qualified.Operating is {} operating)
+                {
+                    <MudText Typo="Typo.subtitle2">Recorded native facility and equipment status assignments</MudText>
+                    <MudText>Compared UTC @operating.ComparedAtUtc.ToString("O"). Recorded codes require explicit operating and transition policy.</MudText>
+                    <MudTable Items="@operating.Statuses" Dense="true" aria-label="Complete qualified native status assignments">
+                        <HeaderContent><MudTh>Qualified asset</MudTh><MudTh>Recorded type and value</MudTh><MudTh>Native source and key</MudTh><MudTh>Native UTC boundaries</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Qualified asset">@context.AssetType · @context.AssetId / @context.FacilityType</MudTd><MudTd DataLabel="Recorded type and value">@context.StatusType · @context.Value · record active @context.ActiveIndicator</MudTd><MudTd DataLabel="Native source and key">@context.Source / @context.StatusId</MudTd><MudTd DataLabel="Native UTC boundaries">@(context.TemporalEvidence?context.EffectiveAtUtc?.ToString("O"):"Unconfirmed date interpretation") · start @context.StartedAtUtc?.ToString("O") · expiry @context.ExpiresAtUtc?.ToString("O") · end @context.EndedAtUtc?.ToString("O")</MudTd></RowTemplate>
+                        <NoRecordsContent><MudText>No native status assignments were returned for these reviewed identities.</MudText></NoRecordsContent>
+                        <PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                    @foreach(var population in operating.Statuses.GroupBy(row=>(row.AssetType,row.AssetId,row.FacilityType,row.StatusType)))
+                    {<MudText>@population.Key.AssetType @population.Key.AssetId / @population.Key.FacilityType · @population.Key.StatusType · current native row candidates @population.Count(row=>row.Covers(operating.ComparedAtUtc))</MudText>}
+                    <MudExpansionPanels><MudExpansionPanel Text="Recorded native status and type references">
+                        <MudTable Items="@operating.References" Dense="true">
+                            <HeaderContent><MudTh>Reference family and type</MudTh><MudTh>Recorded value</MudTh><MudTh>Type reference</MudTh><MudTh>Current recorded reference</MudTh></HeaderContent>
+                            <RowTemplate><MudTd DataLabel="Reference family and type">@context.AssetType / @context.StatusType</MudTd><MudTd DataLabel="Recorded value">@context.Value</MudTd><MudTd DataLabel="Type reference">@(context.TypeReferenceCurrent?"Effective":"Unconfirmed")</MudTd><MudTd DataLabel="Current recorded reference">@(context.Covers(operating.ComparedAtUtc)?"Effective recorded reference":"Unconfirmed")</MudTd></RowTemplate>
+                            <PagerContent><MudTablePager /></PagerContent>
+                        </MudTable>
+                    </MudExpansionPanel></MudExpansionPanels>
+                }
+                @if(qualified.ReturnPolicy is {} policyReview)
+                {
+                    <MudText Typo="Typo.subtitle2">Recorded return-policy comparison</MudText>
+                    <MudText>Compared UTC @policyReview.ComparedAtUtc.ToString("O") · current configured app return roles @string.Join("; ",policyReview.ActorReturnRoles). This comparison records no asset return or legal clearance.</MudText>
+                    @if(policyReview.Blockers.Count==0){<MudAlert Severity="Severity.Info">Current sources match the recorded policy checks. The complete controlled return and independent authority remain required.</MudAlert>}
+                    <MudTable Items="@policyReview.Applications" Dense="true" aria-label="Qualified facility policy applications">
+                        <HeaderContent><MudTh>Qualified facility</MudTh><MudTh>Recorded policy versions</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Qualified facility">@context.FacilityId / @context.FacilityType</MudTd><MudTd DataLabel="Recorded policy versions">@foreach(var version in policyReview.Catalog.Versions.Where(row=>context.PolicyRecordIds.Contains(row.RecordId,StringComparer.Ordinal))){<MudText>@version.RecordId · version @version.Version · @version.Policy.Jurisdiction · @version.Policy.AreaId / @version.Policy.AreaType · @(version.Policy.AreaApplicability=="NOT_APPLICABLE"?"Recorded non-applicability":"Applicable requirements") · roles @string.Join("; ",version.Policy.AuthorizedReturnRoles) · source @version.Policy.SourceReference</MudText>@foreach(var transition in version.Policy.Transitions){<MudText>@transition.AssetType / @transition.StatusType · accepted @string.Join("; ",transition.AcceptedSourceValues) · @(transition.Disposition=="PRESERVE"?"Preserve current facet":$"Target {transition.TargetValue} / source {transition.NativeSource}")</MudText>}}</MudTd></RowTemplate>
+                        <PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                    <MudExpansionPanels><MudExpansionPanel Text="Reviewed native evidence and target source references">
+                        <MudTable Items="@policyReview.NativeSources" Dense="true"><HeaderContent><MudTh>Native source</MudTh><MudTh>Current reference</MudTh><MudTh>UTC period</MudTh></HeaderContent><RowTemplate><MudTd DataLabel="Native source">@context.Source</MudTd><MudTd DataLabel="Current reference">@(context.Covers(policyReview.ComparedAtUtc)?"Effective recorded source":"Unconfirmed")</MudTd><MudTd DataLabel="UTC period">@context.EffectiveAtUtc?.ToString("O") / @context.ExpiresAtUtc?.ToString("O")</MudTd></RowTemplate><PagerContent><MudTablePager /></PagerContent></MudTable>
+                    </MudExpansionPanel></MudExpansionPanels>
+                    @foreach(var finding in policyReview.Blockers){<MudAlert Severity="Severity.Warning">@finding</MudAlert>}
+                }
+                @if(qualified.Licensing is {} licensing)
+                {
+                    <MudText Typo="Typo.subtitle2">Recorded facility licensing evidence</MudText>
+                    <MudText>Compared UTC @licensing.ComparedAtUtc.ToString("O") · source date zone @qualified.DateTimeZoneId</MudText>
+                    <MudTable Items="@licensing.Licenses" Dense="true" aria-label="Qualified native facility licences">
+                        <HeaderContent><MudTh>Qualified licence</MudTh><MudTh>Issuer, holder and FIELD</MudTh><MudTh>Native UTC dates</MudTh><MudTh>Recorded flags and source</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Qualified licence">@context.FacilityId / @context.FacilityType / @context.LicenseId · @context.LicenseNumber · @context.LicenseType</MudTd><MudTd DataLabel="Issuer, holder and FIELD">Issuer @(context.IssuerBaId ?? "Not recorded") · holder @(context.HolderBaId ?? "Not recorded") · FIELD @(context.AssignedFieldId ?? "Not recorded")</MudTd><MudTd DataLabel="Native UTC dates">@(context.TemporalEvidence?context.GrantedAtUtc?.ToString("O"):"Unconfirmed date interpretation") · effective @context.EffectiveAtUtc?.ToString("O") · expiry @context.ExpiresAtUtc?.ToString("O")</MudTd><MudTd DataLabel="Recorded flags and source">Record active @context.ActiveIndicator · fees @(context.FeesPaidIndicator ?? "Not recorded") · violation @(context.ViolationIndicator ?? "Not recorded") · @(context.Source ?? "Not recorded")</MudTd></RowTemplate>
+                        <NoRecordsContent><MudText>No native licence records were returned for these qualified facilities.</MudText></NoRecordsContent>
+                        <PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                    <MudTable Items="@licensing.Statuses" Dense="true" aria-label="Recorded native licence status history">
+                        <HeaderContent><MudTh>Qualified licence and status key</MudTh><MudTh>Recorded status</MudTh><MudTh>Native UTC period and source</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Qualified licence and status key">@context.FacilityId / @context.FacilityType / @context.LicenseId / @context.StatusId</MudTd><MudTd DataLabel="Recorded status">@context.StatusType · @context.Value · record active @context.ActiveIndicator</MudTd><MudTd DataLabel="Native UTC period and source">@(context.TemporalEvidence?context.EffectiveAtUtc?.ToString("O"):"Unconfirmed date interpretation") · @context.ExpiresAtUtc?.ToString("O") · @context.Source</MudTd></RowTemplate>
+                        <NoRecordsContent><MudText>No native licence status records were returned.</MudText></NoRecordsContent>
+                        <PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                    <MudText Typo="Typo.subtitle2">Recorded licence areas</MudText>
+                    <MudText>Area names and types do not establish a country, jurisdiction or permission to operate. Explicit applicability policy and supporting sources remain required.</MudText>
+                    @if(licensing.Areas is {} areas)
+                    {
+                        <MudTable Items="@areas" Dense="true" aria-label="Complete native licence area assignments">
+                            <HeaderContent><MudTh>Qualified licence and area</MudTh><MudTh>Recorded area source</MudTh><MudTh>Assignment UTC period</MudTh><MudTh>Referenced area UTC period</MudTh></HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Qualified licence and area">@context.FacilityId / @context.FacilityType / @context.LicenseId · @context.AreaId / @context.AreaType · @context.Description</MudTd>
+                                <MudTd DataLabel="Recorded area source">Assignment @context.Source · record active @context.ActiveIndicator · @(context.Area?.PreferredName ?? "Native area unconfirmed") · area source @(context.Area?.Source ?? "Unconfirmed") · recorded document reference @(context.Area?.SourceDocumentId ?? "Not recorded")</MudTd>
+                                <MudTd DataLabel="Assignment UTC period">@(context.TemporalEvidence?context.EffectiveAtUtc?.ToString("O"):"Unconfirmed date interpretation") / @context.ExpiresAtUtc?.ToString("O")</MudTd>
+                                <MudTd DataLabel="Referenced area UTC period">@(context.Area is {} area?($"{(area.Covers(licensing.ComparedAtUtc)?"Effective recorded area":"Unconfirmed current area")} · {area.EffectiveAtUtc:O} / {area.ExpiresAtUtc:O}"):"Native area unconfirmed")</MudTd>
+                            </RowTemplate>
+                            <NoRecordsContent><MudText>No native licence-area assignments were returned. Jurisdiction applicability remains unconfirmed.</MudText></NoRecordsContent>
+                            <PagerContent><MudTablePager /></PagerContent>
+                        </MudTable>
+                    }
+                    else{<MudText>Native licence-area evidence has not been reviewed. Jurisdiction applicability remains unconfirmed.</MudText>}
+                    <MudTable Items="@licensing.Conditions" Dense="true" aria-label="Recorded licence conditions">
+                        <HeaderContent><MudTh>Licence condition</MudTh><MudTh>Recorded requirement</MudTh><MudTh>Due and fulfilment evidence</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Licence condition">@context.LicenseId / @context.ConditionId · @context.ConditionType / @context.ConditionCode</MudTd><MudTd DataLabel="Recorded requirement">@context.Description · @context.DueCondition</MudTd><MudTd DataLabel="Due and fulfilment evidence">@(context.TemporalEvidence?context.DueAtUtc?.ToString("O"):"Unconfirmed date interpretation") · fulfilled @(context.FulfilledIndicator ?? "Not recorded") · exemption @(context.ExemptIndicator ?? "Not recorded") · @context.FulfilledAtUtc?.ToString("O") · fulfilled by @(context.FulfilledByBaId ?? "Unconfirmed")</MudTd></RowTemplate>
+                        <NoRecordsContent><MudText>No native licence condition records were returned.</MudText></NoRecordsContent>
+                        <PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                    <MudExpansionPanels><MudExpansionPanel Text="Recorded numeric terms, units and restrictions" Expanded="true">
+                        <MudText>Recorded values and native unit definitions are shown without conversion or a compliance decision. Missing values remain unconfirmed; a recorded zero remains zero. Source document identifiers require separate source and applicability review.</MudText>
+                        <MudTable Items="@licensing.Conditions" Dense="true" aria-label="Recorded licence numeric terms and restriction versions">
+                            <HeaderContent><MudTh>Licence condition</MudTh><MudTh>Recorded value and unit</MudTh><MudTh>Recorded due term</MudTh><MudTh>Exact restriction version and source</MudTh></HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Licence condition">@context.FacilityId / @context.FacilityType / @context.LicenseId / @context.ConditionId</MudTd>
+                                @if(context.Terms is {} terms)
+                                {
+                                    <MudTd DataLabel="Recorded value and unit">@(terms.Value?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "Unconfirmed numeric value") · @(terms.ValueUnitId ?? "Unit not recorded") · @(terms.ValueUnit?.Name ?? "Native unit unconfirmed") · quantity @terms.ValueUnit?.QuantityType / system @terms.ValueUnit?.MeasurementSystemId / usage @terms.ValueUnit?.UsageType · source @terms.ValueUnit?.Source · document @terms.ValueUnit?.SourceDocumentId · product @terms.ProductId<MudText>Unit UTC effective @terms.ValueUnit?.EffectiveAtUtc?.ToString("O") / expiry @terms.ValueUnit?.ExpiresAtUtc?.ToString("O") · @(terms.ValueUnit?.Covers(licensing.ComparedAtUtc)==true?"Effective recorded unit":"Unconfirmed current unit")</MudText></MudTd>
+                                    <MudTd DataLabel="Recorded due term">@(terms.DueTerm?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "Unconfirmed due term") · @(terms.DueTermUnitId ?? "Unit not recorded") · @(terms.DueTermUnit?.Name ?? "Native unit unconfirmed") · quantity @terms.DueTermUnit?.QuantityType / system @terms.DueTermUnit?.MeasurementSystemId / usage @terms.DueTermUnit?.UsageType · @terms.DueFrequency<MudText>Unit source @terms.DueTermUnit?.Source · recorded document reference @terms.DueTermUnit?.SourceDocumentId · UTC effective @terms.DueTermUnit?.EffectiveAtUtc?.ToString("O") / expiry @terms.DueTermUnit?.ExpiresAtUtc?.ToString("O") · @(terms.DueTermUnit?.Covers(licensing.ComparedAtUtc)==true?"Effective recorded unit":"Unconfirmed current unit")</MudText></MudTd>
+                                    <MudTd DataLabel="Exact restriction version and source">
+                                        @(terms.RestrictionId ?? "Restriction key not recorded") / @(terms.RestrictionVersion?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "Version unconfirmed")
+                                        @if(terms.Restriction is {} restriction)
+                                        {
+                                            <MudText>@restriction.Name · @restriction.Description · recorded act @restriction.RegulatoryAct · @restriction.ClassId / @restriction.Type / @restriction.DurationType</MudText>
+                                            <MudText>Source @restriction.Source · recorded document reference @restriction.SourceDocumentId · record active @restriction.ActiveIndicator</MudText>
+                                            <MudText>UTC effective @(restriction.TemporalEvidence?restriction.EffectiveAtUtc?.ToString("O"):"Unconfirmed date interpretation") / expiry @restriction.ExpiresAtUtc?.ToString("O") · start @restriction.StartedAtUtc?.ToString("O") / end @restriction.EndedAtUtc?.ToString("O") · recorded start event @restriction.StartEventAtUtc?.ToString("O") / end event @restriction.EndEventAtUtc?.ToString("O")</MudText>
+                                        }
+                                        else{<MudText>Native restriction unconfirmed. Explicit applicability review remains required.</MudText>}
+                                    </MudTd>
+                                }
+                                else{<MudTd colspan="3">Numeric term, unit and restriction evidence has not been reviewed.</MudTd>}
+                            </RowTemplate>
+                            <NoRecordsContent><MudText>No native licence conditions were returned for numeric term review.</MudText></NoRecordsContent>
+                            <PagerContent><MudTablePager /></PagerContent>
+                        </MudTable>
+                    </MudExpansionPanel></MudExpansionPanels>
+                    <MudTable Items="@licensing.Violations" Dense="true" aria-label="Recorded licence violations and resolutions">
+                        <HeaderContent><MudTh>Licence violation</MudTh><MudTh>Recorded type and resolution</MudTh><MudTh>Native UTC dates</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Licence violation">@context.LicenseId / @context.ViolationId · condition @context.ConditionId</MudTd><MudTd DataLabel="Recorded type and resolution">@context.ViolationType · @(context.ResolutionType ?? "Not recorded")</MudTd><MudTd DataLabel="Native UTC dates">@(context.TemporalEvidence?context.OccurredAtUtc?.ToString("O"):"Unconfirmed date interpretation") · resolution @context.ResolvedAtUtc?.ToString("O")</MudTd></RowTemplate>
+                        <NoRecordsContent><MudText>No native licence violation records were returned; applicability still requires policy review.</MudText></NoRecordsContent>
+                        <PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                    <MudExpansionPanels><MudExpansionPanel Text="Recorded licensing identity and code references">
+                        <MudTable Items="@licensing.References" Dense="true">
+                            <HeaderContent><MudTh>Native reference</MudTh><MudTh>Exact keys</MudTh><MudTh>Reference presence and dates</MudTh></HeaderContent>
+                            <RowTemplate><MudTd DataLabel="Native reference">@context.Kind</MudTd><MudTd DataLabel="Exact keys">@context.Key / @context.Qualifier</MudTd><MudTd DataLabel="Reference presence and dates">@(context.Covers(licensing.ComparedAtUtc)?"Effective recorded reference":"Unconfirmed reference applicability")</MudTd></RowTemplate>
+                            <PagerContent><MudTablePager /></PagerContent>
+                        </MudTable>
+                    </MudExpansionPanel></MudExpansionPanels>
+                    <MudText Typo="Typo.caption">Recorded licences, status codes, flags and resolution dates do not establish legal or operating approval.</MudText>
+                }
+                <MudAlert Severity="Severity.Info">These are native source facts. Licensing applicability and explicit return-policy evidence are required before operating-state advancement.</MudAlert>
+            }
+            @foreach(var well in review.Wells)
+            {
+                <MudText Typo="Typo.subtitle1">Well @well.WellId · current access @well.AccessLevel · operator @well.OperatorBaId</MudText>
+                <MudText Typo="Typo.caption">Configured date zone @(well.DateTimeZoneId ?? "Unconfirmed") · native well revision @well.WellRevision</MudText>
+                <MudText Typo="Typo.subtitle2">Current native facet candidates at the recorded comparison UTC</MudText>
+                <MudTable Items="@well.Facets.Where(row=>row.ActiveIndicator=="Y" && row.Covers(well.ComparedAtUtc)).ToArray()" Dense="true">
+                    <HeaderContent><MudTh>Native facet</MudTh><MudTh>Recorded value</MudTh><MudTh>Native source and key</MudTh><MudTh>UTC period</MudTh></HeaderContent>
+                    <RowTemplate><MudTd DataLabel="Native facet">@context.Facet</MudTd><MudTd DataLabel="Recorded value">@context.Value · @context.Qualifier @context.QualifierValue · @context.ActiveIndicator</MudTd><MudTd DataLabel="Native source and key">@context.Source / @context.StatusId</MudTd><MudTd DataLabel="UTC period">@(context.TemporalEvidence?context.EffectiveAtUtc?.ToString("O"):"Unconfirmed date interpretation") · @context.ExpiresAtUtc?.ToString("O")</MudTd></RowTemplate>
+                    <NoRecordsContent><MudText>No current native facet assignment is confirmed.</MudText></NoRecordsContent>
+                    <PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+                <MudExpansionPanels><MudExpansionPanel Text="Complete recorded facet history">
+                    <MudTable Items="@well.Facets" Dense="true">
+                        <HeaderContent><MudTh>Facet and recorded value</MudTh><MudTh>Source and key</MudTh><MudTh>UTC effective / expiry / end</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Facet and recorded value">@context.Facet · @context.Value · @context.Qualifier @context.QualifierValue · @context.ActiveIndicator</MudTd><MudTd DataLabel="Source and key">@context.Source / @context.StatusId</MudTd><MudTd DataLabel="UTC effective / expiry / end">@(context.TemporalEvidence?context.EffectiveAtUtc?.ToString("O"):"Unconfirmed") / @context.ExpiresAtUtc?.ToString("O") / @context.EndedAtUtc?.ToString("O")</MudTd></RowTemplate>
+                        <PagerContent><MudTablePager /></PagerContent>
+                    </MudTable>
+                </MudExpansionPanel></MudExpansionPanels>
+                <MudText Typo="Typo.caption">Recorded Active target reference: @(well.References.Any(row=>row.Facet=="Condition" && row.Value=="Active" && row.Covers(well.ComparedAtUtc))?"Present":"Unconfirmed")</MudText>
+            }
+            @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+        }
+        <MudText>This view records no asset transition. A completed maintenance workflow does not establish an Active well condition, production readiness or financial close.</MudText>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter,EditorRequired]public CompanyWorkOrderCompletionQuery Query{get;set;}=null!;
+    private bool _disposed;
+    private int _generation;
+    private string? _error;
+    private CompanyWorkOrderCompletionQuery? _attached;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet(){if(_attached!=Query){Invalidate();_attached=Query;State.Attach(Query);}}
+    private Task ReadAsync()=>ReadCore(false);
+    private Task ReadStatusAsync()=>ReadCore(true);
+    private async Task ReadCore(bool recorded)
+    {
+        if(_disposed || State.Busy)return;_error=null;var snapshot=Company.Snapshot;var generation=_generation;
+        try{Query.Require();var user=(await Authentication.GetAuthenticationStateAsync()).User;if(snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=Query.Task.FieldId || snapshot!=Company.Snapshot || generation!=_generation)throw new UnauthorizedAccessException("Current original company/account/standard role/FIELD and return evidence authority are required.");State.Attach(Query);if(recorded)await State.ReadReturnStatusAsync(Workflows);else await State.ReadAsync(Workflows);}
+        catch(Exception error){if(!_disposed && snapshot==Company.Snapshot && generation==_generation){State.Clear();_error=Calls.Explain(error,"reading original maintenance asset evidence","Current asset operating evidence is unconfirmed");}}
+    }
+    private void Invalidate(){_generation++;State.Clear();_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.Clear();}
+}

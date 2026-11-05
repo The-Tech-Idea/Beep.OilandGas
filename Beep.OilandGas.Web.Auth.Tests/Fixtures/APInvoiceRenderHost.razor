@@ -1,0 +1,14 @@
+@namespace Beep.OilandGas.Web.Auth.Tests.Fixtures
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.BusinessProcess
+<MudPopoverProvider />
+<APInvoiceSourcePanel Review="Review" AllowPurchaseSource="AllowPurchaseSource" ReviewPurchaseSource="OnReview" ReviewReceiptAllocations="OnAllocations" AllowAllocationPreparation="AllowPreparation" ReviewProposal="OnProposal" />
+@code {
+    [Microsoft.AspNetCore.Components.Parameter] public APInvoiceWorkspaceState? Review {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool AllowPreparation {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback OnProposal {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool AllowPurchaseSource {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback OnAllocations {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public Microsoft.AspNetCore.Components.EventCallback<string> OnReview {get;set;}
+}

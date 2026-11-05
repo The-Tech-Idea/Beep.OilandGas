@@ -1,0 +1,123 @@
+{
+  "plan": "Plan353 / Persona09 assigned overdue-action browser acceptance",
+  "date": "2026-10-30",
+  "status": "selected journey passes after current app RTL fix",
+  "states": 6,
+  "resultArtifact": "browser-result.json",
+  "sourceCopies": [
+    {
+      "source": "Beep.OilandGas.Web\\Components\\Workflow\\HseAssignedActions.razor",
+      "sha256": "fd32fdeaff6a0915ad21d76ca6556fc9bad9c476b74169877af4f5fdc7ff798f",
+      "fixture": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-browser-d0fec1f771be43818b1d3d7e4fb44171\\CurrentClosure\\HseAssignedActions.razor",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web\\Components\\Workflow\\HseClosureWorkflow.razor",
+      "sha256": "c05168b5b5d2cfb06bdfb7e1be3146aec5cb68da75abb9c8deb230c702c635dd",
+      "fixture": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-browser-d0fec1f771be43818b1d3d7e4fb44171\\CurrentClosure\\HseClosureWorkflow.razor",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web\\Components\\Workflow\\HseCorrectiveAction.razor",
+      "sha256": "58b42f40c60d29e1609754c18fdc14b774c6f8ee25bed307ddd7deaed2f5e403",
+      "fixture": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-browser-d0fec1f771be43818b1d3d7e4fb44171\\CurrentClosure\\HseCorrectiveAction.razor",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web\\Components\\Workflow\\HseCauseReview.razor",
+      "sha256": "f55e504c7398dc8d689d1e68ae8338ac51d4b8913a75e6bd3ffeed2770f24624",
+      "fixture": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-browser-d0fec1f771be43818b1d3d7e4fb44171\\CurrentClosure\\HseCauseReview.razor",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web\\Components\\Workflow\\HseWorkflowStart.razor",
+      "sha256": "da2a3ab14d508f14dbc29bf949aebf6ae8cfc6e03b86229244cf4d98ea57f66a",
+      "fixture": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-browser-d0fec1f771be43818b1d3d7e4fb44171\\CurrentClosure\\HseWorkflowStart.razor",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web\\Pages\\PPDM39\\BusinessProcess\\HSEIncidentDetail.razor",
+      "sha256": "80b3d9b9b32050dd8ac1c3100fbe578a332363497a9bb32009198c22553b37a7",
+      "fixture": "CurrentIncident/HSEIncidentDetail.razor",
+      "differences": "four child component namespace qualifications and newline normalization only"
+    }
+  ],
+  "sourceLinks": [
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\HSEServiceClient.cs",
+      "sha256": "439d6fe08c5fb173130ee500331286daddb79b66119c6b4ceaff8fcfaf13c46b"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\HSEServiceClient.Closure.cs",
+      "sha256": "48360a8480010949b5d94aa28a0353d41f3b36c688d73cc0d2a2b971c4a46e61"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Client\\App\\Services\\Field\\IFieldService.cs",
+      "sha256": "108aa664e900f9313201d1839908b187223ac7cfdf508763906b3fbdc06efd3b"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\ApiClient.cs",
+      "sha256": "7a434bd3a27e29b377156fbdfaa544f42d6df0c3487afce3d10f9664bb8f8125"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Models\\Data\\Security\\PermissionConstants.cs",
+      "sha256": "0750b42a4005fcb779c1804d37aa88dd92850f37b6f7d72ce627b98591c40064"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\CorrectiveActionIntentStore.cs",
+      "sha256": "e8ed11fddeb6a62cea1edf158065159e023d717aff49a95caeac6c7a920f8123"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\CorrectiveActionIntentStore.Closure.cs",
+      "sha256": "3c316324b7addeced88111986bcbed7051ca7839e71dc04bdf3e0be4c0eabbb6"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\IHSEServiceClient.cs",
+      "sha256": "ad6d15d597f0016f251409721f72535ddf3b5cc146c3f4bbbba42fdd6bb7c4e0"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\HSEServiceClient.AssignedActions.cs",
+      "sha256": "3bab01ee242a346054a60020ea387c94489f9e09a054935318280035e0d96c3d"
+    }
+  ],
+  "cssSha256": "36874e26ec8899e883a5dc2924ad357b1a3fafc356f0a40d36e0e59d0f96870f",
+  "runtimeSha256": "3ee7e6fff509ab6af490c548c416a713bfdcdb6a0049962889464b8eb5407c07",
+  "productionChange": "Current queue text uses automatic direction; mixed-script exact incident identifiers and UTC dates are isolated so English counts/date punctuation remain readable under RTL. No CSS/JS/schema/SQL/EF/legacy owner change.",
+  "observed": [
+    "Keyboard Enter activates review, pages10 of11 records then the exact action11 record.",
+    "A refresh held after its header-scoped read starts; current render clears links and shows progress.",
+    "B loads its own private action with colliding local incident/FIELD IDs and distinct tenant/core bindings.",
+    "Release late A reply and wait actual typed-client task settlement; B remains unchanged.",
+    "Restore A, review/page again and use keyboard Enter to open exact URI-encoded incident and action11 fragment.",
+    "Actual current incident page renders matching action11 and standard browser fragment navigation places it within the viewport.",
+    "1280px and390px documents have no horizontal overflow. No mutation originals in sessionStorage.",
+    "All controlled business HTTP requests GET; zero lifecycle/native attempts/effects and zero generic action reads.",
+    "Computed summary direction LTR and explicit LTR mixed identifier verified after app fix."
+  ],
+  "visualReview": [
+    "Before-direction-fix wide/narrow images exposed reordering.",
+    "Current wide-page-two.png and narrow-restored-a.png visually inspected after repair.",
+    "Current detail/action view was visually inspected in the pre-fix run; queue-only direction repair does not change detail source."
+  ],
+  "controlledSeams": [
+    "Fixture wrapper route hosts actual queue component, not full production landing/layout.",
+    "Authentication, FIELD/workflow/source outcomes and two-company business HTTP handler are controlled. Current typed client and ApiClient execute actual requests/header/snapshot checks.",
+    "Native mapping/assignment query is not executed by this browser fixture; prior native/reader evidence remains separate.",
+    "No production API host/OIDC, installed-driver/provider, full localization or screen-reader certification."
+  ],
+  "fixtureFailures": [
+    "initial-interactive-readiness-failure.json: Enter before interactive connection; zero queue requests. Added fixture-only readiness marker.",
+    "initial-render-observation-failure.json: immediate assertion sampled DOM before pending render. Continued same held request after waiting actual progressbar.",
+    "unicode-selector-failure.json: fixture script had dash encoding corruption, corrected selector/continued existing exact action page.",
+    "before-direction-fix-browser-result.json: behavioral journey passes across continuation calls, visual inspection exposed actual RTL problem.",
+    "Final current-source journey runs all six states in one invocation on fresh owned backend and passes."
+  ],
+  "build": "2.10 seconds;52 support/assembly warnings,0errors; no missing dependency project build.",
+  "performanceFinding": "PPDMGenericRepository.GetPaginatedAsync currently calls GetAsync and materializes the full population before Skip/Take. It cannot qualify bounded provider paging; not used as a fake scalability fix.",
+  "remaining": [
+    "Provider-backed bounded queue query/server paging and large FIELD performance;64 returned incident/4096 action bounds retained.",
+    "Actual configured API/OIDC/provider integration; production layout/theme, broader assistive-technology/localization acceptance.",
+    "Whole approved roadmap/goal remains active. Commit/push pending full completion."
+  ],
+  "cleanup": "Owned hse353assigned browser closed; exact owned HseBrowser executable absent after stop/recheck."
+}

@@ -16,9 +16,7 @@ public interface IFacilityManagementService
 
     Task<FACILITY?> GetFacilityAsync(string facilityId, string? facilityType, CancellationToken cancellationToken = default);
 
-    Task<FACILITY> CreateFacilityAsync(FACILITY facility, string userId, CancellationToken cancellationToken = default);
 
-    Task UpdateFacilityAsync(FACILITY facility, string userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<FACILITY_CLASS>> ListFacilityClassesAsync(string facilityId, string? facilityType, CancellationToken cancellationToken = default);
 
@@ -36,7 +34,6 @@ public interface IFacilityManagementService
 
     Task<IReadOnlyList<FACILITY_EQUIPMENT>> ListFacilityEquipmentAsync(string facilityId, string? facilityType, CancellationToken cancellationToken = default);
 
-    Task<FACILITY_EQUIPMENT> LinkEquipmentToFacilityAsync(string facilityId, string? facilityType, string equipmentId, string userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<FACILITY_MAINTAIN>> ListFacilityMaintenanceAsync(string facilityId, string? facilityType, DateTime? startDate, DateTime? endDate, CancellationToken cancellationToken = default);
 

@@ -1,0 +1,25 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+<MudPaper Outlined="true" Class="pa-3 my-3">
+    <MudText Typo="Typo.h6" HtmlTag="h3">Reported completion evidence</MudText>
+    <MudAlert Severity="Severity.Warning">This is the recorder's report, pending independent acceptance. It does not establish accepted tests, close reporting responsibility or authorize production handover.</MudAlert>
+    <MudText>Reported actual completion @Report.CompletedAtUtc.ToString("u") UTC</MudText>
+    <MudText Class="development-draft-description">Work reported complete: @Report.WorkCompleted</MudText>
+    <MudSimpleTable Dense="true" Hover="true">
+        <caption>Supporting tests as reported by the recorder</caption>
+        <thead><tr><th scope="col">Test / reference</th><th scope="col">Reported UTC / result</th><th scope="col">Provenance / result notes</th></tr></thead>
+        <tbody>
+            @foreach (var test in Report.Tests)
+            {
+                <tr><th scope="row">@test.TestType<br />@test.Reference</th><td>@test.TestedAtUtc.ToString("u") UTC<br />@Result(test.ReportedResult)</td><td>@test.Provenance<br />@test.ResultNotes</td></tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+    <MudText>The recorder explicitly reviewed known outstanding work and defects.</MudText>
+    @if (Report.OutstandingItems.Count == 0) { <MudText>No outstanding items were reported by this recorder. Independent acceptance remains required.</MudText> }
+    else { <MudList T="string" aria-label="Reported outstanding work and defects">@foreach (var item in Report.OutstandingItems) { <MudListItem T="string">@item</MudListItem> }</MudList> }
+</MudPaper>
+@code {
+    [Parameter, EditorRequired] public DrillingCompletionReport Report { get; set; } = default!;
+    private static string Result(string value) => value switch { "REPORTED_PASS" => "Pass (reported)", "REPORTED_FAIL" => "Fail (reported)", "INCONCLUSIVE" => "Inconclusive (reported)", _ => throw new InvalidOperationException("The reported test result is unconfirmed.") };
+}

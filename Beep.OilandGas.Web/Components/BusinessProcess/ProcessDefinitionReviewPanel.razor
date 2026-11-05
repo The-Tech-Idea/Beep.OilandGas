@@ -1,0 +1,25 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@if(Review?.Current is {} definition)
+{
+    <MudText Typo="Typo.h5">@definition.ProcessName</MudText>
+    <MudText>Definition @definition.ProcessId · FIELD @Review.FieldId · Type @definition.ProcessType · Source entity @definition.EntityType</MudText>
+    <MudText>Version: @(string.IsNullOrWhiteSpace(definition.Version)?"Unavailable":definition.Version) · @(definition.IsActive?"Active definition":"Inactive definition")</MudText>
+    <MudText>@definition.Description</MudText>
+    <MudText>Recorded creation date: @(definition.CreatedDate==default?"Unavailable":definition.CreatedDate.ToString("O"))</MudText>
+    <MudText Typo="Typo.h6" Class="mt-3">Configured steps and responsibilities</MudText>
+    @if(definition.Steps.Count==0){<MudAlert Severity="Severity.Info">No recorded steps were returned. Starting is unavailable.</MudAlert>}
+    @foreach(var step in definition.Steps.OrderBy(row=>row.SequenceNumber))
+    {
+        <MudPaper Outlined="true" Class="pa-3 my-2">
+            <MudText>@step.SequenceNumber · @step.StepName (@step.StepId) · @step.StepType</MudText>
+            <MudText>@step.Description</MudText>
+            <MudText>Configured roles: @(step.RequiredRoles.Count==0?"Not recorded":string.Join(", ",step.RequiredRoles)) · @(step.RequiresApproval?"Approval required":"No approval requirement recorded")</MudText>
+        </MudPaper>
+    }
+    <MudAlert Severity="Severity.Info">Configured responsibilities do not grant roles, source access or approval. A process start requires current FIELD/source WRITE authority; independent review and posting remain separate recorded actions.</MudAlert>
+}
+else {<MudAlert Severity="Severity.Info">No configured definition is confirmed for this company and FIELD. Reload before continuing.</MudAlert>}
+@code{[Parameter] public ProcessDefinitionDetailState? Review {get;set;}}

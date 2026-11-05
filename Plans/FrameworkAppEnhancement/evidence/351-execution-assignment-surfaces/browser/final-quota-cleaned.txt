@@ -1,0 +1,8 @@
+### Result
+{
+  "removed": 79
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => { const keys=Object.keys(sessionStorage).filter(k=>k.startsWith("oilgas351-assignment-quota-"));keys.forEach(k=>sessionStorage.removeItem(k));return {removed:keys.length}; }');
+```

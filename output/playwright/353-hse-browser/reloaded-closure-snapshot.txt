@@ -1,0 +1,22 @@
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=f1e1]:
+  - generic [ref=f1e113]:
+    - heading "Isolated HSE browser fixture" [level=1] [ref=f1e114]
+    - paragraph [ref=f1e115]: Actual HSE components and protected tab storage. Controlled clients and authentication; production API/provider qualification is separate.
+    - group [ref=f1e116]:
+      - button "Show HSE landing" [ref=f1e117] [cursor=pointer]
+      - button "Show closure workflow" [active] [ref=f1e119] [cursor=pointer]
+      - button "Switch other company" [ref=f1e121] [cursor=pointer]
+      - button "Restore original company" [ref=f1e123] [cursor=pointer]
+  - generic [ref=f1e225]:
+    - heading "Controlled incident field / case · CLOSED" [level=2] [ref=f1e226]
+    - heading "Lifecycle approval and incident closure" [level=6] [ref=f1e227]
+    - generic [ref=f1e228]: The original final incident closure approval request awaits confirmation.
+    - paragraph [ref=f1e235]: Independent browser-reviewed evidence confirms the repaired valve and final incident closure.
+    - button "Reconcile original closure stage" [ref=f1e236] [cursor=pointer]
+    - button "Review changed native incident history" [ref=f1e238] [cursor=pointer]
+```

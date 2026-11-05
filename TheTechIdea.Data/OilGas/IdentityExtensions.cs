@@ -46,10 +46,14 @@ public sealed class AppPermissionExtension
 // Assignment history survives removal from AspNetUserRoles.
 public sealed class AppUserRoleExtension
 {
+    // Null/null is repository administration. Company work requires an explicitly scoped assignment.
+    public string? TenantId { get; set; }
+    public string? BusinessAssociateId { get; set; }
     public string UserRoleId { get; set; } = Guid.NewGuid().ToString();
     public string UserId { get; set; } = "";
     public string RoleId { get; set; } = "";
     public string? GrantedByUserId { get; set; }
+    public string? RevokedByUserId { get; set; }
     public string? AssignmentReason { get; set; }
     public DateTime EffectiveFromUtc { get; set; }
     public DateTime? EffectiveToUtc { get; set; }

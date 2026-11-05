@@ -12,7 +12,7 @@ public interface IComplianceService
 
     Task RecordPaymentAsync(string obligationId, RecordPaymentRequest request, string userId);
 
-    Task<ObligationDetailModel?> GetByIdAsync(string obligationId);
+    Task<ObligationDetailModel?> GetByIdAsync(string obligationId, string fieldId);
 
     Task<List<ObligationSummary>> GetUpcomingObligationsAsync(string fieldId, int daysAhead = 30);
 

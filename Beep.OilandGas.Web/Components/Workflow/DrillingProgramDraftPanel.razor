@@ -1,0 +1,156 @@
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject IAfeServiceClient Afes
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+<MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+    <MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton>
+    <MudButton Href="/development/well-design" Variant="Variant.Outlined">Recorded well evidence</MudButton>
+    <MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload program source and recovery</MudButton>
+</MudStack>
+@if(_state?.CanView!=true){<MudAlert Severity="Severity.Info">Select a company with drilling, development, workflow and financial-view access to inspect program funding or recover an original draft.</MudAlert>}
+else
+{
+    @if(_state.Busy){<MudProgressLinear Indeterminate="true" aria-label="Confirming original drilling program" />}
+    @if(_state.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+    @if(_state.Confirmation is {} confirmation){<MudAlert Severity="@(_state.Receipt?.Recorded is not null || _state.ReviewReceipt?.Recorded==true?Severity.Success:Severity.Info)">@confirmation</MudAlert>}
+    @if(_state.ReviewPending is {} reviewPending)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Retained original program review submission</MudText><MudText>@reviewPending.Source.Program.PROGRAM_NAME · Version @reviewPending.Source.Program.PROGRAM_VERSION · @reviewPending.Workflow.ProcessName</MudText><MudText>Program @reviewPending.Source.Program.PROGRAM_ID · FIELD @reviewPending.Scope().FieldId · Original intent @reviewPending.IntentId</MudText><MudButton OnClick="RecoverReview" Disabled="@(!_state.CanRecoverReview)" Variant="Variant.Outlined" Class="my-3">Recover original program review</MudButton></MudPaper>
+    }
+    else if(_state.Pending is {} pending)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Retained original drilling program</MudText><MudText>@pending.Name · Well @pending.Basis.Well.Uwi · FIELD @pending.Basis.Scope().FieldId</MudText><MudText>@pending.Basis.Funding.Source.Afe().Number · @pending.MeasuredDepth @pending.DepthUnit MD</MudText>
+            <MudButton OnClick="Recover" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined">Recover original program outcome</MudButton>
+        </MudPaper>
+    }
+    else if(_state.ReviewReceipt is {} reviewReceipt)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Original program review outcome</MudText>
+            @if(reviewReceipt.Recorded){<MudText>Recorded program review @reviewReceipt.InstanceId · First stage @reviewReceipt.StepInstanceId · @reviewReceipt.TaskIds.Count recorded receiving destinations</MudText><MudButton Href="@("/drilling/program-review/assigned?processId="+Uri.EscapeDataString(reviewReceipt.InstanceId))" Variant="Variant.Outlined" Class="my-2">Open recorded program review history</MudButton><MudButton Href="@("/drilling/program-execution?reviewId="+Uri.EscapeDataString(reviewReceipt.InstanceId))" Variant="Variant.Outlined">Inspect recorded program execution</MudButton><MudText>The saved program remains DRAFT. Submission records its independent assignment, without recording program approval or drilling execution.</MudText>}
+            else{<MudText>This original review submission was confirmed absent.</MudText>}
+        </MudPaper>
+    }
+    else if(_state.ReviewPrepared is {} reviewPrepared)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Confirm original independent program review</MudText><MudText>@reviewPrepared.Source.Program.PROGRAM_NAME · Version @reviewPrepared.Source.Program.PROGRAM_VERSION · Maker @reviewPrepared.Source.Program.ROW_CREATED_BY</MudText><MudText>Program @reviewPrepared.Source.Program.PROGRAM_ID · Well @reviewPrepared.Source.Basis.Well.Uwi · FIELD @reviewPrepared.Scope().FieldId</MudText><MudText>@reviewPrepared.Workflow.ProcessName · @reviewPrepared.Workflow.Version</MudText>
+            @foreach(var stage in reviewPrepared.Workflow.Stages){<MudText>@stage.Definition.Sequence · @stage.Definition.StepName · Role @stage.Definition.AssignedRole · Workspaces @string.Join(", ",stage.Definition.PersonaCodes)</MudText>@foreach(var recipient in stage.Authority.Recipients){<MudText>Independent reviewer @recipient.UserId · @recipient.PersonaCode</MudText>}}
+            <MudText>The first receiving stage will be assigned. Later stages wait for their independent decisions.</MudText><MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton OnClick="SubmitReview" Disabled="@(!_state.CanSubmitReview)" Variant="Variant.Filled" Color="Color.Primary">Confirm and retain program review</MudButton><MudButton OnClick="CancelReview" Disabled="@_state.Busy" Variant="Variant.Outlined">Return to routing review</MudButton></MudStack>
+        </MudPaper>
+    }
+    else if(_state.Receipt?.Recorded is {} recorded)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Recorded drilling program draft</MudText><MudText>@recorded.PROGRAM_NAME · Version @recorded.PROGRAM_VERSION · @recorded.PROGRAM_STATUS</MudText><MudText>Program @recorded.PROGRAM_ID · Well @recorded.WELL_ID · FIELD @recorded.FIELD_ID</MudText><MudText>Planned MD @recorded.PLANNED_MEASURED_DEPTH @recorded.DEPTH_OUOM · TVD @recorded.PLANNED_TRUE_VERTICAL_DEPTH @recorded.DEPTH_OUOM</MudText><MudText>Planned @recorded.PLANNED_SPUD_DATE?.ToString("yyyy-MM-dd") to @recorded.PLANNED_COMPLETION_DATE?.ToString("yyyy-MM-dd") · @recorded.PLANNED_DURATION_DAYS days</MudText><MudText>AFE @recorded.AFE_NUMBER · @recorded.AFE_COST?.ToString(CultureInfo.InvariantCulture) @recorded.AFE_CURRENCY</MudText><MudText Class="development-draft-description">@recorded.DESCRIPTION_OBJECTIVE</MudText><MudText Typo="Typo.caption">Recorded by @recorded.ROW_CREATED_BY · @recorded.ROW_CREATED_DATE?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText></MudPaper>
+    }
+    else if(_state.Prepared is {} original)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Confirm original drilling program draft</MudText><MudText>@original.Name · Well @original.Basis.Well.Uwi · FIELD @original.Basis.Scope().FieldId</MudText><MudText>@original.WellType · @original.Profile · MD @original.MeasuredDepth @original.DepthUnit · TVD @original.VerticalDepth @original.DepthUnit</MudText><MudText>Planned @original.PlannedSpudDate.ToString("yyyy-MM-dd") to @original.PlannedCompletionDate.ToString("yyyy-MM-dd") · @original.DurationDays days</MudText><MudText>Approved AFE @original.Basis.Funding.Source.Afe().Number · @original.Basis.Funding.Source.Afe().RequestedAmount.ToString(CultureInfo.InvariantCulture) @original.Basis.Funding.Source.Afe().CurrencyCode</MudText><MudText Class="development-draft-description">@original.Objective</MudText><MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton OnClick="Save" Disabled="@(!_state.CanPrepare)" Color="Color.Primary" Variant="Variant.Filled">Confirm and retain program draft</MudButton><MudButton OnClick="Cancel" Disabled="@_state.Busy" Variant="Variant.Outlined">Edit program inputs</MudButton></MudStack></MudPaper>
+    }
+    else if(_state.Funding is {} funding)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Review the recorded well and approved funding</MudText>
+            @if(string.IsNullOrWhiteSpace(WellUwi)){<MudTextField T="string" Label="Recorded well UWI" @bind-Value="well" Required="true" MaxLength="128" Class="my-3" />}
+            else{<MudText>Recorded well UWI: @WellUwi</MudText>}
+            <MudSelect T="string" Label="Recorded company AFE source" @bind-Value="afe" Required="true" Class="my-3">@foreach(var row in funding.Items){<MudSelectItem T="string" Value="@row.Source.Afe.AfeId">@row.Source.Afe.Number · FIELD @row.Source.FieldId · @(row.Recorded?.Decision??"No financial decision")</MudSelectItem>}</MudSelect>
+            <MudButton OnClick="Inspect" Disabled="@(!_state.CanInspect)" Variant="Variant.Outlined">Inspect approved program basis</MudButton>
+            <MudText Typo="Typo.caption">The source check requires reconciled final investment approval and this well's current FIELD membership.</MudText>
+        </MudPaper>
+        @if(_state.Basis is {} basis)
+        {
+            var money=basis.Funding.Source.Afe();
+            <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Approved program basis</MudText><MudText>@basis.Well.Name · @basis.Well.Uwi · FIELD @basis.Scope().FieldId</MudText><MudText>AFE @money.Number · @money.RequestedAmount.ToString("N"+money.CurrencyDecimals,CultureInfo.InvariantCulture) @money.CurrencyCode · Book @money.BookId</MudText><MudText>Approved FDP @money.BaselineId · Investment @basis.Funding.HandoffId</MudText><MudText>Investment reviewer @basis.Funding.Source.Recorded!.Reviewer · @basis.Funding.Source.Recorded.AtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText></MudPaper>
+            @if(CompanyLocalTime(basis.Funding.Source.Recorded.AtUtc) is {} localApproval)
+            { <MudText Typo="Typo.caption">Investment review in company time: @localApproval</MudText> }
+            @if(_state.Drafts is {} saved)
+            {
+                <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Recorded programs for this well and funding</MudText>
+                @if(saved.Drafts.Count==0){<MudText>No recorded program drafts were returned for this exact source.</MudText>}
+                @foreach(var item in saved.Drafts){<MudText>@item.PROGRAM_NAME · Version @item.PROGRAM_VERSION · @item.PROGRAM_STATUS · @item.PROGRAM_ID</MudText><MudText>Planned MD @item.PLANNED_MEASURED_DEPTH @item.DEPTH_OUOM · TVD @item.PLANNED_TRUE_VERTICAL_DEPTH @item.DEPTH_OUOM · Maker @item.ROW_CREATED_BY</MudText>
+                    @if(_state.CanReviewRouting){<MudButton OnClick="@(()=>ReviewRouting(item.PROGRAM_ID))" Disabled="@_state.Busy" Variant="Variant.Outlined" Class="my-2">Inspect recorded review and routing for @item.PROGRAM_NAME</MudButton>}
+                }
+                </MudPaper>
+            }
+            @if(_state.Routing is {} routing)
+            {
+                var program=routing.Source.Program;
+                <MudPaper Outlined="true" Class="pa-4 my-3">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Saved program and independent review routing</MudText>
+                    <MudText>@program.PROGRAM_NAME · Version @program.PROGRAM_VERSION · @program.PROGRAM_STATUS · @program.PROGRAM_ID</MudText>
+                    <MudText>Original maker @program.ROW_CREATED_BY · @program.ROW_CREATED_DATE?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+                    <MudText Class="development-draft-description">@program.DESCRIPTION_OBJECTIVE</MudText>
+                    <MudText>@program.WELL_TYPE · @program.WELL_PROFILE · Planned MD @program.PLANNED_MEASURED_DEPTH @program.DEPTH_OUOM · TVD @program.PLANNED_TRUE_VERTICAL_DEPTH @program.DEPTH_OUOM</MudText>
+                    <MudText>Planned @program.PLANNED_SPUD_DATE?.ToString("yyyy-MM-dd") to @program.PLANNED_COMPLETION_DATE?.ToString("yyyy-MM-dd") · @program.PLANNED_DURATION_DAYS days</MudText>
+                    <MudText>Approved AFE @program.AFE_NUMBER · @program.AFE_COST?.ToString(CultureInfo.InvariantCulture) @program.AFE_CURRENCY · FDP @program.FDP_BASELINE_ID</MudText>
+                    <MudAlert Severity="Severity.Info" Class="my-3">Routing readiness creates no assignment or approval. This saved program remains DRAFT. Review and confirm the exact workflow before assigning its first independent stage.</MudAlert>
+                    @if(routing.ExistingReviewInstanceId is {} existingReview){<MudText>Recorded program review assignment @existingReview. A new submission is blocked; this assignment is separate from program approval.</MudText><MudButton Href="@("/drilling/program-review/assigned?processId="+Uri.EscapeDataString(existingReview))" Variant="Variant.Outlined" Class="my-2">Open recorded program review history</MudButton><MudButton Href="@("/drilling/program-execution?reviewId="+Uri.EscapeDataString(existingReview))" Variant="Variant.Outlined">Inspect recorded program execution</MudButton>}
+                    else if(!_state.CanCreate || !Company.Selection!.Permissions.Contains("Workflow.Start",StringComparer.Ordinal)){<MudText>No recorded program review was found for this saved source. Current drilling-create and workflow-start rights are required to inspect proposed assignment routing.</MudText>}
+                    else if(routing.Options.Count==0){<MudText>No configured DRILLING_PROGRAM approval workflow was returned. Configure its actual stages and independent roles before submission.</MudText>}
+                    @foreach(var option in routing.Options)
+                    {
+                        <MudText Typo="Typo.subtitle1">@option.ProcessName · @option.Version · @(option.Ready?"All configured stages have eligible recipients":"Independent reviewers are missing")</MudText>
+                        @if(option.Ready){<MudButton OnClick="@(()=>PrepareReview(option.ProcessId))" Disabled="@(!_state.CanPrepareReview)" Variant="Variant.Outlined" Class="my-2">Review submission for @option.ProcessName</MudButton>}
+                        @foreach(var stage in option.Stages)
+                        {
+                            <MudText>@stage.Definition.Sequence · @stage.Definition.StepName · Role @stage.Definition.AssignedRole · @(stage.Definition.SlaHours is {} hours?hours+" hours SLA":"No SLA recorded")</MudText>
+                            @if(stage.Authority.Recipients.Count==0){<MudAlert Severity="Severity.Warning">No independent company reviewer has the current role, drilling/workflow approval, workspace and original FIELD access for this stage.</MudAlert>}
+                            @foreach(var receiver in stage.Authority.Recipients){<MudText>Eligible reviewer @receiver.UserId · Workspace @receiver.PersonaCode</MudText>}
+                        }
+                    }
+                    <MudText Typo="Typo.caption">Source and routing checked @routing.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC. Investment approval and program approval are separate.</MudText>
+                </MudPaper>
+            }
+            @if(_state.CanCreate)
+            {
+            <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Explicit planned program inputs</MudText>
+                <MudTextField T="string" Label="Program name" @bind-Value="name" Required="true" MaxLength="256" Class="my-3" />
+                <MudTextField T="string" Label="Program objectives and source rationale" @bind-Value="objective" Required="true" Lines="3" MaxLength="4096" Class="my-3" />
+                <MudSelect T="string" Label="Well type" @bind-Value="type" Required="true" Class="my-3">@foreach(var value in new[]{"WILDCAT","APPRAISAL","DEVELOPMENT","SIDETRACK","INFILL"}){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}</MudSelect>
+                <MudSelect T="string" Label="Planned profile" @bind-Value="profile" Required="true" Class="my-3">@foreach(var value in new[]{"VERTICAL","J_SHAPE","S_SHAPE","HORIZONTAL"}){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}</MudSelect>
+                @if(SuggestedDepthUnit is {} suggested && string.IsNullOrEmpty(unit) && md is null && tvd is null)
+                {
+                    <MudButton OnClick="UseCompanyDepthUnit" Variant="Variant.Outlined">Use company depth unit (@suggested)</MudButton>
+                    <MudText Typo="Typo.caption">Select the unit before entering depths; changing a unit does not convert entered values.</MudText>
+                }
+                <MudNumericField T="decimal?" Label="Planned measured depth" @bind-Value="md" Required="true" Class="my-3" />
+                <MudNumericField T="decimal?" Label="Planned true vertical depth" @bind-Value="tvd" Required="true" Class="my-3" />
+                <MudSelect T="string" Label="Recorded depth unit" @bind-Value="unit" Required="true" Disabled="@DepthUnitLocked" Class="my-3"><MudSelectItem T="string" Value='@("m")'>m</MudSelectItem><MudSelectItem T="string" Value='@("ft")'>ft</MudSelectItem></MudSelect>
+                @if(DepthUnitLocked)
+                {
+                    <MudText Typo="Typo.caption">The entered depths are recorded in @unit. Clear both values to choose another unit; they are not converted automatically.</MudText>
+                    <MudButton OnClick="ClearDepthsForUnitChange" Variant="Variant.Outlined">Clear depths to change unit</MudButton>
+                }
+                <MudNumericField T="int?" Label="Planned drilling duration in days" @bind-Value="days" Required="true" Class="my-3" />
+                <MudDatePicker Label="Planned spud calendar date" @bind-Date="start" Required="true" Class="my-3" />
+                <MudDatePicker Label="Planned completion calendar date" @bind-Date="end" Required="true" Class="my-3" />
+                <MudButton OnClick="Prepare" Disabled="@(!_state.CanPrepare)" Variant="Variant.Outlined">Review program draft</MudButton>
+            </MudPaper>
+            }
+        }
+    }
+    else if(!_state.Busy){<MudAlert Severity="Severity.Info">Reload the current source and retained input. Creating a draft requires current Drilling.Create authority.</MudAlert>}
+    <MudText Typo="Typo.caption">A program draft preserves planned inputs and approved funding. Independent program approval, rig assignment, execution and actual cost require their own recorded evidence.</MudText>
+}
+@code{
+    [Parameter]public string? WellUwi{get;set;}
+    [CascadingParameter] public Beep.OilandGas.Web.Services.CompanyEnvironmentDisplay? CompanyEnvironment { get; set; }
+    private string? SuggestedDepthUnit => CompanyEnvironment?.Matches(Company) == true && CompanyEnvironment.Review.Settings.DepthUnit is "m" or "ft" ? CompanyEnvironment.Review.Settings.DepthUnit : null;
+    private string? CompanyLocalTime(DateTimeOffset instant) => CompanyEnvironment?.Matches(Company) == true ? CompanyEnvironment.LocalTime(instant.UtcDateTime) : null;
+    private void UseCompanyDepthUnit(){if(string.IsNullOrEmpty(unit) && md is null && tvd is null && SuggestedDepthUnit is {} suggested) unit=suggested;}
+    private bool DepthUnitLocked => !string.IsNullOrEmpty(unit) && (md is not null || tvd is not null);
+    private void ClearDepthsForUnitChange(){if(DepthUnitLocked){md=null;tvd=null;}}
+    private DrillingProgramDraftState? _state;private string? loaded,well,afe,name,objective,type,profile,unit;private decimal? md,tvd;private int? days;private DateTime? start,end;private bool disposed,initialized;
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Afes,Journal,Calls.Explain);_state.Changed+=Changed;Company.Changed+=ClearCompanyInputs;}
+    protected override async Task OnParametersSetAsync(){if(!initialized || loaded!=WellUwi){initialized=true;loaded=WellUwi;await Reload();}}
+    private void PrepareReview(string id)=>_state!.PrepareReview(id);private void CancelReview()=>_state!.CancelReview();private Task SubmitReview()=>_state!.SubmitReviewAsync();private Task RecoverReview()=>_state!.RecoverReviewAsync();
+    private Task ReviewRouting(string id)=>_state!.ReviewRoutingAsync(id);
+    private Task Reload()=>_state!.LoadAsync(WellUwi);private Task Inspect()=>_state!.InspectAsync(afe,well);private void Prepare()=>_state!.Prepare(name,objective,type,profile,md,tvd,unit,days,start,end);private void Cancel()=>_state!.Cancel();private Task Save()=>_state!.SaveAsync();private Task Recover()=>_state!.RecoverAsync();
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    private void ClearCompanyInputs(){if(disposed)return;_ = InvokeAsync(()=>{if(disposed)return;well=afe=name=objective=type=profile=unit=null;md=tvd=null;days=null;start=end=null;StateHasChanged();});}
+    public void Dispose(){disposed=true;Company.Changed-=ClearCompanyInputs;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

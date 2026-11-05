@@ -1,0 +1,202 @@
+{
+  "observed_at_utc": "2026-10-20T09:48:50.472431+00:00",
+  "scope": "Original qualified work identity capture, native start owned recheck, checked start/report facts and return binding, operator and reviewer screens. Dirty local source checkpoint, not CI attestation.",
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceQualifiedWorkScope.cs",
+      "sha256": "9106180f319222221ad7db0a957dc7d9b09eb6b20a8c15ced79da8b1ee3847e6"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyWorkOrderExecutionStart.cs",
+      "sha256": "837dc66384f4af8335bd390e2b1e6f4bce3eef9a8e58deaeaac21d3246b46714"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyWorkOrderSubmissionInspectionReview.cs",
+      "sha256": "d81b8cb5a95b82abe6dc78a7d344283b02d78bee3e23a87570bd1abbc78d5a13"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyWorkOrderCompletionReview.cs",
+      "sha256": "f81d3f22d5ff22b844f0e69f135838e664c0c50a6a45359687beed70ad2b419b"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturn.cs",
+      "sha256": "fc574b586b6ef24be07a0df9ca9b59fb589915426701f2939e9c847781e6067f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs",
+      "sha256": "cfe5bdd4aaa34cd4e5ee0bf25ffd2ddb9a5ccbdfa16d017f1c969099656c2dbe"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs",
+      "sha256": "eea7e2e6badca3a871a52f44ae36b14eae0c0298f2c9a063d0793f3115d10942"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderExecutionPermitService.Start.cs",
+      "sha256": "e349bcde3f887d05e6398ee9ab11c99990f84744fd3a8f88ec3f18b240f49cd7"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/ContractorManagementService.ExecutorIdentity.cs",
+      "sha256": "7fa55bc46020819bd8771295ffba2f39a8690e2dfe8cccf61e28d6d8eac965ef"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "sha256": "0a87a531611396c894b7854e122044b7742ace168f5f96313ac467e7422659cc"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/WorkOrderExecutionStartState.cs",
+      "sha256": "276cf03400ed973fa5e78b18f55bb5b011c9686e8572f56af5ff064dd23e38b1"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/WorkOrderExecutionStartPanel.razor",
+      "sha256": "0fd07cde902fbf1e03bb240799e95622fedc66c0055402a5163d62ecd3524ca0"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetEvidencePanel.razor",
+      "sha256": "f2253edf554fcb6838ff519e0f1fd74ae61747255de7e11ba62524444341b213"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/WorkOrderCompleteApprovalFixture.cs",
+      "sha256": "3d25f84bb1bea295541349ac16fd5ce15419b4c4258f953b29ddf393113e68f9"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/WorkOrderExecutionStartFixture.cs",
+      "sha256": "df329f4b7ef64fdb35038f554bfa0d072a57318a918c99c9f37895f84fc1912e"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/WorkOrderExecutorIdentityTests.cs",
+      "sha256": "4fa0c29ba8a2cb59d1042653b1f860d9edc9ccfdd206ad04a94a14ab6720f76d"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedWorkScopeTests.cs",
+      "sha256": "8d8aa908763d07952e4bf71ae1107e047e828dee74cf4ceee8911a2917aabd3d"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "e352a9b34b72641466a2449747a3e5232aa0c5f22e77e7bfa892d4e7ef9bbe97"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+      "sha256": "e9ab30769067df2d2d93082a28a02aa3caccfc2b7fdea6562970f7a9ae08d663"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/WorkOrderExecutionStartStateTests.cs",
+      "sha256": "9e6407238838391cdbd69c0c473c5d5ee3ee085f2394e0b55925d99f84cdab61"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetEvidenceTests.cs",
+      "sha256": "4122f2899a7803540be3e2121e34d211cad2185e4ec63fd1971cdc2352f17fcf"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "7327d8480387a73df8cb141f4e177d25541fe87fe8c66e3ff9d64c77a978230a"
+    }
+  ],
+  "observed_data_dll_in_running_37_case_output": {
+    "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "sha256": "330a99667043f1948806859f3af20b5193a07033e71466fd145903fe2e7fc28d",
+    "note": "Running 37-case build used Data4, before final malformed-header guards. A focused follow-up will validate the final Data5 paths."
+  },
+  "final_source_observed_utc": "2026-10-20T09:56:36.609045+00:00",
+  "protected_http": {
+    "status": "failed_timeout",
+    "observed_exit": 1,
+    "path": "oilgas-335-work-scope-http-final.log",
+    "sha256": "6afc9b172feffec472717ee1978d37402a33d7337ed88997bbe6fb1310b40cbe",
+    "result": "Both read-only qualified evidence cases exceeded unchanged HttpClient.Timeout=100 seconds; 4.2279 minutes. Failure at response read on test line 62; no source/assertion/timeout weakened.",
+    "output_modified_utc": "2026-10-20T10:01:05.776507+00:00",
+    "follow_up": {
+      "status": "failed_timeout",
+      "observed_exit": 1,
+      "path": "oilgas-335-work-scope-http-isolated-false.log",
+      "sha256": "e3986255a515bdc59f21ef2da08db6372cd16e16779e88f5bcaddfb93fcf14c5",
+      "output_modified_utc": "2026-10-20T10:05:30.570173+00:00",
+      "filter": "FullyQualifiedName~QualifiedMaintenanceEvidenceHttpUsesCurrentAppGrantsNativeParentsAndOriginalReportWithoutWrites&DisplayName~False",
+      "result": "One unchanged case still exceeds unchanged HttpClient.Timeout=100 seconds, 2.3836 minutes, isolated with no build/concurrent tests. API performance/source acceptance remains unproven."
+    }
+  },
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "branch": "master",
+  "dirty_tree": true,
+  "outputs": [
+    {
+      "path": "oilgas-335-work-scope-data5.log",
+      "sha256": "9cfc30c8dc8c08560be1480cf8b4f5f9fa23a2b902fc0165cfc93be72f558450",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T09:45:51.129769+00:00",
+      "result": "Final Data build: zero warnings/errors, 6.21 seconds."
+    },
+    {
+      "path": "oilgas-335-work-scope-native-final.log",
+      "sha256": "207e9efec3b0de50c3e648551bdbb977232064b91fe4f89c85069cdd46005da1",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T09:49:45.786076+00:00",
+      "result": "37 complete work-scope/coordinator cases pass, 9.6678 minutes, before final malformed-header guards. Includes actual native qualified start, checked report transfer, original-work binding and mixed ledger/recovery/rollback."
+    },
+    {
+      "path": "oilgas-335-work-scope-header-final.log",
+      "sha256": "40231de1bd88826e266c984a85e0c2c5e8ab89ad30e5934688d6401ad0578957",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T09:55:41.059104+00:00",
+      "result": "Final 27-case focused work-scope/start/report/header gate passes, 3.5664 minutes. Includes the three additional malformed header/population cases on final Data5."
+    },
+    {
+      "path": "oilgas-335-work-scope-ui-final.log",
+      "sha256": "8f0d2d3e253372f58ade430765e4007aa1df5792afb301c6618f0cea648a03da",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T09:39:50.394831+00:00",
+      "result": "82 existing/new operator/reviewer/evidence/client/state cases pass, 22.3827 seconds, before final malformed-header guards."
+    },
+    {
+      "path": "oilgas-335-work-scope-ui-header-final.log",
+      "sha256": "5c5bcfcde8e963ae4efbb16e2f58c915195af803d93189f17b87cff9ebb77d69",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T09:51:28.918160+00:00",
+      "result": "Final six operator missing-scope/current/recovered/company-change and reviewer-original/current screen cases pass on Data5, 15.6333 seconds."
+    },
+    {
+      "path": "oilgas-335-work-scope-start-compat.log",
+      "sha256": "9f8f0b5b9145aef00f7f74739c1eafec8b7fd65c318fcc8ef5cee2b231c0b633",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T09:15:49.159045+00:00",
+      "result": "52 existing start/person compatibility cases pass, 23.6965 seconds; earlier in this implementation before final report/header refinements."
+    },
+    {
+      "path": "oilgas-335-work-scope-person-core.log",
+      "sha256": "fae34c59c53076271a5eaa56fc774368fa99d3a7adc90597c9ba57eae72919c7",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T09:26:55.457141+00:00",
+      "result": "Eight actual native person/assignment cases pass, including independent verification with qualified scope present, 6.0532 seconds."
+    },
+    {
+      "path": "oilgas-335-work-scope-second.log",
+      "sha256": "dfea44d980559f3d0f1cf314fcf1094487af15ca187f68ddba3d2b2c81c2f187",
+      "observed_exit": 1,
+      "output_modified_utc": "2026-10-20T09:26:30.924036+00:00",
+      "result": "Intermediate 37-case run: 35 passed, two new report-transfer fixtures supplied completion after comparison and were refused. Only their completion timestamp was corrected; the final 37-case run supersedes this failure."
+    }
+  ],
+  "limits": [
+    "Observed local dirty-source evidence, not clean-commit CI attestation.",
+    "The 37/native and 82/UI outputs precede final malformed-header guards; final 27/native and 6/UI exercise the changed current paths.",
+    "Native qualified-start tests use active native asset/start/transaction owners with explicit prerequisite/person/document/stock proof seams.",
+    "Downstream closure/report DTOs in coordinator cases remain controlled seams; full native qualified start/submission/verification/closure/return HTTP is open.",
+    "Provider/schema/typed-projection/clock/latency/load, browser/keyboard/RTL/device and release gates remain open.",
+    "No schema apply, handwritten SQL, domain EF, extra ledger, staging, commit or push."
+  ],
+  "commands": {
+    "native37_filter": "FullyQualifiedName~OriginalQualifiedWorkScope|FullyQualifiedName~OriginalWorkScopeCannot|FullyQualifiedName~NativeQualifiedWorkStart|FullyQualifiedName~QualifiedReturnBindsRecorded|FullyQualifiedName~OriginalQualifiedReport|FullyQualifiedName~CompleteQualifiedReturn|FullyQualifiedName~CompleteMixedReturn",
+    "native27_filter": "OriginalQualifiedWorkScope|OriginalWorkScopeCannot|NativeQualifiedWorkStart|QualifiedReturnBindsRecorded|OriginalQualifiedReport",
+    "repository_properties": [
+      "FocusedCompanyTests=true",
+      "FocusedDataAssemblyPath=<isolated canonical Data DLL>",
+      "BuildProjectReferences=false",
+      "GeneratePackageOnBuild=false",
+      "UseBeepDMSource=false"
+    ],
+    "UI_script": "Scripts/Test-MaintenanceReceivingPage.ps1",
+    "native_compat_script": "Scripts/Test-MaintenanceProcessStart.ps1"
+  },
+  "processes": "All native, UI and protected HTTP processes are terminal; actual exits collected. No process needs restart.",
+  "observed_complete_at_utc": "2026-10-20T10:06:54.939954+00:00",
+  "next_action": "Trace the actual protected evidence request and repeated authorization/source work; do not increase the timeout, weaken assertions or remove guards to manufacture a pass."
+}

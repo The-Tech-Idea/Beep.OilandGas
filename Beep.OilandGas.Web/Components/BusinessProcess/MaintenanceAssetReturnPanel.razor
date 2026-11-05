@@ -1,0 +1,167 @@
+@using System.Globalization
+@using Microsoft.AspNetCore.WebUtilities
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject MaintenanceAssetReturnState State
+@inject MaintenanceAssetEvidenceState Evidence
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Class="pa-3 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Return the affected assets to service</MudText>
+        <MudText>Review the original closed report, affected assets and current physical observations.</MudText>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reviewing or recording native asset return" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        @if(_referenceUrlError is not null){<MudAlert Severity="Severity.Error">@_referenceUrlError</MudAlert>}
+        @if(State.NeedsRecovery){<MudAlert Severity="Severity.Info">Recover the original return reference before starting another review. A failed or missing recovery response does not confirm that no return was recorded.</MudAlert>}
+        <MudButton OnClick="ReviewAsync" Disabled="@(!State.CanReview || _referenceUrlError is not null)">Review current asset return</MudButton>
+        @if(State.Review is {} review)
+        {
+            <MudText>Original report @review.Assets.Report.Query.SubmissionId · configured role @review.Physical.Assignment.Stage.AssignedRole</MudText>
+            <MudText>Recorded closure UTC @review.Assets.Closure.RecordedAtUtc.ToString("O") · current evidence UTC @review.Physical.Completion.ComparedAtUtc.ToString("O")</MudText>
+            <MudSimpleTable Dense="true" aria-label="Original affected return scope">
+                <thead><tr><th>Component</th><th>Well</th><th>Equipment</th><th>Facility / type</th></tr></thead>
+                <tbody>
+                    @foreach(var component in review.Assets.Order.Components)
+                    {<tr><td>@component.ComponentId</td><td>@component.WellId</td><td>@component.EquipmentId</td><td>@component.FacilityId / @component.FacilityType</td></tr>}
+                </tbody>
+            </MudSimpleTable>
+            @if(review.Assets.QualifiedAssets is {} qualified)
+            {
+                @foreach(var equipment in qualified.Equipment)
+                {
+                    var target=CompanyMaintenanceQualifiedAssets.IsOriginalFacilityTarget(review.Assets.Order,equipment.Installation.FacilityId,equipment.Installation.FacilityType);
+                    <MudText>Equipment @equipment.EquipmentId · @equipment.Installation.FacilityId / @equipment.Installation.FacilityType · @(target?"Affected facility":"Installation parent (read only)")</MudText>
+                }
+            }
+            <MudForm @ref="_form">
+                <MudStack Spacing="2">
+                    <MudTextField @bind-Value="_activation" @bind-Value:after="InputsChanged" Label="Actual activation UTC (ISO 8601, ending Z)" HelperText="Enter the observed instant with Z or +00:00. No company or device time zone is assumed." Required="true" Validation="@(new Func<string,string?>(ValidateUtc))" Disabled="@State.Busy" />
+                    @foreach(var well in review.Assets.Wells)
+                    {
+                        var condition=well.Facets.Single(row=>row.Facet=="Condition" && row.ActiveIndicator=="Y" && row.Covers(well.ComparedAtUtc));
+                        <MudText>Well @well.WellId · @condition.Value to Active · recorded source @condition.Source · original status @condition.StatusId</MudText>
+                        <MudNumericField T="decimal?" Value="@_capabilities.GetValueOrDefault(well.WellId)" ValueChanged="@((decimal? value)=>{_capabilities[well.WellId]=value;InputsChanged();})" Label="@("Observed capability percent for "+well.WellId)" Min="@((decimal?)0m)" Max="@((decimal?)100m)" Required="true" Disabled="@State.Busy" />
+                    }
+                    @foreach(var target in QualifiedTargets(review))
+                    {
+                        <MudNumericField T="decimal?" Value="@_qualifiedCapabilities.GetValueOrDefault(target)" ValueChanged="@((decimal? value)=>{_qualifiedCapabilities[target]=value;InputsChanged();})" Label="@("Observed capability percent for "+target.Type+" "+target.Id+" "+target.Qualifier)" Min="@((decimal?)0m)" Max="@((decimal?)100m)" Required="true" Disabled="@State.Busy" />
+                    }
+                    <MudTextField @bind-Value="_reason" @bind-Value:after="InputsChanged" Label="Reason and observed return evidence" Lines="3" Required="true" MaxLength="4096" Disabled="@State.Busy" />
+                    @if(review.Assets.QualifiedAssets is not null)
+                    {
+                        <MudButton OnClick="PreviewAsync" Disabled="@(!State.CanRecord || _referenceUrlError is not null)">Check complete observed return</MudButton>
+                        @if(_qualifiedTransitions is {} transitions && HasQualifiedPreview(review))
+                        {
+                            <MudText Typo="Typo.subtitle2">Reviewed qualified return transitions</MudText>
+                            @foreach(var transition in transitions)
+                            {
+                                var original=review.Assets.QualifiedAssets.Operating!.Statuses.Single(row=>row.AssetType==transition.AssetType && row.AssetId==transition.AssetId && row.FacilityType==transition.FacilityType && row.StatusId==transition.OriginalStatusId);
+                                <MudText>@transition.AssetType @transition.AssetId @transition.FacilityType · @transition.StatusType: @original.Value to @transition.TargetValue · @transition.OriginalSource / @transition.OriginalStatusId to @transition.NativeSource · observed capability @transition.ObservedCapabilityPercent%</MudText>
+                            }
+                            <MudText Typo="Typo.caption">Any observation, UTC or reason change requires another check and confirmation.</MudText>
+                        }
+                        else{<MudText>Enter every actual observation and check the complete return before confirming.</MudText>}
+                    }
+                    <MudCheckBox @bind-Value="_confirm" Label="I confirm the actual UTC, every observed capability and the displayed original sources and targets for all affected assets" Disabled="@(State.Busy || _referenceUrlError is not null || review.Assets.QualifiedAssets is not null && !HasQualifiedPreview(review))" />
+                    <MudButton OnClick="RecordAsync" Disabled="@(!State.CanRecord || _referenceUrlError is not null || !_confirm || review.Assets.QualifiedAssets is not null && !HasQualifiedPreview(review))" Color="Color.Primary">Retain reference and record native asset return</MudButton>
+                </MudStack>
+            </MudForm>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original asset-return intent" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@State.Busy">Recover original asset return</MudButton>
+        @if(State.VisibleReference is {} id){<MudText>Retained original asset return @id</MudText>}
+        @if(State.Receipt is {} saved)
+        {
+            <MudAlert Severity="Severity.Success">Recorded native asset return</MudAlert>
+            <MaintenanceAssetReturnOutcome Facts="@CompanyMaintenanceAssetReturnFacts.From(saved)" />
+        }
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public CompanyWorkOrderCompletionQuery Query{get;set;}=null!;
+    private CompanyWorkOrderCompletionQuery? _attached;
+    private readonly Dictionary<string,decimal?> _capabilities=new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Type,string Id,string? Qualifier),decimal?> _qualifiedCapabilities=new();
+    private IReadOnlyList<CompanyMaintenanceQualifiedReturnTransition>? _qualifiedTransitions;
+    private string? _previewRevision;
+    private MudForm? _form;
+    private string _activation="",_reason="",_reference="";
+    private string? _error;
+    private string? _referenceUrlError;
+    private (CompanyScope Company,string UserId,CompanyWorkOrderCompletionQuery Query,Guid Reference)? _importedReference;
+    private bool _confirm,_disposed;
+    private int _generation;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet()
+    {
+        Query.Require();if(_attached!=Query){Invalidate();_attached=Query;}State.Attach(Query);
+        ImportReference();
+    }
+    private void ImportReference()
+    {
+        var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);_referenceUrlError=null;
+        if(!values.ContainsKey("maintenanceAssetReturn") && !values.ContainsKey("assetReturnProcess") && !values.ContainsKey("assetReturnSubmission")){_importedReference=null;return;}
+        if(!values.TryGetValue("maintenanceAssetReturn",out var ids) || ids.Count!=1 || !Guid.TryParse(ids[0],out var id) || id==Guid.Empty || !values.TryGetValue("assetReturnProcess",out var process) || process.Count!=1 || process[0]!=Query.Task.InstanceId || !values.TryGetValue("assetReturnSubmission",out var submission) || submission.Count!=1 || submission[0]!=Query.SubmissionId)
+        {_referenceUrlError="The original return link does not match this report. Open the original report or recover its retained reference.";return;}
+        if(Company.Selection is not {} selected)return;
+        var imported=(selected.Scope,selected.UserId,Query,id);if(_importedReference==imported)return;
+        if(!State.TryRetainReference(id)){_referenceUrlError="Use the retained original return reference in its original company, account and report.";return;}
+        _reference=id.ToString("D");_importedReference=imported;
+    }
+    private static string? ValidateUtc(string value)=>TryUtc(value,out _)?null:"Enter the actual ISO 8601 UTC instant ending Z or +00:00.";
+    private static bool TryUtc(string? value,out DateTime utc)
+    {
+        return ExplicitUtcInput.TryParse(value,out utc);
+    }
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !State.HasCurrentCapabilities || State.Review is {} review && !user.IsInRole(review.Physical.Assignment.Stage.AssignedRole) || await Fields.GetCurrentFieldIdAsync()!=Query.Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("The original company/account/FIELD and current configured standard return role and target capabilities are required.");
+        State.Attach(Query);ImportReference();
+    }
+    private Task ReviewAsync()=>Run(async()=>
+    {
+        await Authority();if(_referenceUrlError is not null)throw new InvalidOperationException(_referenceUrlError);await State.ReviewAsync(Workflows);_activation="";_reason="";InputsChanged();_capabilities.Clear();_qualifiedCapabilities.Clear();
+        if(State.Review is {} review)foreach(var well in review.Assets.Wells)_capabilities.Add(well.WellId,null);
+    },"reviewing original native asset return");
+    private static IEnumerable<(string Type,string Id,string? Qualifier)> QualifiedTargets(CompanyMaintenanceAssetReturnReview review)=>review.Assets.QualifiedAssets is {} assets
+        ?assets.Facilities.Where(row=>CompanyMaintenanceQualifiedAssets.IsOriginalFacilityTarget(review.Assets.Order,row.FacilityId,row.FacilityType)).Select(row=>(Type:"FACILITY",Id:row.FacilityId,Qualifier:(string?)row.FacilityType))
+            .Concat(assets.Equipment.Select(row=>(Type:"EQUIPMENT",Id:row.EquipmentId,Qualifier:(string?)null)))
+        :[];
+    private CompanyMaintenanceQualifiedReturnObservation[]? QualifiedObservations(CompanyMaintenanceAssetReturnReview review)=>review.Assets.QualifiedAssets is null?null:
+        QualifiedTargets(review).Select(row=>new CompanyMaintenanceQualifiedReturnObservation(row.Type,row.Id,row.Qualifier,_qualifiedCapabilities.GetValueOrDefault(row))).ToArray();
+    private bool HasQualifiedPreview(CompanyMaintenanceAssetReturnReview review)=>_qualifiedTransitions is not null && _previewRevision==review.SourceRevision();
+    private void InputsChanged(){_confirm=false;_qualifiedTransitions=null;_previewRevision=null;}
+    private Task PreviewAsync()=>Run(async()=>
+    {
+        await Authority();if(_referenceUrlError is not null)throw new InvalidOperationException(_referenceUrlError);InputsChanged();if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
+        if(!TryUtc(_activation,out var utc) || State.Review is not {} review || review.Assets.QualifiedAssets is not {} qualified)throw new InvalidOperationException("Enter the actual UTC and every qualified observation before checking the complete return.");
+        _qualifiedTransitions=CompanyMaintenanceQualifiedAssetReturn.Resolve(qualified,review.Assets.Order,QualifiedObservations(review)!,review.Physical.Assignment.Stage.AssignedRole,utc);_previewRevision=review.SourceRevision();
+    },"checking the complete qualified asset return");
+    private Task RecordAsync()=>Run(async()=>
+    {
+        await Authority();if(_referenceUrlError is not null)throw new InvalidOperationException(_referenceUrlError);if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
+        if(!_confirm || !TryUtc(_activation,out var utc) || State.Review is not {} review || review.Assets.QualifiedAssets is not null && !HasQualifiedPreview(review))throw new InvalidOperationException("Check and confirm the actual UTC, every affected asset observation and original source streams.");
+        var observations=review.Assets.Wells.Select(well=>new CompanyWellReturnActivation(well.WellId,well.Facets.Single(row=>row.Facet=="Condition" && row.ActiveIndicator=="Y" && row.Covers(well.ComparedAtUtc)).Source,_capabilities.GetValueOrDefault(well.WellId))).ToArray();
+        await State.RecordAsync(Workflows,utc,observations,_reason,_confirm,Retain,QualifiedObservations(review));if(State.Receipt is not null)Evidence.Clear();
+    },"recording original native asset return");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original retained asset-return intent.");await State.RecoverAsync(Workflows,id,Retain);if(State.Receipt is not null)Evidence.Clear();},"recovering original native asset return");
+    private Task Retain(Guid id)
+    {
+        var url=Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"maintenanceAssetReturn",id.ToString("D")},{"assetReturnProcess",Query.Task.InstanceId},{"assetReturnSubmission",Query.SubmissionId},{"closureProcess",Query.Task.InstanceId},{"closureSubmission",Query.SubmissionId}});
+        Navigation.NavigateTo(url,replace:true);_reference=id.ToString("D");return Task.CompletedTask;
+    }
+    private async Task Run(Func<Task> action,string operation)
+    {if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;var generation=_generation;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot && generation==_generation)_error=Calls.Explain(error,operation,"Native asset return is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}}
+    private void Invalidate(){_generation++;State.Clear();_activation="";_reason="";_reference="";_referenceUrlError=null;_importedReference=null;InputsChanged();_capabilities.Clear();_qualifiedCapabilities.Clear();_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

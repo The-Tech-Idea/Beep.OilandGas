@@ -1,0 +1,52 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Web.Services
+@if(Review?.Confirmed==true)
+{
+    <MudText Typo="Typo.h6">Recorded maintenance orders</MudText>
+    <MudText>FIELD: @Review.FieldId · Loaded headers: @Review.Rows.Count</MudText>
+    <MudText Typo="Typo.caption">This queue covers the loaded FIELD and subtype response. Follow assigned process work above for recorded workflow actions. Header dates and components do not establish scheduling, permits or acceptance.</MudText>
+    @if(Review.Rows.Count==0)
+    {
+        <MudAlert Severity="Severity.Info">No recorded work orders were returned for this FIELD and subtype filter.</MudAlert>
+    }
+    else
+    {
+        <MudTextField T="string" @bind-Value="_search" Immediate="true" Label="Search loaded order number, type or component reference" Clearable="true" />
+        <MudTable T="WorkOrderSummary" Items="@Review.Rows" Filter="Matches" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Order</MudTh><MudTh>Recorded type</MudTh><MudTh>Request date</MudTh><MudTh>Due date</MudTh><MudTh>Recorded components</MudTh><MudTh>Detail</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Order">@(string.IsNullOrWhiteSpace(context.InstanceName)?"Recorded number unavailable":context.InstanceName)<MudText Typo="Typo.caption">@context.InstanceId</MudText></MudTd>
+                <MudTd DataLabel="Recorded type">@(string.IsNullOrWhiteSpace(context.WoSubType)?"Unavailable":context.WoSubType)</MudTd>
+                <MudTd DataLabel="Request date">@Date(context.RequestDate)</MudTd>
+                <MudTd DataLabel="Due date">@Date(context.DueDate)</MudTd>
+                <MudTd DataLabel="Recorded components">
+                    @foreach(var component in context.Components)
+                    {
+                        <MudText Typo="Typo.caption">@component.ComponentId · FIELD @component.FieldId · Well @(string.IsNullOrWhiteSpace(component.WellId)?"Unavailable":component.WellId) · Equipment @(string.IsNullOrWhiteSpace(component.EquipmentId)?"Unavailable":component.EquipmentId)</MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Detail"><MudButton Href="@WorkOrderNavigation.Detail(context.InstanceId)">Open recorded order</MudButton></MudTd>
+            </RowTemplate>
+            <NoRecordsContent><MudText>No loaded order matches this search. Clear the search to review the loaded response.</MudText></NoRecordsContent>
+            <PagerContent><MudTablePager /></PagerContent>
+        </MudTable>
+        <MudText Typo="Typo.caption">Dates are displayed as recorded using the current display culture. No overdue or execution-readiness status is inferred.</MudText>
+    }
+}
+else
+{
+    <MudAlert Severity="Severity.Info">The recorded order queue is not confirmed. Select the original company and FIELD, then reload.</MudAlert>
+}
+@code {
+    [Parameter] public WorkOrderListState? Review {get;set;}
+    private int? _version;
+    private string? _search;
+    protected override void OnParametersSet(){if(_version!=Review?.Version){_search=null;_version=Review?.Version;}}
+    private static string Date(DateTime? value)=>value?.ToString("d",System.Globalization.CultureInfo.CurrentCulture) ?? "Unavailable";
+    private bool Matches(WorkOrderSummary row)=>Review?.Matches(row,_search)==true;
+}

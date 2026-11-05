@@ -1,0 +1,9 @@
+@page "/accounting/billing-policies"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Components.Workflow
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3">Sales billing policy preparation and review</MudText>
+    <MudButton Href="/accounting/revenue-workbench" Variant="Variant.Outlined">Return to revenue workspace</MudButton>
+    <BillingPolicyWorkbench />
+</MudContainer>

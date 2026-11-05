@@ -1,0 +1,39 @@
+### Page
+- Page URL: http://127.0.0.1:65079/
+### Snapshot
+```yaml
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e49]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f2e50]
+    - paragraph [ref=f2e51]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f2e52]:
+      - button "Use read-only unmapped profile" [ref=f2e53] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f2e55] [cursor=pointer]
+      - button "Switch other company" [ref=f2e57] [cursor=pointer]
+      - button "Switch other account" [ref=f2e59] [cursor=pointer]
+      - button "Restore original company/account" [ref=f2e61] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f2e63] [cursor=pointer]
+      - button "Retain an unrecorded competing start" [ref=f2e65] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f2e67] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f2e69] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f2e71] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=f2e73]:
+    - heading "Approved program drilling execution" [level=1] [ref=f2e74]
+    - group [ref=f2e75]:
+      - link "Drilling workspace" [ref=f2e76] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Saved programs" [ref=f2e78] [cursor=pointer]:
+        - /url: /ppdm39/operations/drillingoperations
+      - button "Reload original execution outcome" [ref=f2e80] [cursor=pointer]
+    - status [ref=f2e82]:
+      - generic [ref=f2e83]: You kept the exact different recorded execution and cleared this confirmed-unrecorded original from this tab. No execution, WELL, report or financial record was changed. Reload its recorded outcome.
+    - generic [ref=f2e88]:
+      - heading "Different recorded execution requires your review" [level=2] [ref=f2e89]
+      - paragraph [ref=f2e90]: This original drilling-execution-82B707D738C1E38F193CADF65C49616848729F93AB6FB85CFF423F440B81D922 was confirmed unrecorded. Another exact start owns this approved program.
+      - paragraph [ref=f2e91]: Company company · FIELD original-field/واحد · Well recorded-well/one
+      - paragraph [ref=f2e92]: Recorded operation drilling-execution-50156EFAC9544628206470EEF6508ABBE04DB157C3E5E84A0AEE9452A55F8B4B · Recorder execution-recorder · Role ConfiguredExecutionRecorder · Actual spud 2026-10-26 16:40:36Z UTC
+      - paragraph [ref=f2e93]: Actual observed start reported by the configured company recorder
+      - paragraph [ref=f2e94]: Conflict checked 2026-10-26 16:41:49Z UTC
+    - generic [ref=f2e95]: A recorded execution start is separate from WELL state, financial actuals, drilling completion, construction acceptance and production handover.
+```

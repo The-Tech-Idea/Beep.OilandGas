@@ -1,0 +1,136 @@
+{
+  "recorded_at": "2026-10-27T10:13:15.998653+03:00",
+  "status": "local-generation-qualified-protected-closure-api-failed",
+  "scope": "Canonical current reporting generation; current manager/crew/tasks through closure, status, assigned work, inbox candidates and actual pages. Public transfer API/journal/form remain open.",
+  "gates": {
+    "native": {
+      "status": "passed",
+      "passed_names": [
+        "Beep.OilandGas.ApiService.Tests.DrillingReportingReassignmentNativeTests.CurrentAdmittedManagerMayDifferFromInitialSenderAndKeepsBothAccountsAudit",
+        "Beep.OilandGas.ApiService.Tests.DrillingReportingReassignmentNativeTests.ChangedManagementRoleCanTakeOverUnchangedCrewWithoutInventingAnotherHandoff",
+        "Beep.OilandGas.ApiService.Tests.DrillingReportingClosureNativeTests.ClosureCompletesOnlyOriginalReportingTasksAndPreservesAcceptanceAndAssignmentRecovery(destinations: 2)",
+        "Beep.OilandGas.ApiService.Tests.DrillingReportingClosureNativeTests.ClosureCompletesOnlyOriginalReportingTasksAndPreservesAcceptanceAndAssignmentRecovery(destinations: 1)",
+        "Beep.OilandGas.ApiService.Tests.DrillingReportingClosureNativeTests.ClosureAfterTransferClosesOnlyCurrentGenerationAndEarlierTransferStillRecovers"
+      ],
+      "failed_names": [],
+      "total_time": "14.0520 Minutes",
+      "log": "logs/oilgas-351-current-generation-native.log",
+      "live_session_at_capture": null
+    },
+    "screens": {
+      "status": "failed",
+      "passed_names": [
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ExactCurrentRecipientCanReadResponsibilityWhileForeignOrStaleSourcesStayUnavailable(mode: \"company\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.LateProgressCannotPublishIntoAnotherPrivateResponsibilityContext(change: \"persona\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ExactCurrentRecipientCanReadResponsibilityWhileForeignOrStaleSourcesStayUnavailable(mode: \"current\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ExactCurrentRecipientCanReadResponsibilityWhileForeignOrStaleSourcesStayUnavailable(mode: \"actor\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.LateProgressCannotPublishIntoAnotherPrivateResponsibilityContext(change: \"dispose\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ExactCurrentRecipientCanReadResponsibilityWhileForeignOrStaleSourcesStayUnavailable(mode: \"unavailable\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ExactCurrentRecipientCanReadResponsibilityWhileForeignOrStaleSourcesStayUnavailable(mode: \"late-company\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.LateProgressCannotPublishIntoAnotherPrivateResponsibilityContext(change: \"company\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ExactCurrentRecipientCanReadResponsibilityWhileForeignOrStaleSourcesStayUnavailable(mode: \"role\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.LateProgressCannotPublishIntoAnotherPrivateResponsibilityContext(change: \"route\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ExactCurrentRecipientCanReadResponsibilityWhileForeignOrStaleSourcesStayUnavailable(mode: \"persona\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.ExactRecipientLoadsSourcedCompletionSeparatelyWithoutInventingTaskClosureOrWritingReports",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingExecutionAssignedStateTests.ActualReceiverPageAndSharedLandingPanelShowOriginalResponsibilityWithoutInventingProgressCounts",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.UnavailableOrWrongExecutionIsNotZeroProgressAndDoesNotEraseQualifiedResponsibility(fault: \"lookup\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.UnavailableOrWrongExecutionIsNotZeroProgressAndDoesNotEraseQualifiedResponsibility(fault: \"execution\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ConfirmedReceiptSurvivesCleanupFailureAndExactRecoveryFinishesCleanup",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ActualProtectedStoreRoundTripsScopeAndRefusesReplacingOrClearingAnotherOriginal",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExplicitUtcReasonConfirmationAndCurrentManagementProfileAreRequired(fault: \"offset\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExplicitUtcReasonConfirmationAndCurrentManagementProfileAreRequired(fault: \"confirmation\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExplicitUtcReasonConfirmationAndCurrentManagementProfileAreRequired(fault: \"reason\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExplicitUtcReasonConfirmationAndCurrentManagementProfileAreRequired(fault: \"read-only\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExplicitUtcReasonConfirmationAndCurrentManagementProfileAreRequired(fault: \"before-review\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExplicitUtcReasonConfirmationAndCurrentManagementProfileAreRequired(fault: \"profile\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExplicitUtcReasonConfirmationAndCurrentManagementProfileAreRequired(fault: \"future\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ActualManagementPageConfirmsOriginalAndRecoversAfterWholeOwnerReload(loseAcknowledgement: False)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ActualManagementPageConfirmsOriginalAndRecoversAfterWholeOwnerReload(loseAcknowledgement: True)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.LoadingProfileEventKeepsReadinessBusyAndDoesNotPublishBeforeCurrentEvidenceReturns",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExistingAssignmentNavigationDiscoversOnlyTheSourceBoundCurrentCompletionReview(missing: True)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ExistingAssignmentNavigationDiscoversOnlyTheSourceBoundCurrentCompletionReview(missing: False)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.FailedOrUnconfirmedRetentionNeverTransportsClosure(readback: False)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.FailedOrUnconfirmedRetentionNeverTransportsClosure(readback: True)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ActualManagementPageShowsCurrentCrewManagerAndTransferHistoryInsteadOfInitialCounts",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.LateReceiptCannotPublishOrClearAnotherContext(change: \"route\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.LateReceiptCannotPublishOrClearAnotherContext(change: \"persona\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.LateReceiptCannotPublishOrClearAnotherContext(change: \"company\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.LateReceiptCannotPublishOrClearAnotherContext(change: \"dispose\")",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.AcceptedNativeCalendarAndUtcEvidenceRemainExplicitUnderArabicCalendarCulture",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.LostAcknowledgementReloadsRetainedOriginalBeforeSourceOrProfileAndRecoversWithReadOnlyRights",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ContextChangeDuringRetentionPreventsSubmissionAndPreservesOriginalScopeInput"
+      ],
+      "failed_names": [
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.ActualReceiverScreenLoadsReportedTestsAndKeepsOngoingResponsibilityExplicit"
+      ],
+      "total_time": "6.2419 Minutes",
+      "log": "logs/oilgas-351-current-generation-screens.log",
+      "live_session_at_capture": null
+    },
+    "screen_label": {
+      "status": "passed",
+      "passed_names": [
+        "Beep.OilandGas.Web.Auth.Tests.DrillingAssignedCompletionStateTests.ActualReceiverScreenLoadsReportedTestsAndKeepsOngoingResponsibilityExplicit"
+      ],
+      "failed_names": [],
+      "total_time": "21.9322 Seconds",
+      "log": "logs/oilgas-351-current-generation-screen-label.log",
+      "live_session_at_capture": null
+    },
+    "page_labels": {
+      "status": "passed",
+      "passed_names": [
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ActualManagementPageConfirmsOriginalAndRecoversAfterWholeOwnerReload(loseAcknowledgement: False)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ActualManagementPageConfirmsOriginalAndRecoversAfterWholeOwnerReload(loseAcknowledgement: True)",
+        "Beep.OilandGas.Web.Auth.Tests.DrillingReportingClosureStateTests.ActualManagementPageShowsCurrentCrewManagerAndTransferHistoryInsteadOfInitialCounts"
+      ],
+      "failed_names": [],
+      "total_time": "2.3663 Minutes",
+      "log": "logs/oilgas-351-current-generation-page-labels.log",
+      "live_session_at_capture": null
+    },
+    "protected_api": {
+      "status": "failed",
+      "exit_code": 1,
+      "passed_names": [],
+      "failed_names": [
+        "Beep.OilandGas.ApiService.Tests.DrillingExecutionStartApiTests.FocusedReportingClosureUsesManagerAuthorityAndReadOnlyRecoveryThenRemovesOnlyOwnedPendingWork"
+      ],
+      "total_time": "23.3618 Minutes",
+      "log": "logs/oilgas-351-current-generation-api.log",
+      "live_session_at_capture": null,
+      "failure": "Read-only correction report recovery exceeded unchanged100-second timeout before reporting closure."
+    },
+    "protected_api_current_source": {
+      "status": "failed",
+      "evidence": "../351-reporting-transfer-app/observed-evidence.json"
+    }
+  },
+  "distinct_terminal_passing_inputs": 45,
+  "data_build": {
+    "status": "passed",
+    "errors": 0,
+    "warnings": 2,
+    "elapsed": "13.55 seconds",
+    "log": "logs/oilgas-351-current-generation-data.log"
+  },
+  "limits": [
+    "Focused controlled native/state/actual MudBlazor page tests only.",
+    "The first 40-case screen gate is failed (39 passed/1 obsolete-heading assertion); the exact corrected case has a separate passing run.",
+    "Later page wording has a separate three-case gate. Earlier gates retain earlier Razor source scope.",
+    "Portable PDB checksums identify actual compiled sources; no combined current-source full-filter pass.",
+    "Protected closure HTTP failed in23.3618 minutes during prerequisite correction report recovery; new transfer app HTTP is tracked separately.",
+    "No new provider/schema/migration/isolation/concurrency/LOB/full-host/OIDC/browser/multinational/notification/physical-certificate/performance acceptance.",
+    "No SQL, domain EF, compatibility alias, new ledger or table. Full 351/goal remain partial; 350 last promoted; no staging/commit/push."
+  ],
+  "sha256_at_capture": {
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\logs\\oilgas-351-current-generation-api.log": "f97ff9d7cad984730551a019950a7d6f8c786b7c76433a8dd5e4c06e55b18835",
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\logs\\oilgas-351-current-generation-data.log": "5a1dc2cdac5497f417c71e91ef1a0d85f04f7cc13111f6443902c60660bd00e1",
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\logs\\oilgas-351-current-generation-native.log": "a04c609e99e9f1fbae099cf3b884992ef20804b29388eae2a096f7892942a1b2",
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\logs\\oilgas-351-current-generation-page-labels.log": "ae93ec2f54f160eec9bc813239ce99ed614c753132b563e80c517970a72ced62",
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\logs\\oilgas-351-current-generation-screen-label.log": "c5f3265ff8a16d40cf84c717ae1bfb27492404286ce700a55c5cbd8bc9935228",
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\logs\\oilgas-351-current-generation-screens.log": "191bda7a766fc71a935ed56e725e3da0d4c0c5b0f32ec17f4d76556ac6e96726",
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\qualified-source-checksums.json": "9eba5027093d57a446a4fba0dad8894c5e7889ddd33e34814128859070520c6d",
+    "Plans\\FrameworkAppEnhancement\\evidence\\351-reporting-generation\\REPRODUCE.md": "e71f382a82a1dfad4ea2ae598fa40de5873e438c88413c784d62a43e105c7486"
+  }
+}

@@ -1,0 +1,25 @@
+using Microsoft.Diagnostics.Tracing.Etlx;
+using System.Text.Json;
+using var log = new TraceLog(args[0]);
+var all=0;var active=0;var waits=0;var kinds=new Dictionary<string,int>();
+var leaves=new Dictionary<string,int>();var inclusive=new Dictionary<string,int>();var owners=new Dictionary<string,int>();var stacks=new Dictionary<string,int>();
+void Add(Dictionary<string,int> d,string k)=>d[k]=d.GetValueOrDefault(k)+1;
+foreach(var ev in log.Events) {
+ if(ev.ProviderName!="Microsoft-DotNETCore-SampleProfiler") continue;
+ all++;var call=ev.CallStack();if(call is null)continue;
+ var frames=new List<string>();for(var s=call;s is not null;s=s.Caller)frames.Add(s.CodeAddress.FullMethodName??s.CodeAddress.ModuleName+"!<unresolved>");
+ if(frames.Count==0)continue;
+ var leaf=frames[0];
+ if(new[]{"WaitHandle.WaitOne", "LowLevelLifoSemaphore.WaitForSignal", "Monitor.Wait", "IOCompletionPoller.Poll", "WaitHandle.WaitAny", "SocketPal.Poll", "ManualResetEventSlim.Wait"}.Any(leaf.Contains)){waits++;continue;}
+ active++;Add(kinds,string.Join(",",ev.PayloadNames.Select(n=>n+"="+ev.PayloadByName(n))));
+ Add(leaves,leaf);foreach(var name in frames.Distinct())Add(inclusive,name);
+ Add(owners,frames.FirstOrDefault(n=>n.StartsWith("Beep.OilandGas.")||n.StartsWith("TheTechIdea.Beep."))??"<no application frame>");
+ Add(stacks,string.Join("\n",frames.Take(30)));
+}
+File.WriteAllText(args[1],JsonSerializer.Serialize(new{AllSamples=all,ExcludedWaitSamples=waits,RemainingSamples=active,EventKinds=kinds,EventsLost=log.EventsLost,
+ Leaves=leaves.OrderByDescending(x=>x.Value).Take(35),
+ Owners=owners.OrderByDescending(x=>x.Value).Take(35),
+ Inclusive=inclusive.Where(x=>x.Key.StartsWith("Beep.OilandGas.")||x.Key.StartsWith("TheTechIdea.Beep.")).OrderByDescending(x=>x.Value).Take(55),
+ Stacks=stacks.OrderByDescending(x=>x.Value).Take(10),
+ Limits="Known blocking/polling leaf frames excluded explicitly; remaining sample weights include managed/native work, contention and GC. This is a diagnostic attribution heuristic, not exact CPU or wall-time per method."},new JsonSerializerOptions{WriteIndented=true}));
+Console.WriteLine($"All={all}, excluded waits={waits}, remaining={active}, lost={log.EventsLost}");

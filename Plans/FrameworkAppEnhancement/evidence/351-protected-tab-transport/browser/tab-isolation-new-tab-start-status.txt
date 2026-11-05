@@ -1,0 +1,45 @@
+### Open tabs
+- 0: [](http://127.0.0.1:65142/)
+- 1: (current) [](http://127.0.0.1:65142/)
+### Page
+- Page URL: http://127.0.0.1:65142/
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e44]
+    - paragraph [ref=e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e46]:
+      - button "Use read-only unmapped profile" [ref=e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e49] [cursor=pointer]
+      - button "Switch other company" [ref=e51] [cursor=pointer]
+      - button "Switch other account" [ref=e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e57] [cursor=pointer]
+      - button "Show actual start recovery" [active] [ref=e59] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e61] [cursor=pointer]
+  - generic [ref=e115]:
+    - heading "Approved program drilling execution" [level=1] [ref=e116]
+    - group [ref=e117]:
+      - link "Drilling workspace" [ref=e118] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Saved programs" [ref=e120] [cursor=pointer]:
+        - /url: /ppdm39/operations/drillingoperations
+      - button "Reload original execution outcome" [ref=e122] [cursor=pointer]
+    - generic [ref=e124]:
+      - heading "Exact independently approved program" [level=2] [ref=e125]
+      - paragraph [ref=e126]: Original drilling program · Version 1 · Source status DRAFT
+      - paragraph [ref=e127]: Company tenant / company · Reader execution-recorder · Original FIELD original-field/واحد · Well recorded-well/one
+      - paragraph [ref=e128]: Planned MD 2500.25 m · TVD 2500 m
+      - paragraph [ref=e129]: Approved AFE AFE-independent-1 · 25.125 KWD · FDP fdp-baseline-F77730BB1900F628F64A46D3F76774CEDA4C9686B16C8CDD0F70CEEC6AB8CCB6
+      - paragraph [ref=e130]: Program review drilling-program-review-26B6303D53DBA89774319391018BC23D1E63011141808431AE02F467F4CE923F · 2 recorded independent approvals · Final approval 2026-10-26 13:00:58Z UTC
+    - generic [ref=e131]:
+      - heading "Recorded drilling execution" [level=2] [ref=e132]
+      - paragraph [ref=e133]: Operation drilling-execution-C9872A5B77C6CD9AD52BF5E1C99F2A989FBAC392C12ABABB015FF2A5C732AE75 · STARTED
+      - paragraph [ref=e134]: Actual reported spud 2026-10-26 13:01:00Z UTC
+      - paragraph [ref=e135]: Recorded by execution-recorder · Role ConfiguredExecutionRecorder · Workspace DRILLING_RECORDER · 2026-10-26 13:01:00Z UTC
+      - paragraph [ref=e136]: Actual observed start reported by the configured company recorder
+      - link "Open observed drilling progress" [ref=e137] [cursor=pointer]:
+        - /url: /drilling/program-execution/reports?reviewId=drilling-program-review-26B6303D53DBA89774319391018BC23D1E63011141808431AE02F467F4CE923F
+    - generic [ref=e139]: A recorded execution start is separate from WELL state, financial actuals, drilling completion, construction acceptance and production handover.
+```

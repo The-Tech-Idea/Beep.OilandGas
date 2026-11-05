@@ -1,12 +1,25 @@
-﻿@page "/production/intervention"
+@page "/production/intervention"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Components.BusinessProcess
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IFieldSelectionContext DataManagement
+@inject OilGasCallFailures Calls
+@implements IDisposable
 @using Beep.OilandGas.Models.Data.WorkOrder
-@inject ApiClient ApiClient
-@inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IProductionServiceClient ProductionService
+@inject ProductionInterventionDecisionState Decisions
+@inject AuthenticationStateProvider Authentication
 
 <PageTitle>Decide Well Interventions</PageTitle>
+<FieldSelector />
+@if(!string.IsNullOrWhiteSpace(_error)){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+@if(!_confirmed){<MudAlert Severity="Severity.Info">Intervention source is unconfirmed. Select company/FIELD and reload.</MudAlert>}
+<MudButton OnClick="LoadCandidatesAsync" Disabled="_isLoading">Reload recorded candidates</MudButton>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
@@ -51,10 +64,10 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent Class="pa-0">
-                        <MudDataGrid T="InterventionCandidate" Items="@_candidates" Dense="true"
+                        <MudDataGrid T="ProductionInterventionCandidateDto" Items="@_candidates" Dense="true"
                                      Hover="true" RowClick="@OnCandidateClick" ReadOnly="true">
                             <Columns>
-                                <PropertyColumn Property="c => c.WellName" Title="Well" />
+                                <PropertyColumn Property="c => c.WellId" Title="Recorded well" />
                                 <TemplateColumn Title="Type">
                                     <CellTemplate>
                                         <MudChip T="string" Size="Size.Small"
@@ -64,13 +77,13 @@
                                     </CellTemplate>
                                 </TemplateColumn>
                                 <PropertyColumn Property="c => c.Problem" Title="Problem" />
-                                <PropertyColumn Property="c => c.DeferredBopd" Title="Deferred (BOPD)" Format="N0" />
-                                <PropertyColumn Property="c => c.EstCostUsd" Title="Est. Cost ($K)" Format="N0" />
+                                <TemplateColumn Title="Deferred production"><CellTemplate>@(context.Item.DeferredBopd is {} rate ? rate.ToString("N2") + " BOPD" : "Unavailable")</CellTemplate></TemplateColumn>
+                                <TemplateColumn Title="Est. Cost"><CellTemplate>@(context.Item.EstCostUsd is {} cost ? cost.ToString("N2") + " USD" : "Unavailable")</CellTemplate></TemplateColumn>
                                 <TemplateColumn Title="Priority">
                                     <CellTemplate>
                                         <MudChip T="string" Size="Size.Small"
                                                  Color="@PriorityColor(context.Item.Priority)">
-                                            @context.Item.Priority
+                                            @(context.Item.Priority ?? "Unavailable")
                                         </MudChip>
                                     </CellTemplate>
                                 </TemplateColumn>
@@ -81,7 +94,7 @@
                                 </TemplateColumn>
                                 <TemplateColumn>
                                     <CellTemplate>
-                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => SelectCandidateAsync(context.Item))">
                                             Review →
                                         </MudButton>
                                     </CellTemplate>
@@ -102,7 +115,7 @@
                 Back to List
             </MudButton>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                / @_selectedIntervention.WellName / @_selectedIntervention.InterventionType
+                / @_selectedIntervention.WellId / @_selectedIntervention.InterventionType
             </MudText>
         </MudStack>
 
@@ -112,64 +125,36 @@
             <MudItem xs="12" lg="8">
                 <MudStack Spacing="3">
 
-                    @* Context banner *@
-                    <MudPaper Elevation="2" Class="pa-4">
-                        <MudGrid Spacing="2">
-                            <MudItem xs="12">
-                                <MudText Typo="Typo.h6">
-                                    Decision: @_selectedIntervention.InterventionType — @_selectedIntervention.WellName
-                                </MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
-                                    @_selectedIntervention.ProblemDescription
-                                </MudText>
-                            </MudItem>
-                            <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Deferred Production</MudText>
-                                <MudText Typo="Typo.h6" Color="Color.Error">@_selectedIntervention.DeferredBopd.ToString("N0") BOPD</MudText>
-                            </MudItem>
-                            <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Days Deferred</MudText>
-                                <MudText Typo="Typo.h6" Color="Color.Warning">@_selectedIntervention.DaysDeferred days</MudText>
-                            </MudItem>
-                            <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Lost Revenue</MudText>
-                                <MudText Typo="Typo.h6">$@((_selectedIntervention.DeferredBopd * _selectedIntervention.DaysDeferred * 70 / 1000).ToString("N0"))K</MudText>
-                            </MudItem>
-                            <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Est. Cost</MudText>
-                                <MudText Typo="Typo.h6">$@_selectedIntervention.EstCostUsd.ToString("N0")K</MudText>
-                            </MudItem>
-                        </MudGrid>
-                    </MudPaper>
+                    <ProductionInterventionEvidence Source="_selectedIntervention" OriginalDecision='@(_confirmed ? _decisions?.Original(_fieldName,_selectedIntervention.WellId) : null)' HasAcknowledgement='@(_confirmed && Decisions.HasAcknowledgement(_fieldName,_selectedIntervention.WellId))' Reviewing="_deciding" ReviewAcknowledgement="ReviewAcknowledgedDecisionAsync" NativeDecisionId="_recoveryId" ReviewNativeDecision="ReviewNativeDecisionAsync" NativeReviewMessage="@_recoveryMessage" />
 
                     @* Supporting data tabs *@
                     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
                         <MudTabPanel Text="Production History">
                             <MudPaper Elevation="0" Class="pa-3">
+                                @if(_wellRateSeries.Count==0){<MudAlert Severity="Severity.Info">Recorded rate history is unavailable.</MudAlert>}
+                                else
+                                {
                                 <MudChart ChartType="ChartType.Line"
                                           ChartSeries="@_wellRateSeries"
-                                          XAxisLabels="@_wellRateLabels"
+                                          ChartLabels="@_wellRateLabels"
                                           Width="100%" Height="220px" />
+                                }
                                 <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
-                                    Rate drop started @_selectedIntervention.OnsetDate — @_selectedIntervention.RootCause
+                                    Recorded well tests are supplemental evidence. Rate-drop onset and root cause are unavailable.
                                 </MudText>
                             </MudPaper>
                         </MudTabPanel>
                         <MudTabPanel Text="Diagnostics">
                             <MudPaper Elevation="0" Class="pa-3">
+                                @if(_diagnosticsError is not null){<MudAlert Severity="Severity.Warning">@_diagnosticsError</MudAlert>}
+                                else if(_diagnostics.Count==0){<MudAlert Severity="Severity.Info">Recorded diagnostic metadata is unavailable.</MudAlert>}
                                 <MudList T="DiagnosticItem" Dense="true">
                                     @foreach (var d in _diagnostics)
                                     {
                                         <MudListItem T="DiagnosticItem" Value="d">
                                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                                                 <MudText Typo="Typo.body2">@d.Parameter</MudText>
-                                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                                    <MudText Typo="Typo.body2">@d.Value</MudText>
-                                                    <MudChip T="string" Size="Size.Small"
-                                                             Color="@(d.IsAbnormal ? Color.Warning : Color.Success)">
-                                                        @(d.IsAbnormal ? "Abnormal" : "Normal")
-                                                    </MudChip>
-                                                </MudStack>
+                                                <MudText Typo="Typo.body2">@d.Value</MudText>
                                             </MudStack>
                                         </MudListItem>
                                         <MudDivider />
@@ -179,6 +164,7 @@
                         </MudTabPanel>
                         <MudTabPanel Text="Similar Past Cases">
                             <MudPaper Elevation="0" Class="pa-3">
+                                @if(_historicalCases.Count==0){<MudAlert Severity="Severity.Info">Recorded comparable cases have not been returned.</MudAlert>}
                                 <MudList T="HistoricalCase" Dense="true">
                                     @foreach (var c in _historicalCases)
                                     {
@@ -215,23 +201,7 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudAlert Severity="Severity.Warning" Class="mb-3">
-                                <strong>@_selectedIntervention.RecommendedAction</strong>
-                            </MudAlert>
-                            <MudList T="string" Dense="true">
-                                <MudListItem T="string" Value="@("scope")">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Scope</MudText>
-                                    <MudText Typo="Typo.body2">@_selectedIntervention.Scope</MudText>
-                                </MudListItem>
-                                <MudListItem T="string" Value="@("duration")">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Est. Duration</MudText>
-                                    <MudText Typo="Typo.body2">@_selectedIntervention.EstDurationDays days</MudText>
-                                </MudListItem>
-                                <MudListItem T="string" Value="@("payout")">
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Payout Period</MudText>
-                                    <MudText Typo="Typo.body2">@_selectedIntervention.PayoutMonths months</MudText>
-                                </MudListItem>
-                            </MudList>
+                            <MudAlert Severity="Severity.Info">An approved engineering recommendation, scope, duration and payout have not been returned. This activity type is not an instruction to proceed.</MudAlert>
                         </MudCardContent>
                     </MudCard>
 
@@ -258,8 +228,8 @@
                                     {
                                         <MudButton Variant="Variant.Outlined" Color="Color.Success"
                                                    StartIcon="@Icons.Material.Filled.RequestQuote"
-                                                   Href="@GetLinkedAfeHref(_selectedIntervention.AfeNumber)">
-                                            Open AFE @_selectedIntervention.AfeNumber
+                                                   Href="/economics/afe">
+                                            Choose AFE source
                                         </MudButton>
                                     }
                                     @if (!string.IsNullOrWhiteSpace(_selectedIntervention.AbandonmentId))
@@ -282,19 +252,23 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
+                            @if(!ProductionInterventionDecisionChecks.IsIndependentApprover(_selectedIntervention.SourcePreparer,Company.Selection?.UserId))
+                            {<MudAlert Severity="Severity.Warning">A disposition requires an identified source preparer and a different reviewer. Review source ownership before deciding.</MudAlert>}
                             <MudTextField @bind-Value="_decisionNote" Label="Decision Note / Rationale"
                                           Lines="3" Variant="Variant.Outlined" Class="mb-3"
                                           Placeholder="Required before approving or deferring…" />
+                            <MudAlert Severity="Severity.Info">Create a maintenance header separately. An optional link requires a recorded corrective order with a component for this FIELD and well.</MudAlert>
+                            <MudTextField @bind-Value="_linkedWorkOrderId" Label="Recorded work-order ID to link (optional)" HelperText="Checked against its recorded FIELD/well component when approving." />
                             <MudStack Spacing="2">
                                 <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Success"
                                            StartIcon="@Icons.Material.Filled.CheckCircle"
-                                           Disabled="@string.IsNullOrWhiteSpace(_decisionNote)"
+                                           Disabled="@(!CanSubmitDecision)"
                                            OnClick="ApproveIntervention">
-                                    Approve &amp; Schedule
+                                    Record Approval
                                 </MudButton>
                                 <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Warning"
                                            StartIcon="@Icons.Material.Filled.PauseCircle"
-                                           Disabled="@string.IsNullOrWhiteSpace(_decisionNote)"
+                                           Disabled="@(!CanSubmitDecision)"
                                            OnClick="DeferIntervention">
                                     Defer — Monitor
                                 </MudButton>
@@ -302,7 +276,7 @@
                                 {
                                     <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Error"
                                                StartIcon="@Icons.Material.Filled.ArrowForward"
-                                               Disabled="@string.IsNullOrWhiteSpace(_decisionNote)"
+                                               Disabled="@(_deciding || !_confirmed || string.IsNullOrWhiteSpace(_decisionNote) || _decisions?.IsBlocked(_fieldName,_selectedIntervention.WellId)==true || (_recoveryId is not null && !_recoveryConfirmed))"
                                                OnClick="TransitionToDecommissioning">
                                         Transition to P&amp;A
                                     </MudButton>
@@ -317,7 +291,7 @@
                                 }
                                 <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Error"
                                            StartIcon="@Icons.Material.Filled.Cancel"
-                                           OnClick="RejectIntervention">
+                                           Disabled="@(!CanSubmitDecision)" OnClick="RejectIntervention">
                                     Reject / Close
                                 </MudButton>
                             </MudStack>
@@ -338,12 +312,28 @@
 
     [SupplyParameterFromQuery(Name = "returnTo")]
     public string? ReturnTo { get; set; }
+    [SupplyParameterFromQuery(Name = "decisionId")]
+    public Guid? DecisionId { get; set; }
+
+    private Guid? _recoveryId;
+    private string? _recoveryMessage;
+    private bool _recoveryConfirmed;
+    private bool CanSubmitDecision => !_deciding && _confirmed && _selectedIntervention is {} source && source.SelectionContext is not null &&
+        !ProductionInterventionActivityChecks.IsDecisionActivity(source.LatestActivityType) &&
+        ProductionInterventionDecisionChecks.IsIndependentApprover(source.SourcePreparer,Company.Selection?.UserId) &&
+        !string.IsNullOrWhiteSpace(_decisionNote) && _decisions?.IsBlocked(_fieldName,source.WellId)!=true && (_recoveryId is null || _recoveryConfirmed);
 
     private string _fieldName = string.Empty;
+    private string _linkedWorkOrderId=string.Empty;
+    private string? _error;
+    private string? _diagnosticsError;
+    private bool _confirmed,_deciding,_disposed;
+    private long _loadVersion;
+    private ProductionInterventionDecisionState? _decisions;
     private string _decisionNote = "";
-    private InterventionDetail? _selectedIntervention;
+    private ProductionInterventionCandidateDto? _selectedIntervention;
 
-    private List<InterventionCandidate> _candidates = new();
+    private List<ProductionInterventionCandidateDto> _candidates = new();
     private List<DiagnosticItem>          _diagnostics = new();
     private List<HistoricalCase>          _historicalCases = new();
     private List<ChartSeries<double>>     _wellRateSeries = new();
@@ -352,73 +342,68 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _decisions=Decisions;Company.Changed+=ContextChanged;DataManagement.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;
+        await LoadCandidatesAsync();
+    }
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged()
+    {
+        ++_loadVersion;_confirmed=false;_fieldName=string.Empty;_candidates=[];BackToList();_error=null;
+        if(!_disposed)_=InvokeAsync(StateHasChanged);
+    }
+    private void AuthenticationChanged(Task<AuthenticationState> state)=>ContextChanged();
+    public void Dispose(){_disposed=true;++_loadVersion;Company.Changed-=ContextChanged;DataManagement.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+    private async Task RequireAuthorityAsync()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot!=Company.Snapshot || snapshot.Selection is null || user.Identity?.IsAuthenticated!=true || !snapshot.Selection.Roles.Any(user.IsInRole))
+            throw new UnauthorizedAccessException("Current company roles are required for the intervention workspace.");
+    }
+    private async Task LoadCandidatesAsync()
+    {
+        if(_isLoading || _disposed)return;
+        BackToList();var scope=Company.Snapshot;var version=++_loadVersion;_confirmed=false;_fieldName=string.Empty;_candidates=[];_error=null;_isLoading=true;
         try
         {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
+            if(scope.Selection is null)return;
+            await RequireAuthorityAsync();
+            if(_disposed || version!=_loadVersion || scope!=Company.Snapshot)return;
+            var field=await DataManagement.GetCurrentFieldIdAsync();
+            if(_disposed || version!=_loadVersion || scope!=Company.Snapshot)return;
+            if(string.IsNullOrWhiteSpace(field))throw new InvalidOperationException("Confirm a FIELD before reading intervention candidates.");
+            var dtos=await ProductionService.GetInterventionCandidatesAsync();
+            if(_disposed || version!=_loadVersion || scope!=Company.Snapshot)return;
+            ProductionInterventionCandidateChecks.Require(dtos,scope.Selection.Scope,scope.Selection.UserId,field);
+            await RequireAuthorityAsync();
+            if(_disposed || version!=_loadVersion || scope!=Company.Snapshot)return;
+            _fieldName=field;_confirmed=true;_candidates=dtos;
+            var match=_candidates.FirstOrDefault(c=>c.WellId==WellId);if(match is not null)await SelectCandidateAsync(match);
         }
-        catch { /* field name is non-critical */ }
-
-        _isLoading = true;
-        try
-        {
-            var dtos = await ProductionService.GetInterventionCandidatesAsync();
-            _candidates = (dtos ?? new())
-                .Select(d => new InterventionCandidate(
-                    d.WellId, d.WellName, d.InterventionType, d.Problem,
-                    d.DeferredBopd, d.EstDaysSinceOnset, d.Priority, d.Status, d.EstCostUsd,
-                    d.WorkOrderId, d.AfeId, d.AfeNumber, d.AbandonmentId, d.ProcessInstanceId))
-                .ToList();
-            if (!string.IsNullOrWhiteSpace(WellId))
-            {
-                var match = _candidates.FirstOrDefault(c => c.WellId == WellId);
-                if (match != null) await SelectCandidateAsync(match);
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error loading candidates.", Severity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        catch(Exception ex){var message=Calls.Explain(ex,"loading recorded intervention candidates","Intervention candidates could not be confirmed");if(!_disposed && version==_loadVersion && scope==Company.Snapshot)_error=message;}
+        finally{_isLoading=false;}
     }
 
-    private void OnCandidateClick(DataGridRowClickEventArgs<InterventionCandidate> args) =>
+    private void OnCandidateClick(DataGridRowClickEventArgs<ProductionInterventionCandidateDto> args) =>
         _ = SelectCandidateAsync(args.Item);
 
-    private async Task SelectCandidateAsync(InterventionCandidate c)
+    private async Task SelectCandidateAsync(ProductionInterventionCandidateDto c)
     {
-        _selectedIntervention = new InterventionDetail(
-            WellId:             c.WellId,
-            WellName:           c.WellName,
-            InterventionType:   c.InterventionType,
-            Problem:            c.Problem,
-            ProblemDescription: $"{c.Problem}. Work request raised {c.EstDaysSinceOnset} days ago.",
-            DeferredBopd:       c.DeferredBopd,
-            DaysDeferred:       c.EstDaysSinceOnset,
-            EstCostUsd:         c.EstCostUsd,
-            OnsetDate:          DateTime.UtcNow.AddDays(-c.EstDaysSinceOnset).ToString("dd MMM yyyy"),
-            RootCause:          "Refer to well diagnostic data below",
-            RecommendedAction:  $"Proceed with {c.InterventionType}",
-            Scope:              $"{c.InterventionType} scope to be defined by well engineer",
-            EstDurationDays:    7,
-            PayoutMonths:       2,
-            WorkOrderId:        c.WorkOrderId,
-            AfeId:              c.AfeId,
-            AfeNumber:          c.AfeNumber,
-            AbandonmentId:      c.AbandonmentId,
-            ProcessInstanceId:  c.ProcessInstanceId
-        );
-        _decisionNote = "";
-        _diagnostics = new();
+        if(!_confirmed || !_candidates.Contains(c))return;
+        var version=++_loadVersion;var scope=Company.Snapshot;
+        _selectedIntervention = c;
+        _recoveryConfirmed=false;_recoveryMessage=null;
+        var original=Decisions.Original(_fieldName,c.WellId);
+        _recoveryId=original?.Request.IntentId is {} id && id!=Guid.Empty ? id :
+            WellId==c.WellId && DecisionId is {} queryId && queryId!=Guid.Empty ? queryId :
+            c.LatestRecordedBy==Company.Selection?.UserId ? c.LatestDecisionId : null;
+        _decisionNote = "";_linkedWorkOrderId=string.Empty;
+        _diagnostics = new();_diagnosticsError=null;
         _wellRateSeries = new();
         _wellRateLabels = Array.Empty<string>();
         try
         {
             var perf = await ProductionService.GetWellPerformanceAsync(c.WellId);
+            if(_disposed || version!=_loadVersion || scope!=Company.Snapshot || _selectedIntervention?.WellId!=c.WellId)return;
             if (perf?.WellTests != null)
             {
                 var latest = perf.WellTests
@@ -426,29 +411,32 @@
                     .FirstOrDefault();
                 if (latest != null)
                 {
-                    _diagnostics.Add(new("Test Date",  latest.TestDate?.ToString("yyyy-MM-dd") ?? "N/A", false));
-                    _diagnostics.Add(new("Test Type",  latest.TestType ?? "N/A", false));
-                    _diagnostics.Add(new("Well Status", perf.Status ?? "UNKNOWN", perf.Status != "ACTIVE"));
+                    _diagnostics.Add(new("Test Date",  latest.TestDate?.ToString("yyyy-MM-dd") ?? "Unavailable"));
+                    _diagnostics.Add(new("Test Type",  latest.TestType ?? "Unavailable"));
+                    _diagnostics.Add(new("Well Status", string.IsNullOrWhiteSpace(perf.Status) ? "Unavailable" : perf.Status));
                 }
             }
         }
-        catch { /* diagnostics are supplemental — do not block the decision flow */ }
+        catch(Exception ex){var message=Calls.Explain(ex,"loading recorded intervention diagnostics","Diagnostic metadata could not be confirmed");if(!_disposed && version==_loadVersion && scope==Company.Snapshot)_diagnosticsError=message;}
         StateHasChanged();
     }
 
     private void BackToList()
     {
+        ++_loadVersion;
         _selectedIntervention = null;
-        _decisionNote = "";
-        _diagnostics = new();
+        _recoveryId=null;_recoveryMessage=null;_recoveryConfirmed=false;
+        _decisionNote = "";_linkedWorkOrderId=string.Empty;
+        _diagnostics = new();_diagnosticsError=null;
         _wellRateSeries = new();
     }
 
     private void OpenNewIntervention()
     {
+        if(!_confirmed)return;
         var wellId = _selectedIntervention?.WellId ?? WellId;
-        var title = _selectedIntervention?.RecommendedAction ?? "Intervention follow-up";
-        var description = _selectedIntervention?.ProblemDescription ?? "Create an intervention work order for the selected well.";
+        var title = "Intervention follow-up";
+        var description = _selectedIntervention?.Problem ?? "Create an intervention work order for the selected well.";
         var query = new List<string> { "openCreate=true", $"subType={Uri.EscapeDataString(WorkOrderSubType.Corrective)}" };
 
         if (!string.IsNullOrWhiteSpace(wellId))
@@ -466,48 +454,95 @@
         NavigationManager.NavigateTo($"/ppdm39/workorder?{string.Join("&", query)}");
     }
 
-    private async Task ApproveIntervention()
+    private Task ApproveIntervention()=>SubmitDecisionAsync("APPROVED");
+    private async Task SubmitDecisionAsync(string decision)
     {
-        if (_selectedIntervention == null) return;
+        var selected=_selectedIntervention;
+        if(selected is null || !CanSubmitDecision)return;
+        var scope=Company.Snapshot;var field=_fieldName;var version=_loadVersion;_deciding=true;
         try
         {
-            var result = await ProductionService.RecordInterventionDecisionAsync(
-                _selectedIntervention.WellId,
-                new ProductionInterventionDecisionRequest
-                {
-                    Decision = "Approved",
-                    Note = _decisionNote,
-                    InterventionType = _selectedIntervention.InterventionType,
-                    Problem = _selectedIntervention.ProblemDescription,
-                    EstimatedCostUsd = _selectedIntervention.EstCostUsd,
-                    CreateWorkOrder = true,
-                    LinkAfe = true,
-                    WorkOrderId = _selectedIntervention.WorkOrderId,
-                    AfeId = _selectedIntervention.AfeId
-                });
-            if (!result.Success)
-            {
-                Snackbar.Add("Approval failed.", Severity.Error);
-                return;
-            }
-
-            Snackbar.Add(result.Message ?? $"Intervention approved for {_selectedIntervention.WellName}.", Severity.Success);
-
-            if (!string.IsNullOrWhiteSpace(result.WorkOrderId))
-            {
-                NavigationManager.NavigateTo($"/ppdm39/workorder/{Uri.EscapeDataString(result.WorkOrderId)}?returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}");
-                return;
-            }
-
-            _selectedIntervention = null;
-            await OnInitializedAsync();
+            await RequireAuthorityAsync();
+            if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion || !ReferenceEquals(selected,_selectedIntervention))return;
+            var current=await DataManagement.GetCurrentFieldSelectionAsync();
+            FieldSelectionReviewValidator.RequireCurrent(current,scope.Selection!.Scope,scope.Selection.UserId);
+            if(current.SelectionContext!=selected.SelectionContext)throw new InvalidOperationException("The source FIELD review changed. Reload its original data before deciding.");
+            await RequireAuthorityAsync();
+            if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion || !ReferenceEquals(selected,_selectedIntervention))return;
+            var attempt=_decisions!.Begin(selected.WellId,new(){IntentId=Guid.NewGuid(),Context=selected.SelectionContext,ExpectedSourceRevision=selected.SourceRevision,FieldId=field,Decision=decision,Note=_decisionNote,
+                InterventionType=selected.InterventionType,Problem=selected.Problem,CreateWorkOrder=false,LinkAfe=false,
+                WorkOrderId=decision=="APPROVED" ? _linkedWorkOrderId : null});
+            _recoveryId=attempt.Request.IntentId;DecisionId=_recoveryId;WellId=attempt.Well;
+            NavigationManager.NavigateTo(GetNativeRecoveryHref(attempt.Well,attempt.Request.IntentId),replace:true);
+            var result=await ProductionService.RecordInterventionDecisionAsync(attempt.Well,attempt.Request);
+            _decisions.RetainAcknowledgement(attempt,result);
+            if(_disposed || !_decisions.IsCurrent(attempt,_fieldName))return;
+            var confirmed=await Decisions.RecoverNativeOutcomeAsync(field,attempt.Well,attempt.Request.IntentId,async()=>{
+                var recovered=await ProductionService.RecoverInterventionDecisionAsync(attempt.Well,attempt.Request.IntentId);
+                await RequireAuthorityAsync();
+                if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion || !ReferenceEquals(selected,_selectedIntervention))throw new OperationCanceledException("The displayed original decision context changed.");
+                return recovered;
+            });
+            if(confirmed is null)throw new InvalidOperationException("The original reservation is retained but its decision result is not confirmed.");
+            if(_disposed || !_decisions.IsCurrent(attempt,_fieldName) || version!=_loadVersion || !ReferenceEquals(selected,_selectedIntervention))return;
+            Snackbar.Add(result.Message ?? $"Recorded {decision} decision returned for {attempt.Well}.",Severity.Success);
+            if(!string.IsNullOrWhiteSpace(result.WorkOrderId)){NavigationManager.NavigateTo(GetLinkedWorkOrderHref(result.WorkOrderId));return;}
+            BackToList();await LoadCandidatesAsync();
         }
-        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
+        catch(Exception ex){var message=Calls.Explain(ex,"recording an intervention decision","Decision outcome could not be confirmed. Review recorded source before retrying");if(!_disposed && scope==Company.Snapshot && field==_fieldName)_error=message;}
+        finally{_deciding=false;}
     }
 
+    private async Task ReviewAcknowledgedDecisionAsync()
+    {
+        if(_recoveryId is not null){await ReviewNativeDecisionAsync();return;}
+        if(_disposed || !_confirmed || _deciding || _selectedIntervention is not {} selected)return;
+        var scope=Company.Snapshot;var field=_fieldName;var version=_loadVersion;_deciding=true;_error=null;
+        try
+        {
+            await RequireAuthorityAsync();
+            if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion)return;
+            var result=await Decisions.ReviewAcknowledgedOutcomeAsync(field,selected.WellId,async()=>{
+                var recorded=await ProductionService.GetInterventionCandidatesAsync();
+                await RequireAuthorityAsync();
+                if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion)throw new OperationCanceledException("The original displayed decision context changed.");
+                return recorded;
+            });
+            if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion)return;
+            Snackbar.Add("The original acknowledged decision matches the recorded activity. No decision was submitted again.",Severity.Success);
+            if(!string.IsNullOrWhiteSpace(result.WorkOrderId)){NavigationManager.NavigateTo(GetLinkedWorkOrderHref(result.WorkOrderId));return;}
+            BackToList();await LoadCandidatesAsync();
+        }
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing the original acknowledged intervention decision","The original decision remains unconfirmed");if(!_disposed && scope==Company.Snapshot && field==_fieldName)_error=message;}
+        finally{_deciding=false;}
+    }
+    private string GetNativeRecoveryHref(string well,Guid id)=>$"/production/intervention?wellId={Uri.EscapeDataString(well)}&decisionId={id:D}"+
+        (string.IsNullOrWhiteSpace(ReturnTo)?string.Empty:$"&returnTo={Uri.EscapeDataString(ReturnTo)}");
+
+    private async Task ReviewNativeDecisionAsync()
+    {
+        if(_disposed || !_confirmed || _deciding || _selectedIntervention is not {} selected || _recoveryId is not {} id)return;
+        var scope=Company.Snapshot;var field=_fieldName;var version=_loadVersion;_deciding=true;_error=null;
+        try
+        {
+            await RequireAuthorityAsync();
+            var result=await Decisions.RecoverNativeOutcomeAsync(field,selected.WellId,id,async()=>{
+                var recovery=await ProductionService.RecoverInterventionDecisionAsync(selected.WellId,id);
+                await RequireAuthorityAsync();
+                if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion || !ReferenceEquals(selected,_selectedIntervention))throw new OperationCanceledException("The original displayed recovery context changed.");
+                return recovery;
+            });
+            if(_disposed || scope!=Company.Snapshot || field!=_fieldName || version!=_loadVersion)return;
+            _recoveryConfirmed=result is not null;
+            _recoveryMessage=result is null ? "The original request is retained; its native decision is not yet confirmed. No decision was submitted again." :
+                $"Original {result.Decision} decision confirmed for {result.WellId}. No decision was submitted again.";
+        }
+        catch(Exception ex){var message=Calls.Explain(ex,"recovering the original native intervention decision","The original decision remains unconfirmed");if(!_disposed && scope==Company.Snapshot && field==_fieldName)_error=message;}
+        finally{_deciding=false;}
+    }
     private async Task TransitionToDecommissioning()
     {
-        if (_selectedIntervention == null) return;
+        if (_selectedIntervention == null || !_confirmed || _deciding || _decisions?.IsBlocked(_fieldName,_selectedIntervention.WellId)==true || (_recoveryId is not null && !_recoveryConfirmed)) return;
 
         try
         {
@@ -517,7 +552,7 @@
                 {
                     Note = _decisionNote,
                     InterventionType = _selectedIntervention.InterventionType,
-                    Problem = _selectedIntervention.ProblemDescription,
+                    Problem = _selectedIntervention.Problem,
                     EstimatedCostUsd = _selectedIntervention.EstCostUsd,
                     AbandonmentType = "PERMANENTLY_ABANDONED",
                     AbandonmentMethod = "CEMENT_PLUG",
@@ -547,47 +582,8 @@
         }
     }
 
-    private async Task DeferIntervention()
-    {
-        if (_selectedIntervention == null) return;
-        try
-        {
-            var result = await ProductionService.RecordInterventionDecisionAsync(
-                _selectedIntervention.WellId,
-                new ProductionInterventionDecisionRequest { Decision = "Deferred", Note = _decisionNote });
-            if (!result.Success)
-            {
-                Snackbar.Add("Deferral failed.", Severity.Error);
-                return;
-            }
-
-            Snackbar.Add($"Intervention deferred — monitoring {_selectedIntervention.WellName}", Severity.Warning);
-            _selectedIntervention = null;
-            await OnInitializedAsync();
-        }
-        catch (Exception) { Snackbar.Add("Deferral failed.", Severity.Error); }
-    }
-
-    private async Task RejectIntervention()
-    {
-        if (_selectedIntervention == null) return;
-        try
-        {
-            var result = await ProductionService.RecordInterventionDecisionAsync(
-                _selectedIntervention.WellId,
-                new ProductionInterventionDecisionRequest { Decision = "Rejected", Note = _decisionNote });
-            if (!result.Success)
-            {
-                Snackbar.Add("Rejection failed.", Severity.Error);
-                return;
-            }
-
-            Snackbar.Add($"Intervention closed for {_selectedIntervention.WellName}", Severity.Info);
-            _selectedIntervention = null;
-            await OnInitializedAsync();
-        }
-        catch (Exception) { Snackbar.Add("Rejection failed.", Severity.Error); }
-    }
+    private Task DeferIntervention()=>SubmitDecisionAsync("DEFERRED");
+    private Task RejectIntervention()=>SubmitDecisionAsync("REJECTED");
 
     private Color TypeColor(string t) => t switch
     {
@@ -597,33 +593,19 @@
         _                   => Color.Default,
     };
 
-    private Color PriorityColor(string p) => p switch
+    private Color PriorityColor(string? p) => p switch
     {
         "HIGH"   => Color.Error,
         "MEDIUM" => Color.Warning,
         _        => Color.Default,
     };
 
-    private record InterventionCandidate(string WellId, string WellName, string InterventionType, string Problem,
-        double DeferredBopd, int EstDaysSinceOnset, string Priority, string Status, double EstCostUsd,
-        string? WorkOrderId, string? AfeId, string? AfeNumber, string? AbandonmentId, string? ProcessInstanceId);
-
-    private record InterventionDetail(string WellId, string WellName, string InterventionType, string Problem,
-        string ProblemDescription, double DeferredBopd, int DaysDeferred, double EstCostUsd, string OnsetDate,
-        string RootCause, string RecommendedAction, string Scope, int EstDurationDays, int PayoutMonths,
-        string? WorkOrderId, string? AfeId, string? AfeNumber, string? AbandonmentId, string? ProcessInstanceId);
-
-    private record DiagnosticItem(string Parameter, string Value, bool IsAbnormal);
+    private record DiagnosticItem(string Parameter, string Value);
     private record HistoricalCase(string Well, string InterventionType, string Date, int UpliftBopd, int CostUsdK, string Outcome);
 
     private string GetLinkedWorkOrderHref(string workOrderId) =>
-        $"/ppdm39/workorder/{Uri.EscapeDataString(workOrderId)}?returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}";
-
-    private string GetLinkedAfeHref(string afeNumber)
-    {
-        var href = $"/economics/afe?afeNumber={Uri.EscapeDataString(afeNumber)}";
-        return href + $"&returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}";
-    }
+        WorkOrderNavigation.Detail(workOrderId)+$"&returnTo={Uri.EscapeDataString(BuildInterventionReturnTo())}"+
+        (DecisionId is {} id && !string.IsNullOrWhiteSpace(WellId)?$"&interventionId={id:D}&wellId={Uri.EscapeDataString(WellId)}":string.Empty);
 
     private string GetLinkedDecommissioningHref(string wellId, string? abandonmentId, string? processInstanceId, string? handoffReason = null)
     {
@@ -654,6 +636,7 @@
         if (!string.IsNullOrWhiteSpace(wellId))
             query.Add($"wellId={Uri.EscapeDataString(wellId)}");
 
+        if(DecisionId is {} decisionId)query.Add($"decisionId={decisionId:D}");
         if (!string.IsNullOrWhiteSpace(ReturnTo))
             query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
 

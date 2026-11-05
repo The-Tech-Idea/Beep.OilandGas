@@ -1,0 +1,78 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase4 selected separate-process recovery and affected physical rollback gate",
+  "observed_at": "2026-10-29T19:11:12.952261+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; preserved; no commit/push",
+  "result": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "14s",
+    "exit_code": 0,
+    "attempts": 1
+  },
+  "methods": {
+    "InstalledPermitProviderRecoversUnacknowledgedSubmissionAcrossProcesses": "New separate-process retained-original recovery/replay and read-only database stability.",
+    "InstalledPermitProviderRollsBackThenRecoversExactNativeSubmission": "Affected extracted native fixture preserves receipt-stage physical rollback and same-original retry."
+  },
+  "command": "OILGAS_TEST_PERMIT_DRIVER_FEED=<isolated local feed>; dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~InstalledPermitProviderRecoversUnacknowledgedSubmissionAcrossProcesses|FullyQualifiedName~InstalledPermitProviderRollsBackThenRecoversExactNativeSubmission --logger console;verbosity=minimal",
+  "process_reports": {
+    "commit": {
+      "ProcessId": 43464,
+      "IntentId": "a708d1b5-e24e-4ea4-a957-cff6b5e1b184",
+      "OutcomeHash": null,
+      "HistoryCount": 0,
+      "ReceiptCount": 0
+    },
+    "recover": {
+      "ProcessId": 19324,
+      "IntentId": "a708d1b5-e24e-4ea4-a957-cff6b5e1b184",
+      "OutcomeHash": "B7E5AF94839CDE627ACA8196B3D9147AFF5F662047D2FD02D5A1A344DB8A5ADE",
+      "HistoryCount": 1,
+      "ReceiptCount": 1
+    },
+    "replay": {
+      "ProcessId": 37044,
+      "IntentId": "a708d1b5-e24e-4ea4-a957-cff6b5e1b184",
+      "OutcomeHash": "B7E5AF94839CDE627ACA8196B3D9147AFF5F662047D2FD02D5A1A344DB8A5ADE",
+      "HistoryCount": 1,
+      "ReceiptCount": 1
+    }
+  },
+  "database": {
+    "retained_path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-restart-9b980790df6b44f982b0fc5e7a7d008b\\permits.db",
+    "sha256_after": "1bffb84c34e1b49a74609d676d1bf1c1bbb1829a241ad3e6487cef37c22aa911",
+    "read_only_stability": "Parent assertions compare database SHA256 immediately after commit with after each exited recovery/replay worker; both comparisons passed."
+  },
+  "original_sha256": "5c1af9fb87ee1412b6dabcd8687f8bd120453fca8e5329724e6c6d5d94e183b4",
+  "observed": [
+    "Three distinct fresh dotnet worker process IDs, each different from parent test process.",
+    "Original persisted before command transport; commit worker withholds the outcome and exits73 after physical commit.",
+    "Fresh recovery/replay open existing database; neither applies schema migrations and both disable command write authority.",
+    "Native original/result validation succeeds after original JSON reload and process restart.",
+    "Recovery/replay return the same exact original and matching confirmed outcome hashes with one history/receipt.",
+    "Retained original bytes and physical database SHA256 remain unchanged during read-only recovery and replay.",
+    "Affected physical receipt-stage rollback/retry check still passes after fixture extraction."
+  ],
+  "limits": [
+    "Unacknowledged transport is controlled by worker exit73; no actual HTTP/OIDC network failure.",
+    "Workers finish after normal disposal; abrupt termination, OS/power-loss durability and concurrent writers remain open.",
+    "Company authority/read policy/metadata/defaults are fixture boundaries, not current API/RBAC or two-company proof.",
+    "Current local SQLite connector1.0.59/provider1.0.119 and changed BeepDM source/runtime are dependencies; public distribution remains unverified.",
+    "Only three native permit ledger tables are initially migrated through Beep Migration; full PERMITS/supporting schema and existing-schema evolution remain open.",
+    "No handwritten SQL/EF migration or unrelated tests."
+  ],
+  "sha256": {
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "67709d38a96b566e0c5c49dbd81b2a7584d0a59215466239171720c0a4ac2827",
+    "tools/PermitProviderWorker/Program.cs": "04f4efee925db935f1c80d23902338e602c87e667ccde7e88721e73760c30c1d",
+    "tools/PermitProviderWorker/PermitProviderWorker.csproj": "f3cac472cb8a02f5f00b39ac513a9ac7a0f0226420e32e157a7177c3b3054e64",
+    "tools/PermitProviderWorker/README.md": "b492c700fbf07de337e83c842631a22d8f64d003240d9d159f0ed572dabaaa5a",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "b67ff5e76079ef770a2f9f8ac20fc57c2bed0cfa9f7ac361671edb03523c1db8",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.deps.json": "f1e1a3e30d7ae0dffe962e91bfed00f00dfd7cc8106bac18f8bdfa3362e9336f",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.runtimeconfig.json": "ae7d5acd5927fab88aa87fde85993c89468e71b6cfd7e88dbcf2920a5e23c276",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.PermitProviderWorker.dll": "2b96db4eb6bdce4d97ed5f91bb18e442d9a608fb06ea4ff3c945c85ad99b9802",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "df6ed94226122f2a038a53081cfbd40f3dc0fa6d84da2b59e4462506b36c3408",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "ac42115b9f829ed524ba3de62af516d941be43bbf1e0cc43d3e494d8b0c2ba57",
+    "../BeepDM/DataManagementEngineStandard/bin/Debug/net10.0/DataManagementEngine.dll": "55783166f492c83cc95c79fef4233e00b97da879ce0730d4959ae13ba0ba8f46"
+  }
+}

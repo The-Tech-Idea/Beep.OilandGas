@@ -1,93 +1,141 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.DevelopmentPlanning.Services;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DevelopmentPlanning;
-using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field;
 
-[ApiController]
-[Authorize]
+[ApiController, Authorize]
 [Route("api/field/current/development-planning")]
-[RequireCurrentFieldAccess]
-public class DevelopmentPlanningController : ControllerBase
+[ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
+public sealed class DevelopmentPlanningController(IDevelopmentPlanService service,IDevelopmentPlanRequestAuthority authority) : ControllerBase
 {
-    private readonly IDevelopmentPlanService _service;
-    private readonly ILogger<DevelopmentPlanningController> _logger;
-
-    public DevelopmentPlanningController(
-        IDevelopmentPlanService service,
-        ILogger<DevelopmentPlanningController> logger)
+    [HttpGet("plans/options")]
+    public async Task<ActionResult<DevelopmentPlanDraftOptions>> GetDraftOptionsAsync()
     {
-        _service = service;
-        _logger = logger;
+        var scope=await authority.CaptureAsync(User,PermissionConstants.DevelopmentPlanning.Create,true);
+        var result=await service.GetDraftOptionsAsync(scope.Context,scope.PlanningDatabase,scope.CheckCurrentAsync);await scope.ConfirmAsync();return Ok(result);
     }
-
     [HttpGet("plans")]
-    public async Task<ActionResult<List<DevelopmentPlan>>> GetPlansAsync([FromQuery] string? fieldId = null)
+    public async Task<ActionResult<DevelopmentPlanDraftList>> GetPlansAsync()
     {
-        var plans = await _service.GetDevelopmentPlansAsync(fieldId);
-        return Ok(plans);
+        var scope=await authority.CaptureAsync(User,PermissionConstants.DevelopmentPlanning.View,false);
+        var result=await service.GetDevelopmentPlansAsync(scope.Context,scope.PlanningDatabase,scope.CheckCurrentAsync);await scope.ConfirmAsync();return Ok(result);
     }
-
-    [HttpGet("plans/{planId}")]
-    public async Task<ActionResult<DevelopmentPlan>> GetPlanAsync(string planId)
+    [HttpGet("plans/{id}")]
+    public async Task<ActionResult<DevelopmentPlanSourceReview>> GetPlanAsync(string id)
     {
-        var plan = await _service.GetDevelopmentPlanAsync(planId);
-        if (plan == null)
-            return NotFound(new { error = $"Plan {planId} not found." });
-        return Ok(plan);
+        var scope=await authority.CaptureAsync(User,PermissionConstants.DevelopmentPlanning.View,false);
+        var result=await service.GetDevelopmentPlanAsync(scope.Context,scope.PlanningDatabase,id,scope.CheckCurrentAsync);
+        result.Require(scope.Context,id);await scope.ConfirmAsync();return Ok(result);
     }
-
+    [HttpGet("plans/{id}/review-workflows")]
+    public async Task<ActionResult<DevelopmentReviewCatalog>> GetReviewWorkflowsAsync(string id,[FromQuery]string expectedSourceRevision,
+        [FromServices]DevelopmentReviewCatalogService workflows)=>Ok(await workflows.ReadAsync(User,id,expectedSourceRevision));
     [HttpPost("plans")]
-    public async Task<ActionResult<DevelopmentPlan>> CreatePlanAsync([FromBody] CreateDevelopmentPlan request)
+    public async Task<ActionResult<FIELD_DEVELOPMENT_PLAN>> CreatePlanAsync([FromBody] CreateDevelopmentPlan request)
     {
-        var created = await _service.CreateDevelopmentPlanAsync(request);
-        return Ok(created);
+        request=DevelopmentPlanDraftReview.Capture(request,request.SelectionContext);
+        var scope=await authority.CaptureAsync(User,PermissionConstants.DevelopmentPlanning.Create,true,request.SelectionContext,true);
+        if(request.PlanningDatabase!=scope.PlanningDatabase)throw RefusalException.Conflict("The reviewed development-planning target changed.");
+        var result=await service.CreateDevelopmentPlanAsync(request,scope.CheckCurrentAsync);await scope.ConfirmAsync();return Ok(result);
     }
-
-    [HttpPut("plans/{planId}")]
-    public async Task<ActionResult<DevelopmentPlan>> UpdatePlanAsync(string planId, [FromBody] UpdateDevelopmentPlan request)
+    [HttpPost("plans/{id}/review-handoffs/prepare")]
+    public async Task<ActionResult<DevelopmentReviewStart>> PrepareReviewAsync(string id,[FromBody]DevelopmentReviewSelection selection,
+        [FromServices]DevelopmentReviewHandoffService handoffs)=>Ok(await handoffs.PrepareAsync(User,id,selection));
+    [HttpPost("review-handoffs")]
+    public async Task<ActionResult<DevelopmentReviewStartReceipt>> SubmitReviewAsync([FromBody]DevelopmentReviewStart original,
+        [FromServices]DevelopmentReviewHandoffService handoffs)=>Ok(await handoffs.SubmitAsync(User,original));
+    [HttpPost("review-handoffs/recover")]
+    public async Task<ActionResult<DevelopmentReviewStartReceipt>> RecoverReviewAsync([FromBody]DevelopmentReviewStart original,
+        [FromServices]DevelopmentReviewHandoffService handoffs)=>Ok(await handoffs.SubmitAsync(User,original,true));
+    [HttpGet("review-handoffs/{processId}/assigned")]
+    public async Task<ActionResult<DevelopmentAssignedReview>> GetAssignedReviewAsync(string processId,
+        [FromServices]IDevelopmentAssignedReviewReader assigned,[FromServices]IFailureReporter failures)
     {
-        var updated = await _service.UpdateDevelopmentPlanAsync(planId, request);
-        return Ok(updated);
+        try{return Ok(await assigned.ReadAsync(User,processId));}
+        catch(UnauthorizedAccessException){throw RefusalException.Forbidden("Current independent company reviewer, workspace and original FIELD access are required.");}
+        catch(InvalidOperationException changed)
+        {
+            failures.ReportHandled(changed,"opening assigned development review","the original task and source could not be confirmed",FailureSeverity.Degraded);
+            throw RefusalException.Conflict("The assigned development task, workflow or original source changed or is unavailable. Reload company assigned work.");
+        }
     }
-
-    [HttpPost("plans/{planId}/approve")]
-    public async Task<ActionResult<DevelopmentPlan>> ApprovePlanAsync(string planId)
+    [HttpPost("review-decisions")]
+    public Task<ActionResult<DevelopmentReviewDecisionReceipt>> DecideReviewAsync([FromBody]DevelopmentReviewDecision command,
+        [FromServices]IDevelopmentReviewDecisionService decisions,[FromServices]IFailureReporter failures)=>DecisionResult(()=>decisions.DecideAsync(User,command),failures);
+    [HttpPost("review-decisions/recover")]
+    public Task<ActionResult<DevelopmentReviewDecisionReceipt>> RecoverReviewDecisionAsync([FromBody]DevelopmentReviewDecision original,
+        [FromServices]IDevelopmentReviewDecisionService decisions,[FromServices]IFailureReporter failures)=>DecisionResult(()=>decisions.DecideAsync(User,original,true),failures);
+    [HttpGet("review-handoffs/{processId}/history")]
+    public Task<ActionResult<DevelopmentReviewProgress>> GetReviewProgressAsync(string processId,
+        [FromServices]IDevelopmentReviewProgressReader reviews,[FromServices]IFailureReporter failures)=>ProgressResult(()=>reviews.ReadProgressAsync(User,processId),failures);
+    [HttpGet("plans/{id}/review-status")]
+    public Task<ActionResult<DevelopmentPlanReviewStatus>> GetPlanReviewStatusAsync(string id,[FromQuery]string expectedSourceRevision,
+        [FromServices]IDevelopmentReviewProgressReader reviews,[FromServices]IFailureReporter failures)=>ProgressResult(async()=>{
+            if(!ProcessDefinitionRevision.IsValid(expectedSourceRevision))throw RefusalException.Invalid("Inspect the recorded draft before checking its review outcome.");
+            var scope=await authority.CaptureAsync(User,PermissionConstants.DevelopmentPlanning.View,false);
+            var source=await service.GetDevelopmentPlanAsync(scope.Context,scope.PlanningDatabase,id,scope.CheckCurrentAsync);source.Require(scope.Context,id);
+            if(source.Plan is null || source.Revision!=expectedSourceRevision)throw RefusalException.Conflict("The displayed draft changed or is unavailable. Reload its recorded source.");
+            await scope.ConfirmAsync();var progress=await reviews.ReadForSourceAsync(User,source);
+            var closing=await service.GetDevelopmentPlanAsync(scope.Context,scope.PlanningDatabase,id,scope.CheckCurrentAsync);closing.Require(scope.Context,id);
+            if(closing.Plan is null || closing.Revision!=source.Revision)throw RefusalException.Conflict("The draft changed during its recorded review lookup.");
+            await scope.ConfirmAsync();var result=new DevelopmentPlanReviewStatus(closing,progress,DateTimeOffset.UtcNow);result.Require(source);return result;
+        },failures);
+    private async Task<ActionResult<T>> ProgressResult<T>(Func<Task<T>> read,IFailureReporter failures)
     {
-        var userId = User.ActingUserId();
-        var approved = await _service.ApproveDevelopmentPlanAsync(planId, userId);
-        return Ok(approved);
+        try{return Ok(await read());}
+        catch(UnauthorizedAccessException){throw RefusalException.Forbidden("Current company review readership and original FIELD access are required.");}
+        catch(InvalidOperationException changed)
+        {
+            failures.ReportHandled(changed,"reading recorded development review history","the recorded review outcome could not be confirmed",FailureSeverity.Degraded);
+            throw RefusalException.Conflict("The recorded development review, audit or source changed or is unavailable. Reload its current evidence.");
+        }
     }
-
-    [HttpGet("plans/{planId}/well-activities")]
-    public async Task<ActionResult<List<WELL_ACTIVITY>>> GetWellActivitiesAsync(string planId, [FromQuery] string? wellUwi = null)
+    [HttpGet("review-handoffs/{processId}/baseline")]
+    public Task<ActionResult<DevelopmentPlanBaselineReview>> GetBaselineAsync(string processId,[FromQuery]string expectedReviewRevision,
+        [FromServices]IDevelopmentPlanBaselineService baselines,[FromServices]IFailureReporter failures)
+        =>BaselineResult(()=>baselines.ReadBaselineAsync(User,processId,expectedReviewRevision),failures,false);
+    [HttpPost("baselines")]
+    public Task<ActionResult<DevelopmentPlanReleaseReceipt>> ApproveBaselineAsync([FromBody]DevelopmentPlanRelease original,
+        [FromServices]IDevelopmentPlanBaselineService baselines,[FromServices]IFailureReporter failures)
+        =>BaselineResult(()=>baselines.ApproveBaselineAsync(User,original),failures,true);
+    [HttpPost("baselines/recover")]
+    public Task<ActionResult<DevelopmentPlanReleaseReceipt>> RecoverBaselineAsync([FromBody]DevelopmentPlanRelease original,
+        [FromServices]IDevelopmentPlanBaselineService baselines,[FromServices]IFailureReporter failures)
+        =>BaselineResult(()=>baselines.ApproveBaselineAsync(User,original,true),failures,false);
+    private async Task<ActionResult<T>> BaselineResult<T>(Func<Task<T>> action,IFailureReporter failures,bool write)
     {
-        var activities = await _service.GetWellActivitiesAsync(planId, wellUwi);
-        return Ok(activities);
+        try{return Ok(await action());}
+        catch(UnauthorizedAccessException){throw RefusalException.Forbidden("Current original FDP participant, final approval role and original FIELD authority are required for this baseline action.");}
+        catch(InvalidOperationException changed)
+        {
+            failures.ReportHandled(changed,write?"approving FDP baseline":"reading original FDP baseline","the original baseline outcome could not be confirmed",FailureSeverity.Degraded);
+            throw RefusalException.Conflict("The original FDP baseline, source or review could not be confirmed. Preserve any retained approval intent and recover its original outcome before another approval.");
+        }
     }
-
-    [HttpPost("maintenance")]
-    public async Task<ActionResult<WELL_MAINTENANCE_PLAN>> CreateMaintenanceAsync([FromBody] CreateWellMaintenancePlan request)
+    private async Task<ActionResult<DevelopmentReviewDecisionReceipt>> DecisionResult(Func<Task<DevelopmentReviewDecisionReceipt>> action,IFailureReporter failures)
     {
-        var userId = User.ActingUserId();
-        var created = await _service.CreateWellMaintenancePlanAsync(request, userId);
-        return Ok(created);
+        try{return Ok(await action());}
+        catch(UnauthorizedAccessException){throw RefusalException.Forbidden("Current original independent reviewer, approval permissions and FIELD authority are required.");}
+        catch(InvalidOperationException changed)
+        {
+            failures.ReportHandled(changed,"recording independent development review","the original decision outcome is unconfirmed",FailureSeverity.Degraded);
+            throw RefusalException.Conflict("The original review decision, assignment or source could not be confirmed. Preserve its intent and recover the original outcome before another decision.");
+        }
     }
-
-    [HttpPost("service-jobs")]
-    public async Task<ActionResult<WELL_SERVICE_JOB>> CreateServiceJobAsync([FromBody] CreateWellServiceJob request)
+    [HttpPost("plans/recover")]
+    public async Task<ActionResult<DevelopmentPlanDraftRecovery>> RecoverPlanAsync([FromBody] CreateDevelopmentPlan original)
     {
-        var userId = User.ActingUserId();
-        var created = await _service.CreateWellServiceJobAsync(request, userId);
-        return Ok(created);
+        original=DevelopmentPlanDraftReview.Capture(original,original.SelectionContext);
+        var scope=await authority.CaptureAsync(User,PermissionConstants.DevelopmentPlanning.Create,false,original.SelectionContext,false);
+        if(original.PlanningDatabase!=scope.PlanningDatabase)throw RefusalException.Conflict("The original development-planning target changed.");
+        var result=await service.RecoverDevelopmentPlanAsync(original,scope.Context,scope.PlanningDatabase,scope.CheckCurrentAsync);await scope.ConfirmAsync();return Ok(result);
     }
 }

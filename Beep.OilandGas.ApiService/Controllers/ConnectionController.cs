@@ -95,27 +95,5 @@ namespace Beep.OilandGas.ApiService.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Create a new database connection (via DataManagement API)
-        /// This endpoint delegates to PPDM39SetupController for database creation
-        /// </summary>
-        [HttpPost("create")]
-        public async Task<ActionResult<CreateConnectionResult>> CreateConnection([FromBody] CreateConnectionRequest request)
-        {
-            if (request == null || string.IsNullOrEmpty(request.ConnectionName))
-            {
-                    return BadRequest(new { error = "Connection name is required." });
-            }
-
-            // Note: Database creation is handled by PPDM39SetupController
-            // This endpoint can redirect or call the setup service
-            // For now, return a response indicating the connection should be created via setup endpoints
-            return Ok(new CreateConnectionResult
-            {
-                Success = true,
-                ConnectionName = request.ConnectionName,
-                Message = "Use /api/ppdm39/setup endpoints to create database connections"
-            });
-        }
     }
 }

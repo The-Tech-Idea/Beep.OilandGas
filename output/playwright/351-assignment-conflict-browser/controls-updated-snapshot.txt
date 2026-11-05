@@ -1,0 +1,31 @@
+### Page
+- Page URL: http://127.0.0.1:62732/
+### Snapshot
+```yaml
+- generic [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e3]
+    - paragraph [ref=f1e4]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e5]:
+      - button "Use read-only unmapped profile" [active] [ref=f1e6] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e8] [cursor=pointer]
+      - button "Switch other company" [ref=f1e10] [cursor=pointer]
+      - button "Switch other account" [ref=f1e12] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e14] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e16] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [ref=f1e119] [cursor=pointer]
+      - button "Retain an unrecorded competing start" [ref=f1e18] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f1e20] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e22] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f1e24] [cursor=pointer]
+      - button "Show actual receiving responsibility" [ref=f1e121] [cursor=pointer]
+  - generic [ref=f1e48]:
+    - heading "Execution reporting responsibility" [level=1] [ref=f1e49]
+    - group [ref=f1e50]:
+      - link "Drilling workspace" [ref=f1e51] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=f1e53] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload source and recipients" [ref=f1e55] [cursor=pointer]
+    - generic [ref=f1e57]: Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.
+```

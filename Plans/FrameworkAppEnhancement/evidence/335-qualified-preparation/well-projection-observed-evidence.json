@@ -1,0 +1,77 @@
+{
+  "observed_at_utc": "2026-10-20T08:56:12.794609+00:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "branch": "master",
+  "dirty_tree": true,
+  "scope": "Current complete well proof projection, ambiguous columns and focused owned/native/API checks. No claim of qualified API/source binding or external-provider completion.",
+  "sources": [
+    {
+      "path": "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs",
+      "sha256": "98e603539b3d1ceb9058bbc642711ac3dac203191d5756928d3cdfb05d99c107"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceReturnEvidence.cs",
+      "sha256": "fcf44ac225e6b3e71fdd06f3f29d25bf4eb3e914cbb138d4cb597b897c1d3aa5"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "6b257db8c4ad8049d9f04161996ae28598b84269e2cdd82726c0d66b8175c419"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceWellEvidenceTests.cs",
+      "sha256": "92213d8f3d0f2c5490a64fbca68e066e0db72ddcccdc8e1b4fed79fd21c4cf3f"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceAssetReturnTests.cs",
+      "sha256": "729ae213855d7aed6db421a900fd33d1c5d6ffdfe0fbe1eddbd2048a7b0c56cf"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "oilgas-335-well-projection-first.log",
+      "sha256": "2e46a56116abe0f155b837fbc1e90d22232285c9211f768dce325e457b0cc8f2",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:52:14.430771+00:00",
+      "result": "90 pass, 7.8012 minutes. Broader well/return gate before the additional case-ambiguity refusal. The final changed-mapping paths are checked in the following current gates."
+    },
+    {
+      "path": "oilgas-335-well-projection-final.log",
+      "sha256": "fa65ede3698bbc401ae7ca23db0628dbef0dd91e760ada30c9f738988ae9ca0c",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:51:14.262664+00:00",
+      "result": "24 pass, 1.5202 minutes: complete dictionary/table columns, declared nullable values, missing columns, duplicate-case names and record/readback/private/public recovery refusal/rollback."
+    },
+    {
+      "path": "oilgas-335-well-projection-mixed.log",
+      "sha256": "a6c683c1d91dac7384f1b656fb69b1d3841936032a5934d7f4dec4f76aaff95b",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:54:44.814506+00:00",
+      "result": "48 pass, 2.9935 minutes: complete mixed/facility-only/equipment-only original recording and private/public recovery, mixed rollback, native capability DBNull mapping and app row authorization."
+    },
+    {
+      "path": "oilgas-335-well-projection-core.log",
+      "sha256": "31500a7272a3e36b3a9c9908e1db10cf05b8e33f666c94f8511c47fc8c2a904d",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:50:08.763582+00:00",
+      "result": "Core builds with zero errors, one existing missing analyzer-project warning; 2.87 seconds."
+    }
+  ],
+  "protected_http": {
+    "status": "passed",
+    "observed_exit": 0,
+    "filter": "FullyQualifiedName~ActualPhysicalReturnAcceptanceHttpRequiresIndependentEvidenceAndRecoversWithoutReplay",
+    "path": "oilgas-335-well-projection-http.log",
+    "sha256": "6e187ce7d35ddc935b2e701f0e8d1dd0ff5dcfc3be4dbea31037883745cbcf81",
+    "output_modified_utc": "2026-10-20T09:04:15.787120+00:00",
+    "result": "One existing protected HTTP physical/closure/well-return/private-public recovery path passes in 8.3899 minutes. Retains declared recorded-start/report/well source seams; not the original qualified start-to-return workflow.",
+    "notes": "Terminal exit collected from session 88358. No shared repository output rebuilt during execution. Aggregate runtime is not a latency/load qualification."
+  },
+  "limits": [
+    "Observed local dirty-master evidence, not CI or external-provider attestation.",
+    "The 90-case broader output predates the additional duplicate-column check; current 24 and 48 gates cover the final changed paths.",
+    "Original qualified work/installation capture, native qualified closure-to-return source binding, API/form/status integration, provider/browser/release remain open.",
+    "Native WELL_STATUS capability uses its existing nonnullable canonical model; explicit DBNull in a nonnullable native column is refused, never converted to zero."
+  ],
+  "observed_complete_at_utc": "2026-10-20T09:05:28.290540+00:00",
+  "processes": "All five focused processes terminal and exits collected."
+}

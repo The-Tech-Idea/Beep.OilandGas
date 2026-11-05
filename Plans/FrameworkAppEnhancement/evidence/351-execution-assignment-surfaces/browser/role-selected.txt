@@ -1,0 +1,9 @@
+### Ran Playwright code
+```js
+await page.getByRole('option', { name: 'ConfiguredExecutionAssigner' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:54712/
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\351-assignment-browser\artifacts\page-2026-10-26T16-09-11-685Z.yml)

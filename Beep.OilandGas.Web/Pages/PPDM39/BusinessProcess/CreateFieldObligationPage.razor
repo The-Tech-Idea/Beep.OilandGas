@@ -1,0 +1,126 @@
+@page "/ppdm39/compliance/obligations/new"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject ApiClient Api
+@inject IFieldObligationIntentStore Intents
+@inject ILogger<CreateFieldObligationPage> Logger
+
+<PageTitle>Record FIELD obligation</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Record FIELD obligation</MudText>
+    <MudAlert Severity="Severity.Info" Class="my-3">Record PPDM facts for the selected company and FIELD. A critical date is not a determination of a regulatory deadline or filing status.</MudAlert>
+    @if (_message is not null) { <MudAlert Severity="@(_confirmed ? Severity.Success : Severity.Warning)" Class="my-3" role="status">@_message</MudAlert> }
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Processing obligation" /> }
+    @if (!_busy && _context is null) { <MudButton OnClick="Reload" Variant="Variant.Outlined">Review current FIELD</MudButton> }
+    @if (_context is not null)
+    {
+        <MudText Class="my-3">Selected FIELD: @_fieldName</MudText>
+        @if (_pending is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Class="my-3">A previous submission needs confirmation. Retry the same request for @_pending.ObligationType / @_pending.ComponentType: @_pending.Description</MudAlert>
+            <MudButton OnClick="Submit" Disabled="@(_busy || !FieldObligationIdentity.SameTarget(_pending.Context, _context))" Variant="Variant.Filled" Color="Color.Primary">Retry original submission</MudButton>
+            @if (_pending.Context != _context) { <MudText Class="my-2">The FIELD review was refreshed. Retrying rechecks current access and preserves the original request.</MudText> }
+        }
+        else if (_options is not null && !_confirmed)
+        {
+            <MudSelect T="string" @bind-Value="_type" Label="Recorded obligation type" Required="true" Disabled="@_busy">
+                @foreach (var item in _options.ObligationTypes) { <MudSelectItem T="string" Value="@item">@item</MudSelectItem> }
+            </MudSelect>
+            <MudSelect T="string" @bind-Value="_component" Label="Recorded FIELD component type" Required="true" Disabled="@_busy">
+                @foreach (var item in _options.ComponentTypes) { <MudSelectItem T="string" Value="@item">@item</MudSelectItem> }
+            </MudSelect>
+            <MudTextField T="string" @bind-Value="_description" Label="Description" Required="true" MaxLength="255" Disabled="@_busy" />
+            <MudDatePicker @bind-Date="_criticalDate" Label="Recorded critical date (optional)" Disabled="@_busy" />
+            @if (_options.ObligationTypes.Count == 0 || _options.ComponentTypes.Count == 0)
+            { <MudAlert Severity="Severity.Warning" Class="my-2">No active reference codes are available. Configure the PPDM reference data before recording an obligation.</MudAlert> }
+            <MudButton OnClick="Submit" Disabled="@(_busy || !CanSubmit)" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">Record obligation</MudButton>
+        }
+    }
+    <MudButton Href="/ppdm39/compliance/obligations" Variant="Variant.Text" Class="mt-4">Back to FIELD obligations</MudButton>
+</MudContainer>
+
+@code {
+    private FieldSelectionReview? _context;
+    private FieldObligationCreationOptions? _options;
+    private CreateFieldObligation? _pending;
+    private string _fieldName = "", _type = "", _component = "", _description = "";
+    private DateTime? _criticalDate;
+    private string? _message = "Choose a company and FIELD to review available types.";
+    private bool _busy, _confirmed, _interactive, _disposed;
+    private long _generation;
+    private bool CanSubmit => _options is not null && _options.ObligationTypes.Contains(_type, StringComparer.Ordinal) &&
+        _options.ComponentTypes.Contains(_component, StringComparer.Ordinal) && !string.IsNullOrWhiteSpace(_description) &&
+        _description.Trim().Length <= 255 && !_description.Any(char.IsControl);
+
+    protected override void OnInitialized() { Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) { _interactive = true; await Reload(); if (!_disposed) await InvokeAsync(StateHasChanged); }
+    }
+    private async Task Reload()
+    {
+        var generation = ++_generation; var company = Company.Snapshot; _busy = true; _context = null; _pending = null; _options = null; _confirmed = false;
+        bool Current() => !_disposed && generation == _generation && company == Company.Snapshot;
+        try
+        {
+            if (company.Selection is null) { _message = "Choose a company and FIELD before recording an obligation."; return; }
+            var field = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(field, company.Selection.Scope, company.Selection.UserId);
+            if (!field.SelectionAvailable || field.SelectionContext is null) { _message = "Choose an available FIELD before recording an obligation."; return; }
+            var review = field.SelectionContext;
+            var pending = await Intents.ReadAsync(review); if (!Current()) return;
+            FieldObligationCreationOptions? options = null;
+            if (pending is null)
+            {
+                options = await Api.GetAsync<FieldObligationCreationOptions>("/api/field/current/compliance/obligation-creation/options"); if (!Current()) return;
+                if (options is null || options.Context != review || options.ObligationTypes is null || options.ComponentTypes is null ||
+                    options.ObligationTypes.Any(code => !LeaseSummaryValidator.Identifier(code)) || options.ComponentTypes.Any(code => !LeaseSummaryValidator.Identifier(code)) ||
+                    options.ObligationTypes.Distinct(StringComparer.Ordinal).Count() != options.ObligationTypes.Count || options.ComponentTypes.Distinct(StringComparer.Ordinal).Count() != options.ComponentTypes.Count)
+                    throw new InvalidOperationException("The FIELD reference options were not confirmed.");
+            }
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, company.Selection.Scope, company.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != review) throw new InvalidOperationException("The FIELD review changed.");
+            _context = review; _fieldName = string.IsNullOrWhiteSpace(field.FieldName) ? field.FieldId : field.FieldName;
+            _pending = pending; _options = options; _message = pending is null ? null : "The prior submission outcome is unconfirmed.";
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "FIELD obligation setup could not be confirmed"); _message = "Obligation setup could not be confirmed. Check your company, FIELD and filing access, then reload."; } }
+        finally { if (Current()) _busy = false; }
+    }
+    private async Task Submit()
+    {
+        if (_busy || _context is null || (_pending is null && !CanSubmit)) return;
+        var generation = _generation; var company = Company.Snapshot; var context = _context;
+        bool Current() => !_disposed && generation == _generation && company == Company.Snapshot && _context == context;
+        if (_pending is not null && !FieldObligationIdentity.SameTarget(_pending.Context, context)) return;
+        var request = _pending ?? new CreateFieldObligation(context, Guid.NewGuid(), _type, _component, _description.Trim(),
+            _criticalDate is null ? null : DateTime.SpecifyKind(_criticalDate.Value.Date, DateTimeKind.Unspecified));
+        _busy = true; _message = null;
+        try
+        {
+            await Intents.RetainAsync(request); if (!Current()) return; _pending = request;
+            var response = await Api.PostAsync<CreateFieldObligation, CreatedFieldObligation>("/api/field/current/compliance/obligation-creation", request); if (!Current()) return;
+            var field = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            if (!field.SelectionAvailable || field.SelectionContext != context || response is null || response.Context != context ||
+                response.ObligationId != "FO-" + request.IntentId.ToString("N").ToUpperInvariant() || response.Sequence != 1 || response.ComponentObservation != 1)
+                throw new InvalidOperationException("The recorded obligation outcome could not be confirmed.");
+            await Intents.ClearAsync(request); if (!Current()) return;
+            _pending = null; _confirmed = true; _message = "The FIELD obligation and its component were recorded. Return to the worklist to review them.";
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "FIELD obligation submission was not confirmed"); _message = _pending is null ? "The request could not be retained. No submission was sent." : "The outcome is unconfirmed. Retry the original submission."; } }
+        finally { if (Current()) _busy = false; }
+    }
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged()
+    {
+        ++_generation; _context = null; _pending = null; _options = null; _type = _component = _description = ""; _criticalDate = null; _busy = false; _confirmed = false;
+        _message = "Company or FIELD changed. Review the current selection.";
+        if (_interactive && !_disposed) _ = InvokeAsync(async () => { await Reload(); if (!_disposed) StateHasChanged(); });
+    }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }
+}

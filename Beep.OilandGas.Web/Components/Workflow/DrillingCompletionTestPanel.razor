@@ -1,0 +1,42 @@
+@using Beep.OilandGas.Web.Services
+@if(State.Current is {} review)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Inspect a recorded native completion test</MudText>
+        <MudText>Choose the reported reference, then enter the existing PPDM test key for this original well. No key or result is inferred from the report.</MudText>
+        <MudSelect T="int" Label="Reported completion test to compare" @bind-Value="index" Required="true" Disabled="@State.Busy">
+            @for(var position=0;position<review.Original.Source.ReportedCompletion!.Report.Tests.Count;position++)
+            {
+                var item=review.Original.Source.ReportedCompletion.Report.Tests[position];var selectedIndex=position;
+                <MudSelectItem T="int" Value="selectedIndex">@(position+1): @item.TestType / @item.Reference / @item.ReportedResult</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField T="string" Label="Native test source" @bind-Value="source" MaxLength="128" Required="true" Disabled="@State.Busy" />
+        <MudTextField T="string" Label="Native test type" @bind-Value="type" MaxLength="128" Required="true" Disabled="@State.Busy" />
+        <MudTextField T="string" Label="Native test run number" @bind-Value="run" MaxLength="128" Required="true" Disabled="@State.Busy" />
+        <MudTextField T="string" Label="Native test number" @bind-Value="number" MaxLength="128" Required="true" Disabled="@State.Busy" />
+        <MudButton OnClick="Inspect" Disabled="@(!State.CanInspectTest)" Variant="Variant.Outlined">Inspect exact native test</MudButton>
+        <MudAlert Severity="Severity.Info">Inspection records no acceptance or decision. A native result code is shown as recorded; no passing threshold, timezone, financial actual or production release is inferred.</MudAlert>
+    </MudPaper>
+}
+@if(State.TestInspection is {} evidence)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Checked native test comparison</MudText>
+        <MudText>Well @evidence.Native.Uwi; source @evidence.Native.Source; test type @evidence.Native.TestType; run @evidence.Native.RunNumber; test @evidence.Native.TestNumber</MudText>
+        <MudText>Reported reference @evidence.Reported.Reference; native report reference @evidence.Native.ReportReference; exact reference matches @evidence.ReferenceMatches</MudText>
+        <MudText>Reported UTC @evidence.Reported.TestedAtUtc.ToString("u"); native recorded test date @evidence.Native.TestDate.ToString("yyyy-MM-dd HH:mm:ss"); calendar date matches @evidence.CalendarDateMatches</MudText>
+        <MudText>Reported result @evidence.Reported.ReportedResult; native result code @evidence.Native.ResultCode</MudText>
+        <MudText Class="development-draft-description">@evidence.Native.Remark</MudText>
+        <MudText>Native created by @evidence.Native.CreatedBy at @evidence.Native.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"); changed by @evidence.Native.ChangedBy at @evidence.Native.ChangedAt.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+        <MudText>Native revision @evidence.Native.NativeRevision; inspection checked @evidence.CheckedAtUtc.ToString("u") UTC</MudText>
+        @if(!evidence.ReferenceMatches || !evidence.CalendarDateMatches){<MudAlert Severity="Severity.Warning">The selected native test differs from the reported reference or calendar date. Resolve the discrepancy before acceptance.</MudAlert>}
+        <MudAlert Severity="Severity.Info">The native date does not establish the reported UTC instant. This comparison is read-only evidence, not accepted physical tests or completion.</MudAlert>
+    </MudPaper>
+}
+@code {
+    [Parameter,EditorRequired] public DrillingCompletionAssignedState State{get;set;}=default!;
+    private int index=-1;private string source="",type="",run="",number="";private string? revision;
+    protected override void OnParametersSet(){var next=State.Current?.Revision;if(next!=revision){revision=next;index=-1;source=type=run=number="";}}
+    private Task Inspect()=>State.InspectTestAsync(index,source,type,run,number);
+}

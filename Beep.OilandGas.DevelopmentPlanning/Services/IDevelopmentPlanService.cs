@@ -1,72 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data.PermitsAndApplications;
-using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Beep.OilandGas.Models.Data.DevelopmentPlanning;
-using Beep.OilandGas.PPDM39.Models;
+using TheTechIdea.Data.OilGas;
 
-namespace Beep.OilandGas.DevelopmentPlanning.Services
+namespace Beep.OilandGas.DevelopmentPlanning.Services;
+
+public interface IDevelopmentPlanService
 {
-    /// <summary>
-    /// Service for managing development plans.
-    /// </summary>
-    public interface IDevelopmentPlanService
-    {
-        /// <summary>
-        /// Gets all development plans.
-        /// </summary>
-        Task<List<DevelopmentPlan>> GetDevelopmentPlansAsync(string? fieldId = null);
-
-        /// <summary>
-        /// Gets a development plan by ID.
-        /// </summary>
-        Task<DevelopmentPlan?> GetDevelopmentPlanAsync(string planId);
-
-        /// <summary>
-        /// Creates a new development plan.
-        /// </summary>
-        Task<DevelopmentPlan> CreateDevelopmentPlanAsync(CreateDevelopmentPlan createDto);
-
-        /// <summary>
-        /// Updates a development plan.
-        /// </summary>
-        Task<DevelopmentPlan> UpdateDevelopmentPlanAsync(string planId, UpdateDevelopmentPlan updateDto);
-
-        /// <summary>
-        /// Approves a development plan.
-        /// </summary>
-        Task<DevelopmentPlan> ApproveDevelopmentPlanAsync(string planId, string approvedBy);
-
-        /// <summary>
-        /// Gets well plans for a development plan.
-        /// </summary>
-        Task<List<WellPlan>> GetWellPlansAsync(string planId);
-
-        /// <summary>
-        /// Gets facility plans for a development plan.
-        /// </summary>
-        Task<List<FacilityPlan>> GetFacilityPlansAsync(string planId);
-
-        /// <summary>
-        /// Gets permit applications for a development plan.
-        /// </summary>
-        Task<List<PERMIT_APPLICATION>> GetPermitApplicationsAsync(string planId);
-
-        /// <summary>
-        /// Gets well activities linked to a development plan.
-        /// </summary>
-        Task<List<WELL_ACTIVITY>> GetWellActivitiesAsync(string planId, string? wellUwi = null);
-
-        /// <summary>
-        /// Schedules a maintenance plan for a well.
-        /// </summary>
-        Task<WELL_MAINTENANCE_PLAN> CreateWellMaintenancePlanAsync(CreateWellMaintenancePlan createDto, string userId);
-
-        /// <summary>
-        /// Schedules a service-company job for a well.
-        /// </summary>
-        Task<WELL_SERVICE_JOB> CreateWellServiceJobAsync(CreateWellServiceJob createDto, string userId);
-    }
+    Task<DevelopmentPlanBaselineReview> GetBaselineAsync(DevelopmentReviewProgress review,Func<Task> requireAuthority);
+    Task<DevelopmentPlanReleaseReceipt> ApproveBaselineAsync(DevelopmentPlanRelease original,Func<Task> requireAuthority,bool recover=false);
+    Task<DevelopmentPlanDraftOptions> GetDraftOptionsAsync(FieldSelectionReview current, AssetDatabaseScope planning, Func<Task> requireAuthority);
+    Task<DevelopmentPlanDraftList> GetDevelopmentPlansAsync(FieldSelectionReview current, AssetDatabaseScope planning, Func<Task> requireAuthority);
+    Task<DevelopmentPlanSourceReview> GetDevelopmentPlanAsync(FieldSelectionReview current, AssetDatabaseScope planning, string id, Func<Task> requireAuthority);
+    Task<FIELD_DEVELOPMENT_PLAN> CreateDevelopmentPlanAsync(CreateDevelopmentPlan request, Func<Task> requireAuthority);
+    Task<DevelopmentPlanDraftRecovery> RecoverDevelopmentPlanAsync(CreateDevelopmentPlan original, FieldSelectionReview current, AssetDatabaseScope planning, Func<Task> requireAuthority);
 }
-

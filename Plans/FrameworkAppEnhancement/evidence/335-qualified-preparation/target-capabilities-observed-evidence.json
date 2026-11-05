@@ -1,0 +1,241 @@
+{
+  "observed_at_utc": "2026-10-21T05:58:38.8869780Z",
+  "scope": "Explicit original target capabilities and role-facing return scope through Data-owned projection, API boundary, typed client, return state and existing MudBlazor/closure surfaces. Qualified operating mutation is still gated pending native/API/form integration.",
+  "git": {
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "staging_commit_or_push_performed": false
+  },
+  "environment": {
+    "os": "Microsoft Windows 10.0.26200",
+    "sdk": "10.0.401",
+    "root": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas",
+    "documentation_framework_snapshot": "a80d41ad0affd81b549f5f063787e186d162e37f"
+  },
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturn.cs",
+      "sha256": "935a515b0d757fb9b0bee1873709b3838128b751f7a699f0f6ef44fcb9582d33"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "0a68d57bde6f837854e099d5b2d9c754390f720ca7ba69cb1fa3d72e43fefeb1"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.AssetEvidence.cs",
+      "sha256": "34f7ef8b8fa992051544f3a415be81b0b1cdc9ef5e2c448c5ce10c51f331a713"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/MaintenanceAssetReturnState.cs",
+      "sha256": "4942f741b49835ff42d0bd24f4a036fff0edac8a69b49cbfaa0019f5b84d987f"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnPanel.razor",
+      "sha256": "1631826d11e53bf94621f0bf55dee090ed35d9d592f536202fd55ff8ca438d3d"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceClosurePanel.razor",
+      "sha256": "92473a0eef871009ec8877a06b21ee762e6d65c7748348a8ca6246fe26a606f8"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStateTests.cs",
+      "sha256": "8bcac6a234fb282f93f28ec9a6edd9c5b7bb99b26debdfcd9845259e30b39ff4"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetTests.cs",
+      "sha256": "fc8c4e87016bb3bd7901919d921e6abff410f8c8c46f401cd2021768c2f9a6e7"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "d03bd995bb79dca2df69cf7f67ee4284ed5a2695cbed0dc0622f3052897a9c23"
+    },
+    {
+      "path": "Scripts/Test-MaintenanceReceivingPage.ps1",
+      "sha256": "efa32e36f196138a623489733fb1055b10a509d8de936b15cefd6e6b2e32f3d1"
+    }
+  ],
+  "data_assembly": {
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "sha256": "f7ff1518ac84db95b49f7b5f0af85f51f5136987cb6727439a4317e290884a8d",
+    "change": "Adds the shared pure capability projection; existing serialized domain bodies and schemas unchanged."
+  },
+  "checks": [
+    {
+      "name": "Data-contracts-build",
+      "status": "verified",
+      "exit_code": 0,
+      "warnings": 0,
+      "errors": 0,
+      "duration": "7.28 seconds",
+      "command": "dotnet build \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\DataFinancial.csproj\" --no-restore",
+      "log": "oilgas-335-target-capabilities-data.log"
+    },
+    {
+      "name": "first-native-compile",
+      "status": "failed",
+      "exit_code": 1,
+      "log": "oilgas-335-target-capabilities-native-first-build.log",
+      "note": "New test used a from-end index inside an EF expression tree; corrected by capturing the scalar permission before the query. No tests ran."
+    },
+    {
+      "name": "first-ui-compile",
+      "status": "failed",
+      "exit_code": 1,
+      "log": "oilgas-335-target-capabilities-ui-first-build.log",
+      "note": "Focused host legacy model assembly made an explicit WorkOrderDetailModel annotation ambiguous. Client/state helpers now consume the existing Data-owned evidence contract and its Order property; no duplicate DTO or dependency substitute added."
+    },
+    {
+      "name": "target-projection-and-current-api-authority",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 17,
+      "failed": 0,
+      "duration": "38.7592 seconds",
+      "filter": "FullyQualifiedName~OriginalAssetReturnCapabilitiesUseExistingRegistryAndOnlyExplicitTargets|FullyQualifiedName~ActualReturnAuthorityUsesCurrentOriginalTargetsAndAppCapabilities",
+      "log": "oilgas-335-target-capabilities-native.log",
+      "seam": "Actual app RBAC, standard role bridge, company/profile/grants, original order owner and permission gate. Controlled closed-return callback intentionally terminates after its guard; no completed qualified review or mutation claim.",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:UseSharedCompilation=false -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~OriginalAssetReturnCapabilitiesUseExistingRegistryAndOnlyExplicitTargets|FullyQualifiedName~ActualReturnAuthorityUsesCurrentOriginalTargetsAndAppCapabilities\" --logger \"console;verbosity=normal\""
+    },
+    {
+      "name": "return-ui-client-state-and-read-status",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 75,
+      "failed": 0,
+      "duration": "40.5847 seconds",
+      "filter": "FullyQualifiedName~MaintenanceAssetReturnStateTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests|FullyQualifiedName~MaintenanceAssetEvidenceTests",
+      "log": "oilgas-335-target-capabilities-ui.log",
+      "seam": "Actual components/HtmlRenderer, states and typed client with controlled canonical report/closure/review facts and transport/field/auth/JS seams; not browser or qualified native-return acceptance.",
+      "command": "./Scripts/Test-MaintenanceReceivingPage.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -Filter \"FullyQualifiedName~MaintenanceAssetReturnStateTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests|FullyQualifiedName~MaintenanceAssetEvidenceTests\""
+    },
+    {
+      "name": "existing-protected-well-return-journey",
+      "status": "verified",
+      "exit_code": 0,
+      "filter": "FullyQualifiedName~ActualPhysicalReturnAcceptanceHttpRequiresIndependentEvidenceAndRecoversWithoutReplay",
+      "log": "oilgas-335-target-capabilities-http.log",
+      "no_build": true,
+      "timeout_seconds": 100,
+      "passed": 1,
+      "failed": 0,
+      "duration": "13.6847 minutes",
+      "seam": "Actual app RBAC/standard-role bridge, API and original native physical/closure/well-return/private-public recovery owners with existing recorded-start/report/well source seams. Original 100-second request timeout and assertions unchanged. Qualified physical/closure/return journey remains open.",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:UseSharedCompilation=false -p:FocusedCompanyTests=true \"-p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~ActualPhysicalReturnAcceptanceHttpRequiresIndependentEvidenceAndRecoversWithoutReplay\" --logger \"console;verbosity=normal\""
+    }
+  ],
+  "outputs": [
+    {
+      "path": "oilgas-335-target-capabilities-data.log",
+      "sha256": "d933621fc7c2acdccba746f9c9cb021aeadd91ec0d0383c324becaa3c19c7662"
+    },
+    {
+      "path": "oilgas-335-target-capabilities-native-first-build.log",
+      "sha256": "23fa6b5520bdff50fe544f9c79605ab8174f40763f127e5d8fea9df13e342502"
+    },
+    {
+      "path": "oilgas-335-target-capabilities-ui-first-build.log",
+      "sha256": "2983bffb9f051b9b7a0c0109cb7267dd3592d45f7fbe062ca199b2f9b631a53e"
+    },
+    {
+      "path": "oilgas-335-target-capabilities-native.log",
+      "sha256": "714663e91204adbd2451025bf3a128ade7d9f800e3f16c589030054fc0856734"
+    },
+    {
+      "path": "oilgas-335-target-capabilities-ui.log",
+      "sha256": "54a536c9be1b8adb494debd48fc85c85166a8c484cec68e67e41a410834d0477"
+    },
+    {
+      "path": "oilgas-335-target-capabilities-source-checkpoint.json",
+      "sha256": "91dfdfe4cd2484a839cedb0c065b0da4f626b74cd14d2154cbea0aa5b4786210"
+    },
+    {
+      "path": "oilgas-335-target-capabilities-http.log",
+      "sha256": "990effbc5e998f349499b8f7f90e30507da96924a0825dc9b7b7ca886061c10f"
+    }
+  ],
+  "limitations": [
+    "Qualified facility/equipment mutation, observations, API participant injection and full native qualified start/report/physical/closure/return journey remain open.",
+    "Qualified review display remains read-only; well-only record and original recovery remain supported.",
+    "Current and retained order revisions must match for private recovery; controlled changed-scope rework is still an open requirement.",
+    "Existing standard ASP.NET roles and app RBAC remain authoritative; this helper is only a projection of existing permission keys.",
+    "No business EF/SQL, schema/migration application, new DTO/ledger, custom CSS/JS/theme or extra authorization system introduced.",
+    "Provider, browser/keyboard/RTL/device, concurrency/load and release evidence remain separate.",
+    "No staging, commit or push; full goal/plan remains active."
+  ],
+  "all_processes_terminal": true,
+  "review": {
+    "kind": "self-review",
+    "source": "Actual changed files and affected existing plan/tracker owner set",
+    "checks": [
+      "Shared Data capability keys match the existing app permission registry; explicit targets only.",
+      "API roles/capabilities remain fresh around actual scope and native callbacks.",
+      "Unknown-scope client checks common action rights and validates returned target rights before publication.",
+      "Qualified UI mutation remains disabled; original well JSON/body/reference and failure retention paths preserved.",
+      "Active obsolete capability work items reconciled in the owner and eight existing trackers; historical evidence retained."
+    ],
+    "limitations": "No independent reviewer, browser or production provider certification."
+  },
+  "documentation": {
+    "documents": [
+      "MASTER-TODO-TRACKER.md",
+      "Plans/FrameworkAppEnhancement/README.md",
+      "Plans/FrameworkAppEnhancement/Company-Plan-Index.md",
+      "Plans/FrameworkAppEnhancement/Company-Phase-D-Operations.md",
+      "Plans/FrameworkAppEnhancement/Persona-08-Maintenance-and-Facility.md",
+      "Plans/FrameworkAppEnhancement/Persona-05-Operator-and-Shift-Supervisor.md",
+      "Plans/FrameworkAppEnhancement/Implementation-317-Controlled-Execution-Verification-and-Return.md",
+      "Plans/FrameworkAppEnhancement/Persona-12-Company-Administrator.md",
+      "Plans/FrameworkAppEnhancement/Implementation-335-Qualified-Facility-and-Equipment-Return.md"
+    ],
+    "links_checked": 1101,
+    "broken_root_prefixed_links_repaired": 17,
+    "encoding": "Eight existing tracker documents preserved as Latin1 bytes; owner335 UTF8.",
+    "remaining_link_errors": 0,
+    "scope": "Affected owner/tracker documents only; immutable historical evidence retained.",
+    "hashes": [
+      {
+        "path": "MASTER-TODO-TRACKER.md",
+        "sha256": "5d0715c376bd06a76d07a76f14e610b0430c442b241b7c0ec19c455e1b83cdef"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/README.md",
+        "sha256": "9966de6d55fd608b308544f4fb488eb66c627dce320881a944998cbbea6ba0aa"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Company-Plan-Index.md",
+        "sha256": "a13dac5a788d4f65c6d8a2b12780b10367c376e59612e4ddf5e182dbf64c6bbb"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Company-Phase-D-Operations.md",
+        "sha256": "2742af8633529c0802c9d5181a0353298a33d919a63db54cb5f7ab003db7d0f3"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Persona-08-Maintenance-and-Facility.md",
+        "sha256": "ca3941433848f7fc94896925803600fb8904bcbbf1ee44dafbc55ea8f9512eda"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Persona-05-Operator-and-Shift-Supervisor.md",
+        "sha256": "8904b30038648e19401cded3eb77dcc63dd95167ab5cb54986f7145738992f92"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Implementation-317-Controlled-Execution-Verification-and-Return.md",
+        "sha256": "8798697dc050a79aaca6c107701de1be3ef9ea765358f6b533827e13100808f8"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Persona-12-Company-Administrator.md",
+        "sha256": "adcff45376ecea0a5c19afaf40190e4719523e4038899df70a6587c841663bfe"
+      },
+      {
+        "path": "Plans/FrameworkAppEnhancement/Implementation-335-Qualified-Facility-and-Equipment-Return.md",
+        "sha256": "489c19037cd6d438bf1faf024376c6c59405d0ea3d7f9ce5f28608510bf10d33"
+      }
+    ]
+  },
+  "runtime": {
+    "data_copy": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "data_sha256": "f7ff1518ac84db95b49f7b5f0af85f51f5136987cb6727439a4317e290884a8d",
+    "test_assembly": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+    "test_assembly_sha256": "98ca28f6b091680766863c670248ebf3def89363b965d3a8925c086aefd150ec",
+    "note": "Observed after all terminal results; no shared output rebuild while the protected process was live."
+  }
+}

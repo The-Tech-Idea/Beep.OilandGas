@@ -1,3 +1,5 @@
+using Beep.OilandGas.PermitsAndApplications.Exceptions;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PermitsAndApplications.Constants;
@@ -6,6 +8,11 @@ using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.ApiService.Attributes;
+using TheTechIdea.Data.OilGas;
+using PermitApplicationSummary = TheTechIdea.Data.OilGas.PermitApplicationSummary;
+using PermitApplicationDetail = TheTechIdea.Data.OilGas.PermitApplicationDetail;
+using Beep.OilandGas.Models.Data.Security;
 
 namespace Beep.OilandGas.ApiService.Controllers.Permits;
 
@@ -16,6 +23,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Permits;
 [ApiController]
 [Route("api/field/current/permits")]
 [Authorize]
+[ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
+[RequireCurrentFieldAccess(PermissionConstants.HSE.ViewPermits)]
 public class PermitsController : ControllerBase
 {
     private readonly IPermitApplicationLifecycleService _lifecycle;
@@ -23,22 +32,30 @@ public class PermitsController : ControllerBase
     private readonly IPermitComplianceCheckService _compliance;
     private readonly IPermitStatusHistoryService _statusHistory;
     private readonly IFieldOrchestrator _fieldOrchestrator;
+    private readonly ICompanyPermitApplicationDataAccess _permitAccess;
 
     public PermitsController(
         IPermitApplicationLifecycleService lifecycle,
         IPermitApplicationWorkflowService workflow,
         IPermitComplianceCheckService compliance,
         IPermitStatusHistoryService statusHistory,
-        IFieldOrchestrator fieldOrchestrator)
+        IFieldOrchestrator fieldOrchestrator,
+        ICompanyPermitApplicationDataAccess permitAccess)
     {
         _lifecycle = lifecycle;
         _workflow = workflow;
         _compliance = compliance;
         _statusHistory = statusHistory;
         _fieldOrchestrator = fieldOrchestrator;
+        _permitAccess = permitAccess;
     }
 
     // ── Application CRUD ──────────────────────────────────────────────────────
+
+    [HttpGet("application-catalog")]
+    public ActionResult<PermitApplicationCatalog> GetApplicationCatalog() => Ok(new PermitApplicationCatalog(
+        Enum.GetNames<PermitApplicationType>(), Enum.GetNames<RegulatoryAuthority>(),
+        Enum.GetNames<Country>().Where(country => country != nameof(Country.Other)).ToArray(), Enum.GetNames<StateProvince>()));
 
     /// <summary>
     /// Get all permit applications, optionally filtered by status.
@@ -48,19 +65,31 @@ public class PermitsController : ControllerBase
         [FromQuery] string? status,
         [FromQuery] string? authority)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
+        ActionResult<List<PermitApplicationSummary>> Confirm(IEnumerable<PERMIT_APPLICATION>? rows)
+        {
+            if (rows is null || _fieldOrchestrator.CurrentFieldId != fieldId) throw new InvalidOperationException("The permit population or current FIELD changed.");
+            var materialized = rows.ToArray();
+            if (materialized.Any(row => row is null)) throw new InvalidOperationException("The permit population is incomplete.");
+            var selected = materialized.Where(row => row.FIELD_ID == fieldId).ToArray();
+            if (selected.Any(row => string.IsNullOrWhiteSpace(row.PERMIT_APPLICATION_ID)) || selected.Select(row => row.PERMIT_APPLICATION_ID).Distinct(StringComparer.Ordinal).Count() != selected.Length)
+                throw new InvalidOperationException("The selected FIELD permit identities are incomplete or ambiguous.");
+            return Ok(selected.Select(ToSummary).ToList());
+        }
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            var parsed = Enum.TryParse<PermitApplicationStatus>(status, true, out var s) ? s : PermitApplicationStatus.Draft;
+            if (!Enum.TryParse<PermitApplicationStatus>(status, true, out var parsed) || !Enum.IsDefined(parsed))
+                return BadRequest(new { error = "The permit status is not recognized." });
             var apps = await _lifecycle.GetByStatusAsync(parsed);
-            return Ok(apps.Select(a => ToSummary(a, fieldId)).ToList());
+            return Confirm(apps);
         }
 
         if (!string.IsNullOrWhiteSpace(authority))
         {
             var apps = await _workflow.GetPermitApplicationsByAuthorityAsync(authority);
-            return Ok(apps.Select(a => ToSummary(a, fieldId)).ToList());
+            return Confirm(apps);
         }
 
         // Return all active applications
@@ -69,161 +98,220 @@ public class PermitsController : ControllerBase
         foreach (var s in allStatuses)
         {
             var batch = await _lifecycle.GetByStatusAsync(s);
+            if (batch is null) throw new InvalidOperationException("The permit population is unavailable.");
             allApps.AddRange(batch);
         }
-        return Ok(allApps.Select(a => ToSummary(a, fieldId)).ToList());
+        return Confirm(allApps);
     }
 
     /// <summary>
     /// Get a specific permit application by ID.
     /// </summary>
-    [HttpGet("{applicationId}")]
-    public async Task<ActionResult<PermitApplicationDetail>> GetByIdAsync(string applicationId)
+    [HttpGet("application")]
+    public async Task<ActionResult<PermitApplicationDetail>> GetByIdAsync([FromQuery] string applicationId)
     {
         if (string.IsNullOrWhiteSpace(applicationId))
             return BadRequest(new { error = "Application ID is required." });
 
+        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest(new { error = "No active field selected." });
         var app = await _lifecycle.GetByIdAsync(applicationId);
-        if (app == null)
+        if (_fieldOrchestrator.CurrentFieldId != fieldId) throw new InvalidOperationException("The current FIELD changed during the permit read.");
+        if (app == null || app.FIELD_ID != fieldId || app.PERMIT_APPLICATION_ID != applicationId)
             return NotFound(new { error = $"Permit application {applicationId} not found." });
 
-        var history = await _statusHistory.GetHistoryAsync(applicationId);
+        var history = MapHistory(await _statusHistory.GetHistoryAsync(applicationId), applicationId);
         var complianceResult = await _compliance.CheckComplianceAsync(applicationId);
+        if (_fieldOrchestrator.CurrentFieldId != fieldId) throw new InvalidOperationException("The current FIELD changed during the permit read.");
 
-        return Ok(new PermitApplicationDetail
+        var detail = new PermitApplicationDetail
         {
-            Application = app,
-            StatusHistory = history.ToList(),
-            ComplianceResult = complianceResult
-        });
-    }
-
-    /// <summary>
-    /// Create a new permit application.
-    /// </summary>
-    [HttpPost]
-    public async Task<ActionResult<string>> CreateAsync([FromBody] CreatePermitApplicationRequest request)
-    {
-        var userId = User.ActingUserId();
-        if (request == null)
-            return BadRequest(new { error = "Request body is required." });
-
-        var application = new PERMIT_APPLICATION
-        {
-            APPLICATION_TYPE = ParseApplicationType(request.ApplicationType),
-            REGULATORY_AUTHORITY = ParseRegulatoryAuthority(request.RegulatoryAuthority),
-            APPLICANT_ID = string.IsNullOrWhiteSpace(request.ApplicantName) ? "unknown" : request.ApplicantName.Trim(),
-            WELL_ID = request.WellId,
-            FACILITY_ID = request.FacilityId,
-            REMARKS = request.Description,
-            FIELD_ID = _fieldOrchestrator.CurrentFieldId ?? string.Empty,
-            STATUS = PermitApplicationStatus.Draft,
-            COUNTRY = Country.UnitedStates,
-            STATE_PROVINCE = StateProvince.Other
+            Application = ToSummary(app),
+            StatusHistory = history,
+            ComplianceResult = MapCheck(complianceResult, applicationId, fieldId)
         };
-
-        var created = await _lifecycle.CreateAsync(application, userId);
-        return CreatedAtAction(nameof(GetByIdAsync), new { applicationId = created.PERMIT_APPLICATION_ID }, created.PERMIT_APPLICATION_ID);
+        PermitApplicationReadValidator.Require(detail, applicationId, fieldId);
+        return Ok(detail);
     }
 
-    /// <summary>
-    /// Update an existing permit application.
-    /// </summary>
-    [HttpPut("{applicationId}")]
-    public async Task<ActionResult> UpdateAsync(string applicationId, [FromBody] UpdatePermitApplicationRequest request)
+    [HttpGet("application-inbox")]
+    public async Task<ActionResult<PermitApplicationInboxReview>> ReadInboxAsync()
     {
-        var userId = User.ActingUserId();
-        if (string.IsNullOrWhiteSpace(applicationId))
-            return BadRequest(new { error = "Application ID is required." });
-        if (request == null)
-            return BadRequest(new { error = "Request body is required." });
-
-        var existing = await _lifecycle.GetByIdAsync(applicationId);
-        if (existing == null)
-            return NotFound(new { error = $"Permit application {applicationId} not found." });
-
-        if (!string.IsNullOrWhiteSpace(request.ApplicationType))
-            existing.APPLICATION_TYPE = ParseApplicationType(request.ApplicationType);
-        if (!string.IsNullOrWhiteSpace(request.RegulatoryAuthority))
-            existing.REGULATORY_AUTHORITY = ParseRegulatoryAuthority(request.RegulatoryAuthority);
-        if (!string.IsNullOrWhiteSpace(request.ApplicantName))
-            existing.APPLICANT_ID = request.ApplicantName.Trim();
-        if (request.Description != null)
-            existing.REMARKS = request.Description;
-
-        await _lifecycle.UpdateAsync(applicationId, existing, userId);
-        return NoContent();
+        var context=await RequirePermitContextAsync();var authority=await _permitAccess.ReviewInboxAuthorityAsync();
+        if(authority.Context!=context)throw RefusalException.Forbidden("The permit inbox authority belongs to another module/selection.");
+        var rows=new List<PermitApplicationSummary>();
+        var returned=await _lifecycle.GetApplicationsAsync()??throw new InvalidOperationException("The permit inbox population is unavailable.");
+        foreach(var row in returned)
+        {
+            if(row is null || row.FIELD_ID!=context.Field.FieldId)throw RefusalException.Forbidden("The returned permit record escaped its selected FIELD.");
+            rows.Add(ToSummary(row));
+            if(rows.Count>4096)throw new InvalidOperationException("The returned permit population exceeds this inbox limit; refine server paging before using it.");
+        }
+        if(await _permitAccess.ReviewInboxAuthorityAsync()!=authority)throw RefusalException.Conflict("The permit inbox authority changed while reading records.");
+        await RequirePermitContextAsync(context);
+        return Ok(PermitApplicationInboxReview.Capture(authority,DateTimeOffset.UtcNow,rows.OrderBy(row=>row.PermitApplicationId,StringComparer.Ordinal).ToArray()));
     }
 
-    // ── Workflow Actions ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Submit a permit application for regulatory review.
-    /// </summary>
-    [HttpPost("{applicationId}/submit")]
-    public async Task<ActionResult> SubmitAsync(string applicationId)
+    [HttpPost("application-creation-review")]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.IssuePermit, true)]
+    public async Task<ActionResult<PermitApplicationCreationReview>> ReviewCreationAsync([FromBody] PermitApplicationCreationProposal proposal)
     {
-        var userId = User.ActingUserId();
-        if (string.IsNullOrWhiteSpace(applicationId))
-            return BadRequest(new { error = "Application ID is required." });
-
-        var existing = await _lifecycle.GetByIdAsync(applicationId);
-        if (existing == null)
-            return NotFound(new { error = $"Permit application {applicationId} not found." });
-
-        var submitted = await _lifecycle.SubmitAsync(applicationId, userId);
-        return Ok(new { applicationId = submitted.PERMIT_APPLICATION_ID, status = submitted.STATUS.ToString() });
+        if(proposal is null)return BadRequest(new{error="An explicit creation proposal is required."});
+        try{proposal.Require();}
+        catch(InvalidOperationException){throw RefusalException.Invalid("The creation proposal requires valid draft values and complete linked resource identities.");}
+        var context=await RequirePermitContextAsync();
+        var result=await _permitAccess.ReviewCreationAsync(proposal)??throw new InvalidOperationException("The creation source review is unavailable.");
+        result.RequireFor(proposal,context.Field);
+        if(result.Context!=context)throw RefusalException.Forbidden("The creation review belongs to another permit module binding.");
+        await RequirePermitContextAsync(context);return Ok(result);
     }
 
-    /// <summary>
-    /// Approve or reject a permit application (regulator action).
-    /// </summary>
-    [HttpPost("{applicationId}/decision")]
-    public async Task<ActionResult> ProcessDecisionAsync(
-        string applicationId,
-        [FromBody] PermitDecisionRequest request)
+    [HttpGet("application-review")]
+    public async Task<ActionResult<PermitApplicationSourceReview>> ReviewSourceAsync([FromQuery] string applicationId)
     {
-        var userId = User.ActingUserId();
-        if (string.IsNullOrWhiteSpace(applicationId))
-            return BadRequest(new { error = "Application ID is required." });
-        if (request == null || string.IsNullOrWhiteSpace(request.Decision))
-            return BadRequest(new { error = "Decision is required (Approved or Rejected)." });
+        if (!LeaseSummaryValidator.Identifier(applicationId)) return BadRequest(new {error="An exact permit application identity is required."});
+        var context = await RequirePermitContextAsync();
+        PermitApplicationSourceReview review;
+        try { review = await _lifecycle.ReviewSourceAsync(applicationId) ?? throw new InvalidOperationException("The permit source review is unavailable."); }
+        catch (PermitNotFoundException)
+        {
+            throw RefusalException.NotFound("The permit application is unavailable in the current company FIELD.");
+        }
+        review.Require();
+        if (review.Context != context || review.ReadApplication().PERMIT_APPLICATION_ID != applicationId)
+            throw new InvalidOperationException("The permit source review belongs to another request context or application.");
+        await RequirePermitContextAsync(context); return Ok(review);
+    }
 
-        var result = await _lifecycle.ProcessDecisionAsync(
-            applicationId,
-            request.Decision,
-            request.Remarks ?? string.Empty,
-            userId);
+    [HttpPost("application-command")]
+    public async Task<ActionResult<PermitApplicationCommandOutcome>> RecordCommandAsync([FromBody] PermitApplicationCommand original)
+    {
+        if (original is null) return BadRequest(new {error="A retained reviewed permit original is required."});
+        RequireOriginal(original); await RequirePermitContextAsync(original.Review.Context);
+        // The native owner independently enforces current IssuePermit/ApprovePermit and FIELD write authority
+        // for a new effect. A confirmed same-original replay remains read-only.
+        var result = await _lifecycle.RecordCommandAsync(original) ?? throw new InvalidOperationException("The permit outcome is unconfirmed. Retain the original for recovery.");
+        result.Require();
+        if (result.Original != original) throw new InvalidOperationException("The permit outcome belongs to another original.");
+        await RequirePermitContextAsync(original.Review.Context); return Ok(result);
+    }
 
-        return Ok(new { applicationId = result.PERMIT_APPLICATION_ID, status = result.STATUS.ToString(), decision = result.DECISION });
+    [HttpPost("application-command/recovery")]
+    public async Task<ActionResult<PermitApplicationCommandRecovery>> RecoverCommandAsync([FromBody] PermitApplicationCommand original)
+    {
+        if (original is null) return BadRequest(new {error="The original permit command is required for read-only recovery."});
+        RequireOriginal(original); await RequirePermitContextAsync(original.Review.Context);
+        var result = new PermitApplicationCommandRecovery(original, await _lifecycle.RecoverCommandAsync(original)); result.Require(original);
+        await RequirePermitContextAsync(original.Review.Context); return Ok(result);
+    }
+
+    [HttpPost("application-document-stage")]
+    public async Task<ActionResult<PermitDocumentStageResponse>> StageDocumentAsync([FromBody] PermitDocumentStageRequest request)
+    {
+        if(request is null)return BadRequest(new{error="An exact original and matching bytes are required."});request.Require();
+        await RequirePermitContextAsync(request.Original.Review.Context);
+        var proof=await CurrentDocumentEvidenceAsync(()=>_lifecycle.StageDocumentAsync(request.Original,request.Content))??throw new InvalidOperationException("Document staging is unconfirmed; retain the original.");
+        proof.Require(request.Original);
+        var response=new PermitDocumentStageResponse(request.Original,PermitDocumentStageReceipt.From(proof));response.Require(request.Original);
+        await RequirePermitContextAsync(request.Original.Review.Context);return Ok(response);
+    }
+    [HttpPost("application-document-stage/recovery")]
+    public async Task<ActionResult<PermitDocumentStageResponse>> RecoverDocumentStageAsync([FromBody] PermitDocumentStageOriginal original)
+    {
+        if(original is null)return BadRequest(new{error="The retained document original is required."});original.Require();await RequirePermitContextAsync(original.Review.Context);
+        var proof=await CurrentDocumentEvidenceAsync(()=>_lifecycle.RecoverDocumentStageAsync(original));proof?.Require(original);
+        var response=new PermitDocumentStageResponse(original,proof is null?null:PermitDocumentStageReceipt.From(proof));response.Require(original);
+        await RequirePermitContextAsync(original.Review.Context);return Ok(response);
+    }
+    [HttpPost("application-attachment-content")]
+    public async Task<ActionResult<PermitAttachmentContent>> ReadAttachmentContentAsync([FromBody] PermitAttachmentContentQuery query)
+    {
+        if(query is null)return BadRequest(new{error="An exact reviewed attachment is required."});query.Require();await RequirePermitContextAsync(query.Review.Context);
+        var result=await CurrentDocumentEvidenceAsync(()=>_lifecycle.ReadAttachmentContentAsync(query))??throw new InvalidOperationException("Attachment content is unconfirmed.");result.Require(query);
+        await RequirePermitContextAsync(query.Review.Context);return Ok(result);
+    }
+    [HttpPost("application-attachment-download")]
+    public async Task<IActionResult> DownloadAttachmentAsync([FromBody] PermitAttachmentContentQuery query)
+    {
+        if(query is null)return BadRequest(new{error="An exact reviewed attachment is required."});query.Require();await RequirePermitContextAsync(query.Review.Context);
+        var result=await CurrentDocumentEvidenceAsync(()=>_lifecycle.ReadAttachmentContentAsync(query))??throw new InvalidOperationException("Attachment content is unconfirmed.");result.Require(query);
+        await RequirePermitContextAsync(query.Review.Context);Response.Headers["X-Content-Type-Options"]="nosniff";
+        return File(result.Content,"application/octet-stream",result.Receipt.Document.FileName);
+    }
+
+    private static async Task<T> CurrentDocumentEvidenceAsync<T>(Func<Task<T>> read)
+    {
+        try{return await read();}
+        catch(PermitDocumentEvidenceChangedException error)
+        {throw new RefusalException(RefusalKind.Conflict,"Native document or reference evidence changed or is unavailable. Review the current PPDM setup and application before retrying.",error);}
+    }
+
+    private static void RequireOriginal(PermitApplicationCommand original)
+    {
+        try { original.Require(); }
+        catch (Exception exception) when (exception is InvalidOperationException or System.Text.Json.JsonException)
+        {
+            throw RefusalException.Invalid("The retained permit original is invalid. Review the current source before preparing a new command.");
+        }
+    }
+
+    private async Task<PermitApplicationDataScope> RequirePermitContextAsync(PermitApplicationDataScope? expected = null)
+    {
+        var current = await _permitAccess.RequireReadScopeAsync() ?? throw new InvalidOperationException("The current permit company context is unavailable.");
+        current.Require();
+        if (current.Field.ActorUserId != User.ActingUserId() || current.Field.FieldId != _fieldOrchestrator.CurrentFieldId || expected is not null && current != expected)
+            throw RefusalException.Forbidden("The permit original, actor, company, FIELD selection or module binding differs from the current request.");
+        return current;
     }
 
     /// <summary>
     /// Run a compliance check on a permit application.
     /// </summary>
-    [HttpGet("{applicationId}/compliance")]
-    public async Task<ActionResult<PermitComplianceResult>> CheckComplianceAsync(string applicationId)
+    [HttpGet("application-check")]
+    public async Task<ActionResult<PermitApplicationCheckResult>> CheckComplianceAsync([FromQuery] string applicationId)
     {
         if (string.IsNullOrWhiteSpace(applicationId))
             return BadRequest(new { error = "Application ID is required." });
 
+        var application = await GetCurrentApplicationAsync(applicationId);
+        if (application is null) return NotFound(new { error = "The permit application is unavailable in the current FIELD." });
+        var fieldId = application.FIELD_ID;
         var result = await _compliance.CheckComplianceAsync(applicationId);
-        return Ok(result);
+        if (_fieldOrchestrator.CurrentFieldId != fieldId) throw new InvalidOperationException("The current FIELD changed during the permit check.");
+        return Ok(MapCheck(result, applicationId, fieldId));
     }
 
     // ── Helper Methods ────────────────────────────────────────────────────────
 
-    private static PermitApplicationType ParseApplicationType(string? value) =>
-        Enum.TryParse<PermitApplicationType>(value, ignoreCase: true, out var parsed)
-            ? parsed
-            : PermitApplicationType.Other;
+    private async Task<PERMIT_APPLICATION?> GetCurrentApplicationAsync(string applicationId)
+    {
+        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        if (string.IsNullOrWhiteSpace(fieldId)) throw new InvalidOperationException("No active FIELD is selected.");
+        var application = await _lifecycle.GetByIdAsync(applicationId);
+        if (_fieldOrchestrator.CurrentFieldId != fieldId) throw new InvalidOperationException("The current FIELD changed during the permit read.");
+        return application is not null && application.PERMIT_APPLICATION_ID == applicationId && application.FIELD_ID == fieldId ? application : null;
+    }
 
-    private static RegulatoryAuthority ParseRegulatoryAuthority(string? value) =>
-        Enum.TryParse<RegulatoryAuthority>(value, ignoreCase: true, out var parsed)
-            ? parsed
-            : RegulatoryAuthority.Other;
+    private static List<PermitStatusHistoryEntry> MapHistory(IEnumerable<PERMIT_STATUS_HISTORY>? rows, string applicationId)
+    {
+        var history = rows?.ToArray() ?? throw new InvalidOperationException("The permit status history is unavailable.");
+        if (history.Any(row => row is null || row.PERMIT_APPLICATION_ID != applicationId || !LeaseSummaryValidator.Identifier(row.PERMIT_STATUS_HISTORY_ID)) ||
+            history.Select(row => row.PERMIT_STATUS_HISTORY_ID).Distinct(StringComparer.Ordinal).Count() != history.Length)
+            throw new InvalidOperationException("The permit history belongs to another application or has ambiguous identities.");
+        return history.Select(row => new PermitStatusHistoryEntry { HistoryId = row.PERMIT_STATUS_HISTORY_ID, ApplicationId = applicationId,
+            Status = row.STATUS, StatusDate = row.STATUS_DATE == default ? null : row.STATUS_DATE, Remarks = row.STATUS_REMARKS, UpdatedBy = row.UPDATED_BY }).ToList();
+    }
+    private static PermitApplicationCheckResult MapCheck(Beep.OilandGas.Models.Data.PermitsAndApplications.PermitComplianceResult? result, string applicationId, string fieldId)
+    {
+        if (result is null || result.ComplianceScore is < 0 or > 100 || result.Violations is null || result.Warnings is null)
+            throw new InvalidOperationException("The permit checker result is unavailable or invalid.");
+        var check = new PermitApplicationCheckResult { ApplicationId = applicationId, FieldId = fieldId, CheckedAtUtc = DateTimeOffset.UtcNow,
+            IsCompliant = result.IsCompliant, ComplianceScore = result.ComplianceScore, Violations = result.Violations.ToList(), Warnings = result.Warnings.ToList() };
+        PermitApplicationReadValidator.RequireCheck(check, applicationId, fieldId);
+        return check;
+    }
 
-    private static PermitApplicationSummary ToSummary(PERMIT_APPLICATION app, string fieldId)
+    private static PermitApplicationSummary ToSummary(PERMIT_APPLICATION app)
     {
         return new PermitApplicationSummary
         {
@@ -236,54 +324,8 @@ public class PermitsController : ControllerBase
             SubmittedDate = app.SUBMITTED_DATE,
             DecisionDate = app.DECISION_DATE,
             Decision = app.DECISION,
-            FieldId = fieldId
+            FieldId = app.FIELD_ID,
+            SubmittedByUserId=app.SUBMITTED_BY_USER_ID,Country=app.COUNTRY.ToString(),Region=app.STATE_PROVINCE.ToString()
         };
     }
-}
-
-// ── DTOs ──────────────────────────────────────────────────────────────────────
-
-public class PermitApplicationSummary
-{
-    public string PermitApplicationId { get; set; } = string.Empty;
-    public string ApplicationType { get; set; } = string.Empty;
-    public string RegulatoryAuthority { get; set; } = string.Empty;
-    public string ApplicantName { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public DateTime? CreatedDate { get; set; }
-    public DateTime? SubmittedDate { get; set; }
-    public DateTime? DecisionDate { get; set; }
-    public string? Decision { get; set; }
-    public string FieldId { get; set; } = string.Empty;
-}
-
-public class PermitApplicationDetail
-{
-    public PERMIT_APPLICATION Application { get; set; } = default!;
-    public List<PERMIT_STATUS_HISTORY> StatusHistory { get; set; } = new();
-    public PermitComplianceResult ComplianceResult { get; set; } = default!;
-}
-
-public class CreatePermitApplicationRequest
-{
-    public string ApplicationType { get; set; } = string.Empty;
-    public string RegulatoryAuthority { get; set; } = string.Empty;
-    public string ApplicantName { get; set; } = string.Empty;
-    public string? WellId { get; set; }
-    public string? FacilityId { get; set; }
-    public string? Description { get; set; }
-}
-
-public class UpdatePermitApplicationRequest
-{
-    public string? ApplicationType { get; set; }
-    public string? RegulatoryAuthority { get; set; }
-    public string? ApplicantName { get; set; }
-    public string? Description { get; set; }
-}
-
-public class PermitDecisionRequest
-{
-    public string Decision { get; set; } = string.Empty;
-    public string? Remarks { get; set; }
 }

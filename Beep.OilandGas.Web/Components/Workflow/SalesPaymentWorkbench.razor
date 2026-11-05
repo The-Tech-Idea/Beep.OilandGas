@@ -1,0 +1,61 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CompanySalesReceivableWorkspaceState State
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+@if(_canRead)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-4">
+        <MudText Typo="Typo.h6">Sales payment proposals</MudText>
+        <MudText>Review actual posted receivable evidence before proposing a receipt. A proposal creates no paid balance, settlement or cash posting.</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(State.HasPendingPayment){<MudAlert Severity="Severity.Warning">The exact original payment request is retained. Reconcile it before another financial request.</MudAlert>@if(State.PendingPayment is {} pending){<MudText>@pending.Number · @pending.Amount @pending.Source.Currency · Request @pending.Id</MudText>@if(_canPrepare){<MudButton OnClick="Retry" Disabled="State.Busy">Reconcile original payment proposal</MudButton>}<MudButton OnClick='@(()=>RecoverId(pending.Id))' Disabled="State.Busy">Recover original payment outcome</MudButton>}}
+        <MudForm @ref="_selectionForm"><MudTextField T="string" Label="Recorded payment ledger book" Value="_book" ValueChanged='@(v=>Selection("book",v))' Required="true" MaxLength="128" /><MudTextField T="string" Label="Recorded functional ledger currency" Value="_currency" ValueChanged='@(v=>Selection("currency",v))' Required="true" MaxLength="16" /><MudButton OnClick="Load" Disabled="State.Busy">Review native payment source</MudButton></MudForm>
+        @if(State.PaymentSource is {} source && source.Ledger.ReceivableId==ReceivableId)
+        {
+            <MudText>Company @source.Ledger.Company.BusinessAssociateId · FIELD @source.Ledger.FieldId · Customer @source.CustomerId · Book @source.Ledger.BookId</MudText>
+            <MudText>Original receivable @source.OriginalAmount @source.Currency · Unreleased proposals @source.UnreleasedProposedAmount @source.Currency · Available to propose @source.AvailableToPropose @source.Currency</MudText>
+            <MudText>Confirmed posted journal @source.Ledger.Journals.Single().Number · @source.Ledger.CurrencyCode · Original currency precision @source.CurrencyDecimals</MudText>
+            @foreach(var proposal in source.Payments){<MudText>@proposal.Number · @proposal.Status · @proposal.Amount @proposal.Currency · @proposal.Date.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · @proposal.CreatedBy · @proposal.ExternalReference</MudText>@if(proposal.Review is {} review){<MudText>Reviewed by @review.Reviewer · @review.FinancialDisposition · @review.FinancialEvidence · @review.ReceiptDisposition · @review.ReceiptEvidence · @review.Reason</MudText>}}
+            @if(State.CanPreparePayment)
+            {
+                <MudForm @ref="_form">
+                    <MudTextField T="string" Label="Payment proposal number" @bind-Value="_number" Required="true" MaxLength="128" /><MudDatePicker Label="Company calendar payment date" @bind-Date="_date" Required="true" /><MudNumericField T="decimal?" Label="Proposed amount in original receivable currency" @bind-Value="_amount" Required="true" />
+                    <MudSelect T="string" Label="Payment method" @bind-Value="_method" Required="true"><MudSelectItem T="string" Value='@("BANK_TRANSFER")'>Bank transfer</MudSelectItem><MudSelectItem T="string" Value='@("ACH")'>ACH</MudSelectItem><MudSelectItem T="string" Value='@("WIRE")'>Wire</MudSelectItem><MudSelectItem T="string" Value='@("CHECK")'>Check</MudSelectItem><MudSelectItem T="string" Value='@("CASH")'>Cash</MudSelectItem></MudSelect>
+                    <MudTextField T="string" Label="Recorded payer business associate ID" @bind-Value="_payer" Required="true" MaxLength="128" /><MudTextField T="string" Label="Original bank/payment trace reference" @bind-Value="_reference" Required="true" MaxLength="256" /><MudTextField T="string" Label="Receipt evidence reference" @bind-Value="_evidence" Required="true" MaxLength="2000" /><MudTextField T="string" Label="Evidence observation UTC timestamp (ISO 8601)" @bind-Value="_observed" Required="true" MaxLength="64" /><MudTextField T="string" Label="Payment proposal reason" @bind-Value="_reason" Required="true" MaxLength="128" /><MudButton OnClick="Prepare" Color="Color.Primary" Variant="Variant.Filled" Disabled="State.Busy">Prepare reviewed payment proposal</MudButton>
+                </MudForm>
+            }
+        }
+        <MudForm @ref="_recoveryForm"><MudTextField T="string" Label="Original payment proposal ID" @bind-Value="_recoveryId" Required="true" MaxLength="32" /><MudButton OnClick="Recover" Disabled="State.Busy">Recover my original payment proposal</MudButton></MudForm>
+        @if(State.PaymentResult is {} result && result.AR_INVOICE_ID==ReceivableId){<MudAlert Severity="Severity.Success">The original @result.PAYMENT_NUMBER payment proposal is recorded and confirmed. Review status is shown with the native proposal evidence; release remains a separate action.</MudAlert>@if(Company.Selection?.Permissions.Contains("Workflow.Start",StringComparer.Ordinal)==true){<Beep.OilandGas.Web.Components.BusinessProcess.CompanyAccountingHandoffPanel EntityType="AR_PAYMENT" EntityId="@result.AR_PAYMENT_ID" SourceRevision="@ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(result))" />}}
+        <SalesPaymentReviewWorkbench />
+    </MudPaper>
+}
+@code{
+    [Parameter,EditorRequired]public string ReceivableId{get;set;}="";
+    private MudForm? _form,_selectionForm,_recoveryForm;
+    private string _book="",_currency="",_number="",_method="",_payer="",_reference="",_evidence="",_observed="",_reason="",_recoveryId="";
+    private DateTime? _date;
+    private decimal? _amount;
+    private string? _error;
+    private bool _canRead,_canPrepare,_disposed;
+    private long _epoch;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){Reset();try{await Access();}catch{_canRead=false;}}
+    private async Task Access(bool write=false){var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);_canRead=State.CanReadPayments;_canPrepare=Company.Selection!.Permissions.Contains("Accounting.PrepareSalesPayment",StringComparer.Ordinal);if(!_canRead || write && !_canPrepare)throw new UnauthorizedAccessException();}
+    private async Task Execute(Func<Task> action,bool write=false){var epoch=_epoch;_error=null;try{await Access(write);await action();if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="Payment evidence or outcome is unconfirmed. Check original company/account/book/FIELD, proposal authority and receipt evidence. Recover and reconcile the original request before another payment.";}}
+    private void Selection(string name,string value){if(name=="book")_book=value;else _currency=value;++_epoch;State.Invalidate();_error=null;}
+    private Task Load()=>Execute(async()=>{if(_selectionForm is not null){await _selectionForm.ValidateAsync();if(!_selectionForm.IsValid)return;}await State.LoadPaymentSourceAsync(ReceivableId,_book,_currency,Accounting);});
+    private Task Prepare()=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_date is null || _amount is null || !(_observed.EndsWith("Z",StringComparison.Ordinal) || _observed.EndsWith("+00:00",StringComparison.Ordinal)) || !DateTimeOffset.TryParse(_observed,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out var stamp) || stamp.Offset!=TimeSpan.Zero)throw new InvalidOperationException();await State.PreparePaymentAsync(_number,DateTime.SpecifyKind(_date.Value,DateTimeKind.Unspecified),_amount.Value,_method,_payer,_reference,_evidence,stamp.UtcDateTime,_reason,Accounting);},true);
+    private Task Retry()=>Execute(()=>State.SubmitPaymentAsync(Accounting),true);
+    private Task RecoverId(string id)=>Execute(()=>State.RecoverPaymentAsync(id,Accounting));
+    private Task Recover()=>Execute(async()=>{if(_recoveryForm is not null){await _recoveryForm.ValidateAsync();if(!_recoveryForm.IsValid)return;}await State.RecoverPaymentAsync(_recoveryId,Accounting);});
+    private void Reset(){++_epoch;_canRead=_canPrepare=false;_error=null;_book=_currency=_number=_method=_payer=_reference=_evidence=_observed=_reason=_recoveryId="";_date=null;_amount=null;Changed();}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();Reset();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

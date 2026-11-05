@@ -1,0 +1,83 @@
+{
+  "status": "verified-scoped-read-phase",
+  "recorded_at": "2026-10-29T13:26:48.223653+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; existing goal work preserved",
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase 1; Feature-09 step 2; Persona-09 company/FIELD source details",
+  "checks": [
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "889 ms",
+      "filter": "FullyQualifiedName~PermitApiMapsCanonicalHistoryAndCheckerWithoutRawNativePayload|FullyQualifiedName~PermitTypedReadUsesExactQueryAndRefusesUnboundWireEvidence|FullyQualifiedName~PermitDetailPublishesOnlyCurrentPermittedCanonicalEvidence|FullyQualifiedName~PermitDetailDiscardsLateCompanyResponseAndReloadsChangedQuery|FullyQualifiedName~PermitListShowsOnlyConfirmedFieldRecords|FullyQualifiedName~Foreign_detail_is_not_returned_and_does_not_read_history_or_compliance|FullyQualifiedName~Foreign_application_cannot_reach_decision_or_compliance_operations",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~PermitApiMapsCanonicalHistoryAndCheckerWithoutRawNativePayload|FullyQualifiedName~PermitTypedReadUsesExactQueryAndRefusesUnboundWireEvidence|FullyQualifiedName~PermitDetailPublishesOnlyCurrentPermittedCanonicalEvidence|FullyQualifiedName~PermitDetailDiscardsLateCompanyResponseAndReloadsChangedQuery|FullyQualifiedName~PermitListShowsOnlyConfirmedFieldRecords|FullyQualifiedName~Foreign_detail_is_not_returned_and_does_not_read_history_or_compliance|FullyQualifiedName~Foreign_application_cannot_reach_decision_or_compliance_operations\" --logger \"console;verbosity=minimal\"",
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\354-permit-application-read\\oilgas-354-permit-read.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-permit-read.log",
+      "original_sha256": "2a3cecf79ad79505c47d2d9272ced8c0095735bed5b0e34a80bf7532a63e40d5"
+    },
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "788 ms",
+      "filter": "FullyQualifiedName~PermitApiMapsCanonicalHistoryAndCheckerWithoutRawNativePayload|FullyQualifiedName~PermitTypedReadUsesExactQueryAndRefusesUnboundWireEvidence|FullyQualifiedName~PermitCheckerReadRequiresExactRecordedApplicationEvidence|FullyQualifiedName~PermitDetailPublishesOnlyCurrentPermittedCanonicalEvidence|FullyQualifiedName~PermitDetailDiscardsLateCompanyResponseAndReloadsChangedQuery|FullyQualifiedName~PermitListShowsOnlyConfirmedFieldRecords|FullyQualifiedName~Foreign_detail_is_not_returned_and_does_not_read_history_or_compliance|FullyQualifiedName~Foreign_application_cannot_reach_decision_or_compliance_operations|FullyQualifiedName~PermitCreationUsesExplicitCatalogCountryAndCurrentField",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~PermitApiMapsCanonicalHistoryAndCheckerWithoutRawNativePayload|FullyQualifiedName~PermitTypedReadUsesExactQueryAndRefusesUnboundWireEvidence|FullyQualifiedName~PermitCheckerReadRequiresExactRecordedApplicationEvidence|FullyQualifiedName~PermitDetailPublishesOnlyCurrentPermittedCanonicalEvidence|FullyQualifiedName~PermitDetailDiscardsLateCompanyResponseAndReloadsChangedQuery|FullyQualifiedName~PermitListShowsOnlyConfirmedFieldRecords|FullyQualifiedName~Foreign_detail_is_not_returned_and_does_not_read_history_or_compliance|FullyQualifiedName~Foreign_application_cannot_reach_decision_or_compliance_operations|FullyQualifiedName~PermitCreationUsesExplicitCatalogCountryAndCurrentField\" --logger \"console;verbosity=minimal\"",
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\354-permit-application-read\\oilgas-354-permit-read-final.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-permit-read-final.log",
+      "original_sha256": "8bf6fda563e422fb133b6b5f0136ec28f301e3f7319c44a806252c89b607c1cc"
+    }
+  ],
+  "distinct_current_cases": 30,
+  "count_note": "The final 30-case gate includes and supersedes the earlier 22 inputs. Do not add them.",
+  "data_build": {
+    "status": "verified",
+    "exit_code": 0,
+    "duration_seconds": 4.27,
+    "warnings": 1,
+    "errors": 0,
+    "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-data-final.log",
+    "scope": "BuildProjectReferences=false; existing missing sibling IdentityServer analyzer warning."
+  },
+  "criterion_mapping": {
+    "canonical_api_read": "6 inputs: exact application/history/checker shape and assembly ownership, foreign/duplicate history refusal before checker call, FIELD drift, missing or contradictory checker refusal.",
+    "typed_detail": "4 inputs: encoded reserved/multilingual identity query and foreign application/history/checker refusal.",
+    "typed_checker": "3 inputs: exact encoded checker query, foreign and missing evidence refusal.",
+    "actual_detail": "6 inputs: current read permission, matching FIELD/history/checker, unavailable source and immediate company clear; unreviewed mutation controls absent.",
+    "late_and_query": "1 input: late old-company response cannot restore content; query change loads the new exact identity.",
+    "affected_list": "4 inputs: current FIELD list, foreign/duplicate/missing populations refused; detail links use the new query destination.",
+    "affected_api_boundary": "2 inputs: foreign detail/decision/check do not reach dependent operations.",
+    "affected_create_navigation": "4 inputs: explicit supported country/current FIELD/unconfirmed creation behavior and successful creation navigation to the canonical detail query."
+  },
+  "source_sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationWorkflow.cs": "54227d973c2149c930b4adbc3be9e6bbe040f83256b0ccac34fc0f3e7b2e79f2",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "d9c8ad9d825f6413a0c559b2e69a283b02297b0c541bc4a7cc195c0cf366f42d",
+    "Beep.OilandGas.Web/Services/IPermitServiceClient.cs": "f376c17bee0824b6d191160e65167c2e5020ba456fceb8e19d0a0a55b5d68a3f",
+    "Beep.OilandGas.Web/Services/PermitServiceClient.cs": "d19ddc5b826be4ac62618a3d60da75c57b484c330be555185fbb264b0a62701a",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/PermitDetail.razor": "23657e0c53a39d2c174ab2928526ee467d65ac0e74fb15b8182ff51583d7c81a",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/PermitDashboard.razor": "fb75aa36ba674d71476688192c415495ec502e20b7471d975990ad35c7271272",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/NewPermitApplication.razor": "a4d9ff63e6873958545eaad3258ce2bde25eed18d29fb5f293eba8d57802463b",
+    "Beep.OilandGas.Web.Auth.Tests/PermitApplicationReadWorkflowTests.cs": "df1e53c3d5108af1404add3c049f11fd9af90b618b9a358a3c8e1c7a50990c6b",
+    "Beep.OilandGas.Web.Auth.Tests/HsePersonaLandingTests.cs": "f701041e5f986cefbeeec41ce7b6f4ee61af819532c8b246fda723e3de5c639e"
+  },
+  "runtime_data_sha256": "7b5e55bfa14f7d8dc66c57b69fc9423625dc0144e90aaebe983d98c13adc2a6d",
+  "review_notes": [
+    "Removed Web and API transport class declarations; Data owns shared summary/detail/history/checker/request/result wire models. Domain-native models/services retain their existing module ownership pending phase 2.",
+    "Actual API authorization attributes now require current HSE.ViewPermits for reads and IssuePermit/ApprovePermit plus FIELD WRITE for corresponding existing mutations. Direct controller tests do not execute those filters.",
+    "Raw native objects are mapped explicitly; no alias wire parsing or compatibility endpoint was added. Detail/check GET and detail screen use exact encoded query identities.",
+    "The unsafe direct approval UI and Environment.UserName remarks were retired. Reviewed submission and independent decisions remain required phases 2/3, not a read-only final product.",
+    "Only trailing blank-line cleanup followed the final functional gate; no behavior changed."
+  ],
+  "limitations": [
+    "Controlled native lifecycle/history/checker services, HTTP handler and bUnit selection/authentication seams; no actual provider, protected middleware HTTP, production role provisioning, OIDC/browser/RTL or concurrency qualification.",
+    "Current-FIELD filtering and view authorization do not prove company-bound native permit retrieval. The existing module persistence/mutation owners and transaction/recovery/independence remain to be replaced/qualified in phases 2/3.",
+    "Automated checker output is not regulator approval or permission to operate; jurisdiction policy applicability remains unqualified.",
+    "No SQL, EF migration, schema change or application database connection was added. Beep Migration remains the only future schema path.",
+    "Existing cached module outputs and unrelated analyzer/source-link/dependency warnings remain. No full class or full suite ran.",
+    "Overall feature/phase/goal and commit/push remain pending."
+  ]
+}

@@ -1,0 +1,170 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md attachment phase1 only",
+  "observed_at": "2026-10-29T21:52:02.429816+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; existing work preserved; full goal active; no commit/push",
+  "selection_policy": "Read master tracker AND active plan immediately before each exact-method test command. No whole-class/full-suite/unrelated incident runs.",
+  "methods": {
+    "InstalledPermitAttachmentMetadataBindsReviewedPopulation": {
+      "inputs": 4,
+      "proves": "Real setup-loaded SQLite and seven-entity Beep Migration: exact current-parent attachment population excludes a foreign row; metadata arrival invalidates unrecorded original, no effects/receipt; independent correction preserves metadata and read-only recovery; historical receipt recovery survives later metadata; six-table fixture without attachment schema refuses review. Physical FILE_PATH absent."
+    },
+    "PermitAttachmentSnapshotRequiresExactBoundedFrozenPopulation": {
+      "inputs": 7,
+      "proves": "Foreign, duplicate, inactive, negative size,129 rows and changed fingerprint refuse. Population sorting stable; returned decoded rows and later source mutations cannot change frozen strings."
+    },
+    "ActualPermitAttachmentMetadataIsInertAndCannotConfirmContent": {
+      "inputs": 3,
+      "proves": "Actual component static render for author/independent/read-only; URL-like filename HTML-encoded/inert, unknown size unit, explicit unconfirmed-content warning, withheld SUBMIT/APPROVE and independent correction through controlled state."
+    },
+    "PermitAttachmentMetadataUsesExistingCorrectionAndRecoveryWire": {
+      "inputs": 6,
+      "proves": "Metadata survives correction record/recovery through existing source-linked controller and Web/SDK transports."
+    },
+    "InstalledPermitDrillingAmendmentUsesReviewedOwnedLedger": {
+      "inputs": 3,
+      "proves": "Affected common snapshot/seven-entity parent-population read retains physical drilling owned transaction/readback/rollback/stale source/historical recovery."
+    },
+    "InstalledPermitSupportingAmendmentUsesReviewedOwnedLedger": {
+      "inputs": 6,
+      "proves": "Same affected owner/schema/read behavior for environmental/injection."
+    }
+  },
+  "gates": [
+    {
+      "log": "oilgas-354-attachment-01.log",
+      "passed": 26,
+      "failed": 3,
+      "skipped": 0,
+      "duration": "33s",
+      "exit_code": 1,
+      "failure": "Three new physical fixture insertions explicitly set non-nullable SUBMITTED_BY_USER_ID to null before the workflow. Canonical schema unchanged."
+    },
+    {
+      "log": "oilgas-354-attachment-02.log",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "12s",
+      "exit_code": 0,
+      "filter": "FullyQualifiedName~InstalledPermitAttachmentMetadataBindsReviewedPopulation&DisplayName!~correction",
+      "repair": "Fixture uses existing canonical empty string; only three failed inputs rerun. Product sources unchanged; passing26 not rerun."
+    }
+  ],
+  "distinct_selected_inputs": 29,
+  "result": "All29 distinct selected inputs now pass across the original gate and exact failed-input retry. Do not sum executions into unique coverage.",
+  "command_template": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<workspace>/TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter <exact listed method/input selection> --logger console;verbosity=minimal",
+  "changes": [
+    "Canonical snapshot captures exact bounded unique active attachment metadata for the current parent, with stable ordering and revision/outcome binding. Missing schema/provider/foreign/changed evidence cannot become absence.",
+    "Same parent-filtered generic native read path covers all three subtypes and attachment population under current scope/target/schema checks.",
+    "Recorded metadata display is inert and identifies unconfirmed content and unknown size unit/time provenance; no file/path/URL is fetched.",
+    "Unconfirmed attachment content withholds new SUBMIT/APPROVE. Independent rejection/correction and immutable historical read-only original recovery retain existing permission/stage boundaries.",
+    "Retired unused raw attachment mutation service/interface/timestamp IDs and FILE_PATH model field. Explicit filename/type/description/uploader widths remain Data-owned and Beep Migration driven."
+  ],
+  "retired_files": [
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Services/PermitAttachmentService.cs",
+      "absent": true
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Core/Interfaces/IPermitAttachmentService.cs",
+      "absent": true
+    }
+  ],
+  "construction_observation": "A test string-literal quoting issue was caught and fixed before compilation. Data/native/focused builds pass with warnings. Three failed tests were fixture nullability only and repaired without weakening schema or assertions.",
+  "self_review": "Existing source review, transaction/history/receipt/recovery and typed transport owners retained. Inspected native PPDM document reader is work-order membership specific; no reuse of its authorization as generic permit document access. No duplicate blob store or arbitrary path access introduced. README and active tracker updated.",
+  "limits": [
+    "This is attachment metadata/source prerequisite ONLY. No file upload/link, native RM document staging/application membership, verified content digest/version/size/unit or download implementation is delivered here. These remain required phases2/3.",
+    "Existing attachment metadata causes deliberate positive-action refusal until reviewed content support is implemented; metadata presence does not establish actual file evidence.",
+    "Physical setup-loaded SQLite uses isolated connector1.0.59/provider1.0.119 and prior changed engine runtime; authority/defaults/metadata/faults controlled. No public package distribution/other-provider acceptance.",
+    "Fresh seven-entity schema only; existing-schema FILE_PATH removal/width evolution and old payload conversion are not executed or qualified. No compatibility path, handwritten SQL or new EF migration.",
+    "HtmlRenderer/state and controlled controller/Web/SDK cases do not qualify hosted API/OIDC/new browser/RTL/a11y behavior.",
+    "Binding reconciliation, company jurisdiction policy and other roadmap gates remain open; whole approved goal is not complete."
+  ],
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/APPLICATION_ATTACHMENT.cs",
+      "sha256": "130e8b9b2d2e5dd60aa978b325ac2db16678377fd5fdfdb0d9ad19196712d75e"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationSupportingSnapshot.cs",
+      "sha256": "8422f48b066d786d63aaa14c8fca10be28e43d7bc8e36403dbb1dc44b132b225"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs",
+      "sha256": "d898a28922f591a10f2608b1a97e04efb8841f63ac5000bfb9a58f77cf8fa5a5"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs",
+      "sha256": "4fc02ff575712923eff3da4f47c67d7c6cb1d19eb6b10370cb5599b88ad1fccc"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor",
+      "sha256": "2c40751422006cf28605becec105e33b9ee686d6b126e049e1e05809d4b30e16"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs",
+      "sha256": "7e147b7e8eeb964b35684aaa7e3f2f54b670ce243067c293731fc0e3ca048be0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs",
+      "sha256": "a78c404354469836fe0e714befd4bd5b61a34f01146b4150ba0b93653051acbc"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs",
+      "sha256": "1d55a55b6f5160d5c5e613d5fdfd04e9b37752d3b4561a587abd4e5f0f38ec6a"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/README.md",
+      "sha256": "7d737933f53217e6ecb719a7be2ec8fa617fbf361a53f74d968384370351996b"
+    }
+  ],
+  "runtime_hashes": [
+    {
+      "path": "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll",
+      "sha256": "ef53c40b3a0584b8ee5db31a60192ff4036bd2f9022754d1481abc60c0fad533"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll",
+      "sha256": "01300a71788836f760fc9a067bc0b625ef374d4672bbb50d401159cea1a762a0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "f193bcd9cb57b7d8658c3098b111e00df0c1fade9c68b5d4d435cc85e07040f8"
+    }
+  ],
+  "logs": [
+    {
+      "path": "oilgas-354-attachment-01.log",
+      "sha256": "50d454bc8a07bdf3cf069f11042502c32bef7a780bcb5243468e6bdd7e8dd6ce"
+    },
+    {
+      "path": "oilgas-354-attachment-02.log",
+      "sha256": "c17048b5cbaffe8d3142c549281af2b3e9d3f78d98daf07f80f5855be0b99fc1"
+    },
+    {
+      "path": "oilgas-354-attachment-data-build-02.log",
+      "sha256": "df64f63bd96df3514af4f25f7d92e389e42a5cb57f1bfaadc2e22ab8aedaabb9"
+    },
+    {
+      "path": "oilgas-354-attachment-data-build.log",
+      "sha256": "73cf5f770b53cd9731ee81e1e5a773ffc33782074086997bb9be2c7d327268de"
+    },
+    {
+      "path": "oilgas-354-attachment-native-build-02.log",
+      "sha256": "14ab4b2a2c219b7161c0c7b62c2ffa9e43f811881ead9745dff74276a9e863cc"
+    },
+    {
+      "path": "oilgas-354-attachment-native-build.log",
+      "sha256": "5cecd51d3220fedbc97e8865fc40a1e57922067318e67aec5011a72b19d940ef"
+    },
+    {
+      "path": "oilgas-354-attachment-tests-build-02.log",
+      "sha256": "14487329fe86b79c95f7f5e34564a41ea560ad95c6e7745c705015bf7b0921e5"
+    },
+    {
+      "path": "oilgas-354-attachment-tests-build.log",
+      "sha256": "0087c739ed84929fd8048277c321acb72a9718d5651bbfdad825c0ba63eb1e0c"
+    }
+  ]
+}

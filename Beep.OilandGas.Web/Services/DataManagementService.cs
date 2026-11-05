@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Web.Services
     /// Service for managing data sources and connections in the web application.
     /// Provides centralized access to current data source, available connections, and related settings.
     /// </summary>
-    public interface IDataManagementService
+    public interface IDataManagementService : TheTechIdea.Data.OilGas.IFieldSelectionContext
     {
         /// <summary>
         /// Get the current active data source connection name
@@ -43,34 +43,9 @@ namespace Beep.OilandGas.Web.Services
         Task<List<string>> GetAvailableDatabaseTypesAsync();
 
         /// <summary>
-        /// Discover available PPDM setup scripts for a database type.
-        /// </summary>
-        Task<List<ScriptInfo>> DiscoverScriptsAsync(string databaseType);
-
-        /// <summary>
-        /// Start PPDM database creation.
-        /// </summary>
-        Task<DatabaseCreationResult> CreateDatabaseAsync(CreateDatabaseRequest request);
-
-        /// <summary>
-        /// Get PPDM database creation progress.
-        /// </summary>
-        Task<ScriptExecutionProgressInfo?> GetCreationProgressAsync(string executionId);
-
-        /// <summary>
         /// Delete a saved PPDM setup connection.
         /// </summary>
         Task<DeleteConnectionResult> DeleteConnectionAsync(string connectionName);
-
-        /// <summary>
-        /// Drop a PPDM database or schema.
-        /// </summary>
-        Task<DropDatabaseResult> DropDatabaseAsync(DropDatabaseRequest request);
-
-        /// <summary>
-        /// Recreate a PPDM database or schema.
-        /// </summary>
-        Task<RecreateDatabaseResult> RecreateDatabaseAsync(RecreateDatabaseRequest request);
 
         /// <summary>
         /// Start a PPDM database copy operation.
@@ -116,11 +91,6 @@ namespace Beep.OilandGas.Web.Services
         /// Create a SQLite PPDM setup database.
         /// </summary>
         Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request);
-
-        /// <summary>
-        /// Create schema from the migration-based setup path.
-        /// </summary>
-        Task<CreateSchemaResult> CreateSchemaFromMigrationAsync(CreateSchemaRequest request);
 
         /// <summary>
         /// Build a schema migration plan and review artifacts.
@@ -196,20 +166,11 @@ namespace Beep.OilandGas.Web.Services
         // Field Management
         // ============================================
 
-        /// <summary>
-        /// Get the current active field ID
-        /// </summary>
-        Task<string?> GetCurrentFieldIdAsync();
-
+        // Current FIELD reads and notifications are inherited from IFieldSelectionContext.
         /// <summary>
         /// Set the current active field
         /// </summary>
-        Task<bool> SetCurrentFieldAsync(string fieldId);
-
-        /// <summary>
-        /// Event fired when current field changes
-        /// </summary>
-        event Action<string>? CurrentFieldChanged;
+        // FIELD selection commands and reviewed reads are inherited from IFieldSelectionContext.
 
         // ============================================
         // Entity Operations
@@ -218,27 +179,27 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Get entities from a table with optional filters
         /// </summary>
-        Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39");
+        Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null);
 
         /// <summary>
         /// Get a single entity by ID
         /// </summary>
-        Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string? connectionName = null);
 
         /// <summary>
         /// Insert an entity
         /// </summary>
-        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string? connectionName = null);
 
         /// <summary>
         /// Update an entity
         /// </summary>
-        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string? connectionName = null);
 
         /// <summary>
         /// Delete an entity
         /// </summary>
-        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string connectionName = "PPDM39");
+        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string? connectionName = null);
 
         // ============================================
         // Import/Export Operations
@@ -247,12 +208,12 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Import data from CSV file
         /// </summary>
-        Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null);
+        Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string? connectionName = null, Action<ProgressUpdate>? onProgress = null);
 
         /// <summary>
         /// Export data to CSV file
         /// </summary>
-        Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null);
+        Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null);
 
         // ============================================
         // Validation Operations
@@ -272,20 +233,6 @@ namespace Beep.OilandGas.Web.Services
         /// Get validation rules for a table
         /// </summary>
         Task<object> GetValidationRulesAsync(string tableName, string connectionName = "PPDM39");
-
-        // ============================================
-        // Quality Operations
-        // ============================================
-
-        /// <summary>
-        /// Get data quality metrics for a table
-        /// </summary>
-        Task<DataQualityResult> GetTableQualityMetricsAsync(string tableName, string connectionName = "PPDM39");
-
-        /// <summary>
-        /// Get data quality dashboard
-        /// </summary>
-        Task<DataQualityDashboardResult> GetQualityDashboardAsync(string connectionName = "PPDM39");
 
         // ============================================
         // Versioning Operations
@@ -476,56 +423,6 @@ namespace Beep.OilandGas.Web.Services
                 ?? new List<string>();
         }
 
-        public async Task<List<ScriptInfo>> DiscoverScriptsAsync(string databaseType)
-        {
-            if (string.IsNullOrWhiteSpace(databaseType))
-            {
-                return new List<ScriptInfo>();
-            }
-
-            return await _apiClient.GetAsync<List<ScriptInfo>>(
-                $"/api/ppdm39/setup/discover-scripts/{Uri.EscapeDataString(databaseType)}")
-                ?? new List<ScriptInfo>();
-        }
-
-        public async Task<DatabaseCreationResult> CreateDatabaseAsync(CreateDatabaseRequest request)
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            try
-            {
-                var result = await _apiClient.PostAsync<CreateDatabaseRequest, DatabaseCreationResult>(
-                    "/api/ppdm39/setup/create-database",
-                    request);
-
-                return result ?? new DatabaseCreationResult
-                {
-                    Success = false,
-                    ErrorMessage = "Database creation failed"
-                };
-            }
-            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
-            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
-            {
-                return new DatabaseCreationResult
-                {
-                    Success = false,
-                    ErrorMessage = _calls.Explain(failure, "creating a PPDM database", "The database was not created")
-                };
-            }
-        }
-
-        public async Task<ScriptExecutionProgressInfo?> GetCreationProgressAsync(string executionId)
-        {
-            if (string.IsNullOrWhiteSpace(executionId))
-            {
-                return null;
-            }
-
-            return await _apiClient.GetAsync<ScriptExecutionProgressInfo>(
-                $"/api/ppdm39/setup/creation-progress/{Uri.EscapeDataString(executionId)}");
-        }
-
         public async Task<DeleteConnectionResult> DeleteConnectionAsync(string connectionName)
         {
             if (string.IsNullOrWhiteSpace(connectionName))
@@ -563,60 +460,6 @@ namespace Beep.OilandGas.Web.Services
                 Success = false,
                 Message = "Failed to delete connection"
             };
-        }
-
-        public async Task<DropDatabaseResult> DropDatabaseAsync(DropDatabaseRequest request)
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            try
-            {
-                var result = await _apiClient.PostAsync<DropDatabaseRequest, DropDatabaseResult>(
-                    "/api/ppdm39/setup/drop-database",
-                    request);
-
-                return result ?? new DropDatabaseResult
-                {
-                    Success = false,
-                    Message = "Failed to drop database"
-                };
-            }
-            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
-            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
-            {
-                return new DropDatabaseResult
-                {
-                    Success = false,
-                    Message = _calls.Explain(failure, "dropping a PPDM database", "The database was not dropped")
-                };
-            }
-        }
-
-        public async Task<RecreateDatabaseResult> RecreateDatabaseAsync(RecreateDatabaseRequest request)
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            try
-            {
-                var result = await _apiClient.PostAsync<RecreateDatabaseRequest, RecreateDatabaseResult>(
-                    "/api/ppdm39/setup/recreate-database",
-                    request);
-
-                return result ?? new RecreateDatabaseResult
-                {
-                    Success = false,
-                    Message = "Failed to recreate database"
-                };
-            }
-            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
-            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
-            {
-                return new RecreateDatabaseResult
-                {
-                    Success = false,
-                    Message = _calls.Explain(failure, "recreating a PPDM database", "The database was not recreated")
-                };
-            }
         }
 
         public async Task<OperationStartResponse> CopyDatabaseAsync(CopyDatabaseRequest request)
@@ -842,32 +685,6 @@ namespace Beep.OilandGas.Web.Services
                     Success = false,
                     Message = _calls.Explain(failure, "creating a SQLite PPDM database", "The SQLite database was not created"),
                     ConnectionName = request.ConnectionName
-                };
-            }
-        }
-
-        public async Task<CreateSchemaResult> CreateSchemaFromMigrationAsync(CreateSchemaRequest request)
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            try
-            {
-                return await _apiClient.PostAsync<CreateSchemaRequest, CreateSchemaResult>(
-                           "/api/ppdm39/setup/create-schema-from-migration",
-                           request)
-                       ?? new CreateSchemaResult
-                       {
-                           Success = false,
-                           Message = "Schema migration failed."
-                       };
-            }
-            // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
-            catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
-            {
-                return new CreateSchemaResult
-                {
-                    Success = false,
-                    Message = _calls.Explain(failure, "creating the schema from its migrations", "The schema was not created")
                 };
             }
         }
@@ -1162,7 +979,7 @@ namespace Beep.OilandGas.Web.Services
             throw lastException ?? new InvalidOperationException($"Operation {operationName} failed after {maxRetries} attempts");
         }
 
-        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39")
+        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null)
         {
             try
             {
@@ -1189,7 +1006,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string? connectionName = null)
         {
             try
             {
@@ -1210,20 +1027,15 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string? connectionName = null)
         {
             // Not sent again when it does not complete (ExecuteWithRetryAsync): the request may have reached the API, and
             // sending it again would insert the row twice.
             try
             {
-                var request = new GenericEntityRequest
-                {
-                    TableName = tableName,
-                    EntityData = entityData,
-                    ConnectionName = connectionName
-                };
                 var url = $"/api/ppdm39/data/{tableName}/insert";
-                return await _apiClient.PostAsync<GenericEntityRequest, GenericEntityResponse>(url, request)
+                if (!string.IsNullOrEmpty(connectionName)) url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+                return await _apiClient.PostAsync<Dictionary<string, object>, GenericEntityResponse>(url, entityData)
                     ?? new GenericEntityResponse { Success = false };
             }
             // A failed call is answered as a failed result the page shows (its contract); the store keeps the failure.
@@ -1237,20 +1049,15 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string? connectionName = null)
         {
             try
             {
                 return await ExecuteWithRetryAsync(async () =>
                 {
-                    var request = new GenericEntityRequest
-                    {
-                        TableName = tableName,
-                        EntityData = entityData,
-                        ConnectionName = connectionName
-                    };
                     var url = $"/api/ppdm39/data/{tableName}/{entityId}";
-                    return await _apiClient.PutAsync<GenericEntityRequest, GenericEntityResponse>(url, request)
+                    if (!string.IsNullOrEmpty(connectionName)) url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
+                    return await _apiClient.PutAsync<Dictionary<string, object>, GenericEntityResponse>(url, entityData)
                         ?? new GenericEntityResponse { Success = false };
                 }, $"updating a {tableName} row");
             }
@@ -1265,7 +1072,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string? connectionName = null)
         {
             try
             {
@@ -1290,7 +1097,7 @@ namespace Beep.OilandGas.Web.Services
         // Import/Export Operations Implementation
         // ============================================
 
-        public async Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null)
+        public async Task<OperationStartResponse> ImportFromCsvAsync(string tableName, Stream csvStream, string fileName, Dictionary<string, string>? columnMapping = null, bool validateForeignKeys = true, string? connectionName = null, Action<ProgressUpdate>? onProgress = null)
         {
             try
             {
@@ -1330,7 +1137,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string connectionName = "PPDM39", Action<ProgressUpdate>? onProgress = null)
+        public async Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null)
         {
             try
             {
@@ -1391,30 +1198,6 @@ namespace Beep.OilandGas.Web.Services
                 url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
 
             return await _apiClient.GetAsync<object>(url) ?? new List<object>();
-        }
-
-        // ============================================
-        // Quality Operations Implementation
-        // ============================================
-
-        public async Task<DataQualityResult> GetTableQualityMetricsAsync(string tableName, string connectionName = "PPDM39")
-        {
-            var url = $"/api/datamanagement/quality/{tableName}/metrics";
-            if (!string.IsNullOrEmpty(connectionName))
-                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-
-            return await _apiClient.GetAsync<DataQualityResult>(url)
-                ?? new DataQualityResult { TableName = tableName };
-        }
-
-        public async Task<DataQualityDashboardResult> GetQualityDashboardAsync(string connectionName = "PPDM39")
-        {
-            var url = "/api/datamanagement/quality/alerts";
-            if (!string.IsNullOrEmpty(connectionName))
-                url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
-
-            return await _apiClient.GetAsync<DataQualityDashboardResult>(url)
-                ?? new DataQualityDashboardResult();
         }
 
         // ============================================
@@ -1511,39 +1294,56 @@ namespace Beep.OilandGas.Web.Services
 
         public async Task<string?> GetCurrentFieldIdAsync()
         {
-            await _fieldLock.WaitAsync();
+            var response = await GetCurrentFieldSelectionAsync();
+            return response.SelectionAvailable ? response.FieldId : null;
+        }
+
+        public async Task<List<FieldListItem>> GetAvailableFieldsAsync(CancellationToken token = default)
+        {
+            var captured = _apiClient.CompanySnapshot;
+            RequireFieldScope(captured);
+            var rows = await _apiClient.GetAsync<List<FieldListItem>>("/api/field/fields", token);
+            RequireFieldScope(captured);
+            TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireCatalog(rows);
+            return rows!.Select(TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.Snapshot).ToList();
+        }
+
+        public async Task<FieldResponse> GetCurrentFieldSelectionAsync(CancellationToken token = default)
+        {
+            var captured = _apiClient.CompanySnapshot;
+            RequireFieldScope(captured);
+            await _fieldLock.WaitAsync(token);
             try
             {
-                var response = await _apiClient.GetAsync<FieldResponse>("/api/field/current")
+                RequireFieldScope(captured);
+                var response = await _apiClient.GetAsync<FieldResponse>("/api/field/current", token)
                     ?? throw new InvalidOperationException("Current field response was empty.");
-                return string.IsNullOrWhiteSpace(response.FieldId) ? null : response.FieldId;
-            }
-            // This endpoint defines 404 as no active field, not a failure: answered as no selection, and recorded.
-            catch (OilGasApiException noField) when (noField.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _failures.ReportHandled(
-                    noField,
-                    "reading the active field",
-                    consequence: "the API holds no active field for this person; the caller was answered with no selection",
-                    FailureSeverity.Degraded);
-                return null;
+                RequireFieldScope(captured);
+                TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireCurrent(response, captured.Selection!.Scope, captured.Selection.UserId);
+                return response;
             }
             finally { _fieldLock.Release(); }
         }
 
-        public async Task<bool> SetCurrentFieldAsync(string fieldId)
+        public async Task<bool> SetCurrentFieldAsync(SetActiveFieldRequest request, CancellationToken token = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+            ArgumentNullException.ThrowIfNull(request);
+            var intent = new SetActiveFieldRequest { FieldId = request.FieldId, ConnectionName = request.ConnectionName, Context = request.Context is { } review ? review with { } : null };
+            var captured = _apiClient.CompanySnapshot;
+            RequireFieldScope(captured);
+            TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireReview(intent.Context, captured.Selection!.Scope, captured.Selection.UserId);
+            if (!TheTechIdea.Data.OilGas.LeaseSummaryValidator.Identifier(intent.FieldId)) throw new ArgumentException("An exact FIELD identity is required.");
             bool confirmed = false;
             bool uncertain = false;
-            await _fieldLock.WaitAsync();
+            await _fieldLock.WaitAsync(token);
             try
             {
+                RequireFieldScope(captured);
                 var response = await _apiClient.PostAsync<SetActiveFieldRequest, SetActiveFieldResponse>(
-                    "/api/field/set-active", new SetActiveFieldRequest { FieldId = fieldId })
+                    "/api/field/set-active", intent, token)
                     ?? throw new InvalidOperationException("Field selection was not confirmed.");
-                if (!response.Success) return false;
-                if (response.FieldId != fieldId) throw new InvalidOperationException("The confirmed field differs from the requested field.");
+                RequireFieldScope(captured);
+                TheTechIdea.Data.OilGas.FieldSelectionReviewValidator.RequireAcknowledgement(response, intent);
                 confirmed = true;
                 return true;
             }
@@ -1551,8 +1351,14 @@ namespace Beep.OilandGas.Web.Services
             finally
             {
                 _fieldLock.Release();
-                if (confirmed || uncertain) PublishFieldChange(confirmed ? fieldId : string.Empty);
+                if ((confirmed || uncertain) && _apiClient.CompanySnapshot == captured) PublishFieldChange(confirmed ? intent.FieldId : string.Empty);
             }
+        }
+
+        private void RequireFieldScope((long Version, Beep.OilandGas.Client.App.CompanyClientSelection? Selection) captured)
+        {
+            if (captured.Selection is null || _apiClient.CompanySnapshot != captured)
+                throw new OperationCanceledException("The selected company/account changed. Reload the FIELD selector.");
         }
 
         private void PublishFieldChange(string fieldId)

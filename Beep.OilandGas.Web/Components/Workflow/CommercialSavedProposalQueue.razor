@@ -1,0 +1,95 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IBusinessProcessServiceClient Processes
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-4">
+    <MudText Typo="Typo.h5">My saved commercial proposals</MudText>
+    <MudText>Recover the original proposal from its closed rejection-review process. Opening a proposal reviews its current evidence before any retry.</MudText>
+    <MudButton OnClick="Reload" Disabled="@_busy">Reload my saved proposals</MudButton>
+    <MudSelect T="int" Value="@_pageSize" ValueChanged="ChangePageSize" Label="Saved proposals per page" Disabled="@_busy">
+        @foreach(var size in new[]{1,4,8,16,32}){<MudSelectItem T="int" Value="@size">@size</MudSelectItem>}
+    </MudSelect>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Loading saved commercial proposals" />}
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Select a company before recovering saved proposals.</MudAlert>}
+    else if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    else if(_queue is {} queue)
+    {
+        <MudText Typo="Typo.caption">Company: @queue.Company.BusinessAssociateId · Account: @queue.ActorUserId · Retrieved UTC: @_retrieved?.ToString("O")</MudText>
+        @if(_page is {} page)
+        {
+            <MudText>Saved proposals: @(page.TotalRecords) · Page @(page.PageNumber) of @Math.Max(1,page.TotalPages). Each page is reviewed independently; unresolved counts below apply to this page.</MudText>
+            <MudButton OnClick="@(()=>LoadPage(page.PageNumber-1))" Disabled="@(_busy || !page.HasPreviousPage)">Previous saved proposals page</MudButton>
+            <MudButton OnClick="@(()=>LoadPage(page.PageNumber+1))" Disabled="@(_busy || !page.HasNextPage)">Next saved proposals page</MudButton>
+        }
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton Variant="Variant.Outlined" OnClick="@(()=>_showRecorded=false)">Unresolved on this page (@queue.Rows.Count(row=>row.Status!="RECORDED"))</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="@(()=>_showRecorded=true)">All proposals on this page (@queue.Rows.Count)</MudButton>
+        </MudStack>
+        @if(VisibleRows.Count==0){<MudAlert Severity="Severity.Info">@(_showRecorded?"No saved commercial proposals were returned on this page.":"No unresolved saved commercial proposals were confirmed on this page. Review other pages when available.")</MudAlert>}
+        else
+        {
+            <MudTable T="CompanyCommercialAmendmentQueueRow" Items="VisibleRows" Dense="true" Hover="true" aria-label="My saved commercial proposals">
+                <HeaderContent><MudTh>Contract / version</MudTh><MudTh>Saved proposal</MudTh><MudTh>Native outcome</MudTh><MudTh>Recovery</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Contract / version">@context.Entry.SALES_CONTRACT_ID · @context.Entry.Restore(queue.Company,queue.ActorUserId,context.Entry.PROCESS_INSTANCE_ID).Amendment.Preparation.Terms.Version</MudTd>
+                    <MudTd DataLabel="Saved proposal">@context.Entry.COMMERCIAL_TERMS_INTENT_ID · UTC @context.Entry.ROW_CREATED_DATE?.ToString("O")</MudTd>
+                    <MudTd DataLabel="Native outcome">
+                        @(context.Status=="RECORDED"?"Recorded in native version history":context.Status=="SAVED_PENDING"?"Saved; native amendment not recorded":"Reconciliation required")
+                        @if(context.Recorded() is {} recorded){<MudText Typo="Typo.caption">Independent decision: @(recorded.Decision?.Decision.ToString() ?? "Pending")</MudText>}
+                    </MudTd>
+                    <MudTd DataLabel="Recovery"><MudButton Href="@("/accounting/processes/"+Uri.EscapeDataString(context.Entry.PROCESS_INSTANCE_ID))">Open original proposal process</MudButton></MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+</MudPaper>
+@code {
+    private CompanyCommercialAmendmentQueue? _queue;
+    private CompanyCommercialAmendmentPage? _page;
+    private int _requestedPage=1,_pageSize=8;
+    private string? _error;
+    private DateTime? _retrieved;
+    private bool _busy,_disposed,_reloadRequested,_showRecorded;
+    private int _generation;
+    private IReadOnlyList<CompanyCommercialAmendmentQueueRow> VisibleRows=>_queue?.Rows.Where(row=>_showRecorded || row.Status!="RECORDED").ToArray() ?? [];
+    protected override async Task OnInitializedAsync(){Company.Changed+=Changed;Authentication.AuthenticationStateChanged+=AuthenticationChanged;await Reload();}
+    private async Task RequireAuthority()
+    {
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;var selection=Company.Selection;
+        var subject=user.FindFirstValue("sub");var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ??subject;
+        if(selection is null || user.Identity?.IsAuthenticated!=true || actor!=selection.UserId || subject is not null && subject!=selection.UserId || !selection.Roles.Any(user.IsInRole))throw new UnauthorizedAccessException();
+    }
+    private Task Reload()=>LoadPage(_requestedPage);
+    private Task ChangePageSize(int size){CompanyCommercialAmendmentPage.RequireRequest(1,size);_pageSize=size;_requestedPage=1;return Reload();}
+    private async Task LoadPage(int number)
+    {
+        if(_disposed)return;CompanyCommercialAmendmentPage.RequireRequest(number,_pageSize);_requestedPage=number;if(_busy){_reloadRequested=true;return;}_busy=true;
+        try
+        {
+            do
+            {
+                _reloadRequested=false;_queue=null;_page=null;_error=null;_retrieved=null;_showRecorded=false;var original=Company.Snapshot;var generation=_generation;var requested=_requestedPage;var size=_pageSize;
+                if(original.Selection is null)continue;
+                try
+                {
+                    await RequireAuthority();if(_disposed || generation!=_generation || original!=Company.Snapshot)continue;
+                    var result=await Processes.GetCommercialAmendmentPageAsync(requested,size);
+                    await RequireAuthority();if(_disposed || generation!=_generation || original!=Company.Snapshot)continue;
+                    if(requested!=_requestedPage || size!=_pageSize)continue;
+                    result.Require(original.Selection.Scope,original.Selection.UserId,requested,size);_page=CompanyInventorySourceReview.Copy(result);_queue=CompanyInventorySourceReview.Copy(result.Queue);_retrieved=DateTime.UtcNow;
+                }
+                catch{if(!_disposed && generation==_generation && original==Company.Snapshot)_error="The complete saved proposal queue, native history or current company account authority could not be confirmed. Reload access and original process evidence.";}
+            }while(_reloadRequested && !_disposed);
+        }
+        finally{_busy=false;}
+    }
+    private void Changed(){++_generation;_requestedPage=1;_queue=null;_page=null;_error=null;_retrieved=null;if(!_disposed)_=InvokeAsync(async()=>{StateHasChanged();await Reload();if(!_disposed)StateHasChanged();});}
+    private void AuthenticationChanged(Task<AuthenticationState> state)=>Changed();
+    public void Dispose(){_disposed=true;++_generation;_queue=null;_page=null;Company.Changed-=Changed;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

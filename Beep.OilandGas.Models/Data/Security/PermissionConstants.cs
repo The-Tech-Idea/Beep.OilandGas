@@ -43,14 +43,74 @@ namespace Beep.OilandGas.Models.Data.Security
         // Accounting & Financial Permissions
         // ─────────────────────────────────────────────────────────────────
 
+        public static class Inventory
+        {
+            public const string View = "Inventory.View";
+            public const string ReleaseWorkOrderMaterial = "Inventory.ReleaseWorkOrderMaterial";
+            public const string ReserveWorkOrderMaterial = "Inventory.ReserveWorkOrderMaterial";
+            public const string RecordReceiptStock = "Inventory.RecordReceiptStock";
+            public const string RecordSupplierReturn = "Inventory.RecordSupplierReturn";
+        }
+
+        public static class Procurement
+        {
+            // Read-only PO source authority; assigning this does not grant ledger access or receipt commands.
+            public const string View = "Procurement.View";
+            public const string RecordReceiptDecision = "Procurement.RecordReceiptDecision";
+            public const string PrepareInventoryLink = "Procurement.PrepareInventoryLink";
+            public const string RecordInventoryLinkDecision = "Procurement.RecordInventoryLinkDecision";
+            public const string ReopenInventoryLink = "Procurement.ReopenInventoryLink";
+        }
+
         public static class Accounting
         {
             public const string View = "Accounting.View";
+            public const string PrepareWorkOrderBudget = "Accounting.PrepareWorkOrderBudget";
+            public const string PrepareDevelopmentBudget = "Accounting.PrepareDevelopmentBudget";
+            public const string ReviewDevelopmentBudget = "Accounting.ReviewDevelopmentBudget";
+            public const string ReviewWorkOrderBudget = "Accounting.ReviewWorkOrderBudget";
+            public const string RecordWorkOrderActualCost = "Accounting.RecordWorkOrderActualCost";
+            public const string ConfigureLedger = "Accounting.ConfigureLedger";
+            public const string ReviewSalesJournalSource = "Accounting.ReviewSalesJournalSource";
+            public const string PrepareSalesJournal = "Accounting.PrepareSalesJournal";
+            public const string ReviewSalesJournal = "Accounting.ReviewSalesJournal";
+            public const string ReviewPostedSalesLedger = "Accounting.ReviewPostedSalesLedger";
+            public const string ReviewSalesJournalPosting = "Accounting.ReviewSalesJournalPosting";
+            public const string PostSalesJournal = "Accounting.PostSalesJournal";
+            public const string RecordSalesJournalDecision = "Accounting.RecordSalesJournalDecision";
+            // Explicit company policy commands; do not grant invoice matching, posting or payment.
+            public const string PrepareMatchingPolicy = "Accounting.PrepareMatchingPolicy";
+            public const string ApproveMatchingPolicy = "Accounting.ApproveMatchingPolicy";
+            public const string PrepareBillingPolicy = "Accounting.PrepareBillingPolicy";
+            public const string ApproveBillingPolicy = "Accounting.ApproveBillingPolicy";
+            // Native draft proposal only; does not authorize independent review, receivables or posting.
+            public const string PrepareSalesInvoice = "Accounting.PrepareSalesInvoice";
+            public const string PrepareSalesReceivable = "Accounting.PrepareSalesReceivable";
+            public const string ReviewSalesPaymentSource = "Accounting.ReviewSalesPaymentSource";
+            public const string ReviewSalesPayment = "Accounting.ReviewSalesPayment";
+            public const string RecordSalesPaymentDecision = "Accounting.RecordSalesPaymentDecision";
+            public const string PrepareSalesPayment = "Accounting.PrepareSalesPayment";
+            public const string ReviewSalesReceivable = "Accounting.ReviewSalesReceivable";
+            public const string RecordSalesReceivableDecision = "Accounting.RecordSalesReceivableDecision";
+            // Read private invoice proposal evidence for independent review; does not record a decision or post.
+            public const string ReviewSalesInvoice = "Accounting.ReviewSalesInvoice";
+            public const string RecordSalesInvoiceDecision = "Accounting.RecordSalesInvoiceDecision";
+            // Accountant variance preparation only; does not grant controller decisions or posting.
+            public const string PrepareInvoiceVariance = "Accounting.PrepareInvoiceVariance";
+            public const string RecordInvoiceVariance = "Accounting.RecordInvoiceVariance";
+            public const string ReviewInvoiceVariance = "Accounting.ReviewInvoiceVariance";
+            public const string RecordInvoiceVarianceDecision = "Accounting.RecordInvoiceVarianceDecision";
+            public const string CorrectInvoice = "Accounting.CorrectInvoice";
+            // Read-only proposal source review; no allocation write or matching approval grant.
+            public const string PrepareReceiptAllocation = "Accounting.PrepareReceiptAllocation";
+            // Explicit allocation recording only; does not grant receiver acceptance, matching or posting.
+            public const string RecordReceiptAllocation = "Accounting.RecordReceiptAllocation";
             public const string PostJournal = "Accounting.PostJournal";
             public const string ApproveJournal = "Accounting.ApproveJournal";
             public const string EditSettings = "Accounting.EditSettings";
             public const string ViewReports = "Accounting.ViewReports";
             public const string ManagePeriods = "Accounting.ManagePeriods";
+            public const string ReopenPeriods = "Accounting.ReopenPeriods";
         }
 
         public static class Tax
@@ -287,6 +347,7 @@ namespace Beep.OilandGas.Models.Data.Security
         public static class HSE
         {
             public const string View = "HSE.View";
+            public const string ViewRestricted = "HSE.ViewRestricted";
             public const string ReportIncident = "HSE.ReportIncident";
             public const string ManageIncidents = "HSE.ManageIncidents";
             public const string ApproveIncident = "HSE.ApproveIncident";
@@ -436,6 +497,19 @@ namespace Beep.OilandGas.Models.Data.Security
         // ─────────────────────────────────────────────────────────────────
         // Lifecycle Workflow & Process Permissions
         // ─────────────────────────────────────────────────────────────────
+
+        public static class Maintenance
+        {
+            public const string ViewApprovedPermit = "Maintenance.ViewApprovedPermit";
+            public const string ExecuteWork = "Maintenance.ExecuteWork";
+            public const string VerifyCompletion = "Maintenance.VerifyCompletion";
+            public const string ReturnToService = "Maintenance.ReturnToService";
+            public const string ConfigureReturnPolicy = "Maintenance.ConfigureReturnPolicy";
+            public const string AssignPersonnel = "Maintenance.AssignPersonnel";
+            public const string ReleasePersonnel = "Maintenance.ReleasePersonnel";
+            public const string ConfigurePersonnelPolicy = "HSE.ConfigurePersonnelPolicy";
+            public const string ConfigurePersonnelIdentity = "HSE.ConfigurePersonnelIdentity";
+        }
 
         public static class Workflow
         {

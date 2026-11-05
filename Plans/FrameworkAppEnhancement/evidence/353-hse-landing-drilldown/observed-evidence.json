@@ -1,0 +1,43 @@
+{
+  "status": "verified-scoped-component",
+  "recorded_at": "2026-10-29T12:28:11.180043+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; earlier ongoing goal changes preserved",
+  "plan": [
+    "Company-Persona-Data-Workflows.md - Shared screen and data contract: KPI contribution drill-down",
+    "Feature-09-Governance-and-Durable-Workflow.md - implementation step 2",
+    "Implementation-353-HSE-Verification-and-Closure.md - HSE landing incident-count drill-down"
+  ],
+  "checks": [
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "1 second",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~HseIncidentCountsOpenExactPagedRecordsAndClearOnContextChange|FullyQualifiedName~HseIncidentCountDrillDownDistinguishesEmptyGroupFromUnavailablePopulation|FullyQualifiedName~HsePersonasSeeTheirAssignedWorkWithoutFabricatedSafetyFigures|FullyQualifiedName~LateIncidentTotalsAreClearedAfterCompanyChange|FullyQualifiedName~InvalidIncidentPopulationCannotProduceDashboardTotals\" --logger \"console;verbosity=minimal\"",
+      "criterion_to_method": {
+        "HseIncidentCountsOpenExactPagedRecordsAndClearOnContextChange": "2 inputs: complete 21-record returned population, exact group-to-ID mapping, ten-record paging, encoded non-ASCII/reserved identity, selected-state accessibility, company/FIELD clearing and explicit fresh reload.",
+        "HseIncidentCountDrillDownDistinguishesEmptyGroupFromUnavailablePopulation": "2 inputs: empty returned population and zero-contributor selected group, no false unavailable state, filter reset after refresh.",
+        "HsePersonasSeeTheirAssignedWorkWithoutFabricatedSafetyFigures": "2 existing HSE routes: authorized workspace metadata, assigned tasks, scoped counts/source links and no fabricated safety metrics.",
+        "LateIncidentTotalsAreClearedAfterCompanyChange": "1 input: previous company response cannot restore counts or links.",
+        "InvalidIncidentPopulationCannotProduceDashboardTotals": "2 inputs: foreign FIELD and duplicate identities cannot become totals or drill-down records."
+      },
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\353-hse-landing-drilldown\\landing.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-hse-landing-drilldown.log",
+      "original_sha256": "c93ca6d42fb04d39519aa216605d04d7562dcebce251a8105068c18de55e73a2"
+    }
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.Web/Pages/PPDM39/HSE/HSEDashboard.razor": "0597175eab897147adfbb54bbecbfb6843ea70547bb8f9a35896aa8bb4f6d74f",
+    "Beep.OilandGas.Web.Auth.Tests/HsePersonaLandingTests.cs": "e344c83f78b84024574ad1a3555745a178a2dd3983fc0264370de0d92347950a"
+  },
+  "limitations": [
+    "Source-linked bUnit tests use controlled persona/inbox/incident/selection services. No actual browser/OIDC/RTL/accessibility/provider qualification.",
+    "Local filtering/paging covers exactly the returned population; it does not establish complete FIELD inventory, server-side paging or an atomic multi-source snapshot.",
+    "Current-state counts have no reporting-date filter. Checked UTC time identifies confirmation of this returned projection, not source modification time.",
+    "Existing dependency/source-link/analyzer warnings remain. No SQL, data/schema or EF migration was introduced.",
+    "Whole-class/full suites were not run. Overall goal/plan and commit/push remain pending."
+  ]
+}

@@ -4,7 +4,7 @@ using TheTechIdea.Beep.ConfigUtil;
 
 namespace Beep.OilandGas.PPDM39.Core
 {
-    internal static class BeepOperationResult
+    public static class BeepOperationResult
     {
         public static bool IsSuccess(IErrorsInfo result) =>
             result != null && result.Flag == Errors.Ok &&

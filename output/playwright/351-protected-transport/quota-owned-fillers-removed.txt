@@ -1,0 +1,9 @@
+### Result
+{
+  "removedOwnedQuotaKeys": 56,
+  "remainingKeys": []
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {const keys=Object.keys(sessionStorage).filter(k=>k.startsWith("oilgas-test-quota-"));for(const key of keys)sessionStorage.removeItem(key);return {removedOwnedQuotaKeys:keys.length,remainingKeys:Object.keys(sessionStorage)};}');
+```

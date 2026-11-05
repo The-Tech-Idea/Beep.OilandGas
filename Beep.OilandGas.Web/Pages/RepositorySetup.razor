@@ -1,56 +1,81 @@
 @page "/setup/repository"
 @using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Components.Setup
+@using Microsoft.AspNetCore.Components.Authorization
 @inject RepositoryAccountClient RepositoryClient
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject ApiClient Api
+@inject ILogger<RepositorySetup> Logger
+@implements IDisposable
 
-<PageTitle>Repository Setup</PageTitle>
-<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
-    <MudStack Spacing="3">
-        <MudText Typo="Typo.h5">Repository Setup</MudText>
-        @if (_busy)
-        {
-            <MudProgressLinear Indeterminate="true" />
-        }
-        else
-        {
-            <MudAlert Severity="@SeverityForStatus">@StatusText</MudAlert>
-            <MudStack Row="true" Spacing="2">
-                <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="Refresh" Variant="Variant.Outlined">Refresh</MudButton>
-                @if (_status == RepositoryReadiness.BootstrapRequired)
-                {
-                    @* The first person to sign in becomes the administrator: the API provisions their account at first sight.
-                       This went to an endpoint of the Web's own that passed any return address on and posted a registration. *@
-                    <MudButton StartIcon="@Icons.Material.Filled.Login" Href="@BeepClientEndpoints.LoginWithReturn("/dashboard")"
-                               Variant="Variant.Filled" Color="Color.Primary">Sign in as the administrator</MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.PersonAdd" Href="@BeepClientEndpoints.RegisterWithReturn("/dashboard")"
-                               Variant="Variant.Outlined" Color="Color.Primary">Create an account</MudButton>
-                }
-                @if (_status == RepositoryReadiness.Ready)
-                {
-                    <MudButton StartIcon="@Icons.Material.Filled.Dashboard" Href="/dashboard"
-                               Variant="Variant.Filled" Color="Color.Primary">Dashboard</MudButton>
-                }
-            </MudStack>
-        }
-    </MudStack>
-</MudContainer>
+<PageTitle>First-time setup</PageTitle>
+<FirstRunSetupGuide Status="@_status" Busy="@_busy" SystemSetupStatus="@_systemSetupStatus" CompanySetupStatus="@_companySetupStatus" CompanySelected="@(Company.Selection is not null)" LoginUrl="@LoginUrl" RegisterUrl="@RegisterUrl" OnRefresh="Refresh" />
 
 @code {
-    private bool _busy = true;
+    private bool _busy = true, _disposed;
+    private long _generation;
     private RepositoryReadiness _status = RepositoryReadiness.Unavailable;
-    private string StatusText => _status switch
-    {
-        RepositoryReadiness.Ready => "Repository ready.",
-        RepositoryReadiness.BootstrapRequired => "Repository installed. Nobody administers it yet: the first person to sign in becomes its administrator.",
-        RepositoryReadiness.MigrationRequired => "Repository installation or migration required on the API server.",
-        RepositoryReadiness.RecoveryRequired => "Repository administrator state requires operator recovery. First-user registration is unavailable.",
-        _ => "Repository unavailable. Check the API service and repository connection."
-    };
-    private Severity SeverityForStatus => _status == RepositoryReadiness.Ready ? Severity.Success : Severity.Warning;
-    protected override Task OnInitializedAsync() => Refresh();
+    private string _systemSetupStatus = "not checked";
+    private string _companySetupStatus = "Select a company to review its environment.";
+    private static string LoginUrl => BeepClientEndpoints.LoginWithReturn("/setup/repository");
+    private static string RegisterUrl => BeepClientEndpoints.RegisterWithReturn("/setup/repository");
+    protected override async Task OnInitializedAsync() { Company.Changed += CompanyChanged; Authentication.AuthenticationStateChanged += AuthenticationChanged; await Refresh(); }
+    private void CompanyChanged() => _ = InvokeAsync(async () => { await Refresh(); if (!_disposed) StateHasChanged(); });
+    private void AuthenticationChanged(Task<AuthenticationState> state) => _ = InvokeAsync(async () => { await Refresh(); if (!_disposed) StateHasChanged(); });
     private async Task Refresh()
     {
-        _busy = true;
-        try { _status = await RepositoryClient.GetReadinessAsync(); }
-        finally { _busy = false; }
+        var generation = ++_generation; var companySnapshot = Company.Snapshot;
+        _busy = true; _systemSetupStatus = "not checked"; _companySetupStatus = "Select a company to review its environment.";
+        if (!_disposed) StateHasChanged();
+        try
+        {
+            var status = await RepositoryClient.GetReadinessAsync();
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            if (_disposed || generation != _generation) return;
+            _status = status;
+            if (status != RepositoryReadiness.Ready || !user.IsInRole("Administrator")) return;
+            try
+            {
+                var summary = await SystemSetupReadinessReader.ReadAsync(Api);
+                if (!_disposed && generation == _generation) _systemSetupStatus = summary;
+            }
+            catch (Exception error) { if (!_disposed && generation == _generation) { Logger.LogWarning(error, "System setup readiness could not be confirmed"); _systemSetupStatus = "System setup could not be confirmed; check the repository."; } }
+            if (_disposed || generation != _generation || companySnapshot != Company.Snapshot || companySnapshot.Selection is null) return;
+            try
+            {
+                var readiness = await CompanyEnvironmentReadinessReader.ReadAsync(Api, companySnapshot.Selection.Scope);
+                if (_disposed || generation != _generation || companySnapshot != Company.Snapshot) return;
+                _companySetupStatus = readiness.Status switch
+                {
+                    CompanyEnvironmentReadiness.Missing => "No environment is saved for the selected company. Configure and review its country settings.",
+                    CompanyEnvironmentReadiness.Current => $"Country {readiness.CountryCode} is saved and its shared settings match the company review. Verify source coverage; activation is not confirmed.",
+                    _ => $"Country {readiness.CountryCode} is saved, but shared or country settings changed or validation issues need attention. Review the company environment again; activation is not confirmed."
+                };
+                if (readiness.Status == CompanyEnvironmentReadiness.Current && companySnapshot.Selection.Roles.Contains("Administrator", StringComparer.Ordinal))
+                {
+                    try
+                    {
+                        var sources = await Api.GetAsync<CompanyEnvironmentSourceReview>("/api/company-environment/sources");
+                        if (_disposed || generation != _generation || companySnapshot != Company.Snapshot) return;
+                        CompanyEnvironmentSourceReviewValidator.RequireValid(sources, companySnapshot.Selection.Scope, readiness.CompanyRevision!, readiness.EffectiveRevision);
+                        var sourceItems = sources!.Sources;
+                        _companySetupStatus += sourceItems.Length == 0
+                            ? " No company data sources are configured."
+                            : $" Source bindings: {sourceItems.Count(x => x.BindingStatus == "Bound")} of {sourceItems.Length} bound; {sourceItems.Count(x => x.MappingStatus == "ReviewRequired")} need mapping review.";
+                        _companySetupStatus += " Binding review does not test source data or connectivity.";
+                    }
+                    catch (Exception error)
+                    {
+                        if (!_disposed && generation == _generation && companySnapshot == Company.Snapshot)
+                        { Logger.LogWarning(error, "Company source bindings could not be confirmed"); _companySetupStatus += " Company source bindings could not be confirmed."; }
+                    }
+                }
+            }
+            catch (Exception error) { if (!_disposed && generation == _generation && companySnapshot == Company.Snapshot) { Logger.LogWarning(error, "Company environment readiness could not be confirmed"); _companySetupStatus = "The selected company's environment could not be confirmed. Check company access and system setup."; } }
+
+        }
+        finally { if (!_disposed && generation == _generation) _busy = false; }
     }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= CompanyChanged; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }
 }

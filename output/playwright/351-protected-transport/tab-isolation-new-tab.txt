@@ -1,0 +1,16 @@
+### Result
+- 0: [](http://127.0.0.1:65142/)
+- 1: (current) [](http://127.0.0.1:65142/)
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:65142/');
+```
+### Open tabs
+- 0: [](http://127.0.0.1:65142/)
+- 1: (current) [](http://127.0.0.1:65142/)
+### Page
+- Page URL: http://127.0.0.1:65142/
+### Snapshot
+- [Snapshot](output\playwright\351-protected-transport\artifacts\page-2026-10-26T13-26-16-685Z.yml)
+### Events
+- New console entries: output\playwright\351-protected-transport\artifacts\console-2026-10-26T13-26-16-541Z.log#L1-L2

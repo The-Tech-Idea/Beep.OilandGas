@@ -1,0 +1,203 @@
+{
+  "observed_at_utc": "2026-10-21T07:36:16.6771101Z",
+  "scope": "Existing persona recorded-report queue selects one original report and reuses read-only current/recorded asset evidence; original reference/recovery regression retained.",
+  "git": {
+    "branch": "master",
+    "staging_commit_push_performed": false,
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7"
+  },
+  "environment": {
+    "sdk": "10.0.401",
+    "framework_snapshot": "a80d41ad0affd81b549f5f063787e186d162e37f",
+    "os": "Microsoft Windows NT 10.0.26200.0"
+  },
+  "sources": [
+    {
+      "sha256": "e33c24564a180d06d1da10711ce33834011442b33d337fa31eb313ab20a9b8a5",
+      "path": "Beep.OilandGas.Web/Components/Workflow/MaintenanceRecordedWorkQueue.razor"
+    },
+    {
+      "sha256": "2e03387bbc97d1f584a1d135206fe72c44e7f492d4a8a59189950afcc27a24ad",
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetEvidencePanel.razor"
+    },
+    {
+      "sha256": "7f94ab9c23f8680726aeafd699b66660a84753a5363066cdd0a0b3b44ba7224c",
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkTests.cs"
+    },
+    {
+      "sha256": "7c32f2c380ef68b01e45c840c9ee8c837a0c0ffc3286f3207e3ca4a0a40fa57d",
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkLandingTests.cs"
+    },
+    {
+      "sha256": "01dae093383a0cf62c1189eccb3ad826e13e65ea013af2097428e1cc0477765f",
+      "path": "Scripts/Test-PurchaseOrderOwnership.ps1"
+    }
+  ],
+  "related_sources": [
+    {
+      "sha256": "d0c8859e6244c65964a05674cffbd2ef32d19177e7b61a6907b05dd267302788",
+      "path": "Beep.OilandGas.Web/Services/MaintenanceRecordedWorkState.cs"
+    },
+    {
+      "sha256": "da10d02a943ad459e5e1bd027a24fa02d8d5ab0bf4020e61ff315151725ed608",
+      "path": "Beep.OilandGas.Web/Services/MaintenanceAssetEvidenceState.cs"
+    },
+    {
+      "sha256": "d1269c6ec507e46ed67cca9263b5f1a4cafe6db60db9b1b43d7341d34a5ebde0",
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnOutcome.razor"
+    },
+    {
+      "sha256": "57de7c41875a7fbc011d48905fac3cf3c7887516c7ba5d902cb51dcf3ea47989",
+      "path": "Beep.OilandGas.Web/Components/Workflow/PersonaTaskInbox.razor"
+    },
+    {
+      "sha256": "34f7ef8b8fa992051544f3a415be81b0b1cdc9ef5e2c448c5ce10c51f331a713",
+      "path": "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.AssetEvidence.cs"
+    },
+    {
+      "sha256": "be3028c3e71ccb996c2af1ac2fc6ac184193e811ef96e4982a31622b0cf5a8dc",
+      "path": "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.MaintenanceReturnPolicies.cs"
+    },
+    {
+      "sha256": "154eca83f9f61b7ac64b38791f23009705226e13904ebc950afa2d3e69ddce48",
+      "path": "Scripts/Test-MaintenanceReceivingPage.ps1"
+    }
+  ],
+  "data_assembly": {
+    "note": "Unchanged canonical Data8. No native/API/schema rebuild or write in this slice.",
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "sha256": "1f0a5419ad0d98aaec486823583c2432f4c374738a16d3a163eb20e9d624f14d"
+  },
+  "checks": [
+    {
+      "exit_code": 0,
+      "command": "./Scripts/Test-MaintenanceReceivingPage.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -Filter \"FullyQualifiedName~MaintenanceRecordedWorkTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests|FullyQualifiedName~MaintenanceAssetEvidenceTests|FullyQualifiedName~MaintenanceAssetReturnStateTests\"",
+      "passed": 161,
+      "duration": "39.3763 seconds",
+      "name": "initial-ui",
+      "status": "verified",
+      "log": "oilgas-336-inline-evidence-ui.log",
+      "note": "Before final absent-return, late-selection/account assertions and accessibility attributes."
+    },
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "name": "current-ui",
+      "failed": 0,
+      "duration": "46.9652 seconds",
+      "seams": "Actual HtmlRenderer/MudBlazor queue/panel/state/client with controlled public report/status projections, transport, auth, FIELD and static JS. No native/protected HTTP/provider/browser claim.",
+      "log": "oilgas-336-inline-evidence-ui-final.log",
+      "command": "./Scripts/Test-MaintenanceReceivingPage.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -Filter \"FullyQualifiedName~MaintenanceRecordedWorkTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests|FullyQualifiedName~MaintenanceAssetEvidenceTests|FullyQualifiedName~MaintenanceAssetReturnStateTests\"",
+      "passed": 164
+    },
+    {
+      "name": "initial-parent-harness",
+      "command": "./Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -IncludeWorkflowInbox -TestFilter \"FullyQualifiedName~MaintenanceRecordedWorkLandingTests|FullyQualifiedName~PersonaTaskInboxStateTests\"",
+      "exit_code": 1,
+      "log": "oilgas-336-inline-evidence-landing.log",
+      "status": "failed",
+      "note": "No tests ran; four current interface members required the existing maintenance return-policy client partial. Harness repaired by linking the actual source."
+    },
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "name": "current-parent",
+      "failed": 0,
+      "duration": "3.1505 seconds",
+      "seams": "Actual PersonaTaskInbox on maintenance, operations and production-engineer catalog routes. Actual child evidence component; public source/client/auth/FIELD/JS seams, no automatic asset request on selection, pending counts unchanged.",
+      "log": "oilgas-336-inline-evidence-landing-final.log",
+      "command": "./Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -IncludeWorkflowInbox -TestFilter \"FullyQualifiedName~MaintenanceRecordedWorkLandingTests|FullyQualifiedName~PersonaTaskInboxStateTests\"",
+      "passed": 88
+    }
+  ],
+  "outputs": [
+    {
+      "sha256": "0d96aa6328fec598c66f3a9c62449e07fca3f5a77e7a304fdc88f90eb426a5db",
+      "path": "oilgas-336-inline-evidence-ui.log"
+    },
+    {
+      "sha256": "55d0599639b7b38f85ffe269b6fb943ac5b0e0cfe4d52b6537dfcd14c63f7021",
+      "path": "oilgas-336-inline-evidence-ui-final.log"
+    },
+    {
+      "sha256": "8919012329ee876eefbefb043d69f81f0ae8c763723172a788405f05ba2e7473",
+      "path": "oilgas-336-inline-evidence-landing.log"
+    },
+    {
+      "sha256": "5fa01fe89c98e05b66112ecabb4f6bbaa0e050ac070ce1ad89847738e6b848f1",
+      "path": "oilgas-336-inline-evidence-landing-final.log"
+    }
+  ],
+  "review": {
+    "checks": [
+      "Current authorized page membership controls report selection; a foreign query is ignored.",
+      "Existing API/client/state and current standard role/capability/FIELD checks remain the authority.",
+      "One selected view; original report changes invalidate existing evidence without a second model/store.",
+      "Close/disposal clears state and fences late status replies; page/filter/account/company/FIELD/auth changes remove visible evidence.",
+      "No source or status request merely from selecting the row; no return review or mutation command in the landing journey.",
+      "Existing CallFailures report source errors; failures cannot render authoritative absence.",
+      "Original source route navigation and pending/report counts retain existing meanings."
+    ],
+    "limits": "Headless scoped proof; browser/screen-reader/keyboard/RTL/provider/native original lifecycle and wider plan acceptance remain open.",
+    "kind": "self-review"
+  },
+  "limitations": [
+    "Current-source and original-return historical facts remain separate; published report discovery does not certify accepted closure, asset readiness or finance close.",
+    "No native/API/domain contract/SQL/domain EF/schema/business write/CSS/JS change.",
+    "Authoritative original intent absence/reset, native qualified start/report/physical/closure/protected record POST, later transitions/rework and complete dashboards remain open.",
+    "Wider company/persona/finance/multinational/provider/browser/OIDC/concurrency/release plan remains active; commit/push follows complete goal/plan acceptance.",
+    "Earlier source-type/nullable/analyzer and unrelated focused PersonaSelector warnings remain outside this slice."
+  ],
+  "all_processes_terminal": true,
+  "final_verification": {
+    "internal_links_checked": 1116,
+    "missing_links": [],
+    "encoding": "Eight existing trackers retained as Latin1; active feature owners UTF8.",
+    "all_processes_terminal": true,
+    "source_output_hashes": "verified",
+    "status": "verified",
+    "documentation": [
+      {
+        "sha256": "6e88dddfa11d8d6f6bffd79988b178e6450b0a821bb56d4da50ce924c58ec167",
+        "path": "MASTER-TODO-TRACKER.md"
+      },
+      {
+        "sha256": "f412b25b084926eae506e17ebc20f80b7daa84b39cc73211238de9e8960e9f21",
+        "path": "Plans/FrameworkAppEnhancement/README.md"
+      },
+      {
+        "sha256": "44b57e13b7462fb5bab91fc19e5a1d0396ab00390fa3e5cbf566447e880077b1",
+        "path": "Plans/FrameworkAppEnhancement/Company-Plan-Index.md"
+      },
+      {
+        "sha256": "3cfffcf1f0708d25bc8922d90ba61048dbcb1441052a6cfa53592d0c8d1d6b1e",
+        "path": "Plans/FrameworkAppEnhancement/Company-Phase-D-Operations.md"
+      },
+      {
+        "sha256": "8549163fc87fa9a4112e6888010109256ec8b24ddf687a85f1ed9f18f40a3e84",
+        "path": "Plans/FrameworkAppEnhancement/Persona-08-Maintenance-and-Facility.md"
+      },
+      {
+        "sha256": "30a199d90f1d58f858c03b8d90e5bf6059814f013709da4f6bbf5c53d3522189",
+        "path": "Plans/FrameworkAppEnhancement/Persona-05-Operator-and-Shift-Supervisor.md"
+      },
+      {
+        "sha256": "ff04f005c88193dfa2eafecc288f540252b5744f4b418371ec157dab980fac58",
+        "path": "Plans/FrameworkAppEnhancement/Implementation-317-Controlled-Execution-Verification-and-Return.md"
+      },
+      {
+        "sha256": "64d4e4865c1895a43278b096167fb08a0e65692c44adbdf0852d4a7336481c55",
+        "path": "Plans/FrameworkAppEnhancement/Persona-12-Company-Administrator.md"
+      },
+      {
+        "sha256": "708d1902732d60638bec59d15d3a7d12d5d3d6ecd1e9ccf2c4b993888cd5906d",
+        "path": "Plans/FrameworkAppEnhancement/Implementation-335-Qualified-Facility-and-Equipment-Return.md"
+      },
+      {
+        "sha256": "91fb1ab66e4ce6419fbecc5852650184ed9e8001e8f7a280d36eb2ad388d986e",
+        "path": "Plans/FrameworkAppEnhancement/Implementation-336-Recorded-Maintenance-Work-Landings.md"
+      }
+    ],
+    "whitespace_and_conflict_checks": "verified for all eight changed production/test/harness files, including untracked sources"
+  }
+}

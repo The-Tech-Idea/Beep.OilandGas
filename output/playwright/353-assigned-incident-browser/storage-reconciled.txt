@@ -1,0 +1,9 @@
+### Result
+{
+  "entries": 0,
+  "characters": 0
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({entries:Object.keys(sessionStorage).length,characters:Object.values(sessionStorage).join("").length})');
+```

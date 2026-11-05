@@ -1,478 +1,130 @@
-﻿@page "/development/construction"
-@inject ApiClient ApiClient
-@inject IDevelopmentServiceClient DevelopmentServiceClient
-@inject ILifeCycleService LifeCycleService
-@inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
+@page "/development/construction"
+@page "/development"
+@page "/facilities/dashboard"
+@page "/lifecycle/facilities/dashboard"
+@page "/lifecycle/development/dashboard"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IDevelopmentServiceClient Development
+@inject OilGasCallFailures Calls
 
-<PageTitle>Track Construction Progress</PageTitle>
-
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-
-    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
-
-    @* ── Header ──────────────────────────────────────────────────────────── *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Track Construction Progress</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Facility construction milestones</MudText>
-                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Icon="@Icons.Material.Filled.Construction">Development</MudChip>
-            </MudStack>
-        </MudStack>
-        <MudStack Row="true" Spacing="2">
-            @if (!string.IsNullOrWhiteSpace(ReturnTo))
+<PageTitle>Construction and handover evidence</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Construction and handover evidence</MudText>
+    <MudText Class="my-3">Review the recorded sources for your company and field before making a construction or handover decision.</MudText>
+    <MudAlert Severity="Severity.Info" Class="mb-4" role="status">A qualified construction progress and handover record is not yet available here. Schedule, budget variance, safety totals, punch-list counts and first-oil dates cannot be determined from the available evidence.</MudAlert>
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/development/construction", "/facilities/dashboard", "/lifecycle/facilities/dashboard", "/lifecycle/development/dashboard"})' />
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Recorded facilities for this FIELD</MudText>
+        <MudText Class="my-2">Use these source records to choose what to review. A facility row does not establish construction progress or handover acceptance.</MudText>
+        @if(Company.Selection is null)
+        {
+            <MudAlert Severity="Severity.Info">Choose a company to review its facility records.</MudAlert>
+        }
+        else if(!CanViewFacilities())
+        {
+            <MudAlert Severity="Severity.Info">Your current company role does not have permission to view development facility records.</MudAlert>
+        }
+        else
+        {
+            <MudButton OnClick="ReloadFacilities" Disabled="@(_facilities?.Loading == true)" Variant="Variant.Outlined">Reload facility records</MudButton>
+            @if(_facilities?.Loading==true){<MudProgressLinear Indeterminate="true" aria-label="Loading facility records" />}
+            else if(_facilities?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+            else if(_facilities?.NeedsField==true){<MudAlert Severity="Severity.Info">Choose an available FIELD, then reload facility records.</MudAlert>}
+            else if(_facilities?.Loaded==true && _facilities.Review is {} review)
             {
-                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.ArrowBack"
-                           Href="@ReturnTo">
-                    Back
-                </MudButton>
-            }
-            <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
-                       StartIcon="@Icons.Material.Filled.Construction"
-                       OnClick="OpenDrillingWorkflow">
-                @GetDrillingWorkflowActionLabel()
-            </MudButton>
-        </MudStack>
-    </MudStack>
-
-    @if (HasDevelopmentWorkflowContext)
-    {
-        <MudPaper Elevation="1" Class="pa-4 mb-4">
-            <MudStack Spacing="1">
-                <MudText Typo="Typo.subtitle2">Development Construction Handoff Active</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@GetWorkflowContextMessage()</MudText>
-            </MudStack>
-        </MudPaper>
-    }
-
-    @* ── Project Health Banner ────────────────────────────────────────────── *@
-    <MudPaper Elevation="2" Class="pa-3 mb-4">
-        <MudGrid Spacing="2" AlignItems="AlignItems.Center">
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Schedule</MudText>
-                        <MudText Typo="Typo.body2"><strong>On Track</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Budget</MudText>
-                        <MudText Typo="Typo.body2"><strong>3% Over</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Safety</MudText>
-                        <MudText Typo="Typo.body2"><strong>Zero incidents</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Quality</MudText>
-                        <MudText Typo="Typo.body2"><strong>98% punch closed</strong></MudText>
-                    </MudStack>
-                </MudStack>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
-
-    @* ── Main Content ─────────────────────────────────────────────────────── *@
-    <MudGrid Spacing="3">
-
-        @* LEFT — Milestone tracker (8 cols) *@
-        <MudItem xs="12" lg="8">
-            <MudStack Spacing="3">
-
-                @foreach (var group in _workGroups)
+                <MudText Class="my-2">Company @review.Company.BusinessAssociateId · FIELD @review.FieldId · @Recorded(_facilities.FieldName)</MudText>
+                <MudText Typo="Typo.caption">Recorded facility source checked @_facilities.LoadedAtUtc?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+                @if(_facilities.Rows.Count==0){<MudAlert Severity="Severity.Info">No facility rows were returned for this company and FIELD.</MudAlert>}
+                else
                 {
-                    <MudCard Elevation="2">
-                        <MudCardHeader>
-                            <CardHeaderContent>
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudIcon Icon="@group.Icon" Color="@group.HeaderColor" />
-                                    <MudText Typo="Typo.subtitle1">@group.Title</MudText>
-                                    <MudChip T="string" Size="Size.Small" Color="@OverallGroupColor(group)">
-                                        @GroupSummary(group)
-                                    </MudChip>
-                                </MudStack>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardContent Class="pa-0">
-                            <MudList T="WorkPackage" Dense="true">
-                                @foreach (var pkg in group.Packages)
-                                {
-                                    <MudListItem T="WorkPackage" Value="pkg">
-                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pr-3">
-                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                                <MudIcon Icon="@PkgIcon(pkg)"
-                                                         Color="@PkgColor(pkg)"
-                                                         Size="Size.Small" />
-                                                <MudStack Spacing="0">
-                                                    <MudText Typo="Typo.body2">@pkg.Name</MudText>
-                                                    @if (!string.IsNullOrEmpty(pkg.Note))
-                                                    {
-                                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@pkg.Note</MudText>
-                                                    }
-                                                    @if (pkg.IsActive && pkg.PercentComplete > 0)
-                                                    {
-                                                        <MudProgressLinear Value="@pkg.PercentComplete"
-                                                                           Color="Color.Primary"
-                                                                           Class="mt-1 og-progress-inline" />
-                                                    }
-                                                </MudStack>
-                                            </MudStack>
-                                            <MudStack AlignItems="AlignItems.End" Spacing="0">
-                                                <MudText Typo="Typo.caption" Color="@(pkg.IsCompleted ? Color.Success : Color.Secondary)">
-                                                    @(pkg.IsCompleted ? "✓ " : "Target: ")@pkg.TargetDate
-                                                </MudText>
-                                            </MudStack>
-                                        </MudStack>
-                                    </MudListItem>
-                                    <MudDivider />
-                                }
-                            </MudList>
-                        </MudCardContent>
-                    </MudCard>
-                }
-
-                @* First Oil target banner *@
-                <MudPaper Elevation="3" Class="pa-4">
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="3">
-                        <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Warning" Size="Size.Large" />
-                        <MudStack AlignItems="AlignItems.Center" Spacing="0">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Target Date</MudText>
-                            <MudText Typo="Typo.h5" Color="Color.Warning"><strong>FIRST OIL — Dec 2026</strong></MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Warning" Size="Size.Large" />
-                    </MudStack>
-                </MudPaper>
-
-            </MudStack>
-        </MudItem>
-
-        @* RIGHT — Open actions + cost variance (4 cols) *@
-        <MudItem xs="12" lg="4">
-            <MudStack Spacing="3">
-
-                @* Punch items *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Open Punch Items</MudText>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@_punchItems.Count</MudChip>
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudCardContent Class="pa-0">
-                        <MudList T="PunchItem" Dense="true">
-                            @foreach (var p in _punchItems)
+                    <MudTable T="FACILITY" Items="@_facilities.Rows" Dense="true" aria-label="Recorded facilities for the selected FIELD">
+                        <HeaderContent><MudTh>Facility ID</MudTh><MudTh>Type</MudTh><MudTh>Recorded name</MudTh><MudTh>Recorded operator</MudTh><MudTh>Source details</MudTh></HeaderContent>
+                        <RowTemplate><MudTd DataLabel="Facility ID">@context.FACILITY_ID</MudTd><MudTd DataLabel="Type">@context.FACILITY_TYPE</MudTd><MudTd DataLabel="Recorded name">@Recorded(context.FACILITY_LONG_NAME ?? context.FACILITY_SHORT_NAME)</MudTd><MudTd DataLabel="Recorded operator">@Recorded(context.CURRENT_OPERATOR)</MudTd><MudTd DataLabel="Source details"><MudButton OnClick="@(() => InspectEquipment(context.FACILITY_ID,context.FACILITY_TYPE))" Variant="Variant.Outlined" Size="Size.Small" aria-label="@($"Inspect equipment for {context.FACILITY_ID}, type {context.FACILITY_TYPE}")">Inspect equipment</MudButton><MudButton Href="@FacilityEvidenceRoute.For(review,context)" Variant="Variant.Outlined" Size="Size.Small" aria-label="@($"Open facility {context.FACILITY_ID}, type {context.FACILITY_TYPE}")">Open facility evidence</MudButton></MudTd></RowTemplate>
+                    </MudTable>
+                    @if(SelectedFacility() is {} facility)
+                    {
+                        <MudPaper Outlined="true" Class="pa-3 my-3">
+                            <MudText Typo="Typo.h6" HtmlTag="h3">Equipment recorded for @facility.FACILITY_ID / @facility.FACILITY_TYPE</MudText>
+                            <MudText>These are recorded active equipment rows, not proof of installation, testing or construction acceptance.</MudText>
+                            <MudButton OnClick="@(() => InspectEquipment(facility.FACILITY_ID,facility.FACILITY_TYPE))" Disabled="@_facilities.EquipmentLoading" Variant="Variant.Outlined">Reload equipment evidence</MudButton>
+                            @if(_facilities.EquipmentLoading){<MudProgressLinear Indeterminate="true" aria-label="Loading facility equipment" />}
+                            else if(_facilities.EquipmentError is {} equipmentError){<MudAlert Severity="Severity.Error" role="alert">@equipmentError</MudAlert>}
+                            else if(_facilities.EquipmentLoaded)
                             {
-                                <MudListItem T="PunchItem" Value="p">
-                                    <MudStack Spacing="0">
-                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                            <MudText Typo="Typo.body2">@p.Description</MudText>
-                                            <MudChip T="string" Size="Size.Small"
-                                                     Color="@(p.Category == "A" ? Color.Error : p.Category == "B" ? Color.Warning : Color.Default)">
-                                                Cat @p.Category
-                                            </MudChip>
-                                        </MudStack>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@p.Owner · Due @p.DueDate</MudText>
-                                    </MudStack>
-                                </MudListItem>
-                                <MudDivider />
+                                @if(_facilities.Equipment.Count==0){<MudAlert Severity="Severity.Info">No active equipment rows were returned for this facility.</MudAlert>}
+                                else{<MudTable Items="@_facilities.Equipment" Dense="true" aria-label="Recorded facility equipment"><HeaderContent><MudTh>Equipment</MudTh><MudTh>Installation observation</MudTh><MudTh>Recorded source</MudTh></HeaderContent><RowTemplate><MudTd DataLabel="Equipment">@context.EquipmentId</MudTd><MudTd DataLabel="Installation observation">@context.InstallationObservation</MudTd><MudTd DataLabel="Recorded source">@Recorded(context.Source)</MudTd></RowTemplate></MudTable>}
                             }
-                        </MudList>
-                    </MudCardContent>
-                </MudCard>
-
-                @* Cost variance *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Cost Variance</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudChart ChartType="ChartType.Bar"
-                                  ChartSeries="@_costSeries"
-                                  XAxisLabels="@_costLabels"
-                                  Width="100%"
-                                  Height="180px" />
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">USD MM · Q1 2024 to date</MudText>
-                    </MudCardContent>
-                </MudCard>
-
-                @* Safety observations *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Safety Observations (30-day)</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudGrid Spacing="2">
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Positive</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Success">142</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Near Misses</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Warning">3</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">LTIs</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Success">0</MudText>
-                            </MudItem>
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">TRIR</MudText>
-                                <MudText Typo="Typo.h5" Color="Color.Success">0.0</MudText>
-                            </MudItem>
-                        </MudGrid>
-                    </MudCardContent>
-                </MudCard>
-
-            </MudStack>
+                        </MudPaper>
+                    }
+                }
+            }
+            else{<MudAlert Severity="Severity.Info">Reload to confirm current facility records.</MudAlert>}
+        }
+    </MudPaper>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="4">
+            <MudCard Outlined="true"><MudCardContent>
+                <MudText Typo="Typo.h6" HtmlTag="h2">Engineering and execution</MudText>
+                <MudText Class="my-3">Open the original development plan, well evidence and drilling program to inspect recorded decisions and execution.</MudText>
+                <MudStack Spacing="2">
+                    <MudButton Href="/development/fdp" Variant="Variant.Outlined">Development plans</MudButton>
+                    <MudButton Href="/development/well-design" Variant="Variant.Outlined">Well evidence and design</MudButton>
+                    <MudButton Href="/ppdm39/operations/drillingoperations" Variant="Variant.Outlined">Drilling operations</MudButton>
+                </MudStack>
+            </MudCardContent></MudCard>
         </MudItem>
-
+        <MudItem xs="12" md="4">
+            <MudCard Outlined="true"><MudCardContent>
+                <MudText Typo="Typo.h6" HtmlTag="h2">Facilities and investment</MudText>
+                <MudText Class="my-3">Review facility records and approved investment in their own source screens. Their status does not establish construction acceptance.</MudText>
+                <MudStack Spacing="2">
+                    <MudButton Href="/ppdm39/development/facilities" Variant="Variant.Outlined">Facility records</MudButton>
+                    <MudButton Href="/economics/afe" Variant="Variant.Outlined">Investment records</MudButton>
+                </MudStack>
+            </MudCardContent></MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Outlined="true"><MudCardContent>
+                <MudText Typo="Typo.h6" HtmlTag="h2">Safety and assigned work</MudText>
+                <MudText Class="my-3">Review recorded incidents and the current company's assigned work through their own authorization boundaries.</MudText>
+                <MudStack Spacing="2">
+                    <MudButton Href="/ppdm39/hse/incidents" Variant="Variant.Outlined">Incident records</MudButton>
+                    <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton>
+                </MudStack>
+            </MudCardContent></MudCard>
+        </MudItem>
     </MudGrid>
-
+    @if(CanViewInvestment())
+    {
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-4">Investment evidence across accessible FIELDs</MudText>
+        <MudText>These company-authorized requests may belong to a different FIELD from the selected facility list. Open the original request to review its source and decision.</MudText>
+        <DevelopmentInvestmentQueuePanel />
+    }
+    <MudAlert Severity="Severity.Warning" Class="my-4">Recorded drilling completion and physical test acceptance do not by themselves accept construction or release production. These decisions require their own source-bound evidence and authorized owners.</MudAlert>
 </MudContainer>
 
 @code {
-    [SupplyParameterFromQuery(Name = "wellUwi")]
-    public string? WellUwi { get; set; }
-
-    [SupplyParameterFromQuery(Name = "wellName")]
-    public string? WellName { get; set; }
-
-    [SupplyParameterFromQuery(Name = "targetDepth")]
-    public string? TargetDepth { get; set; }
-
-    [SupplyParameterFromQuery(Name = "rigName")]
-    public string? RigName { get; set; }
-
-    [SupplyParameterFromQuery(Name = "sourceProcess")]
-    public string? SourceProcess { get; set; }
-
-    [SupplyParameterFromQuery(Name = "returnTo")]
-    public string? ReturnTo { get; set; }
-
-    [SupplyParameterFromQuery(Name = "openDrillingCreate")]
-    public bool OpenDrillingCreate { get; set; }
-
-    private string _fieldName = string.Empty;
-    private bool   _loading   = true;
-
-    private List<WorkGroup>   _workGroups  = new();
-    private List<PunchItem>   _punchItems  = new();
-    private List<ChartSeries<double>> _costSeries = new();
-    private string[] _costLabels = Array.Empty<string>();
-
-    private bool HasDevelopmentWorkflowContext =>
-        !string.IsNullOrWhiteSpace(WellUwi)
-        || !string.IsNullOrWhiteSpace(WellName)
-        || string.Equals(SourceProcess, "DEVELOPMENT", StringComparison.OrdinalIgnoreCase);
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
-        }
-        catch { /* field name is non-critical */ }
-
-        _loading = true;
-        try
-        {
-            var progress = await DevelopmentServiceClient.GetConstructionProgressAsync();
-            if (progress != null)
-            {
-                _workGroups = progress.WorkGroups.Select(g => new WorkGroup(
-                    g.Title,
-                    Icons.Material.Filled.Construction,
-                    Color.Primary,
-                    g.Packages.Select(p => new WorkPackage(
-                        p.Name, p.TargetDate, p.IsCompleted, p.IsActive, p.PercentComplete, p.Note)).ToList()
-                )).ToList();
-
-                _punchItems = progress.PunchItems.Select(p =>
-                    new PunchItem(p.Description, p.Owner, p.DueDate, p.Category)).ToList();
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Failed to load construction progress.", Severity.Error);
-        }
-        finally { _loading = false; }
-    }
-
-    private string PkgIcon(WorkPackage p) =>
-        p.IsCompleted ? Icons.Material.Filled.CheckCircle
-        : p.IsActive  ? Icons.Material.Filled.RadioButtonChecked
-        : Icons.Material.Outlined.RadioButtonUnchecked;
-
-    private Color PkgColor(WorkPackage p) =>
-        p.IsCompleted ? Color.Success : p.IsActive ? Color.Primary : Color.Default;
-
-    private Color OverallGroupColor(WorkGroup g)
-    {
-        if (g.Packages.All(p => p.IsCompleted)) return Color.Success;
-        if (g.Packages.Any(p => p.IsActive))    return Color.Primary;
-        return Color.Default;
-    }
-
-    private string GroupSummary(WorkGroup g)
-    {
-        var done = g.Packages.Count(p => p.IsCompleted);
-        return $"{done}/{g.Packages.Count}";
-    }
-
-    private void OpenDrillingWorkflow() =>
-        NavigationManager.NavigateTo(BuildDrillingWorkflowHref());
-
-    private string GetDrillingWorkflowActionLabel()
-    {
-        if (OpenDrillingCreate && !string.IsNullOrWhiteSpace(WellUwi))
-            return "Launch Drilling Operation";
-
-        if (!string.IsNullOrWhiteSpace(WellUwi))
-            return "Open Drilling Tracker";
-
-        return "View Drilling Operations";
-    }
-
-    private string GetWorkflowContextMessage()
-    {
-        if (!string.IsNullOrWhiteSpace(WellName) && !string.IsNullOrWhiteSpace(WellUwi))
-            return $"Construction progress is being reviewed for {WellName} ({WellUwi}) before drilling execution.";
-
-        if (!string.IsNullOrWhiteSpace(WellUwi))
-            return $"Construction progress is being reviewed for well {WellUwi} before drilling execution.";
-
-        return "Construction progress is currently part of the development-to-drilling workflow handoff.";
-    }
-
-    private string BuildDrillingWorkflowHref()
-    {
-        var query = new List<string>
-        {
-            $"returnTo={Uri.EscapeDataString(BuildConstructionProgressReturnTo())}"
-        };
-
-        if (!string.IsNullOrWhiteSpace(WellUwi))
-        {
-            query.Add($"wellUwi={Uri.EscapeDataString(WellUwi)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(WellName))
-        {
-            query.Add($"wellName={Uri.EscapeDataString(WellName)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(TargetDepth))
-        {
-            query.Add($"targetDepth={Uri.EscapeDataString(TargetDepth)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(RigName))
-        {
-            query.Add($"rigName={Uri.EscapeDataString(RigName)}");
-        }
-
-        if (HasDevelopmentWorkflowContext)
-        {
-            query.Add($"sourceProcess={Uri.EscapeDataString("DEVELOPMENT")}");
-        }
-
-        if (OpenDrillingCreate && !string.IsNullOrWhiteSpace(WellUwi))
-        {
-            query.Insert(0, "openCreate=true");
-        }
-
-        return "/ppdm39/operations/drillingoperations?" + string.Join("&", query);
-    }
-
-    private string BuildConstructionProgressReturnTo()
-    {
-        var query = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(WellUwi))
-        {
-            query.Add($"wellUwi={Uri.EscapeDataString(WellUwi)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(WellName))
-        {
-            query.Add($"wellName={Uri.EscapeDataString(WellName)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(TargetDepth))
-        {
-            query.Add($"targetDepth={Uri.EscapeDataString(TargetDepth)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(RigName))
-        {
-            query.Add($"rigName={Uri.EscapeDataString(RigName)}");
-        }
-
-        if (HasDevelopmentWorkflowContext)
-        {
-            query.Add($"sourceProcess={Uri.EscapeDataString("DEVELOPMENT")}");
-        }
-
-        if (OpenDrillingCreate)
-        {
-            query.Add("openDrillingCreate=true");
-        }
-
-        if (!string.IsNullOrWhiteSpace(ReturnTo))
-        {
-            query.Add($"returnTo={Uri.EscapeDataString(ReturnTo)}");
-        }
-
-        return query.Count == 0
-            ? "/development/construction"
-            : "/development/construction?" + string.Join("&", query);
-    }
-
-    private class WorkGroup
-    {
-        public string Title { get; set; }
-        public string Icon { get; set; }
-        public Color HeaderColor { get; set; }
-        public List<WorkPackage> Packages { get; set; }
-        public WorkGroup(string title, string icon, Color color, List<WorkPackage> pkgs)
-        { Title = title; Icon = icon; HeaderColor = color; Packages = pkgs; }
-    }
-
-    private class WorkPackage
-    {
-        public string Name { get; set; }
-        public string TargetDate { get; set; }
-        public bool IsCompleted { get; set; }
-        public bool IsActive { get; set; }
-        public double PercentComplete { get; set; }
-        public string Note { get; set; }
-        public WorkPackage(string n, string d, bool done, bool active, double pct, string note)
-        { Name=n; TargetDate=d; IsCompleted=done; IsActive=active; PercentComplete=pct; Note=note; }
-    }
-
-    private record PunchItem(string Description, string Owner, string DueDate, string Category);
+    private DevelopmentFacilityEvidenceState? _facilities;
+    private string? selectedFacilityId,selectedFacilityType;
+    private bool disposed;
+    private static string Recorded(string? value)=>string.IsNullOrWhiteSpace(value)?"Not recorded":value;
+    private FACILITY? SelectedFacility()=>_facilities?.Loaded==true?_facilities.Rows.SingleOrDefault(row=>row.FACILITY_ID==selectedFacilityId && row.FACILITY_TYPE==selectedFacilityType):null;
+    private async Task InspectEquipment(string id,string type){_facilities!.ClearEquipment();selectedFacilityId=id;selectedFacilityType=type;await _facilities.LoadEquipmentAsync(id,type);}
+    private bool CanViewInvestment()=>Company.Selection is {} selected && new[]{"Accounting.View","DevelopmentPlanning.View","Workflow.View"}.All(permission=>selected.Permissions.Contains(permission,StringComparer.Ordinal));
+    private bool CanViewFacilities()=>Company.Selection is {} selected && selected.Permissions.Contains("DevelopmentPlanning.View",StringComparer.Ordinal);
+    protected override void OnInitialized(){_facilities=new(Company,Fields,Development,Calls.Explain);_facilities.Changed+=Changed;}
+    protected override Task OnAfterRenderAsync(bool firstRender)=>firstRender?ReloadFacilities():Task.CompletedTask;
+    private Task ReloadFacilities()=>CanViewFacilities()?_facilities!.LoadAsync():Task.CompletedTask;
+    private void Changed(){if(_facilities?.Loaded!=true){selectedFacilityId=null;selectedFacilityType=null;}if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_facilities is not null){_facilities.Changed-=Changed;_facilities.Dispose();}}
 }

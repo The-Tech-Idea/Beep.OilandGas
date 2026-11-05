@@ -1,0 +1,1211 @@
+[
+  {
+    "label": "oilgas-351-current-generation-native.log",
+    "pdb": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-649d4de0ca364f82b4fdbf4f2fe5efe9\\bin\\Debug\\net10.0\\PurchaseOwnership.pdb",
+    "pdb_sha256": "45b921c8f5a6306e75820f30dcab297486524273ea3a8cc49f89244ea3f8623c",
+    "documents": [
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureApiJourney.cs",
+        "compiled_sha256": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "current_sha256_at_capture": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransfer.cs",
+        "compiled_sha256": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "current_sha256_at_capture": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransferPersistence.cs",
+        "compiled_sha256": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "current_sha256_at_capture": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentNativeTests.cs",
+        "compiled_sha256": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "current_sha256_at_capture": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingReportingClosureState.cs",
+        "compiled_sha256": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "current_sha256_at_capture": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingReportingClosureStateTests.cs",
+        "compiled_sha256": "acd21003afc69ade9c729a0bd10e5f074d1332963cd2c8041211e97f07000b54",
+        "current_sha256_at_capture": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "matches_current_at_capture": false
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.CompletionAssigned.cs",
+        "compiled_sha256": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "current_sha256_at_capture": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.Progress.cs",
+        "compiled_sha256": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "current_sha256_at_capture": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingAssignedCompletionStateTests.cs",
+        "compiled_sha256": "820d189fdd84d0492cee1379168d3b4112c06f9bfe059b66e8be2e379657a11c",
+        "current_sha256_at_capture": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "matches_current_at_capture": false
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "current_sha256_at_capture": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "current_sha256_at_capture": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.Conflict.cs",
+        "compiled_sha256": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "current_sha256_at_capture": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentConflictStateTests.cs",
+        "compiled_sha256": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "current_sha256_at_capture": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentConflictNativeTests.cs",
+        "compiled_sha256": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "current_sha256_at_capture": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionConflict.cs",
+        "compiled_sha256": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "current_sha256_at_capture": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentApiJourney.cs",
+        "compiled_sha256": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "current_sha256_at_capture": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentStateTests.cs",
+        "compiled_sha256": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "current_sha256_at_capture": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignedStateTests.cs",
+        "compiled_sha256": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "current_sha256_at_capture": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignment.cs",
+        "compiled_sha256": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "current_sha256_at_capture": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.cs",
+        "compiled_sha256": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "current_sha256_at_capture": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.cs",
+        "compiled_sha256": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "current_sha256_at_capture": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignment.cs",
+        "compiled_sha256": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "current_sha256_at_capture": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingClosure.cs",
+        "compiled_sha256": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "current_sha256_at_capture": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingReassignment.cs",
+        "compiled_sha256": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "current_sha256_at_capture": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ReportingClosure.cs",
+        "compiled_sha256": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "current_sha256_at_capture": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingServiceClient.ReportingClosure.cs",
+        "compiled_sha256": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "current_sha256_at_capture": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentNativeTests.cs",
+        "compiled_sha256": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "current_sha256_at_capture": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureNativeTests.cs",
+        "compiled_sha256": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "current_sha256_at_capture": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentTests.cs",
+        "compiled_sha256": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "current_sha256_at_capture": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Controllers\\WorkflowTasksController.cs",
+        "compiled_sha256": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "current_sha256_at_capture": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\ICrossPersonaTaskRouter.cs",
+        "compiled_sha256": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "current_sha256_at_capture": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\CrossPersonaTaskRouter.cs",
+        "compiled_sha256": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "current_sha256_at_capture": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.DailyReports.cs",
+        "compiled_sha256": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "current_sha256_at_capture": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.Execution.cs",
+        "compiled_sha256": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "current_sha256_at_capture": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingReportingResponsibility.razor",
+        "compiled_sha256": "b2645878db586510115f54fb41cc132b349fbec1210b7fea025f05f6be306fc1",
+        "current_sha256_at_capture": "5a670436f4c165887fcf88e6377a1fc07aaef95497dc70d1c91aa69a9205594b",
+        "matches_current_at_capture": false
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssignment.razor",
+        "compiled_sha256": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "current_sha256_at_capture": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssigned.razor",
+        "compiled_sha256": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "current_sha256_at_capture": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "matches_current_at_capture": true
+      }
+    ],
+    "runtime_data_sha256": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "canonical_data_sha256_at_capture": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "runtime_data_matches_current_at_capture": true
+  },
+  {
+    "label": "oilgas-351-current-generation-screens.log",
+    "pdb": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-f7246a04d16c4fd9b676b854ee7b7403\\bin\\Debug\\net10.0\\PurchaseOwnership.pdb",
+    "pdb_sha256": "833caae9dd5c1309355784a387dc25f70037fd91c302f9e2976dc397e7d9e312",
+    "documents": [
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureApiJourney.cs",
+        "compiled_sha256": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "current_sha256_at_capture": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransfer.cs",
+        "compiled_sha256": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "current_sha256_at_capture": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransferPersistence.cs",
+        "compiled_sha256": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "current_sha256_at_capture": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentNativeTests.cs",
+        "compiled_sha256": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "current_sha256_at_capture": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingReportingClosureState.cs",
+        "compiled_sha256": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "current_sha256_at_capture": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingReportingClosureStateTests.cs",
+        "compiled_sha256": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "current_sha256_at_capture": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.CompletionAssigned.cs",
+        "compiled_sha256": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "current_sha256_at_capture": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.Progress.cs",
+        "compiled_sha256": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "current_sha256_at_capture": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingAssignedCompletionStateTests.cs",
+        "compiled_sha256": "820d189fdd84d0492cee1379168d3b4112c06f9bfe059b66e8be2e379657a11c",
+        "current_sha256_at_capture": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "matches_current_at_capture": false
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "current_sha256_at_capture": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "current_sha256_at_capture": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.Conflict.cs",
+        "compiled_sha256": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "current_sha256_at_capture": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentConflictStateTests.cs",
+        "compiled_sha256": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "current_sha256_at_capture": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentConflictNativeTests.cs",
+        "compiled_sha256": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "current_sha256_at_capture": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionConflict.cs",
+        "compiled_sha256": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "current_sha256_at_capture": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentApiJourney.cs",
+        "compiled_sha256": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "current_sha256_at_capture": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentStateTests.cs",
+        "compiled_sha256": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "current_sha256_at_capture": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignedStateTests.cs",
+        "compiled_sha256": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "current_sha256_at_capture": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignment.cs",
+        "compiled_sha256": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "current_sha256_at_capture": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.cs",
+        "compiled_sha256": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "current_sha256_at_capture": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.cs",
+        "compiled_sha256": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "current_sha256_at_capture": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignment.cs",
+        "compiled_sha256": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "current_sha256_at_capture": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingClosure.cs",
+        "compiled_sha256": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "current_sha256_at_capture": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingReassignment.cs",
+        "compiled_sha256": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "current_sha256_at_capture": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ReportingClosure.cs",
+        "compiled_sha256": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "current_sha256_at_capture": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingServiceClient.ReportingClosure.cs",
+        "compiled_sha256": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "current_sha256_at_capture": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentNativeTests.cs",
+        "compiled_sha256": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "current_sha256_at_capture": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureNativeTests.cs",
+        "compiled_sha256": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "current_sha256_at_capture": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentTests.cs",
+        "compiled_sha256": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "current_sha256_at_capture": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Controllers\\WorkflowTasksController.cs",
+        "compiled_sha256": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "current_sha256_at_capture": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\ICrossPersonaTaskRouter.cs",
+        "compiled_sha256": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "current_sha256_at_capture": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\CrossPersonaTaskRouter.cs",
+        "compiled_sha256": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "current_sha256_at_capture": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.DailyReports.cs",
+        "compiled_sha256": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "current_sha256_at_capture": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.Execution.cs",
+        "compiled_sha256": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "current_sha256_at_capture": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingReportingResponsibility.razor",
+        "compiled_sha256": "b2645878db586510115f54fb41cc132b349fbec1210b7fea025f05f6be306fc1",
+        "current_sha256_at_capture": "5a670436f4c165887fcf88e6377a1fc07aaef95497dc70d1c91aa69a9205594b",
+        "matches_current_at_capture": false
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssignment.razor",
+        "compiled_sha256": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "current_sha256_at_capture": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssigned.razor",
+        "compiled_sha256": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "current_sha256_at_capture": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "matches_current_at_capture": true
+      }
+    ],
+    "runtime_data_sha256": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "canonical_data_sha256_at_capture": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "runtime_data_matches_current_at_capture": true
+  },
+  {
+    "label": "oilgas-351-current-generation-screen-label.log",
+    "pdb": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-292da74b6b8041e486cc6eb5d71254f8\\bin\\Debug\\net10.0\\PurchaseOwnership.pdb",
+    "pdb_sha256": "6fa0a58e209311cfb3a3c2a0cac9e1e28d3851dab3fe4773af7f530ed3ed0903",
+    "documents": [
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureApiJourney.cs",
+        "compiled_sha256": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "current_sha256_at_capture": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransfer.cs",
+        "compiled_sha256": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "current_sha256_at_capture": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransferPersistence.cs",
+        "compiled_sha256": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "current_sha256_at_capture": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentNativeTests.cs",
+        "compiled_sha256": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "current_sha256_at_capture": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingReportingClosureState.cs",
+        "compiled_sha256": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "current_sha256_at_capture": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingReportingClosureStateTests.cs",
+        "compiled_sha256": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "current_sha256_at_capture": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.CompletionAssigned.cs",
+        "compiled_sha256": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "current_sha256_at_capture": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.Progress.cs",
+        "compiled_sha256": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "current_sha256_at_capture": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingAssignedCompletionStateTests.cs",
+        "compiled_sha256": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "current_sha256_at_capture": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "current_sha256_at_capture": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "current_sha256_at_capture": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.Conflict.cs",
+        "compiled_sha256": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "current_sha256_at_capture": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentConflictStateTests.cs",
+        "compiled_sha256": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "current_sha256_at_capture": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentConflictNativeTests.cs",
+        "compiled_sha256": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "current_sha256_at_capture": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionConflict.cs",
+        "compiled_sha256": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "current_sha256_at_capture": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentApiJourney.cs",
+        "compiled_sha256": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "current_sha256_at_capture": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentStateTests.cs",
+        "compiled_sha256": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "current_sha256_at_capture": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignedStateTests.cs",
+        "compiled_sha256": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "current_sha256_at_capture": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignment.cs",
+        "compiled_sha256": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "current_sha256_at_capture": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.cs",
+        "compiled_sha256": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "current_sha256_at_capture": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.cs",
+        "compiled_sha256": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "current_sha256_at_capture": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignment.cs",
+        "compiled_sha256": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "current_sha256_at_capture": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingClosure.cs",
+        "compiled_sha256": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "current_sha256_at_capture": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingReassignment.cs",
+        "compiled_sha256": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "current_sha256_at_capture": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ReportingClosure.cs",
+        "compiled_sha256": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "current_sha256_at_capture": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingServiceClient.ReportingClosure.cs",
+        "compiled_sha256": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "current_sha256_at_capture": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentNativeTests.cs",
+        "compiled_sha256": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "current_sha256_at_capture": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureNativeTests.cs",
+        "compiled_sha256": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "current_sha256_at_capture": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentTests.cs",
+        "compiled_sha256": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "current_sha256_at_capture": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Controllers\\WorkflowTasksController.cs",
+        "compiled_sha256": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "current_sha256_at_capture": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\ICrossPersonaTaskRouter.cs",
+        "compiled_sha256": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "current_sha256_at_capture": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\CrossPersonaTaskRouter.cs",
+        "compiled_sha256": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "current_sha256_at_capture": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.DailyReports.cs",
+        "compiled_sha256": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "current_sha256_at_capture": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.Execution.cs",
+        "compiled_sha256": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "current_sha256_at_capture": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingReportingResponsibility.razor",
+        "compiled_sha256": "b2645878db586510115f54fb41cc132b349fbec1210b7fea025f05f6be306fc1",
+        "current_sha256_at_capture": "5a670436f4c165887fcf88e6377a1fc07aaef95497dc70d1c91aa69a9205594b",
+        "matches_current_at_capture": false
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssignment.razor",
+        "compiled_sha256": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "current_sha256_at_capture": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssigned.razor",
+        "compiled_sha256": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "current_sha256_at_capture": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "matches_current_at_capture": true
+      }
+    ],
+    "runtime_data_sha256": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "canonical_data_sha256_at_capture": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "runtime_data_matches_current_at_capture": true
+  },
+  {
+    "label": "oilgas-351-current-generation-api.log",
+    "pdb": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-e9fa73bfa3c94a7cb629f62795b754bd\\bin\\Debug\\net10.0\\PurchaseOwnership.pdb",
+    "pdb_sha256": "2428bd328b1d28d46f3d7ac1881bd98e62b488ad437f702343c917fc4a92064d",
+    "documents": [
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureApiJourney.cs",
+        "compiled_sha256": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "current_sha256_at_capture": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransfer.cs",
+        "compiled_sha256": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "current_sha256_at_capture": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransferPersistence.cs",
+        "compiled_sha256": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "current_sha256_at_capture": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentNativeTests.cs",
+        "compiled_sha256": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "current_sha256_at_capture": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingReportingClosureState.cs",
+        "compiled_sha256": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "current_sha256_at_capture": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingReportingClosureStateTests.cs",
+        "compiled_sha256": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "current_sha256_at_capture": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.CompletionAssigned.cs",
+        "compiled_sha256": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "current_sha256_at_capture": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.Progress.cs",
+        "compiled_sha256": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "current_sha256_at_capture": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingAssignedCompletionStateTests.cs",
+        "compiled_sha256": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "current_sha256_at_capture": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "current_sha256_at_capture": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "current_sha256_at_capture": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.Conflict.cs",
+        "compiled_sha256": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "current_sha256_at_capture": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentConflictStateTests.cs",
+        "compiled_sha256": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "current_sha256_at_capture": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentConflictNativeTests.cs",
+        "compiled_sha256": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "current_sha256_at_capture": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionConflict.cs",
+        "compiled_sha256": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "current_sha256_at_capture": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentApiJourney.cs",
+        "compiled_sha256": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "current_sha256_at_capture": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentStateTests.cs",
+        "compiled_sha256": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "current_sha256_at_capture": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignedStateTests.cs",
+        "compiled_sha256": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "current_sha256_at_capture": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignment.cs",
+        "compiled_sha256": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "current_sha256_at_capture": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.cs",
+        "compiled_sha256": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "current_sha256_at_capture": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.cs",
+        "compiled_sha256": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "current_sha256_at_capture": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignment.cs",
+        "compiled_sha256": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "current_sha256_at_capture": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingClosure.cs",
+        "compiled_sha256": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "current_sha256_at_capture": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingReassignment.cs",
+        "compiled_sha256": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "current_sha256_at_capture": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ReportingClosure.cs",
+        "compiled_sha256": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "current_sha256_at_capture": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingServiceClient.ReportingClosure.cs",
+        "compiled_sha256": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "current_sha256_at_capture": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentNativeTests.cs",
+        "compiled_sha256": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "current_sha256_at_capture": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureNativeTests.cs",
+        "compiled_sha256": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "current_sha256_at_capture": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentTests.cs",
+        "compiled_sha256": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "current_sha256_at_capture": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Controllers\\WorkflowTasksController.cs",
+        "compiled_sha256": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "current_sha256_at_capture": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\ICrossPersonaTaskRouter.cs",
+        "compiled_sha256": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "current_sha256_at_capture": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\CrossPersonaTaskRouter.cs",
+        "compiled_sha256": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "current_sha256_at_capture": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.DailyReports.cs",
+        "compiled_sha256": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "current_sha256_at_capture": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.Execution.cs",
+        "compiled_sha256": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "current_sha256_at_capture": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingReportingResponsibility.razor",
+        "compiled_sha256": "b2645878db586510115f54fb41cc132b349fbec1210b7fea025f05f6be306fc1",
+        "current_sha256_at_capture": "5a670436f4c165887fcf88e6377a1fc07aaef95497dc70d1c91aa69a9205594b",
+        "matches_current_at_capture": false
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssignment.razor",
+        "compiled_sha256": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "current_sha256_at_capture": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssigned.razor",
+        "compiled_sha256": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "current_sha256_at_capture": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "matches_current_at_capture": true
+      }
+    ],
+    "runtime_data_sha256": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "canonical_data_sha256_at_capture": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "runtime_data_matches_current_at_capture": true
+  },
+  {
+    "label": "oilgas-351-current-generation-page-labels.log",
+    "pdb": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-093627ff0da44f66b55a21cfba4447a8\\bin\\Debug\\net10.0\\PurchaseOwnership.pdb",
+    "pdb_sha256": "9717cb7f8dc03dafa3d925bfe5b06ac63b9137f5147aec4a7506a288a80b2eaa",
+    "documents": [
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureApiJourney.cs",
+        "compiled_sha256": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "current_sha256_at_capture": "32b75dc0f8e3b2b70ff1adea03f3739c950b80efa251c60ad8db09b4836ba635",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransfer.cs",
+        "compiled_sha256": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "current_sha256_at_capture": "0fafb8f2ded00bbb465237c5b9d253b38e86179cd344cddc06e93151e05e1628",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingTransferPersistence.cs",
+        "compiled_sha256": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "current_sha256_at_capture": "9633ca4301ed31f277175cef4167c6d6f3f721b2ebaf0b021075b57b28a2f1cd",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentNativeTests.cs",
+        "compiled_sha256": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "current_sha256_at_capture": "a8d2451eef6a80d5498719f64628ac0492772773d35b6acfb6eed8753e02679e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingReportingClosureState.cs",
+        "compiled_sha256": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "current_sha256_at_capture": "109acd9b62f89bf748c3bd6298be3040ab56176c00e79bca1aeb619fcf22ba4e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingReportingClosureStateTests.cs",
+        "compiled_sha256": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "current_sha256_at_capture": "aee2f8885bb1bf6e07506044cfce82c2bbdeda8cd11f39a364fee76aa64a613c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.CompletionAssigned.cs",
+        "compiled_sha256": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "current_sha256_at_capture": "0abd78e6c9aaba9499512f680935c39c2153d2c435bb9e98dffd467e698c6e95",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.Progress.cs",
+        "compiled_sha256": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "current_sha256_at_capture": "a33941a69d0f032977e23a078d8176fcf1611eae3f82d203ea36ca2df2f8d286",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingAssignedCompletionStateTests.cs",
+        "compiled_sha256": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "current_sha256_at_capture": "4518d19d2b29b9a7a81598cfd7f44eb622bbdd19e2890c1c62b8f97a42546de9",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "current_sha256_at_capture": "daece50fc9a31db6a3f9b479b8ac7d663fb2dde3f7106cec3c2a12e22b2baf7a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignmentConflict.cs",
+        "compiled_sha256": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "current_sha256_at_capture": "fe9e649448908d8dfc8fe81bb278ee723228c643cb26586fc47276718f2e945f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.Conflict.cs",
+        "compiled_sha256": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "current_sha256_at_capture": "d4cbb8b2324a7169ffcd2401d5833fc2473de717142b1afae93aca36f54627e0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentConflictStateTests.cs",
+        "compiled_sha256": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "current_sha256_at_capture": "21e0db2e77e06612547015d132a9691bf99c25a1545d0711cab6536077ac0cb3",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentConflictNativeTests.cs",
+        "compiled_sha256": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "current_sha256_at_capture": "27329987d6842505c933f986433f7b2c133c9c42bc7552110d9db3c451e953eb",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionConflict.cs",
+        "compiled_sha256": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "current_sha256_at_capture": "eeae93782ce2cf3364628f70985dd9a1be641efc2e28aebaa209e76b8ed82cc0",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentApiJourney.cs",
+        "compiled_sha256": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "current_sha256_at_capture": "62ca6d875d8682b56c2579d11aca08b0ef8b8190d8f2c4c31904cd466fc34114",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignmentStateTests.cs",
+        "compiled_sha256": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "current_sha256_at_capture": "f7376107400b8fed5190d61427bcc3dff9fdfebc32a3bd0217b0af99d4a7cd4f",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web.Auth.Tests\\DrillingExecutionAssignedStateTests.cs",
+        "compiled_sha256": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "current_sha256_at_capture": "58c14b9bb4ac47c72f4c6414368113c503ad253ecab865d1aea75677cc6443b6",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ExecutionAssignment.cs",
+        "compiled_sha256": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "current_sha256_at_capture": "6187b544bf80fa8d3518efa213d5637425a34de3308afe1a9b7f57c8e53c2a12",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignmentState.cs",
+        "compiled_sha256": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "current_sha256_at_capture": "f05dadcdb2aa297a18fbd939d87269169d251e3241b802cb0bbaa7872847e6ba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingExecutionAssignedState.cs",
+        "compiled_sha256": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "current_sha256_at_capture": "45395c0cac6681fb2fe70018dc9556a707f2530fe558a9e30befa3fe5edd915e",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ExecutionAssignment.cs",
+        "compiled_sha256": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "current_sha256_at_capture": "a33982dc4f6b3731cd9595da359137a57bc74ae30199619df3f6743f21142506",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingClosure.cs",
+        "compiled_sha256": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "current_sha256_at_capture": "42536ee6289e09f23196d435e2a038db0cc09324109fcebcc600d1d0cfc5006a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\PPDMProcessService.ReportingReassignment.cs",
+        "compiled_sha256": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "current_sha256_at_capture": "dd06f2e938372ae99eb970de7c979166d7c8f67eb0b11eb5e17ec68e0bf80e63",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.ReportingClosure.cs",
+        "compiled_sha256": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "current_sha256_at_capture": "8aca16d46a7637a3227630fc7f04a9b1e1ae4ea61067c2199b5fde6ea2481d83",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\DrillingServiceClient.ReportingClosure.cs",
+        "compiled_sha256": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "current_sha256_at_capture": "57ebdd8cdce9d11ac197207b14fe23e58c9345c5b4f2f083d001caa9bc5baf8c",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingExecutionAssignmentNativeTests.cs",
+        "compiled_sha256": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "current_sha256_at_capture": "7501589b153e6b9958edb19c7728678260bd8bbc316e6d92997d4f1ef71aae94",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingClosureNativeTests.cs",
+        "compiled_sha256": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "current_sha256_at_capture": "ee00fe6478073c315def95a3e2ace1787e2c111d7512a239d4914cda4c4899ce",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService.Tests\\DrillingReportingReassignmentTests.cs",
+        "compiled_sha256": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "current_sha256_at_capture": "d83afd5c051d903d61cb1acc58c2e19cc538d88d5c7f44edc5aecd91bef297de",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Controllers\\WorkflowTasksController.cs",
+        "compiled_sha256": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "current_sha256_at_capture": "50408d824ec9c9f1d3b60625da6d66dd069f3eef9d78919fed4708baf9322de7",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\ICrossPersonaTaskRouter.cs",
+        "compiled_sha256": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "current_sha256_at_capture": "70a6ad10ab5a24d219f0fa6c805c29ff92bfc781ac8206347e8f7e6ab80e5060",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.LifeCycle\\Services\\Processes\\CrossPersonaTaskRouter.cs",
+        "compiled_sha256": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "current_sha256_at_capture": "ce8e098e8eeee5e01f41c74f8cf594f638e6cd3a3c0e00aa90241c863d59c659",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.DailyReports.cs",
+        "compiled_sha256": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "current_sha256_at_capture": "8083312c42efa8fdefa13066f4ddc41fb06cf33c2aca16faea4cf667348f1cfc",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyDrillingProgramService.Execution.cs",
+        "compiled_sha256": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "current_sha256_at_capture": "f842f640d8b25469fe0f830fec9a940a17e9068bf6e7ba5c61dfba680ea73cba",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingReportingResponsibility.razor",
+        "compiled_sha256": "5a670436f4c165887fcf88e6377a1fc07aaef95497dc70d1c91aa69a9205594b",
+        "current_sha256_at_capture": "5a670436f4c165887fcf88e6377a1fc07aaef95497dc70d1c91aa69a9205594b",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssignment.razor",
+        "compiled_sha256": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "current_sha256_at_capture": "90a2db16af5aea13a573aa5246c7d3c00c445cf303695d0dbc0bca8aa138e97a",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Pages\\PPDM39\\Drilling\\DrillingExecutionAssigned.razor",
+        "compiled_sha256": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "current_sha256_at_capture": "601bb56d1df63f49d96fe3735517015d682aa0e802408221b527d5a5ceff0523",
+        "matches_current_at_capture": true
+      }
+    ],
+    "runtime_data_sha256": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "canonical_data_sha256_at_capture": "67c0e405a5299226ce20a263d5243381b2ebe709b4998a943a0d53b23a1a0b8b",
+    "runtime_data_matches_current_at_capture": true
+  },
+  {
+    "label": "canonical-data",
+    "pdb": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.pdb",
+    "pdb_sha256": "46d8f18956a7e10a5a21c0d6db9085df17f9dfba841ae9d095e593a62956c204",
+    "documents": [
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\OilGas\\DrillingAndConstruction\\DrillingExecutionAssignment.cs",
+        "compiled_sha256": "5962cbe7d78e7d40fb9b007bcae0c02d33c065d183e462d32a38145cfa3b4aee",
+        "current_sha256_at_capture": "5962cbe7d78e7d40fb9b007bcae0c02d33c065d183e462d32a38145cfa3b4aee",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\OilGas\\DrillingAndConstruction\\DrillingExecutionAssignmentConflict.cs",
+        "compiled_sha256": "1bfe2ddf7d0a07e5d41e010a96b12da0afbb8f88563e5d8fcaa75f5133b9f6d8",
+        "current_sha256_at_capture": "1bfe2ddf7d0a07e5d41e010a96b12da0afbb8f88563e5d8fcaa75f5133b9f6d8",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\OilGas\\DrillingAndConstruction\\DrillingExecutionAssignmentReview.cs",
+        "compiled_sha256": "d6049a9f9fb6b3afee8893b3496a1dc86b5de3afb6c5807a3a0b16c02f5b0312",
+        "current_sha256_at_capture": "d6049a9f9fb6b3afee8893b3496a1dc86b5de3afb6c5807a3a0b16c02f5b0312",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\OilGas\\DrillingAndConstruction\\DrillingReportingClosure.cs",
+        "compiled_sha256": "3f7513ca4efa9fbd8146caae81fcc2aa4504ecb12b898a07006ba443892fed0b",
+        "current_sha256_at_capture": "3f7513ca4efa9fbd8146caae81fcc2aa4504ecb12b898a07006ba443892fed0b",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\OilGas\\DrillingAndConstruction\\DrillingReportingClosureStatus.cs",
+        "compiled_sha256": "013c8f27376ef41fcf3de8f3e92511ad4b3575382ca5e06f5b4645158cc33990",
+        "current_sha256_at_capture": "013c8f27376ef41fcf3de8f3e92511ad4b3575382ca5e06f5b4645158cc33990",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\OilGas\\DrillingAndConstruction\\DrillingReportingGeneration.cs",
+        "compiled_sha256": "df5b8d9dc573af90c16fc15cf6244fc2f65ef9541adaa88623dc645cd5c1a71b",
+        "current_sha256_at_capture": "df5b8d9dc573af90c16fc15cf6244fc2f65ef9541adaa88623dc645cd5c1a71b",
+        "matches_current_at_capture": true
+      },
+      {
+        "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\OilGas\\DrillingAndConstruction\\DrillingReportingReassignment.cs",
+        "compiled_sha256": "5a5026c9d68b6f8ced9c49c74bd6d69c37ae49c5019b8cf32083af05f4f7db10",
+        "current_sha256_at_capture": "5a5026c9d68b6f8ced9c49c74bd6d69c37ae49c5019b8cf32083af05f4f7db10",
+        "matches_current_at_capture": true
+      }
+    ]
+  }
+]

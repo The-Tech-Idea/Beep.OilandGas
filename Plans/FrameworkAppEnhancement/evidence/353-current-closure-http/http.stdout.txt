@@ -1,0 +1,9 @@
+         at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddlewareImpl.<Invoke>g__Awaited|10_0(ExceptionHandlerMiddlewareImpl middleware, HttpContext context, Task task)
+[xUnit.net 00:08:50.21]   Finished:    Beep.OilandGas.Repository.Tests
+  Passed Beep.OilandGas.Repository.Tests.CurrentFieldLifecycleGateTests.FinalClosureHttpAcrossStoresRefusesRevocationAndReconcilesLostCommit [8 m 49 s]
+
+Test Run Successful.
+Total tests: 1
+     Passed: 1
+ Total time: 8.8490 Minutes

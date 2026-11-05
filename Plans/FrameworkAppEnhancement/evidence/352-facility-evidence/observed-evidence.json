@@ -1,0 +1,1056 @@
+{
+  "recorded_at": "2026-10-27T13:44:56.117521+03:00",
+  "status": "focused_passed",
+  "total": 50,
+  "failed": 0,
+  "scope": "14 facility state, typed transport and actual component observations; 35 affected well and one construction screen regression. App component with mocked HTTP/field source; not protected facility API or live provider.",
+  "elapsed": "4.3545 seconds",
+  "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentWellEvidenceTests|FullyQualifiedName~ConstructionEvidenceScreenTests'",
+  "sha256": {
+    "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "bdcb852e682c903043237c307993fa89f6f24b8de313983948a0e091794510d9",
+    "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "9f431192f6423996289cfa03ab14a82f3378672ab0c67a54d82dea3598aa4513",
+    "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "8cfb75763d12c8ad6d0009efddb444a8b16e781527030157846f5681e8624f3a",
+    "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "ca53b0823309b2f0d33378893e37d23523f830972838612847760db8aa180039",
+    "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "bc070e6b3c915acaafbee25462cd238a0249c2f2358eff65a0ecc168aa7c121a",
+    "Scripts/Test-PurchaseOrderOwnership.ps1": "815eecc6251a8dd28c9367843d69a17a88953c4281ab00f901d94118af45ca48"
+  },
+  "log_sha256": "3b01ba942d9b13a4657647398d6e41bdfd9e5e4b338588c32dafcf8da9afd389",
+  "api_change": "Removed obsolete current-development facility POST/PUT and corresponding UI client methods; independent /api/facility routes and lifecycle owner remain and are not qualified by this removal. The GET has scoped protected HTTP checks.",
+  "read_authority_gate": {
+    "status": "passed",
+    "total": 45,
+    "new_authority_cases": 16,
+    "facility_screen_cases": 14,
+    "existing_development_authority_cases": 15,
+    "time": "8.6450 seconds",
+    "log": "facility-read-authority.log",
+    "sha256": "880276671c4ebfe1f41a72adcd687560f556f5c7d82a5c2cbf598f67cff7f1d4",
+    "scope": "Real authority with SQLite binding fixture and mocked account/roles, grants, FIELD source and resource access; actual endpoint and host not compiled or exercised.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs": "020e0c58b89eb5e6b3bfb3729f25f505ba09c69c798fffe96ffffaa8c05befae",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityReadAuthorityTests.cs": "9d40a335e8beae7773d9e31b3a5d8f4df70f08bee4017ada79326b8b0bf986d4",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentDraftAuthorityTests.cs": "0c238919aa1aae966210d53b7d7ac5b6fd7eaf7adaa32d9585106c0bef70a72c",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs": "1cdbfdf439a13a3b13ec9a64186a98b065d837ed0aefa6afd349615a8664d816",
+      "Beep.OilandGas.ApiService/Program.cs": "0884fff41b551dce0d9beb53799a4ee8295fd81ed56dfc5a7afbddc2633ce2f0",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "0b5db05900c1dc497d379b4cad8d9430592caff295fbb4bdd7a534386d711d22"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityReadAuthorityTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentDraftAuthorityTests'"
+  },
+  "controller_gate": {
+    "status": "passed",
+    "total": 52,
+    "controller_cases": 7,
+    "authority_cases": 16,
+    "facility_screen_cases": 14,
+    "existing_development_authority_cases": 15,
+    "time": "7.2755 seconds",
+    "log": "facility-controller-focused.log",
+    "sha256": "428892a45cfa8aef28fdf8ea35c27114081d1fc8636f232b991afdf9bd05fb60",
+    "scope": "Actual controller and authority with real SQLite binding fixture and mocked native owner, account, grants, FIELD and resource access. No protected host or live provider.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs": "020e0c58b89eb5e6b3bfb3729f25f505ba09c69c798fffe96ffffaa8c05befae",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "e146e974f333623eaff88ee09a2d8fa0f523edba67bd16d05171d4784c39d187",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceControllerTests.cs": "e6708bf501f2e86a056b7d8b8fc896a4757fa361fd5d0cb798962181a12f254d",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityReadAuthorityTests.cs": "9d40a335e8beae7773d9e31b3a5d8f4df70f08bee4017ada79326b8b0bf986d4",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentDraftAuthorityTests.cs": "0c238919aa1aae966210d53b7d7ac5b6fd7eaf7adaa32d9585106c0bef70a72c",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs": "11d9b1807a7f86e6941136065b93ba90dd0faaac88d2382e35814a0678462c4a",
+      "Beep.OilandGas.ApiService/Program.cs": "33ff769c194f70f9d5ea60862d51e947c0cc97dcb7a7f0cc19e80da2cf3a5aab",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "f377703369625c95e6bb70ca6695b0862298f230b151e315ec18739535ab8096"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceControllerTests|FullyQualifiedName~DevelopmentFacilityReadAuthorityTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentDraftAuthorityTests'"
+  },
+  "composite_and_http_gate": {
+    "status": "passed",
+    "total": 87,
+    "http_cases": 8,
+    "scope": "Actual typed client, Kestrel authentication, FIELD authorization filter, facility controller and read authority with SQLite binding and controlled account/role/FIELD/grant/resource/native owner seams; actual page/state and well/construction regressions. Does not use production startup/DI, real OIDC, Beep provider or physical schema.",
+    "time": "8.3517 seconds",
+    "log": "facility-composite-focused.log",
+    "sha256": "923c31b49034c6b4172fc85c21b91d5ae1586893c63db7382393cec2349f0e3c",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs": "020e0c58b89eb5e6b3bfb3729f25f505ba09c69c798fffe96ffffaa8c05befae",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "69742f5497e71f29186326d21ff34fc6686bed8925dfdbc85a28257758538f03",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "3af668ab8571ed4ca2c6f0f8003a01159987e966612975fa67ba331c6d3ae036",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceControllerTests.cs": "eab062beaa2f176d24140f4ff3c93fb7a073a360dfb2aa45c9760f439da82217",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityReadAuthorityTests.cs": "9d40a335e8beae7773d9e31b3a5d8f4df70f08bee4017ada79326b8b0bf986d4",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "1a0c740e756eb0ca39459cc1858d2631ec219d1c1af0d35c2b5bb5b1d347837b",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "5f231ae2e077e71d05edadeee3714614f02171b7090aa1389cf10c6669b74544",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "bdcb852e682c903043237c307993fa89f6f24b8de313983948a0e091794510d9",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "ca53b0823309b2f0d33378893e37d23523f830972838612847760db8aa180039",
+      "Beep.OilandGas.ApiService/Program.cs": "33ff769c194f70f9d5ea60862d51e947c0cc97dcb7a7f0cc19e80da2cf3a5aab",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "2a293c499af3fbf374844015fbe77147c6f158f8daf32f6233eeee11af6b3d96"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEvidenceControllerTests|FullyQualifiedName~DevelopmentFacilityReadAuthorityTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentWellEvidenceTests|FullyQualifiedName~ConstructionEvidenceScreenTests'"
+  },
+  "facility_details_gate": {
+    "status": "passed",
+    "total": 37,
+    "time": "6.7153 seconds",
+    "log": "facility-details-focused.log",
+    "sha256": "674950b42bf40a9621886761f9d4fbfada8019bd548e0fa9fd2b4e20b2928adb",
+    "scope": "Actual facility component and state, controlled owner/authority and Kestrel protected route. Includes selection by composite key and company-change privacy; not production host/provider/browser.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "e04dd6d37594e4bd01c914bdcb15096adb07463a63630f335923687d5355c8be",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "1a0c740e756eb0ca39459cc1858d2631ec219d1c1af0d35c2b5bb5b1d347837b",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "1a718cbafa27cb0fc6874136c19d48571562f022da9ca4f307ebb9f45cdc8609",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "69742f5497e71f29186326d21ff34fc6686bed8925dfdbc85a28257758538f03",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "3af668ab8571ed4ca2c6f0f8003a01159987e966612975fa67ba331c6d3ae036",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "2a293c499af3fbf374844015fbe77147c6f158f8daf32f6233eeee11af6b3d96"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEvidenceControllerTests|FullyQualifiedName~ConstructionEvidenceScreenTests'"
+  },
+  "legacy_removal_gate": {
+    "status": "passed",
+    "total": 72,
+    "time": "7.9318 seconds",
+    "log": "facility-legacy-removal-focused.log",
+    "sha256": "01ab87f73777a861016381c125f2cc04f703280b07fe0a5c7dcc0f4812771060",
+    "scope": "Actual facility screen/state and typed client, controlled protected HTTP and controller, development-well and construction regressions. Legacy DevelopmentController is not compiled in this harness; its route removal is source inspection only.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs": "02730adedaa2660d8ef53061773bc4adaf40f962dbba98a06ee8cd3b3d30562b",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "60184eb04bb0523b541923945804c0a43bce72b110b86936eef947858e225e60",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "b95d434afb4fbc4f4efcfa85369d1539badbcef401858dd5993827145910fb8d",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "e04dd6d37594e4bd01c914bdcb15096adb07463a63630f335923687d5355c8be",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "1a718cbafa27cb0fc6874136c19d48571562f022da9ca4f307ebb9f45cdc8609",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "69742f5497e71f29186326d21ff34fc6686bed8925dfdbc85a28257758538f03",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "2a293c499af3fbf374844015fbe77147c6f158f8daf32f6233eeee11af6b3d96"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEvidenceControllerTests|FullyQualifiedName~DevelopmentWellEvidenceTests|FullyQualifiedName~ConstructionEvidenceScreenTests'"
+  },
+  "edit_contract_gate": {
+    "status": "passed",
+    "total": 53,
+    "new_contract_cases": 17,
+    "time": "7.9431 seconds",
+    "log": "oilgas-facility-edit-contract-focused-final.log",
+    "log_sha256": "04de3b4e5a5744784c9ae26c05489a238e5254a2dd76cb896795186b635d77d3",
+    "data_assembly_sha256": "75a0826fdde524c072d841f98833e7e7386a1b89e358c560691345249fe4cb9a",
+    "data_build": "Succeeded in 5.53 seconds; 0 errors and two missing sibling analyzer warnings.",
+    "scope": "Shared edit-review/intent validation plus actual facility state, controller and protected HTTP regression with controlled seams. No facility persistence, recovery, edit screen or production host is implemented/tested.",
+    "source_sha256_at_capture": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityEdit.cs": "e32e55c92e4f5e9147642c381fba2f8b7e2922e587570b58452f76af8077bc4c",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEditContractTests.cs": "7ad448c791d549193adbfba8bcb0e63694123b23c056597fa82631fb98080e06",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "535db9a532d7c8b9bd8f9cbf6f377937209ad29ba129e14ae9d5e4b053bd9a4e"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEditContractTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEvidenceControllerTests'"
+  },
+  "edit_review_surface_gate": {
+    "status": "passed",
+    "total": 86,
+    "new_controller_review_cases": 10,
+    "new_protected_http_cases": 1,
+    "time": "7.7936 seconds",
+    "log": "facility-edit-surface-verified.log",
+    "sha256": "e72101b0b30d4d4e353bf58539a30c20875026f016c362cdc83e44b425404e94",
+    "data_assembly_sha256": "75a0826fdde524c072d841f98833e7e7386a1b89e358c560691345249fe4cb9a",
+    "scope": "Actual edit-review controller, Kestrel typed HTTP, facility page/state and contract with SQLite module binding and controlled account, grants, FIELD and native owner. No provider-backed write, recovery, production host or browser testing.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs": "753c9d666622447b7e9f2e84a601e6e5c742e626169a60833bead799e8ceb9b4",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "06fabeaffc2aac3ab071620e7fb06ba420e8d309eb044b6078d7e12828df6b03",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEditReviewTests.cs": "5081368d5172f62a45e7198c512afef411810303c9c5a07d22c9b427e0e0d5ca",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "c8077ca02f13cc0896b12206310b65693be6e1c1d321bcba36eda6110f6b5549",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "e4f4ebd60e943bcf89a8ec05f130fe75b6f87ea3ffcc22b7020b9f3c7025eba4",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "f8e71d1cef91980a19e5ca2cd49e5e1cddafcf79d20c96646402701a79cbf143",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "f6838226455cb607f731f762d5a1f282ad143955cff0e29b93bb441ff5c7c7b0",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "396cd527a887b8d160567b66c42b5651f510569a5b68e59e4361fa1c54afd5d5",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "2c463fb1875f5f907a8877ff8d0d241f54279411f583d1a4c25a076f9f624e16",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityEdit.cs": "e32e55c92e4f5e9147642c381fba2f8b7e2922e587570b58452f76af8077bc4c",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "4f1ca477b695eba420b05cc2433c1ad04268c92433ac77981e581c4593702a84"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEditReviewTests|FullyQualifiedName~DevelopmentFacilityReadAuthorityTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceControllerTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEditContractTests'"
+  },
+  "edit_journal_gate": {
+    "status": "passed",
+    "total": 53,
+    "new_journal_cases": 2,
+    "time": "7.7865 seconds",
+    "log": "facility-edit-journal-focused.log",
+    "sha256": "c284e78e1362318e34e626214cb82c2a32187908075ccebfeb7538ce2111aa6d",
+    "data_assembly_sha256": "75a0826fdde524c072d841f98833e7e7386a1b89e358c560691345249fe4cb9a",
+    "scope": "Actual ASP.NET protected session storage with in-memory JS seam; same-store-instance serialization, account/company separation and exact revision retention. No browser, cross-circuit concurrency, API write or recovery proof.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.cs": "0bd519a9a8515e4e56efcf037c55bd85befa02fa458a605aa9915431aa28fa07",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.FacilityEdit.cs": "5abe342ad3ec11ab93a9a70258279ec04c81fd7ca0e700b25d6b08fa9bf01efd",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEditJournalTests.cs": "499d0f77eb5742cb9e17fd39560f1fdb114217639f2c238228e12b225cfb69d6",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEditContractTests.cs": "4a53a67a610267189a788737af552a7500168b8ca0cbb9835808ebe779787f05",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "df23d1b8d30141d746caaf94d3c566fce6cec1ad8b8b8f7b3d71f9bc1afc0e2f"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEditJournalTests|FullyQualifiedName~DevelopmentFacilityEditContractTests|FullyQualifiedName~DevelopmentFacilityEditReviewTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests'"
+  },
+  "durable_intent_gate": {
+    "status": "passed",
+    "total": 44,
+    "new_intent_cases": 15,
+    "time": "7.2304 seconds",
+    "log": "oilgas-facility-intent-focused-verified.log",
+    "log_sha256": "00c9a912ec12f191e1ffbd97d24a8587792b44a8833b92035f02a4224a2793ed",
+    "data_assembly_sha256": "9f37a5b3d5f21b6c4f522f5ed85e2de8424c3e7cb51e568dc2c818ecfac28624",
+    "build": "Data build passed in 6.33 seconds with 0 errors and 2 missing sibling analyzer warnings.",
+    "initial_failure": "The first focused run did not compile due to a missing ClassCreator using; corrected before the final pass.",
+    "scope": "In-memory contract, original/result tamper and Beep ClassCreator metadata checks; module declaration inspected as source. No migration, provider schema, transaction, update or recovery executed.",
+    "source_sha256_at_capture": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/FACILITY_EDIT_INTENT.cs": "b403b7bd5e8ccf22ec57a4ba1a6526395ee0ea35726a828bbbdbd729b4798fac",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityEdit.cs": "fa6d9a10367accc4373953eca1d4084e6ae08c13758cf64be0ebb3c31f24edbd",
+      "Beep.OilandGas.ProductionOperations/Modules/FacilityManagementModuleSetup.cs": "d2531f09b133eb3b8bac8692277d5962efa0cc5f9bdd6abd7d01fd7374f697c6",
+      "Beep.OilandGas.Web.Auth.Tests/FacilityEditIntentTests.cs": "8571707792800d8cae916f40ef342378859f7d7175874f62e34c5263ca23a064",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "fd233d6ab048818ae0d2f347c3f0c061d4cf9e75617a660064f27e8ed72a5e36"
+    },
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~FacilityEditIntentTests|FullyQualifiedName~DevelopmentFacilityEditContractTests|FullyQualifiedName~DevelopmentFacilityEditJournalTests|FullyQualifiedName~DevelopmentFacilityEditReviewTests'"
+  },
+  "native_preflight_gate": {
+    "status": "passed",
+    "total": 30,
+    "new_preflight_cases": 12,
+    "existing_facility_identity_cases": 18,
+    "time": "7.2792 seconds",
+    "log": "oilgas-facility-preflight-final-verified.log",
+    "log_sha256": "6f9ce8e8e42229e50c70ebcdc82d850d55972d595ee15ac69eff46db389c10ca",
+    "data_assembly_sha256": "9f37a5b3d5f21b6c4f522f5ed85e2de8424c3e7cb51e568dc2c818ecfac28624",
+    "scope": "Actual Beep repository owner and real app SQLite grant policy with controlled datasource, schema, FIELD evidence and authority seams. No actual provider schema, database migration, write or recovery.",
+    "initial_failures": [
+      "Focused harness omitted the existing reporting-transfer source; a subsequent source-linked run also needed completion owner files. Both source dependencies were included, and the final gate passed."
+    ],
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEdit.cs": "c986ef7d2c188e0e2cb0b3c1936968d56d00234d31b246d7af44bc2ae0c7dd54",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "195e5a59b62e771add1c4d2db112a82bdb43e4c9beac509886e5058a67081a04",
+      "Beep.OilandGas.Repository.Tests/FacilityEditPreflightTests.cs": "18f96dd8b4fc2e64c0c04647c0170ba3b7f9746592339815542631fba7219f55",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "f97856a72d1c4ea4a6ea3ce8965b78d61939276aae94aab5a31359e5e3bdd1cb",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/FACILITY_EDIT_INTENT.cs": "b403b7bd5e8ccf22ec57a4ba1a6526395ee0ea35726a828bbbdbd729b4798fac",
+      "Scripts/Test-MaintenanceHandoffHttp.ps1": "cb0391fa57b9e0bc37be4e64a03e8fa31ca0dd24051a20d5cebf9ce6ed1a8bba"
+    },
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityEditPreflightTests|FullyQualifiedName~FacilityQualifiedIdentityTests'"
+  },
+  "intent_boundary_gate": {
+    "status": "passed",
+    "total": 40,
+    "time": "8.1098 seconds",
+    "log": "facility-intent-boundary-final.log",
+    "sha256": "d2a5bbd320c7ad30f88b63b4546b63b2bae47388e9f6b081e0ebd5a58b855d3d",
+    "data_assembly_sha256": "9f37a5b3d5f21b6c4f522f5ed85e2de8424c3e7cb51e568dc2c818ecfac28624",
+    "scope": "Actual Beep repository boundary, app company row policy, native preflight and facility identity; SQLite app grants with controlled provider seams. No reviewed mutation owner, write, rollback or recovery.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs": "05f81cdcefe61a7b0239dea5f1f5062d05ada8619e1e674490ff906a99147a23",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "5277c6bea356750ed940a04648e5fa84316518ad09850fee24a56eefebc65dee",
+      "Beep.OilandGas.Repository.Tests/CompanyPPDMRowAccessTests.cs": "ff270a1654b526496fbaad202665af4619111dc4e3e7c6bbef48afab64e89b80",
+      "Beep.OilandGas.Repository.Tests/FacilityEditPreflightTests.cs": "2b7714221284052ca9b5b926079ec56b80f831a76dd831d93ae4cb02a400fa40",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEdit.cs": "c986ef7d2c188e0e2cb0b3c1936968d56d00234d31b246d7af44bc2ae0c7dd54",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "f97856a72d1c4ea4a6ea3ce8965b78d61939276aae94aab5a31359e5e3bdd1cb"
+    },
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityEditPreflightTests|FullyQualifiedName~StandardCompanyPolicyCannotAuthorizeRawWellStatusOrPrivateReturnIntentWrites|FullyQualifiedName~FacilityQualifiedIdentityTests'"
+  },
+  "native_save_recovery_gate": {
+    "status": "passed",
+    "total": 48,
+    "new_native_write_cases": 8,
+    "time": "11.2462 seconds",
+    "log": "facility-native-write-current.log",
+    "log_sha256": "f4bb006b96d2351e2e704188aae3e62deb24b8be00c4e592f301eacc3894fcdb",
+    "data_assembly_sha256": "cb836a23533b1c417a5c73222f0951736932f0622aee601c5ba8ac9eb0492853",
+    "scope": "Actual Beep owner/repository/transaction against controlled in-memory datasource with simulated physical transaction and real SQLite app grant policy. No production provider, actual migration, host or API/UI submission. Final run also asserts both writes only and preservation of every other fixture row.",
+    "initial_failures": [
+      "First native gate had an AppFilter target-type compile error, corrected. A default Data build encountered duplicate Beep dependencies; focused no-project-reference build exposed and corrected a GUID string type error. A subsequent gate failed because the test fixture had replaced its transaction-capable connection; the fixture was corrected and final gate passed."
+    ],
+    "recovery_limits": "Read-only exact recorded intent recovery; missing or ambiguous evidence refuses. Normal resubmission/idempotent retry and absent-intent proof remain open. A rollback failure is reported as unconfirmed, not as restored state.",
+    "source_sha256_at_capture": {
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEdit.cs": "e9e334b247b745a248a69d687167faf29ad0e5db8ba38b8f1c085e589db8afe3",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEditWrite.cs": "dd81da187344f6403850421a5a5048e37ec2ead4cd40c1dcd65bd13ffb7cb4c8",
+      "Beep.OilandGas.Repository.Tests/FacilityEditNativeWriteTests.cs": "bb08671eba99035c8a32fc5e1a241f99f733b1b9826eee8ca860c35bd7e00601",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "d73929dd26cc701e6bbd7c41f3bac39996ccb6ee4a06bdcae1474a64bc2b9c35",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/FACILITY_EDIT_INTENT.cs": "6455dbc8dd35a64febef92efb399ad17fe29dc3591a95b9e89bec237d8b94885",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs": "05f81cdcefe61a7b0239dea5f1f5062d05ada8619e1e674490ff906a99147a23",
+      "Scripts/Test-MaintenanceHandoffHttp.ps1": "cb0391fa57b9e0bc37be4e64a03e8fa31ca0dd24051a20d5cebf9ce6ed1a8bba"
+    },
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~FacilityEditPreflightTests|FullyQualifiedName~StandardCompanyPolicyCannotAuthorizeRawWellStatusOrPrivateReturnIntentWrites|FullyQualifiedName~FacilityQualifiedIdentityTests'"
+  },
+  "native_contract_regression": {
+    "status": "passed",
+    "total": 44,
+    "time": "6.4645 seconds",
+    "log": "oilgas-facility-native-contract-regression.log",
+    "sha256": "a0b46ec19cd574e110de075964b87dfbd7f29adac546d79adb00a554fdf2b911"
+  },
+  "app_save_and_recovery_gate": {
+    "recorded_at": "2026-10-27T11:01:41.863279+00:00",
+    "status": "passed",
+    "total": 68,
+    "elapsed": "9.1001 seconds",
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~CompanyDevelopmentFacilityEditServiceTests|FullyQualifiedName~DevelopmentFacilityReadAuthorityTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEditJournalTests'",
+    "scope": "Actual rendered component, typed HTTP and protected Kestrel controller with controlled native owner, SQLite binding fixture, controlled account and resource grants, and protected storage fixture. Includes retention/readback failure, lost response and company change in flight. Not combined protected HTTP and native owner, production startup, OIDC, live browser or provider.",
+    "native_gate": {
+      "total": 48,
+      "elapsed": "12.2851 seconds",
+      "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~FacilityEditPreflightTests|FullyQualifiedName~StandardCompanyPolicyCannotAuthorizeRawWellStatusOrPrivateReturnIntentWrites|FullyQualifiedName~FacilityQualifiedIdentityTests'",
+      "scope": "Actual native owner and repository with simulated Beep transaction and SQLite app grants, separately from protected HTTP."
+    },
+    "logs_sha256": {
+      "facility-app-save-current.log": "152565e8bb671bea02f4161a630dcf9082b7ac3b97ca799613a026967ad6ed61",
+      "facility-native-owner-current.log": "1e45b99a61ccf4b1c982dee1415bd385891d94de0f145e0c947d71650c400962",
+      "facility-save-http-initial.log": "20fc5d0ef0a71b65d6290bfcb6918f6effc00ef82eae3f625faa48b35962330f",
+      "facility-save-http-corrected.log": "111387c2f9e898746c29759732eaf6efd25f0051d892ba3ffca8964fa7a39ed2",
+      "facility-save-http-diagnostic.log": "9292f6dbf3956fa8782470bb456f1caecaba56c64a18c6983ea3881c28a60269",
+      "oilgas-facility-api-build.log": "f7234d1aca4b07eb77578dcef5309a8fcd79f3e31f25cadabc77af9fe253acac",
+      "oilgas-facility-diagnostics-build.log": "9131839120e0c1c0a95063da474639e41bede7c5f51f1c6e240350b258165407",
+      "oilgas-facility-diagnostics-restored-build.log": "d05a3f2fcd21cfefa9e5ed10f36c293a2eb890b305475d037ffbe446283e07fc"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/ICompanyFacilityEditOwner.cs": "fd132459da3a08387fa975b7bd6e250a63b50e7344bbc8cbdfe39d5951795918",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityEditReceipt.cs": "80e6b915cb5952a6b6bff95647be9645abcbce0e5c64a37a494e31582243e9a3",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs": "3702d2fb9277b1c6de3bec38c26497cf237a5afe4fe38025397b288f216f6abd",
+      "Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs": "0f11c599c1f5b6688fbe84862e8d5d8e5949f86ebd7789e0cf4699d0cb5292b4",
+      "Beep.OilandGas.ApiService/Program.cs": "b1940110f6e4d4b70051d385fd0b35e2fe192de0cf29aad434c91636d4df8900",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "2fc82631a96771a5d435e9c6def6780956194bbd406cc2ba839bb2ecd21a9196",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "76aa57752a9eed802207af0a9be41134badfd53c8f7e84858ccffa2ac857664e",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "d785562fb03a524ad93c3431a5c556da2f42eac305b9e3ea6c8490e54af1149d",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "4dd7cfe2878570c792ae20ba45fddc49aaec22459dfca99fc46d3360a8637a6d",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "aaf0cd9518743480c08613e2c289cde5a5e9e1cdb85e69bafd71a0a693c21b6c",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "7ae350b9c4fa412dec5af6cf6f5b3a1e073ea43e76e12bd1a0fd8bd42bd2f38c",
+      "Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityEditServiceTests.cs": "fd3f03c97714e5404e85edbce84d3bd6b8e93473c0a6db334ebf180e3d6ef60f",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEditWrite.cs": "9deca8824baec5b0e9f568a03e09fc7f31814a9fa49ed328fb229b50a2f949e0",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "aa8d4759d6bba98b4b5a75f5e6fcea480d92d036cca76596ac6cdf2235fd01cb",
+      "Scripts/Test-MaintenanceHandoffHttp.ps1": "cb0391fa57b9e0bc37be4e64a03e8fa31ca0dd24051a20d5cebf9ce6ed1a8bba",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "7a4817508f9f366e15f80a0dcf1a438756e584858f256a20bbb4732885defb5d",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "194475e0e693bd27e81da544f75cf19aee115c4b9ec69968aec8c0f0eb9f2972"
+    },
+    "prior_failures": "Initial protected save requests were rejected by automatic model validation of generated PPDM nullability; domain-validated JSON parsing corrected this. Earlier focused log names are retained when present.",
+    "api_build": {
+      "status": "failed_missing_reference",
+      "command": "dotnet build Beep.OilandGas.ApiService/Beep.OilandGas.ApiService.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "error": "Missing Beep.OilandGas.Diagnostics reference DLL; separately restoring and building it failed for missing sibling Beep.Web/TheTechIdeaWeb.Diagnostics reference DLL. Production Program and DI remain unverified."
+    }
+  },
+  "original_retry_gate": {
+    "recorded_at": "2026-10-27T11:06:07.221577+00:00",
+    "native_total": 48,
+    "native_elapsed": "18.3548 seconds",
+    "app_total": 70,
+    "app_elapsed": "9.1435 seconds",
+    "commands": {
+      "native": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~FacilityEditPreflightTests|FullyQualifiedName~StandardCompanyPolicyCannotAuthorizeRawWellStatusOrPrivateReturnIntentWrites|FullyQualifiedName~FacilityQualifiedIdentityTests'",
+      "app": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~CompanyDevelopmentFacilityEditServiceTests|FullyQualifiedName~DevelopmentFacilityReadAuthorityTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEditJournalTests'"
+    },
+    "scope": "The real native owner and repository run with a simulated Beep transaction and SQLite grants; repeated exact original does not add writes, changed original and revoked WRITE refuse. Separate actual rendered component and protected Kestrel app run uses a controlled native owner. Real provider concurrency, combined native HTTP and production DI not established.",
+    "log_sha256": {
+      "facility-native-retry.log": "d2f591104103589732838cf74b7f53eb3d4501c73f76e777bc1d70e648c0db99",
+      "facility-app-retry.log": "542534b5dbcd577a310315e7d4573be76f9ef8852e2e919fd656cfdc458303a2"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEditWrite.cs": "e920f407a480663a2782dabc7e93966a5acf6b44395f7520b169e4e03c9db9bc",
+      "Beep.OilandGas.Repository.Tests/FacilityEditNativeWriteTests.cs": "ea697132233f36fd445d4c436c2f3393c67484332bb837a8e129219a009095fd",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "0357aad046ba47b6fe907b9d30835d74ee35de17291a47fbc9f4af6ac7f9bacf",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "97ccbc5f7ebae71526ff2a5253cbcb74c820ed9cdc38361f845c00e3f94e6263",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "7fb6db4ebfa0171cc40962c8e5c80583d573f791ad77161cca9beeee968ca1a5",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "d3929b8c1d4c0843e0b381b1e666343d2b5a6d8482ae5f161a720d0ae90c74ec",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "7a4817508f9f366e15f80a0dcf1a438756e584858f256a20bbb4732885defb5d"
+    }
+  },
+  "protected_native_http_gate": {
+    "recorded_at": "2026-10-27T11:12:12.625478+00:00",
+    "status": "passed",
+    "total": 9,
+    "elapsed": "20.2341 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner|FullyQualifiedName~FacilityEditNativeWriteTests'",
+    "scope": "Actual Kestrel controller/current FIELD filter, app authority, SQLite company/grants, actual facility owner/repository and simulated Beep transaction; controlled authentication, FIELD access and source-list seams. Save, same-original retry, edit revocation and READ-only recovery, plus eight native transaction cases. No production DI, real provider, concurrency, OIDC or browser proof.",
+    "earlier_failures": "Initial compile required a resolver lambda. The later revocation test refreshed a new selection object rather than the host-held selection; final run refreshes both.",
+    "logs_sha256": {
+      "facility-native-http-compile-failed.log": "52143031c98eb47a14b35ee7ab97470b3a31e0f15911439524e8d580ce087329",
+      "facility-native-http-initial-pass.log": "78b698338eaffbe44dcc0faf22c6c8d0804324dc57aa5160a7a53a68026a587d",
+      "facility-native-http-stale-fixture-failed.log": "a088538fd3b5835b7babbea635ebb5e98300e7541b24fb32a73ea213532084d8",
+      "facility-native-http-final.log": "c62b2a861e1cf9a7e0672ed7027a1638e0363b896eaaa1aca291e385c6031e8d"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "38bc15e758894ad196dba7c2cacf62bcfe12b52c7570b3c57d536c6e62513e7e",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "d78ed724d46fb4d837770a3dc43a705966316bd16d0b9315563e06c77135ec32",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs": "3702d2fb9277b1c6de3bec38c26497cf237a5afe4fe38025397b288f216f6abd",
+      "Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs": "0f11c599c1f5b6688fbe84862e8d5d8e5949f86ebd7789e0cf4699d0cb5292b4",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "194475e0e693bd27e81da544f75cf19aee115c4b9ec69968aec8c0f0eb9f2972",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentEditWrite.cs": "e920f407a480663a2782dabc7e93966a5acf6b44395f7520b169e4e03c9db9bc",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "7a4817508f9f366e15f80a0dcf1a438756e584858f256a20bbb4732885defb5d"
+    }
+  },
+  "facility_master_boundary_gate": {
+    "recorded_at": "2026-10-27T11:16:37.491692+00:00",
+    "status": "passed",
+    "total": 36,
+    "elapsed": "19.1485 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ObsoleteRawFacilityMasterWritesAreNotExposed|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner|FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~FacilityEditPreflightTests|FullyQualifiedName~StandardCompanyPolicyCannotAuthorizeRawWellStatusOrPrivateReturnIntentWrites'",
+    "scope": "Actual Kestrel route refusal, generic mutation and company-policy fences, plus actual protected reviewed edit/recovery and simulated Beep native transaction. Does not qualify other facility child/lifecycle routes, production DI or real provider.",
+    "earlier_failure": "Source-linked FacilityController required an explicit Microsoft.AspNetCore.Http using; corrected.",
+    "logs_sha256": {
+      "facility-master-boundary-compile-failed.log": "e64087bdea2370831d2ca7e4b0d7021794eb995a3ce2abf930c2f25d013f91d0",
+      "facility-master-boundary-final.log": "80ce8247c17f78c609baafc569ff4f8182194e2f5b0af439031046d9d81789b1"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.ApiService/Controllers/Facility/FacilityController.cs": "bde05e1fa50306b44fa1cd8b2d2fdd532946d396f83bc174eb8bdd209d041634",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.cs": "cb09c9aa988e696749b61fb5db8755747ec3f228be55cfccfe55e93013ae150c",
+      "Beep.OilandGas.ProductionOperations/Services/IFacilityManagementService.cs": "bcc04203034ea3c0da2b65ddb3d89523e318b32311226ec75e77d30d81a10897",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "642f8d0b9fadef7f675a272bff5360ba48fad95a30ca6035a33a7089a0164ac0",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs": "91fc080a91b8620c5d45cfba3e749f5608dd395601174856352446fb201d5821",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "3ed89680b97ebdb81304afb0fb421d95928e98422ab11b1f71f28256e1580471",
+      "Beep.OilandGas.Repository.Tests/FacilityEditPreflightTests.cs": "33e7eab28f35da4dd3f717b800bb7120a4fadd5c3b88c5b8affa8e1537384711",
+      "Beep.OilandGas.Repository.Tests/CompanyPPDMRowAccessTests.cs": "6cc259f0d0aad6dcbf4d11c452937cfcecfede8bbc67985cde325ffe88cbb966",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "a20c2836bbe3f6cdf57dd1be82ffb1acc48739d0d7ffd309a20479d7f0414b9c",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "7a4817508f9f366e15f80a0dcf1a438756e584858f256a20bbb4732885defb5d"
+    }
+  },
+  "facility_creation_proposal_gate": {
+    "recorded_at": "2026-10-27T11:19:40.003541+00:00",
+    "status": "passed",
+    "app_total": 54,
+    "app_elapsed": "9.2320 seconds",
+    "native_total": 10,
+    "native_elapsed": "17.3688 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "app": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEditJournalTests|FullyQualifiedName~CompanyDevelopmentFacilityEditServiceTests'",
+      "native": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ObsoleteRawFacilityMasterWritesAreNotExposed|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner|FullyQualifiedName~FacilityEditNativeWriteTests'"
+    },
+    "scope": "Actual rendered facility page and state; no creation command, save, reference qualification or provider. Protected/native edit regression uses simulated provider transaction. Data build has one missing sibling analyzer warning.",
+    "logs_sha256": {
+      "facility-create-draft-data.log": "c1231935057db9c406c6daf3cbea32160d1d42cc7e3d9030829ad37b1f119946",
+      "facility-create-draft-app.log": "5b380f362c62f204d09a6b91109124e7ca5e54f0243631a5237c77bc836133d9",
+      "facility-create-draft-native.log": "d678988105a6114c61a59d68b274c436c35673fe56b64b26bcf07402a44cd8f5"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreationDraft.cs": "26097a73aa4311073b455f46e0132a29a94d889711da15f3132b62c5164ad12f",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "bd981b9346b66794abcda1a8140fba7ea4305c1959f032d846e0d9f0090e9f7f",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "44ca881fdf8a3edaf7d70cfabd920fe0bd48648f9d5b03a547b861253c706f27",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "3d0e6caa207b3e2a9cfee33d576767339ad3b09dbb3e5bd756644f024eaa2beb",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "b99b38d79bece1d24d00389bba23c5641ac9dcd30510dba67449638d9a1bcd00"
+    }
+  },
+  "facility_creation_source_review_gate": {
+    "recorded_at": "2026-10-27T11:24:41.107520+00:00",
+    "status": "passed",
+    "app_total": 59,
+    "app_elapsed": "7.8127 seconds",
+    "native_total": 9,
+    "native_elapsed": "12.0185 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "app": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~CompanyDevelopmentFacilityCreationTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~CompanyDevelopmentFacilityEditServiceTests'",
+      "native": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityCreationSourceTests|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner'"
+    },
+    "scope": "Protected Kestrel/typed client uses mocked creation source reader; separate actual native reader uses simulated datasource and checks collision, reference and guard drift. No combined creation HTTP/native, production DI, physical provider, date policy, reservation or creation write.",
+    "logs_sha256": {
+      "facility-create-review-data.log": "a981b775c8e0d03fbce00f5c2cea992e6d7b728d656d239b201a4a0f44bd65ab",
+      "facility-create-review-native.log": "b038fbbca89c989640de349c39203aab11fb9bd2bb65e869960c3b6b39454c1a",
+      "facility-create-review-app.log": "dfd868f5189906b3ae0dc50a480d030f21887811f37f729f63092f5022b85114"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreationReview.cs": "acb65e601ab779ee4ee74911e548f6f615dd2001068fbf956f9a1fde023d3741",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreation.cs": "149bb57240ef65e3914f78213bacb63aa2268dbcfa2c9fd36f1511481a5d0f6f",
+      "Beep.OilandGas.ApiService/Services/DevelopmentFacilityReadAuthority.cs": "88121c78882d97809fba38b2301822133dcbd32de234d1c87ad2ab67838891a5",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityCreationService.cs": "7ac016f39c4abddc294c6ed323765166bb07b8713d634c9f26f5a73575f99bd1",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "181038bd2f7fa05c9c2a3deea2c16bcbb840e975209a99169cd4897a4135ad77",
+      "Beep.OilandGas.ApiService/Program.cs": "113d463b7b914ce65e95f0b9becfdbf52aced8bcbab2137681487b6207b43f4a",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "55bfaf312d3fdbd3e3d498babec23723c9c6eebdac31879b4c796e2aa3da56e8",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "dbea0b4ce1926b564503dd2d00dd1c471f92102e74b07e1b43734ade8148d5ba",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "1ef4c493fe28fd2dc2dd27bc3edfc25c38d21683582380f67e72bddd739f4116",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "1dd4e96d6554621875cb158b8a086cee8f5a76b8928df71704e3ab8ac4f10ef5",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "df98afbc6dcc205194a14de9c43b35bbd3ba2cc00460dcff730c1257e5d67e81",
+      "Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityCreationTests.cs": "52ba7f7ba4f1cb73faf8db62469f5ae5367a9120e0c71ad5a7470cd9dcfcfb2a",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "e8623c5ee7ecadb32f1989bfe2080e8504ba35bed9cfa1c721e84c6438bd9dfd",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs": "0efcf9630855cce5ed9d39890ca9ac3ca735fce5c7b1def9e051c241b0a5d11c",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "a3a281b50fae85963f8cf359fe89d7f08459e8179e02302471c90cb895be0923",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "4a95e8da174d5c47eb1f06fe1512c3a355fb569c7832fd9aad043a6e26c2fc21",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "179cc7741e2d9b22dcb90c5f2f56833802c442e25d83a0db517484b23678d482"
+    }
+  },
+  "facility_creation_intent_gate": {
+    "recorded_at": "2026-10-27T11:28:08.428103+00:00",
+    "status": "passed",
+    "app_total": 70,
+    "app_elapsed": "7.6936 seconds",
+    "native_total": 43,
+    "native_elapsed": "14.4209 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "app": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~FacilityCreationIntentTests|FullyQualifiedName~CompanyDevelopmentFacilityCreationTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests'",
+      "native": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityCreationSourceTests|FullyQualifiedName~FacilityEditPreflightTests|FullyQualifiedName~StandardCompanyPolicyCannotAuthorizeRawWellStatusOrPrivateReturnIntentWrites|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner'"
+    },
+    "scope": "Shared command/intent roundtrip, explicit operator and UTC audit tamper refusal, Beep ClassCreator shape and generic/company policy fences. Setup declaration source-inspected; no migration execution, operator validation or creation persistence. Existing edit HTTP/native uses simulated provider. Data build has one missing sibling analyzer warning.",
+    "earlier_failure": "First app build lacked an IDMEEditor test using; corrected.",
+    "logs_sha256": {
+      "facility-create-intent-data.log": "1709bc80dee3b7f82532f6bed1ea29e2f7580bb7590b592333d8b114f64c44b6",
+      "facility-create-intent-compile-failed.log": "ffc0b70a2ac9711d45290a706aec751d87d3afc55666e586b736822f9add2323",
+      "facility-create-intent-app.log": "8a8b653550bbe42aa234601b7939ef6b3723b53c560be6cfdab05b04d82f0c6a",
+      "facility-create-intent-native.log": "87f93e23ef18862b2e95f742958bf5db40adca909afe15a7d4bd3ff1805d9205"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreation.cs": "0609546bee565b96fd74a72b04a7670b8e4ece71c8add82ef3be5b44f4c2a5a3",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/FACILITY_CREATE_INTENT.cs": "009665e9a744ba4ac8c07d080728f0209aece93446250c0c36852fe66cdec287",
+      "Beep.OilandGas.ProductionOperations/Modules/FacilityManagementModuleSetup.cs": "ea726728da875c87c8869ecdd19dfb1c426a7d29dc2060fcad36b4e5ead67f60",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs": "432410e3f0f1cc031e0172d31326acdf7f3d5a0da29672954a6e15a0032837d9",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "5bc1dcaf637e00eb1cb04d8d0ccda92d7d92c54a8540687b7dce98fb14694485",
+      "Beep.OilandGas.Web.Auth.Tests/FacilityCreationIntentTests.cs": "b82a0e7c5f16de4bd9fb604985b02354fd59c616b449977f775b8e4f7816be87",
+      "Beep.OilandGas.Repository.Tests/FacilityEditPreflightTests.cs": "bdd151fc56d104dc2088c1c84543e5e28515e5e3742fd92730ac31e2a82eda37",
+      "Beep.OilandGas.Repository.Tests/CompanyPPDMRowAccessTests.cs": "8d71ca6a837f46e6b9e67c68cf046c391becd045d6d06b083c2a6b069e3215d5",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "58a0dcbfc657b5f364fdac5f6bee24bc74bd98e72a855b98b974c8edab28d538",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "6ede9863aedef99e464a2380e682c6dffc9929f996622e59a432eb70834121cd"
+    }
+  },
+  "facility_creation_operator_gate": {
+    "recorded_at": "2026-10-27T11:31:40.312753+00:00",
+    "status": "passed",
+    "app_total": 70,
+    "app_elapsed": "7.3117 seconds",
+    "native_total": 13,
+    "native_elapsed": "13.1728 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "app": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~FacilityCreationIntentTests|FullyQualifiedName~CompanyDevelopmentFacilityCreationTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests'",
+      "native": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityCreationSourceTests|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner'"
+    },
+    "scope": "Actual native reader with simulated datasource rejects missing, duplicate, inactive and changed operator. Separate app/protected HTTP uses controlled source reader; displayed screen does not establish operator authority or save. No provider, production DI, combined creation HTTP/native or creation persistence. Data build has one missing sibling analyzer warning.",
+    "earlier_failure": "Screen test expected old warning wording; updated assertion and reran.",
+    "logs_sha256": {
+      "facility-operator-data.log": "f7ddddf2b9babba68835fd9d198e53954867924ec8e5fb54f5b378bc539b73b3",
+      "facility-operator-native.log": "e930d6e7d6cd6e0c86f1c7d536a9551e2bb4d1020c612ac6d1b55535f6c51c30",
+      "facility-operator-app-assertion-failed.log": "ca67204b9af0fea0a552373764ac0059bcff799a52733b01eea429842c564586",
+      "facility-operator-app.log": "31914bf5d8955d0181909fc2ea8fc88b44e732169a53ab99f2a99b68313221d9"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreationDraft.cs": "ee9cf2ad4f70f517b5a1dc9ffe24a2ec63857293a3401f34a3f73d6a24a73682",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreationReview.cs": "988ee318229ecf5b214a3baf14c22da5fa5f9fc483606cc18fbd3c49b77253d2",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreation.cs": "d3ddccf26b529555598e45f82ee80aade9fd7405b95ee5400c26e9600b89e440",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreation.cs": "84a1940ee21ac1688c65cb2a4449bff0315741bde58f786c5249bc38ea5c9a13",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityCreationService.cs": "c0a4639a1f9de78c436a7f6391cb0e5979a8f43507ad6286a499661e6cc56202",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "732fd828b218a68985150c385ec836013bbed46ee32dda6d6de3576fc9bb93d1",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "71177893eef5c3e12397021152f8ea520a46ed696b8e3f3591d12a5b76caefc3",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "69eacebd8e154b10b570ed74ddacbaf268d5a179586b1246ff7f169b778596ad",
+      "Beep.OilandGas.Web.Auth.Tests/FacilityCreationIntentTests.cs": "1fca8fa70140945c73116f0e2108527d4e2f4f6965aa1602a215a491d0f72160",
+      "Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityCreationTests.cs": "184aeca40350ea3d40dae1a958c14ac338949794c5105eb3a921c76723bdb63c",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "9f5ec73ef9905af349e5d76009c45468bbc36dd523298a5a662012320a58f6f4",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs": "c863bf442eccad09b1f5eed61a64f66ea64528d56e990ae7d9cf542720d4c290",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "ccee05790ce1ec2aae665bd791cb11466438f561722e3ae846c720f9c77bd34b"
+    }
+  },
+  "facility_creation_preflight_gate": {
+    "recorded_at": "2026-10-27T11:36:57.697650+00:00",
+    "status": "passed",
+    "total": 28,
+    "elapsed": "16.1858 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityCreationSourceTests|FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner'",
+    "scope": "Actual native preflight and edit owner, controlled schema/datasource and simulated transaction. Verifies source drift, existing link/intent, missing capacity and nullability; no create mutation, real provider, operator legal authority or reservation.",
+    "earlier_failure": "Initial compilation required explicit AppFilter construction.",
+    "logs_sha256": {
+      "facility-creation-preflight-compile-failed.log": "df4567fac0897c32ca250f89727126aee6ab0340baee0391118e28e9f25d526a",
+      "facility-creation-preflight-current.log": "1636d8534302eef56aeea44677bf0420c69135265ea8b7d084250485e74792e5"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreation.cs": "0a23a8233ca3ab6354b6c0e7bef4e4538d8122b213ca35cdc84cddb6f3da0366",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs": "f0cac5f6e7bd53708179b7b66368b48c194d8b75ea14bc14bf5854b9b56ed3ec",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "4a95e8da174d5c47eb1f06fe1512c3a355fb569c7832fd9aad043a6e26c2fc21",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreation.cs": "d3ddccf26b529555598e45f82ee80aade9fd7405b95ee5400c26e9600b89e440",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/FACILITY_CREATE_INTENT.cs": "009665e9a744ba4ac8c07d080728f0209aece93446250c0c36852fe66cdec287",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "ccee05790ce1ec2aae665bd791cb11466438f561722e3ae846c720f9c77bd34b"
+    }
+  },
+  "facility_creation_native_write_gate": {
+    "recorded_at": "2026-10-27T11:41:24.663597+00:00",
+    "status": "passed",
+    "total": 37,
+    "elapsed": "15.7952 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityCreationSourceTests|FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner'",
+    "scope": "Actual facility owner/repository with controlled schema, app authority and simulated Beep transaction. Tests success, each of three failures, revoked authority, source drift, failed begin, rollback failure and commit-after-failure exact recovery. No protected create API, real provider, concurrency or migration. Current app facility policy uses CURRENT_OPERATOR as company ownership; cross-operator visibility and authority remain unresolved before exposing creation.",
+    "earlier_failure": "Initial fixture lacked physical connection evidence; corrected and rerun.",
+    "logs_sha256": {
+      "facility-creation-write-fixture-failed.log": "5f054761835b4ef90ae4ec19abefb9795c1ad2046edcde169acf0ba3c5002835",
+      "facility-creation-write-final.log": "9ce3088a2aae1ee20c0a4433f80cc8516ea163bd1eed3b0f28d91797c20c4b73"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreation.cs": "c7ebe29b7ffd7362a4745a31e5991bb30ce0bfcb746e1bd1ca9dd1bd5780ec97",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreationWrite.cs": "743f8969286fecff932a6f83d9d3a74813122dc3ae8904e65075b86d3dea9fd6",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs": "6a8780ebb02691c4735a3b1818b927f22c951258ecbae3e26b2cdef863f62c27",
+      "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "68a58ee5949e92196ca5904a0e255ca53293032a9dfadf0e3a9dc274d4e7053b",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreation.cs": "d3ddccf26b529555598e45f82ee80aade9fd7405b95ee5400c26e9600b89e440",
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/FACILITY_CREATE_INTENT.cs": "009665e9a744ba4ac8c07d080728f0209aece93446250c0c36852fe66cdec287",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "ccee05790ce1ec2aae665bd791cb11466438f561722e3ae846c720f9c77bd34b"
+    }
+  },
+  "partner_facility_visibility_gate": {
+    "recorded_at": "2026-10-27T11:45:47.269240+00:00",
+    "status": "passed",
+    "total": 16,
+    "elapsed": "18.6805 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~InheritedFieldAccessCanReadAnExternallyOperatedFacilityWithoutOpeningOtherFieldsOrCompanies|FullyQualifiedName~DirectFacilityGrantAloneDoesNotOpenAnExternallyOperatedFacility|FullyQualifiedName~FieldGrantWithoutInheritanceDoesNotOpenAnExternallyOperatedFacility|FullyQualifiedName~ActualDevelopmentFacilityListShowsPartnerOperatorOnlyThroughInheritedSelectedField|FullyQualifiedName~Actual_FIELD_asset_reads_keep_only_selected_FIELD_and_company_records|FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner'",
+    "scope": "Actual company row policy, SQLite grants, simulated PPDM entitlement/source and actual development service; verifies scoped inherited FIELD access, non-inheritance, other FIELD/company, entitlement/grant revocation and direct grant refusal. Not legal ownership, external-operator direct edit/grant/maintenance, production host, real provider or cross-tenant qualification.",
+    "log_sha256": "dc94d5d6748d0ebc98b57460afa2ea7214cf66cee36a6692bb8e10f53e3205ec",
+    "source_sha256": {
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "1218a42ef773035683119083c8fabe357d6c4a81dbdd8476076e2a16f1e502a6",
+      "Beep.OilandGas.Repository.Tests/CompanyPPDMRowAccessTests.cs": "bb3544140831dcf7e2b6639099b14b3b0a48ca619e0bacaef0bbc391eac384d2",
+      "Beep.OilandGas.Repository.Tests/CompanyDevelopmentBoundaryTests.cs": "ef85f1acc98b545c7151fbb17cff6928d5e5c9fcc3be3ba872983f578883242e",
+      "Beep.OilandGas.LifeCycle/Services/Development/PPDMDevelopmentService.cs": "378f93adbff066ed279569798ffe7786c17a955fa937d509eeef029574238920",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "ccee05790ce1ec2aae665bd791cb11466438f561722e3ae846c720f9c77bd34b"
+    }
+  },
+  "facility_creation_app_workflow_gate": {
+    "recorded_at": "2026-10-27T11:55:04.466271+00:00",
+    "status": "passed",
+    "app_total": 92,
+    "app_elapsed": "7.8727 seconds",
+    "native_http_total": 30,
+    "native_http_elapsed": "15.9221 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "app": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~CompanyDevelopmentFacilityCreationTests|FullyQualifiedName~FacilityCreationIntentTests|FullyQualifiedName~DevelopmentFacilityEvidenceHttpTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~DevelopmentFacilityEditJournalTests|FullyQualifiedName~CompanyDevelopmentFacilityEditServiceTests'",
+      "native_http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ProtectedFacilityCreationUsesInheritedFieldAndActualNativeOwner|FullyQualifiedName~FacilityCreationSourceTests|FullyQualifiedName~ActualDevelopmentFacilityListShowsPartnerOperatorOnlyThroughInheritedSelectedField'"
+    },
+    "scope": "Actual rendered screen, protected tab store and typed protected HTTP with controlled owner; separate actual protected Kestrel controller, SQLite app grants and real native owner with simulated Beep datasource/transaction. Includes partner operator, idempotent original retry, lost acknowledgement, grant/permission revoke and READ-only recovery. No live provider/migration, production DI, browser, operator legal authority or cross-tenant proof.",
+    "earlier_failure": "HTTP fixture generated a new grant concurrency stamp per read; fixed to preserve original grant revision.",
+    "logs_sha256": {
+      "facility-creation-api-data.log": "a981b775c8e0d03fbce00f5c2cea992e6d7b728d656d239b201a4a0f44bd65ab",
+      "facility-create-ui-native.log": "ee42a0d2557c330d6b77d3913c78d893e996835d050dcc9187acf395795abe29",
+      "facility-create-ui-fixture-failed.log": "ab8184689fe73c603360dacd7de03fc4869e3967edaf71bb42fed7d6879f23ae",
+      "facility-create-ui-app.log": "c32ef0daa25db06d6d8b26d56e438bf1424e647d6c45aae304a099ee9cea0f0c"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentFacilityCreationReceipt.cs": "91bc7870fe3b92f545922e52984e89214a718433ac81402c85858fc1d2bdc85e",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreationWrite.cs": "fd54a15d68ec2526e48c0c0d2df3b9512e6e220544cc8702aa2b2a9bb69de5a8",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityCreationService.cs": "ed7bd241eee84c8034968be3546ea8c75112f3bbe20685a48d49cff023231b0a",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "3bd3a1c364968169201f248e0173f3e2946aaa3d15153d346378b11c71781062",
+      "Beep.OilandGas.ApiService/Program.cs": "d21880f824b151e69cafac3556f6439ceb480f1c51032fefd4c231faa55abd50",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "728501da25ad577ab6c1ff39be2470a337731102c248952f96716884c7ed1194",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.FacilityCreation.cs": "8f949c7d2137a2b1cf6102a4a8d9d3b9c4dafad28d5fffabf1284c2009676f7e",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.cs": "e14c456af3492846dd288f6575eff6fd0900081ca6d61d799e483058e51d1f0a",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "fb52d63c150fca9483c5fda8979089104bba169e340011c568564449194f7a02",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "fd003c86c201130b09302d84e5bb7e613b40b539aff414f2dbeba08611bffc8c",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "b49ff89dea427fe6b21e07d9472028e335831212cb52171144c0ffe5cd038b81",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "cf251b90d783c6af4fc9d81538d72d56972115f861b04f15380e0f066b18e305",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEditJournalTests.cs": "d6159e7f7565a1bbc692e4a76b1808669aa0cdc7339a09c1d5f2dccc888478ab",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentDraftWorkspaceTests.cs": "bab1731cf560f5f87b661caf803b698991808cc07ecdf0fd3fb89c569d9b2ef8",
+      "Beep.OilandGas.ApiService.Tests/CompanyDevelopmentFacilityCreationTests.cs": "905e60759902cc08429b0a5c597b6a3426621e60f7c9dc071cf5a685d3265e1f",
+      "Beep.OilandGas.ApiService.Tests/DevelopmentFacilityEvidenceHttpTests.cs": "47aa77d18c4692d5e50d689006e622d10e30e1722c1862e4f8fdb42c89c4595c",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "8214a960f2cca13cfcd1db00bbf243b097389c267885bcb118b5350ccd261714",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs": "7bd8234401f5067905c51318a0e361fe18676ca1a3fe90cce2519ed842644b22",
+      "Scripts/Test-PurchaseOrderOwnership.ps1": "7a1c2a9c2a216e14161fd4704bff0e046da3f2f48c86d664bb97bc9814bcb717",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "1cea6b60b4201acb5df3d493d1d750e573c48f5b29b024215a3583e33b392422"
+    }
+  },
+  "partner_facility_direct_edit_gate": {
+    "recorded_at": "2026-10-27T12:02:24.721514+00:00",
+    "status": "passed",
+    "total": 58,
+    "elapsed": "29.4432 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~CompositeFacilityGrantTests|FullyQualifiedName~FacilityEditNativeWriteTests|FullyQualifiedName~InheritedFieldAccessCanReadAnExternallyOperatedFacilityWithoutOpeningOtherFieldsOrCompanies|FullyQualifiedName~DirectFacilityGrantAloneDoesNotOpenAnExternallyOperatedFacility|FullyQualifiedName~ProtectedFacilityEditAndRetryUseTheActualNativeOwner|FullyQualifiedName~ProtectedFacilityCreationUsesInheritedFieldAndActualNativeOwner'",
+    "scope": "Actual selected-company FIELD entitlement, grant admission, SQLite app grants, access facade, actual native edit and protected Kestrel controller under controlled authentication/FIELD access and simulated Beep datasource and transaction. Covers absence/low entitlement, missing/ambiguous field, inherited and direct grant revocation, downgrade and partner operator. No real provider, production startup, operator legal authority, partner maintenance, browser or cross-tenant proof.",
+    "earlier_failure": "Expanded suite had five stale assertions for previously moved operator filter and retired raw facility mutations; updated to current intended boundaries.",
+    "logs_sha256": {
+      "partner-facility-edit-stale-tests-failed.log": "6e06857cf1d9646a89970544b8ade7a154b21c013f4e3064e3ba176abce10680",
+      "partner-facility-edit-current.log": "7e54ed70665cf0eea76e74c0eedf6ae7b24514ed46b0d1a59865ab7f90b5a91e"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.ApiService/Services/PPDMAssetGrantTargetVerifier.cs": "3e17962f837a82416d86d8f9ecc62a82960f1b012f6babf1b98c7afcd54e6ee8",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "c96823fd8cd30a6b6e7d3e4f3c06831d56e748134ad8f7669e646718343fdc88",
+      "Beep.OilandGas.Repository.Tests/CompositeFacilityGrantTests.cs": "d7860dd4778c3f8699c773421d1bec1626fd334ca284dee11f21e4573e53ab55",
+      "Beep.OilandGas.Repository.Tests/FacilityEditNativeWriteTests.cs": "b941add9d168f7080fa816f64c79d4be8de039fe29e08a72d3cd8f72382ded56",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "8a45c23a223c0f157f40eebcc6586e6a11d37ce39084030c081e5e83d7f0ddea",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "1cea6b60b4201acb5df3d493d1d750e573c48f5b29b024215a3583e33b392422"
+    }
+  },
+  "partner_maintenance_evidence_gate": {
+    "recorded_at": "2026-10-27T12:10:13.197189+00:00",
+    "status": "passed",
+    "native_total": 17,
+    "native_elapsed": "7.1994 seconds",
+    "screen_total": 69,
+    "screen_elapsed": "21.3653 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "native": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~PartnerFacilityMaintenanceEvidenceRequiresExactFieldAndCurrentDirectAuthority|FullyQualifiedName~PartnerFacilityStatusUsesDirectAccessEvenWhenFieldGrantIsStronger|FullyQualifiedName~PartnerFacilityLicensingUsesDirectAccessEvenWhenFieldGrantIsStronger|FullyQualifiedName~ActualOwnerReadsExactQualifiedParentsAndCurrentInstallationWithoutStatusReadsOrWrites|FullyQualifiedName~OriginalQualifiedParentsMustStillBeAuthorizedBeforeAnyOperatingStatusRead|FullyQualifiedName~ActualNativeReaderPreservesQualifiedLicenceIssuerHolderDatesAndReferencesWithoutApprovalInference|FullyQualifiedName~PartnerFacilityGrantRequiresCurrentCompanyFieldEntitlement'",
+      "screen": "Scripts/Test-MaintenanceReceivingPage.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~MaintenanceAssetEvidenceTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests'"
+    },
+    "scope": "Actual native identity/status/licence owners with SQLite app grants and controlled Beep source; separate rendered screen with controlled data. No partner protected HTTP/native return, actual provider, legal operation authorization or browser proof.",
+    "earlier_runs": "An overbroad native run was intentionally stopped after 194 individual passes and is not a completed gate. A screen run selected no tests under the wrong harness. An initial narrowed native run used an older test assembly; current test names were confirmed after rebuild.",
+    "logs_sha256": {
+      "partner-maintenance-data.log": "be987345c8d61e753926fbdabeb9d3ab275c09671c114adc733758c7d66b7cdf",
+      "partner-maintenance-overbroad-stopped.log": "70376b9914d6c4e2ea3b0dc84553dc2b230a186b1741e57497ae30ca780732ce",
+      "partner-maintenance-stale-assembly.log": "f2f455848223f31f4b2e6615ef5f9bf6121d6731124d6d8801bab30bad342c34",
+      "partner-maintenance-native.log": "54c9e33a972dcd1b709ad77aa5f162a86aff8eba539554c7dfd99c9728c1bb34",
+      "partner-maintenance-wrong-harness-no-tests.log": "3ed8371e0ffb462c393dc51b42bd26b16fc704d007e2a069d84c836a95bd10a8",
+      "partner-maintenance-screen.log": "cc25d4081a91f8c46402fbcc1db23333d640808171e7b2d0bc794b9c7a7c7a82"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/CompanyMaintenanceQualifiedAssets.cs": "996340cf3ddb7c6c08428d2d2b33eb9dba3485112a68faeb7c6f3032cb04fca1",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "adce84ada6ff9179be16939ce1d10233a0c118822c1c53a2dae294aa7ed59640",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs": "8d506104a64359cfd09e82aa387f200d0cdc58e5c9477d4cd3f99b56e46c9838",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs": "7d61fd3b2aeaae3f0f5b309e59191cc9389da1937617e9d845ee9edf3fc9248d",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetTests.cs": "36b50828c9df57bd6e920e02c3382f6386d2b4f3c89441123becb01c09c8fffc",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs": "9ab73a95e5beb1da35671efe70bd46ed9f62a847983ed37245a58ca7b7088f88",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs": "d51d17b76921fc1dcb9138c62cba0ac741615bf7015bd773f3f6bdfec5574240",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetEvidenceTests.cs": "270424e1df2b008d4389e372116bcab3e143fe719b7db52a75cfcc0f71dbbfd6",
+      "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "6380fcaa1d3e7836e2c6bae9a29f8b702e223257157a126c484a267509af7857"
+    }
+  },
+  "partner_maintenance_protected_http_gate": {
+    "recorded_at": "2026-10-27T12:13:21.687403+00:00",
+    "status": "passed",
+    "http_total": 1,
+    "http_elapsed": "38.7311 seconds",
+    "screen_total": 69,
+    "screen_elapsed": "20.5909 seconds",
+    "commands": {
+      "http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~PartnerQualifiedMaintenanceEvidenceHttpUsesActualNativeSource'",
+      "screen": "Scripts/Test-MaintenanceReceivingPage.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~MaintenanceAssetEvidenceTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests'"
+    },
+    "scope": "Actual protected Kestrel API and native reader with SQLite app grants, simulated Beep source, controlled authentication and FIELD access, and an explicit closed-lifecycle seam. Exercises partner identity, read-level status, missing schema, foreign FIELD and equipment-grant revocation without writes. Rendered screen tests use controlled API data; no live provider, browser or actual return mutation proof.",
+    "logs_sha256": {
+      "partner-maintenance-protected-http.log": "01a8200a91d116919007ef1da2db0e7328c2f1900432883f85c181282e01fe6b",
+      "partner-maintenance-screen-current.log": "1b9f895688bb3f49ccd18535e597ed070a0f60cc3079e12b6107bd377a5a40aa"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs": "d99e09d80e6fa96912cd87889b1e046849ad95e79f85034bd3e31b68e53a5781",
+      "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetEvidencePanel.razor": "cf4c2dfda36b47d4a29aab8fc3cc11b1efb742dbbc9b057d2a008840fea55813",
+      "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetEvidenceTests.cs": "edaf539b282ddc778670ea4a545052aa95ebe0d32a54a1f79c0c5dc11da0a858"
+    }
+  },
+  "facility_equipment_legacy_boundary_gate": {
+    "recorded_at": "2026-10-27T12:15:30.453877+00:00",
+    "status": "passed",
+    "total": 4,
+    "elapsed": "3.8935 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~Facility_equipment_mutation_requires_a_reviewed_owner_even_with_facility_write|FullyQualifiedName~EquipmentChildrenUseTheExactOriginalQualifiedFacilityWithoutCrossTypeRows'",
+    "scope": "Focused generic row policy insert, update and delete refusals with a DELETE facility grant, plus exact composite identity for the retained internal read owner. The legacy HTTP controller and raw link method were removed; this is not proof of full application startup or a replacement installation workflow.",
+    "removed_paths": [
+      "Beep.OilandGas.ApiService/Controllers/Facility/FacilityEquipmentController.cs"
+    ],
+    "log_sha256": "43685cbb58e14f1360b0e2d728acece90086b3c9f645014ab2908a4e672c3546",
+    "source_sha256": {
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "3fd87d780aa2d26f6f3d33cfe6eb0ab2aa3d372e2602dcf249b07034498a52d1",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.Operations.cs": "fe4213005b58ae881dbe87a3e656ddedf879185cb8a80d65eb09045d56aa1cf2",
+      "Beep.OilandGas.ProductionOperations/Services/IFacilityManagementService.cs": "0804aa9a2c0d3c27891b11151562bb13f5bd0ad393fa1b80bb98aac87962a800",
+      "Beep.OilandGas.Repository.Tests/CompositeFacilityGrantTests.cs": "7c8cf0452e417c34554237ef8dd989dfcdc9510348b9ec3880dd453e74e3382a"
+    }
+  },
+  "facility_equipment_native_read_gate": {
+    "recorded_at": "2026-10-27T12:18:03.069786+00:00",
+    "status": "passed",
+    "total": 11,
+    "elapsed": "5.4904 seconds",
+    "command": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityEquipmentReadRequiresCurrentParentsAndStableMembership'",
+    "scope": "Actual facility-centric native reader with SQLite app grants and controlled Beep source. Tests company and partner facility, missing direct/inherited access, equipment grant and owner, foreign field, authority revocation, duplicate and changing membership. No HTTP, UI, real provider or installation mutation proof.",
+    "log_sha256": "b26b91a9308d4649431f474e6d2072f550ce7fd4017a446546662f6917b45f17",
+    "source_sha256": {
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "f343df9663abc853e7499d1cb6a9ff27629a5b84247ab4682e1868489ea7f7ff",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetTests.cs": "95818d25c479da67ecba81878344cfa689d1de87d888bbc24c1599c5dd64b516"
+    }
+  },
+  "facility_equipment_app_http_gate": {
+    "recorded_at": "2026-10-27T12:23:59.620161+00:00",
+    "status": "passed",
+    "native_http_total": 12,
+    "native_http_elapsed": "13.1676 seconds",
+    "screen_total": 48,
+    "screen_elapsed": "3.5299 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "native_http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ProtectedFacilityEquipmentReadUsesActualNativeOwnerAndCurrentAuthority|FullyQualifiedName~FacilityEquipmentReadRequiresCurrentParentsAndStableMembership'",
+      "screen": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceTests'"
+    },
+    "scope": "Protected Kestrel HTTP and actual native reader with SQLite grants, simulated source, controlled authentication and field access; rendered app and typed client with controlled transport. No production DI/startup, browser, live provider, installation writes or concurrency proof. Earlier runs failed due to a missing FIELD fixture, a no-store header assertion that omitted no-cache, and the wrong screen harness switch.",
+    "logs_sha256": {
+      "equipment-http.log": "2fe148711b298fb435d9d4e38a782f7e18eaad0e639a241d1728cee0ea8cffdb",
+      "equipment-screen.log": "d032ab2805dffdf9c101fb59a983370ba00c07976516194399d387836b019d64",
+      "equipment-data-build.log": "7b618da2ec02f4e67e07897fc2dce75c23b32e6e1646d3f2e2f6318676e33481",
+      "equipment-http-fixture-failure.log": "214107c990aab748ab79405a1640e3228344abb78f98f2326a21ccea6175a6de",
+      "equipment-http-cache-assertion-failure.log": "f699e746aed166c251b6d6bb2af68dc471474c4e97204083e5feac2a6532b0d4",
+      "equipment-screen-wrong-harness.log": "73d98ceae2c3cfdf0430e235d16b064bc3863541b33c32c2307cacde876ec328"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/ICompanyFacilityEditOwner.cs": "d8d1f4858062c78f5d39375a6f0e8323678c2762365d7b483086da8b1e78877f",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs": "be032c333333a92bd7bb62f90d333d07e16c4fe2ff041a7af13ab536f7a596b7",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "287607a482946e3fb2092887914d63635dac47df0a141979e76b1822fa3ddb28",
+      "Beep.OilandGas.ApiService/Program.cs": "ffe98dd214e9eb886143897ea5968697a7c7d2f818f961e9e26315269b74e7dd",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "3c3a43e27661ff6976b55ee0a77ad442098b95c6258a997efdac1cec4d13abed",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "55ba4e0e868ecc8df434327c815f4a7893efa62586dc578251a1ff4faa111085",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "9e4ab9f4f3ce1232d2e49f5de05cc829a5a9692ffeea33183af3bc478b92f267",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "c4c336c84016dbcb3c4e8e8674064297e39a6af8e469a33d45978a1cfb672ff1",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "f30cbda998faf5c254c1050ce5664420c58fb20c1a1d79393a608f55a1c15d3c",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "30cb87c8be35fd8748e5c6619b91db361452f2f794e59f0a1d25945fe79cea22",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "4898cb904338451bef30e350ef51739924b0065b211e526ffd0a00d7bc6062a9"
+    }
+  },
+  "equipment_installation_review_gate": {
+    "recorded_at": "2026-10-27T12:28:36.598484+00:00",
+    "status": "passed",
+    "native_http_total": 11,
+    "native_http_elapsed": "13.6306 seconds",
+    "screen_total": 52,
+    "screen_elapsed": "3.5959 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "native_http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~InstallationReviewRequiresWriteAuthorityAndStableRecordedPopulation|FullyQualifiedName~ProtectedInstallationReviewUsesActualNativeAuthorityWithoutWrites'",
+      "screen": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceTests'"
+    },
+    "scope": "Protected Kestrel HTTP and native owner with SQLite grants, controlled field and auth, and simulated source; rendered screen and state use controlled API. No installation mutation, transaction, recovery, production startup, browser or live-provider proof. Earlier native build had a local-name collision and earlier screen run selected the wrong role component; corrected final runs pass.",
+    "logs_sha256": {
+      "installation-review-data.log": "1283555f6938de23eceae5caa2364948c0ac1b7f9c46649df6156f986e563b99",
+      "installation-review-native.log": "e008f8bf400d3398f06014e604b121a19f753bf69ace48bade490e27502c1551",
+      "installation-review-screen.log": "65fc24a679d714f1a12e9007ab03c956e1964f330c5900ee472d76fc0ee24a62",
+      "installation-review-compile-failure.log": "0b31a961aa89e4277e101bb3e4289d51d6ae025cb3c01bc1fd7f59a5521ebae4",
+      "installation-review-screen-selector-failure.log": "6b7114d2107931bfaf618282414a5e0eef675431e344bcae3e03e402e15a3f7b"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/ICompanyFacilityEditOwner.cs": "68aa340a7f3dd72fa072d777ffaafa8dcdfa3a39f7d13708342ea4e8743e7e50",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs": "384eb6fcb7890f6e2aa5a3a08956754fd35d21a74472b878b8739b50729cc3c1",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "08a71a1fdc89e3cd9bcdeb7607cb0c6d79546114341e7e8617be051a97fac51b",
+      "Beep.OilandGas.ApiService/Program.cs": "dbc3b7aeb2ffba9e800c08496fc5d2a2c3f5f224d06ae8fde5aea86cd8b47b1c",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "3c4a1ffa4237cc81bcc33bcb9ffa76d2255dd5ff0b41da115debd8d3d331cb71",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetTests.cs": "ea3d39578928332f419136aa97cb952f8cfadfe7917efcb7a3a5a3b6e1f92ad6",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "1b081ac3d0c7aa64c70aa605f85fa1a621682afeb3833bb46074cac9ca2cfa5d",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "739e8c64eb94398107385ac47b9ccdd84541db3289f41286bbb08fd11ad4ac87",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "973e776bf9244c01359fa1d609e6ef3b4c9fa60a09663acf3b818777cfd97b4d",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "1274f6b4c0d96f2293ffe4c8e380298282849732b888631db473ce96074a2099",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "874ae269ddb8d6c7ada6471378dd5ccd57624068fa385c3072aa9f2d90197973",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "51db02c4d9e36404b3709df1b47b1541b428232d756f06658a1eb9505464d333"
+    }
+  },
+  "equipment_installation_intent_gate": {
+    "recorded_at": "2026-10-27T12:32:14.195166+00:00",
+    "status": "passed",
+    "boundary_total": 6,
+    "boundary_elapsed": "3.9406 seconds",
+    "screen_contract_total": 86,
+    "screen_contract_elapsed": "4.1680 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "boundary": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~FacilityAndPrivateIntentCannotBeWrittenThroughAnUnownedGenericRepository'",
+      "screen_contract": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~FacilityCreationIntentTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests'"
+    },
+    "scope": "Shared original/result round-trip and tamper tests, ClassCreator model shape, focused generic repository write refusal, and rendered/state proposal preparation with controlled data. Beep module setup declares the intent type. No actual schema migration, durable installation transaction, recovery endpoint, real provider or browser proof.",
+    "logs_sha256": {
+      "installation-intent-data.log": "76d0ffa676c88cfb87c947b9277ae9345e993cb83c8e4fca185b4d8430ca0aac",
+      "installation-intent-boundary.log": "5a1d77f2089b77d03dfa8a832384fab1b4c0a70730e406c22a2940f75b872f61",
+      "installation-intent-screen.log": "8291e6fae18903ff74046772e6bd16f5f658678b07e49737d5d644d0802a7712"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/EquipmentInstallationIntent.cs": "2ec859a51a5eb9360efb8ff435e0d3a05cccf6e5ddc5be3615be3cd0713588b5",
+      "Beep.OilandGas.ProductionOperations/Modules/FacilityManagementModuleSetup.cs": "c4827d3affc4da8a1384a073298505bae558f697dcfaba943d28ccb455f0e294",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "58624893ec8fdac016cd90c7e3a1cd28969181afbfe7620ee4ac4284ee3662a7",
+      "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs": "73e8171d78c9df3f3fdf548754b7605c67baff2010648ec5ac4a3a499a4ad5f5",
+      "Beep.OilandGas.Repository.Tests/FacilityEditPreflightTests.cs": "3e06ddfe291a873528f80eb68fc82dd3e889807b9ebf97643a8068d63d66b019",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "10bfca94e8abe1841bba2aa8eba4611c0c8df4bfe76a2e85035153bb3a04da35",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "76f7ac8f6d92bc5ec5bbebb3f09069b5edf613ce76355672929da29897b20a23",
+      "Beep.OilandGas.Web.Auth.Tests/FacilityCreationIntentTests.cs": "41d2fd3d96ec47dd727d702016153445e6cc9249df089dde5bb7539057493beb",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "6919c8c946bc53b0ee45b2c2abe631a4752ae6de19862e8ec73f8a067f5e26d8"
+    }
+  },
+  "equipment_installation_native_transaction_gate": {
+    "recorded_at": "2026-10-27T12:37:02.332118+00:00",
+    "status": "passed",
+    "native_total": 13,
+    "native_elapsed": "8.5496 seconds",
+    "screen_total": 1,
+    "screen_elapsed": "3.3895 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "native": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~EquipmentInstallationUsesReviewedSourceAtomicIntentAndExactRecovery'",
+      "screen": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~FacilityScreenShowsUnsavedInstallationReview'"
+    },
+    "scope": "Actual native owner with simulated serializable Beep source and SQLite grants: exact installation and intent, repeat and recovery, commit response lost, failed insert and rollback, failed rollback, authority/source drift, schema capacity, split binding, begin failure, and active/overlap refusal. Screen test uses controlled API. No protected save API, UI retention, executed migration, production DI, real provider or concurrency proof.",
+    "logs_sha256": {
+      "equipment-installation-native-transaction.log": "d445f838795c0befeabe282a309f75c0838cb31cdf466b85e1d66faf4bb7df6c",
+      "equipment-installation-warning-screen.log": "d0c27350c2464ae527fcc31e57ddda5638411b085e7268073fd18b4d8c4c1019",
+      "equipment-installation-native-data.log": "5206c6f976321ffa96fa596f598dedf72d10dbac3123bd3a524d5a493bab48bc"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/EquipmentInstallationIntent.cs": "13ad666c27f06912e80c867161a004c053b1091d52dc2e037574194b2b0cdab6",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "83a6381b0a83f46afa780a47072f4802613db51edd24cdc3fec52af79a30cdc6",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreationWrite.cs": "88d7d38643350a91601fbe952eabb297b29fd04dbdeeb48fe35b5296dc168b75",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs": "0027eccc245dd2e108109d36ec37c29c38548797d6fbf73bd7b412426367f6c6",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "5c7cad1665d1b0d74ed139d5d6a2e9e66025871b82f8127c25dcf8a2180d3a70",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "f4563125188e3ae087481307882f0e48a90722c7bc26138c9173c5e4559b5db5"
+    }
+  },
+  "equipment_installation_app_http_gate": {
+    "recorded_at": "2026-10-27T12:44:08.317422+00:00",
+    "status": "passed",
+    "native_http_total": 14,
+    "native_http_elapsed": "50.1443 seconds",
+    "screen_contract_total": 96,
+    "screen_contract_elapsed": "3.7402 seconds",
+    "commands": {
+      "data": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:UseBeepDMSource=false -v:q",
+      "native_http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ProtectedInstallationSaveAndReadOnlyRecoveryUseActualNativeOwner|FullyQualifiedName~EquipmentInstallationUsesReviewedSourceAtomicIntentAndExactRecovery'",
+      "screen_contract": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~DevelopmentFacilityEvidenceTests|FullyQualifiedName~FacilityCreationIntentTests|FullyQualifiedName~DevelopmentFacilityEditJournalTests'"
+    },
+    "scope": "Actual protected Kestrel-to-native save and read-only recovery, current equipment revocation and 13 simulated Beep transaction cases with SQLite grants and controlled authentication and FIELD access. Rendered screen and protected session storage are tested with controlled transport and simulated browser storage. Initial HTTP run used stale selected-company fixture after permission refresh; corrected final run passes. No production DI/startup, browser, real provider, executed migration or provider concurrency proof.",
+    "logs_sha256": {
+      "equipment-installation-api-data.log": "73a5217d48f1a82bbab58780d349e383c99b85a36075f0d7e3b72ccb8baea2cf",
+      "equipment-installation-api-http.log": "f67041948e9d7fc0b28f613a51a1a76bf8eadc77eac7d71a9c4a538124f39ed6",
+      "equipment-installation-api-screen.log": "352ea70a53dc49bdc68cd03b08139f4e1d65a7b0c181b9a74ccec42e669c8840",
+      "equipment-installation-api-fixture-failure.log": "c36f49c6d160049a450e79aca1c0db7cd0b8d82dc735a9f175126c0dcfe6498b"
+    },
+    "source_sha256": {
+      "TheTechIdea.Data/OilGas/DevelopmentPlanning/EquipmentInstallationIntent.cs": "abe5f45f29d686e413a854837d7ce2eaf28900d4bfba164ea9d646ec1d48d74c",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "df4ec021b9d60fb352b320ab0da6b7dfd70852ddba5965ed8a8f16d9fdcbd6bf",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.DevelopmentCreationWrite.cs": "cdaff190c7c4f8dad5caa4a8d3f87c827ce018040aebc8b6418a78a28162a42e",
+      "Beep.OilandGas.ApiService/Services/CompanyDevelopmentFacilityEditService.cs": "9b88c1fc697875e3cbe72f982bcaf87727a29179380b40eadcd8d47f9c449ad5",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "d686428e64c38feffac6db47e9951c9edf3b436a27531ce19dfbd64c1a2f5763",
+      "Beep.OilandGas.ApiService/Program.cs": "d7e1b1efb03f6223166d790f2aff0a57f05804b01b256a2f662e592157e374f2",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "1236831fb36898083011eaec920c1fad32ab6033958ae88c19f4a04a3c3d790c",
+      "Beep.OilandGas.Repository.Tests/FacilityCreationSourceTests.cs": "0027eccc245dd2e108109d36ec37c29c38548797d6fbf73bd7b412426367f6c6",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.cs": "5960f798f73074f9a4b3041e93ed735f6a3006b75a0a061fccc5290789af97de",
+      "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.FacilityCreation.cs": "f5c0db3c3aac1a436b391efb16120bd7db23ab76e28e74e7daef5d43f125a241",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "8c4322c4d5608eedcdb131813c934c91f4c4d41a0f10a648006084be718dac09",
+      "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "27c5a832647225c3e874ffb52398922d01037f53c54c566aed7d5714fcf8a1f7",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "3ba1b8d1677bdc722f11d2cae843c314f965ed1b70ad5629998dc0dedd48c550",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "23afe4cc7c772cb32d0fabf75967dcf8dfde7665ce77b8b03ddb71cca285103c",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "743cb6e63e1459575a9243702b1bdf433d34006a7162b6cefdbf239da9f235c0",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEditJournalTests.cs": "d033dffb82339e267fb90b4ced561d46fd7bfa8a478552e5588a50c1e5bc7bd2"
+    }
+  },
+  "sqlite_driver_transaction_readiness_gate": {
+    "recorded_at": "2026-10-27T12:52:40.104951+00:00",
+    "status": "partial",
+    "native_http_total": 15,
+    "native_http_elapsed": "17.6852 seconds",
+    "commands": {
+      "source_probe": "Scripts/Test-BeepSqliteTransactionCapability.ps1 -ProviderDirectory C:/Users/f_ald/source/repos/The-Tech-Idea/BeepDataSources/DataSourcesPluginsCore/SqliteDatasourceCore/bin/Debug/net10.0",
+      "package_probe": "dotnet run --project Plans/FrameworkAppEnhancement/evidence/352-facility-evidence/sqlite-package-probe/Capability.csproj -v:q",
+      "native_http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ProtectedFacilityEquipmentReadUsesActualNativeOwnerAndCurrentAuthority|FullyQualifiedName~A_driver_without_owned_transaction_evidence_is_refused_before_begin|FullyQualifiedName~EquipmentInstallationUsesReviewedSourceAtomicIntentAndExactRecovery'"
+    },
+    "scope": "The locally built sibling SQLite driver and matching dependencies passed an isolated real in-memory connection test of the actual app transaction owner, physical transaction identity, serializable isolation, command enlistment, commit and rollback. No business rows or migrations were executed. A separate exact cached NuGet SQLite 1.0.58/RDBDataSource 2.0.21 probe failed to load InMemoryRDBSource with TypeLoadException; metadata on cached RDB versions 2.0.21 and 2.0.22 also shows no ActiveTransaction declaration. This does not establish which package or plugin the running app loads. The 409 handler was tested with a controlled owner throwing the capability exception; initial HTTP attempt replaced the source too early and failed before the owner, corrected in final run. Real installation writes, migration, deployment and concurrent transactions remain unverified.",
+    "logs_sha256": {
+      "sqlite-source-transaction-probe.log": "482b3ab3d2a7ea8bb242b94089f4169edbed65fca81cfb3d378301974b69c295",
+      "sqlite-package-load-failure.log": "3751fc568e7bce7a005015d7c67b7c8dc8ddf748951d373df710642ca6279350",
+      "sqlite-source-capability.log": "435c3a58f2f53ceb02159fe1bcacd202524a73115e5766a750007e66a29d58b7",
+      "driver-refusal-tests.log": "67b86944211e2a9d1a2686184645f4ffaf9ad21a24cb566dbfb359298cf497b0",
+      "driver-refusal-initial-failure.log": "bf1655c21d3fc4b907982b431ba339bb1a84a1ae8582caf0dc65e2820ddf196c"
+    },
+    "source_sha256": {
+      "Scripts/Test-BeepSqliteTransactionCapability.ps1": "59f1673ab88ad34d93968e3cb68c113402410527f98b046140c84a154145f41e",
+      "Scripts/BeepSqliteTransactionProbe.cs": "7d8b54b85eed0f18ab8bb579a3a2ff9f08de428e3a21b5e5627bd4777c0ba2f4",
+      "Beep.OilandGas.PPDM39/Core/PPDMDataSourceTransaction.cs": "d39a4cc4f9bf34bb4998cd94c0f6ff9b0e6cf1101f898faac2fd80e241d22d2e",
+      "Beep.OilandGas.PPDM39/Core/BeepOperationResult.cs": "83c1985b8dc33937b07e6130a19b5c5cbc74053358a089f8680ed9d7a7c79725",
+      "Beep.OilandGas.ApiService/Middleware/RefusalExceptionHandler.cs": "87dddca40ad3b16dd9777a0fec8159fdc6443af1d1b38752a2a55239cc9a954f",
+      "Beep.OilandGas.Repository.Tests/CompanyLeaseDataTests.cs": "f58f8818dc1ab34ed9dfb8f8840c4c35cd1168ccac078c1b14f683ce2e8bdd80",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "b2bf916b41805b974cea52e0ab59666e59b8f38aad7af9f7fac6e22551999c0a"
+    },
+    "package_probe_files_sha256": {
+      "sqlite-package-probe\\Capability.csproj": "fde1063459bf462b017e928e7c85a14b4478487d1912f413508ad8ee08ff7f92",
+      "sqlite-package-probe\\Program.cs": "caa79bc3cc4926a23f5968713d9ea03784cfb039133b772c8a7951b76468c6a7"
+    }
+  },
+  "sqlite_migration_exact_audit_gate": {
+    "recorded_at": "2026-10-27T13:00:21.575606+00:00",
+    "status": "failed",
+    "native_http_regression_status": "passed",
+    "native_http_total": 31,
+    "native_http_elapsed": "19.3734 seconds",
+    "commands": {
+      "provider_probe": "Scripts/Test-BeepSqliteMigrationCapability.ps1 -ProviderDirectory C:/Users/f_ald/source/repos/The-Tech-Idea/BeepDataSources/DataSourcesPluginsCore/SqliteDatasourceCore/bin/Debug/net10.0 -AppDependencyDirectory Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0",
+      "native_http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ProtectedFacilityEquipmentReadUsesActualNativeOwnerAndCurrentAuthority|FullyQualifiedName~UnconfirmedOwnershipAuthoritySchemaOrInstallationCannotProducePartialEvidence|FullyQualifiedName~EquipmentInstallationUsesReviewedSourceAtomicIntentAndExactRecovery'"
+    },
+    "scope": "Actual Beep MigrationManager using a mocked editor/service setup created the real intent type in isolated in-memory SQLite with the locally built sibling driver. Native datasource insertion and query returned one dynamic row, but physical metadata reported six model DateTime fields as System.String and converting the returned ROW_CREATED_DATE yielded an unspecified kind and non-exact timestamp. The probe deliberately fails the app exact-schema and UTC-audit contract. It did not run the full native installation owner, production DI, app provider selection, concurrency or real browser. An earlier fixture lacked adapter-resolution services and another lacked Roslyn runtime; the final probe corrected both. Focused owner and protected HTTP tests use simulated source; HTTP schema refusal uses a controlled owner.",
+    "logs_sha256": {
+      "sqlite-migration-audit-gate.log": "5d2547081f2e25579f34245a414b15acbb42f842b0a5bd650e017c01e01bdb5d",
+      "sqlite-schema-conflict-tests.log": "1199bb28b95ca5867a1d5d9410005cf4c83e3a2b47c966d4528d1e4a5ec2b3b6",
+      "sqlite-migration-missing-services.log": "1d2fa7b87e877f8461c013dd5021451e6077139d2cbb564bb59a03e1a2885166",
+      "sqlite-migration-missing-compiler.log": "a66dceed93b05cb5d93599e7f47b825da407f323eee1be09c119f9599fb8bac7"
+    },
+    "source_sha256": {
+      "Scripts/Test-BeepSqliteMigrationCapability.ps1": "c2662b03d039b3606de35412d049a5d28b1e51ea8189ce82d224069248f0bf43",
+      "Scripts/BeepSqliteMigrationProbe.cs": "fc418446e6bb93d8ddba500b8b30a98f0bb7497d6e7927f11e170efb60baa7cf",
+      "Beep.OilandGas.PPDM39/Core/PPDMDataSourceTransaction.cs": "5521cafd875c4f37e87d552ba67d12b60627c4eb4303c546d259f03792f24373",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "3312cc468ca958a04f16163d4aae7ef55fa326da709e6d18afa1457809790484",
+      "Beep.OilandGas.ApiService/Middleware/RefusalExceptionHandler.cs": "0666f63ddc0396f999864d2f44450a10c8ba8db602824cee2b10d41ce6ad6eb5",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetTests.cs": "0ddc5d5b5cd5db87d5f88e3795230635e8b07360b46677ef322f90db8960ca77",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "2735b26ab04c8d8a84417f7a5d534d0833bf0344ee57f211d82a35c164a84bc3"
+    }
+  },
+  "sqlite_typed_stream_and_schema_response_gate": {
+    "recorded_at": "2026-10-27T13:03:57.891332+00:00",
+    "status": "partial",
+    "native_http_total": 43,
+    "native_http_elapsed": "21.6635 seconds",
+    "commands": {
+      "provider_probe": "Scripts/Test-BeepSqliteMigrationCapability.ps1 -ProviderDirectory C:/Users/f_ald/source/repos/The-Tech-Idea/BeepDataSources/DataSourcesPluginsCore/SqliteDatasourceCore/bin/Debug/net10.0 -AppDependencyDirectory Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0",
+      "native_http": "Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -Filter 'FullyQualifiedName~ProtectedFacilityEquipmentReadUsesActualNativeOwnerAndCurrentAuthority|FullyQualifiedName~UnconfirmedOwnershipAuthoritySchemaOrInstallationCannotProducePartialEvidence|FullyQualifiedName~EquipmentInstallationUsesReviewedSourceAtomicIntentAndExactRecovery|FullyQualifiedName~PreflightRequiresCurrentCompoundSourceDirectWriteAndColocatedPhysicalSchema'"
+    },
+    "scope": "Real Beep migration and SQLite datasource with mocked editor/services: the generic dynamic read loses UTC kind and exactness and typed GetEntityStreamAsync returned one row with an unset creation audit. The probe intentionally exits nonzero. Actual protected Kestrel endpoint exercises native owner missing-table refusal with simulated Beep source and SQLite app grants; the 43 focused tests cover schema and installation preflight. No full native installation write, production DI or other provider proof.",
+    "logs_sha256": {
+      "sqlite-typed-stream-audit-failure.log": "3b5ff09d92b794f987271a0dd72db89655d643e6b5ebda1ddf62face88096c18",
+      "sqlite-missing-schema-response-tests.log": "8887acc9b09212f990c4d549e78bd803dc0a23df990d09e1ef09451029aeb18a"
+    },
+    "source_sha256": {
+      "Scripts/Test-BeepSqliteMigrationCapability.ps1": "c2662b03d039b3606de35412d049a5d28b1e51ea8189ce82d224069248f0bf43",
+      "Scripts/BeepSqliteMigrationProbe.cs": "633acc2df73d3752f4cee3497ed476b2141e97db3aceb77a4c3baff1c44c88e7",
+      "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs": "d3119276223a791e0e9f6c090de8fd36c78f274313054a351bcf82ad9ea4c925",
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetTests.cs": "1c13fbd9eee51ac51b1d619e061fcfe857617d0d5c793d9791bed3d415e3545c",
+      "Beep.OilandGas.Repository.Tests/DevelopmentFacilityNativeHttpTests.cs": "21d35d0ad8523b522a83847568fcdc3b546620cc45df1b673ee27f81b51089e6",
+      "Beep.OilandGas.ApiService/Middleware/RefusalExceptionHandler.cs": "0666f63ddc0396f999864d2f44450a10c8ba8db602824cee2b10d41ce6ad6eb5"
+    }
+  },
+  "construction_facility_landing_gate": {
+    "recorded_at": "2026-10-27T13:07:49.360150+00:00",
+    "status": "passed",
+    "total": 69,
+    "elapsed": "3.9300 seconds",
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~ConstructionEvidenceScreenTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests'",
+    "scope": "Actual rendered construction landing and reused facility state, including current company/FIELD evidence, partner operator, permission gating, escaped text, empty, failure, foreign FIELD and context-change cases. API and field selections are controlled, not live provider or browser. Initial compilation missed the explicit FIELD contract namespace; corrected final run passes. No construction acceptance or progress decision is inferred.",
+    "logs_sha256": {
+      "construction-facility-screen.log": "57226372dc1db605f2bc65ef70e19b251c859f67121eb76e267f7528911bdaa1",
+      "construction-screen-missing-import-1.log": "05395780c2a1fb76ee40c7797098c4f1aaba52f6f0d9cdf428ad55088e917c21",
+      "construction-screen-missing-import-2.log": "8438e56c8d2e6d53a69355f492aaa8ad167e6ec34f85307fc48c491933a3ad34"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/ConstructionProgress.razor": "21af87e5ad14e2877f3c4760136bda63c83aa78d57125b5f725a7102435675cd",
+      "Beep.OilandGas.Web.Auth.Tests/ConstructionEvidenceScreenTests.cs": "bc77173f3d576ed99db84f779185f0ab2d27380c6574cf28f9889ef1361e92ef",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "8c4322c4d5608eedcdb131813c934c91f4c4d41a0f10a648006084be718dac09",
+      "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "3ba1b8d1677bdc722f11d2cae843c314f965ed1b70ad5629998dc0dedd48c550",
+      "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentFacilityEvidenceController.cs": "d686428e64c38feffac6db47e9951c9edf3b436a27531ce19dfbd64c1a2f5763"
+    }
+  },
+  "construction_investment_landing_gate": {
+    "recorded_at": "2026-10-27T13:10:33.754154+00:00",
+    "status": "passed",
+    "total": 90,
+    "elapsed": "4.2654 seconds",
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~ConstructionEvidenceScreenTests|FullyQualifiedName~DevelopmentInvestmentStateTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests'",
+    "scope": "Actual rendered construction landing, existing investment queue and facility state using controlled API responses and FIELD/persona fixtures. Tests display of the original AFE, recorded amount and review status, exact source link, permission restriction and clearing when access changes. Investment queue is across currently accessible company FIELDs, distinct from the selected-FIELD facility list. No live provider, browser, new decision, handover or construction acceptance proof.",
+    "log_sha256": "6c1aaaaf682df571bb3e77c43f7ba166cfc5dc11ca62872bdc623a56163c85d0",
+    "source_sha256": {
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/ConstructionProgress.razor": "3d702f443dad36c4c365faf28e60b0f70cb79a27bcae9095935eb181790105dd",
+      "Beep.OilandGas.Web.Auth.Tests/ConstructionEvidenceScreenTests.cs": "48c86278eea1c4c4398ebe9ff02ecbe42cecd104cb32d0382ff485032313bcae",
+      "Beep.OilandGas.Web/Components/Workflow/DevelopmentInvestmentQueuePanel.razor": "2c1350e048c7691d7e231c73ba6d2f1b28daecd57e5a7217c820e36e8b9a1b3f",
+      "Beep.OilandGas.Web/Services/DevelopmentInvestmentQueueState.cs": "45ff9462d852d21e1f65c2d4f5647392ede46737311cdff25957d8d298f1d661",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "8c4322c4d5608eedcdb131813c934c91f4c4d41a0f10a648006084be718dac09"
+    }
+  },
+  "investment_queue_field_filter_gate": {
+    "recorded_at": "2026-10-27T13:13:01.775097+00:00",
+    "status": "passed",
+    "total": 91,
+    "elapsed": "4.0663 seconds",
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~ConstructionEvidenceScreenTests|FullyQualifiedName~DevelopmentInvestmentStateTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests'",
+    "scope": "Actual rendered investment queue, construction landing and related state tests with controlled API and persona/FIELD data. Covers multiple authorized FIELD values, selected filter, correctly filtered counts, source removal on refresh and persona change. The filter is presentation-only over an already-authorized company queue. No production provider, live API, browser or new financial decision proof.",
+    "log_sha256": "af02c50c92f470a409a3d51780d533402ca90c9fd554c13cba2bb510739b4f72",
+    "source_sha256": {
+      "Beep.OilandGas.Web/Components/Workflow/DevelopmentInvestmentQueuePanel.razor": "b9ac454a7161f529e3afe23e4c20227b88b1e0382c05f0576b262ab1964e8270",
+      "Beep.OilandGas.Web/Services/DevelopmentInvestmentQueueState.cs": "45ff9462d852d21e1f65c2d4f5647392ede46737311cdff25957d8d298f1d661",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentInvestmentStateTests.cs": "b040d1b9e0fcf5d703a02e8e74d6a1cb2c74968c7c8b48a2f3b8007cb8c44b92",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/ConstructionProgress.razor": "3d702f443dad36c4c365faf28e60b0f70cb79a27bcae9095935eb181790105dd",
+      "Beep.OilandGas.Web.Auth.Tests/ConstructionEvidenceScreenTests.cs": "48c86278eea1c4c4398ebe9ff02ecbe42cecd104cb32d0382ff485032313bcae"
+    }
+  },
+  "construction_facility_source_link_gate": {
+    "recorded_at": "2026-10-27T13:16:21.127162+00:00",
+    "status": "passed",
+    "total": 99,
+    "elapsed": "3.8105 seconds",
+    "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~ConstructionEvidenceScreenTests|FullyQualifiedName~DevelopmentInvestmentStateTests|FullyQualifiedName~DevelopmentFacilityEvidenceTests'",
+    "scope": "Actual rendered source and destination components with controlled API and FIELD data. Checks encoded link and query binding, company/tenant/FIELD mismatch, composite identity collisions, partial inputs, same-page query changes and context clearing. Initial test attempted direct parameter injection for query-supplied values; corrected to exercise navigation. No real browser, OIDC, real provider or construction acceptance proof.",
+    "logs_sha256": {
+      "construction-facility-link.log": "eb9847e75a320851aa34e6353fd84902a74c0c0c5da81134c5ec083fb8cfa167",
+      "construction-facility-link-initial-test-failure.log": "1fd6a67e6c4d5dd3c3fb0988ff59c532f8307f4f4e374f6790f848c601a031a0"
+    },
+    "source_sha256": {
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/ConstructionProgress.razor": "5ce2850037782e592a3737b7f2696a5a06005da8edc01bc4ffb4e5daef97f14b",
+      "Beep.OilandGas.Web/Pages/PPDM39/Development/Facilities.razor": "b3df0d47e2dbaa63ae7b6b335a8c47d8df07140a538468a40f91508315127ddb",
+      "Beep.OilandGas.Web.Auth.Tests/ConstructionEvidenceScreenTests.cs": "1a1769c234da962e66258e2a3d40d8942b2a5c350d5c3b67a6675493421bc5fe",
+      "Beep.OilandGas.Web.Auth.Tests/DevelopmentFacilityEvidenceTests.cs": "f4697e79be6c1223c44c51883cfebda8d46f90918240ddac85129f9821faa8c8",
+      "Beep.OilandGas.Web/Services/DevelopmentFacilityEvidenceState.cs": "8c4322c4d5608eedcdb131813c934c91f4c4d41a0f10a648006084be718dac09"
+    }
+  }
+}

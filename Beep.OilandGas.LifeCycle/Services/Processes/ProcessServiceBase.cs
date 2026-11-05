@@ -7,8 +7,6 @@ using Beep.OilandGas.Models.Processes;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Services;
-using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -79,54 +77,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     throw new InvalidOperationException($"Process definition '{processId}' has no steps defined");
                 }
 
-                var instanceId = GenerateInstanceId();
-                var instance = new ProcessInstance
-                {
-                    InstanceId = instanceId,
-                    ProcessId = processId,
-                    EntityId = entityId,
-                    EntityType = entityType,
-                    FieldId = fieldId,
-                    CurrentState = "INITIAL",
-                    CurrentStepId = orderedSteps[0].StepId,
-                    Status = ProcessStatus.IN_PROGRESS,
-                    StartDate = DateTime.UtcNow,
-                    StartedBy = userId,
-                    ProcessData = new PROCESS_DATA
-                    {
-                        InstanceId = instanceId,
-                        LastUpdated = DateTime.UtcNow
-                    },
-                    StepInstances = new List<ProcessStepInstance>(),
-                    History = new List<ProcessHistoryEntry>()
-                };
+                var instance = CreateInitialProcess(orderedSteps, processId, entityId, entityType, fieldId, userId,
+                    GenerateInstanceId(), DateTime.UtcNow, _ => GenerateStepInstanceId());
 
-                // Create initial step instances
-                for (int i = 0; i < orderedSteps.Count; i++)
-                {
-                    var step = orderedSteps[i];
-                    instance.StepInstances.Add(new ProcessStepInstance
-                    {
-                        StepInstanceId = GenerateStepInstanceId(),
-                        InstanceId = instance.InstanceId,
-                        StepId = step.StepId,
-                        StepName = step.StepName,
-                        SequenceNumber = step.SequenceNumber,
-                        Status = i == 0 ? StepStatus.PENDING : StepStatus.BLOCKED,
-                        RequiredRole = step.RequiredRoles.Count > 0 ? step.RequiredRoles[0] : null,
-                        ApprovalRequired = step.RequiresApproval,
-                        SlaHours = step.SlaHours,
-                        StepData = new PROCESS_STEP_DATA(),
-                        Approvals = new List<ApprovalRecord>(),
-                        ValidationResults = new List<ValidationResult>()
-                    });
-                }
-
-                // Save instance (to be implemented by derived classes)
-                await SaveProcessInstanceAsync(instance);
-
-                // Add history entry
-                await AddHistoryEntryAsync(instance.InstanceId, new ProcessHistoryEntry
+                await PersistStartedProcessAsync(instance, new ProcessHistoryEntry
                 {
                     HistoryId = GenerateHistoryId(),
                     InstanceId = instance.InstanceId,
@@ -148,6 +102,61 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             }
         }
 
+        protected ProcessInstance CreateInitialProcess(IReadOnlyList<ProcessStepDefinition> orderedSteps, string processId,
+            string entityId, string entityType, string fieldId, string userId, string instanceId, DateTime startedAt,
+            Func<ProcessStepDefinition, string> stepIdentity, PROCESS_DATA? payload = null)
+        {
+            var instance = new ProcessInstance
+            {
+                InstanceId = instanceId,
+                ProcessId = processId,
+                EntityId = entityId,
+                EntityType = entityType,
+                FieldId = fieldId,
+                CurrentState = "INITIAL",
+                CurrentStepId = orderedSteps[0].StepId,
+                Status = ProcessStatus.IN_PROGRESS,
+                StartDate = startedAt,
+                StartedBy = userId,
+                ProcessData = payload ?? new PROCESS_DATA
+                {
+                    InstanceId = instanceId,
+                    LastUpdated = startedAt
+                },
+                StepInstances = new List<ProcessStepInstance>(),
+                History = new List<ProcessHistoryEntry>()
+            };
+
+            // Create initial step instances
+            for (int i = 0; i < orderedSteps.Count; i++)
+            {
+                var step = orderedSteps[i];
+                instance.StepInstances.Add(new ProcessStepInstance
+                {
+                    StepInstanceId = stepIdentity(step),
+                    InstanceId = instance.InstanceId,
+                    StepId = step.StepId,
+                    StepName = step.StepName,
+                    SequenceNumber = step.SequenceNumber,
+                    Status = i == 0 ? StepStatus.PENDING : StepStatus.BLOCKED,
+                    RequiredRole = step.RequiredRoles.Count > 0 ? step.RequiredRoles[0] : null,
+                    ApprovalRequired = step.RequiresApproval,
+                    SlaHours = step.SlaHours,
+                    StepData = new PROCESS_STEP_DATA(),
+                    Approvals = new List<ApprovalRecord>(),
+                    ValidationResults = new List<ValidationResult>()
+                });
+            }
+
+            return instance;
+        }
+
+        /// <summary>Native owners override this boundary to persist the initial graph and audit together.</summary>
+        protected virtual async Task PersistStartedProcessAsync(ProcessInstance instance, ProcessHistoryEntry history)
+        {
+            await SaveProcessInstanceAsync(instance);
+            instance.History.Add(await AddHistoryEntryAsync(instance.InstanceId, history));
+        }
         public abstract Task<ProcessInstance?> GetProcessInstanceAsync(string instanceId);
         public abstract Task<List<ProcessInstance>> GetProcessInstancesForEntityAsync(string entityId, string entityType);
         public abstract Task<ProcessInstance?> GetCurrentProcessForEntityAsync(string entityId, string entityType);

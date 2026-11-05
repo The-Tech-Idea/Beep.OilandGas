@@ -1,0 +1,152 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "timestamp": "2026-10-30T01:22:22.402695+00:00",
+  "status": "Selected phase transport qualified through17 distinct focused inputs. Full goal remains active.",
+  "problem": "Combined cross-store orchestration still exceeded the unchanged100s Web client request deadline after measured path/query optimizations.",
+  "change": "Use the existing independently durable lifecycle and native transactions as HTTP phase boundaries. No new queue, store, schema or domain contract.",
+  "protocol": {
+    "approval": "POST closure/complete-stage takes canonical CompanyHseClosureCommand and returns canonical CompanyHseClosureReceipt only. It never claims native closure.",
+    "native": "POST closure/record-native takes canonical CompanyHseClosureRecovery(original,receipt). The native owner invokes persisted lifecycle confirmation before/after its own transaction; exact original/receipt must match. Returns CompanyHseClosureOutcome only after both are confirmed.",
+    "client": "Actual Web HSEServiceClient performs both requests for final stage, one for nonterminal stages. It checks scope and exact receipt before the native request; no automatic retry on uncertainty. Existing component keeps protected original until the final outcome validates.",
+    "guards": "All native/lifecycle role, source and before/after confirmation owners retained. No authority/value caching, skipped checks or timeout increase."
+  },
+  "checks": {
+    "coordinator_and_client": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 7.9852,
+      "scope": "Only6 coordinator final-stage inputs and6 actual typed-client inputs."
+    },
+    "final_client_and_identity": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 3.3791,
+      "scope": "6 overlapping client inputs with exact exception types;2 identity inputs, including persisted ordinary-path hash contract."
+    },
+    "distinct_boundary_inputs": 14,
+    "protected_provider": {
+      "status": "passed",
+      "method": "CurrentFieldLifecycleGateTests.InstalledSqliteClosureRecoversLostHttpAcknowledgementAndReopens",
+      "deadline_seconds_per_request": 100,
+      "scope": "Approval receipt with native receipt absent, between-phase Workflow.Approve revocation/denial, restore, native transport lost ack/exact retry/hash preservation and fresh-owner reopen.",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "minutes": 5.6915,
+      "exit_code": 0,
+      "observations": {
+        "Dropped": 1,
+        "BufferedAcknowledgementBytes": 8012,
+        "Failure": "HttpRequestException",
+        "LifecycleApprovalClientMilliseconds": 37545.6065,
+        "calls": [
+          {
+            "stage": "lifecycle-approval",
+            "status": 200,
+            "milliseconds": 37465.9236
+          },
+          {
+            "stage": "acknowledgement-dropped",
+            "status": 200,
+            "milliseconds": 66274.4443,
+            "bufferedBytes": 8012
+          },
+          {
+            "stage": "native-retry",
+            "status": 200,
+            "milliseconds": 59727.8963
+          }
+        ],
+        "NativeHashBeforeRetry": "349C9869D071FCBCCE6C6DBF701D8E0DCD3B301A55D5337C092DEEC9A968450C",
+        "NativeHashAfterRetry": "349C9869D071FCBCCE6C6DBF701D8E0DCD3B301A55D5337C092DEEC9A968450C",
+        "LifecycleHashBeforeRetry": "99AE619BA21C0A9492AFFFA7A02CA3C2765B0B9BE1F5A13F2C8B351600FDEB89",
+        "LifecycleHashAfterRetry": "99AE619BA21C0A9492AFFFA7A02CA3C2765B0B9BE1F5A13F2C8B351600FDEB89"
+      },
+      "reopen": {
+        "FreshEditor": true,
+        "FreshNativeSource": true,
+        "FreshLifecycleSource": true,
+        "OriginalRecoveredFromDatabase": true,
+        "NativeHashBefore": "349C9869D071FCBCCE6C6DBF701D8E0DCD3B301A55D5337C092DEEC9A968450C",
+        "NativeHashAfter": "349C9869D071FCBCCE6C6DBF701D8E0DCD3B301A55D5337C092DEEC9A968450C",
+        "LifecycleHashBefore": "99AE619BA21C0A9492AFFFA7A02CA3C2765B0B9BE1F5A13F2C8B351600FDEB89",
+        "LifecycleHashAfter": "99AE619BA21C0A9492AFFFA7A02CA3C2765B0B9BE1F5A13F2C8B351600FDEB89",
+        "FoundationRegistry": "Retained controlled fixture; not a whole application process restart"
+      },
+      "physical_directory": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-9fe13abb7a354017b10a9bcb8c16f0cd"
+    },
+    "total_distinct_passing_inputs": 17,
+    "first_approval_http": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "minutes": 3.388,
+      "method": "CurrentFieldLifecycleGateTests.FinalClosureHttpAcrossStoresRefusesRevocationAndReconcilesLostCommit",
+      "scope": "Actual protected controllers/field/role bridge/company coordinator/lifecycle/native owners, controlled native datasource adapters. First lifecycle writes, no native receipt after approval alone, between-phase Workflow.Approve revocation/refusal with no writes, controlled native commit-after-write failure and exact receipt retry with no new writes. Not actual driver commit-ack failure."
+    },
+    "final_client": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "seconds": 1.8746,
+      "scope": "Actual HSEServiceClient/ApiClient source with controlled HTTP handler. Added lost approval response requires HttpRequestException and exactly one request; no native request/automatic retry. Six earlier client cases also pass."
+    }
+  },
+  "build": {
+    "final_seconds": 16.2,
+    "errors": 0,
+    "warnings": 655,
+    "scope": "Focused source-linked target, no project-reference build. Actual HSEServiceClient partials and actual SDK IFieldService contract included. Initial missing source-reference build failure retained in log; resolved without copied interface."
+  },
+  "path_optimization": {
+    "handle_identity_inputs": 2,
+    "passed": 2,
+    "seconds": 3.6436,
+    "regular_path_128_call_milliseconds": 14.9995,
+    "prior_component_attribute_milliseconds": 43.0646,
+    "limits": "Local narrow diagnostic, not a statistical or request benchmark.",
+    "combined_request_after_change": {
+      "failed": 1,
+      "minutes": 3.9942,
+      "reason": "Unchanged100s timeout; this failure motivated the HTTP phase change."
+    }
+  },
+  "source_sha256": {
+    "Beep.OilandGas.ApiService/Services/ModuleDatabaseTarget.cs": "831e07acfa126163665e37cc113c81c9e797befc950e9f23b48cb5454ee27248",
+    "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.Closure.cs": "1a4d7c4dba7c6462fb0befa24d093126f8bae116cec467fd6bfdae8a0630481c",
+    "Beep.OilandGas.ApiService/Controllers/HSE/IncidentWorkflowController.cs": "1a791ab10739560d436fb8c8284b082c09473f36724de67b4a6aaa544df7d794",
+    "Beep.OilandGas.Web/Services/HSEServiceClient.Closure.cs": "48360a8480010949b5d94aa28a0353d41f3b36c688d73cc0d2a2b971c4a46e61",
+    "Beep.OilandGas.Web/Services/HSEServiceClient.cs": "439d6fe08c5fb173130ee500331286daddb79b66119c6b4ceaff8fcfaf13c46b",
+    "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs": "88987fa7f58acc15593fbfc4eb5e1e809489ab38e7eefccf779318dc998b3931",
+    "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowServiceTests.cs": "4c7494fdcbacbb147ab923e9fbe1904120d0d9db617e876e07706b54de3c85dc",
+    "Beep.OilandGas.Repository.Tests/HseClosurePhaseClientTests.cs": "0e9a24474a52b0ce52ed54fa0138b3e5af3051e11b1b009756bd54fbd5e837ea",
+    "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowHttpTests.cs": "3d9a8301b1f3d1a78253456c1bc554b3b9b853868878533df39296b3f951488f",
+    "Beep.OilandGas.Repository.Tests/ModuleDatabaseTargetTests.cs": "d7e0f79f24a7ed610c6ea2317e406a4d364cf1b069cb6dbfed9a396f82cb80a4",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "ad39cb165baa65a31a85544ee8e5bc824b33d8ffb0cbc6651169729702f13964",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "1c1955d12ab6399d954efb3ab3071a5eb9075447ae06f2ab816dec5058515610"
+  },
+  "limits": [
+    "Coordinator/native boundary cases use explicit mocks; typed client uses controlled HttpMessageHandler, not production OIDC/server.",
+    "Full host/OIDC, concurrent writers, provider matrix, regional/RTL/a11y and full goal acceptance remain open. No commit or push.",
+    "Final lifecycle stages/RCA handoff are composed through actual canonical owners before the protected HTTP sequence. HTTP approval leg confirms the already-recorded final approval; it does not prove first final approval write through HTTP. The updated controlled-source HTTP journey is the next selected gate for first approval/API commit failure.",
+    "Approval/retry/native timings are fixture request observations, not production latency/host acceptance. SDK general30s default is not qualified by this Web-specific route gate.",
+    "The final7-input client build changes test cases only. Protected provider/first-approval HTTP runtime hash is retained in source_sha256; do not substitute the later test-only runtime hash for those executions."
+  ],
+  "qualified_at": "2026-10-30T01:27:50.400083+00:00",
+  "final_test_only_checkpoint": {
+    "build_seconds": 37.72,
+    "warnings": 655,
+    "errors": 0,
+    "app_sources_unchanged_since_provider_gate": true,
+    "source_sha256": {
+      "Beep.OilandGas.Repository.Tests/HseClosurePhaseClientTests.cs": "73a7402a3a8f7b0557caee54b62068df7a6f6d9f02d86fac27b730e3f1f532ca",
+      "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "b1081f85bf272da331736b3336c669de8f0fef6e2a6b6408be4f3e2c156fbdc6"
+    }
+  },
+  "next": "Qualify the real Web startup/OIDC/full app persona journey and production latency/provider/concurrency/regional gates in Plan353. Current native-provider HTTP phase confirmation and controlled first-approval API semantics are qualified separately; do not claim full production acceptance or complete the company goal.",
+  "completed_checkpoint_at": "2026-10-30T01:35:10.881647+00:00"
+}

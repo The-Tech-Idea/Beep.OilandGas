@@ -1,0 +1,152 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using System.Globalization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject CompanySalesInvoiceWorkspaceState State
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 mt-4">
+    <MudText Typo="Typo.h5">Billing handoff from approved receiving</MudText>
+    <MudText>Review the physical delivery, approved contract price and company billing policy before recording an invoice draft.</MudText>
+    <MudButton OnClick="Reload" Disabled="@State.Busy" Variant="Variant.Outlined">Reload and reconcile original invoice evidence</MudButton>
+    <MudButton Href="/accounting/billing-policies" Variant="Variant.Outlined">Review company billing policies</MudButton>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading or recording sales invoice evidence" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(!_authorized){<MudAlert Severity="Severity.Info">Open an approved delivery with the selected company account and current accounting role, then reload.</MudAlert>}
+    @if(_authorized)
+    {
+        @if(State.HasPendingIntent)
+        {
+            <MudAlert Severity="Severity.Warning" role="status">An original invoice request remains unconfirmed. Return to its original company, account and delivery to reconcile before another proposal.</MudAlert>
+            @if(State.Pending is {} pending)
+            {
+                <MudText>Original invoice: @pending.Facts.InvoiceNumber · Intent: @pending.IntentId · Ticket: @pending.Review.TicketId</MudText>
+                <MudText>Original dates: @Calendar(pending.Facts.InvoiceDate) through @Calendar(pending.Facts.DueDate) · Tax proposal: @pending.Facts.TaxAmount · Charges proposal: @pending.Facts.ChargesAmount</MudText>
+                <MudText>Original reason: @pending.Facts.Reason</MudText>
+                @if(State.CanRetryPending && _canPrepare){<MudButton OnClick="Retry" Disabled="@State.Busy" Variant="Variant.Outlined">Retry exact original invoice request</MudButton>}
+            }
+        }
+        @if(State.Workspace is {} workspace)
+        {
+            var source=workspace.Source;var basis=source.Delivery.ReviewBillingBasis();
+            <MudText>Company: @source.Company.BusinessAssociateId · FIELD: @source.FieldId · Delivery ticket: @source.TicketId</MudText>
+            <MudText>Contract buyer: @source.Delivery.Source.Source.Contract.BUYER_BA_ID</MudText>
+            <MudText>Approved receiving quantity: @basis.ApprovedQuantity @basis.QuantityUnit · Approved unit price: @basis.ApprovedUnitPrice @basis.CurrencyCode / @basis.PriceUnit</MudText>
+            @if(basis.UnroundedAmount is {} amount){<MudText>Price extension before company rounding, tax and charges: @amount @basis.CurrencyCode</MudText>}
+            @if(!basis.HasCompatiblePriceBasis){<MudAlert Severity="Severity.Warning">Compatible independently approved receiving quantity and fixed unit price are unavailable. Invoice preparation requires their recorded review.</MudAlert>}
+            <MudText Typo="Typo.caption">Receiving price basis: @basis.Revision · Complete invoice source: @source.Revision</MudText>
+            <MudText Typo="Typo.h6">Recorded company sales billing policies</MudText>
+            @if(source.Policies.Records.Count==0){<MudAlert Severity="Severity.Info">No company sales billing policy is available. Prepare explicit rules and obtain independent approval before invoicing.</MudAlert>}
+            @foreach(var policy in source.Policies.Records)
+            {
+                var record=CompanyBillingPolicyProof.Require(source.Company,policy).Record;var rules=record.Rules;
+                <MudText>Policy @record.PolicyId · @policy.MATCHING_POLICY_STATUS · @rules.CurrencyCode · Decimal places: @rules.CurrencyDecimals · Rounding: @RoundingLabel(rules.RoundingMode)</MudText>
+                <MudText>Company calendar window: @Calendar(rules.EffectiveFrom) through @(rules.EffectiveThrough is {} end?Calendar(end):"No recorded end date") · Prepared by: @record.PreparedBy · Independent reviewer: @(record.ApprovedBy ?? "Not recorded")</MudText>
+            }
+            @foreach(var invoice in source.Invoices)
+            {
+                <MudText>Recorded invoice: @invoice.InvoiceId · @invoice.Status · Proposed total: @invoice.ProposedTotal @invoice.CurrencyCode · Prepared by: @invoice.PreparedBy</MudText>
+                @if(Company.Selection?.Permissions.Contains("Accounting.ReviewSalesInvoice",StringComparer.Ordinal)==true){<MudButton Href="@($"/accounting/sales-invoice-review?invoice={Uri.EscapeDataString(invoice.InvoiceId)}")" Variant="Variant.Outlined">Open independent invoice review evidence</MudButton>}
+            }
+            @if(basis.HasCompatiblePriceBasis && !State.HasCurrencyPolicy){<MudAlert Severity="Severity.Info">An independently approved company billing policy for this recorded currency is unavailable. Review policy history before invoice preparation.</MudAlert>}
+            @if(State.CanPrepare && _canPrepare)
+            {
+                <MudText Typo="Typo.h6">Explicit invoice proposal</MudText>
+                <MudAlert Severity="Severity.Info">Enter company calendar dates and reviewed tax, charges and entitlement proposals. Enter an explicit zero when the reviewed amount is zero. These notes require independent review.</MudAlert>
+                <MudForm @ref="_form">
+                    <MudGrid>
+                        <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_number" Label="Invoice number" Required="true" MaxLength="128" Disabled="@State.Busy" /></MudItem>
+                        <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_date" Label="Invoice company calendar date" Required="true" Disabled="@State.Busy" HelperText="Select the stored company calendar date and its applicable approved billing policy." /></MudItem>
+                        <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_due" Label="Due company calendar date" Required="true" Disabled="@State.Busy" /></MudItem>
+                        <MudItem xs="12" md="6"><MudNumericField T="decimal?" @bind-Value="_tax" Label="Explicit tax amount proposal" Required="true" Min="0m" Disabled="@State.Busy" /></MudItem>
+                        <MudItem xs="12" md="6"><MudNumericField T="decimal?" @bind-Value="_charges" Label="Explicit charges amount proposal" Required="true" Min="0m" Disabled="@State.Busy" /></MudItem>
+                    </MudGrid>
+                    <MudTextField T="string" @bind-Value="_taxNotes" Label="Tax review evidence and reason" Required="true" MaxLength="2000" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_chargeNotes" Label="Charges review evidence and reason" Required="true" MaxLength="2000" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_rightsNotes" Label="Contract entitlement review evidence" Required="true" MaxLength="2000" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_reason" Label="Invoice preparation reason" Required="true" MaxLength="1000" Disabled="@State.Busy" />
+                    @if(Preview is {} preview)
+                    {
+                        <MudText>Applicable approved policy: @preview.PolicyId · Rounded price extension: @preview.RoundedPrice @preview.Currency · Subtotal including proposed charges: @preview.Subtotal @preview.Currency · Proposed total including tax: @preview.Total @preview.Currency</MudText>
+                    }
+                    else{<MudText Typo="Typo.caption">Complete the explicit fields within the applicable approved policy to review the proposed total.</MudText>}
+                    <MudButton OnClick="Record" Disabled="@State.Busy" Variant="Variant.Filled" Color="Color.Primary">Record invoice draft proposal</MudButton>
+                </MudForm>
+            }
+        }
+        @if(State.Result is {} outcome)
+        {
+            @if(outcome.Invoice.REVIEW_WORKFLOW_JSON is null){<MudAlert Severity="Severity.Success" role="status">Invoice draft and original outcome receipt confirmed in current native evidence.</MudAlert>}
+            else{<MudAlert Severity="Severity.Success" role="status">Original invoice preparation and recorded independent disposition confirmed in current native evidence.</MudAlert>}
+            <MudText>Invoice: @outcome.Invoice.INVOICE_NUMBER · Status: @outcome.Invoice.STATUS · Proposed total: @outcome.Invoice.TOTAL_AMOUNT @outcome.Invoice.CURRENCY_CODE</MudText>
+            <MudText>Prepared by: @outcome.Invoice.ROW_CREATED_BY · UTC: @outcome.Invoice.ROW_CREATED_DATE?.ToString("O") · Intent: @outcome.Intent.SALES_INVOICE_INTENT_ID</MudText>
+            <Beep.OilandGas.Web.Components.BusinessProcess.CompanyAccountingHandoffPanel EntityType="INVOICE" EntityId="@outcome.Invoice.INVOICE_ID" SourceRevision="@CompanyAccountingSourceTypes.InvoicePreparationRevision(outcome)" />
+        }
+        <MudText Typo="Typo.caption">Draft proposals await independent invoice review. Receivable creation, payment, recognition and ledger posting remain separate workflow steps.</MudText>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public string? TicketId{get;set;}
+    private string? _loadedTicket,_error;
+    private string _number="",_taxNotes="",_chargeNotes="",_rightsNotes="",_reason="";
+    private decimal? _tax,_charges;
+    private DateTime? _date,_due;
+    private MudForm? _form;
+    private bool _authorized,_canPrepare,_disposed;
+    private long _epoch;
+    private static string Calendar(DateTime value)=>value.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture);
+    private static string RoundingLabel(string value)=>value switch{"TO_EVEN"=>"Midpoint to even","AWAY_FROM_ZERO"=>"Midpoint away from zero","EXACT_ONLY"=>"Exact amount only",_=>"Unavailable"};
+    private (string PolicyId,string Currency,decimal RoundedPrice,decimal Subtotal,decimal Total)? Preview
+    {
+        get
+        {
+            if(State.Workspace is not {} workspace)return null;
+            try{var facts=Facts();var amounts=workspace.Source.ReviewAmounts(facts);var policy=workspace.Source.Policies.RequireApplicable(amounts.Rules.CurrencyCode,facts.InvoiceDate);
+                return(policy.ACCOUNTING_METHOD_ID,amounts.Rules.CurrencyCode,amounts.RoundedPrice,amounts.Subtotal,amounts.Total);}
+            catch(InvalidOperationException){return null;}
+        }
+    }
+    private CompanySalesInvoiceFacts Facts()
+    {
+        if(_date is null || _due is null || _date.Value.TimeOfDay!=TimeSpan.Zero || _due.Value.TimeOfDay!=TimeSpan.Zero)throw new InvalidOperationException();
+        return new(_number,DateTime.SpecifyKind(_date.Value,DateTimeKind.Unspecified),DateTime.SpecifyKind(_due.Value,DateTimeKind.Unspecified),_tax,_charges,_taxNotes,_chargeNotes,_rightsNotes,_reason);
+    }
+    private async Task Access()
+    {
+        _authorized=false;_canPrepare=false;var snapshot=Company.Snapshot;var epoch=_epoch;
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();
+        State.Admit(user);_authorized=true;_canPrepare=Company.Selection!.Permissions.Contains("Accounting.PrepareSalesInvoice",StringComparer.Ordinal);
+    }
+    protected override void OnInitialized(){State.AttachOwner(this);State.Changed+=StateChanged;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync()
+    {if(_loadedTicket==TicketId)return;State.Invalidate();ContextChanged();_loadedTicket=TicketId;await Reload();}
+    private void Reset(){_number="";_taxNotes="";_chargeNotes="";_rightsNotes="";_reason="";_tax=null;_charges=null;_date=null;_due=null;}
+    private async Task Reload()
+    {
+        var epoch=_epoch;_error=null;Reset();try{await Access();if(TicketId is null)throw new InvalidOperationException();await State.LoadAsync(TicketId,Accounting);if(!_disposed && epoch==_epoch)await Access();}
+        catch{if(!_disposed && epoch==_epoch)_error="Invoice source and original outcome could not be confirmed. Check selected company/account access, the delivery and billing policy, then reload.";}
+    }
+    private async Task Record()
+    {
+        var epoch=_epoch;_error=null;
+        try
+        {
+            await Access();if(!_canPrepare || !State.CanPrepare)throw new UnauthorizedAccessException();
+            if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
+            await State.PrepareAsync(Facts(),Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}
+        }
+        catch{if(!_disposed && epoch==_epoch)_error="Invoice draft outcome was not confirmed. Check explicit dates, policy precision, tax, charges, entitlement and reason. Retain and reconcile any original request.";}
+    }
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(!_canPrepare || !State.CanRetryPending)throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch{if(!_disposed && epoch==_epoch)_error="The original invoice request remains unconfirmed. Return to its original company, account and delivery to reconcile.";}}
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_error=null;Reset();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}
+    public void Dispose(){_disposed=true;State.Changed-=StateChanged;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.DetachOwner(this);}
+}

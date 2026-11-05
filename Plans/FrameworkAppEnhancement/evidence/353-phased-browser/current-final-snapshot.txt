@@ -1,0 +1,103 @@
+### Page
+- Page URL: http://127.0.0.1:51825/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+### Snapshot
+```yaml
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=f6e3]
+    - paragraph [ref=f6e4]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=f6e5]:
+      - link "Open assigned HSE process" [ref=f6e6] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=f6e8] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=f6e10] [cursor=pointer]
+      - button "Restore original company" [ref=f6e12] [cursor=pointer]
+  - generic [ref=f6e14]:
+    - group [ref=f6e15]:
+      - button [ref=f6e16] [cursor=pointer]
+      - group [ref=f6e21]:
+        - heading "INJURY — Recorded assigned incident" [level=5] [ref=f6e22]
+        - group [ref=f6e23]:
+          - generic [ref=f6e24]: Tier 4
+          - generic [ref=f6e30]: CLOSED
+          - generic [ref=f6e36]: 29-Oct-2026 02:00 · North FIELD · originator
+    - separator [ref=f6e37]
+    - generic [ref=f6e38]:
+      - generic [ref=f6e39]:
+        - generic [ref=f6e40]:
+          - paragraph [ref=f6e43]: Incident Details
+          - table [ref=f6e47]:
+            - rowgroup [ref=f6e48]:
+              - row [ref=f6e49]:
+                - cell "Date/Time" [ref=f6e50]
+                - cell [ref=f6e51]:
+                  - paragraph [ref=f6e52]: 29-Oct-2026 02:00
+              - row [ref=f6e53]:
+                - cell "Type" [ref=f6e54]
+                - cell [ref=f6e55]:
+                  - paragraph [ref=f6e56]: INJURY
+              - row [ref=f6e57]:
+                - cell "Tier" [ref=f6e58]
+                - cell "Tier 4" [ref=f6e59]
+              - row [ref=f6e66]:
+                - cell "Location" [ref=f6e67]
+                - cell [ref=f6e68]:
+                  - paragraph [ref=f6e69]: North FIELD
+              - row [ref=f6e70]:
+                - cell "Reported jurisdiction" [ref=f6e71]
+                - cell [ref=f6e72]:
+                  - paragraph [ref=f6e73]: KUWAIT
+              - row [ref=f6e74]:
+                - cell "Reported By" [ref=f6e75]
+                - cell [ref=f6e76]:
+                  - paragraph [ref=f6e77]: originator
+        - generic [ref=f6e78]:
+          - paragraph [ref=f6e85]: Root Cause Analysis
+          - generic [ref=f6e86]:
+            - button "Review recorded causes and classifications" [ref=f6e87] [cursor=pointer]
+            - button "Find my recorded causes" [ref=f6e89] [cursor=pointer]
+            - button "View shared recorded causes" [ref=f6e91] [cursor=pointer]
+            - button "Find my recorded RCA handoff" [ref=f6e93] [cursor=pointer]
+            - paragraph [ref=f6e95]: No root cause is displayed in the incident detail.
+      - generic [ref=f6e97]:
+        - paragraph [ref=f6e100]: Corrective Actions
+        - generic [ref=f6e101]:
+          - separator [ref=f6e102]
+          - button "Review incident closure prerequisites" [ref=f6e103] [cursor=pointer]
+          - separator [ref=f6e105]
+          - heading "Lifecycle approval and incident closure" [level=6] [ref=f6e106]
+          - generic [ref=f6e107]: New lifecycle approvals and correction returns are unavailable for a closed, cancelled or unconfirmed incident state. Recover recorded approval evidence to confirm an earlier outcome.
+          - button "Recover recorded closure approval" [ref=f6e114] [cursor=pointer]
+          - status [ref=f6e116]: "Incident closure confirmed: lifecycle approval and native CLOSED status are recorded."
+          - table [ref=f6e120]:
+            - rowgroup [ref=f6e121]:
+              - row [ref=f6e122]:
+                - columnheader "Action Sort Column options" [ref=f6e123]:
+                  - generic [ref=f6e124]:
+                    - generic [ref=f6e125] [cursor=pointer]: Action
+                    - generic [ref=f6e126] [cursor=pointer]:
+                      - button "Sort" [ref=f6e127]
+                      - button "Column options" [ref=f6e133]
+                - columnheader "Assigned To Sort Column options" [ref=f6e138]:
+                  - generic [ref=f6e139]:
+                    - generic [ref=f6e140] [cursor=pointer]: Assigned To
+                    - generic [ref=f6e141] [cursor=pointer]:
+                      - button "Sort" [ref=f6e142]
+                      - button "Column options" [ref=f6e148]
+                - columnheader "Due Sort Column options" [ref=f6e153]:
+                  - generic [ref=f6e154]:
+                    - generic [ref=f6e155] [cursor=pointer]: Due
+                    - generic [ref=f6e156] [cursor=pointer]:
+                      - button "Sort" [ref=f6e157]
+                      - button "Column options" [ref=f6e163]
+                - columnheader "Status" [ref=f6e168]
+            - rowgroup [ref=f6e170]:
+              - row [ref=f6e171]:
+                - cell "Inspect valve" [ref=f6e172]
+                - cell "worker" [ref=f6e173]
+                - cell "31-Oct-26" [ref=f6e174]
+                - cell "COMPLETED" [ref=f6e175]
+            - rowgroup:
+              - row
+```

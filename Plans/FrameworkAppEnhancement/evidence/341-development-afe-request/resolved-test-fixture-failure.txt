@@ -1,0 +1,14 @@
+Observed pre-correction gate: 761 passed, 1 failed.
+The failed owned planning read restored detached fixture rows. The recovery test was corrected to reacquire its current native header before restoring the controlled source. Product code kept refusing changed original evidence.
+
+  Failed Beep.OilandGas.ApiService.Tests.DevelopmentAfeApiTests.LaterSourceChangeLeavesCommittedOriginalUnconfirmedUntilOriginalEvidenceIsAuthorized [13 s]
+  Error Message:
+   System.InvalidOperationException : The canonical FDP baseline differs from its exact original source, approval or audit.
+  Stack Trace:
+     at TheTechIdea.Data.OilGas.DevelopmentPlanRelease.FromRecord(FIELD_DEVELOPMENT_PLAN row) in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\TheTechIdea.Data\OilGas\DevelopmentPlanning\DevelopmentPlanRelease.cs:line 49
+   at TheTechIdea.Data.OilGas.DevelopmentPlanBaselineReview.Require(DevelopmentReviewProgress displayed) in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\TheTechIdea.Data\OilGas\DevelopmentPlanning\DevelopmentPlanRelease.cs:line 61
+   at Beep.OilandGas.DevelopmentPlanning.Services.DevelopmentPlanService.ReadBaseline(IDataSource source, String connection, DevelopmentReviewProgress review, Func`1 guard) in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DevelopmentPlanning\Services\DevelopmentPlanService.Baseline.cs:line 34
+   at Beep.OilandGas.DevelopmentPlanning.Services.DevelopmentPlanService.<>c__DisplayClass3_0.<<GetBaselineAsync>b__0>d.MoveNext() in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DevelopmentPlanning\Services\DevelopmentPlanService.Baseline.cs:line 41
+--- End of stack trace from previous location ---
+
+The corrected case passed in the targeted correction log and the final clean 763-test run.

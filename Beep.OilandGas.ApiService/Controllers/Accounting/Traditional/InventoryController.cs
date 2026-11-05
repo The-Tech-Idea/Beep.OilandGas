@@ -19,9 +19,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
     /// <summary>
     /// API controller for Inventory operations.
     /// </summary>
-    [ApiController]
-    [Route("api/accounting/traditional/inventory")]
-    public class InventoryController : ControllerBase
+    public partial class InventoryController : ControllerBase
     {
         private readonly ProductionAccountingService _service;
         private readonly IInventoryService _inventoryService;
@@ -38,88 +36,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             _inventoryService = inventoryService ?? throw new ArgumentNullException(nameof(inventoryService));
             _glIntegration = glIntegration ?? throw new ArgumentNullException(nameof(glIntegration));
             _logger = logger;
-        }
-
-        /// <summary>
-        /// Create an inventory transaction.
-        /// </summary>
-        [HttpPost("transactions")]
-        public async Task<ActionResult<object>> CreateTransaction(
-            [FromBody] CreateInventoryTransactionRequest request,
-            [FromQuery] string connectionName = "PPDM39")
-        {
-            var userId = User.ActingUserId();
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var transaction = _service.TraditionalAccounting.Inventory.CreateTransaction(
-                request.InventoryItemId,
-                request.TransactionType,
-                request.TransactionDate,
-                request.Quantity,
-                request.UnitCost,
-                request.Description ?? "",
-                userId);
-
-            // Post to GL based on transaction type
-            // Receipt: Debit Inventory, Credit AP/Cash
-            // Issue: Debit Expense/COGS, Credit Inventory
-            var lines = new List<JournalEntryLineData>();
-            
-            if (request.TransactionType == "Receipt")
-            {
-                lines.Add(new JournalEntryLineData
-                {
-                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1300")?.GL_ACCOUNT_ID ?? "",
-                    DebitAmount = transaction.TOTAL_COST,
-                    CreditAmount = null,
-                    Description = $"Inventory Receipt - {request.Description}"
-                });
-                lines.Add(new JournalEntryLineData
-                {
-                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "2000")?.GL_ACCOUNT_ID ?? "",
-                    DebitAmount = null,
-                    CreditAmount = transaction.TOTAL_COST,
-                    Description = $"Inventory Receipt - {request.Description}"
-                });
-            }
-            else if (request.TransactionType == "Issue")
-            {
-                lines.Add(new JournalEntryLineData
-                {
-                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "5100")?.GL_ACCOUNT_ID ?? "",
-                    DebitAmount = transaction.TOTAL_COST,
-                    CreditAmount = null,
-                    Description = $"Inventory Issue - {request.Description}"
-                });
-                lines.Add(new JournalEntryLineData
-                {
-                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1300")?.GL_ACCOUNT_ID ?? "",
-                    DebitAmount = null,
-                    CreditAmount = transaction.TOTAL_COST,
-                    Description = $"Inventory Issue - {request.Description}"
-                });
-            }
-
-            if (lines.Count > 0)
-            {
-                var journalEntryId = await LedgerPosting.PostAsync(
-                    () => _glIntegration.PostTraditionalAccountingToGL(
-                        transaction.INVENTORY_TRANSACTION_ID,
-                        "Inventory",
-                        lines,
-                        transaction.TRANSACTION_DATE ?? DateTime.UtcNow,
-                        userId),
-                    $"Inventory transaction {transaction.INVENTORY_TRANSACTION_ID}", transaction.INVENTORY_TRANSACTION_ID, "Inventory");
-
-                return Ok(new { TransactionId = transaction.INVENTORY_TRANSACTION_ID, JournalEntryId = journalEntryId });
-            }
-
-            return Ok(new { TransactionId = transaction.INVENTORY_TRANSACTION_ID });
         }
 
         /// <summary>

@@ -1,0 +1,9 @@
+### Result
+{
+  "originalCharacters": 101766,
+  "corrupted": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {const entry=Object.entries(sessionStorage).find(([key])=>key.endsWith(".drilling-report"));if(!entry)throw new Error("No owned report to corrupt");window.__oilgasProof={key:entry[0],value:entry[1]};sessionStorage.setItem(entry[0],"corrupt-owned-fixture-proof");return {originalCharacters:entry[1].length,corrupted:true};}');
+```

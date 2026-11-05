@@ -1,4 +1,5 @@
 @page "/production/engineer-workspace"
+@page "/lifecycle/production/dashboard"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Web.Services
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
@@ -6,6 +7,7 @@
 <PageTitle>Production Engineer Workspace</PageTitle>
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudText Typo="Typo.h4" Class="mb-4">Production Engineer Workspace</MudText>
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/production/engineer-workspace","/lifecycle/production/dashboard"})' />
     <ProductionFieldOverview />
         @* Engineering tools remain available while field data loads. *@
         <MudGrid>

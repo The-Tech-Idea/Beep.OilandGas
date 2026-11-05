@@ -1,0 +1,37 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@if(Review?.WorkOrder is {} order)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6">Recorded maintenance source</MudText>
+        <MudText>Order: @order.WorkOrderId · Number: @order.RecordedNumber · Type: @order.OrderType · FIELD: @order.FieldId</MudText>
+        <MudText>Requested: @(order.RequestDate?.ToString("O") ?? "Unavailable") · Due: @(order.DueDate?.ToString("O") ?? "Unavailable")</MudText>
+        <MudText>@order.Instructions</MudText>
+        <MudText Typo="Typo.subtitle1">Recorded components</MudText>
+        @foreach(var component in order.Components)
+        {
+            <MudText>Component: @component.ComponentId · FIELD: @component.FieldId · Well: @(string.IsNullOrWhiteSpace(component.WellId)?"Unavailable":component.WellId) · Equipment: @(string.IsNullOrWhiteSpace(component.EquipmentId)?"Unavailable":component.EquipmentId)</MudText>
+        }
+        <MudText Typo="Typo.subtitle1">Recorded inspection evidence</MudText>
+        @if(order.Inspections.Count==0){<MudAlert Severity="Severity.Info">No recorded inspection requirements were returned. Required coverage and inspection acceptance remain unconfirmed.</MudAlert>}
+        @foreach(var row in order.Inspections)
+        {
+            <MudText>@row.CondSeq · @row.CondType · @row.RequiredText · @row.Status</MudText>
+            <MudText>Requirement owner: @row.RequirementActor · Reported jurisdiction: @row.Jurisdiction · Reference: @(string.IsNullOrWhiteSpace(row.RegulatoryRef)?"Not recorded":row.RegulatoryRef)</MudText>
+            @if(row.Status!="UNRECORDED")
+            {<MudText>Inspector: @row.Inspector · Recorded UTC: @row.InspectDate?.ToString("O") · @row.ResultText</MudText>}
+        }
+        <MudAlert Severity="Severity.Info">These are recorded source facts for this process action review. Process transitions do not establish permit clearance, independent maintenance acceptance or return-to-service authorization. Review the recorded requirements and approvals before those handoffs.</MudAlert>
+        <MudText Typo="Typo.caption">Retrieved: @order.RetrievedAtUtc.ToString("O") · Action review: @Review.Revision</MudText>
+        <MudButton Href="@order.Route">Open recorded maintenance order</MudButton>
+    </MudPaper>
+}
+else
+{
+    <MudAlert Severity="Severity.Warning">Recorded maintenance details are unavailable.</MudAlert>
+}
+@code {
+    [Parameter] public ProcessTransitionReview? Review {get;set;}
+}

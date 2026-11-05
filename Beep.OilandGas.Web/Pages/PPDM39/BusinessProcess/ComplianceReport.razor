@@ -1,161 +1,95 @@
-﻿@page "/ppdm39/compliance/report"
-@attribute [Authorize(Roles = "Compliance,Manager,Admin")]
-@inject ApiClient ApiClient
-@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
-@inject ILifeCycleService LifeCycleService
-@inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
+@page "/ppdm39/compliance/report"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Compliance,Manager,Admin")]
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.Process
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IBusinessProcessServiceClient BusinessProcessClient
+@inject ILogger<ComplianceReport> Logger
 
-<PageTitle>Submit Compliance Report</PageTitle>
-
+<PageTitle>Start compliance report process</PageTitle>
 <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
-
-    @* ── Header ──────────────────────────────────────────────────────── *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance")' />
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Submit Compliance Report</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Submit regulatory obligation report to jurisdiction authority</MudText>
+    <MudText Typo="Typo.h5" HtmlTag="h1">Start a compliance report process</MudText>
+    <MudAlert Severity="Severity.Info" Class="my-3">This starts an internal workflow. It does not send a report to a regulator or link the workflow to a recorded obligation.</MudAlert>
+    @if (!string.IsNullOrEmpty(_message)) { <MudAlert Severity="@(_confirmed ? Severity.Info : Severity.Warning)" Class="mb-3">@_message</MudAlert> }
+    @if (_uncertain || _confirmed) { <MudButton Href="/tasks/inbox" Variant="Variant.Outlined" Class="mb-3">Open workflow inbox</MudButton> }
+    @if (_review is not null)
+    {
+        <MudText Class="mb-3">Selected FIELD: @_fieldName</MudText>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_jurisdiction" Label="Jurisdiction" Required="true" MaxLength="128" Disabled="@(_submitting || _uncertain || _confirmed)" />
+            <MudTextField @bind-Value="_type" Label="Configured process obligation type" Required="true" MaxLength="128" Disabled="@(_submitting || _uncertain || _confirmed)" HelperText="Enter the type used by the company's configured compliance process." />
+            <MudDatePicker @bind-Date="_start" Label="Reporting period start" Required="true" Disabled="@(_submitting || _uncertain || _confirmed)" />
+            <MudDatePicker @bind-Date="_end" Label="Reporting period end" Required="true" Disabled="@(_submitting || _uncertain || _confirmed)" />
+            <MudTextField @bind-Value="_reference" Label="External reference, if available" MaxLength="128" Disabled="@(_submitting || _uncertain || _confirmed)" />
+            <MudStack Row="true" Spacing="2">
+                <MudButton Href="/ppdm39/compliance/obligations" Variant="Variant.Outlined">Back to obligations</MudButton>
+                <MudButton OnClick="SubmitAsync" Disabled="@(_submitting || _uncertain || _confirmed)" Variant="Variant.Filled" Color="Color.Primary">@(_submitting ? "Starting…" : "Start internal process")</MudButton>
+            </MudStack>
         </MudStack>
-    </MudStack>
-
-    <MudForm @ref="_form">
-        <MudCard Elevation="2" Class="mb-4">
-            <MudCardHeader>
-                <CardHeaderContent>
-                    <MudText Typo="Typo.subtitle1">Jurisdiction &amp; Obligation</MudText>
-                </CardHeaderContent>
-            </MudCardHeader>
-            <MudCardContent>
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" sm="6">
-                        <MudSelect T="string" @bind-Value="_jurisdictionTag" Label="Jurisdiction" Required="true"
-                                   Variant="Variant.Outlined" RequiredError="Jurisdiction is required">
-                            <MudSelectItem Value='"USA"'>USA — ONRR / State</MudSelectItem>
-                            <MudSelectItem Value='"CAN"'>Canada — CAPP / AER / NEB</MudSelectItem>
-                            <MudSelectItem Value='"INTL"'>International — Country-specific</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudSelect T="string" @bind-Value="_obligationType" Label="Obligation Type" Required="true"
-                                   Variant="Variant.Outlined" RequiredError="Type is required">
-                            <MudSelectItem Value='"PRODUCTION_REPORT"'>Monthly Production Report</MudSelectItem>
-                            <MudSelectItem Value='"ROYALTY_RETURN"'>Royalty Return</MudSelectItem>
-                            <MudSelectItem Value='"FLARING_DECLARATION"'>Flaring Volume Declaration</MudSelectItem>
-                            <MudSelectItem Value='"ENVIRONMENTAL_REPORT"'>Environmental Compliance</MudSelectItem>
-                            <MudSelectItem Value='"WELL_INTEGRITY"'>Annual Well Integrity</MudSelectItem>
-                            <MudSelectItem Value='"OTHER"'>Other</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudDatePicker @bind-Date="_periodStart" Label="Period Start" Required="true"
-                                       Variant="Variant.Outlined" RequiredError="Period start is required" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudDatePicker @bind-Date="_periodEnd" Label="Period End" Required="true"
-                                       Variant="Variant.Outlined" RequiredError="Period end is required" />
-                    </MudItem>
-                </MudGrid>
-            </MudCardContent>
-        </MudCard>
-
-        <MudCard Elevation="2" Class="mb-4">
-            <MudCardHeader>
-                <CardHeaderContent>
-                    <MudText Typo="Typo.subtitle1">Report Content</MudText>
-                </CardHeaderContent>
-            </MudCardHeader>
-            <MudCardContent>
-                <MudGrid Spacing="3">
-                    <MudItem xs="12">
-                        <MudTextField @bind-Value="_reportData" Label="Report Data / Reference (JSON or Reference Number)"
-                                      Lines="5" Variant="Variant.Outlined"
-                                      HelperText="Enter JSON data, report reference number, or summary text" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudTextField @bind-Value="_submissionReference" Label="Submission Reference (optional)"
-                                      Variant="Variant.Outlined"
-                                      HelperText="External reference assigned by regulatory authority" />
-                    </MudItem>
-                </MudGrid>
-            </MudCardContent>
-        </MudCard>
-
-        <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
-            <MudButton Variant="Variant.Outlined"
-                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance")'>
-                Cancel
-            </MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.Send"
-                       Disabled="@_submitting"
-                       OnClick="SubmitReportAsync">
-                @(_submitting ? "Submitting…" : "Submit Report")
-            </MudButton>
-        </MudStack>
-    </MudForm>
-
+    }
+    else { <MudButton OnClick="LoadFieldAsync" Disabled="@_submitting">Review current FIELD</MudButton> }
 </MudContainer>
 
-@using Microsoft.AspNetCore.Authorization
-@using Beep.OilandGas.Models.Data
-@using Beep.OilandGas.Models.Data.Process
-
 @code {
-    private string _fieldName = string.Empty;
-    private string    _jurisdictionTag     = string.Empty;
-    private string    _obligationType      = string.Empty;
-    private DateTime? _periodStart         = null;
-    private DateTime? _periodEnd           = null;
-    private string    _reportData          = string.Empty;
-    private string    _submissionReference = string.Empty;
-    private bool      _submitting          = false;
-
-    private MudForm _form = null!;
-
-    protected override async Task OnInitializedAsync()
+    private FieldSelectionReview? _review;
+    private string _fieldName = "", _jurisdiction = "", _type = "", _reference = "";
+    private string? _message;
+    private DateTime? _start, _end;
+    private bool _submitting, _uncertain, _confirmed, _disposed;
+    private long _generation;
+    private readonly HashSet<(CompanyScope Company, string Actor, string Database, string? Field)> _pending = [];
+    private static (CompanyScope, string, string, string?) Key(FieldSelectionReview review) => (review.Company, review.ActorUserId, review.Database.Fingerprint, review.FieldId);
+    protected override async Task OnInitializedAsync() { Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; await LoadFieldAsync(); }
+    private async Task LoadFieldAsync()
     {
+        _review = null; var generation = ++_generation; var selected = Company.Snapshot;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot;
         try
         {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
+            if (selected.Selection is null) { _message = "Choose a company and FIELD first."; return; }
+            var field = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(field, selected.Selection.Scope, selected.Selection.UserId);
+            if (!field.SelectionAvailable) { _message = "Choose an available FIELD first."; return; }
+            _review = field.SelectionContext; _fieldName = string.IsNullOrWhiteSpace(field.FieldName) ? field.FieldId : field.FieldName;
+            _uncertain = _review is not null && _pending.Contains(Key(_review));
+            _message = _uncertain ? "A process outcome is unconfirmed for this FIELD. Review the workflow inbox before starting another process." : null;
         }
-        catch
-        {
-            // Header field name is helpful but non-blocking for report submission.
-        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Could not review compliance process FIELD"); _message = "The current FIELD could not be confirmed."; } }
     }
-
-    private async Task SubmitReportAsync()
+    private static bool ValidText(string? value, bool required = true) => (!required && string.IsNullOrEmpty(value)) || !string.IsNullOrWhiteSpace(value) && value.Length <= 128 && value == value.Trim() && !value.Any(char.IsControl);
+    private async Task SubmitAsync()
     {
-        await _form.ValidateAsync();
-        if (!_form.IsValid) return;
-
-        _submitting = true;
+        if (_review is null || _submitting || _uncertain || _confirmed) return;
+        if (!ValidText(_jurisdiction) || !ValidText(_type) || !ValidText(_reference, false) || _start is null || _end is null || _end <= _start)
+        { _message = "Enter a jurisdiction, configured type and reporting period with an end after its start."; return; }
+        var review = _review; var selected = Company.Snapshot; var generation = _generation;
+        var request = new ComplianceReportRequest { JurisdictionTag = _jurisdiction, ObligationType = _type, PeriodStart = _start.Value, PeriodEnd = _end.Value, SubmissionReference = _reference };
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot && _review == review;
+        _submitting = true; var attempted = false;
         try
         {
-            var request = new ComplianceReportRequest
-            {
-                JurisdictionTag      = _jurisdictionTag,
-                ObligationType       = _obligationType,
-                PeriodStart          = _periodStart ?? DateTime.Today,
-                PeriodEnd            = _periodEnd   ?? DateTime.Today,
-                ReportData           = _reportData,
-                SubmissionReference  = _submissionReference
-            };
-            await BusinessProcessClient.SubmitComplianceReportAsync(request);
-            Snackbar.Add("Compliance report submitted successfully.", Severity.Success);
-            NavigationManager.NavigateTo("/ppdm39/compliance");
+            var field = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(field, review.Company, review.ActorUserId);
+            if (!field.SelectionAvailable || field.SelectionContext != review) { ContextChanged(); return; }
+            _pending.Add(Key(review)); attempted = true; var instance = await BusinessProcessClient.SubmitComplianceReportAsync(request); if (!Current()) return;
+            field = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(field, review.Company, review.ActorUserId);
+            if (!field.SelectionAvailable || field.SelectionContext != review) { ContextChanged(); return; }
+            if (instance is null || !LeaseSummaryValidator.Identifier(instance.InstanceId) || !LeaseSummaryValidator.Identifier(instance.EntityId) || instance.EntityType != "COMPLIANCE_REPORT" || instance.FieldId != review.FieldId)
+                throw new InvalidOperationException("The internal process response was unavailable or mismatched.");
+            _pending.Remove(Key(review)); _confirmed = true; _message = $"Internal process {instance.InstanceId} was accepted. Review it in the workflow inbox. No regulator submission is confirmed.";
         }
-        catch (Exception)
+        catch (Exception error)
         {
-            Snackbar.Add("Submission failed.", Severity.Error);
+            if (Current()) { Logger.LogWarning(error, "Compliance report process request could not be confirmed"); _uncertain = attempted; _message = attempted ? "The process outcome is unconfirmed. Review the workflow inbox before starting another process." : "The current FIELD could not be confirmed."; }
         }
-        finally
-        {
-            _submitting = false;
-        }
+        finally { _submitting = false; }
     }
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged() { ++_generation; _review = null; _fieldName = ""; _jurisdiction = ""; _type = ""; _reference = ""; _start = null; _end = null; _confirmed = false; _uncertain = false; _message = "Company or FIELD changed. Review the current FIELD before continuing."; if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }
 }

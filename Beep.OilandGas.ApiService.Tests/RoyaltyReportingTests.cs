@@ -124,11 +124,11 @@ public class RoyaltyReportingTests
     {
         var accounting = new Mock<IAccountingService>(MockBehavior.Strict);
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
-        access.Setup(a => a.CheckAssetAccessAsync("local", "field-a", "FIELD", null)).ReturnsAsync(new AccessCheckResponse { HasAccess = false });
+        access.Setup(a => a.CheckAssetAccessAsync("local", "field-a", "FIELD", null, null)).ReturnsAsync(new AccessCheckResponse { HasAccess = false });
         var controller = Controller(accounting.Object, true);
         Assert.IsType<ForbidResult>((await controller.GetRoyaltyCalculations(access.Object, "field-a")).Result);
         accounting.VerifyNoOtherCalls();
-        access.Setup(a => a.CheckAssetAccessAsync("local", "field-a", "FIELD", null)).ReturnsAsync(new AccessCheckResponse { HasAccess = true });
+        access.Setup(a => a.CheckAssetAccessAsync("local", "field-a", "FIELD", null, null)).ReturnsAsync(new AccessCheckResponse { HasAccess = true });
         accounting.Setup(a => a.GetRoyaltyCalculationsAsync("field-a", null, null)).ReturnsAsync(new List<ROYALTY_CALCULATION>());
         Assert.IsType<OkObjectResult>((await controller.GetRoyaltyCalculations(access.Object, "field-a")).Result);
     }

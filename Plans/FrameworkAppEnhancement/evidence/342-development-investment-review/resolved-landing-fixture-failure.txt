@@ -1,0 +1,14 @@
+Initial landing cases failed because the bUnit service provider was resolved by navigation before the test registered authorization/services. Registration moved before service resolution; product authorization was unchanged. The targeted three cases and the final combined gate pass.
+
+  Failed Beep.OilandGas.Web.Auth.Tests.DevelopmentInvestmentStateTests.ActualAccountingLandingRequiresStandardCurrentRoleAndViewsForInvestmentQueueEntry(views: False, role: True) [32 ms]
+  Error Message:
+   System.InvalidOperationException : New services/implementations cannot be registered with the Services provider in a TestContext, after the first services has been retrieved from it using e.g. the GetService or GetRequiredService methods. This typically happens when a component is rendered, so make sure all services are added before that.
+  Stack Trace:
+     at Bunit.TestServiceProvider.CheckInitializedAndThrow() in /_/src/bunit.core/TestServiceProvider.cs:line 270
+   at Bunit.TestServiceProvider.Add(ServiceDescriptor item) in /_/src/bunit.core/TestServiceProvider.cs:line 213
+   at Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(IServiceCollection services, Type serviceType, Type implementationType)
+   at Bunit.TestDoubles.FakeAuthorizationExtensions.AddTestAuthorization(TestContextBase context) in /_/src/bunit.web/TestDoubles/Authorization/FakeAuthorizationExtensions.cs:line 23
+   at Beep.OilandGas.Web.Auth.Tests.DevelopmentInvestmentStateTests.ActualAccountingLandingRequiresStandardCurrentRoleAndViewsForInvestmentQueueEntry(Boolean views, Boolean role) in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web.Auth.Tests\DevelopmentInvestmentStateTests.cs:line 125
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+

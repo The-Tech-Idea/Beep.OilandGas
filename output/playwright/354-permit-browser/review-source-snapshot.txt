@@ -1,0 +1,66 @@
+### Page
+- Page URL: http://127.0.0.1:51176/ppdm39/permits/detail?applicationId=review%2F%D8%B4%D8%B1%D9%83%D8%A9%3F1
+### Snapshot
+```yaml
+- generic [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - generic [ref=f2e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=f2e10]:
+      - button "Fixture author" [ref=f2e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=f2e13] [cursor=pointer]
+      - button "Fixture read only" [ref=f2e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=f2e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=f2e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=f2e21] [cursor=pointer]
+      - link "HSE landing" [ref=f2e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=f2e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=f2e203]:
+    - heading "Recorded permit application" [level=1] [ref=f2e204]
+    - group [ref=f2e205]:
+      - link "Permit applications" [ref=f2e206] [cursor=pointer]:
+        - /url: /ppdm39/permits
+      - button "Reload recorded application" [ref=f2e208] [cursor=pointer]
+    - paragraph [ref=f2e210]: Company company · FIELD Fixture FIELD A · application review/شركة?1
+    - generic [ref=f2e211]: Read checked 2026-10-29 14:55:33Z. Source dates below are displayed as recorded; their time zones are not established here.
+    - generic [ref=f2e212]:
+      - heading "Application details" [level=2] [ref=f2e213]
+      - paragraph [ref=f2e214]: "Type: Drilling"
+      - paragraph [ref=f2e215]: "Authority: Other"
+      - paragraph [ref=f2e216]: "Applicant: Recorded applicant"
+      - paragraph [ref=f2e217]: "Status: Submitted"
+      - paragraph [ref=f2e218]: "Decision: Not recorded"
+      - paragraph [ref=f2e219]: "Created: Not recorded · Submitted: Not recorded · Decision date: Not recorded"
+    - generic [ref=f2e220]:
+      - heading "Recorded status history" [level=2] [ref=f2e221]
+      - paragraph [ref=f2e222]: No status history was returned for this application.
+    - generic [ref=f2e223]:
+      - heading "Automated checker result" [level=2] [ref=f2e224]
+      - paragraph [ref=f2e225]: No automated checker result was returned.
+    - group [ref=f2e227]:
+      - heading "Reviewed permit workflow" [level=2] [ref=f2e228]
+      - paragraph [ref=f2e229]: Review the exact application before submission or an independent decision. The server rechecks current permissions and FIELD write authority.
+      - button "Read retained permit original" [ref=f2e230] [cursor=pointer]
+      - button "Review application for workflow" [active] [ref=f2e232] [cursor=pointer]
+      - paragraph [ref=f2e235]: Application review/شركة?1 · FIELD A
+      - paragraph [ref=f2e236]: Country Kuwait · region Other · authority Other
+      - paragraph [ref=f2e237]: Applicant Recorded applicant · status Submitted
+      - paragraph [ref=f2e238]: "Submitting account: issuer"
+      - generic [ref=f2e239]: Reviewed source 521B28EE8E7AC068831225D56D7BF770115192F2D2429379C22535C1B67398E2 · recorded history entries 0
+      - generic [ref=f2e240]:
+        - generic [ref=f2e241]:
+          - textbox "Reason for this permit action*" [ref=f2e243]
+          - generic: Reason for this permit action*
+        - generic [ref=f2e245]:
+          - generic [ref=f2e246]: Enter 20 to 2000 characters explaining the action against this reviewed evidence.
+          - generic [ref=f2e247]: 0 / 2000
+      - generic [ref=f2e250] [cursor=pointer]:
+        - checkbox "I checked this application, country, authority and recorded history for this action." [ref=f2e252]
+        - generic [ref=f2e256]: I checked this application, country, authority and recorded history for this action.
+      - group [ref=f2e257]:
+        - button "Record independent approval" [disabled]
+        - button "Record independent rejection" [disabled]
+        - button "Request correction" [disabled]
+      - generic [ref=f2e234]: An internal workflow decision does not establish regulator clearance, legal compliance or permission to operate.
+```

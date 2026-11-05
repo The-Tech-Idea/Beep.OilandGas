@@ -8,8 +8,6 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Services;
-using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,9 +22,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
     /// <summary>
     /// Concrete implementation of process service that stores process data in database
     /// </summary>
-    public class PPDMProcessService : ProcessServiceBase
+    public partial class PPDMProcessService : ProcessServiceBase, TheTechIdea.Data.OilGas.ICompanyAccountingProcessCommands, TheTechIdea.Data.OilGas.ICompanyMaintenanceProcessCommands, TheTechIdea.Data.OilGas.ICompanyMaintenanceAcceptanceCommands, TheTechIdea.Data.OilGas.ICompanyHseWorkflowCommands
     {
         private readonly ILoggerFactory? _loggerFactory;
+        private readonly IRolePersonaReader? _personaReader;
         private PPDMGenericRepository? _processDefinitionRepository;
         private PPDMGenericRepository? _processInstanceRepository;
         private PPDMGenericRepository? _processStepInstanceRepository;
@@ -40,10 +39,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
             ILogger<PPDMProcessService>? logger = null,
-            ILoggerFactory? loggerFactory = null)
+            ILoggerFactory? loggerFactory = null,
+            IRolePersonaReader? personaReader = null)
             : base(editor, commonColumnHandler, defaults, metadata, connectionName, logger)
         {
             _loggerFactory = loggerFactory;
+            _personaReader = personaReader;
         }
 
         #region Process Definition Management
@@ -198,15 +199,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
                 foreach (var result in results)
                 {
-                    var processInstance = result as PROCESS_INSTANCE;
-                    if (processInstance != null && !string.IsNullOrEmpty(processInstance.PROCESS_INSTANCE_ID))
-                    {
-                        var instance = await LoadProcessInstanceAsync(processInstance.PROCESS_INSTANCE_ID);
-                        if (instance != null)
-                        {
-                            instances.Add(instance);
-                        }
-                    }
+                    if(result is not PROCESS_INSTANCE processInstance || string.IsNullOrWhiteSpace(processInstance.PROCESS_INSTANCE_ID) ||
+                        processInstance.ENTITY_ID!=entityId || processInstance.ENTITY_TYPE!=entityType || instances.Any(row=>row.InstanceId==processInstance.PROCESS_INSTANCE_ID))
+                        throw new InvalidOperationException("Complete unique source process rows are required.");
+                    var instance=await LoadProcessInstanceAsync(processInstance.PROCESS_INSTANCE_ID) ?? throw new InvalidOperationException("A listed source process is unavailable.");
+                    if(instance.InstanceId!=processInstance.PROCESS_INSTANCE_ID || instance.EntityId!=entityId || instance.EntityType!=entityType)
+                        throw new InvalidOperationException("A listed process changed its source identity.");
+                    instances.Add(instance);
                 }
 
                 return instances;
@@ -288,6 +287,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         public override async Task<bool> SkipStepAsync(string instanceId, string stepId, string reason, string userId)
         {
+            RequireReviewedHseMutation(await LoadProcessInstanceAsync(instanceId), stepId);
             try
             {
                 var instance = await LoadProcessInstanceAsync(instanceId);
@@ -522,6 +522,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         {
             try
             {
+                await RejectUnqualifiedInvestmentMutationAsync(instanceId);
                 var repo = GetProcessHistoryRepository();
                 var entity = ConvertToProcessHistoryEntity(entry);
                 entity.PROCESS_HISTORY_ID = entry.HistoryId ?? GenerateHistoryId();
@@ -641,6 +642,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 {
                     processInstanceId = stepEntity.PROCESS_INSTANCE_ID ?? string.Empty;
                 }
+                RequireReviewedHseMutation(await LoadProcessInstanceAsync(processInstanceId), approval: true);
+                await RejectUnqualifiedInvestmentMutationAsync(processInstanceId);
 
                 var entity = new PROCESS_APPROVAL
                 {
@@ -681,6 +684,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 {
                     return false;
                 }
+                RequireReviewedHseMutation(await LoadProcessInstanceAsync(entity.PROCESS_INSTANCE_ID!), approval: true);
+                await RejectUnqualifiedInvestmentMutationAsync(entity.PROCESS_INSTANCE_ID);
                 entity.APPROVAL_STATUS = "APPROVED";
                 entity.APPROVAL_DATE = DateTime.UtcNow;
                 entity.APPROVED_BY = approvedBy;
@@ -714,6 +719,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 {
                     return false;
                 }
+                await RejectUnqualifiedInvestmentMutationAsync(entity.PROCESS_INSTANCE_ID);
+                RequireReviewedHseMutation(await LoadProcessInstanceAsync(entity.PROCESS_INSTANCE_ID!), approval: true);
                 entity.APPROVAL_STATUS = "REJECTED";
                 entity.APPROVAL_DATE = DateTime.UtcNow;
                 entity.APPROVED_BY = rejectedBy;
@@ -742,6 +749,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         private async Task SaveProcessInstanceAsync(ProcessInstance instance, string userId)
         {
+            RejectUnqualifiedInvestmentMutation(instance);
             try
             {
                 var repo = GetProcessInstanceRepository();
@@ -891,9 +899,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 ProcessType = processDef.PROCESS_TYPE ?? string.Empty,
                 EntityType = processDef.ENTITY_TYPE ?? string.Empty,
                 Description = processDef.DESCRIPTION ?? string.Empty,
-                Version = processDef.VERSION ?? "1.0",
-                IsActive = processDef.IS_ACTIVE == "Y",
-                CreatedDate = processDef.ROW_CREATED_DATE ?? DateTime.UtcNow,
+                Version = processDef.VERSION ?? string.Empty,
+                IsActive = processDef.IS_ACTIVE == "Y" && processDef.ACTIVE_IND == "Y",
+                CreatedDate = processDef.ROW_CREATED_DATE ?? default,
                 CreatedBy = processDef.ROW_CREATED_BY ?? string.Empty,
                 Steps = new List<ProcessStepDefinition>(),
                 Transitions = new Dictionary<string, ProcessTransition>(),

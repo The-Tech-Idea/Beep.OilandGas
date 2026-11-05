@@ -1,13 +1,20 @@
-﻿@page "/ppdm39/hse/incidents"
+@page "/ppdm39/hse/incidents"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Models.Data.Process
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject Beep.OilandGas.Web.Services.IHSEServiceClient HSEClient
-@inject ILifeCycleService LifeCycleService
+@inject Beep.OilandGas.Web.Services.IIncidentReportIntentStore ReportIntents
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ILogger<HSEIncidents> Logger
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
 
 <PageTitle>Manage HSE Incidents</PageTitle>
 
@@ -19,14 +26,25 @@
             <MudText Typo="Typo.h5">Manage HSE Incidents</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Report, track, and close-out field incidents</MudText>
         </MudStack>
+        <MudButton OnClick="LoadIncidentsAsync" Variant="Variant.Outlined">Reload incidents</MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Error"
                    StartIcon="@Icons.Material.Filled.AddAlert"
-                   Disabled="@_requiresLogin"
+                   Disabled="@(!_loaded || !_canReport || _reporting || _optionsLoading || ReportOutcomeUnconfirmed())"
                    OnClick="OpenReportDialogAsync">
             Report Incident
         </MudButton>
     </MudStack>
+    @if (_retainedReport is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-3">
+            A previous report submission could not be confirmed. Reconcile the original report before preparing another.
+            <MudButton OnClick="RetryReportAsync" Disabled="@(_reporting || !_loaded || !_canReport)" Variant="Variant.Outlined">Reconcile original report</MudButton>
+        </MudAlert>
+    }
+    else if (_retentionUnavailable)
+    { <MudAlert Severity="Severity.Warning" Class="mb-3">The saved report state is unavailable. Reload this page before reporting an incident.</MudAlert> }
+
 
     @if (!string.IsNullOrWhiteSpace(_loadWarning))
     {
@@ -48,15 +66,22 @@
         </MudAlert>
     }
 
+    @if (_loaded)
+    {
     @* ── KPI chips ───────────────────────────────────────────────────── *@
     <MudStack Row="true" Spacing="2" Class="mb-4" Wrap="Wrap.Wrap">
-        <MudChip T="string" Color="Color.Error"    Icon="@Icons.Material.Filled.Error">Tier 1: @_tier1Count fatal/PTD</MudChip>
-        <MudChip T="string" Color="Color.Warning"  Icon="@Icons.Material.Filled.Warning">Tier 2: @_tier2Count LTI</MudChip>
-        <MudChip T="string" Color="Color.Info"     Icon="@Icons.Material.Filled.Info">Tier 3: @_tier3Count MTC/RWC</MudChip>
-        <MudChip T="string" Color="Color.Success"  Icon="@Icons.Material.Filled.CheckCircle">Tier 4: @_tier4Count First Aid</MudChip>
+        <MudChip T="string" Color="Color.Error"    Icon="@Icons.Material.Filled.Error">Recorded tier 1: @_tier1Count</MudChip>
+        <MudChip T="string" Color="Color.Warning"  Icon="@Icons.Material.Filled.Warning">Recorded tier 2: @_tier2Count</MudChip>
+        <MudChip T="string" Color="Color.Info"     Icon="@Icons.Material.Filled.Info">Recorded tier 3: @_tier3Count</MudChip>
+        <MudChip T="string" Color="Color.Success"  Icon="@Icons.Material.Filled.CheckCircle">Recorded tier 4: @_tier4Count</MudChip>
         <MudDivider Vertical="true" FlexItem="true" />
         <MudChip T="string" Color="Color.Default">Open: @_openCount</MudChip>
         <MudChip T="string" Color="Color.Success">Closed: @_closedCount</MudChip>
+        <MudChip T="string" Color="Color.Default">Cancelled: @_cancelledCount</MudChip>
+        @if (_unknownStateCount > 0)
+        {
+            <MudChip T="string" Color="Color.Warning">Other or unrecorded state: @_unknownStateCount</MudChip>
+        }
         @if (_missingWorkflowCount > 0)
         {
             <MudChip T="string" Color="Color.Warning" Icon="@Icons.Material.Filled.SyncProblem">
@@ -72,19 +97,22 @@
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
                           Immediate="true" />
-            <MudSelect T="string" @bind-Value="_tierFilter" Label="API RP 754 Tier">
+            <MudSelect T="string" @bind-Value="_tierFilter" Label="Recorded tier">
                 <MudSelectItem Value='""'>All Tiers</MudSelectItem>
-                <MudSelectItem Value='"1"'>Tier 1 — Fatal/PTD</MudSelectItem>
-                <MudSelectItem Value='"2"'>Tier 2 — LTI</MudSelectItem>
-                <MudSelectItem Value='"3"'>Tier 3 — MTC/RWC</MudSelectItem>
-                <MudSelectItem Value='"4"'>Tier 4 — First Aid</MudSelectItem>
+                <MudSelectItem Value='"1"'>Tier 1</MudSelectItem>
+                <MudSelectItem Value='"2"'>Tier 2</MudSelectItem>
+                <MudSelectItem Value='"3"'>Tier 3</MudSelectItem>
+                <MudSelectItem Value='"4"'>Tier 4</MudSelectItem>
             </MudSelect>
             <MudSelect T="string" @bind-Value="_statusFilter" Label="Status">
                 <MudSelectItem Value='""'>All</MudSelectItem>
-                <MudSelectItem Value='"OPEN"'>Open</MudSelectItem>
-                <MudSelectItem Value='"UNDER INVESTIGATION"'>Under Investigation</MudSelectItem>
-                <MudSelectItem Value='"RCA IN PROGRESS"'>RCA In Progress</MudSelectItem>
-                <MudSelectItem Value='"CLOSED"'>Closed</MudSelectItem>
+                <MudSelectItem Value='@IncidentState.Reported'>Reported</MudSelectItem>
+                <MudSelectItem Value='@IncidentState.UnderInvestigation'>Under investigation</MudSelectItem>
+                <MudSelectItem Value='@IncidentState.PendingRCA'>Pending RCA</MudSelectItem>
+                <MudSelectItem Value='@IncidentState.PendingCorrectiveAction'>Pending corrective action</MudSelectItem>
+                <MudSelectItem Value='@IncidentState.PendingCloseOut'>Pending close-out</MudSelectItem>
+                <MudSelectItem Value='@IncidentState.Closed'>Closed</MudSelectItem>
+                <MudSelectItem Value='@IncidentState.Cancelled'>Cancelled</MudSelectItem>
             </MudSelect>
         </MudStack>
     </MudPaper>
@@ -96,12 +124,13 @@
                  Hover="true"
                  Striped="true"
                  Sortable="true"
-                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(e.Item.IncidentId)}"))">
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/hse/incident-detail?incidentId={Uri.EscapeDataString(e.Item.IncidentId)}"))">
         <Columns>
             <PropertyColumn Property="r => r.IncidentDate" Title="Date"         Format="dd-MMM-yy" />
             <PropertyColumn Property="r => r.IncidentType" Title="Type" />
             <PropertyColumn Property="r => r.Description"  Title="Description" />
             <PropertyColumn Property="r => r.Location"     Title="Location" />
+            <PropertyColumn Property="r => r.Jurisdiction" Title="Reported jurisdiction" />
             <TemplateColumn Title="Tier" Sortable="false">
                 <CellTemplate>
                     <HSEIncidentSeverityBadge Tier="@context.Item.Tier" />
@@ -126,21 +155,16 @@
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                        @if (!context.Item.HasWorkflow)
+                        @if (_review is not null && _canManage)
                         {
-                            <MudButton Variant="Variant.Text"
-                                       Size="Size.Small"
-                                       Color="Color.Warning"
-                                       StartIcon="@Icons.Material.Filled.Sync"
-                                       Disabled="@(_ensuringWorkflowIncidentId == context.Item.IncidentId)"
-                                       OnClick='@(() => EnsureWorkflowAsync(context.Item.IncidentId))'>
-                                @(_ensuringWorkflowIncidentId == context.Item.IncidentId ? "Creating..." : "Create Workflow")
-                            </MudButton>
+                            <HseWorkflowStart CanStart="@IsOpen(context.Item.Status)" Context="_review" IncidentId="@context.Item.IncidentId" HasWorkflow="@context.Item.HasWorkflow" CanManage="_canManage" OnConfirmed="LoadIncidentsAsync" />
                         }
 
                         <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
                                        Size="Size.Small" Color="Color.Primary"
-                                       OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(context.Item.IncidentId)}"))' />
+                                       OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/hse/incident-detail?incidentId={Uri.EscapeDataString(context.Item.IncidentId)}"))' />
+                        <div @onclick:stopPropagation="true"><MudButton Href='@($"/hse/incidents/investigator?incidentId={Uri.EscapeDataString(context.Item.IncidentId)}")' Size="Size.Small" Variant="Variant.Outlined">Review investigator</MudButton></div>
+                        <div @onclick:stopPropagation="true"><MudButton Href='@($"/hse/incidents/corrective-plan?incidentId={Uri.EscapeDataString(context.Item.IncidentId)}")' Size="Size.Small" Variant="Variant.Outlined">Corrective action plan</MudButton></div>
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
@@ -149,6 +173,7 @@
             <MudDataGridPager T="IncidentRow" />
         </PagerContent>
     </MudDataGrid>
+    }
 
 </MudContainer>
 
@@ -162,33 +187,27 @@
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3">
-            <MudSelect @bind-Value="_rIncidentType" Label="Incident Type" Variant="Variant.Outlined" Required="true">
-                <MudSelectItem Value='"SPILL"'>Spill / Release</MudSelectItem>
-                <MudSelectItem Value='"FIRE"'>Fire / Explosion</MudSelectItem>
-                <MudSelectItem Value='"INJURY"'>Personal Injury</MudSelectItem>
-                <MudSelectItem Value='"NEAR_MISS"'>Near Miss</MudSelectItem>
-                <MudSelectItem Value='"ENVIRONMENTAL"'>Environmental</MudSelectItem>
-                <MudSelectItem Value='"PROPERTY_DAMAGE"'>Property Damage</MudSelectItem>
-                <MudSelectItem Value='"PROCESS_SAFETY"'>Process Safety</MudSelectItem>
+            @if (_optionsLoading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+            @if (_optionsMessage is not null) { <MudAlert Severity="Severity.Warning">@_optionsMessage</MudAlert> }
+            <MudSelect T="IncidentReportOption" @bind-Value="_rOption" ToStringFunc="FormatReportOption" Label="Recorded incident set, type and tier" Variant="Variant.Outlined" Required="true" Disabled="@(_optionsLoading || _reportOptions is null)">
+                @if (_reportOptions is not null)
+                {
+                    @foreach (var option in _reportOptions.Options)
+                    { <MudSelectItem T="IncidentReportOption" Value="@option">@option.IncidentSetId · @option.IncidentTypeId · @option.SeverityId</MudSelectItem> }
+                }
             </MudSelect>
-            <MudSelect @bind-Value="_rTier" T="int" Label="API RP 754 Tier" Variant="Variant.Outlined">
-                <MudSelectItem Value="1">Tier 1 — Fatality / PTD</MudSelectItem>
-                <MudSelectItem Value="2">Tier 2 — Lost Time Injury</MudSelectItem>
-                <MudSelectItem Value="3">Tier 3 — MTC / RWC</MudSelectItem>
-                <MudSelectItem Value="4">Tier 4 — First Aid / Near Miss</MudSelectItem>
-            </MudSelect>
-            <MudDatePicker @bind-Date="_rIncidentDateNullable" Label="Incident Date" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_rIncidentTimestamp" Label="Incident time with UTC offset" HelperText="Use ISO 8601, for example 2026-10-27T15:30+03:00 or 2026-10-27T12:30Z." Variant="Variant.Outlined" Required="true" />
             <MudTextField @bind-Value="_rLocation" Label="Location" Variant="Variant.Outlined" Required="true" />
+            <MudTextField @bind-Value="_rJurisdiction" Label="Jurisdiction" Variant="Variant.Outlined" Required="true" MaxLength="128" />
             <MudTextField @bind-Value="_rDescription" Label="Description" Variant="Variant.Outlined"
                           Lines="3" Required="true" />
-            <MudTextField @bind-Value="_rJurisdiction" Label="Jurisdiction" Variant="Variant.Outlined" />
         </MudStack>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(() => _showReportDialog = false)" Disabled="@_reporting">Cancel</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Error"
                    StartIcon="@Icons.Material.Filled.Send"
-                   Disabled="@_reporting"
+                   Disabled="@(_reporting || _optionsLoading || _reportOptions is null || _rOption is null)"
                    OnClick="SubmitReportAsync">
             @(_reporting ? "Submitting…" : "Submit Report")
         </MudButton>
@@ -207,62 +226,109 @@
     private int _tier4Count = 0;
     private int _openCount  = 0;
     private int _closedCount = 0;
+    private int _cancelledCount = 0;
+    private int _unknownStateCount = 0;
     private int _missingWorkflowCount = 0;
     private string? _loadWarning;
     private bool _requiresLogin;
+    private bool _loaded;
+    private bool _canManage;
+    private bool _canReport;
+    private bool _disposed;
+    private long _generation;
+    private FieldSelectionReview? _review;
+    private IncidentReportIntent? _retainedReport;
+    private bool _storageReady, _retentionChecked, _retentionUnavailable;
 
     private List<IncidentRow> _incidents = new();
 
     private IEnumerable<IncidentRow> FilteredIncidents => _incidents.Where(i =>
         (string.IsNullOrWhiteSpace(_search) ||
-            i.Description.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
-            i.IncidentType.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            i.IncidentId.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            i.Description?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+            i.IncidentType?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+            i.Location?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+            i.Jurisdiction?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
             i.WorkflowStatus.Contains(_search, StringComparison.OrdinalIgnoreCase)) &&
         (string.IsNullOrWhiteSpace(_tierFilter)   || i.Tier   == _tierFilter) &&
-        (string.IsNullOrWhiteSpace(_statusFilter) || i.Status.Equals(_statusFilter, StringComparison.OrdinalIgnoreCase)));
+        (string.IsNullOrWhiteSpace(_statusFilter) || string.Equals(i.Status, _statusFilter, StringComparison.OrdinalIgnoreCase)));
+
+    private static bool IsOpen(string? status) => status is IncidentState.Reported or IncidentState.UnderInvestigation or
+        IncidentState.PendingRCA or IncidentState.PendingCorrectiveAction or IncidentState.PendingCloseOut;
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
-        }
-        catch
-        {
-            // Field name is helpful for the header but non-blocking for incident operations.
-        }
-
+        Company.Changed += ContextChanged;
+        Fields.CurrentFieldChanged += FieldChanged;
+        Authentication.AuthenticationStateChanged += AuthenticationChanged;
         await LoadIncidentsAsync();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _storageReady = true;
+        await RefreshRetainedReportAsync();
+        if (!_disposed) await InvokeAsync(StateHasChanged);
+    }
+    private void FieldChanged(string _) => ContextChanged();
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> _) => ContextChanged();
+    private void ContextChanged()
+    {
+        ++_generation; _loaded=false; _canManage=false; _canReport=false; _review=null; _incidents=new(); _fieldName=string.Empty; _requiresLogin=false;
+        _showReportDialog=false; _reportOptions=null; _rOption=null; _retainedReport=null; _retentionChecked=false; _retentionUnavailable=false; _loadWarning="Company or FIELD changed. Reload incidents for the current selection.";
+        if(!_disposed) _=InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        _disposed=true; ++_generation; Company.Changed-=ContextChanged; Fields.CurrentFieldChanged-=FieldChanged; Authentication.AuthenticationStateChanged-=AuthenticationChanged;
     }
 
     private async Task LoadIncidentsAsync()
     {
+        _loaded = false;
+        _canManage = false;
+        _canReport = false;
+        _review = null;
+        _retainedReport = null; _retentionChecked = false; _retentionUnavailable = false;
+        _incidents = new();
+        var generation=++_generation; var selected=Company.Snapshot;
+        bool Current()=>!_disposed && generation==_generation && selected==Company.Snapshot;
         try
         {
+            if(selected.Selection is null){_loadWarning="Choose a company, then reload incidents.";return;}
+            var before=await Fields.GetCurrentFieldSelectionAsync();
+            if(!Current())return;
+            FieldSelectionReviewValidator.RequireCurrent(before,selected.Selection.Scope,selected.Selection.UserId);
+            if(!before.SelectionAvailable){_loadWarning="Choose an available FIELD, then reload incidents.";return;}
+            var original=before.SelectionContext!;
             var incidentsTask = HSEClient.GetIncidentsAsync();
             var workflowsTask = BusinessProcessClient.GetHseIncidentsAsync();
 
             await Task.WhenAll(incidentsTask, workflowsTask);
 
-            var incidents = await incidentsTask;
-            var workflows = (await workflowsTask)
-                .Where(workflow => !string.IsNullOrWhiteSpace(workflow.EntityId) && !string.IsNullOrWhiteSpace(workflow.InstanceId))
-                .GroupBy(workflow => workflow.EntityId, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(
-                    grouping => grouping.Key,
-                    grouping => grouping.OrderByDescending(workflow => workflow.StartedAt).First(),
-                    StringComparer.OrdinalIgnoreCase);
+            if(!Current())return;
+            var incidents = await incidentsTask ?? throw new InvalidOperationException("The incident population was unavailable.");
+            if(incidents.Any(incident=>incident is null || string.IsNullOrWhiteSpace(incident.IncidentId) || incident.FieldId!=original.FieldId) || incidents.Select(incident=>incident.IncidentId).Distinct(StringComparer.Ordinal).Count()!=incidents.Count)
+                throw new InvalidOperationException("Incident identities or FIELD could not be confirmed.");
+            var after=await Fields.GetCurrentFieldSelectionAsync();if(!Current())return;
+            FieldSelectionReviewValidator.RequireCurrent(after,selected.Selection.Scope,selected.Selection.UserId);
+            if(!after.SelectionAvailable || after.SelectionContext!=original || after.FieldId!=before.FieldId)throw new InvalidOperationException("The selected FIELD changed during the incident read.");
+            _fieldName=before.FieldName ?? before.FieldId;
+            var workflowRows=await workflowsTask ?? throw new InvalidOperationException("The incident workflow population was unavailable.");
+            if(workflowRows.Count!=incidents.Count || workflowRows.Any(workflow=>workflow is null || workflow.EntityType!="HSE_INCIDENT" || string.IsNullOrWhiteSpace(workflow.EntityId)) ||
+                workflowRows.Select(workflow=>workflow.EntityId).Distinct(StringComparer.Ordinal).Count()!=workflowRows.Count ||
+                workflowRows.Any(workflow=>!incidents.Any(incident=>incident.IncidentId==workflow.EntityId)))
+                throw new InvalidOperationException("The incident and workflow populations could not be correlated.");
+            var workflows=workflowRows.ToDictionary(workflow=>workflow.EntityId,StringComparer.Ordinal);
 
             _incidents = incidents
                 .Select(incident =>
                 {
                     workflows.TryGetValue(incident.IncidentId, out var workflow);
-                    var hasWorkflow = workflow != null;
+                    var hasWorkflow = workflow is not null && !string.IsNullOrWhiteSpace(workflow.InstanceId);
                     var reportedBy = hasWorkflow && !string.IsNullOrWhiteSpace(workflow?.StartedBy)
                         ? workflow.StartedBy
-                        : incident.InvestigatorId ?? string.Empty;
+                        : "Not recorded";
 
                     return new IncidentRow(
                         incident.IncidentId,
@@ -270,6 +336,7 @@
                         incident.IncidentType,
                         incident.Description,
                         incident.Location,
+                        incident.Jurisdiction,
                         incident.Tier.ToString(),
                         incident.CurrentState,
                         hasWorkflow,
@@ -283,14 +350,23 @@
             _tier2Count = _incidents.Count(i => i.Tier == "2");
             _tier3Count = _incidents.Count(i => i.Tier == "3");
             _tier4Count = _incidents.Count(i => i.Tier == "4");
-            _openCount   = _incidents.Count(i => !string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
-            _closedCount = _incidents.Count(i => string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
+            _openCount   = _incidents.Count(i => IsOpen(i.Status));
+            _closedCount = _incidents.Count(i => i.Status == IncidentState.Closed);
+            _cancelledCount = _incidents.Count(i => i.Status == IncidentState.Cancelled);
+            _unknownStateCount = _incidents.Count(i => !IsOpen(i.Status) && i.Status != IncidentState.Closed && i.Status != IncidentState.Cancelled);
             _missingWorkflowCount = _incidents.Count(i => !i.HasWorkflow);
             _loadWarning = null;
             _requiresLogin = false;
+            var user = (await Authentication.GetAuthenticationStateAsync()).User; if (!Current()) return;
+            _canManage = CanManage(user, selected.Selection);
+            _canReport = CanReport(user, selected.Selection);
+            _review = original;
+            _loaded = true;
+            if (_storageReady) await RefreshRetainedReportAsync();
         }
         catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
         {
+            if(!Current())return;
             _incidents = new();
             _tier1Count = 0;
             _tier2Count = 0;
@@ -299,16 +375,35 @@
             _openCount = 0;
             _closedCount = 0;
             _missingWorkflowCount = 0;
-            _requiresLogin = true;
-            _loadWarning = "Sign in to load HSE incidents and workflow status for the current field.";
+            _requiresLogin = ex.StatusCode == System.Net.HttpStatusCode.Unauthorized;
+            _loadWarning = _requiresLogin ? "Sign in to load HSE incidents and workflow status for the current field." : "Your current account cannot view incidents for this field.";
         }
         catch (Exception exception)
         {
-            // Handled: any failure to load (the API, its payload, a lifecycle lookup) leaves the page empty and says so.
+            if(!Current())return;
+            // Failed reads are not an empty incident population.
             Logger.LogWarning(exception, "HSE incidents could not be loaded.");
             _requiresLogin = false;
             _loadWarning = "Could not load HSE incidents.";
             Snackbar.Add("Could not load HSE incidents.", Severity.Warning);
+        }
+    }
+
+    private async Task RefreshRetainedReportAsync()
+    {
+        if (!_storageReady || !_loaded || _review is not { } review) return;
+        var generation = _generation; var snapshot = Company.Snapshot;
+        _retentionChecked = false; _retentionUnavailable = false;
+        try
+        {
+            var retained = await ReportIntents.ReadAsync(review);
+            if (_disposed || generation != _generation || snapshot != Company.Snapshot) return;
+            _retainedReport = retained; _retentionChecked = true;
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning(error, "Retained incident report could not be loaded");
+            if (!_disposed && generation == _generation && snapshot == Company.Snapshot) _retentionUnavailable = true;
         }
     }
 
@@ -319,100 +414,139 @@
     // ── Report-incident dialog state ─────────────────────────────────────
     private bool     _showReportDialog  = false;
     private bool     _reporting         = false;
-    private string   _ensuringWorkflowIncidentId = string.Empty;
-    private string   _rIncidentType     = "SPILL";
-    private int      _rTier             = 4;
-    private DateTime _rIncidentDate     = DateTime.Today;
+    private bool _optionsLoading;
+    private string? _optionsMessage;
+    private IncidentReportOptions? _reportOptions;
+    private IncidentReportOption? _rOption;
+    private static string FormatReportOption(IncidentReportOption? option) => option is null ? string.Empty : $"{option.IncidentSetId} · {option.IncidentTypeId} · {option.SeverityId}";
+    private string   _rIncidentTimestamp = string.Empty;
     private string   _rLocation         = string.Empty;
     private string   _rDescription      = string.Empty;
-    private string   _rJurisdiction     = "USA";
-
-    // MudDatePicker requires DateTime?
-    private DateTime? _rIncidentDateNullable
-    {
-        get => _rIncidentDate;
-        set => _rIncidentDate = value ?? DateTime.Today;
-    }
+    private string   _rJurisdiction     = string.Empty;
 
     private async Task OpenReportDialogAsync()
     {
-        _rIncidentType = "SPILL";
-        _rTier         = 4;
-        _rIncidentDate = DateTime.Today;
+        if (!_loaded || !_canReport || _reporting || _optionsLoading || _review is null || ReportOutcomeUnconfirmed()) return;
+        var original = _review; var generation = _generation; var scope = Company.Snapshot;
+        _reportOptions = null; _rOption = null; _optionsMessage = null;
+        _rIncidentTimestamp = string.Empty;
         _rLocation     = string.Empty;
         _rDescription  = string.Empty;
-        _rJurisdiction = "USA";
+        _rJurisdiction = string.Empty;
         _showReportDialog = true;
-        await Task.CompletedTask;
+        _optionsLoading = true;
+        try
+        {
+            var options = await BusinessProcessClient.GetHseReportOptionsAsync();
+            if (_disposed || generation != _generation || scope != Company.Snapshot) return;
+            var current = await Fields.GetCurrentFieldSelectionAsync();
+            if (_disposed || generation != _generation || scope != Company.Snapshot) return;
+            FieldSelectionReviewValidator.RequireCurrent(current, original.Company, original.ActorUserId);
+            if (!current.SelectionAvailable || current.SelectionContext != original || options.Context != original ||
+                options.Revision is not { Length: 64 } || options.Revision.Any(c => !char.IsAsciiHexDigit(c) || char.IsAsciiLetterLower(c)) ||
+                options.Options is null || options.Options.Any(o => o is null || string.IsNullOrWhiteSpace(o.IncidentSetId) || string.IsNullOrWhiteSpace(o.IncidentTypeId) || o.SeverityId is not ("TIER_1" or "TIER_2" or "TIER_3" or "TIER_4")) ||
+                options.Options.Distinct().Count() != options.Options.Count)
+                throw new InvalidOperationException("The recorded incident options could not be confirmed.");
+            _reportOptions = options;
+            if (options.Options.Count == 0) _optionsMessage = "No current incident type and tier combinations are configured for this database.";
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning(error, "Incident report options could not be reviewed");
+            if (!_disposed && generation == _generation && scope == Company.Snapshot) _optionsMessage = "Could not review recorded incident options. Close and try again.";
+        }
+        finally { _optionsLoading = false; }
     }
 
     private async Task SubmitReportAsync()
     {
-        if (string.IsNullOrWhiteSpace(_rDescription) || string.IsNullOrWhiteSpace(_rLocation))
+        if (_reporting || !_loaded || !_canReport || _review is not { } review || ReportOutcomeUnconfirmed() ||
+            Company.Selection is not { } selected || selected.Scope != review.Company || selected.UserId != review.ActorUserId) return;
+        if (_reportOptions is null || _reportOptions.Context != review || _rOption is null || !_reportOptions.Options.Contains(_rOption) ||
+            string.IsNullOrWhiteSpace(_rDescription) || string.IsNullOrWhiteSpace(_rLocation) || string.IsNullOrWhiteSpace(_rJurisdiction) ||
+            !IncidentReportTime.TryParseIncidentTime(_rIncidentTimestamp, out var incidentUtc))
         {
-            Snackbar.Add("Description and location are required.", Severity.Warning);
+            Snackbar.Add("Choose an incident type and tier, enter the time with its UTC offset, and provide description, location and jurisdiction.", Severity.Warning);
             return;
         }
+        var original = new IncidentReportIntent(Guid.NewGuid(), review, _rOption, _reportOptions.Revision,
+            incidentUtc, _rLocation.Trim(), _rDescription.Trim(), _rJurisdiction.Trim());
+        try { original.Require(); }
+        catch (InvalidOperationException) { Snackbar.Add("Check the report details and try again.", Severity.Warning); return; }
+        var generation = _generation; var snapshot = Company.Snapshot;
         _reporting = true;
         try
         {
-            var request = new HSEIncidentReportRequest
-            {
-                IncidentType = _rIncidentType,
-                Severity = MapTierToSeverity(_rTier),
-                IncidentDateTime = _rIncidentDate,
-                LocationDescription = _rLocation,
-                Description = _rDescription
-            };
-            var result = await BusinessProcessClient.ReportHseIncidentAsync(request);
-            _showReportDialog = false;
-            await LoadIncidentsAsync();
-            Snackbar.Add("Incident reported.", Severity.Success);
-            if (result != null && !string.IsNullOrWhiteSpace(result.EntityId))
-                NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(result.EntityId)}");
+            await RequireReportContextAsync(review, selected, generation, snapshot);
+            await ReportIntents.RetainAsync(original);
+            if (_disposed || generation != _generation || snapshot != Company.Snapshot) return;
+            _retainedReport = original;
+            await SendRetainedReportAsync(original, selected, generation, snapshot);
         }
-        catch (Exception)
+        catch (Exception error)
         {
-            Snackbar.Add("Failed to report incident.", Severity.Error);
+            Logger.LogWarning(error, "Incident report submission was not confirmed");
+            if (!_disposed && generation == _generation && snapshot == Company.Snapshot)
+            {
+                await RefreshRetainedReportAsync();
+                if (!_disposed && generation == _generation && snapshot == Company.Snapshot)
+                    Snackbar.Add("Incident submission could not be confirmed. Reconcile the original report before another submission.", Severity.Warning);
+            }
         }
         finally { _reporting = false; }
     }
 
-    private async Task EnsureWorkflowAsync(string incidentId)
+    private async Task RetryReportAsync()
     {
-        _ensuringWorkflowIncidentId = incidentId;
-
-        try
+        if (_reporting || !_loaded || !_canReport || _review is not { } review || _retainedReport is not { } original ||
+            Company.Selection is not { } selected || selected.Scope != review.Company || selected.UserId != review.ActorUserId) return;
+        var generation = _generation; var snapshot = Company.Snapshot; _reporting = true;
+        try { await SendRetainedReportAsync(original, selected, generation, snapshot); }
+        catch (Exception error)
         {
-            var instance = await BusinessProcessClient.EnsureHseIncidentWorkflowAsync(incidentId);
-            await LoadIncidentsAsync();
-
-            Snackbar.Add(
-                instance == null
-                    ? "Workflow was not created for the incident."
-                    : "Workflow created for the incident.",
-                instance == null ? Severity.Warning : Severity.Success);
+            Logger.LogWarning(error, "Original incident report could not be reconciled");
+            if (!_disposed && generation == _generation && snapshot == Company.Snapshot)
+                Snackbar.Add("The original report could not be reconciled. Review the current company, FIELD and incident options.", Severity.Warning);
         }
-        catch
-        {
-            Snackbar.Add("Could not create workflow for the incident.", Severity.Error);
-        }
-        finally
-        {
-            _ensuringWorkflowIncidentId = string.Empty;
-        }
+        finally { _reporting = false; }
     }
 
-    private static string MapTierToSeverity(int tier) => tier switch
+    private async Task RequireReportContextAsync(FieldSelectionReview review, CompanyClientSelection selected, long generation,
+        (long Version, CompanyClientSelection? Selection) snapshot)
     {
-        1 => "TIER1",
-        2 => "TIER2",
-        3 => "TIER3",
-        _ => "TIER4"
-    };
+        void Current() { if (_disposed || generation != _generation || snapshot != Company.Snapshot) throw new InvalidOperationException("The reporting context changed."); }
+        Current(); var user = (await Authentication.GetAuthenticationStateAsync()).User; Current();
+        if (!CanReport(user, selected)) throw new UnauthorizedAccessException();
+        var current = await Fields.GetCurrentFieldSelectionAsync(); Current();
+        FieldSelectionReviewValidator.RequireCurrent(current, selected.Scope, selected.UserId);
+        if (!current.SelectionAvailable || current.SelectionContext != review) throw new InvalidOperationException("The reviewed FIELD changed.");
+    }
+
+    private async Task SendRetainedReportAsync(IncidentReportIntent original, CompanyClientSelection selected, long generation,
+        (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await RequireReportContextAsync(original.Context, selected, generation, snapshot);
+        var receipt = await BusinessProcessClient.RecordHseIncidentAsync(original);
+        await RequireReportContextAsync(original.Context, selected, generation, snapshot);
+        receipt.Require(original);
+        await ReportIntents.ClearAsync(original);
+        if (_disposed || generation != _generation || snapshot != Company.Snapshot) return;
+        _retainedReport = null; _showReportDialog = false;
+        Snackbar.Add("Incident records saved. The workflow has not started; review the incident and start its workflow separately.", Severity.Success);
+        await LoadIncidentsAsync();
+    }
+
+    private static bool CanManage(System.Security.Claims.ClaimsPrincipal user, CompanyClientSelection selected) =>
+        CanUse(user, selected, Beep.OilandGas.Models.Data.Security.PermissionConstants.HSE.ManageIncidents);
+    private static bool CanReport(System.Security.Claims.ClaimsPrincipal user, CompanyClientSelection selected) =>
+        CanUse(user, selected, Beep.OilandGas.Models.Data.Security.PermissionConstants.HSE.ReportIncident);
+    private static bool CanUse(System.Security.Claims.ClaimsPrincipal user, CompanyClientSelection selected, string permission) =>
+        user.Identity?.IsAuthenticated == true && user.FindFirst("party_id")?.Value == selected.UserId &&
+        selected.Roles.Any(user.IsInRole) && selected.Permissions.Contains(permission, StringComparer.Ordinal);
+    private bool ReportOutcomeUnconfirmed() => !_storageReady || !_retentionChecked || _retentionUnavailable || _retainedReport is not null;
 
     private record IncidentRow(
         string IncidentId, DateTime IncidentDate, string IncidentType,
-        string Description, string Location, string Tier,
+        string Description, string Location, string Jurisdiction, string Tier,
         string Status, bool HasWorkflow, string WorkflowStatus, string ReportedBy);
 }

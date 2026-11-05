@@ -1,0 +1,90 @@
+@using TheTechIdea.Data.OilGas
+@using Microsoft.AspNetCore.Components.Authorization
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">First-time setup</MudText>
+    <MudText Class="my-3">Prepare the installation, administrator, company and data environment before opening operational workspaces.</MudText>
+    @if (Busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else
+    {
+        <MudAlert Severity="@(Status == RepositoryReadiness.Ready ? Severity.Success : Severity.Warning)" Class="mb-3">@StatusText</MudAlert>
+        <MudButton OnClick="OnRefresh" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh">Check repository again</MudButton>
+        @if (Status is RepositoryReadiness.Unavailable or RepositoryReadiness.MigrationRequired or RepositoryReadiness.BootstrapRequired)
+        {
+            <MudButton Href="/setup/bootstrap-drivers" Variant="Variant.Outlined" Class="mx-2">Install database drivers and connectors</MudButton>
+        }
+        @if (Status == RepositoryReadiness.BootstrapRequired)
+        {
+            <MudStack Row="true" Spacing="2" Class="my-3" Wrap="Wrap.Wrap">
+                <MudButton Href="@LoginUrl" Variant="Variant.Filled" Color="Color.Primary">Sign in as the administrator</MudButton>
+                <MudButton Href="@RegisterUrl" Variant="Variant.Outlined">Create an account</MudButton>
+            </MudStack>
+        }
+        @if (Status == RepositoryReadiness.Ready)
+        {
+            <AuthorizeView Roles="Administrator">
+                <Authorized>
+                    <MudGrid Spacing="3" Class="mt-2">
+                        <MudItem xs="12"><MudCard Outlined="true"><MudCardContent>
+                            <MudText Typo="Typo.h6" HtmlTag="h2">System setup repository</MudText>
+                            <MudText Class="my-2">Configure the shared Beep repository for PPDM and tools setup before company environments.</MudText>
+                            <MudText Typo="Typo.body2" Class="my-2">@SystemSetupStatus</MudText>
+                            <MudButton Href="/setup/system-repository" Variant="Variant.Outlined">Open system repository setup</MudButton>
+                        </MudCardContent></MudCard></MudItem>
+                        <MudItem xs="12" md="6"><MudCard Outlined="true"><MudCardContent>
+                            <MudText Typo="Typo.h6" HtmlTag="h2">1. Company and access</MudText>
+                            <MudText Class="my-2">@(CompanySelected ? "A company is selected for this session. Review its users and roles." : "Choose an available company using the company selector in the top bar, then review its users and roles.")</MudText>
+                            @if (!CompanySelected) { <MudText Typo="Typo.body2">An active company membership is required. Create company access under a new or existing tenant if needed.</MudText> }
+                            <MudButton Href="/setup/initial-company" Variant="Variant.Outlined">Set up company access</MudButton>
+                            <MudButton Href="/setup/company-members" Variant="Variant.Outlined" Disabled="@(!CompanySelected)">Add company members</MudButton>
+                            <MudButton Href="/admin/access-control/user-roles" Variant="Variant.Outlined">Users and roles</MudButton>
+                            <MudButton Href="/admin/access-control/hierarchy-config" Variant="Variant.Outlined">Company hierarchy</MudButton>
+                        </MudCardContent></MudCard></MudItem>
+                        <MudItem xs="12" md="6"><MudCard Outlined="true"><MudCardContent>
+                            <MudText Typo="Typo.h6" HtmlTag="h2">2. Connections and modules</MudText>
+                            <MudText Class="my-2">Install the database driver and datasource connector, create and test a Beep connection, then choose a tenant and review the migration plan.</MudText>
+                            <MudButton Href="/setup/drivers" Variant="Variant.Outlined">Install drivers and connectors</MudButton>
+                            <MudButton Href="/ppdm39/database-management" Variant="Variant.Outlined">Create and test connections</MudButton>
+                            <MudButton Href="/admin/module-databases" Variant="Variant.Outlined">Open database setup</MudButton>
+                        </MudCardContent></MudCard></MudItem>
+                        <MudItem xs="12" md="6"><MudCard Outlined="true"><MudCardContent>
+                            <MudText Typo="Typo.h6" HtmlTag="h2">3. Country and company environment</MudText>
+                            <MudText Class="my-2">Country presets, company overrides, units, sources, mappings and tool settings need to be configured for each company.</MudText>
+                            <MudText Typo="Typo.body2" Class="my-2">@CompanySetupStatus</MudText>
+                            <MudButton Href="/setup/company-environment" Variant="Variant.Outlined" Disabled="@(!CompanySelected)">Configure and verify company environment</MudButton>
+                            <MudAlert Severity="Severity.Info">Preview and save country defaults and overrides. Operational verification and activation remain separate steps.</MudAlert>
+                        </MudCardContent></MudCard></MudItem>
+                        <MudItem xs="12" md="6"><MudCard Outlined="true"><MudCardContent>
+                            <MudText Typo="Typo.h6" HtmlTag="h2">4. Review and verification</MudText>
+                            <MudText Class="my-2">Confirm company access, database bindings, migration outcomes and environment settings. Repository readiness alone does not verify these steps.</MudText>
+                            <MudButton Href="/admin/dashboard" Variant="Variant.Outlined">Administration workspace</MudButton>
+                        </MudCardContent></MudCard></MudItem>
+                    </MudGrid>
+                </Authorized>
+                <NotAuthorized Context="auth">
+                    <MudAlert Severity="Severity.Info" Class="mt-3">An application administrator completes company and database setup. Sign in with an administrator account to continue.</MudAlert>
+                    @if (auth.User.Identity?.IsAuthenticated != true)
+                    { <MudButton Href="@LoginUrl" Variant="Variant.Filled" Color="Color.Primary" Class="mt-3">Sign in to continue setup</MudButton> }
+                </NotAuthorized>
+            </AuthorizeView>
+        }
+    }
+</MudContainer>
+@code {
+    [Parameter] public RepositoryReadiness Status { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public bool CompanySelected { get; set; }
+    [Parameter] public string SystemSetupStatus { get; set; } = "not checked";
+    [Parameter] public string CompanySetupStatus { get; set; } = "Select a company to review its environment.";
+    [Parameter] public string LoginUrl { get; set; } = string.Empty;
+    [Parameter] public string RegisterUrl { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnRefresh { get; set; }
+    private string StatusText => Status switch
+    {
+        RepositoryReadiness.Ready => "Repository ready. Company and environment setup still need review.",
+        RepositoryReadiness.BootstrapRequired => "Repository installed. The first person to sign in becomes its administrator.",
+        RepositoryReadiness.MigrationRequired => "Repository installation or migration is required on the API server.",
+        RepositoryReadiness.RecoveryRequired => "Repository administrator state requires operator recovery; first-user registration is unavailable.",
+        _ => "Repository unavailable. Check the API service and repository connection."
+    };
+}

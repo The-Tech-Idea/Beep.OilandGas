@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-29",
+  "plan": "Implementation-354-Permit-Application-Workflow.md retained persona detail forms",
+  "runs": [
+    {
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "587ms",
+      "exact_methods": [
+        "PermitWorkbenchUsesSharedStageIndependenceAndRoleEligibility",
+        "PermitWorkbenchRetainsBeforeTransportAndRefusesInvalidOrUnretainedCommands",
+        "PermitWorkbenchPreservesUncertaintyAndRecoversTheSameOriginal",
+        "ProtectedPermitOriginalSurvivesReloadAndRefusesReplacementOrForeignScope",
+        "PermitWorkbenchRendersExactSourceAndOnlyEligiblePersonaControls",
+        "PermitOriginalRequiresRecordedSubmitterIndependentDecisionAndValidStage"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:    36, Skipped:     0, Total:    36, Duration: 587 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-workbench-corrected.log",
+      "log_sha256": "1aad2863c303b883dcf4342fb1171c5983e4e945d5f214bf77563a94268adaac"
+    },
+    {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "202ms",
+      "exact_methods": [
+        "PermitDetailIntegratesWorkbenchOnlyForCurrentReadableSource"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 202 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-workbench-detail-current.log",
+      "log_sha256": "930687a679d42983be02736394050fff5b64d93c36ac2b85d84e4826e7ee67dd"
+    },
+    {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "215ms",
+      "exact_methods": [
+        "PermitDetailIntegratesWorkbenchOnlyForCurrentReadableSource"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration: 215 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-workbench-detail-final.log",
+      "log_sha256": "d82594589af8ff4906123845f8791f8fa870b5810cfbbf7a8f698eabfa947864"
+    }
+  ],
+  "distinct_inputs_observed": 38,
+  "passing_observations": 40,
+  "overlap": 2,
+  "methods": {
+    "PermitWorkbenchUsesSharedStageIndependenceAndRoleEligibility": {
+      "inputs": 6,
+      "criteria": "Submission, independent approval/rejection; self/terminal/read-only actions withheld."
+    },
+    "PermitWorkbenchRetainsBeforeTransportAndRefusesInvalidOrUnretainedCommands": {
+      "inputs": 4,
+      "criteria": "Invalid reason/confirmation, failed protected retention and context change after save prevent transport."
+    },
+    "PermitWorkbenchPreservesUncertaintyAndRecoversTheSameOriginal": {
+      "inputs": 5,
+      "criteria": "Full state reload with read-only permission, cleanup failure recovery, explicit absence retains original for same-id resend despite later effect, late response withholding, changed binding blocks replacement."
+    },
+    "ProtectedPermitOriginalSurvivesReloadAndRefusesReplacementOrForeignScope": {
+      "inputs": 7,
+      "criteria": "Actual protected tab encryption/restore/clear, conflicting original, same identity with changed binding, different company/actor/FIELD, corrupt ciphertext."
+    },
+    "PermitWorkbenchRendersExactSourceAndOnlyEligiblePersonaControls": {
+      "inputs": 4,
+      "criteria": "Actual static Razor rendering displays country/applicant/submitter and legal limitation; only current permitted stage controls."
+    },
+    "PermitOriginalRequiresRecordedSubmitterIndependentDecisionAndValidStage": {
+      "inputs": 10,
+      "criteria": "Affected canonical eligibility validation after extracting shared AllowedActions."
+    },
+    "PermitDetailIntegratesWorkbenchOnlyForCurrentReadableSource": {
+      "inputs": 2,
+      "criteria": "Actual detail Razor includes workbench for readable source and withholds data/workbench without view authority."
+    }
+  },
+  "command_template": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute actual Data.dll> -p:BuildProjectReferences=false --filter <OR of FullyQualifiedName~ and exact_methods listed per run> --logger \"console;verbosity=minimal\"",
+  "builds": "Data passed8.65s, zero errors, existing missing sibling analyzer warning. Actual workbench/detail Razor and state/store compiled in focused repository target; no full Web host build claimed.",
+  "corrected_initial_attempts": [
+    {
+      "executed_inputs": 0,
+      "cause": "Focused diagnostics test surface has canonical Explain but not extra IsCallFailure/Told members; component uses the existing Explain error path, with no replacement diagnostics owner."
+    },
+    {
+      "executed_inputs": 0,
+      "cause": "NavigationManager.Uri property shadowed System.Uri in new integration test; qualified encoding helper."
+    }
+  ],
+  "sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs": "87152d09b870042f1b22fe038f153b401a51d66ed4786b91b9fa82c964cfd6c4",
+    "Beep.OilandGas.Web/Services/PermitApplicationIntentStore.cs": "53fab1154cefb1b6b32cfc1ed282e768073f95c0a31693d4efd5081cb01c56c5",
+    "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs": "3a96f2d69d79aee9c04ee12f37a0ac59610a1a229ecc225f6d369ded47ce2af2",
+    "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor": "5fd09b25f1d276726fa8387b011e121ec27315998203c89c3d392ac4d4a7162c",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/PermitDetail.razor": "52113a7a07c1356522960de145915afe7b16cf9713df237d5e18ff3c2838fb67",
+    "Beep.OilandGas.Web/Program.cs": "3c0e27c4aa988ad53abe78e205a83e5b1097e78614dcce83f1fb2e532075a866",
+    "Beep.OilandGas.Web/wwwroot/css/app.css": "b6117589f6ec253886ea565b84fa99c303dd140f5aed8a4a9f094e84cb3785a0",
+    "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs": "39ea4f75f1fa0d29570b9cd8299a4960658864b133b5e95d92b284ed6372e673",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "fcc06862884833e8947d6f029bc7dfd4038397443c488bb296b93f39088d899b",
+    "Beep.OilandGas.Web.Auth.Tests/PermitApplicationReadWorkflowTests.cs": "aaa4e7007abb91f3fe883a7f641a3d3449ab4f4cdb9fa6c54ceea00dfb29cc9b",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "c243cc6124f60d9056665d04654db9b82b78185394bcec68d85a6d17d9c1dc89",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "53d8f45be69df543e5c4f07fe590eadbe7e0b9a379de4923e50af20c9b9dfff2"
+  },
+  "scope": "Actual form state, shared Data eligibility, actual encrypted ProtectedSessionStorage with ephemeral protection provider/fake JS tab, controlled permit client/auth/selection outcomes, actual static Razor rendering. The page identity is supplied by a component activator. Not query/router, interactive events, real browser storage transport, native API mutation, hosted auth middleware, real provider or physical migration proof.",
+  "runtime_scope_note": "The36 behavior/storage/component inputs precede final wrapping CSS and reason wording only; the final two integration inputs compile/render the current sources. Counts overlap and are not added as a single regression total.",
+  "behavior": "One original retained and read back before transport. Unknown outcomes block replacement; explicit absent recovery preserves the original because an earlier request may still commit. Resend uses the same intent under current write permission. Read-only recorded recovery clears only its matching input after validated outcome. Context changes withhold late responses and preserve tab input. Recorded results are labelled separately from current source/regulator clearance.",
+  "open": [
+    "Reviewed company-owned creation/editing and remaining direct create/update replacement",
+    "Role inbox/landing handoffs and correction/rejection cycle",
+    "Explicit reconciliation qualification for retained originals after selection revision/database binding changes; currently preserved and blocked",
+    "Actual browser click/keyboard/reload/viewport/RTL/accessibility acceptance; scoped wrapping CSS is not viewport proof",
+    "Protected hosted HTTP/OIDC/multi-account/native owner journey and actual provider Beep Migration/transaction/concurrency/performance qualification"
+  ],
+  "migration": "No schema, SQL or EF changes. Beep Migration remains the sole schema owner. New browser input store is protected tab storage, not a business database or approval ledger.",
+  "goal": "active; phase2/full feature incomplete; no commit/push"
+}

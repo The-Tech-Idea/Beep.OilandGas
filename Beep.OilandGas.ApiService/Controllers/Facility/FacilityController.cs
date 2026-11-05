@@ -2,6 +2,7 @@ using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ProductionOperations.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Beep.OilandGas.ApiService.Controllers.Facility;
@@ -68,48 +69,6 @@ public class FacilityController : ControllerBase
         if (row == null)
             return NotFound(new { error = $"Facility {facilityId} was not found." });
         return Ok(row);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(FACILITY), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<FACILITY>> CreateAsync(
-        [FromBody] FACILITY facility,
-        CancellationToken cancellationToken)
-    {
-        var userId = User.ActingUserId();
-        if (facility == null)
-            return BadRequest(new { error = "Request body is required." });
-
-        var created = await _facilities
-            .CreateFacilityAsync(facility, userId, cancellationToken)
-            .ConfigureAwait(false);
-        return Ok(created);
-    }
-
-    [HttpPut("{facilityId}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateAsync(
-        string facilityId,
-        [FromBody] FACILITY facility,
-        CancellationToken cancellationToken)
-    {
-        var userId = User.ActingUserId();
-        if (string.IsNullOrWhiteSpace(facilityId))
-            return BadRequest(new { error = "facilityId is required." });
-        if (facility == null)
-            return BadRequest(new { error = "Request body is required." });
-
-        if (!string.IsNullOrWhiteSpace(facility.FACILITY_ID) &&
-            !string.Equals(facility.FACILITY_ID, facilityId, StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "Route facilityId and body FACILITY_ID must match." });
-
-        facility.FACILITY_ID = facilityId;
-        await _facilities
-            .UpdateFacilityAsync(facility, userId, cancellationToken)
-            .ConfigureAwait(false);
-        return NoContent();
     }
 
     [HttpGet("{facilityId}/classes")]

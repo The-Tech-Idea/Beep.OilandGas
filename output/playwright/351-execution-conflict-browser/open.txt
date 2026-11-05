@@ -1,0 +1,12 @@
+### Browser `oilgas351conflict` opened with pid 16336.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:56304');
+```
+### Page
+- Page URL: http://127.0.0.1:56304/
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\351-execution-conflict-browser\artifacts\page-2026-10-26T16-34-01-892Z.yml)
+### Events
+- New console entries: output\playwright\351-execution-conflict-browser\artifacts\console-2026-10-26T16-34-01-269Z.log#L1-L2

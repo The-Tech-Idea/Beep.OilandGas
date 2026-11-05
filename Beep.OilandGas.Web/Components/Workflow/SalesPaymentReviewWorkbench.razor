@@ -1,0 +1,73 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CompanySalesReceivableWorkspaceState State
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+@if(_canRecover)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-4" aria-busy="@State.Busy">
+        <MudText Typo="Typo.h6">Independent payment review</MudText>
+        <MudText>Review the recorded original payment and posted receivable evidence. The payment maker cannot review. A decision records no allocation, paid balance or cash posting.</MudText>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Checking original payment review evidence" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(State.HasPendingPaymentReview){<MudAlert Severity="Severity.Warning">The exact original independent decision is retained. Reconcile it before another financial action.</MudAlert>}
+        @if(State.PendingPaymentReview is {} pending)
+        {
+            <MudText>@pending.Review.Original.PAYMENT_NUMBER · @pending.Decision · Payment @pending.Review.Original.AR_PAYMENT_ID · Original reviewer @pending.Review.Current.Ledger.ActorUserId</MudText>
+            @if(State.CanRetryPaymentReview){<MudButton OnClick="Retry" Disabled="State.Busy">Reconcile original payment decision</MudButton>}
+            <MudButton OnClick='@(()=>RecoverId(pending.Review.Original.AR_PAYMENT_ID))' Disabled="State.Busy">Recover my original payment decision</MudButton>
+        }
+        <MudForm @ref="_lookup"><MudTextField T="string" Label="Recorded original payment proposal ID" @bind-Value="_id" Required="true" MaxLength="32" />@if(_canReview){<MudButton OnClick="Load" Disabled="State.Busy">Review recorded payment proposal</MudButton>}<MudButton OnClick="Recover" Disabled="State.Busy">Recover my retained payment decision</MudButton></MudForm>
+        @if(State.PaymentReviewSource is {} source)
+        {
+            <MudText>Payment @source.Original.PAYMENT_NUMBER · @source.Original.PAYMENT_AMOUNT @source.Original.CURRENCY_CODE · Maker @source.Original.ROW_CREATED_BY</MudText>
+            <MudText>Company @source.Current.Ledger.Company.BusinessAssociateId · FIELD @source.Current.Ledger.FieldId · Book @source.Current.Ledger.BookId · Receivable @source.Current.Ledger.ReceivableId</MudText>
+            <MudText>Recorded payer @source.Original.PAYER_BA_ID · Method @source.Original.PAYMENT_METHOD · Original trace @source.Original.EXTERNAL_REFERENCE · Receipt evidence @source.Original.EVIDENCE_REFERENCE</MudText>
+            <MudText>Original invoice @source.Current.OriginalAmount @source.Current.Currency · Unreleased proposals @source.Current.UnreleasedProposedAmount @source.Current.Currency · Posted journal @source.Current.Ledger.Journals.Single().Number</MudText>
+            @if(State.CanRecordPaymentReview)
+            {
+                <MudForm @ref="_form">
+                    <MudSelect T="string" Label="Independent payment decision" @bind-Value="_decision" Required="true"><MudSelectItem T="string" Value='@("APPROVE")'>Approve proposal</MudSelectItem><MudSelectItem T="string" Value='@("REJECT")'>Reject and return to maker</MudSelectItem></MudSelect>
+                    <MudSelect T="string" Label="Financial disposition" @bind-Value="_financial" Required="true"><MudSelectItem T="string" Value='@("CONFIRMED")'>Confirmed</MudSelectItem><MudSelectItem T="string" Value='@("ISSUE")'>Issue</MudSelectItem></MudSelect>
+                    <MudTextField T="string" Label="Financial review evidence reference" @bind-Value="_financialEvidence" Required="true" MaxLength="2000" />
+                    <MudSelect T="string" Label="Receipt evidence disposition" @bind-Value="_receipt" Required="true"><MudSelectItem T="string" Value='@("CONFIRMED")'>Confirmed</MudSelectItem><MudSelectItem T="string" Value='@("ISSUE")'>Issue</MudSelectItem></MudSelect>
+                    <MudTextField T="string" Label="Receipt review evidence reference" @bind-Value="_receiptEvidence" Required="true" MaxLength="2000" /><MudTextField T="string" Label="Independent payment decision reason" @bind-Value="_reason" Required="true" MaxLength="1000" />
+                    <MudButton OnClick="Record" Color="Color.Primary" Variant="Variant.Filled" Disabled="State.Busy">Record independent payment decision</MudButton>
+                </MudForm>
+            }
+        }
+        @if(State.PaymentReviewRecovery is {} recovery)
+        {
+            @if(recovery.Intent is null){<MudAlert Severity="Severity.Info">No retained decision exists for this original payment. Review fresh evidence before a new decision.</MudAlert>}
+            else if(recovery.Outcome is null){<MudAlert Severity="Severity.Warning">The original independent decision is saved; the payment disposition is unconfirmed. Explicitly reconcile the retained request.</MudAlert>}
+            else{var summary=CompanySalesPaymentReviewProof.Require(recovery.Outcome).Summary();<MudAlert Severity="Severity.Success">Original @recovery.Outcome.PAYMENT_NUMBER proposal @recovery.Outcome.STATUS by @summary.Reviewer. Release remains a separate action.</MudAlert><MudText>@summary.FinancialDisposition · @summary.FinancialEvidence · @summary.ReceiptDisposition · @summary.ReceiptEvidence · @summary.Reason</MudText>}
+        }
+    </MudPaper>
+}
+@code{
+    [Parameter]public CompanySalesPaymentProcessSourceReview? AssignedSource{get;set;}
+    [Parameter]public EventCallback RecordedOutcomeChanged{get;set;}
+    private MudForm? _lookup,_form;
+    private string _id="",_decision="",_financial="",_financialEvidence="",_receipt="",_receiptEvidence="",_reason="";
+    private string? _error,_assignedRevision;
+    private bool _canRecover,_canReview,_disposed;
+    private long _epoch;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){var revision=AssignedSource?.Payment.Revision;if(revision is not null && revision==_assignedRevision)return;Reset();_assignedRevision=revision;try{await Access();if(AssignedSource is {} source){source.Require(Company.Selection!.Scope,Company.Selection.UserId,source.InstanceId);_id=source.PaymentId;}}catch{_canRecover=_canReview=false;}}
+    private async Task Access(bool write=false){var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);_canRecover=State.CanReadPayments;_canReview=State.CanReadPaymentReview;if(!_canRecover || write && (!_canReview || !Company.Selection!.Permissions.Contains("Accounting.RecordSalesPaymentDecision",StringComparer.Ordinal)))throw new UnauthorizedAccessException();}
+    private async Task Execute(Func<Task> action,bool write=false){var epoch=_epoch;_error=null;try{await Access(write);await action();if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="Original payment review or outcome is unconfirmed. Check company/account/FIELD, independent reviewer authority and explicit evidence. Recover the retained original decision before another action.";}}
+    private Task Load()=>Execute(async()=>{if(!_canReview)throw new UnauthorizedAccessException();if(_lookup is not null){await _lookup.ValidateAsync();if(!_lookup.IsValid)return;}await State.LoadPaymentReviewAsync(_id,Accounting);if(AssignedSource is {} source && (State.PaymentReviewSource is not {} review || review.Original.AR_PAYMENT_ID!=source.PaymentId || ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(review.Original))!=source.Payment.Payment.NativeRevision)){State.Invalidate();throw new InvalidOperationException("The assigned payment changed. Reload its original process.");}});
+    private async Task ObserveOutcome(Func<Task> action){await action();if(!_disposed && !State.HasPendingPaymentReview && State.PaymentReviewRecovery?.Outcome is not null)await RecordedOutcomeChanged.InvokeAsync();}
+    private Task Record()=>Execute(()=>ObserveOutcome(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}await State.RecordPaymentReviewAsync(_decision,_financial,_financialEvidence,_receipt,_receiptEvidence,_reason,Accounting);}),true);
+    private Task Retry()=>Execute(()=>ObserveOutcome(()=>State.SubmitPaymentReviewAsync(Accounting)),true);
+    private Task RecoverId(string id)=>Execute(()=>ObserveOutcome(()=>State.RecoverPaymentReviewAsync(id,Accounting)));
+    private Task Recover()=>Execute(()=>ObserveOutcome(async()=>{if(_lookup is not null){await _lookup.ValidateAsync();if(!_lookup.IsValid)return;}await State.RecoverPaymentReviewAsync(_id,Accounting);}));
+    private void Reset(){++_epoch;_assignedRevision=null;_canRecover=_canReview=false;_error=null;_id=_decision=_financial=_financialEvidence=_receipt=_receiptEvidence=_reason="";Changed();}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();Reset();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

@@ -1,0 +1,10 @@
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:55005/ppdm39/hse');
+```
+### Page
+- Page URL: http://127.0.0.1:55005/ppdm39/hse
+### Snapshot
+- [Snapshot](output\playwright\354-permit-browser\artifacts\page-2026-10-29T15-03-32-454Z.yml)
+### Events
+- New console entries: output\playwright\354-permit-browser\artifacts\console-2026-10-29T15-03-32-193Z.log#L1

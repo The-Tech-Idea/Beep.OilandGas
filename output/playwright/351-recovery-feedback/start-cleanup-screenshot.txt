@@ -1,0 +1,11 @@
+### Result
+- [Screenshot of viewport](output\playwright\351-recovery-feedback\artifacts\page-2026-10-26T14-28-44-987Z.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as output\playwright\351-recovery-feedback\artifacts\page-2026-10-26T14-28-44-987Z.png
+await page.screenshot({
+  path: 'output\\playwright\\351-recovery-feedback\\artifacts\\page-2026-10-26T14-28-44-987Z.png',
+  scale: 'css',
+  type: 'png'
+});
+```

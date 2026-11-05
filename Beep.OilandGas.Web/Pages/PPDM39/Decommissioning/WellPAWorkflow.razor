@@ -1,4 +1,4 @@
-﻿@page "/decommissioning/well-pa"
+@page "/decommissioning/well-pa"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject ApiClient ApiClient
@@ -161,12 +161,12 @@
                             <MudButton Variant="Variant.Outlined" Color="Color.Info" FullWidth="true"
                                        StartIcon="@Icons.Material.Filled.Gavel"
                                        OnClick="LaunchComplianceForSelectedWell">
-                                Launch Closure Compliance
+                                Review FIELD obligations
                             </MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
                                        StartIcon="@Icons.Material.Filled.AccountBalance"
                                        OnClick="LaunchCloseoutAfeForSelectedWell">
-                                Open Closeout AFE
+                                Choose AFE source
                             </MudButton>
                         </MudStack>
                     </MudCardActions>
@@ -341,7 +341,7 @@
             return;
         }
 
-        NavigationManager.NavigateTo(BuildCloseoutAfeHref(_selectedWell));
+        NavigationManager.NavigateTo("/economics/afe");
     }
 
     private void UpdateProgress()
@@ -458,24 +458,6 @@
         return "/hse/compliance?" + string.Join("&", query);
     }
 
-    private string BuildCloseoutAfeHref(PAWell well)
-    {
-        var query = new List<string>
-        {
-            "openCreate=true",
-            $"wellId={Uri.EscapeDataString(well.WellId)}",
-            $"description={Uri.EscapeDataString(BuildCloseoutAfeDescription(well))}",
-            $"returnTo={Uri.EscapeDataString(BuildPaWorkflowReturnTo())}"
-        };
-
-        if (well.EstCostUsd > 0)
-        {
-            query.Add($"budgetUsd={Uri.EscapeDataString(well.EstCostUsd.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))}");
-        }
-
-        return "/economics/afe?" + string.Join("&", query);
-    }
-
     private string BuildComplianceDescription(PAWell well)
     {
         var description = $"Plug and abandonment compliance closeout for well {well.WellId}";
@@ -485,16 +467,6 @@
 
         if (!string.IsNullOrWhiteSpace(HandoffReason))
             description += $". Trigger: {HandoffReason}";
-
-        return description;
-    }
-
-    private static string BuildCloseoutAfeDescription(PAWell well)
-    {
-        var description = $"P&A closeout AFE for well {well.WellId}";
-
-        if (!string.IsNullOrWhiteSpace(well.AbandonmentId))
-            description += $" ({well.AbandonmentId})";
 
         return description;
     }

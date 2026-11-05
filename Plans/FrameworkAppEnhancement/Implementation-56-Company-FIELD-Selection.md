@@ -1,0 +1,64 @@
+# Implementation 56 — company-bound FIELD selection
+
+Date: 2026-10-05. Execution owners: CA-03/05/06, FG-01/10/11/12/20/50. [Master tracker](../../MASTER-TODO-TRACKER.md) owns execution status. This extends the existing profile, selector controller, Web data service and component used by [Implementation 55](Implementation-55-FIELD-Bound-Lease-Portfolio.md). The wider plan remains active.
+
+## Problem and resulting behavior
+
+The existing API-request-scoped orchestrator kept its current FIELD in a private property initialized null. Its set endpoint mutated that instance; another request did not restore it. The list endpoint used a global PPDM39 connection, current/set lacked explicit authentication guards, and the selector retained its catalog across company changes. Web lifecycle code also declared three duplicate FIELD DTOs and exposed another unchecked setter.
+
+The existing `RepositoryUserProfileService` now owns the self-selection preference in its existing `APP_USER.PreferencesJson` object. It implements `ICompanyFieldSelectionService`; both profile facets resolve to the same scoped instance. Each saved entry carries the canonical account, company, database binding fingerprint and exact FIELD. A changed binding or company never adopts an old entry. This preference grants no data or operational authority.
+
+The same `api/field/fields`, `current` and `set-active` actions are on an authenticated partial of the existing controller. It no longer needs the broad orchestrator to list/select a FIELD. Catalog/current/set use the actual company-bound generic Beep gateway, current app FIELD grants and PPDM data entitlement. Missing or failed provider evidence cannot become an empty success. Available catalog rows preserve recorded FIELD names/descriptions/change dates; no engineering, financial or legal values are inferred.
+
+Current returns HTTP 200 with explicit availability and a reviewed context even when no selection exists. A saved but inaccessible/inactive FIELD remains in the review for replacement, while the returned selectable FIELD ID is empty and raw FIELD evidence is absent. Missing auth, company, binding or failed evidence is a refusal, not an empty selection. 404 is no longer an absence fallback. Set requires the reviewed actor/company/database, expected preference revision and expected prior FIELD, then independently rereads live active FIELD authority.
+
+## Ownership, persistence and concurrency
+
+`FieldListItem`, `FieldResponse`, `SetActiveFieldRequest` and `SetActiveFieldResponse` move to TheTechIdea.Data with their existing namespaces; their former Models definitions are removed. `FieldSelectionReview`, its validator, service contract and the extended narrow `IFieldSelectionContext` also live in Data. The three Web-local FIELD DTO duplicates and unused Web lifecycle list/set methods are removed. Existing lifecycle current reads delegate to the same Web selection facet. Other lifecycle DTOs/domain methods still need their own ownership audit.
+
+`OilGasFieldSelections` is a protected key within the existing profile JSON. General preference updates preserve it and cannot supply or replace it. Other preference properties and retained company/database entries survive selection writes. Existing malformed/nonobject/ambiguous preferences and the existing 4000-character capacity produce explicit refusal; they are not overwritten, truncated or guessed into another format. Retention/retirement of obsolete bindings needs a reviewed owner before adding more entries beyond this capacity.
+
+The existing Identity `ConcurrencyStamp` protects profile and selection saves. The profile JSON and a new stamp commit in one EF SaveChanges transaction. General profile updates also advance this same token. A concurrent update prevents a partial FIELD save; the service rereads actual current preference and FIELD evidence before acknowledging. This is a preference concurrency fence, not a distributed transaction across registry/Beep authority, a durable command ledger, or FIELD authorization. Identity's separate SecurityStamp is not changed for selection.
+
+Business/module schemas remain Beep MigrationManager-owned. This slice uses the already approved EF identity/profile registry, existing JSON column and existing Identity token. It adds no table, handwritten SQL, EF migration, Beep schema migration, live provider write, deployment or external action.
+
+## Client behavior and contract changes
+
+The existing Web `DataManagementService` remains the selection HTTP owner and implements the narrow facet. It captures original company/account generation before awaiting its existing serialization lock, validates current/review/acknowledgement identities and new revision, snapshots mutable command data and sends one POST. It publishes a confirmed or cleared FIELD only while that original scope remains current. Subscriber failures remain reported without turning the actual saved preference into a failed write.
+
+`FieldSelectionState` subscribes to company and existing FIELD changes, immediately clears evidence, cancels stale catalog/current reads and discards delayed results after switching away and back. It snapshots catalog DTOs and retains original identities; mutated rows cannot become command targets. One pending command suppresses repeated input. Its matching owner event alone cannot confirm the command; a different FIELD event invalidates its eventual acknowledgement. Rejected/uncertain outcomes require an explicit fresh review without automatic write retry. A confirmed save also requires refresh before another change.
+
+The existing selector receives a transient state from Web DI, using the same scoped data owner and normal failure reporting. It renders company-required, genuine empty, saved-but-unavailable, loading, failure and confirmed preference states using MudBlazor. Existing lease consumers receive the same FIELD event and continue requiring explicit FIELD authority independently. The component does not claim the remaining current-field dashboards are integrated.
+
+This strengthens existing wire contracts: set requires Context and current absence is a reviewed 200 response. Repository callers are updated; no alternate compatibility endpoint or legacy JSON adoption path is added. External consumers require a coordinated contract release. The separate legacy SDK FieldService still uses fieldorchestrator/local-mode paths and requires its existing owner audit; it is not certified here.
+
+## Focused evidence
+
+Final affected gate: **97 passed, 0 failed, 0 skipped**, in 26 seconds: 29 profile/company/Beep gateway selector cases, 25 actual UI state/shared-validator cases, 6 actual selector MVC/authentication/body/query-binding cases and 37 existing account/profile cases. The earlier 96-case checkpoint preceded the additional different-FIELD-during-save check. Combined focused checkpoint: **1522 passed, 0 failed, 0 skipped**, adding 59 to the previous 1463, in 6 minutes 44 seconds. It precedes the final different-FIELD event case and final component attribute correction; the final 97-case affected gate and 15-render exact-component gate verify those changes. No final all-1523 inventory run is claimed.
+
+Persistence tests use actual RepositoryDbContext/SQLite mapping, actual profile owner, account/company/row-access/entitlement services and an explicit recording Beep provider. They cover fresh service/context materialization, preserving unrelated preferences/actor, stale/forged reviews, live grant/entitlement/account/active-FIELD changes, malformed catalogs, protected general preferences, expected revision and a competing real profile save through another DbContext. No partial preference survives the reproduced concurrent save. The company-switch fixture also recreates ConnectionProperties, changing its target fingerprint; its evidence covers joint company/database snapshot isolation rather than claiming unchanged-binding switch restoration.
+
+Six Kestrel loopback cases discover only the actual selection controller partial and exercise standard ASP.NET authentication and actual MVC binding. All three anonymous operations return 401 without owner calls; an authenticated member receives reviewed absence and query-bound catalog; exact JSON context reaches the configured owner and its typed acknowledgement is returned; omitted required Context returns 400 before the owner. Authentication and selection service are explicit mocks in these HTTP cases; actual account/company/provider checks are established separately above. Full lifecycle controller discovery and production middleware are not substituted into this fixture.
+
+`Scripts/Test-LeaseWebMarkup.ps1 -RenderPortfolio` compiles the complete exact lease page, KpiCard, StatusBadge and FIELD selector against MudBlazor 9.7.0 with **zero warnings/errors**, verifies copied source hashes, and passes **15 static renders**: eight existing portfolio modes and seven selector modes (full, empty, unavailable, failed, missing company, loading, confirmed). These use actual states/component sources with documented mock boundaries and do not exercise browser JS, live HTTP, Web host registration or production auth. Final artifacts: `%TEMP%/oilgas-lease-page-93c8b1999c784c54be57a153d0184aaa` and its `-render` companion.
+
+Logs: `%TEMP%/oilgas-field-selection-profile-baseline.log`, `oilgas-field-selection-core-focused.log`, `oilgas-field-selection-final-affected.log`, `oilgas-field-selection-final-all-focused.log` and `oilgas-field-selection-page-final-focused.log`. The focused build retains known missing-analyzer/member-hiding warnings. No missing project or production authentication helper is fabricated. The isolated actual-component build has zero warnings/errors.
+
+Reproduce the final affected and markup gates without overwriting another running test assembly:
+
+```powershell
+$fieldFocusedOutput = Join-Path $env:TEMP 'oilgas-field-selection-final-output'
+dotnet test Beep.OilandGas.Repository.Tests -p:FocusedCompanyTests=true -p:UseBeepDMSource=false -p:GeneratePackageOnBuild=false "-p:OutputPath=$fieldFocusedOutput/" --no-restore --filter 'FullyQualifiedName~CompanyFieldSelectionTests|FullyQualifiedName~FieldSelectionTests|FullyQualifiedName~FieldSelectionEndpointTests|FullyQualifiedName~RepositoryAccountProfileTests'
+& Scripts/Test-LeaseWebMarkup.ps1 -RenderPortfolio -FocusedOutputDirectory $fieldFocusedOutput
+```
+
+## Remaining acceptance and next owners
+
+- Restore the reviewed persistent FIELD into the remaining existing lifecycle request owners and remove their optional access/actor/global connection paths. The old broad `IFieldOrchestrator` and phase/domain services are still request scoped; summary/dashboard/well/production/analytics/HSE consumers are not established by the selector's three endpoints. Repair their canonical owners rather than adding another current-FIELD or authorization store. The explicit FIELD lease portfolio remains the bounded integrated consumer.
+- Complete actual Web ApiClient/DataManagementService/LifeCycleService compilation and transport/subscriber/lock/body/company-change tests, registered API/Web host DI and full controller discovery, production account/company middleware/standard claims bridge and HTTP authorization. Core/UI/selector MVC/component compilation are focused-verified; the broader Web adapters and host registration changes are source-only. Do not infer their runtime success from the narrow assembly or static renderer.
+- Accept real Beep provider and registry engines, full unchanged-binding company/account switching, revocation during preference save/readback, concurrent first-profile creation, multi-process/circuit outcomes, preference capacity/retained-binding retirement, browser keyboard/screen-reader/RTL/localization and circuit/navigation recovery. A uncertain preference save is resolved through a fresh authoritative review; durable status/creation outcomes still use their separate owners.
+- Complete durable full-interpretation/database/configuration/status revision/reconciliation and lifetime creation fencing; accept installed driver transaction ownership and canonical LAND area/FK requirements before live mutation promotion. Complete advanced legal/operator/JV/financial/domain paths and wider CA/FG foundation/release gates.
+
+No phase, full-plan, full host, provider, browser, release or production-readiness closure is claimed.
+
+Follow-up: [Implementation 57](Implementation-57-Current-FIELD-Lifecycle-Guard.md) verifies the existing current-FIELD guard and all five lifecycle HTTP routes using the complete controller. Concrete orchestrator/Program edits remain source-only; phase/helper authority/connection/row-policy and production host acceptance remain open. The earlier selector-only HTTP evidence above remains its historical checkpoint.

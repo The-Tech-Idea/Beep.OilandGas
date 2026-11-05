@@ -1,0 +1,27 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@if(Review?.Confirmed==true)
+{
+    <MudText Typo="Typo.h5">Configured financial processes</MudText>
+    <MudText Typo="Typo.caption">FIELD @Review.FieldId · Loaded at UTC @Review.LoadedAtUtc?.ToString("O") · Definitions: @Review.Rows.Count</MudText>
+    <MudAlert Severity="Severity.Info">These are configured definitions, not assigned transactions or approval/posting results. Recorded references do not establish which reporting regime applies to this company. Follow assigned work for original source evidence and permitted actions.</MudAlert>
+    @if(Review.Rows.Count==0){<MudAlert Severity="Severity.Info">No active financial definitions were returned in this catalog response.</MudAlert>}
+    else
+    {
+        <MudTable T="FinancialProcessCatalogState.Item" Items="@Review.Rows" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent><MudTh>Process</MudTh><MudTh>Version</MudTh><MudTh>Source entity</MudTh><MudTh>Configured reference</MudTh><MudTh>Definition</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Process">@context.Name<MudText Typo="Typo.caption">@context.Id</MudText><MudText Typo="Typo.caption">@context.Description</MudText></MudTd>
+                <MudTd DataLabel="Version">@(string.IsNullOrWhiteSpace(context.Version)?"Unavailable":context.Version)</MudTd>
+                <MudTd DataLabel="Source entity">@context.EntityType</MudTd>
+                <MudTd DataLabel="Configured reference">@(string.IsNullOrWhiteSpace(context.Regulation)?"Not recorded":context.Regulation)</MudTd>
+                <MudTd DataLabel="Definition"><MudButton Href="@context.Route">Review configured definition</MudButton></MudTd>
+            </RowTemplate>
+            <PagerContent><MudTablePager /></PagerContent>
+        </MudTable>
+    }
+}
+else {<MudAlert Severity="Severity.Info">Select a company and FIELD, then reload the financial catalog. No definitions are confirmed.</MudAlert>}
+@code{[Parameter] public FinancialProcessCatalogState? Review {get;set;}}

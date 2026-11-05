@@ -1,0 +1,152 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Independent correction, resubmission and company role work queues",
+  "distinct_observed_inputs": 39,
+  "distinct_inputs_now_passing": 39,
+  "passing_observations": 45,
+  "failed_observations": 1,
+  "total_observations": 46,
+  "overlap": "Six native capability inputs repeat after fixture correction and the new physical-column preflight; counts are not a full regression.",
+  "gates": [
+    {
+      "name": "app",
+      "methods": [
+        "PermitCorrectionReviewPreservesSubmissionAndSupportsExplicitEditResubmission",
+        "ActualPermitCorrectionControlRequiresIndependentReviewerAndRetainsUncertainty",
+        "PermitInboxStateUsesReturnedRoleQueuesAndWithholdsForeignOrLateRecords",
+        "PermitInboxPagingSearchAndContextResetKeepExactReturnedRecordGroups",
+        "ActualPermitDashboardRendersScopedRoleQueuesAndExactApplicationLinks",
+        "PermitInboxApiBindsReturnedRecordsAndFreshCommandCapabilities",
+        "PermitInboxWebAndSdkUseCanonicalBoundReadOnlyEndpoint"
+      ],
+      "filter": "FullyQualifiedName~PermitCorrectionReviewPreservesSubmissionAndSupportsExplicitEditResubmission|FullyQualifiedName~ActualPermitCorrectionControlRequiresIndependentReviewerAndRetainsUncertainty|FullyQualifiedName~PermitInboxStateUsesReturnedRoleQueuesAndWithholdsForeignOrLateRecords|FullyQualifiedName~PermitInboxPagingSearchAndContextResetKeepExactReturnedRecordGroups|FullyQualifiedName~ActualPermitDashboardRendersScopedRoleQueuesAndExactApplicationLinks|FullyQualifiedName~PermitInboxApiBindsReturnedRecordsAndFreshCommandCapabilities|FullyQualifiedName~PermitInboxWebAndSdkUseCanonicalBoundReadOnlyEndpoint",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "755 ms",
+      "terminal": "app-terminal.txt",
+      "full_temporary_log": "oilgas-354-correction-inbox-app.log",
+      "full_log_sha256": "2c4d292c23d239ac84a64e8b145f248353e9e4d804ae1fc10a5ed57cb138097d"
+    },
+    {
+      "name": "initial-native",
+      "methods": [
+        "PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess",
+        "PermitCorrectionNativeReturnEditAndResubmitKeepExactOwnedReceipts"
+      ],
+      "filter": "FullyQualifiedName~PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess|FullyQualifiedName~PermitCorrectionNativeReturnEditAndResubmitKeepExactOwnedReceipts",
+      "passed": 8,
+      "failed": 1,
+      "skipped": 0,
+      "exit_code": 1,
+      "duration": "2 m 24 s",
+      "terminal": "initial-native-terminal.txt",
+      "full_temporary_log": "oilgas-354-correction-inbox-native.log",
+      "full_log_sha256": "a60ba27173e73173b86cf66fc4dabdb15812e117a5422ced740aee66c8abebbc"
+    },
+    {
+      "name": "permission-correction",
+      "methods": [
+        "PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess"
+      ],
+      "filter": "FullyQualifiedName~PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess&DisplayName~late-permission",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "2 s",
+      "terminal": "permission-correction-terminal.txt",
+      "full_temporary_log": "oilgas-354-correction-inbox-native-permission.log",
+      "full_log_sha256": "d4977c30f851a77331d69e723a0941294035b53ac394a461d92bb82d2b2e7447"
+    },
+    {
+      "name": "final-reader",
+      "methods": [
+        "PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess"
+      ],
+      "filter": "FullyQualifiedName~PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "17 s",
+      "terminal": "final-reader-terminal.txt",
+      "full_temporary_log": "oilgas-354-inbox-reader-schema-final.log",
+      "full_log_sha256": "6b0f17143cef73adf96a4332b76cc6ca78fb019f0158cde498ee133604ab40b8"
+    }
+  ],
+  "criteria": {
+    "correction": "Current independent reviewer requests RETURN_FOR_CORRECTION through the existing retained command/receipt/owned transaction; preserves submitting account/time, records exact reason/history, sets AdditionalInformationRequired/incomplete submission. Authorized explicit edit/resubmit clears current-header decision, records new submitter, preserves immutable history/receipts and refuses self-approval.",
+    "native": "Actual owned native return/edit/resubmit cycle has three confirmed receipts and nine writes; receipt failure rolls back and lost acknowledgement recovers the same original without duplicate effects. Actual scope/permission/grant owners, controlled driver/transaction ledger.",
+    "inbox": "Data owns a frozen returned-record review with exact company/account/FIELD/module and native FIELD revision/current author/reviewer capabilities. API checks unchanged authority before/after; Web and remote-only SDK reject foreign/missing responses. No DB access from Blazor.",
+    "reader": "Native GetApplications reads the company/FIELD-scoped population once; status selection uses the typed canonical enum instead of guessing provider text storage. Required physical projection columns must occur exactly once. Missing STATUS and reported provider failure refuse instead of becoming a loaded zero/default-Draft inbox. Open/source/scope checks reuse the existing native source owner.",
+    "persona": "Actual permit dashboard/shared queue component renders author drafts/corrections, independent review excluding self/missing submitter, and other returned records. Exact encoded detail links, returned-record counts, search and ten-record paging; role/company/FIELD changes clear projections and withhold late data. Actual correction control is hidden for self/read-only accounts and retained recovery survives uncertainty.",
+    "HSE": "HSEDashboard source embeds the same permission-gated queue component; the whole HSE landing is not compiled/rendered in this focused target.",
+    "ownership": "Canonical summary adds submitting account/country/region. History/transition token helper moves into Data with its enum; unused fallback parser is removed. Existing dashboard logic/old list tests are replaced by shared bound queue checks.",
+    "migration": "No schema change, SQL or EF migration in this slice. Beep Migration remains the sole schema owner."
+  },
+  "builds": [
+    {
+      "target": "Data",
+      "duration": "6.97 s",
+      "warnings": 1,
+      "errors": 0
+    },
+    {
+      "target": "Native Permits final",
+      "duration": "3.49 s",
+      "warnings": 2,
+      "errors": 0
+    },
+    {
+      "target": "SDK",
+      "duration": "5.16 s",
+      "warnings": 1,
+      "errors": 0
+    }
+  ],
+  "corrected_attempts": [
+    "Native build initially qualified the existing Errors enum with Utilities; corrected to ConfigUtil before accepted native build/gate.",
+    "Initial native late-permission test correctly observed the owner refusal, then erroneously attempted a read under the invalidated selection. The test now stops after confirming refusal/no writes; production refusal stays unchanged. Only that case reran before final reader verification."
+  ],
+  "ordering_note": "App gate ran before the native population error/schema guards. Three native correction transaction cases passed in the initial mixed native gate; the final reader gate exercises physical preflight and typed population/status selection. The transaction body is unchanged afterward; its source-opening helper was renamed/reused without behavioral change.",
+  "hashes_at_checkpoint": {
+    "TheTechIdea.Data/OilGas/PermitApplicationInboxReview.cs": "c399a45b42df923f90754f00540182556bed6556e1319e4e13dfd63cc83f93a2",
+    "TheTechIdea.Data/OilGas/PermitApplicationWorkflow.cs": "e8430cd2720d8857320091f53300eff6ebd2f2258fe45556951651505f3ca6ea",
+    "TheTechIdea.Data/OilGas/PermitApplicationDataAccess.cs": "76e1df77766e67e5df507c9f9a1984a52eb48b3d12c12dada32b9cb2af9ce7d3",
+    "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs": "c25d0f5bd87b8e3ee6447e33465c87656f0c1d1a5e069e1f8e7133bd81ea1172",
+    "TheTechIdea.Data/OilGas/PermitApplicationCommandOutcome.cs": "5e7357ca7d49d3672f581500facdc4de1acdaaebb34facb05c62cce84ed5ae33",
+    "TheTechIdea.Data/OilGas/PermitApplicationStatusCodes.cs": "c6962abd8a829a587c111a100624d7c19d0cd5ca41328cdbb6a9514eb0cbb4e7",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "be16f7f57f751ada73f70a4fbdabf590ad56b743fd73bca0296191fb320d3a57",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "89c6b0bb3d3611c10dd4bf33d8ee483d6ea80c903815da9d5883eb67c9c5e3ab",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "2ee4c721d48ee5239895ef2e1db1de7c68a49c2462ea5d056d1b9b9d2a8bda97",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "0253eb0359deb9cd239b67feb2cdf467dd3d618a1aada282f991c4132ad4417e",
+    "Beep.OilandGas.PermitsAndApplications/Core/Interfaces/IPermitApplicationLifecycleService.cs": "9906a17824aba73165289127f09f665b08018d289fa1790fc410db49a59abb73",
+    "Beep.OilandGas.Web/Services/PermitApplicationInboxState.cs": "ce553493c22d00381328310d572f370de28f2876a0bf8460ff705e68ad4dacf2",
+    "Beep.OilandGas.Web/Services/PermitServiceClient.cs": "1a43e55ea0781b8ffea1944d61159cf1b7c4940da6ce348f9baaffa57f2c499e",
+    "Beep.OilandGas.Web/Services/IPermitServiceClient.cs": "a0a69c4235dfef0fc7f57183813c0b7bb75cc2432af572418bc9c9b69a9fa6b7",
+    "Beep.OilandGas.Web/Components/Workflow/PermitApplicationInbox.razor": "8c71d7247da6372f464f9d5dd8db0a4bbb32150ff18c0cce5b9e8c3230f1817f",
+    "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor": "efbe74e8626cd19aad9971d7c6d93665948bb46f304a8ca07e294694d24be7ad",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/PermitDashboard.razor": "dd4479cbebab214c16e5c1968b1be99ffd352e70af38425cc715a86d582c4d2d",
+    "Beep.OilandGas.Web/Pages/PPDM39/HSE/HSEDashboard.razor": "314aa4533912768405f653c5794cc7a4a138c8e33fe88599f8c156d3e95f0576",
+    "Beep.OilandGas.Client/App/Services/Permits/IPermitsService.cs": "b9ef4de8b4540882181169379e7e031abe94b57156ec074a737d577d6f1f9872",
+    "Beep.OilandGas.Client/App/Services/Permits/PermitsService.cs": "ccf8c00614e9e151ab51f13352a281f80ba00cb2dc0147fac634f94681aaf07f",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "a909c24b5508640953a7fcebe9069eb6e3b0541f103159596749d4c1a2ef02a1",
+    "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs": "d822830ff8cbffcefff0c61a8bdb8a8642d4851aa651c2e1f52dc0405326e136",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "508076e6bacce1eab89ecbb72c966374da6276ccd85de5dbc1b723f51a9f3c45",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "c9d150c214b8682afd745ca27369fcf39805a15482d62e43d87e45e604308700",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "13664b1acb147a0d8d367fd0d63cfb12788b2445c7e3ea72c3cd167f90c34d54",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "39600c55118f80d7e854b64e613e718bae3b3bc81339bdd1fbff5ca775424bf6",
+    "Beep.OilandGas.Client/bin/Debug/net10.0/Beep.OilandGas.Client.dll": "c62c5964345a01c45c96ab4cf83d458888a978d2fc26f1eb23b6441d5aada13a",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "1225af38bddb63ac2dbe99a3979ca2eda2e078a07cb02c5f692ad72b9bb87925"
+  },
+  "limitations": [
+    "Controlled native datasource/connection/transaction persistence and transport, not actual provider/Beep Migration or hosted HTTP/OIDC acceptance.",
+    "Actual static permit dashboard/shared Razor and bound correction state; no browser clicks, whole HSE landing rendering, viewport/keyboard/RTL/a11y or production performance qualification.",
+    "Physical-column checks do not establish every real connector materialization/projection acknowledgement contract; provider qualification remains open.",
+    "Counts describe returned records, not complete provider inventory or assignment of individual people. Source review and command authorization must be repeated at the exact application.",
+    "Company jurisdiction applicability, supporting-record amendments, changed-binding reconciliation and phase4 multi-account/browser/host/provider/regional gates remain open.",
+    "Full goal remains active; no commit/push."
+  ]
+}

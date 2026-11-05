@@ -97,93 +97,17 @@ This library provides support for the complete field lifecycle from prospect ide
 - GAU Oil & Gas Waste Disposal Well Letter
 - GAU Determination for a Seismic Survey
 
-## Services
+## Application services and ownership
 
-- `PermitApplicationLifecycleService` - Domain-level application lifecycle (create/update/submit/decision).
-- `PermitStatusHistoryService` - Status transitions and audit history.
-- `PermitAttachmentService` - Attachment ingestion and lifecycle.
-- `PermitComplianceCheckService` - Jurisdiction-aware compliance checks and config-based rules.
-- `PermitComplianceReportService` - Expiry monitoring and compliance reporting.
-- `PermitApplicationWorkflowService` - End-to-end workflows across PPDM entities and form payloads.
+The current delivery status and remaining gates are owned by [Plan 354](../Plans/FrameworkAppEnhancement/Implementation-354-Permit-Application-Workflow.md) and the [company tracker](../Plans/FrameworkAppEnhancement/Company-Plan-Index.md).
 
-## Core Models
+`TheTechIdea.Data` owns the canonical `PERMIT_APPLICATION`, supporting rows, history, immutable command receipt and transport contracts. The PERMITS module manifest uses Beep Migration for schema changes; new application schema does not use handwritten SQL or EF migrations. Clients use the typed API clients.
 
-### PermitApplication
-Base class for all permit applications with common properties:
-- Application ID, Type, Status
-- Regulatory Authority (RRC, TCEQ, etc.)
-- Dates (Created, Submitted, Received, Decision, Effective, Expiry)
-- Applicant and Operator information
-- Attachments, Areas, Components
+`PermitApplicationLifecycleService.ReviewSourceAsync` captures the exact current company/FIELD header, history, three supporting rows and exact active attachment metadata population. Supporting schema/read failures refuse review rather than confirming absence. `RecordCommandAsync` records a reviewed original through the existing owned Serializable transaction, history and receipt. `RecoverCommandAsync` reconciles that same original without a new effect.
 
-### DrillingPermitApplication
-Extends `PermitApplication` with drilling-specific properties:
-- Well UWI
-- Well location (legal description)
-- Target formation
-- Proposed depth
-- Drilling method
-- Surface owner notification
-- Environmental assessment
+Author draft/header changes, submission and independent decisions use this command owner. `AMEND_DRILLING` supplies typed `PermitDrillingDraftChanges` for Draft or AdditionalInformationRequired applications with a recorded well. The proposal cannot change parent ownership, identity, classification, well or filing state. Positive depth requires an explicit recorded unit; casing, legal description and supporting notes allow up to4096 characters. The permit screen retains the original before transport and displays its exact proposal and recorded result. `AMEND_ENVIRONMENTAL` and `AMEND_INJECTION` use the same reviewed owner and typed screen controls. Waste volume and injection limits require an explicit paired unit when entered; unknown quantities and indicators remain nullable. Injection uses only canonical maximum pressure/rate/fluid fields and its recorded well; environmental disposal uses the active `DISPOSAL_METHOD`. Each subtype has its own retained proposal and recorded result display. Attachment metadata is frozen and displayed inertly, without opening a path or URL. A filename, size or uploader reference is not verified content: new submission and positive approval refuse while attachment content is unconfirmed; correction/rejection and historical result recovery remain available under their normal authority/stage checks. The unused raw attachment writer/interface and FILE_PATH field are removed. Application-owned native staging now uses StageDocumentAsync/RecoverDocumentStageAsync and a PERMIT_DOCUMENT_STAGE ownership/proof journal (12-entity PERMITS manifest). Only existing CORE RM_FILE_CONTENT stores bytes; SOURCE_DOCUMENT and RM_INFORMATION_ITEM retain native document headers/version. Server nonce, current company/FIELD/parent authority, target fingerprints, exact metadata/content hashes, owned transactions and readback govern staging and exact retry. Journal/core/journal commits are separate, not distributed atomicity. Recorded staging recovery is historical evidence, not current download authorization. Attachment linking/current-content comparison, sanitized API receipts and protected author upload/download UI remain pending; the existing work-order document reader does not grant general application document access.
 
-### EnvironmentalPermitApplication
-Extends `PermitApplication` with environmental-specific properties:
-- Environmental permit type
-- Waste type and volume
-- Disposal method
-- Environmental impact
-- Monitoring plan
-- NORM involvement
-
-### InjectionPermitApplication
-Extends `PermitApplication` with injection-specific properties:
-- Injection type
-- Injection zone
-- Injection fluid
-- MIT results
-- Monitoring requirements
-- CO2/gas storage flags
-- Maximum injection pressure and rate
-
-## PPDM39 Integration
-
-The library provides complete mapping to PPDM39 entities:
-
-- **APPLICATION**: Main application entity
-- **APPLIC_ATTACH**: Application attachments/documents
-- **APPLIC_AREA**: Geographic areas covered
-- **APPLICATION_COMPONENT**: Application components
-- **WELL_LICENSE**: Well-specific licenses
-- **WELL_PERMIT_TYPE**: Types of well permits
-
-## Usage Example
-
-```csharp
-using Beep.OilandGas.Models.Data.PermitsAndApplications;
-using Beep.OilandGas.PermitsAndApplications.DataMapping;
-
-// Create a drilling permit application
-var drillingPermit = new DrillingPermitApplication
-{
-    ApplicationId = "DP-2025-001",
-    ApplicationType = PermitApplicationType.Drilling,
-    Status = PermitApplicationStatus.Draft,
-    RegulatoryAuthority = RegulatoryAuthority.RRC,
-    WellUWI = "12345678901234",
-    TargetFormation = "Eagle Ford",
-    ProposedDepth = 8500,
-    DrillingMethod = "Horizontal",
-    SurfaceOwnerNotified = true,
-    CreatedDate = DateTime.Now
-};
-
-// Map to PPDM39
-var mapper = new ApplicationMapper();
-var ppdmApplication = mapper.MapDrillingPermitToPPDM39(drillingPermit);
-
-// Map from PPDM39
-var domainApplication = mapper.MapToDomain(ppdmApplication);
-```
+`IPermitApplicationWorkflowService` supplies company-bound reads, automated validation and form payload projection; it does not expose raw persistence or unreviewed lifecycle writes. The automated checker and template renderer are not evidence of regulator approval. Supporting values use the exact canonical parent and recorded units; no unit conversion is inferred.
 
 ## Regulatory Authorities
 

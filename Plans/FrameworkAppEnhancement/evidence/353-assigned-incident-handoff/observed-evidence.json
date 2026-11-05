@@ -1,0 +1,62 @@
+{
+  "status": "verified-scoped-component",
+  "recorded_at": "2026-10-29T12:55:58.302302+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; existing goal changes preserved",
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md - Assigned HSE process to reviewed incident handoff; persona next-role task to source/detail contract",
+  "checks": [
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "1 second",
+      "filter": "FullyQualifiedName~AssignedIncidentSourceLinksExactWorkflowAndRefusesGenericActions|FullyQualifiedName~IncidentWorkflowDeepLinkRequiresExactCurrentRecordedInstance|FullyQualifiedName~AssignedHseProcessPageOffersReviewedIncidentInsteadOfGenericActions|FullyQualifiedName~ConfirmedActionReviewPublishesExactRevisionAndChoices|FullyQualifiedName~IncidentDetailReceivesTheExactIdentifierFromTheQuery|FullyQualifiedName~IncidentDetailRefusesUnmatchedCompanyAuthorityBeforeReading|FullyQualifiedName~LateIncidentDetailCannotReappearAfterCompanyChange",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~AssignedIncidentSourceLinksExactWorkflowAndRefusesGenericActions|FullyQualifiedName~IncidentWorkflowDeepLinkRequiresExactCurrentRecordedInstance|FullyQualifiedName~AssignedHseProcessPageOffersReviewedIncidentInsteadOfGenericActions|FullyQualifiedName~ConfirmedActionReviewPublishesExactRevisionAndChoices|FullyQualifiedName~IncidentDetailReceivesTheExactIdentifierFromTheQuery|FullyQualifiedName~IncidentDetailRefusesUnmatchedCompanyAuthorityBeforeReading|FullyQualifiedName~LateIncidentDetailCannotReappearAfterCompanyChange\" --logger \"console;verbosity=minimal\"",
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\353-assigned-incident-handoff\\oilgas-353-assigned-hse-handoff-final.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-hse-handoff-final.log",
+      "original_sha256": "a408b892535b05ae559d6bb33ec7d841aeba473ad9f8461ae770644e546d7350"
+    },
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "31 ms",
+      "filter": "FullyQualifiedName~ProcessInstanceDetailStateTests.ConfirmedActionReviewPublishesExactRevisionAndChoices",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~ProcessInstanceDetailStateTests.ConfirmedActionReviewPublishesExactRevisionAndChoices\" --logger \"console;verbosity=minimal\"",
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\353-assigned-incident-handoff\\oilgas-353-handoff-generic-source.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-handoff-generic-source.log",
+      "original_sha256": "bca40822d0d61a081318af8512e20d39cc212ed7319a7516f05a536d150450f2"
+    }
+  ],
+  "distinct_inputs": 16,
+  "criterion_mapping": {
+    "source_link": "3 inputs: exact encoded incident/workflow identity; unrecognized definition or instance prefix withholds link; all HSE types refuse generic action lookup; company clearing removes source link.",
+    "actual_assigned_page": "2 inputs: actual process source page renders the reviewed HSE handoff or unconfirmed-link warning; generic action controls/transport absent. FIELD selector is explicitly stubbed.",
+    "destination_binding": "5 inputs: valid encoded instance/incident, wrong instance, missing workflow, invalid query identity before reads and same-page workflow query change. Current company/FIELD/HSE view checks remain.",
+    "affected_current_authority": "5 inputs: exact incident ID, three mismatched authority cases and late result after company change.",
+    "generic_non_hse": "1 input: confirmed ordinary source action review retains exact revision/choices."
+  },
+  "source_sha256": {
+    "Beep.OilandGas.Web/Services/ProcessInstanceDetailState.cs": "fd22f18679cc487bff4b7d299bea40b2d917ea2d488dc12e38a3eb3ca86e4198",
+    "Beep.OilandGas.Web/Components/BusinessProcess/RecordedProcessSourcePanel.razor": "3e1a4085972f7cb9c650967617903ec0df73bdc39d9bfcbdd7b9989d007748ed",
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/ProcessInstanceDetail.razor": "1a10f830d1836aba2dc68ee6eb2a8e0952cfb01afabd1fdee7d337045f1513d4",
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidentDetail.razor": "7c0fd6d7eeb2af68ef7ab671dbc72a37b70a2a72ec90f8dc4bd995337f62087c",
+    "Beep.OilandGas.Web.Auth.Tests/HseIncidentScreenTests.cs": "ed804e5b26cb1e18ae995d68f35d7737fe9de91293914b0f389f5a7dc15799fe",
+    "Beep.OilandGas.Web.Auth.Tests/ProcessInstanceDetailStateTests.cs": "eef4d334ae368dd4511446bec95d6f8b35a934868ef4ec7e122fb17b51e2a20d"
+  },
+  "construction": [
+    "Initial focused build failed because the new test passed a CancellationToken to parameterless GetCurrentFieldIdAsync; fixed the mock to match the active interface. That attempt is not accepted.",
+    "The first successful gate ran 15 cases because the temporary harness lacked ProcessInstanceDetailStateTests.cs. Added its actual source link and ran only the exact ordinary action method: 1 passed."
+  ],
+  "limitations": [
+    "Source-linked bUnit uses controlled clients/current FIELD/authentication; no hosted OIDC/API/provider or new browser qualification.",
+    "Actual assigned process page uses an explicit FIELD selector stub. Existing unrelated maintenance/journal/work-order/state-transition components are not source-linked in this harness and emit Razor warnings; those branches are not qualified by these HSE cases.",
+    "Production startup, full application compilation, route navigation in a real browser, provider/concurrency and cross-company identifier-collision qualification remain separate open gates.",
+    "No task route/schema persistence change, SQL, EF migration, compatibility owner or business DTO was introduced.",
+    "Whole-class/full suites were not run; overall plan/goal and commit/push remain pending."
+  ]
+}

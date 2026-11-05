@@ -1,0 +1,22 @@
+[
+  {
+    "sha256": "6338539cf1ee926b0d85d37c36b4a7e65db82c832cecf25d49e1c628d4cc420b",
+    "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs"
+  },
+  {
+    "sha256": "47b3ead117b3056b6cd96b0c1b3fc6a7926114f2ade6133a88b218b73f5255cb",
+    "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs"
+  },
+  {
+    "sha256": "df158513c0c0acb79eb94bd98d4e188f5a52399da079d62a9c78b0c8797f56c1",
+    "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs"
+  },
+  {
+    "sha256": "94e49ab34cbf71f34f818fa258647a162a17a9e919fc0733fc89d45c0222a694",
+    "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs"
+  },
+  {
+    "sha256": "685d908f5b0aa04fed99d17becba3da92d182591e13d08f3bfa94494c335c1be",
+    "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs"
+  }
+]

@@ -1,0 +1,78 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "observed_at": "2026-10-29T20:58:38.390889+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; existing work preserved; no commit/push",
+  "selected_methods_and_inputs": {
+    "PermitSupportingProjectionUsesExactParentAcrossCultures": 6,
+    "SetupInstalledSqliteMigratesEntirePermitsManifest": 1,
+    "PermitCreationRejectsRetiredDuplicateDrillingClassificationBeforeAccess": 1,
+    "PermitChildrenRequireExactVisibleApplicationAndInjectionParent": 4
+  },
+  "result": {
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "1m6s",
+    "exit_code": 0,
+    "test_attempts": 1
+  },
+  "changes": [
+    "Canonical parent owns classifier, lifecycle, fees and resource identity; subtype duplicate properties removed.",
+    "Shared Data-owned projection requires exact parent identity and provides invariant numeric values to forms and validation.",
+    "Retired unused compatibility mapper/facade/registration and unreviewed raw workflow mutation contracts; reviewed lifecycle owner remains."
+  ],
+  "build_observations": "Initial construction builds failed on missing shared helper insertion, nullable numeric formatting and remaining constructor/well references. Sources repaired; final Data/native/LifeCycle/focused-test builds passed with existing warnings. Logs retained.",
+  "limits": [
+    "Supporting amendment commands and screens remain pending.",
+    "Fresh physical SQLite manifest through setup-loaded driver and Beep Migration; existing schema column removal has not been executed or qualified.",
+    "Controlled fixtures do not qualify production OIDC, other providers, driver distribution or broader app consumers.",
+    "No full suite or unrelated incident closure tests run in this checkpoint. Overall approved goal remains incomplete."
+  ],
+  "logs": [
+    {
+      "file": "oilgas-354-parent-01.log",
+      "sha256": "358a0a8f6572228b17cfdb0244fb82d535983f4d7209ee62c0719041cfb1a03f"
+    },
+    {
+      "file": "oilgas-354-parent-data-build-02.log",
+      "sha256": "e35f7575ede00c33ecf1dc93859fe22584783798affc41326ebe0bd62debffcb"
+    },
+    {
+      "file": "oilgas-354-parent-data-build-03.log",
+      "sha256": "f2fece24a6cb827d2a98f324492deccabe616637724c70cff20c6d8e1f049d45"
+    },
+    {
+      "file": "oilgas-354-parent-data-build-04.log",
+      "sha256": "c913c4b43f1b3c6567f31a4609d8e4a76483768d410672f0284793756713b704"
+    },
+    {
+      "file": "oilgas-354-parent-data-build.log",
+      "sha256": "6777201882ae60689369f1b9f8d99ae0035f623c59cdc92bd4696e69db152c5d"
+    },
+    {
+      "file": "oilgas-354-parent-lifecycle-build.log",
+      "sha256": "94a41ddf2037869d76ef0d409064b211be28c3f1bd5a1a94387f72ce51f21b0e"
+    },
+    {
+      "file": "oilgas-354-parent-native-build-02.log",
+      "sha256": "9d9aee2c18b8799d73f7520e4c4490f0278ee2fdde2e72ff319621dc7fbf68b5"
+    },
+    {
+      "file": "oilgas-354-parent-native-build-04.log",
+      "sha256": "9120c9236ceea6026c0299ffb2fa548fc316882251f160144724505dce30332c"
+    },
+    {
+      "file": "oilgas-354-parent-native-build-05.log",
+      "sha256": "55f1ed1507ebdab9fc10b0566bb01433470a1b53b0dcce13ba8d2a3e09ffc0c6"
+    },
+    {
+      "file": "oilgas-354-parent-native-build.log",
+      "sha256": "16869e738d7a05f587da86d56ef2e844f68fae23bd73b473f63bf35cf2864fd6"
+    },
+    {
+      "file": "oilgas-354-parent-tests-build.log",
+      "sha256": "59f40b29af7aef5f83fa1e0335f0dfd9db86d4c12234ab377c64265bef0efe7d"
+    }
+  ]
+}

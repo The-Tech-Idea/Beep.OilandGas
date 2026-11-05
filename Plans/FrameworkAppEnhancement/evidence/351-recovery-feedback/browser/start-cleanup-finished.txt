@@ -1,0 +1,37 @@
+### Page
+- Page URL: http://127.0.0.1:64072/
+### Snapshot
+```yaml
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f3e44]
+    - paragraph [ref=f3e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f3e46]:
+      - button "Use read-only unmapped profile" [ref=f3e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f3e49] [cursor=pointer]
+      - button "Switch other company" [ref=f3e51] [cursor=pointer]
+      - button "Switch other account" [ref=f3e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=f3e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f3e57] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f3e59] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f3e61] [cursor=pointer]
+    - status [ref=f3e101]: Exact original start retained in its own protected tab key.
+  - generic [ref=f3e102]:
+    - heading "Approved program drilling execution" [level=1] [ref=f3e103]
+    - group [ref=f3e104]:
+      - link "Drilling workspace" [ref=f3e105] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Saved programs" [ref=f3e107] [cursor=pointer]:
+        - /url: /ppdm39/operations/drillingoperations
+      - button "Reload original execution outcome" [ref=f3e109] [cursor=pointer]
+    - status [ref=f3e148]:
+      - generic [ref=f3e149]: The exact original execution start was confirmed recorded. WELL state, financial actuals, completion and production handover remain separate.
+    - generic [ref=f3e141]:
+      - heading "Original execution start outcome" [level=2] [ref=f3e142]
+      - paragraph [ref=f3e143]: Outcome checked 2026-10-26 14:28:50Z UTC
+      - paragraph [ref=f3e144]: Recorded operation drilling-execution-C02016915B547892699C6578BF30CA2000B5194F77B05E8F510196C06DF4B414 · STARTED
+      - paragraph [ref=f3e145]: Company company · FIELD original-field/واحد · Well recorded-well/one · Program Original drilling program version 1
+      - paragraph [ref=f3e146]: Actual reported spud 2026-10-26 14:06:05Z UTC · Recorder execution-recorder · Role ConfiguredExecutionRecorder · Workspace DRILLING_RECORDER
+      - paragraph [ref=f3e147]: Actual observed start reported by the configured company recorder
+    - generic [ref=f3e124]: A recorded execution start is separate from WELL state, financial actuals, drilling completion, construction acceptance and production handover.
+```

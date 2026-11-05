@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('link', { name: 'New application' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:51486/ppdm39/permits/new
+### Snapshot
+- [Snapshot](output\playwright\354-permit-browser\artifacts\page-2026-10-29T15-24-05-384Z.yml)

@@ -1,0 +1,85 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject WorkOrderBudgetDecisionStatusState State
+@inject IWorkOrderServiceClient Orders
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Recorded budget decision and current validity</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudTextField @bind-Value="_book" Label="Original recorded company book" Required="true" Disabled="@State.Busy" />
+        <MudTextField @bind-Value="_afe" Label="Original AFE identity" Required="true" Disabled="@State.Busy" />
+        <MudButton OnClick="LoadAsync" Disabled="@State.Busy">Read recorded outcome and current scope</MudButton>
+        <MudButton OnClick="LoadCostsAsync" Disabled="@State.Busy">Read recorded costs and budget variance</MudButton>
+        @if(State.Current is {} status)
+        {
+            var draft=status.Original();
+            <MudText>Original budget @draft.Number · @draft.BudgetAmount.ToString("N"+draft.CurrencyDecimals) @draft.CurrencyCode · book @draft.BookId</MudText>
+            @if(status.Recorded is {} fact)
+            {
+                <MudText>Recorded independent @fact.Decision · decision @fact.WorkflowId · reviewer @fact.Reviewer · UTC @fact.DecidedAtUtc.ToString("O")</MudText>
+            }
+            else{<MudAlert Severity="Severity.Info">The complete native decision population contains no independent budget decision.</MudAlert>}
+            @if(status.IsApprovedForCurrentScope){<MudAlert Severity="Severity.Success">Recorded approval matches the current original work scope and company book.</MudAlert>}
+            @foreach(var blocker in status.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            <MudText>Compared UTC @status.ComparedAtUtc.ToString("O")</MudText>
+        }
+        @if(State.ActualCosts is {} costs)
+        {
+            var original=costs.Budget.Original();
+            <MudText>Recorded actual costs @costs.RecordedTotal().ToString("N"+original.CurrencyDecimals) @original.CurrencyCode</MudText>
+            <MudText>Original budget remaining (budget less recorded costs) @costs.RemainingOriginalBudget().ToString("N"+original.CurrencyDecimals) @original.CurrencyCode</MudText>
+            @if(costs.Costs.Count==0){<MudAlert Severity="Severity.Info">The complete native cost population contains no recorded costs.</MudAlert>}
+            <MudExpansionPanels>
+                @foreach(var cost in costs.Costs)
+                {
+                    <MudExpansionPanel Text="@(cost.Id+" · "+cost.Amount.ToString("N"+original.CurrencyDecimals)+" "+cost.CurrencyCode)">
+                        <MudText>Recorded source @cost.SourceKind · @cost.SourceId</MudText>
+                        <MudText>AFE @cost.AfeId · valuation UTC @cost.ValuedAtUtc.ToString("O")</MudText>
+                        <MudText>Source revision @cost.SourceRevision</MudText>
+                        <MudText>Recorded cost revision @cost.Revision</MudText>
+                    </MudExpansionPanel>
+                }
+            </MudExpansionPanels>
+            <MudText>Costs observed UTC @costs.ComparedAtUtc.ToString("O")</MudText>
+        }
+        <MudAlert Severity="Severity.Info">Recorded approval and current financial admission are separate. This read does not record costs, post a journal or accept return to service.</MudAlert>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    [Parameter] public string? OriginalBookId{get;set;}
+    [Parameter] public string? OriginalAfeId{get;set;}
+    private string _attached="",_book="",_afe="";
+    private string? _error;
+    private bool _disposed;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet(){var key=FieldId+"\n"+WorkOrderId+"\n"+OriginalBookId+"\n"+OriginalAfeId;if(_attached!=key){Invalidate();_attached=key;_book=OriginalBookId??"";_afe=OriginalAfeId??"";}}
+    private Task LoadAsync()=>LoadCoreAsync(false);
+    private Task LoadCostsAsync()=>LoadCoreAsync(true);
+    private async Task LoadCoreAsync(bool costs)
+    {
+        if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId ||
+                !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) ||
+                await Fields.GetCurrentFieldIdAsync()!=FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current standard financial roles, original company/account and FIELD are required.");
+            State.Attach(new(new(WorkOrderId,FieldId,_book),_afe));if(costs)await State.LoadCostsAsync(Orders);else await State.LoadAsync(Orders);
+        }
+        catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,"reading recorded budget decision/current validity","Original financial decision evidence is unavailable");}
+        finally{if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    private void Invalidate(){State.Clear();_book="";_afe="";_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

@@ -1,12 +1,14 @@
-﻿@page "/ppdm39/operations/leaseacquisition"
+@page "/ppdm39/operations/leaseacquisition"
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Client.App
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inject ILeaseServiceClient LeaseService
-@inject ApiClient ApiClient
-@inject ILifeCycleService LifeCycleService
-@inject OilGasApiFailures Answers
+@inject TheTechIdea.Data.OilGas.IFieldSelectionContext FieldSelection
+@inject LeasePortfolioState Portfolio
+@inject LeaseCreationState Creation
 
 <PageTitle>Manage Lease Acquisitions</PageTitle>
 
@@ -17,56 +19,85 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Manage Lease Acquisitions</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Lease portfolio</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">FIELD @_fieldId — Recorded lease portfolio</MudText>
                 <MudChip T="string" Size="Size.Small" Color="Color.Warning"
                          Icon="@Icons.Material.Filled.Assignment">Operations</MudChip>
             </MudStack>
         </MudStack>
+        <AuthorizeView Roles="Administrator" Context="leaseAdmin">
         <MudButton Variant="Variant.Filled" Color="Color.Warning"
                    StartIcon="@Icons.Material.Filled.Add"
-                   Disabled="@(_isLoading || string.IsNullOrWhiteSpace(_fieldId))"
+                   Disabled="@(!Portfolio.Current || Portfolio.Busy || Creation.Busy)"
                    OnClick="OpenCreateDialog">Create Lease Acquisition</MudButton>
+        </AuthorizeView>
     </MudStack>
 
-    @if (!_isLoading && string.IsNullOrWhiteSpace(_fieldId))
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="LoadLeases" Disabled="@(Portfolio.Loading || Portfolio.Busy)">Reload selected FIELD</MudButton>
+    @if (Portfolio.NeedsCompany)
     {
-        <MudPaper Class="pa-3 mb-4" Outlined="true">
-            <MudText Typo="Typo.body2" Color="Color.Warning">
-                Select an active field before creating a lease acquisition so the new lease is linked to a real field location.
-            </MudText>
+        <MudAlert Severity="Severity.Info" role="status">Select an available company before reading lease records.</MudAlert>
+    }
+    else if (Portfolio.NeedsField)
+    {
+        <MudAlert Severity="Severity.Info" role="status">Choose an available FIELD using the existing field selector.</MudAlert>
+    }
+    else if (Portfolio.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error" role="alert">@Portfolio.Error</MudAlert>
+    }
+    @if (Portfolio.Loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" aria-label="Loading lease records" />
+    }
+    @if (Portfolio.CommandError is not null)
+    {
+        <MudAlert Severity="Severity.Error" role="alert">@Portfolio.CommandError</MudAlert>
+    }
+    @if (Portfolio.Confirmation is not null)
+    {
+        <MudAlert Severity="Severity.Info" role="status">@Portfolio.Confirmation</MudAlert>
+    }
+    @if (Portfolio.HasUnconfirmedStatus)
+    {
+        <MudAlert Severity="Severity.Warning" role="status">A status write for this FIELD is unconfirmed. Its lease remains unavailable for another status write in this session; reloading records does not resolve that command.</MudAlert>
+    }
+    @if (Portfolio.Current)
+    {
+        <MudGrid Class="mb-4" Spacing="3">
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Recorded Leases" Value="@_leases.Count.ToString(CultureInfo.CurrentCulture)"
+                         ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Assignment"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                         TrendText="Current FIELD response" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Recorded ACTIVE Status" Value="@_leases.Count(row => row.Status == "ACTIVE").ToString(CultureInfo.CurrentCulture)"
+                         ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                         TrendText="Stored code; no legal approval inferred" />
+            </MudItem>
+        </MudGrid>
+    }
+    @if (Portfolio.Evaluation is { } evaluated)
+    {
+        <MudPaper Outlined="true" Class="pa-3 mb-4">
+            <MudText Typo="Typo.subtitle2">Recorded lease @evaluated.LandRightSubtype / @evaluated.LeaseId</MudText>
+            <MudText>FIELD @evaluated.FieldId — Date zone @evaluated.DateZoneId</MudText>
+            <MudText>Recorded calculated interest: @evaluated.CalculatedInterest.ToString(CultureInfo.CurrentCulture)</MudText>
+            <MudText>Stored status: @(string.IsNullOrEmpty(evaluated.Status) ? "Not recorded" : evaluated.Status)</MudText>
         </MudPaper>
     }
-
-    @if (_isLoading)
-    {
-        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
-    }
-
-    @* ─── KPI Row *@
-    <MudGrid Class="mb-4" Spacing="3">
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Total Leases" Value="@((_leases?.Count ?? 0).ToString())"
-                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Assignment"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
-                     TrendText="All lease records" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Active"
-                     Value="@((_leases?.Count(l => l.Status == "Active" || l.Status == "ACTIVE") ?? 0).ToString())"
-                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
-                     TrendText="Active leases" />
-        </MudItem>
-    </MudGrid>
-
     @* ─── Leases Grid *@
     <MudCard Elevation="2">
         <MudCardContent Class="pa-0">
-            @if (_leases != null && _leases.Any())
+            @if (Portfolio.Current && _leases.Any())
             {
                 <MudDataGrid T="LeaseSummary" Items="@_leases" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
+                        <PropertyColumn Property="l => l.LandRightSubtype" Title="Land Right Subtype" />
+                        <PropertyColumn Property="l => l.LeaseId" Title="Land Right ID" />
+                        <PropertyColumn Property="l => l.DateZoneId" Title="Date Zone" />
                         <PropertyColumn Property="l => l.LeaseNumber" Title="Lease Number" />
                         <PropertyColumn Property="l => l.LeaseName" Title="Lease Name" />
                         <PropertyColumn Property="l => l.LeaseType" Title="Lease Type" />
@@ -85,9 +116,9 @@
                                 <MudText Typo="Typo.body2">@FormatLeaseTerm(context.Item.PrimaryTermMonths)</MudText>
                             </CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Working Interest">
+                        <TemplateColumn Title="Recorded Calculated Interest">
                             <CellTemplate>
-                                <MudText Typo="Typo.body2">@FormatLeaseWorkingInterest(context.Item.WorkingInterest)</MudText>
+                                <MudText Typo="Typo.body2">@context.Item.CalculatedInterest.ToString(CultureInfo.CurrentCulture)</MudText>
                             </CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Status">
@@ -100,13 +131,17 @@
                                 <MudStack Row="true" Spacing="1">
                                     <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Info"
                                                StartIcon="@Icons.Material.Filled.Info"
-                                               OnClick="@(() => EvaluateLease(context.Item.LeaseId))">Evaluate</MudButton>
+                                               Disabled="@(Portfolio.Busy || !Portfolio.Owns(context.Item))"
+                                               OnClick="@(() => EvaluateLease(context.Item))">Read Record</MudButton>
                                     <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
                                                StartIcon="@Icons.Material.Filled.Gavel"
-                                               Href="@GetComplianceHandoffHref(context.Item)">Start Compliance</MudButton>
+                                               Disabled="@(Portfolio.Busy || !Portfolio.Owns(context.Item))" Href="@GetComplianceHandoffHref(context.Item)">Review FIELD obligations</MudButton>
+                                    <AuthorizeView Roles="Administrator" Context="leaseRowAdmin">
                                     <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Warning"
                                                StartIcon="@Icons.Material.Filled.Edit"
-                                               OnClick="@(() => UpdateLeaseStatus(context.Item.LeaseId))">Update Status</MudButton>
+                                               Disabled="@(!Portfolio.CanUpdate(context.Item))"
+                                               OnClick="@(() => UpdateLeaseStatus(context.Item))">Update Status</MudButton>
+                                    </AuthorizeView>
                                 </MudStack>
                             </CellTemplate>
                         </TemplateColumn>
@@ -119,16 +154,18 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
-            else if (!_isLoading)
+            else if (Portfolio.Current)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
                     <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Secondary" Class="og-icon-xl" />
                     <MudText Typo="Typo.h6">No leases found</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">Create the first lease acquisition for this field.</MudText>
+                    <AuthorizeView Roles="Administrator" Context="leaseEmptyAdmin">
                     <MudButton Variant="Variant.Filled" Color="Color.Warning"
                                StartIcon="@Icons.Material.Filled.Add"
-                               Disabled="@string.IsNullOrWhiteSpace(_fieldId)"
+                               Disabled="@(!Portfolio.Current || Portfolio.Busy || Creation.Busy)"
                                OnClick="OpenCreateDialog" Class="mt-2">Create Lease Acquisition</MudButton>
+                    </AuthorizeView>
                 </MudStack>
             }
         </MudCardContent>
@@ -141,9 +178,24 @@
             </MudText>
         </TitleContent>
         <DialogContent>
-            <MudForm @ref="_createForm" @bind-IsValid="_isCreateFormValid">
+            @if (Creation.Error is not null)
+            {
+                <MudAlert Severity="Severity.Error" role="alert">@Creation.Error</MudAlert>
+            }
+            @if (Creation.Message is not null)
+            {
+                <MudAlert Severity="Severity.Info" role="status">@Creation.Message</MudAlert>
+            }
+            @if (Creation.CanView)
+            {
+            <MudText Typo="Typo.body2">FIELD @_createLeaseRequest.PropertyId — Date zone @_createLeaseRequest.Context?.DateZoneId</MudText>
+            @if (_createLeaseRequest.PropertyId != _fieldId)
+            {
+                <MudAlert Severity="Severity.Info" role="status">Return to FIELD @_createLeaseRequest.PropertyId to continue this original creation intent.</MudAlert>
+            }
+            <MudForm @ref="_createForm" @bind-IsValid="_isCreateFormValid" Disabled="@(!Portfolio.Current || Portfolio.Busy || !Creation.CanEdit || _createLeaseRequest.PropertyId != _fieldId)">
                 <MudStack Spacing="2" Class="mt-2">
-                    <MudTextField T="string" Value="@_fieldId" Label="Active Field ID" Variant="Variant.Outlined" ReadOnly="true" />
+                    <MudTextField T="string" Value="@_createLeaseRequest.PropertyId" Label="Reviewed FIELD ID" Variant="Variant.Outlined" ReadOnly="true" />
                     <MudTextField T="string"
                                   @bind-Value="_createLeaseRequest.LeaseNumber"
                                   Label="Lease Number"
@@ -156,16 +208,14 @@
                                   Variant="Variant.Outlined"
                                   Required="true"
                                   RequiredError="Lease name is required" />
-                    <MudSelect T="string"
+                    <MudTextField T="string"
                                @bind-Value="_createLeaseRequest.LeaseType"
-                               Label="Lease Type"
+                               Label="Reviewed Agreement Type Code"
                                Variant="Variant.Outlined"
                                FullWidth="true"
                                Required="true"
-                               RequiredError="Lease type is required">
-                        <MudSelectItem Value="@("FeeMineral")">Fee Mineral</MudSelectItem>
-                        <MudSelectItem Value="@("Government")">Government</MudSelectItem>
-                    </MudSelect>
+                               RequiredError="Agreement type code is required"
+                               HelperText="Enter the exact reviewed R_LAND_AGREE_TYPE code." />
                     <MudDatePicker @bind-Date="_createEffectiveDate"
                                    Label="Effective Date"
                                    Variant="Variant.Outlined"
@@ -184,24 +234,22 @@
                                      Label="Primary Term (Months)"
                                      Variant="Variant.Outlined"
                                      Min="1" />
-                    <MudNumericField T="decimal"
-                                     @bind-Value="_createLeaseRequest.WorkingInterest"
-                                     Label="Working Interest"
+                    <MudNumericField T="decimal?"
+                                     @bind-Value="_createLeaseRequest.CalculatedInterest"
+                                     Label="Recorded Calculated Interest"
                                      Variant="Variant.Outlined"
-                                     Min="0"
-                                     Max="1"
-                                     Step="0.01m"
-                                     Format="0.00"
-                                     HelperText="Fractional value, e.g. 0.85" />
+                                     Required="true"
+                                     HelperText="Explicit recorded LAND_RIGHT value; financial working interest uses its own workflow." />
                 </MudStack>
             </MudForm>
+            }
         </DialogContent>
         <DialogActions>
             <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CloseCreateDialog">
                 Cancel
             </MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Warning"
-                       Disabled="@_isCreating"
+                       Disabled="@(!Portfolio.Current || Portfolio.Busy || !Creation.CanSubmit || _createLeaseRequest.PropertyId != _fieldId)"
                        OnClick="SubmitCreateLeaseAsync">
                 @if (_isCreating)
                 {
@@ -210,9 +258,13 @@
                 }
                 else
                 {
-                    <MudText>Create Lease</MudText>
+                    <MudText>@(Creation.RetryAvailable ? "Retry Same Intent" : "Create Lease")</MudText>
                 }
             </MudButton>
+            @if (Creation.HasPending)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Warning" Disabled="@(!Portfolio.Current || Portfolio.Busy || !Creation.CanReconcile || _createLeaseRequest.PropertyId != _fieldId)" OnClick="ReconcileCreationAsync">Check Registration</MudButton>
+            }
         </DialogActions>
     </MudDialog>
 
@@ -220,165 +272,99 @@
 
 @code {
     private readonly DialogOptions _createDialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
-    private readonly CreateLeaseAcquisition _createLeaseRequest = new();
+    private CreateLeaseAcquisition _createLeaseRequest => Creation.DisplayDraft;
     private MudForm _createForm = null!;
-    private string _fieldName = string.Empty;
-    private string _fieldId = string.Empty;
-    private List<LeaseSummary>? _leases;
+
+    private string _fieldId => Portfolio.FieldId;
+    private IReadOnlyList<LeaseSummary> _leases => Portfolio.Leases;
     private DateTime? _createEffectiveDate;
     private DateTime? _createExpirationDate;
-    private bool _isLoading = false;
+
     private bool _createDialogVisible;
-    private bool _isCreating;
+    private bool _isCreating => Creation.Busy;
     private bool _isCreateFormValid;
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var field = await LifeCycleService.GetCurrentFieldAsync();
-            if (field != null)
-            {
-                _fieldId = field.FieldId ?? string.Empty;
-                _fieldName = field.FieldName ?? string.Empty;
-            }
-        }
-        catch { /* field name is cosmetic; swallow */ }
-
+        Creation.Changed += CreationChanged;
+        Portfolio.Changed += CreationChanged;
+        FieldSelection.CurrentFieldChanged += FieldChanged;
         await LoadLeases();
     }
-
+    private bool _disposed;
+    private void CreationChanged() { if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    private void FieldChanged(string field)
+    {
+        if (_disposed) return;
+        var load = Portfolio.LoadAsync(() => Task.FromResult<string?>(field));
+        _ = InvokeAsync(async () => { if (_disposed) return; StateHasChanged(); await load; if (!_disposed) StateHasChanged(); });
+    }
     private async Task LoadLeases()
     {
-        _isLoading = true;
-        try
-        {
-            if (string.IsNullOrWhiteSpace(_fieldId))
-            {
-                _leases = new List<LeaseSummary>();
-                return;
-            }
-
-            _leases = await LeaseService.GetAvailableLeasesAsync(new Dictionary<string, string>
-            {
-                ["FieldId"] = _fieldId
-            });
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error loading leases.", Severity.Error);
-            _leases = new List<LeaseSummary>();
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        var load = Portfolio.LoadAsync(FieldSelection.GetCurrentFieldIdAsync);
+        StateHasChanged(); await load;
     }
-
+    public void Dispose()
+    {
+        _disposed = true;
+        FieldSelection.CurrentFieldChanged -= FieldChanged;
+        Creation.Changed -= CreationChanged; Portfolio.Changed -= CreationChanged;
+        Creation.Dispose(); Portfolio.Dispose();
+    }
     private async Task OpenCreateDialog()
     {
-        if (string.IsNullOrWhiteSpace(_fieldId))
+        if (!Portfolio.Current || Portfolio.Busy || string.IsNullOrWhiteSpace(_fieldId))
         {
-            Snackbar.Add("Select an active field before creating a lease acquisition.", Severity.Warning);
+            Snackbar.Add("Select an active field before reviewing a lease registration.", Severity.Warning);
             return;
         }
-
-        ResetCreateLeaseRequest();
+        if (!Creation.HasPending) { _createEffectiveDate = null; _createExpirationDate = null; }
+        await Creation.ReviewAsync(_fieldId);
         _createDialogVisible = true;
-        await Task.CompletedTask;
     }
 
-    private void CloseCreateDialog()
-    {
-        _createDialogVisible = false;
-        ResetCreateLeaseRequest();
-    }
+    private void CloseCreateDialog() => _createDialogVisible = false;
 
     private async Task SubmitCreateLeaseAsync()
     {
-        if (string.IsNullOrWhiteSpace(_fieldId))
+        if (!Portfolio.Current || Portfolio.Busy || !Creation.CanSubmit) return;
+        if (!Creation.HasPending)
         {
-            Snackbar.Add("Select an active field before creating a lease acquisition.", Severity.Warning);
-            return;
-        }
-
-        await _createForm.ValidateAsync();
-        if (!_createForm.IsValid)
-            return;
-
-        if (!_createEffectiveDate.HasValue)
-        {
-            Snackbar.Add("Effective date is required.", Severity.Warning);
-            return;
-        }
-
-        if (_createExpirationDate.HasValue && _createExpirationDate.Value < _createEffectiveDate.Value)
-        {
-            Snackbar.Add("Expiration date cannot be earlier than the effective date.", Severity.Warning);
-            return;
-        }
-
-        _isCreating = true;
-        try
-        {
-            _createLeaseRequest.PropertyId = _fieldId;
+            await _createForm.ValidateAsync();
+            if (!_createForm.IsValid) return;
+            if (!_createEffectiveDate.HasValue) { Snackbar.Add("Effective date is required.", Severity.Warning); return; }
+            if (_createExpirationDate.HasValue && _createExpirationDate.Value <= _createEffectiveDate.Value)
+            { Snackbar.Add("Expiration date must follow the effective date.", Severity.Warning); return; }
             _createLeaseRequest.EffectiveDate = _createEffectiveDate.Value;
             _createLeaseRequest.ExpirationDate = _createExpirationDate;
-            await LeaseService.CreateLeaseAcquisitionAsync(_createLeaseRequest);
-            _createDialogVisible = false;
-            Snackbar.Add("Lease acquisition created successfully", Severity.Success);
-            await LoadLeases();
-            ResetCreateLeaseRequest();
         }
-        catch (Exception)
-        {
-            Snackbar.Add("Error creating lease acquisition.", Severity.Error);
-        }
-        finally
-        {
-            _isCreating = false;
-        }
+        await Creation.SubmitAsync(_fieldId);
+        await ShowConfirmedCreationAsync();
     }
 
-    private async Task EvaluateLease(string leaseId)
+    private async Task ReconcileCreationAsync()
     {
-        try
-        {
-            var evaluation = await LeaseService.EvaluateLeaseAsync(leaseId);
-            Snackbar.Add($"Lease evaluation completed for {evaluation.LeaseName}", Severity.Success);
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error evaluating lease.", Severity.Error);
-        }
+        if (!Portfolio.Current || Portfolio.Busy || !Creation.CanReconcile) return;
+        await Creation.ReconcileAsync(_fieldId);
+        await ShowConfirmedCreationAsync();
     }
 
-    private async Task UpdateLeaseStatus(string leaseId)
+    private async Task ShowConfirmedCreationAsync()
     {
-        var result = await DialogService.ShowMessageBoxAsync(
-            "Update Lease Status",
-            "Mark this lease as Active?",
-            yesText: "Mark Active", cancelText: "Cancel");
-
-        if (result == true)
-        {
-            try
-            {
-                await LeaseService.UpdateLeaseStatusAsync(leaseId, "Active");
-                Snackbar.Add("Lease status updated successfully", Severity.Success);
-                await LoadLeases();
-            }
-            catch (OilGasApiException answer)
-            {
-                Snackbar.Add(Answers.Explain(answer, "marking a lease active", "The lease status was not updated"), Severity.Error);
-            }
-            catch (Exception)
-            {
-                Snackbar.Add("Error updating lease status.", Severity.Error);
-            }
-        }
+        if (Creation.ConfirmedLeaseId is null) return;
+        _createDialogVisible = false;
+        Snackbar.Add("Lease registration confirmed.", Severity.Success);
+        await LoadLeases();
     }
+    private Task EvaluateLease(LeaseSummary row) => Portfolio.EvaluateAsync(row);
 
+    private async Task UpdateLeaseStatus(LeaseSummary row)
+    {
+        if (!Portfolio.CanUpdate(row)) return;
+        var result = await DialogService.ShowMessageBoxAsync("Update Recorded Lease Status",
+            "Record the ACTIVE operational code for this lease?", yesText: "Record ACTIVE", cancelText: "Cancel");
+        if (result == true) await Portfolio.UpdateStatusAsync(row, "ACTIVE");
+    }
     private string GetComplianceHandoffHref(LeaseSummary lease)
     {
         var query = new List<string>
@@ -426,28 +412,4 @@
     private static string FormatLeaseTerm(int? value)
         => value.HasValue ? value.Value.ToString() : "Not set";
 
-    private static string FormatLeaseWorkingInterest(decimal value)
-        => value > 0 ? value.ToString("P0") : "Not set";
-
-    private void ResetCreateLeaseRequest()
-    {
-        _createLeaseRequest.PropertyId = _fieldId;
-        _createLeaseRequest.LeaseName = string.Empty;
-        _createLeaseRequest.LeaseNumber = string.Empty;
-        _createLeaseRequest.LeaseType = "FeeMineral";
-        _createEffectiveDate = DateTime.UtcNow.Date;
-        _createExpirationDate = null;
-        _createLeaseRequest.EffectiveDate = _createEffectiveDate.Value;
-        _createLeaseRequest.ExpirationDate = null;
-        _createLeaseRequest.PrimaryTermMonths = null;
-        _createLeaseRequest.WorkingInterest = default;
-        _createLeaseRequest.NetRevenueInterest = default;
-        _createLeaseRequest.RoyaltyRate = default;
-        _createLeaseRequest.MineralOwnerBaId = null;
-        _createLeaseRequest.SurfaceOwnerBaId = null;
-        _createLeaseRequest.GovernmentAgency = null;
-        _createLeaseRequest.IsFederal = null;
-        _createLeaseRequest.IsIndian = null;
-    }
 }
-

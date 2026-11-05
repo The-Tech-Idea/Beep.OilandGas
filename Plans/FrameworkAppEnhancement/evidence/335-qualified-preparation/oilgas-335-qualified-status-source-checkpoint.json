@@ -1,0 +1,42 @@
+{
+  "observed_at_utc": "2026-10-21T06:30:10.4988437Z",
+  "stage": "53-case protected status/native and final 97-case UI gate before outer native source/order closing guard",
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturnStatus.cs",
+      "sha256": "e75f8ef856e11131e3a4d14a7697729bb33d2d33efdd45cef7f441e77a5756e9"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceQualifiedAssets.cs",
+      "sha256": "978d81d98cb6eb991bdec45a9ff7bc28013e4e5679d093b886b77c3c9b3cb109"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturnStatus.cs",
+      "sha256": "7b143940d8c000caa7c9b782bc205fdb46454d6c74ca46f6f116f525fa10bd77"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs",
+      "sha256": "a6c63e9ea0867556a5368ed3bedd1c1164f287dbee1d81661205376806290947"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "18d978f050c6b8c2082ce3c8bca1f4550d7092cb9a07565ae54699b6c205473a"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetEvidencePanel.razor",
+      "sha256": "85d0e595e7d3a93b0fa4e4e0fe9e78926412abd06e3064ada1af5b488f58b668"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStatusTests.cs",
+      "sha256": "df8509cbcbea7b6f10a9b4e149e3de9786c633f81741664c3dc681f2e5f3d359"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "cd6cbfd03b9a53c21a44e3d94734d46f4080078eb2e2024cfce12c816bc4d919"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "35fc5bdd7fdbec97faf95675a8af0f2bf09b48efb1836da8de7caf073a3285d5"
+    }
+  ]
+}

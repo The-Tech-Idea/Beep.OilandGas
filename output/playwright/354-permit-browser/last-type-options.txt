@@ -1,0 +1,72 @@
+### Page
+- Page URL: http://127.0.0.1:51486/ppdm39/permits/new
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - listbox [ref=e303]:
+    - option [ref=e304] [cursor=pointer]:
+      - paragraph [ref=e306]: Drilling
+    - option [ref=e307] [cursor=pointer]:
+      - paragraph [ref=e309]: Environmental
+    - option [ref=e310] [cursor=pointer]:
+      - paragraph [ref=e312]: Injection
+    - option [ref=e313] [cursor=pointer]:
+      - paragraph [ref=e315]: Storage
+    - option [ref=e316] [cursor=pointer]:
+      - paragraph [ref=e318]: Facility
+    - option [ref=e319] [cursor=pointer]:
+      - paragraph [ref=e321]: Seismic
+    - option [ref=e322] [cursor=pointer]:
+      - paragraph [ref=e324]: Groundwater
+    - option [ref=e325] [cursor=pointer]:
+      - paragraph [ref=e327]: Other
+  - generic [ref=e2]:
+    - generic [ref=e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=e10]:
+      - button "Fixture author" [ref=e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=e13] [cursor=pointer]
+      - button "Fixture read only" [ref=e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=e21] [cursor=pointer]
+      - link "HSE landing" [ref=e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=e238]:
+    - heading "New permit application" [level=1] [ref=e239]
+    - paragraph [ref=e240]: Review the explicit draft and linked company resources before retaining one creation original.
+    - button "Read retained creation original" [ref=e241] [cursor=pointer]
+    - group [ref=e243]:
+      - generic [ref=e246]:
+        - combobox "Application type" [expanded] [active] [ref=e248] [cursor=pointer]
+        - generic: Application type*
+      - generic [ref=e255]:
+        - combobox "Country" [ref=e257] [cursor=pointer]
+        - generic: Country*
+      - generic [ref=e264]:
+        - combobox "State or region" [ref=e266] [cursor=pointer]
+        - generic: State or region*
+      - generic [ref=e273]:
+        - combobox "Recorded authority" [ref=e275] [cursor=pointer]
+        - generic: Recorded authority*
+      - generic [ref=e281]:
+        - textbox "Applicant*" [ref=e283]
+        - generic: Applicant*
+      - generic [ref=e285]:
+        - textbox "Well UWI (optional)" [ref=e287]
+        - generic: Well UWI (optional)
+      - generic [ref=e289]:
+        - textbox "Facility ID (optional)" [ref=e291]
+        - generic: Facility ID (optional)
+      - generic [ref=e293]:
+        - textbox "Facility type (required with facility ID)" [ref=e295]
+        - generic: Facility type (required with facility ID)
+      - generic [ref=e297]:
+        - textbox "Description" [ref=e299]
+        - generic: Description
+      - button "Review draft and linked resources" [disabled]
+    - text: A draft or internal decision does not establish regulator clearance, jurisdiction applicability or permission to operate.
+    - link "Back to permits" [ref=e300] [cursor=pointer]:
+      - /url: /ppdm39/permits
+```

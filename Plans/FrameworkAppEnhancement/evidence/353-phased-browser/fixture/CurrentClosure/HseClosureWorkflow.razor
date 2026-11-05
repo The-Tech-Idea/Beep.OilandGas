@@ -1,0 +1,229 @@
+@using System.Text.Json
+@using Beep.OilandGas.Models.Data.HSE
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.Security
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IHSEServiceClient Client
+@inject ICorrectiveActionIntentStore Intents
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<HseClosureWorkflow> Logger
+
+<MudText Typo="Typo.h6">Lifecycle approval and incident closure</MudText>
+@if (unavailable)
+{ <MudAlert Severity="Severity.Warning">Closure recovery is unavailable. Reload before approving a stage.</MudAlert> }
+else if (ready && correctionPending is not null)
+{
+    <MudAlert Severity="Severity.Warning">The original return to corrective work awaits confirmation.</MudAlert>
+    <MudText Typo="Typo.body2">@correctionPending.Reason</MudText>
+    <MudButton OnClick="RetryCorrectionAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Outlined">Reconcile original correction return</MudButton>
+}
+else if (ready && pending is not null)
+{
+    <MudAlert Severity="Severity.Warning">The original @StageLabel(pending.Review.Stage) request awaits confirmation.</MudAlert>
+    <MudText Typo="Typo.body2">@pending.Reason</MudText>
+    <MudButton OnClick="ReconcileAsync" Disabled="@(busy || !CanApprove || resolution is not null)" Variant="Variant.Outlined">Reconcile original closure stage</MudButton>
+    @if (pending.Review.Stage == "INC_CLOSURE" && resolution is null)
+    {
+        <MudButton OnClick="ReviewResolutionAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Outlined">Review changed native incident history</MudButton>
+        @if (resolutionReview is not null)
+        {
+            <MudAlert Severity="Severity.Info">The terminal approval is retained. Review the current history before explicitly resolving the native closure.</MudAlert>
+            @foreach (var row in resolutionReview.Responses)
+            { <MudText Typo="Typo.body2">@row.Observation · @row.Type · @row.Result · @row.ProjectId · @row.Reason · @row.ChangedBy · @row.ChangedAt?.ToString("u")</MudText> }
+            <MudTextField T="string" @bind-Value="resolutionReason" Label="Reason for resolving the reviewed native history change" Lines="3" MaxLength="2000" Disabled="@busy" />
+            <MudButton OnClick="SubmitResolutionAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Filled" Color="Color.Primary">Resolve reviewed history and record CLOSED status</MudButton>
+        }
+    }
+    @if (resolution is not null)
+    {
+        <MudAlert Severity="Severity.Warning">A native history resolution awaits confirmation.</MudAlert>
+        <MudText Typo="Typo.body2">@resolution.Reason</MudText>
+        <MudButton OnClick="RetryResolutionAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Outlined">Reconcile original native resolution</MudButton>
+    }
+}
+else if (ready)
+{
+    @if (CanStartNewStage)
+    {
+    <MudText Typo="Typo.body2">Review and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.</MudText>
+    <MudButton OnClick="ReviewAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Outlined">Review assigned closure stage</MudButton>
+    <MudButton OnClick="ReviewCorrectionAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Outlined">Review rejected verification for correction</MudButton>
+    @if (correctionReview is not null)
+    {
+        <MudAlert Severity="Severity.Warning">Independent verification rejected the current action evidence. Return it to corrective work before a new verification.</MudAlert>
+        @foreach (var decision in correctionReview.Evidence.Decisions.Where(d => d.Review.Revision == correctionReview.Evidence.Actions.Revision))
+        { <MudText Typo="Typo.body2">@decision.Reason</MudText> }
+        <MudTextField T="string" @bind-Value="correctionReason" Label="Reason and instructions for corrective work" MaxLength="2000" Lines="3" Disabled="@busy" />
+        <MudButton OnClick="SubmitCorrectionAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Filled" Color="Color.Primary">Return rejected verification to corrective work</MudButton>
+    }
+    @if (review is not null)
+    {
+        <MudText Typo="Typo.body2">@StageLabel(review.Stage) · assigned role @review.AssignedRole · @review.Evidence.Actions.Actions.Count completed actions</MudText>
+        <MudText Typo="Typo.body2">@(review.Evidence.VerificationSatisfied ? "A verified independent decision matches the current action evidence." : "Corrective actions can be handed to the independent verification stage.")</MudText>
+        <MudTextField T="string" @bind-Value="reason" Label="Stage approval evidence and reason" MaxLength="2000" Lines="3" Disabled="@busy" />
+        <MudButton OnClick="SubmitAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Filled" Color="Color.Primary">@ApproveLabel(review.Stage)</MudButton>
+    }
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">New lifecycle approvals and correction returns are unavailable for a closed, cancelled or unconfirmed incident state. Recover recorded approval evidence to confirm an earlier outcome.</MudAlert>
+    }
+    <MudButton OnClick="RecoverAsync" Disabled="@(busy || !CanApprove)" Variant="Variant.Text">Recover recorded closure approval</MudButton>
+}
+@if (message is not null) { <MudText Typo="Typo.body2" role="status">@message</MudText> }
+
+@code {
+    [Parameter, EditorRequired] public FieldSelectionReview Context { get; set; } = default!;
+    [Parameter, EditorRequired] public string IncidentId { get; set; } = "";
+    [Parameter, EditorRequired] public string? CurrentIncidentState { get; set; }
+    [Parameter] public bool CanApprove { get; set; }
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    private string? priorState;
+    private bool CanStartNewStage => CurrentIncidentState is IncidentState.Reported or IncidentState.UnderInvestigation or IncidentState.PendingRCA or IncidentState.PendingCorrectiveAction or IncidentState.PendingCloseOut;
+    private FieldSelectionReview? priorContext; private string? priorIncident; private CompanyHseClosureReview? review; private CompanyHseClosureCommand? pending;
+    private string reason = ""; private string? message; private bool ready, read, unavailable, busy, disposed; private long generation;
+    private CompanyHseClosureReview? correctionReview; private CompanyHseCorrectionCommand? correctionPending; private string correctionReason = "";
+    private IncidentClosureResolutionReview? resolutionReview; private IncidentClosureResolution? resolution; private string resolutionReason = "";
+    private static string StageLabel(string stage) => stage switch { "INC_CORRECTIVE_ACTIONS" => "corrective-action handoff", "INC_VERIFICATION" => "independent verification approval", "INC_CLOSURE" => "final incident closure approval", _ => throw new InvalidOperationException("Unknown incident stage.") };
+    private static string ApproveLabel(string stage) => stage == "INC_CLOSURE" ? "Approve final closure and record CLOSED status" : "Confirm " + StageLabel(stage);
+    protected override void OnParametersSet()
+    {
+        if (priorContext == Context && priorIncident == IncidentId && priorState == CurrentIncidentState) return;
+        priorContext = Context; priorIncident = IncidentId; priorState = CurrentIncidentState; generation++; read = true; ready = unavailable = false; review = null; pending = null; message = null; reason = "";
+        resolutionReview = null; resolution = null; resolutionReason = ""; correctionReview = null; correctionPending = null; correctionReason = "";
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!read || disposed) return; read = false; var version = generation;
+        try { var saved = await Intents.ReadClosureAsync(Context, IncidentId); var savedResolution = await Intents.ReadResolutionAsync(Context, IncidentId); var savedCorrection = await Intents.ReadCorrectionAsync(Context, IncidentId); if (savedCorrection is not null && (saved is not null || savedResolution is not null)) throw new InvalidOperationException("Reconcile conflicting retained incident intents."); if (disposed || generation != version) return; if (savedResolution is not null && (saved is null || saved.IntentId != savedResolution.Review.ApprovedIntentId)) throw new InvalidOperationException("The native resolution has no matching retained terminal original."); pending = saved; resolution = savedResolution; correctionPending = savedCorrection; ready = true; }
+        catch (Exception error) { Logger.LogWarning(error, "Incident closure original recovery failed"); if (disposed || generation != version) return; unavailable = true; }
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task Current(long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        void Check() { if (disposed || version != generation || Company.Snapshot != snapshot) throw new InvalidOperationException("The incident closure context changed."); }
+        Check(); var selected = snapshot.Selection ?? throw new UnauthorizedAccessException();
+        var user = (await Authentication.GetAuthenticationStateAsync()).User; Check();
+        if (!CanApprove || user.Identity?.IsAuthenticated != true || user.FindFirst("party_id")?.Value != Context.ActorUserId || selected.UserId != Context.ActorUserId || selected.Scope != Context.Company ||
+            !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains(PermissionConstants.HSE.ManageIncidents) || !selected.Permissions.Contains(PermissionConstants.Workflow.Approve)) throw new UnauthorizedAccessException("Current company incident approval authority is required.");
+        var current = await Fields.GetCurrentFieldSelectionAsync(); Check(); FieldSelectionReviewValidator.RequireCurrent(current, Context.Company, Context.ActorUserId);
+        if (!current.SelectionAvailable || current.SelectionContext != Context) throw new UnauthorizedAccessException("The selected closure FIELD changed.");
+    }
+    private async Task ReviewAsync()
+    {
+        if (!CanStartNewStage || busy || !ready || pending is not null) return; var version = generation; var snapshot = Company.Snapshot; busy = true; message = null; review = null; correctionReview = null;
+        try { await Current(version, snapshot); var result = await Client.ReviewClosureStageAsync(Context, IncidentId); result.Require(); await Current(version, snapshot); if (result.Context != Context || result.Evidence.Actions.IncidentId != IncidentId) throw new InvalidOperationException(); review = result; }
+        catch (Exception error) { Logger.LogWarning(error, "Assigned incident closure review failed"); if (!disposed && version == generation) message = "The assigned stage could not be reviewed. Complete earlier work and confirm independent verified evidence before final approval."; }
+        finally { busy = false; }
+    }
+    private async Task ReviewCorrectionAsync()
+    {
+        if (!CanStartNewStage || busy || !ready || pending is not null || correctionPending is not null) return; var version = generation; var snapshot = Company.Snapshot; busy = true; message = null; review = null; correctionReview = null;
+        try { await Current(version, snapshot); var result = await Client.ReviewCorrectionReturnAsync(Context, IncidentId); result.RequireCorrectionReview(); await Current(version, snapshot); if (result.Context != Context || result.Evidence.Actions.IncidentId != IncidentId) throw new InvalidOperationException(); correctionReview = result; }
+        catch (Exception error) { Logger.LogWarning(error, "Rejected verification correction review failed"); if (!disposed && version == generation) message = "Return review is unavailable. Confirm the recorded rejection and current assigned verification role."; }
+        finally { busy = false; }
+    }
+    private async Task SubmitCorrectionAsync()
+    {
+        if (!CanStartNewStage || busy || !ready || pending is not null || correctionPending is not null || correctionReview is null) return;
+        if (correctionReason.Trim().Length is < 20 or > 2000) { message = "Enter corrective-work instructions between 20 and 2000 characters."; return; }
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await Current(version, snapshot); var original = new CompanyHseCorrectionCommand(Guid.NewGuid(), correctionReview, correctionReason.Trim()); original.Require(); await Intents.RetainCorrectionAsync(original); await Current(version, snapshot); correctionPending = original; await SendCorrection(original, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Incident correction return was not confirmed"); if (!disposed && version == generation) { read = true; ready = false; message = "The correction return is unconfirmed. Reconcile the retained original before starting another operation."; } }
+        finally { busy = false; }
+    }
+    private async Task RetryCorrectionAsync()
+    {
+        if (busy || correctionPending is not { } original) return; var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await SendCorrection(original, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Incident correction return reconciliation failed"); if (!disposed && version == generation) message = "The correction return remains unconfirmed. Its original evidence is retained."; }
+        finally { busy = false; }
+    }
+    private async Task SendCorrection(CompanyHseCorrectionCommand original, long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await Current(version, snapshot); var prior = original.Review.Context;
+        if (prior.Company != Context.Company || prior.ActorUserId != Context.ActorUserId || prior.Database != Context.Database || prior.FieldId != Context.FieldId || original.Review.Evidence.Actions.IncidentId != IncidentId) throw new UnauthorizedAccessException();
+        var receipt = await Client.ReturnForCorrectionAsync(original); receipt.Require(); await Current(version, snapshot);
+        if (JsonSerializer.Serialize(receipt.Original) != JsonSerializer.Serialize(original)) throw new InvalidOperationException("The correction receipt differs from its retained original.");
+        await Intents.ClearCorrectionAsync(original); await Current(version, snapshot); correctionPending = null; correctionReview = null; correctionReason = "";
+        message = "Return to corrective work confirmed. Record and complete correction actions before a new independent verification."; await OnConfirmed.InvokeAsync();
+    }
+    private async Task ReviewResolutionAsync()
+    {
+        if (busy || pending?.Review.Stage != "INC_CLOSURE" || resolution is not null) return; var version = generation; var snapshot = Company.Snapshot; busy = true; message = null; resolutionReview = null;
+        try
+        {
+            await Current(version, snapshot); var result = await Client.ReviewClosureResolutionAsync(Context, IncidentId); result.Require(); await Current(version, snapshot);
+            if (result.Context != Context || result.IncidentId != IncidentId || result.ApprovedIntentId != pending.IntentId || result.ApprovedNativeRevision != pending.Review.NativeRevision || result.LifecycleDatabase != pending.Review.LifecycleDatabase) throw new InvalidOperationException("The native review belongs to another terminal approval."); resolutionReview = result;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Native incident history resolution review failed"); if (!disposed && generation == version) message = "The history change cannot be resolved from the current approval. Confirm the original company, role, action and cause evidence."; }
+        finally { busy = false; }
+    }
+    private async Task SubmitResolutionAsync()
+    {
+        if (busy || resolutionReview is null || pending is null || resolution is not null) return;
+        if (resolutionReason.Trim().Length is < 20 or > 2000) { message = "Enter a native resolution reason between 20 and 2000 characters."; return; }
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await Current(version, snapshot); var original = new IncidentClosureResolution(Guid.NewGuid(), resolutionReview, resolutionReason.Trim()); original.Require(); await Intents.RetainResolutionAsync(original); await Current(version, snapshot); resolution = original; await SendResolution(original, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Native incident history resolution was not confirmed"); if (!disposed && generation == version) { read = true; ready = false; message = "The native resolution is unconfirmed. Reload and reconcile the retained original; closure is not confirmed."; } }
+        finally { busy = false; }
+    }
+    private async Task RetryResolutionAsync()
+    {
+        if (busy || resolution is not { } original) return; var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await SendResolution(original, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Native incident history resolution reconciliation failed"); if (!disposed && generation == version) message = "The original native resolution remains unconfirmed. Its evidence is retained."; }
+        finally { busy = false; }
+    }
+    private async Task SendResolution(IncidentClosureResolution original, long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await Current(version, snapshot); if (pending is null || original.Review.ApprovedIntentId != pending.IntentId) throw new InvalidOperationException("The native resolution has no matching terminal original.");
+        var receipt = await Client.ResolveClosureAsync(original); receipt.Require(); await Current(version, snapshot);
+        if (JsonSerializer.Serialize(receipt.Original) != JsonSerializer.Serialize(pending) || JsonSerializer.Serialize(receipt.Resolution) != JsonSerializer.Serialize(original)) throw new InvalidOperationException("The native resolution differs from the retained approval.");
+        await Intents.ClearResolutionAsync(original); await Intents.ClearClosureAsync(pending); await Current(version, snapshot);
+        resolution = null; resolutionReview = null; pending = null; message = "Incident closure confirmed after explicit native history resolution."; await OnConfirmed.InvokeAsync();
+    }
+    private async Task RecoverAsync()
+    {
+        if (busy || !ready || pending is not null) return; var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try
+        {
+            await Current(version, snapshot); var recorded = await Client.RecoverClosureStageAsync(Context, IncidentId); await Current(version, snapshot);
+            if (recorded is null) { message = "No recorded closure stage was found for this account."; return; } recorded.Require();
+            await Intents.RetainClosureAsync(recorded.Original); await Current(version, snapshot); pending = recorded.Original; review = null;
+            message = "Recorded lifecycle evidence recovered. Reconcile the original to confirm its complete outcome.";
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Recorded incident closure recovery failed"); if (!disposed && version == generation) message = "Recorded closure could not be confirmed. The incident has not been confirmed closed."; }
+        finally { busy = false; }
+    }
+    private async Task SubmitAsync()
+    {
+        if (!CanStartNewStage || busy || !ready || pending is not null || review is null) return;
+        if (reason.Trim().Length is < 20 or > 2000 || reason.Any(c => char.IsControl(c) && c is not ('\r' or '\n'))) { message = "Enter an approval reason between 20 and 2000 characters."; return; }
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await Current(version, snapshot); var original = new CompanyHseClosureCommand(Guid.NewGuid(), review, reason.Trim()); original.Require(); await Intents.RetainClosureAsync(original); await Current(version, snapshot); pending = original; await Send(original, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Incident closure stage was not confirmed"); if (!disposed && version == generation) { read = true; ready = false; message = "The stage outcome is unconfirmed. Reload and reconcile the retained original; the incident has not been confirmed closed."; } }
+        finally { busy = false; }
+    }
+    private async Task ReconcileAsync()
+    {
+        if (busy || pending is not { } original) return; var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await Send(original, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Incident closure reconciliation failed"); if (!disposed && version == generation) message = "The original outcome is still unconfirmed. Its evidence is retained; the incident has not been confirmed closed."; }
+        finally { busy = false; }
+    }
+    private async Task Send(CompanyHseClosureCommand original, long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await Current(version, snapshot); var prior = original.Review.Context;
+        if (prior.Company != Context.Company || prior.ActorUserId != Context.ActorUserId || prior.Database != Context.Database || prior.FieldId != Context.FieldId || original.Review.Evidence.Actions.IncidentId != IncidentId) throw new UnauthorizedAccessException();
+        var outcome = await Client.CompleteClosureStageAsync(original); outcome.Require(); await Current(version, snapshot);
+        if (JsonSerializer.Serialize(outcome.Original) != JsonSerializer.Serialize(original)) throw new InvalidOperationException("The recorded closure differs from its original.");
+        await Intents.ClearClosureAsync(original); await Current(version, snapshot); pending = null; review = null; reason = "";
+        message = original.Review.Stage == "INC_CLOSURE" ? "Incident closure confirmed: lifecycle approval and native CLOSED status are recorded." : "Assigned lifecycle stage confirmed. Review the next assigned stage separately.";
+        await OnConfirmed.InvokeAsync();
+    }
+    public void Dispose() { disposed = true; generation++; }
+}

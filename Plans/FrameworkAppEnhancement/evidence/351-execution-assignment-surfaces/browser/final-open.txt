@@ -1,0 +1,12 @@
+### Browser `oilgas351assignment` opened with pid 32428.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:49208/');
+```
+### Page
+- Page URL: http://127.0.0.1:49208/
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\351-assignment-browser\artifacts\page-2026-10-26T16-13-10-753Z.yml)
+### Events
+- New console entries: output\playwright\351-assignment-browser\artifacts\console-2026-10-26T16-13-10-190Z.log#L1-L2

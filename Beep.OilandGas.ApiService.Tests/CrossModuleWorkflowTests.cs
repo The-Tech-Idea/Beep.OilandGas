@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.DrillingAndConstruction.Core.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -165,39 +165,6 @@ namespace Beep.OilandGas.ApiService.Tests
 
         #endregion
 
-        #region Development Well Design → Construction/Drilling Chain
-
-        [Fact]
-        public async Task WellDesign_LaunchesConstructionProgress_AndDrillingOperation()
-        {
-            // Arrange
-            var mockDrillingService = new Mock<IDrillingOperationService>();
-            var mockDevelopmentService = new Mock<IDevelopmentService>();
-
-            var constructionId = "CONST-001";
-
-            mockDrillingService
-                .Setup(x => x.CreateDrillingOperationAsync(It.IsAny<CREATE_DRILLING_OPERATION>(), It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(new DRILLING_OPERATION { WELL_UWI = "WELL-002" });
-
-            mockDevelopmentService
-                .Setup(x => x.CreateConstructionProgressAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(constructionId);
-
-            // Act
-            var drillingOp = await mockDrillingService.Object.CreateDrillingOperationAsync(
-                new CREATE_DRILLING_OPERATION { WellUWI = "WELL-002" }, "FIELD-004", "user-1");
-            var constructionProgressId = await mockDevelopmentService.Object.CreateConstructionProgressAsync(drillingOp.WELL_UWI, "user-1");
-
-            // Assert
-            Assert.Equal("WELL-002", drillingOp.WELL_UWI);
-            Assert.Equal(constructionId, constructionProgressId);
-            mockDrillingService.Verify(x => x.CreateDrillingOperationAsync(It.IsAny<CREATE_DRILLING_OPERATION>(), "FIELD-004", "user-1"), Times.Once);
-            mockDevelopmentService.Verify(x => x.CreateConstructionProgressAsync("WELL-002", "user-1"), Times.Once);
-        }
-
-        #endregion
-
         #region Mock Service Interfaces for Testing
 
         public interface IWorkOrderService
@@ -220,7 +187,6 @@ namespace Beep.OilandGas.ApiService.Tests
         public interface IDevelopmentService
         {
             Task<string> CreateFdpFromLeaseAsync(string leaseId, string userId);
-            Task<string> CreateConstructionProgressAsync(string wellUwi, string userId);
         }
 
         public interface IEconomicEvaluationService

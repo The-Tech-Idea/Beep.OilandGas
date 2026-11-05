@@ -1,0 +1,107 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "name": "real_quota_refuses_retention_and_submission",
+      "status": "passed",
+      "artifacts": [
+        "final-quota-filled.txt",
+        "final-quota-refused.txt",
+        "metadata-final-quota.json"
+      ]
+    },
+    {
+      "name": "memory_original_is_confirmed_absent_without_retry",
+      "status": "passed",
+      "artifacts": [
+        "final-quota-cleaned.txt",
+        "final-quota-absent.txt",
+        "metadata-final-quota-resolved.json"
+      ]
+    },
+    {
+      "name": "explicit_role_workflow_recipients_and_reason_are_frozen",
+      "status": "passed",
+      "artifacts": [
+        "recorded-frozen.txt",
+        "recorded-prepared-final.txt"
+      ]
+    },
+    {
+      "name": "encrypted_original_precedes_controlled_lost_acknowledgement",
+      "status": "passed",
+      "artifacts": [
+        "encrypted-assignment.txt",
+        "recorded-unconfirmed.txt",
+        "metadata-recorded-unconfirmed.json"
+      ]
+    },
+    {
+      "name": "new_owner_unmapped_readonly_recovery_precedes_source_profile_lookup",
+      "status": "passed",
+      "artifacts": [
+        "readonly-pending.txt",
+        "metadata-readonly-pending.json"
+      ]
+    },
+    {
+      "name": "validated_receipt_survives_unconfirmed_input_cleanup",
+      "status": "passed",
+      "artifacts": [
+        "receipt-awaiting-cleanup.txt",
+        "metadata-cleanup-failed.json"
+      ]
+    },
+    {
+      "name": "lookup_outage_preserves_prior_receipt_and_checked_utc",
+      "status": "passed",
+      "artifacts": [
+        "prior-receipt-survives-outage.txt",
+        "metadata-outage.json"
+      ]
+    },
+    {
+      "name": "readonly_restored_recovery_clears_without_write",
+      "status": "passed",
+      "artifacts": [
+        "receipt-cleanup-completed.txt",
+        "metadata-cleanup-completed.json"
+      ]
+    },
+    {
+      "name": "actual_receiver_shows_exact_task_sender_role_and_report_link",
+      "status": "passed",
+      "artifacts": [
+        "receiver-current.txt",
+        "metadata-receiver-current.json"
+      ]
+    },
+    {
+      "name": "foreign_company_and_account_hide_private_responsibility",
+      "status": "passed",
+      "artifacts": [
+        "foreign-company-hidden.txt",
+        "other-account-hidden.txt"
+      ]
+    },
+    {
+      "name": "restored_receiver_and_clean_final_owned_storage",
+      "status": "passed",
+      "artifacts": [
+        "final-receiver.txt",
+        "metadata-final.json",
+        "final-storage.txt",
+        "final-console.txt"
+      ]
+    }
+  ],
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+  "quota_characters": 5179625,
+  "scope": "Actual MudBlazor components, state, protected tab storage and component circuit in isolated Chromium host. Typed business outcomes, recovery outage and removal failures are controlled seams; quota is actual browser behavior.",
+  "limits": [
+    "No production route/OIDC/RBAC/API/provider/browser-matrix/RTL/a11y/concurrent-circuit/performance qualification from this browser host.",
+    "Separate expanded actual RBAC/typed HTTP/native-driver journey passed and is recorded independently.",
+    "Initial baseline exposed misleading read-only wording while an editable original was pending; current page and final focused/browser checks include its correction.",
+    "One initial console favicon 404 is a diagnostic-host static resource miss; the final reloaded page console has zero errors."
+  ]
+}

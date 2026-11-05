@@ -1,0 +1,212 @@
+@page "/setup/ghg-factors"
+@using System.Text.Json
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject ApiClient Api
+@inject ILogger<GhgFactorSetup> Logger
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject ISystemSetupIntentStore SystemIntents
+@implements IDisposable
+
+<PageTitle>GHG factor setup</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">GHG factor setup</MudText>
+    <MudAlert Severity="Severity.Info" Class="my-3">Enter factors from your reviewed sources for one jurisdiction. Saving a catalog does not approve it or enable GHG reporting.</MudAlert>
+    @if (_message is not null) { <MudAlert Severity="Severity.Warning" Class="my-3" role="status">@_message</MudAlert> }
+    <MudTextField T="string" Value="@_key" ValueChanged="ChangeKey" Label="Jurisdiction key" HelperText="Uppercase letters, numbers, hyphens or underscores." Disabled="@(_busy || !_recoveryReady || _pending is not null)" />
+    <MudButton OnClick="Load" Disabled="@(_busy || !_recoveryReady)" Variant="Variant.Outlined" Class="my-3">Load catalog</MudButton>
+    @if (_pending is not null) { <MudAlert Severity="Severity.Warning" Class="my-2">A previous catalog save is awaiting confirmation. Load the catalog or retry the same save.</MudAlert> }
+    @if (_loaded)
+    {
+        <MudTextField T="string" @bind-Value="_version" Label="Catalog version" Disabled="@(_busy || !_recoveryReady || _pending is not null)" />
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-4">Factors for @_key</MudText>
+        @if (_factors.Count == 0) { <MudText>No factors are recorded.</MudText> }
+        @foreach (var item in _factors)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-2">
+                <MudText>@item.Id — @item.SourceCategory: @item.Factor @item.OutputUnit / @item.InputUnit</MudText>
+                <MudText Typo="Typo.body2">@item.EffectiveFrom.ToString("yyyy-MM-dd") to @item.EffectiveThrough.ToString("yyyy-MM-dd") · @item.SourceReference</MudText>
+                <MudButton OnClick="@(() => Remove(item))" Disabled="@(_busy || !_recoveryReady || _pending is not null)" Variant="Variant.Text" aria-label="@($"Remove factor {item.Id}")">Remove</MudButton>
+            </MudPaper>
+        }
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-4">Add a factor</MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_id" Label="Factor ID" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_category" Label="Activity source category" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+            <MudItem xs="12" md="4"><MudTextField T="string" @bind-Value="_input" Label="Input unit" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+            <MudItem xs="12" md="4"><MudTextField T="string" @bind-Value="_output" Label="Output unit" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+            <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_factor" Label="Factor value" Min="0m" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+            <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_from" Label="Effective from" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+            <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_through" Label="Effective through" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+            <MudItem xs="12"><MudTextField T="string" @bind-Value="_source" Label="Source reference" Required="true" Disabled="@(_busy || !_recoveryReady || _pending is not null)" /></MudItem>
+        </MudGrid>
+        <MudButton OnClick="Add" Disabled="@(_busy || !_recoveryReady || _pending is not null)" Variant="Variant.Outlined" Class="my-3">Add factor to catalog</MudButton>
+        <MudButton OnClick="Save" Disabled="@(_busy || !_recoveryReady || (_pending is null && _factors.Count == 0))" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">@(_pending is null ? "Save catalog" : "Retry the same save")</MudButton>
+    }
+    <MudButton Href="/setup/system-repository" Variant="Variant.Text" Class="mt-4">Back to system setup</MudButton>
+</MudContainer>
+
+@code {
+    private string _key = "", _version = "1", _revision = "", _id = "", _category = "", _input = "", _output = "", _source = "";
+    private decimal? _factor;
+    private DateTime? _from, _through;
+    private readonly List<GhgFactorDefinition> _factors = [];
+    private SystemSetupRequest? _pending;
+    private bool _loaded, _busy;
+    private string? _message;
+    private string? _actor;
+    private long _generation;
+    private bool _recoveryReady, _disposed, _interactive;
+    protected override void OnInitialized() => Authentication.AuthenticationStateChanged += AuthenticationChanged;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) { _interactive = true; await RestoreIntent(Interlocked.Read(ref _generation)); }
+    }
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)
+    {
+        var generation = Interlocked.Increment(ref _generation);
+        _ = InvokeAsync(async () =>
+        {
+            _actor = null; _recoveryReady = false; _pending = null; _loaded = false; _busy = false;
+            _key = ""; _version = "1"; _revision = ""; _factors.Clear();
+            _id = _category = _input = _output = _source = ""; _factor = null; _from = _through = null; _message = null;
+            StateHasChanged(); if (_interactive) await RestoreIntent(generation);
+        });
+    }
+    private bool Current(long generation, string? actor) => !_disposed && generation == Interlocked.Read(ref _generation) && actor is not null && actor == _actor;
+    private async Task RestoreIntent(long generation)
+    {
+        try
+        {
+            var principal = (await Authentication.GetAuthenticationStateAsync()).User;
+            var actor = principal.Identity?.IsAuthenticated == true && principal.IsInRole("Administrator")
+                ? Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find(principal) : null;
+            if (generation != Interlocked.Read(ref _generation) || _disposed) return;
+            if (string.IsNullOrWhiteSpace(actor)) throw new InvalidOperationException("The administrator identity is unavailable.");
+            _actor = actor;
+            var retained = await SystemIntents.ReadSystemAsync(actor);
+            if (!Current(generation, actor)) return;
+            if (retained is not null)
+            {
+                var request = retained.Request;
+                if (request.Category != "GHG_FACTORS")
+                {
+                    _message = "A different shared setup save awaits confirmation. Return to system setup to recover it first.";
+                    await InvokeAsync(StateHasChanged); return;
+                }
+                var catalog = GhgFactorCatalogValidation.Parse(request.Key, request.SettingsJson);
+                _pending = request; _key = request.Key; _version = request.Version; _revision = request.ExpectedRevision;
+                _factors.Clear(); _factors.AddRange(catalog.Factors); _loaded = true;
+            }
+            _recoveryReady = true;
+        }
+        catch (Exception error)
+        {
+            if (generation != Interlocked.Read(ref _generation) || _disposed) return;
+            Logger.LogWarning(error, "GHG catalog recovery is unavailable");
+            _message = "Catalog recovery is unavailable. Return to system setup to recover the retained request, or reload this page.";
+        }
+        if (!_disposed) await InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        _disposed = true; Interlocked.Increment(ref _generation);
+        Authentication.AuthenticationStateChanged -= AuthenticationChanged;
+    }
+    private string Path => $"/api/setup/system-repository/records/GHG_FACTORS/{Uri.EscapeDataString(_key)}";
+
+    private void ChangeKey(string value) { _key = value; _loaded = false; _factors.Clear(); _message = null; }
+    private void Remove(GhgFactorDefinition value) { if (!_busy && _pending is null) _factors.Remove(value); }
+    private static string Json(string key, IReadOnlyList<GhgFactorDefinition> factors) => JsonSerializer.Serialize(new GhgFactorCatalog(key, factors), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    private void Add()
+    {
+        if (_busy || _pending is not null) return;
+        if (_factor is null || _from is null || _through is null) { _message = "Enter a factor value and both effective dates."; return; }
+        var factor = new GhgFactorDefinition(_id, _category, _input, _output, _factor.Value, DateOnly.FromDateTime(_from.Value), DateOnly.FromDateTime(_through.Value), _source);
+        try
+        {
+            _ = GhgFactorCatalogValidation.Parse(_key, Json(_key, [.. _factors, factor]));
+            _factors.Add(factor); _id = _category = _input = _output = _source = ""; _factor = null; _from = _through = null; _message = null;
+        }
+        catch (Exception invalid) when (invalid is ArgumentException or JsonException) { _message = invalid.Message; }
+    }
+    private async Task Load()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor;
+        if (_busy || !_recoveryReady || !Current(generation, actor)) return;
+        _busy = true; _message = null;
+        try
+        {
+            _ = SystemSetupIdentity.ForKey("GHG_FACTORS", _key);
+            var response = await Api.GetAsync<SystemSetupReadResult>(Path);
+            if (!Current(generation, actor)) return;
+            if (response is null || response.Category != "GHG_FACTORS" || response.Key != _key) throw new InvalidOperationException("The catalog identity is unconfirmed.");
+            if (response.Configuration is { } saved) SystemSetupIdentity.RequireValid(saved, "GHG_FACTORS", _key);
+            if (_pending is not null)
+            {
+                var pending = _pending;
+                if (response.Configuration is { } confirmed && Matches(confirmed, pending))
+                {
+                    await SystemIntents.ClearSystemAsync(new(actor!, pending));
+                    if (!Current(generation, actor)) return;
+                    _pending = null; _revision = confirmed.Revision; _loaded = true; _message = "The original catalog save was confirmed.";
+                }
+                else _message = "The previous save outcome is unconfirmed. Retry the same save or check the stored catalog.";
+                return;
+            }
+            var catalog = response.Configuration is null ? null : GhgFactorCatalogValidation.Parse(_key, response.Configuration.SettingsJson);
+            _factors.Clear(); if (catalog is not null) _factors.AddRange(catalog.Factors);
+            _revision = response.Configuration?.Revision ?? ""; _version = response.Configuration?.Version ?? "1"; _loaded = true;
+            _message = catalog is null ? "No catalog is saved for this jurisdiction." : "Catalog loaded for review.";
+        }
+        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "GHG factor catalog could not be loaded"); if (_pending is null) _loaded = false; _message = "The catalog could not be confirmed. Check the jurisdiction and system repository."; } }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    private async Task Save()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor;
+        if (_busy || !_loaded || !_recoveryReady || !Current(generation, actor)) return;
+        SystemSetupRequest request;
+        try
+        {
+            var json = Json(_key, _factors);
+            if (_pending is null) _ = GhgFactorCatalogValidation.Parse(_key, json);
+            request = _pending ?? new("GHG_FACTORS", _key, _version, json, _revision, Guid.NewGuid().ToString("N"));
+            _ = SystemSetupIdentity.ForChange(request);
+        }
+        catch (Exception invalid) when (invalid is ArgumentException or JsonException) { _message = "Review the catalog version and factor details before saving."; return; }
+        var intent = new SystemSetupIntent(actor!, request); _busy = true; _message = null;
+        try
+        {
+            await SystemIntents.RetainSystemAsync(intent);
+            if (!Current(generation, actor)) return;
+            _pending = request;
+        }
+        catch (Exception error)
+        {
+            if (Current(generation, actor)) { Logger.LogWarning(error, "GHG catalog request could not be retained"); _message = "The original save could not be retained; no save was sent. Reload this page to recover it."; _recoveryReady = false; _busy = false; }
+            return;
+        }
+        try
+        {
+            var result = await Api.PutAsync<SystemSetupRequest, SystemSetupConfiguration>(Path, request);
+            if (!Current(generation, actor)) return;
+            if (result is null || !Matches(result, request)) throw new InvalidOperationException("The catalog save is unconfirmed.");
+            await SystemIntents.ClearSystemAsync(intent);
+            if (!Current(generation, actor)) return;
+            _revision = result.Revision; _pending = null; _message = "Catalog saved. Review and approval are still required before use.";
+        }
+        catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            try { await SystemIntents.ClearSystemAsync(intent); if (Current(generation, actor)) { _pending = null; _message = "The catalog was refused. Review its factors and version."; } }
+            catch (Exception clearError) { if (Current(generation, actor)) { Logger.LogWarning(clearError, "Refused catalog request could not be cleared"); _message = "The catalog was refused, but recovery storage could not be cleared. Reload this page."; } }
+        }
+        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "GHG factor catalog save is unconfirmed"); _message = "The save outcome is unconfirmed. Retry the same save or load the catalog."; } }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    private static bool Matches(SystemSetupConfiguration value, SystemSetupRequest request)
+    {
+        SystemSetupIdentity.RequireValid(value, request.Category, request.Key);
+        return value.IntentId == request.IntentId && value.Version == request.Version && value.SettingsJson == request.SettingsJson && value.PreviousRevision == request.ExpectedRevision;
+    }
+}

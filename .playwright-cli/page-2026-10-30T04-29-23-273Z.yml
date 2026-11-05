@@ -1,0 +1,17 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=e6]:
+      - link "Open assigned HSE process" [ref=e7] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=e9] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=e11] [cursor=pointer]
+      - button "Restore original company" [ref=e13] [cursor=pointer]
+  - generic [ref=e15]:
+    - generic [ref=e16]: "Controlled browser fixture: actual current closure component, protected store and typed completion client. Auth, reviews, recorded recovery and HTTP handler outcomes are controlled."
+    - region "Lifecycle approval and incident closure" [ref=e23]:
+      - heading "Lifecycle approval and incident closure" [level=6] [ref=e24]
+      - progressbar "Recovering retained incident requests." [ref=e25]
+      - status [ref=e28]: Recovering retained incident requests.

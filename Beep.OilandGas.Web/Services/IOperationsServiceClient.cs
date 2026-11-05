@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
@@ -25,10 +25,10 @@ namespace Beep.OilandGas.Web.Services
         Task<InjectionOperation> ManageInjectionAsync(string injectionWellId, decimal injectionRate);
 
         // Lease Acquisition Operations
-        Task<LeaseSummary> EvaluateLeaseAsync(string leaseId);
+        Task<LeaseSummary> EvaluateLeaseAsync(string leaseId, string fieldId);
         Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null);
         Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest);
-        Task UpdateLeaseStatusAsync(string leaseId, string status);
+        Task UpdateLeaseStatusAsync(string leaseId, string status, string fieldId);
     }
 }
 

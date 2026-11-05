@@ -14,32 +14,11 @@ using Beep.OilandGas.PermitsAndApplications.Data.PermitTables;
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
     /// <summary>
-    /// Interface for permit and application management services.
-    /// Provides comprehensive permit application lifecycle management with PPDM compliance.
+    /// Company-bound permit reads, validation and form projection.
+    /// Mutations belong to the reviewed native lifecycle command owner.
     /// </summary>
     public interface IPermitApplicationWorkflowService
     {
-        /// <summary>
-        /// Creates a new permit application.
-        /// </summary>
-        /// <param name="application">The permit application to create.</param>
-        /// <param name="userId">The user creating the application.</param>
-        /// <returns>The created permit application.</returns>
-        Task<PERMIT_APPLICATION> CreatePermitApplicationAsync(
-            PERMIT_APPLICATION application,
-            string userId);
-
-        /// <summary>
-        /// Updates an existing permit application.
-        /// </summary>
-        /// <param name="applicationId">The application ID.</param>
-        /// <param name="application">The updated application data.</param>
-        /// <param name="userId">The user updating the application.</param>
-        /// <returns>The updated permit application.</returns>
-        Task<PERMIT_APPLICATION> UpdatePermitApplicationAsync(
-            string applicationId,
-            PERMIT_APPLICATION application,
-            string userId);
 
         /// <summary>
         /// Retrieves a permit application by ID.
@@ -63,77 +42,11 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<List<PERMIT_APPLICATION>> GetPermitApplicationsByAuthorityAsync(string authority);
 
         /// <summary>
-        /// Submits a permit application for review.
-        /// </summary>
-        /// <param name="applicationId">The application ID.</param>
-        /// <param name="userId">The user submitting the application.</param>
-        /// <returns>The updated application.</returns>
-        Task<PERMIT_APPLICATION> SubmitPermitApplicationAsync(
-            string applicationId,
-            string userId);
-
-        /// <summary>
-        /// Approves or rejects a permit application.
-        /// </summary>
-        /// <param name="applicationId">The application ID.</param>
-        /// <param name="decision">The decision (Approved/Rejected).</param>
-        /// <param name="decisionRemarks">Remarks for the decision.</param>
-        /// <param name="userId">The user making the decision.</param>
-        /// <returns>The updated application.</returns>
-        Task<PERMIT_APPLICATION> ProcessPermitDecisionAsync(
-            string applicationId,
-            string decision,
-            string decisionRemarks,
-            string userId);
-
-        /// <summary>
-        /// Adds an attachment to a permit application.
-        /// </summary>
-        /// <param name="applicationId">The application ID.</param>
-        /// <param name="attachment">The attachment to add.</param>
-        /// <param name="userId">The user adding the attachment.</param>
-        /// <returns>The created attachment.</returns>
-        Task<APPLICATION_ATTACHMENT> AddApplicationAttachmentAsync(
-            string applicationId,
-            APPLICATION_ATTACHMENT attachment,
-            string userId);
-
-        /// <summary>
         /// Retrieves attachments for a permit application.
         /// </summary>
         /// <param name="applicationId">The application ID.</param>
         /// <returns>List of attachments.</returns>
         Task<List<APPLICATION_ATTACHMENT>> GetApplicationAttachmentsAsync(string applicationId);
-
-        /// <summary>
-        /// Creates a drilling permit application.
-        /// </summary>
-        /// <param name="drillingApplication">The drilling application.</param>
-        /// <param name="userId">The user creating the application.</param>
-        /// <returns>The created drilling application.</returns>
-        Task<DRILLING_PERMIT_APPLICATION> CreateDrillingPermitApplicationAsync(
-            DRILLING_PERMIT_APPLICATION drillingApplication,
-            string userId);
-
-        /// <summary>
-        /// Creates an environmental permit application.
-        /// </summary>
-        /// <param name="environmentalApplication">The environmental application.</param>
-        /// <param name="userId">The user creating the application.</param>
-        /// <returns>The created environmental application.</returns>
-        Task<ENVIRONMENTAL_PERMIT_APPLICATION> CreateEnvironmentalPermitApplicationAsync(
-            ENVIRONMENTAL_PERMIT_APPLICATION environmentalApplication,
-            string userId);
-
-        /// <summary>
-        /// Creates an injection permit application.
-        /// </summary>
-        /// <param name="injectionApplication">The injection application.</param>
-        /// <param name="userId">The user creating the application.</param>
-        /// <returns>The created injection application.</returns>
-        Task<INJECTION_PERMIT_APPLICATION> CreateInjectionPermitApplicationAsync(
-            INJECTION_PERMIT_APPLICATION injectionApplication,
-            string userId);
 
         /// <summary>
         /// Validates a permit application for completeness.
@@ -156,16 +69,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string authority);
 
         /// <summary>
-        /// Generates required forms for a permit application.
-        /// </summary>
-        /// <param name="applicationId">The application ID.</param>
-        /// <param name="userId">The user generating the forms.</param>
-        /// <returns>List of required forms.</returns>
-        Task<List<REQUIRED_FORM>> GenerateRequiredFormsAsync(
-            string applicationId,
-            string userId);
-
-        /// <summary>
         /// Calculates application fees based on jurisdiction and application type.
         /// </summary>
         /// <param name="applicationId">The application ID.</param>
@@ -180,105 +83,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <returns>JSON payload for required forms.</returns>
         Task<string> GenerateFormPayloadJsonAsync(string applicationId, string? configDirectory = null);
 
-        /// <summary>
-        /// Generates and stores form payload files as attachments for an application.
-        /// </summary>
-        /// <param name="applicationId">The application ID.</param>
-        /// <param name="userId">The user generating the payloads.</param>
-        /// <param name="outputDirectory">Output directory for payload files.</param>
-        /// <param name="configDirectory">Optional config directory for jurisdiction templates.</param>
-        /// <returns>List of created attachments.</returns>
-        Task<IReadOnlyList<APPLICATION_ATTACHMENT>> GenerateFormPayloadAttachmentsAsync(
-            string applicationId,
-            string userId,
-            string outputDirectory,
-            string? configDirectory = null);
-
-        /// <summary>
-        /// Generates JSON and HTML packets for forms and stores them as attachments.
-        /// </summary>
-        /// <param name="applicationId">The application ID.</param>
-        /// <param name="userId">The user generating the packets.</param>
-        /// <param name="outputDirectory">Output directory for packet files.</param>
-        /// <param name="configDirectory">Optional config directory for jurisdiction templates.</param>
-        /// <returns>List of created attachments.</returns>
-        Task<IReadOnlyList<APPLICATION_ATTACHMENT>> GenerateFormPacketAttachmentsAsync(
-            string applicationId,
-            string userId,
-            string outputDirectory,
-            string? configDirectory = null);
-
-        /// <summary>
-        /// Adds a business associate record for a permit application.
-        /// </summary>
-        Task<ApplicBa> AddApplicBusinessAssociateAsync(
-            string applicationId,
-            ApplicBa associate,
-            string userId);
-
-        /// <summary>
-        /// Retrieves business associate records for a permit application.
-        /// </summary>
-        Task<List<ApplicBa>> GetApplicBusinessAssociatesAsync(string applicationId);
-
-        /// <summary>
-        /// Adds a description record for a permit application.
-        /// </summary>
-        Task<ApplicDesc> AddApplicDescriptionAsync(
-            string applicationId,
-            ApplicDesc description,
-            string userId);
-
-        /// <summary>
-        /// Retrieves description records for a permit application.
-        /// </summary>
-        Task<List<ApplicDesc>> GetApplicDescriptionsAsync(string applicationId);
-
-        /// <summary>
-        /// Adds a remark record for a permit application.
-        /// </summary>
-        Task<ApplicRemark> AddApplicRemarkAsync(
-            string applicationId,
-            ApplicRemark remark,
-            string userId);
-
-        /// <summary>
-        /// Retrieves remark records for a permit application.
-        /// </summary>
-        Task<List<ApplicRemark>> GetApplicRemarksAsync(string applicationId);
-
-        /// <summary>
-        /// Adds a business associate permit record.
-        /// </summary>
-        Task<BaPermit> AddBusinessAssociatePermitAsync(BaPermit permit, string userId);
-
-        /// <summary>
-        /// Retrieves business associate permits for a business associate.
-        /// </summary>
-        Task<List<BaPermit>> GetBusinessAssociatePermitsAsync(string businessAssociateId);
-
-        /// <summary>
-        /// Adds a facility license record.
-        /// </summary>
-        Task<FacilityLicense> AddFacilityLicenseAsync(
-            string facilityId,
-            FacilityLicense license,
-            string userId);
-
-        /// <summary>
-        /// Retrieves facility licenses for a facility.
-        /// </summary>
-        Task<List<FacilityLicense>> GetFacilityLicensesAsync(string facilityId);
-
-        /// <summary>
-        /// Adds a well permit type record.
-        /// </summary>
-        Task<WellPermitType> AddWellPermitTypeAsync(WellPermitType permitType, string userId);
-
-        /// <summary>
-        /// Retrieves well permit types, optionally filtered by granting authority.
-        /// </summary>
-        Task<List<WellPermitType>> GetWellPermitTypesAsync(string? grantedByBaId = null);
     }
 
     /// <summary>

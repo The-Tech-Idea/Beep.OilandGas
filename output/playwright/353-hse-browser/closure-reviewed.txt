@@ -1,0 +1,9 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Review assigned closure stage' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 2 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-hse-browser\artifacts\page-2026-10-29T09-33-34-452Z.yml)

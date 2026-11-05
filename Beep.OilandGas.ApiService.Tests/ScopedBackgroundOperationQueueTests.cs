@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -15,8 +16,18 @@ public class ScopedBackgroundOperationQueueTests
         public ValueTask DisposeAsync() { Disposed = true; return ValueTask.CompletedTask; }
     }
 
-    private static ScopedBackgroundOperationQueue Create(ServiceProvider services, RecordingFailureReporter? failures = null) => new(
-        services.GetRequiredService<IServiceScopeFactory>(), failures ?? new RecordingFailureReporter());
+    private static ScopedBackgroundOperationQueue Create(ServiceProvider services, RecordingFailureReporter? failures = null)
+    {
+        var reporter = failures ?? new RecordingFailureReporter();
+        return new(services.GetRequiredService<IServiceScopeFactory>(),
+            (exception, operation, outcome) => reporter.ReportHandled(exception, operation, outcome), Http());
+    }
+
+    private static IHttpContextAccessor Http()
+    {
+        var context = new DefaultHttpContext(); context.Features.Set(TestCompanyProgress.Company());
+        return new HttpContextAccessor { HttpContext = context };
+    }
 
     private static TaskCompletionSource<T> Signal<T>() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -29,7 +40,7 @@ public class ScopedBackgroundOperationQueueTests
     [Fact]
     public async Task JobUsesFreshScopeAfterRequestScopeIsDisposed()
     {
-        await using var services = new ServiceCollection().AddScoped<ScopedProbe>().BuildServiceProvider(validateScopes: true);
+        await using var services = TestCompanyProgress.Services().AddScoped<ScopedProbe>().BuildServiceProvider(validateScopes: true);
         using var queue = Create(services);
         ScopedProbe requestProbe;
         var seen = Signal<ScopedProbe>();
@@ -54,7 +65,7 @@ public class ScopedBackgroundOperationQueueTests
     [Fact]
     public async Task RejectsDuplicateActiveJobAndRecordsFailure()
     {
-        await using var services = new ServiceCollection().AddScoped<ScopedProbe>().BuildServiceProvider();
+        await using var services = TestCompanyProgress.Services().AddScoped<ScopedProbe>().BuildServiceProvider();
         var failures = new RecordingFailureReporter();
         using var queue = Create(services, failures);
         Assert.True(queue.TryEnqueue<ScopedProbe, int>("job", 0,
@@ -78,7 +89,7 @@ public class ScopedBackgroundOperationQueueTests
     [Fact]
     public async Task ShutdownWaitsForActiveWorkAndCancelsQueuedWork()
     {
-        await using var services = new ServiceCollection().AddScoped<ScopedProbe>().BuildServiceProvider();
+        await using var services = TestCompanyProgress.Services().AddScoped<ScopedProbe>().BuildServiceProvider();
         using var queue = Create(services);
         var started = Signal<ScopedProbe>();
         var release = Signal<bool>();
@@ -104,7 +115,7 @@ public class ScopedBackgroundOperationQueueTests
     [Fact]
     public async Task AdmissionIsBoundedAndStopBeforeStartCancelsPendingWork()
     {
-        await using var services = new ServiceCollection().BuildServiceProvider();
+        await using var services = TestCompanyProgress.Services().BuildServiceProvider();
         using var queue = Create(services);
         for (var i = 0; i < 64; i++)
             Assert.True(queue.TryEnqueue<ScopedProbe, int>(i.ToString(), 0, static (_, _, _) => Task.CompletedTask));
@@ -116,7 +127,7 @@ public class ScopedBackgroundOperationQueueTests
     [Fact]
     public async Task ServiceResolutionFailureIsVisibleAndWorkerContinues()
     {
-        await using var services = new ServiceCollection().BuildServiceProvider(validateScopes: true);
+        await using var services = TestCompanyProgress.Services().BuildServiceProvider(validateScopes: true);
         using var queue = Create(services);
         Assert.True(queue.TryEnqueue<ScopedProbe, int>("missing", 0, static (_, _, _) => Task.CompletedTask));
         Assert.True(queue.TryEnqueue<IServiceProvider, int>("next", 0, static (_, _, _) => Task.CompletedTask));

@@ -1,0 +1,166 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Reviewed native creation and retained creation screen",
+  "distinct_observed_inputs": 64,
+  "passing_observations": 64,
+  "gates": [
+    {
+      "name": "contract",
+      "exact_methods": [
+        "PermitCreationOriginalAndOutcomeRefuseUnreviewedIdentityLifecycleResourcesAndAudit",
+        "PermitCreationCompositeFacilityColumnIsOwnedByExistingBeepMigrationManifest"
+      ],
+      "filter": "FullyQualifiedName~PermitCreationOriginalAndOutcomeRefuseUnreviewedIdentityLifecycleResourcesAndAudit|FullyQualifiedName~PermitCreationCompositeFacilityColumnIsOwnedByExistingBeepMigrationManifest",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "263 ms",
+      "terminal": "contract-terminal.txt",
+      "full_temporary_log": "oilgas-354-creation-command-contract-final.log",
+      "full_log_sha256": "efd8216ffbed8e1ca3fa5b6e5997d8783513d667c953eb7a078c0b5631371f2d"
+    },
+    {
+      "name": "native",
+      "exact_methods": [
+        "PermitNativeCreationOwnsDraftHistoryReceiptAndSameOriginalRecovery"
+      ],
+      "filter": "FullyQualifiedName~PermitNativeCreationOwnsDraftHistoryReceiptAndSameOriginalRecovery",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "1 m 41 s",
+      "terminal": "native-terminal.txt",
+      "full_temporary_log": "oilgas-354-creation-command-native.log",
+      "full_log_sha256": "570a49c92e66820beb78bffa807a217e61c18ae189572d220a58df01aa533944"
+    },
+    {
+      "name": "form",
+      "exact_methods": [
+        "PermitCreationStateRetainsOneOriginalAndRecoversWithoutReplacingItsProposal",
+        "ProtectedCreationOriginalIsDiscoverableAfterReloadAndRefusesAnotherDraft",
+        "ActualCreationPageReviewsCompleteKeysAndRefusesChangedInputBeforeTransport",
+        "PermitRoutesExposeReviewedCommandsAndRetireDirectSubmissionDecision"
+      ],
+      "filter": "FullyQualifiedName~PermitCreationStateRetainsOneOriginalAndRecoversWithoutReplacingItsProposal|FullyQualifiedName~ProtectedCreationOriginalIsDiscoverableAfterReloadAndRefusesAnotherDraft|FullyQualifiedName~ActualCreationPageReviewsCompleteKeysAndRefusesChangedInputBeforeTransport|FullyQualifiedName~PermitRoutesExposeReviewedCommandsAndRetireDirectSubmissionDecision",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "735 ms",
+      "terminal": "form-terminal.txt",
+      "full_temporary_log": "oilgas-354-creation-form-final.log",
+      "full_log_sha256": "ee48cc127c95412fc845812d9296872fc826511f74e7dbf79d3d3d1e9cbc6bf3"
+    },
+    {
+      "name": "shared-and-wire",
+      "exact_methods": [
+        "PermitCreationOriginalUsesExistingApiWebAndSdkCommandRecoveryWire",
+        "PermitSdkCreationReviewPostsExactProposalAndRejectsForeignField",
+        "PermitWorkbenchUsesSharedStageIndependenceAndRoleEligibility",
+        "PermitWorkbenchPreservesUncertaintyAndRecoversTheSameOriginal",
+        "PermitWorkbenchRetainsBeforeTransportAndRefusesInvalidOrUnretainedCommands",
+        "ProtectedPermitOriginalSurvivesReloadAndRefusesReplacementOrForeignScope"
+      ],
+      "filter": "FullyQualifiedName~PermitCreationOriginalUsesExistingApiWebAndSdkCommandRecoveryWire|FullyQualifiedName~PermitSdkCreationReviewPostsExactProposalAndRejectsForeignField|FullyQualifiedName~PermitWorkbenchUsesSharedStageIndependenceAndRoleEligibility|FullyQualifiedName~PermitWorkbenchPreservesUncertaintyAndRecoversTheSameOriginal|FullyQualifiedName~PermitWorkbenchRetainsBeforeTransportAndRefusesInvalidOrUnretainedCommands|FullyQualifiedName~ProtectedPermitOriginalSurvivesReloadAndRefusesReplacementOrForeignScope",
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "346 ms",
+      "terminal": "shared-and-wire-terminal.txt",
+      "full_temporary_log": "oilgas-354-creation-shared-wire.log",
+      "full_log_sha256": "ebd716dec6f82ece5160dc101918b54f43962b532e3811312d2673ace86288d1"
+    },
+    {
+      "name": "existing-submission",
+      "exact_methods": [
+        "PermitNativeCommandPersistsOriginalAuditAndRecoversOnlyItsExactEffect"
+      ],
+      "filter": "FullyQualifiedName~PermitNativeCommandPersistsOriginalAuditAndRecoversOnlyItsExactEffect&DisplayName~submit",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "21 s",
+      "terminal": "existing-submission-terminal.txt",
+      "full_temporary_log": "oilgas-354-creation-existing-submit.log",
+      "full_log_sha256": "e40deab19f205da50b769a10e45a290f909917104877f423fb9c2b3a4d10536c"
+    }
+  ],
+  "criteria": {
+    "original": "Retains complete creation source review, intent-bound canonical draft ID, exact header/company/FIELD/composite resource identity, empty source history and explicit reason. Rejects injected status, ownership, asset, audit, history, intent and misplaced/missing creation evidence.",
+    "native": "Actual command owner inserts draft/history/receipt in one owned serializable module transaction, confirms exact readback/audit, refuses existing-ID adoption, stale resources, missing facility schema and foreign receipts; receipt failure rolls back and lost acknowledgement is reconcilable with no duplicate effects.",
+    "authority": "Existing app-owned role/permission, module binding and inherited native FIELD/resource access owners. Fresh resource evidence is checked outside the PERMITS transaction before and after; no PPDM_CORE reads occur inside. A post-commit failure is recoverable uncertainty, not a distributed rollback.",
+    "storage": "Existing ProtectedSessionStorage owner stores one creation original per company/account/FIELD, discoverable after reload and from exact application detail, refuses replacement and verifies save/clear; binding changes cannot hide an unknown original. Actual encryption with controlled JS.",
+    "persona": "Actual new-permit Razor reviews complete keys, requires reason/confirmation, protects before transport, blocks changed proposal, offers same-original recovery/resend, separately displays recorded creation and exact detail link. Static renderer and bound-input simulation only.",
+    "wire": "Actual controller, Web typed client and remote-only SDK use the canonical reviewed command/recovery routes. SDK adds creation-review and shares Data target validation with Web.",
+    "retirement": "Direct API/Web/native create methods, request DTO, permissive parse helpers and timestamp-ID/history helper paths are removed; obsolete direct-create tests are replaced by reviewed state/store/controller/page checks.",
+    "migration": "FACILITY_TYPE is a nullable max128 canonical Data property on existing PERMIT_APPLICATION, owned by the existing Beep Migration manifest. Source-only schema change; no DDL/apply or EF migration."
+  },
+  "builds": [
+    {
+      "target": "Data",
+      "duration": "3.16 s",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1
+    },
+    {
+      "target": "Native Permits",
+      "duration": "3.26 s",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 2
+    },
+    {
+      "target": "SDK",
+      "duration": "4.34 s",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1
+    }
+  ],
+  "corrected_attempts": [
+    "Initial Data build: namespace resolution needed global::Beep; corrected before accepted build.",
+    "Initial contract compilation: fixture used For instead of existing receipt Create factory; corrected before accepted tests.",
+    "Initial form compilation: obsolete direct-create API tests referenced removed methods/DTO; retired those tests in favor of reviewed replacements before accepted form gate."
+  ],
+  "ordering_note": "Native nine-case gate ran before direct-create retirement and UI/SDK completion; the active native command transaction/receipt code did not change afterward. The final established submission case runs the rebuilt native binary. The final shared/wire gate compiles final Data/client/state/store/Razor sources. Counts are selected local observations, not a full regression.",
+  "hashes_at_checkpoint": {
+    "TheTechIdea.Data/OilGas/PERMIT_APPLICATION.cs": "e174ebddf8f37f79a637112fe4b7fbd790430b2c38f0bf67d905492e1cb91527",
+    "TheTechIdea.Data/OilGas/PermitApplicationCreationReview.cs": "7fb2bd2c3a14e77a4dac266325a974ee97c8cb56db91df170b257bf5e970d406",
+    "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs": "18f236be20296447249d2624c31d681402b4a4f35da5dfacb50cd808204bf041",
+    "TheTechIdea.Data/OilGas/PermitApplicationCommandOutcome.cs": "f4ce6f85a947629583b890c468be86a036131370aed9610d2e63ddea800a30b3",
+    "TheTechIdea.Data/OilGas/PermitApplicationCatalog.cs": "554ec6bde4dec1d477da286ea652132ce999422285178de29433e177eac941f5",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "d98f12abbfef89564d20f5a175cc9c8585ba6195d64c747d69275bd2a4d97f8f",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "a6f8858c4985cab5776277f0e8ecdfa9d6de38c19cce776ddfb6e5e5d3f22858",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "5ed8f9a03eacd3f940dcee9ec967802d9fdc5c9a8ae019ffa426dc55c6b20312",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "86eedf8e878782dadee7164aad1a3e5ec63df1e16a581f2c84e87c222da890d5",
+    "Beep.OilandGas.PermitsAndApplications/Core/Interfaces/IPermitApplicationLifecycleService.cs": "0c1621ec0d9d66b63838d54fdece17fa08c8d9eeb9bd594149c3af6ef2f56d1c",
+    "Beep.OilandGas.Web/Services/PermitApplicationIntentStore.cs": "00340e7802bfe3f1c856733277063af861c48fc016c5ab9fd03147e5719b0400",
+    "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs": "48eb014b4220438bee22de1bd56b7acf405ad629b5c9a58b6ed359e6803ad1a8",
+    "Beep.OilandGas.Web/Services/PermitServiceClient.cs": "0e6e94e5725a1750f47fcc6bcc9555bb50ad15c856a5c56961fd352492eed7b2",
+    "Beep.OilandGas.Web/Services/IPermitServiceClient.cs": "ca8f9bf9078c3e847873bd279a41a796d4b997b9ec9869feb02b626946134390",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/NewPermitApplication.razor": "69b9ea484d95f91fd0f2facd8c685a6b6039f7be6601440ce77b0e60fab554fd",
+    "Beep.OilandGas.Client/App/Services/Permits/IPermitsService.cs": "ca53fae96a237e68a8384e6d647611c70ed34d744d0c57fcbc772f03dd22ef71",
+    "Beep.OilandGas.Client/App/Services/Permits/PermitsService.cs": "ff47de1c689e7e17f507550e7ea6bd13f779dc3760e80820648b0895e05fd88c",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "8457f2fcc114967bda8aa629abfcce139de40c45afb97dcd2648255218460069",
+    "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs": "9658172e5db9be1f3938c25e9d2fcbeb1f6192e168552d487c4c89e55447bcb1",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "a336d6f0a512c6b0e49fcc807e0dfe1d49633922074d5881a8a32187f6b45a96",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "5541e67d1562baff0fb99985300ea97cfcf066a9d23524eaad729a1789c74d2b",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "6a3e3996452fb52f9a7ab8d3a39ecc982e6a5f0002ff47e676e2b9e6e8530d55",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "c7f0b3f1822047aa9080f72cce85833e1ee360b0ced4685427339450fb052478",
+    "Beep.OilandGas.Client/bin/Debug/net10.0/Beep.OilandGas.Client.dll": "9d600966ab6f31e52898ecd494c9833cfdf08ec865a4698d71819c98367a5f16",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "db7025fda4975058eff1453099fbf81279ac7a08116279f18a0c82e76cf73039"
+  },
+  "limitations": [
+    "No live Beep Migration apply or actual provider durability/schema/transaction qualification.",
+    "No hosted HTTP/OIDC, actual browser clicks/reload/session transport, viewport/keyboard/RTL/a11y, multi-account or performance acceptance.",
+    "Resources and PERMITS are separate sources. Post-commit resource/authority change is surfaced as uncertainty with immutable original recovery; no distributed atomicity claim.",
+    "Explicit country/region/authority choices do not establish company jurisdiction applicability, legal regulator approval or operation clearance.",
+    "Role inbox/landing/correction, supporting-record amendments, binding reconciliation and regional policies remain open.",
+    "Full goal remains active; no commit/push."
+  ]
+}

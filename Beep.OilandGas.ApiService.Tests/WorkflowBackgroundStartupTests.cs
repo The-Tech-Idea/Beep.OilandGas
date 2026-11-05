@@ -25,8 +25,8 @@ public class WorkflowBackgroundStartupTests
         readiness.Setup(x => x.CheckAsync(It.IsAny<CancellationToken>())).ReturnsAsync(status);
         var editor = new Mock<IDMEEditor>(MockBehavior.Strict);
         var gate = new WorkflowBackgroundConnection(readiness.Object, null!, editor.Object,
-            Array.Empty<IModuleSetup>(), new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
-        Assert.Null(await gate.ResolveAsync(default));
+            Array.Empty<IModuleSetup>(), new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), null!, new());
+        Assert.Null(await gate.ResolveAsync("A", default));
         editor.VerifyNoOtherCalls();
     }
 
@@ -38,7 +38,8 @@ public class WorkflowBackgroundStartupTests
         using var services = new ServiceCollection().BuildServiceProvider();
         var calls = 0;
         using var monitor = new SlaMonitorService(services.GetRequiredService<IServiceScopeFactory>(),
-            resolveConnection: hasResolver ? (_, _) => { calls++; return Task.FromResult<string?>(null); } : null);
+            resolveTenants: hasResolver ? (_, _) => Task.FromResult<IReadOnlyList<string>>(["A"]) : null,
+            resolveConnection: hasResolver ? (_, _, _) => { calls++; return Task.FromResult<string?>(null); } : null);
         var check = typeof(SlaMonitorService).GetMethod("CheckSlaBreachesAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
         await (Task)check.Invoke(monitor, [CancellationToken.None])!;
         Assert.Equal(hasResolver ? 1 : 0, calls);

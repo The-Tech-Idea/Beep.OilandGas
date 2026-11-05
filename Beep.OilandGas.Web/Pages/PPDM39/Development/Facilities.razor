@@ -1,285 +1,260 @@
-﻿@page "/ppdm39/development/facilities"
-@using Beep.OilandGas.Models.Data
+@page "/ppdm39/development/facilities"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
 @using Beep.OilandGas.PPDM39.Models
-@inject ApiClient ApiClient
-@inject IDevelopmentServiceClient DevelopmentServiceClient
-@inject ILifeCycleService LifeCycleService
-@inject ISnackbar Snackbar
-@inject IDialogService DialogService
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IDevelopmentServiceClient Development
+@inject OilGasCallFailures Calls
+@inject IDevelopmentDraftIntentStore Journal
 
-<PageTitle>Manage Surface Facilities</PageTitle>
-
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-
-    @* ── Header ──────────────────────────────────────────────────────── *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Manage Surface Facilities</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Surface facility register</MudText>
-                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
-                         Icon="@Icons.Material.Filled.Factory">Development</MudChip>
-            </MudStack>
-        </MudStack>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
-            Add Facility
-        </MudButton>
+<PageTitle>Development facility evidence</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Development facility evidence</MudText>
+    <MudText Class="my-3">Inspect recorded facility identities and source fields for your current company and FIELD.</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="mb-4">
+        <MudButton Href="/development/construction" Variant="Variant.Outlined">Construction evidence</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Loading == true || _state?.WritingEdit == true)" Variant="Variant.Outlined">Reload facility evidence</MudButton>
     </MudStack>
-
-    @if (_isLoading)
+    @if(linkError is {} sourceLinkError){<MudAlert Severity="Severity.Warning" role="alert">@sourceLinkError</MudAlert>}
+    @if(_state?.InstallationConfirmation is {} installationConfirmation){<MudAlert Severity="Severity.Success" role="status">@installationConfirmation</MudAlert>}
+    @if(_state?.PendingInstallation is {} pendingInstallation)
     {
-        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original equipment installation</MudText>
+            <MudText>Company @pendingInstallation.Review.Proposal.Context.Company.BusinessAssociateId · FIELD @pendingInstallation.Review.Proposal.Context.FieldId · Facility @pendingInstallation.Review.Proposal.FacilityId / @pendingInstallation.Review.Proposal.FacilityType · Equipment @pendingInstallation.Review.Proposal.EquipmentId</MudText>
+            @if(_state.InstallationRetained){<MudAlert Severity="Severity.Warning">This original is retained in this tab. Recover its outcome or retry the same original before preparing another.</MudAlert>}
+            else{<MudAlert Severity="Severity.Warning">Retention was not confirmed. Retry retaining this original before sending it.</MudAlert>}
+            @if(_state.InstallationError is {} pendingInstallationError){<MudAlert Severity="Severity.Error" role="alert">@pendingInstallationError</MudAlert>}
+            @if(_state.CanRetryInstallationRetention){<MudButton OnClick="_state.RetryInstallationRetentionAsync" Variant="Variant.Outlined">Retry retaining installation</MudButton>}
+            @if(_state.CanRecoverInstallation){<MudButton OnClick="_state.RecoverInstallationAsync" Variant="Variant.Outlined">Recover original installation</MudButton>}
+            @if(_state.CanRetryInstallation){<MudButton OnClick="_state.RetryInstallationAsync" Variant="Variant.Outlined">Retry original installation</MudButton>}
+        </MudPaper>
     }
-
-    @* ── KPI Row ─────────────────────────────────────────────────────── *@
-    <MudGrid Class="mb-4" Spacing="3">
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Total Facilities" Value="@((_facilities?.Count ?? 0).ToString())"
-                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Factory"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
-                     TrendText="All facilities" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Operational"
-                     Value="@((_facilities?.Count(IsOperationalFacility) ?? 0).ToString())"
-                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Success"
-                     TrendText="In service" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Under Construction"
-                     Value="@((_facilities?.Count(IsFacilityUnderConstruction) ?? 0).ToString())"
-                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Construction"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Warning"
-                     TrendText="Being built" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Decommissioned"
-                     Value="@((_facilities?.Count(IsDecommissionedFacility) ?? 0).ToString())"
-                     ValueColor="Color.Default" Icon="@Icons.Material.Filled.Archive"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
-                     TrendText="No longer active" />
-        </MudItem>
-    </MudGrid>
-
-    @* ── Facilities Grid ─────────────────────────────────────────────── *@
-    <MudCard Elevation="2">
-        <MudCardContent Class="pa-0">
-            @if (_facilities != null && _facilities.Any())
-            {
-                <MudDataGrid T="FACILITY" Items="@_facilities" Dense="true" Hover="true" Striped="true"
-                             SortMode="SortMode.Multiple" Filterable="true">
-                    <Columns>
-                        <TemplateColumn Title="Facility ID">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.FACILITY_ID</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Facility Name">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2" Color="Color.Primary">
-                                    @GetFacilityName(context.Item)
-                                </MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Type">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.FACILITY_TYPE</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Status">
-                            <CellTemplate>
-                                <StatusBadge Status="@GetFacilityStatus(context.Item)" />
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Actions" Sortable="false">
-                            <CellTemplate>
-                                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.Edit"
-                                           OnClick="@(() => OpenEditDialog(context.Item))">
-                                    Edit
-                                </MudButton>
-                            </CellTemplate>
-                        </TemplateColumn>
-                    </Columns>
-                    <NoRecordsContent>
-                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
-                            <MudIcon Icon="@Icons.Material.Filled.Factory" Color="Color.Secondary"
-                                     Class="og-icon-xl" />
-                            <MudText Typo="Typo.body1">No facilities match the current filter</MudText>
-                        </MudStack>
-                    </NoRecordsContent>
-                </MudDataGrid>
-            }
-            else if (!_isLoading)
-            {
-                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
-                    <MudIcon Icon="@Icons.Material.Filled.Factory" Color="Color.Secondary"
-                             Class="og-icon-xl" />
-                    <MudText Typo="Typo.h6">No facilities registered</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">
-                        Register the first surface facility for this field.
-                    </MudText>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Add"
-                               OnClick="OpenCreateDialog" Class="mt-2">
-                        Add First Facility
-                    </MudButton>
-                </MudStack>
-            }
-        </MudCardContent>
-    </MudCard>
-
-</MudContainer>
-
-@code {
-    private string _fieldName = string.Empty;
-    private List<FACILITY>? _facilities;
-    private bool _isLoading = false;
-
-    protected override async Task OnInitializedAsync()
+    @if(_state?.EditConfirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
+    @if(_state?.CreationConfirmation is {} creationConfirmation){<MudAlert Severity="Severity.Success" role="status">@creationConfirmation</MudAlert>}
+    @if(_state?.PendingCreation is {} pendingCreation)
     {
-        try
-        {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
-        }
-        catch { /* field name is non-critical */ }
-
-        await LoadFacilities();
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original facility creation</MudText>
+            <MudText>Company @pendingCreation.Review.Draft.Context.Company.BusinessAssociateId · FIELD @pendingCreation.Review.Draft.Context.FieldId · Facility @pendingCreation.Review.Draft.FacilityId / @pendingCreation.Review.Draft.FacilityType</MudText>
+            @if(_state.CreationRetained){<MudAlert Severity="Severity.Warning">This original is retained in this tab. Recover its outcome or retry the same original before preparing another.</MudAlert>}
+            else{<MudAlert Severity="Severity.Warning">Retention was not confirmed. Retry retaining the same original before sending it.</MudAlert>}
+            @if(_state.CreationError is {} pendingCreationError){<MudAlert Severity="Severity.Error" role="alert">@pendingCreationError</MudAlert>}
+            @if(_state.CanRetryCreationRetention){<MudButton OnClick="_state.RetryCreationRetentionAsync" Variant="Variant.Outlined">Retry retaining creation</MudButton>}
+            @if(_state.CanRecoverCreation){<MudButton OnClick="_state.RecoverCreationAsync" Variant="Variant.Outlined">Recover original creation</MudButton>}
+            @if(_state.CanRetryCreation){<MudButton OnClick="_state.RetryCreationAsync" Variant="Variant.Outlined">Retry original creation</MudButton>}
+        </MudPaper>
     }
-
-    private async Task LoadFacilities()
+    @if(_state?.PendingEdit is {} pending)
     {
-        _isLoading = true;
-        try
-        {
-            _facilities = await DevelopmentServiceClient.GetFacilitiesAsync();
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error loading facilities.", Severity.Error);
-            _facilities = new List<FACILITY>();
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original facility edit</MudText>
+            <MudText>Company @pending.Review.Context.Company.BusinessAssociateId · FIELD @pending.Review.Context.FieldId · Facility @pending.Review.Original.FACILITY_ID / @pending.Review.Original.FACILITY_TYPE</MudText>
+            <MudText>Proposed name @pending.LongName · Reason @pending.Reason</MudText>
+            @if(_state.RetentionConfirmed){<MudAlert Severity="Severity.Warning">This original is retained in this tab. Recover its outcome or retry the same edit before preparing another.</MudAlert>}
+            else{<MudAlert Severity="Severity.Warning">Retention of this original was not confirmed. Retry retaining the same input before sending it.</MudAlert>}
+            @if(_state.EditError is {} pendingError){<MudAlert Severity="Severity.Error" role="alert">@pendingError</MudAlert>}
+            @if(_state.CanRetryRetention){<MudButton OnClick="_state.RetryRetentionAsync" Disabled="@_state.WritingEdit" Variant="Variant.Outlined">Retry retaining original</MudButton>}
+            @if(_state.CanRecoverEdit){<MudButton OnClick="_state.RecoverEditAsync" Disabled="@_state.WritingEdit" Variant="Variant.Outlined">Recover original outcome</MudButton>}
+            @if(_state.CanRetryEdit){<MudButton OnClick="_state.RetryEditAsync" Disabled="@_state.WritingEdit" Variant="Variant.Outlined">Retry original edit</MudButton>}
+        </MudPaper>
     }
-
-    private async Task OpenCreateDialog()
+    @if(_state?.PendingEdit is null && _state?.PendingCreation is null && _state?.PendingInstallation is null)
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<FacilityEditDialog>("Create Facility", options);
-        var result = await dialog.Result;
-
-        if (result?.Canceled == false && result.Data is Dictionary<string, object> facilityData)
-        {
-            try
-            {
-                await DevelopmentServiceClient.CreateFacilityAsync(ToFacilityRequest(facilityData));
-                
-                Snackbar.Add("Facility created successfully", Severity.Success);
-                await LoadFacilities();
-            }
-            catch (Exception)
-            {
-                Snackbar.Add("Error creating facility.", Severity.Error);
-            }
-        }
-    }
-
-    private async Task OpenEditDialog(object facility)
+    @if(_state?.Loading==true){<MudProgressLinear Indeterminate="true" aria-label="Loading facility evidence" />}
+    else if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    else if(_state?.NeedsCompany!=false){<MudAlert Severity="Severity.Info">Choose a company, then reload facility evidence.</MudAlert>}
+    else if(_state.NeedsField){<MudAlert Severity="Severity.Info">Choose an available FIELD, then reload facility evidence.</MudAlert>}
+    else if(_state.Loaded && _state.Review is {} review)
     {
-        if (facility is not FACILITY f) return;
-
-        var parameters = new DialogParameters<FacilityEditDialog>
+        <MudPaper Outlined="true" Class="pa-3 mb-4">
+            <MudText>Company @review.Company.TenantId / @review.Company.BusinessAssociateId · FIELD @review.FieldId · @Recorded(_state.FieldName)</MudText>
+            <MudText Typo="Typo.caption">Recorded FACILITY rows · checked @_state.LoadedAtUtc?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+        </MudPaper>
+        <MudAlert Severity="Severity.Info" Class="mb-3">The recorded active indicator and remark are shown as stored. They do not establish operational status, construction progress, acceptance or production readiness.</MudAlert>
+        @if(Company.Selection is {} creator && creator.Permissions.Contains("DevelopmentPlanning.Create",StringComparer.Ordinal))
         {
-            { d => d.Facility, new Dictionary<string, object>
+            <MudPaper Outlined="true" Class="pa-4 my-3">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Prepare a new facility</MudText>
+                <MudAlert Severity="Severity.Info">This proposal is not saved. The source review does not reserve the identity or establish operator authority.</MudAlert>
+                @if(_state.CreationDraft is {} proposal)
                 {
-                    { "FACILITY_NAME",   GetFacilityName(f) },
-                    { "FACILITY_TYPE",   f.FACILITY_TYPE ?? string.Empty },
-                    { "FACILITY_STATUS", GetFacilityStatus(f) },
-                    { "DESCRIPTION",     f.DESCRIPTION ?? string.Empty }
+                    <MudText Typo="Typo.h6" HtmlTag="h3">Unsaved proposal</MudText>
+                    <MudText>Company @proposal.Context.Company.BusinessAssociateId · FIELD @proposal.Context.FieldId · Role @proposal.CreatorRole</MudText>
+                    <MudText>Facility @proposal.FacilityId / @proposal.FacilityType · Name @proposal.LongName · Operator @proposal.OperatorBusinessAssociateId</MudText>
+                    <MudText>Description: @Recorded(proposal.Description) · Reason: @proposal.Reason</MudText>
+                    @if(_state.CreationReview is {} creationReview)
+                    {
+                        <MudAlert Severity="Severity.Success">The exact type and operator are recorded as active and the proposed identity was not found during this source check at @creationReview.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC. This does not establish the operator's authority, reserve the identity or save a facility.</MudAlert>
+                        <MudText>Recorded type name: @Recorded(creationReview.TypeSource.LONG_NAME)</MudText>
+                        @if(_state.PreparedCreation is null)
+                        {
+                            <MudCheckBox T="bool" @bind-Value="creationConfirmed" Label="I confirm the reviewed facility and operator details." />
+                            <MudButton OnClick="PrepareCreationCommand" Disabled="@(!_state.CanPrepareCreation(proposal.CreatorRole))" Variant="Variant.Outlined">Prepare original creation</MudButton>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">The exact original will be retained in this tab before sending. An inherited FIELD write grant is required.</MudAlert>
+                            <MudButton OnClick="_state.SubmitCreationAsync" Disabled="@_state.WritingEdit" Color="Color.Primary" Variant="Variant.Filled">Save facility</MudButton>
+                        }
+                    }
+                    @if(_state.CreationError is {} proposalError){<MudAlert Severity="Severity.Error" role="alert">@proposalError</MudAlert>}
+                    @if(_state.ReviewingCreation){<MudProgressLinear Indeterminate="true" aria-label="Checking facility creation source" />}
+                    <MudButton OnClick="_state.ReviewCreationAsync" Disabled="@(_state.ReviewingCreation || !_state.CanPrepareCreation(proposal.CreatorRole))" Variant="Variant.Outlined">Check recorded source</MudButton>
+                    <MudButton OnClick="_state.ClearCreation" Variant="Variant.Outlined">Back to proposal</MudButton>
                 }
-            }
-        };
-
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<FacilityEditDialog>("Edit Facility", parameters, options);
-        var result = await dialog.Result;
-
-        if (result?.Canceled == false && result.Data is Dictionary<string, object> updated)
+                else
+                {
+                    <MudSelect T="string" Label="Your current creator role" @bind-Value="creatorRole">
+                        @foreach(var role in creator.Roles){<MudSelectItem T="string" Value="@role">@role</MudSelectItem>}
+                    </MudSelect>
+                    <MudTextField T="string" Label="Facility ID" @bind-Value="creationId" Required="true" MaxLength="128" />
+                    <MudTextField T="string" Label="Facility type code" @bind-Value="creationType" Required="true" MaxLength="128" />
+                    <MudTextField T="string" Label="Operator business associate ID" @bind-Value="creationOperator" Required="true" MaxLength="128" />
+                    <MudTextField T="string" Label="Facility long name" @bind-Value="creationName" Required="true" MaxLength="255" />
+                    <MudTextField T="string" Label="Description" @bind-Value="creationDescription" Lines="3" MaxLength="4000" />
+                    <MudTextField T="string" Label="Reason for creation" @bind-Value="creationReason" Required="true" Lines="2" MaxLength="1600" />
+                    @if(_state.CreationError is {} creationError){<MudAlert Severity="Severity.Error" role="alert">@creationError</MudAlert>}
+                    <MudButton OnClick="PrepareCreation" Disabled="@(!_state.CanPrepareCreation(creatorRole))" Variant="Variant.Outlined">Review unsaved proposal</MudButton>
+                }
+            </MudPaper>
+        }
+        @if(_state.Rows.Count==0){<MudAlert Severity="Severity.Info" role="status">No facility rows were returned for this company and FIELD.</MudAlert>}
+        else
         {
-            try
+            <MudTable T="FACILITY" Items="@_state.Rows" Dense="true" Hover="true">
+                <HeaderContent><MudTh>Facility ID</MudTh><MudTh>Recorded name</MudTh><MudTh>Type</MudTh><MudTh>Active indicator</MudTh><MudTh>Remark</MudTh><MudTh>Source details</MudTh></HeaderContent>
+                <RowTemplate Context="row"><MudTd DataLabel="Facility ID">@row.FACILITY_ID</MudTd><MudTd DataLabel="Recorded name">@Recorded(row.FACILITY_LONG_NAME ?? row.FACILITY_SHORT_NAME)</MudTd><MudTd DataLabel="Type">@Recorded(row.FACILITY_TYPE)</MudTd><MudTd DataLabel="Active indicator">@Recorded(row.ACTIVE_IND)</MudTd><MudTd DataLabel="Remark">@Recorded(row.REMARK)</MudTd><MudTd DataLabel="Source details"><MudButton OnClick="@(() => Select(row.FACILITY_ID, row.FACILITY_TYPE))" Variant="Variant.Outlined" Size="Size.Small" aria-label="@($"Inspect {row.FACILITY_ID}, type {row.FACILITY_TYPE}")">Inspect recorded fields</MudButton></MudTd></RowTemplate>
+            </MudTable>
+            @if(Selected() is {} selected)
             {
-                await DevelopmentServiceClient.UpdateFacilityAsync(f.FACILITY_ID ?? string.Empty, ToFacilityRequest(updated, f));
-                Snackbar.Add("Facility updated.", Severity.Success);
-                await LoadFacilities();
-            }
-            catch (Exception)
-            {
-                Snackbar.Add("Error updating facility.", Severity.Error);
+                <MudPaper Outlined="true" Class="pa-4 my-3">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Recorded facility fields</MudText>
+                    <MudText>Facility ID @selected.FACILITY_ID · Type @selected.FACILITY_TYPE · FIELD @selected.PRIMARY_FIELD_ID</MudText>
+                    <MudText>Long name: @Recorded(selected.FACILITY_LONG_NAME)</MudText>
+                    <MudText>Short name: @Recorded(selected.FACILITY_SHORT_NAME)</MudText>
+                    <MudText>Active indicator: @Recorded(selected.ACTIVE_IND)</MudText>
+                    <MudText>Description: @Recorded(selected.DESCRIPTION)</MudText>
+                    <MudText>Remark: @Recorded(selected.REMARK)</MudText>
+                    <MudText Typo="Typo.h6" HtmlTag="h3">Recorded facility equipment</MudText>
+                    <MudText Typo="Typo.caption">Recorded active rows do not establish current installation or operating readiness.</MudText>
+                    <MudButton OnClick="@(() => _state.LoadEquipmentAsync(selected.FACILITY_ID,selected.FACILITY_TYPE))" Disabled="@_state.EquipmentLoading" Variant="Variant.Outlined">Load equipment evidence</MudButton>
+                    @if(_state.EquipmentLoading){<MudProgressLinear Indeterminate="true" aria-label="Loading facility equipment" />}
+                    @if(_state.EquipmentError is {} equipmentError){<MudAlert Severity="Severity.Error" role="alert">@equipmentError</MudAlert>}
+                    @if(_state.EquipmentLoaded)
+                    {
+                        @if(_state.Equipment.Count==0){<MudText>No active equipment rows were returned.</MudText>}
+                        else{<MudTable Items="@_state.Equipment" Dense="true"><HeaderContent><MudTh>Equipment</MudTh><MudTh>Installation observation</MudTh><MudTh>Recorded source</MudTh></HeaderContent><RowTemplate><MudTd DataLabel="Equipment">@context.EquipmentId</MudTd><MudTd DataLabel="Installation observation">@context.InstallationObservation</MudTd><MudTd DataLabel="Recorded source">@Recorded(context.Source)</MudTd></RowTemplate></MudTable>}
+                    }
+
+                    @if(Company.Selection is {} equipmentCompany && equipmentCompany.Permissions.Contains("DevelopmentPlanning.Edit",StringComparer.Ordinal))
+                    {
+                        <MudText Typo="Typo.h6" HtmlTag="h3">Review an equipment installation</MudText>
+                        <MudAlert Severity="Severity.Info">This checks recorded source evidence and does not save an installation.</MudAlert>
+                        <MudSelect T="string" Label="Your role for the installation" @bind-Value="installationRole" @bind-Value:after="InstallationChanged">@foreach(var role in equipmentCompany.Roles){<MudSelectItem T="string" Value="@role">@role</MudSelectItem>}</MudSelect>
+                        <MudTextField T="string" Label="Equipment ID" @bind-Value="installationEquipment" @bind-Value:after="InstallationChanged" Required="true" MaxLength="128" />
+                        <MudTextField T="string" Label="Reason for installation" @bind-Value="installationReason" @bind-Value:after="InstallationChanged" Required="true" MaxLength="1600" />
+                        <MudButton OnClick="ReviewInstallation" Disabled="@_state.InstallationReviewing" Variant="Variant.Outlined">Check installation evidence</MudButton>
+                        @if(_state.InstallationReviewing){<MudProgressLinear Indeterminate="true" aria-label="Checking installation evidence" />}
+                        @if(_state.InstallationError is {} installationError){<MudAlert Severity="Severity.Error" role="alert">@installationError</MudAlert>}
+                        @if(_state.InstallationReview is {} installation)
+                        {
+                            <MudAlert Severity="Severity.Info">Recorded equipment @installation.Proposal.EquipmentId is owned by @installation.Source.EquipmentOwner. @installation.Source.RecordedRows installation rows were recorded, including @installation.Source.ActiveRows with an active indicator. These counts do not establish current installation or readiness. Nothing has been saved.</MudAlert>
+                            @if(installation.Source.ActiveRows>0){<MudAlert Severity="Severity.Warning">Recorded active installation rows must be reconciled before another installation can be saved.</MudAlert>}
+                            <MudTextField T="string" Label="Recorded installation time (UTC)" @bind-Value="installationTimeUtc" @bind-Value:after="InstallationTimeChanged" HelperText="Use an ISO date and time ending in Z, for example 2026-10-27T12:00:00Z." />
+                            <MudCheckBox T="bool" @bind-Value="installationConfirmed" @bind-Value:after="InstallationTimeChanged" Label="I confirm the reviewed equipment and recorded installation time." />
+                            <MudButton OnClick="PrepareInstallation" Variant="Variant.Outlined">Prepare installation original</MudButton>
+                            @if(_state.PreparedInstallation is {} preparedInstallation){<MudAlert Severity="Severity.Info">Original prepared for @preparedInstallation.Review.Proposal.EquipmentId at @preparedInstallation.InstalledAtUtc.ToString("O"). It will be retained in this tab before sending.</MudAlert><MudButton OnClick="_state.SubmitInstallationAsync" Disabled="@(_state.WritingEdit || installation.Source.ActiveRows>0)" Color="Color.Primary" Variant="Variant.Filled">Save equipment installation</MudButton>}
+
+                        }
+                    }
+                    @if(Company.Selection is {} company && company.Permissions.Contains("DevelopmentPlanning.Edit",StringComparer.Ordinal))
+                    {
+                        <MudSelect T="string" Label="Your current editor role" @bind-Value="editorRole" @bind-Value:after="RoleChanged" Disabled="@_state.ReviewingEdit">
+                            @foreach(var role in company.Roles){<MudSelectItem T="string" Value="@role">@role</MudSelectItem>}
+                        </MudSelect>
+                        <MudButton OnClick="ReviewEdit" Disabled="@(!_state.CanReviewEdit(selected.FACILITY_ID,selected.FACILITY_TYPE,editorRole))" Variant="Variant.Outlined">Check facility edit authority</MudButton>
+                        @if(_state.ReviewingEdit){<MudProgressLinear Indeterminate="true" aria-label="Checking facility edit authority" />}
+                        @if(_state.EditError is {} editError){<MudAlert Severity="Severity.Error" role="alert">@editError</MudAlert>}
+                        @if(_state.EditReview is {} editReview && _state.PreparedEdit is null)
+                        {
+                            <MudAlert Severity="Severity.Info" role="status">Current role @editReview.EditorRole and facility source checked at @editReview.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC.</MudAlert>
+                            <MudTextField T="string" Label="Facility long name" @bind-Value="editName" Required="true" MaxLength="255" />
+                            <MudTextField T="string" Label="Description" @bind-Value="editDescription" Lines="3" MaxLength="4000" HelperText="Leave empty to clear the description." />
+                            <MudTextField T="string" Label="Reason for change" @bind-Value="editReason" Required="true" Lines="2" MaxLength="1600" />
+                            <MudCheckBox T="bool" @bind-Value="editConfirmed" Label="I confirm this descriptive change to the reviewed facility." />
+                            <MudButton OnClick="Prepare" Disabled="@(!_state.CanPrepareEdit)" Variant="Variant.Outlined">Review proposed edit</MudButton>
+                        }
+                        @if(_state.PreparedEdit is {} prepared)
+                        {
+                            <MudPaper Outlined="true" Class="pa-3 my-3">
+                                <MudText Typo="Typo.h6" HtmlTag="h3">Confirm the original facility edit</MudText>
+                                <MudText>Facility @prepared.Review.Original.FACILITY_ID / @prepared.Review.Original.FACILITY_TYPE · Role @prepared.Review.EditorRole</MudText>
+                                <MudText>Name: @prepared.LongName · Description: @Recorded(prepared.Description)</MudText>
+                                <MudText>Reason: @prepared.Reason</MudText>
+                                <MudAlert Severity="Severity.Info">The exact original will be retained in this tab before it is sent. Recover it if the outcome is unconfirmed.</MudAlert>
+                                <MudButton OnClick="_state.SubmitEditAsync" Disabled="@_state.WritingEdit" Color="Color.Primary" Variant="Variant.Filled">Save facility edit</MudButton>
+                                <MudButton OnClick="_state.CancelPreparedEdit" Disabled="@_state.WritingEdit" Variant="Variant.Outlined">Back to edit</MudButton>
+                            </MudPaper>
+                        }
+                    }
+                    <MudButton OnClick="ClearSelection" Variant="Variant.Text">Close facility details</MudButton>
+                </MudPaper>
             }
         }
     }
-
-    private static FacilityRequest ToFacilityRequest(Dictionary<string, object> facilityData, FACILITY? existingFacility = null)
+    else{<MudAlert Severity="Severity.Info">Reload to confirm current facility evidence.</MudAlert>}
+    }
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="tenantId")] public string? LinkTenantId {get;set;}
+    [Parameter,SupplyParameterFromQuery(Name="companyId")] public string? LinkCompanyId {get;set;}
+    [Parameter,SupplyParameterFromQuery(Name="fieldId")] public string? LinkFieldId {get;set;}
+    [Parameter,SupplyParameterFromQuery(Name="facilityId")] public string? LinkFacilityId {get;set;}
+    [Parameter,SupplyParameterFromQuery(Name="facilityType")] public string? LinkFacilityType {get;set;}
+    private string? linkError;
+    private DevelopmentFacilityEvidenceState? _state;
+    private bool disposed;
+    private string? selectedId,selectedType,editorRole,editName,editDescription,editReason,creatorRole,creationId,creationType,creationOperator,creationName,creationDescription,creationReason;
+    private string? installationRole,installationEquipment,installationReason,installationTimeUtc;
+    private bool installationConfirmed;
+    private bool editConfirmed,creationConfirmed;
+    private static string Recorded(string? value)=>string.IsNullOrWhiteSpace(value)?"Not recorded":value;
+    protected override void OnInitialized(){_state=new(Company,Fields,Development,Calls.Explain,Journal);_state.Changed+=Changed;}
+    protected override void OnParametersSet(){if(_state?.Loaded==true)ApplySourceLink();}
+    protected override Task OnAfterRenderAsync(bool firstRender)=>firstRender?Reload():Task.CompletedTask;
+    private async Task Reload(){await _state!.LoadAsync();ApplySourceLink();}
+    private void ApplySourceLink()
     {
-        return new FacilityRequest
+        linkError=null;var values=new[]{LinkTenantId,LinkCompanyId,LinkFieldId,LinkFacilityId,LinkFacilityType};
+        if(values.All(value=>value is null))return;
+        if(_state?.Loaded!=true || _state.Review is not {} review || _state.WritingEdit || _state.PendingEdit is not null || _state.PendingCreation is not null || _state.PendingInstallation is not null)return;
+        if(values.Any(value=>!LeaseSummaryValidator.Identifier(value)) || review.Company.TenantId!=LinkTenantId || review.Company.BusinessAssociateId!=LinkCompanyId || review.FieldId!=LinkFieldId ||
+           !_state.Rows.Any(row=>row.FACILITY_ID==LinkFacilityId && row.FACILITY_TYPE==LinkFacilityType))
         {
-            FacilityId = existingFacility?.FACILITY_ID,
-            FieldId = existingFacility?.PRIMARY_FIELD_ID,
-            FacilityName = GetDialogValue(facilityData, "FACILITY_NAME"),
-            FacilityType = GetDialogValue(facilityData, "FACILITY_TYPE"),
-            Status = GetDialogValue(facilityData, "FACILITY_STATUS"),
-            Description = GetDialogValue(facilityData, "DESCRIPTION")
-        };
-    }
-
-    private static string GetDialogValue(Dictionary<string, object> values, string key)
-    {
-        return values.TryGetValue(key, out var value)
-            ? value?.ToString() ?? string.Empty
-            : string.Empty;
-    }
-
-    private static string GetFacilityName(FACILITY facility)
-    {
-        return facility.FACILITY_LONG_NAME ?? facility.FACILITY_SHORT_NAME ?? facility.FACILITY_ID ?? string.Empty;
-    }
-
-    private static string GetFacilityStatus(FACILITY facility)
-    {
-        if (!string.IsNullOrWhiteSpace(facility.REMARK))
-        {
-            return facility.REMARK;
+            ClearSelection();linkError="This facility link does not match an accessible record in the current company and FIELD. Select the original context and reload.";return;
         }
-
-        return string.Equals(facility.ACTIVE_IND, "Y", StringComparison.OrdinalIgnoreCase)
-            ? "OPERATIONAL"
-            : "PLANNED";
+        Select(LinkFacilityId,LinkFacilityType);
     }
-
-    private static bool IsOperationalFacility(FACILITY facility)
-    {
-        return string.Equals(GetFacilityStatus(facility), "OPERATIONAL", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsFacilityUnderConstruction(FACILITY facility)
-    {
-        var status = GetFacilityStatus(facility);
-        return string.Equals(status, "CONSTRUCTION", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(status, "DESIGN", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsDecommissionedFacility(FACILITY facility)
-    {
-        var status = GetFacilityStatus(facility);
-        return string.Equals(status, "INACTIVE", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(status, "DECOMMISSIONED", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(status, "ABANDONED", StringComparison.OrdinalIgnoreCase);
-    }
+    private void Select(string? id,string? type){_state?.ClearEquipment();_state?.ClearEdit();ResetForm();editorRole=null;selectedId=id;selectedType=type;}
+    private void ClearSelection(){_state?.ClearEquipment();selectedId=null;selectedType=null;editorRole=null;ResetForm();_state?.ClearEdit();}
+    private void InstallationChanged(){installationTimeUtc=null;installationConfirmed=false;_state?.ClearInstallation();}
+    private void InstallationTimeChanged()=>_state?.ClearPreparedInstallation();
+    private void PrepareInstallation()=>_state?.PrepareInstallation(installationTimeUtc,installationConfirmed);
+    private Task ReviewInstallation()=>_state!.ReviewInstallationAsync(selectedId!,selectedType!,installationEquipment??"",installationRole??"",installationReason??"");
+    private async Task ReviewEdit(){await _state!.ReviewEditAsync(selectedId!,selectedType!,editorRole!);if(_state.EditReview is {} review){editName=review.Original.FACILITY_LONG_NAME;editDescription=review.Original.DESCRIPTION;editReason="";editConfirmed=false;}}
+    private void Prepare()=>_state!.PrepareEdit(editName,editDescription,editReason,editConfirmed);
+    private void PrepareCreation()=>_state!.PrepareCreation(creatorRole,creationId,creationType,creationOperator,creationName,creationDescription,creationReason);
+    private void PrepareCreationCommand()=>_state!.PrepareCreationCommand(creationConfirmed);
+    private void ResetForm(){installationTimeUtc=null;installationConfirmed=false;installationRole=null;installationEquipment=null;installationReason=null;editName=null;editDescription=null;editReason=null;editConfirmed=false;}
+    private void RoleChanged()=>_state?.ClearEdit();
+    private FACILITY? Selected()=>_state?.Loaded==true ? _state.Rows.SingleOrDefault(row=>row.FACILITY_ID==selectedId && row.FACILITY_TYPE==selectedType) : null;
+    private void Changed(){if(!disposed){if(_state?.Loaded!=true){linkError=null;selectedId=null;selectedType=null;editorRole=null;creatorRole=null;creationId=null;creationType=null;creationOperator=null;creationName=null;creationDescription=null;creationReason=null;creationConfirmed=false;ResetForm();}_=InvokeAsync(StateHasChanged);}}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
 }

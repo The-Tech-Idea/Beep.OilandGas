@@ -1,0 +1,369 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Current native document vocabulary and canonical setup/runtime metadata",
+  "status": "20 distinct focused inputs passed; broader feature and whole goal remain open",
+  "timestamp": "2026-10-29T22:06:10.291338+00:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "dirty_worktree": true,
+  "gates": [
+    {
+      "log": "oilgas-354-vocabulary-01.log",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "1.2619 minutes",
+      "exit_code": 0,
+      "selection": "InstalledDocumentVocabularyRequiresExactActiveNativeCodes (8), PermitDocumentApiReportsChangedNativeVocabularyAsSafeConflict (4), affected InstalledNativeDocumentStagingOwnsTwoTargetsAndSameOriginal link-download/link-rollback/linked-change/reader (4)",
+      "proves": "Missing document type/language, inactive format, dated unqualified language refuse before journal/header/file creation; reference mutation during owned CORE transaction rolls back file rows and reference mutation and supports same-original retry; retirement before link refuses with no command receipt; retirement after link yields CHANGED and withholds positive submission/download while historical stage/link recovery remains. Controlled API routes return safe409 and retain inner diagnosis without disclosing it. Actual SQLite/Beep Migration and explicit test authority scopes for native cases."
+    },
+    {
+      "log": "oilgas-354-vocabulary-metadata-01.log",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "11.8815s",
+      "exit_code": 0,
+      "selection": "PermitSetupAndRuntimeMetadataShareDataOwnedManifest (explicit-json/runtime-default), affected SetupInstalledSqliteMigratesEntirePermitsManifest (1)",
+      "proves": "One immutable Data-owned12-type manifest drives actual module setup/runtime metadata; exact canonical names/keys, six native document/catalog identities, no duplicate metadata owner. Actual full12-table Beep Migration creation/keys/columns/repeat."
+    },
+    {
+      "log": "oilgas-354-vocabulary-http-01.log",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "6.0451 minutes",
+      "exit_code": 0,
+      "selection": "PermitDocumentProviderHttpOwnsTwoTargetsAndCompanyPrivateRecovery",
+      "scope": "Initial vocabulary-aware observation with hand-built PERMITS/document metadata; overlaps final fact, not an additional distinct case."
+    },
+    {
+      "log": "oilgas-354-vocabulary-http-02.log",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "5.6845 minutes",
+      "exit_code": 0,
+      "selection": "PermitDocumentProviderHttpOwnsTwoTargetsAndCompanyPrivateRecovery",
+      "proves": "Final actual PPDMMetadataService injected throughout shared HTTP company/native service registrations. Real setup-installed SQLite CORE/permitting targets, app RBAC/company/FIELD/current native authority. Invalid-language409 precedes any native header/file/staging journal; post-CORE confirmation fault, pending recovery, same-original retry, link, exact private binary/content/no-store, foreign source/recovery/download refusal, fresh writer revocation and readonly historical recovery/replay all pass with exact one physical row populations and unchanged100-second per-request timeout."
+    }
+  ],
+  "changes": [
+    "New read-only vocabulary guard requires exact unique active/unretired R_DOCUMENT_TYPE, R_LANGUAGE and R_DIGITAL_FORMAT records and canonical physical keys/columns before staging journal or bytes; compare complete reference payloads across operations and CORE commit/readback.",
+    "Dated EFFECTIVE_DATE/EXPIRY_DATE entries refuse pending explicit reference applicability policy; no implicit UTC or legal meaning. Audit ROW_EXPIRY_DATE retirement refuses.",
+    "Current link/content comparison also rechecks vocabulary; historical recovery remains recorded history.",
+    "Typed evidence changes map to caller-safe409 with preserved inner exception.",
+    "Data-owned PermitApplicationSchema replaces module-local entity list; shared metadata loader registers12 canonical PERMITS definitions and exact type identities for existing native document/reference definitions. No missing foundation metadata is invented or foreign owner adopted.",
+    "No new persistence schema or SQL/EF migration is introduced by runtime registration; existing table creation in selected fixtures uses Beep Migration."
+  ],
+  "construction_observations": [
+    "Initial native build failed for missing canonical IPPDMEntity namespace; fixed import before all selected tests. Retained build log records the failure.",
+    "Canonical runtime metadata gap was found by source inspection: original JSON carried short native names and loader omitted PERMITS. Final HTTP removes hand-built document/permit metadata in favor of actual shared loader."
+  ],
+  "limits": [
+    "Only three named code catalogs are qualified; not complete production PPDM reference data or enforced FK rollout. Existing RM_FILE_CONTENT metadata describes only INFO_ITEM_SUBTYPE against a composite information-item parent; correct compound FK and byte-unit semantics remain required.",
+    "Native BYTE size unit and information subtype applicability are not established by these three catalog checks. No automatic conversion, subtype vocabulary or legal/regulatory applicability is inferred.",
+    "Catalog selection/preflight UX and a durable resolution/cancellation protocol for permanently invalid retained upload originals remain required; no unsafe discard or replacement is introduced.",
+    "Dated reference applicability needs explicit saved company policy, not an assumed display/storage time zone.",
+    "Controlled authentication/accounts/vocabulary and reflective qualification schemas; no production OIDC, other providers/public package distribution, process/power-loss/concurrency, existing-schema conversion or load acceptance.",
+    "One actual setup DMEEditor owns both physical sources. HTTP IDMEEditor routing/open methods are configured mocks returning real sources; metadata and actual source reads/writes/transactions use production owners/driver.",
+    "Repository controlled-mutation admission still lists only the original three PERMITS tables; align it with the canonical full manifest before declaring generic/UnitOfWork/batch bypass retirement complete. API generic company policy currently rejects noncanonical/unreviewed Data-owned extension entities.",
+    "Whole company/persona/finance/multinational/release goal remains active; no compatibility owner, commit or push."
+  ],
+  "final_request_timings": [
+    {
+      "At": "2026-10-29T21:57:44.9882871+00:00",
+      "Route": "application-review",
+      "Status": 400,
+      "Failure": null,
+      "Seconds": 0.2613663,
+      "Eligibility": {}
+    },
+    {
+      "At": "2026-10-29T21:58:02.9857848+00:00",
+      "Route": "application-review",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 17.9817691,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 3.2242120999999995
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T21:58:15.0391448+00:00",
+      "Route": "application-review",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 12.04261,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.321652099999999
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T21:58:17.7718399+00:00",
+      "Route": "application-review",
+      "Status": 404,
+      "Failure": null,
+      "Seconds": 2.7316186,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 45,
+          "Seconds": 1.9258959000000004
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T21:58:19.9370779+00:00",
+      "Route": "application-document-stage/recovery",
+      "Status": 403,
+      "Failure": null,
+      "Seconds": 2.1603163,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 36,
+          "Seconds": 1.5690918999999999
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T21:58:32.608791+00:00",
+      "Route": "application-document-stage",
+      "Status": 409,
+      "Failure": null,
+      "Seconds": 12.6700384,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 59,
+          "Seconds": 2.515722200000001
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T21:59:08.102321+00:00",
+      "Route": "application-document-stage",
+      "Status": 500,
+      "Failure": null,
+      "Seconds": 35.4027597,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 59,
+          "Seconds": 2.5431418000000003
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T21:59:13.1893774+00:00",
+      "Route": "application-document-stage/recovery",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 5.0840284,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.4381226000000007
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T21:59:58.8681152+00:00",
+      "Route": "application-document-stage",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 45.6752288,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 86,
+          "Seconds": 3.7622187000000014
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:00:10.7759058+00:00",
+      "Route": "application-review",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 11.9035315,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.2921910999999997
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:01:06.2796492+00:00",
+      "Route": "application-command",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 55.495465,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 142,
+          "Seconds": 6.145876300000005
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:01:25.3791462+00:00",
+      "Route": "application-review",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 19.0946768,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.3304435000000003
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:01:27.467295+00:00",
+      "Route": "application-attachment-download",
+      "Status": 403,
+      "Failure": null,
+      "Seconds": 2.0865699,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 36,
+          "Seconds": 1.5411696000000001
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:02:05.9101842+00:00",
+      "Route": "application-attachment-download",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 38.4422999,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.3083488
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:02:44.7958171+00:00",
+      "Route": "application-attachment-content",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 38.8844679,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.3609139000000003
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:02:49.7366893+00:00",
+      "Route": "application-document-stage/recovery",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 4.9247707,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.3470011
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:02:54.6611759+00:00",
+      "Route": "application-document-stage",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 4.9226102,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.3108977999999993
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:02:59.5250792+00:00",
+      "Route": "application-document-stage",
+      "Status": 403,
+      "Failure": null,
+      "Seconds": 4.8628262,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.2894713999999987
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:03:04.3795348+00:00",
+      "Route": "application-document-stage/recovery",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 4.8536546,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.282800499999999
+        }
+      }
+    },
+    {
+      "At": "2026-10-29T22:03:08.5603823+00:00",
+      "Route": "application-command/recovery",
+      "Status": 200,
+      "Failure": null,
+      "Seconds": 4.1795723,
+      "Eligibility": {
+        "eligibility": {
+          "Count": 54,
+          "Seconds": 2.2811321000000007
+        }
+      }
+    }
+  ],
+  "retained_logs": [
+    "oilgas-354-vocabulary-01.log",
+    "oilgas-354-vocabulary-data-build.log",
+    "oilgas-354-vocabulary-http-01.log",
+    "oilgas-354-vocabulary-http-02.log",
+    "oilgas-354-vocabulary-metadata-01.log",
+    "oilgas-354-vocabulary-metadata-build.log",
+    "oilgas-354-vocabulary-native-build-02.log",
+    "oilgas-354-vocabulary-native-build-03.log",
+    "oilgas-354-vocabulary-native-build.log",
+    "oilgas-354-vocabulary-tests-build-02.log",
+    "oilgas-354-vocabulary-tests-build-03.log",
+    "oilgas-354-vocabulary-tests-build-04.log",
+    "oilgas-354-vocabulary-tests-build.log"
+  ],
+  "source_sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationSchema.cs": "70c2b9bf974165b0ee92f671d87822d0592f2e514f496ce389fb230eed3db2e5",
+    "Beep.OilandGas.PermitsAndApplications/Modules/PermitsModule.cs": "c6abd2c19cb30c8756dadfb02915b70858d7a5c899cb28acd2d771b4a9070cd0",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.DocumentVocabulary.cs": "77e4fbebfc2a1dbc33219c30f2d48413d13ae125c1f32fcedcbfcdbe84938d7a",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Documents.cs": "817c29d6430d2f055457587f5713a726939f62e693533904b9c9c7cf388ede87",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.AttachmentContent.cs": "61280af46e839dc921f0b8323eebc89aa9b95c71f500bd6e5a1d55ad50801dde",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "3416b7c6689f375c854d916fd5da7f26ba012a6bb190dc99bd4217e7724ad1c9",
+    "Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/PPDMMetadataService.cs": "6355fe6b5b80bcdf1eac525ca8a0dbdb728aa9559288de0864fc36af0337321e",
+    "Beep.OilandGas.PPDM39.DataManagement/Core/Metadata/PermitApplicationNativeMetadata.cs": "087d50ffc4bd7cb0fe2e9031a8ec42c62cd78d64f2117ad6dd10a2dd60e37f58",
+    "Beep.OilandGas.Repository.Tests/PermitDocumentStagingTests.cs": "a528e89bd42b3bd443867987d6cd842ffebd6181bc32e5e8d8b72ec45d2ecd7d",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "1217ba5cf46cf0b0c6b0b0d9a3f86e4594a449aaf3a42606886aecbc4e439825",
+    "Beep.OilandGas.Repository.Tests/PermitProviderHttpTests.cs": "781a2287be6896aa75a5e7ac6cada7f1fbee911604b2ed7d3a890cfad070958a",
+    "Beep.OilandGas.Repository.Tests/PermitDocumentProviderHttpTests.cs": "5d96f88e6e51076a5522c70ae42a49d62638ae4d6c93c9e34592d16f24962e1b",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "70fc3995775f35b966d0c4dc8fb8c520fa24e92118eb9a29030b6462fab7684e"
+  },
+  "native_files_sha256": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-e35e91d5bd624fa68fbc9a9370639291\\document-http-core.db": "055b23004ae81774ea7efa5cff69051ecc98c3258aa214c22f514ffee2fdc523",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-e35e91d5bd624fa68fbc9a9370639291\\permits.db": "025ab5bbe97d27cac463a1fad808f9bf4fc36ba47f3deb634b48047915356d0d"
+  },
+  "runtime_sha256": {
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "e3d394c50b556e982380a1a8a0c4ba06420a7fccf9372b61379e9ab05bf9d40c",
+    "Beep.OilandGas.PPDM39.DataManagement/bin/Debug/net10.0/Beep.OilandGas.PPDM39.DataManagement.dll": "73b3b17a31c9d8a354adc1c2a65d3fefb7d40870b4156477fe23df37059e56c4",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "6e7daf6c75632b9f0890ff0ebe0b93befc55d2390f1a24347d3ed3f1f6ea277e",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "5f393f4e49b1d7a48925269cdbfe21b5c29a9e5975da888e5cab366388f2f9a7"
+  }
+}

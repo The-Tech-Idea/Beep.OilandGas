@@ -1,0 +1,53 @@
+@page "/drilling/completion-review/history"
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject OilGasCallFailures Calls
+<PageTitle>Completion review history</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Independent completion review history</MudText>
+    <MudStack Row="true" Class="my-3"><MudButton Href="/tasks/inbox">Company inbox</MudButton><MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload completion review history</MudButton></MudStack>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming complete original completion decisions" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(Company.Selection is null){<MudAlert Severity="Severity.Info" role="status">Choose your company, then reopen its original completion review.</MudAlert>}
+    @if(_state?.Current is {} progress)
+    {
+        var original=progress.Original;var scope=progress.Source.History.Execution.Basis.Scope();
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Recorded review of the original completion claim</MudText>
+            <MudText>Company @scope.Company.TenantId / @scope.Company.BusinessAssociateId; reader @scope.ActorUserId; FIELD @scope.FieldId; well @progress.Source.History.Execution.Basis.Source.Basis.Well.Uwi</MudText>
+            <MudText>Review @progress.InstanceId; claim @original.ClaimId; reported by @original.Source.ReportedCompletion!.RecorderUserId / @original.Source.ReportedCompletion.RecorderRole / @original.Source.ReportedCompletion.RecorderPersonaCode</MudText>
+            <MudText>Independent review state @progress.State; actual pending approval tasks @progress.PendingTasks; checked @progress.CheckedAtUtc.ToString("u") UTC</MudText>
+            @if(!progress.IsCurrentClaim){<MudAlert Severity="Severity.Warning">This original completion claim is historical or withdrawn in the current checked report history.</MudAlert>}
+            @if(progress.OriginalCompletionAccepted)
+            {
+                <MudAlert Severity="Severity.Success">Original physical completion acceptance is recorded. Accepted claim is current @progress.AcceptedClaimIsCurrent; later report changes or withdrawal do not rewrite the original signoff. Current external test readiness must be rechecked by the next command owner.</MudAlert>
+                <DrillingCompletionAcceptanceEvidenceView Decision="progress.Stages.Last().AcceptedDecision!" />
+            }
+            else{<MudAlert Severity="Severity.Info">No independent physical completion acceptance is recorded by this review outcome.</MudAlert>}
+            <MudAlert Severity="Severity.Info">Completion of ongoing reporting responsibility, WELL updates, financial actuals, construction acceptance and production release require their own source-bound evidence and commands.</MudAlert>
+            <MudButton Href="@("/drilling/program-execution/assignment?reviewId="+Uri.EscapeDataString(progress.Source.History.Execution.Basis.ReviewInstanceId))" Variant="Variant.Outlined">Open reporting responsibility</MudButton>
+            <DrillingCompletionEvidenceView Report="original.Source.ReportedCompletion!.Report" />
+            <MudSimpleTable Bordered="true" Class="my-3">
+                <caption>Complete ordered independent completion review stages</caption>
+                <thead><tr><th scope="col">Stage / role / workspaces</th><th scope="col">Recorded state / reviewer</th><th scope="col">Reason / recorded UTC</th></tr></thead>
+                <tbody>@foreach(var stage in progress.Stages){<tr><th scope="row">@stage.Number / @stage.Name<br />@stage.AssignedRole / @string.Join(", ",stage.PersonaCodes)</th><td>@stage.State<br />@(stage.Reviewer??"No decision") / @(stage.ReviewerPersona??"No deciding workspace")</td><td class="development-draft-description">@(stage.Rationale??"No decision recorded")<br />@(stage.AtUtc?.ToString("u")??"No decision UTC")<br />@stage.ApprovalId<br />@stage.HistoryId</td></tr>}</tbody>
+            </MudSimpleTable>
+            <MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(progress.Source.History.Execution.Basis.ReviewInstanceId))" Variant="Variant.Outlined">Open current execution report history</MudButton>
+        </MudPaper>
+    }
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
+    private DrillingCompletionProgressState? _state;private bool interactive,disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool first){if(!first)return Task.CompletedTask;interactive=true;return Reload();}
+    private Task Reload()=>_state!.LoadAsync(ProcessId);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

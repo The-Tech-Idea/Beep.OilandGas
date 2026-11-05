@@ -1,0 +1,10 @@
+### Ran Playwright code
+```js
+await page.reload();
+```
+### Page
+- Page URL: http://127.0.0.1:49208/
+### Snapshot
+- [Snapshot](output\playwright\351-assignment-browser\artifacts\page-2026-10-26T16-16-07-102Z.yml)
+### Events
+- New console entries: output\playwright\351-assignment-browser\artifacts\console-2026-10-26T16-13-10-190Z.log#L6-L7

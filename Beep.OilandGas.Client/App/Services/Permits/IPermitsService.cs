@@ -1,24 +1,17 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using TheTechIdea.Data.OilGas;
+namespace Beep.OilandGas.Client.App.Services.Permits;
 
-namespace Beep.OilandGas.Client.App.Services.Permits
+/// <summary>Reviewed permit workflows through the current company ApiService gateway.</summary>
+public interface IPermitsService
 {
-    /// <summary>
-    /// Service interface for Permits and Applications operations
-    /// </summary>
-    public interface IPermitsService
-    {
-        Task<PermitApplication> CreatePermitApplicationAsync(PermitApplication request, CancellationToken cancellationToken = default);
-        Task<string> GetPermitStatusAsync(string permitId, CancellationToken cancellationToken = default);
-        Task<List<RequiredDocument>> GetRequiredDocumentsAsync(string permitType, string jurisdiction, CancellationToken cancellationToken = default);
-        Task<bool> SubmitPermitAsync(string permitId, CancellationToken cancellationToken = default);
-        Task<PermitApplication> UpdatePermitApplicationAsync(string permitId, PermitApplication request, CancellationToken cancellationToken = default);
-        Task<List<PermitHistory>> GetPermitHistoryAsync(string assetId, CancellationToken cancellationToken = default);
-        Task<PermitComplianceResult> GetPermitComplianceAsync(string permitId, CancellationToken cancellationToken = default);
-        Task<PermitApplication> RenewPermitAsync(string permitId, PermitApplication request, CancellationToken cancellationToken = default);
-        Task<List<PermitApplication>> GetPendingPermitsAsync(string operatorId, CancellationToken cancellationToken = default);
-        Task<PermitRequirements> GetJurisdictionRequirementsAsync(string jurisdiction, string permitType, CancellationToken cancellationToken = default);
-    }
+    Task<PermitApplicationInboxReview> ReadInboxAsync(FieldSelectionReview expected, CancellationToken cancellationToken = default);
+    Task<PermitApplicationCreationReview> ReviewCreationAsync(PermitApplicationCreationProposal proposal, FieldSelectionReview expected, CancellationToken cancellationToken = default);
+    Task<PermitApplicationSourceReview> ReviewSourceAsync(string applicationId, FieldSelectionReview expected, CancellationToken cancellationToken = default);
+    Task<PermitApplicationCommandOutcome> RecordCommandAsync(PermitApplicationCommand original, CancellationToken cancellationToken = default);
+    Task<PermitApplicationCommandRecovery> RecoverCommandAsync(PermitApplicationCommand original, CancellationToken cancellationToken = default);
+    Task<PermitDocumentStageResponse> StageDocumentAsync(PermitDocumentStageRequest request,CancellationToken cancellationToken=default);
+    Task<PermitDocumentStageResponse> RecoverDocumentStageAsync(PermitDocumentStageOriginal request,CancellationToken cancellationToken=default);
+    Task<PermitAttachmentContent> ReadAttachmentContentAsync(PermitAttachmentContentQuery request,CancellationToken cancellationToken=default);
 }

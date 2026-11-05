@@ -1,0 +1,203 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject IAccountingServiceClient Accounting
+@inject DeliveryAcceptanceWorkspaceState State
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-3 my-3">
+    <MudText Typo="Typo.h6">Delivery acceptance preparation and independent review</MudText>
+    <MudText>Revenue transaction: @TransactionId · FIELD: @FieldId · Original stored window: @From.ToString("yyyy-MM-dd") through @Through.ToString("yyyy-MM-dd")</MudText>
+    <MudButton OnClick="Reload" Disabled="@State.Busy">Reload and reconcile original delivery intent</MudButton>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading or reconciling delivery acceptance" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.HasPendingIntent){<MudAlert Severity="Severity.Warning">An original delivery intent remains unconfirmed. Return to its original company, account, FIELD and transaction, then reload before another command. Retry uses its original identity and reviewed evidence.</MudAlert>}
+    @if(State.HasPendingIntent && State.SavedIntent is null){<MudText>Saving is unconfirmed. Keep this session until reload confirms saved evidence or the exact recorded outcome.</MudText>}
+    @if(_authorized && State.SavedIntent is {} saved)
+    {<MudText>Confirmed saved delivery intent: @saved.DELIVERY_ACCEPTANCE_INTENT_ID · Saved by: @saved.ROW_CREATED_BY · Saved UTC: @saved.ROW_CREATED_DATE?.ToString("O")</MudText><MudText Typo="Typo.caption">Reopen this original delivery source to recover saved work in a new session. Reload checks the recorded outcome before an explicit retry.</MudText>}
+    @if(_authorized && State.Review is {} review)
+    {
+        <MudText>Ticket: @review.Source.TicketId · Net measured quantity: @(review.Source.NetVolume?.ToString(CultureInfo.CurrentCulture) ?? "Unavailable") · Unit: @(review.Source.VolumeUnit ?? "Unavailable") · Status: @(review.Source.TicketStatus ?? "Unavailable")</MudText>
+        <MudText>Receiving buyer in contract: @(review.Source.Source.Contract.BUYER_BA_ID ?? "Unavailable")</MudText>
+        <MudText Typo="Typo.caption">Recorded source revision: @review.Source.Revision</MudText>
+        <MudAlert Severity="Severity.Info">Delivery acceptance is separate from price/unit compatibility, invoicing, recognition policy and ledger posting.</MudAlert>
+        @if(review.Recorded is {} recorded)
+        {
+            <MudText>Recorded acceptance preparation · Intent: @recorded.Preparation.IntentId · Prepared by: @recorded.Preparation.ActorUserId · Prepared UTC: @recorded.PreparedAtUtc.ToString("O")</MudText>
+            <MudText>Acceptance UTC: @recorded.Preparation.Facts.AcceptedAtUtc.ToString("O") · Receiving buyer: @recorded.Preparation.Facts.ReceivingBusinessAssociateId · Evidence reference: @recorded.Preparation.Facts.EvidenceReference</MudText>
+            <MudText>Recorded accepted quantity: @(recorded.Preparation.Facts.AcceptedQuantity?.ToString(CultureInfo.CurrentCulture) ?? "Unavailable") · Accepted unit: @(recorded.Preparation.Facts.AcceptedQuantityUnit ?? "Unavailable")</MudText>
+            @if(!recorded.Preparation.Facts.HasExplicitQuantity){<MudAlert Severity="Severity.Warning">Accepted quantity is absent from the original evidence. The certified measurement is not substituted; approval requires explicit receiving quantity. Recorded history stays unchanged.</MudAlert>}
+            @if(review.ApprovedAcceptedQuantity is {} approvedQuantity)
+            {<MudText>Approved @(review.IsApprovedPartialAcceptance?"partial":"full") receiving quantity: @approvedQuantity.ToString(CultureInfo.CurrentCulture) @review.ApprovedQuantityUnit · Measured quantity outside this approval: @review.MeasuredQuantityOutsideApprovedAcceptance?.ToString(CultureInfo.CurrentCulture)</MudText>}
+            var priceBasis=review.ReviewBillingBasis();
+            <MudPaper Outlined="true" Class="pa-3 my-3">
+                <MudText Typo="Typo.h6">Receiving price basis for billing review</MudText>
+                <MudAlert Severity="@(priceBasis.HasCompatiblePriceBasis?Severity.Info:Severity.Warning)">@BillingBasisMessage(priceBasis.Status)</MudAlert>
+                <MudText>Approved receiving quantity: @(priceBasis.ApprovedQuantity?.ToString(CultureInfo.CurrentCulture) ?? "Unavailable") @priceBasis.QuantityUnit · Approved unit price: @(priceBasis.ApprovedUnitPrice?.ToString(CultureInfo.CurrentCulture) ?? "Unavailable") @priceBasis.CurrencyCode / @priceBasis.PriceUnit</MudText>
+                <MudText>Recorded pricing method: @(priceBasis.PricingMethod ?? "Unavailable")</MudText>
+                @if(priceBasis.UnroundedAmount is {} amount){<MudText>Quantity × approved unit price, before rounding, tax and charges: @amount.ToString(CultureInfo.CurrentCulture) @priceBasis.CurrencyCode</MudText>}
+                <MudText Typo="Typo.caption">Price basis revision: @priceBasis.Revision · Terms revision: @(priceBasis.TermsRevision ?? "Unavailable") · Receiving revision: @(priceBasis.DeliveryRevision ?? "Unavailable")</MudText>
+                <MudText Typo="Typo.caption">Invoice preparation still requires company rounding, rights, tax and charges policies. Billing status and unbilled quantity require recorded invoice evidence.</MudText>
+                @if(priceBasis.HasCompatiblePriceBasis){<MudButton Href="@($"/accounting/sales-invoices?ticket={Uri.EscapeDataString(review.Source.TicketId)}")" Variant="Variant.Outlined">Open delivery billing handoff</MudButton>}
+            </MudPaper>
+            <MudText>@recorded.Preparation.Facts.Notes</MudText>
+            <MudText Typo="Typo.caption">Acceptance revision: @recorded.Revision</MudText>
+            @if(recorded.Decision is {} decision)
+            {<MudAlert Severity="Severity.Info">Recorded independent decision: @decision.Decision · Reviewer: @decision.ActorUserId · UTC: @recorded.DecidedAtUtc?.ToString("O") · Reason: @decision.Reason</MudAlert>}
+            else if(_canDecide && !State.HasPendingIntent)
+            {
+                <MudTextField T="string" Label="Independent delivery decision reason" @bind-Value="_reason" Required="true" MaxLength="4096" Disabled="@State.Busy" />
+                <MudButton OnClick="@(()=>Decide(RevenueDeliveryAcceptanceDecision.Approve))" Disabled="@(State.Busy || !_canApprove)">Approve reviewed delivery acceptance</MudButton>
+                <MudButton OnClick="@(()=>Decide(RevenueDeliveryAcceptanceDecision.Reject))" Disabled="@State.Busy">Reject reviewed delivery acceptance</MudButton>
+            }
+            else if(recorded.Decision is null){<MudAlert Severity="Severity.Info">Independent decision access or complete maker identity is unavailable for this account.</MudAlert>}
+            @if(_canCorrect && !State.HasPendingIntent)
+            {
+                <MudText Typo="Typo.h6">Correct rejected receiving evidence</MudText>
+                <MudAlert Severity="Severity.Info">Enter changed receiving facts and a correction reason. Earlier evidence remains preserved; this creates an undecided version requiring independent review.</MudAlert>
+                <MudForm @ref="_form">
+                    <MudDatePicker Label="Corrected acceptance date (UTC)" @bind-Date="_dateUtc" Required="true" Disabled="@State.Busy" />
+                    <MudTimePicker Label="Corrected acceptance time (UTC)" @bind-Time="_timeUtc" Required="true" Disabled="@State.Busy" />
+                    <MudNumericField T="decimal?" Label="Explicit corrected accepted quantity" @bind-Value="_quantity" Required="true" Min="0m" Disabled="@State.Busy" />
+                    <MudText Typo="Typo.caption">Accepted unit: @(review.Source.VolumeUnit ?? "Unavailable") · Certified measured quantity: @review.Source.NetVolume</MudText>
+                    <MudTextField T="string" Label="Corrected receiving buyer reference" @bind-Value="_buyer" Required="true" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Label="Corrected receiving evidence reference" @bind-Value="_reference" Required="true" MaxLength="256" Disabled="@State.Busy" />
+                    <MudTextField T="string" Label="Corrected receiving review notes" @bind-Value="_notes" Required="true" MaxLength="4096" Disabled="@State.Busy" />
+                    <MudTextField T="string" Label="Receiving correction reason" @bind-Value="_correctionReason" Required="true" MaxLength="4096" Disabled="@State.Busy" />
+                    <MudButton OnClick="Correct" Disabled="@State.Busy" Color="Color.Primary">Record correction for independent review</MudButton>
+                </MudForm>
+            }
+            @if(AssignedSource is null && recorded.Decision is null && !State.HasPendingIntent && !State.Busy && Company.Selection?.Permissions.Contains("Workflow.Start",StringComparer.Ordinal)==true)
+            {
+                <Beep.OilandGas.Web.Components.BusinessProcess.CompanyAccountingHandoffPanel EntityType="RUN_TICKET" EntityId="@review.Source.TicketId" SourceRevision="@CompanyAccountingSourceTypes.DeliveryPreparationRevision(recorded)" />
+            }
+        }
+        else if(_canPrepare && !State.HasPendingIntent)
+        {
+            <MudForm @ref="_form">
+                <MudDatePicker Label="Actual acceptance date in UTC" @bind-Date="_dateUtc" Required="true" Disabled="@State.Busy" />
+                <MudTimePicker Label="Actual acceptance time in UTC" @bind-Time="_timeUtc" Required="true" Disabled="@State.Busy" />
+                <MudNumericField T="decimal?" Label="Actual accepted receiving quantity" @bind-Value="_quantity" Required="true" Min="0" Disabled="@State.Busy" />
+                <MudText>Accepted quantity uses the exact certified unit: @review.Source.VolumeUnit. Enter a positive quantity no greater than the recorded net measurement; no conversion or quantity default is applied.</MudText>
+                <MudTextField T="string" Label="Receiving buyer business associate" @bind-Value="_buyer" Required="true" MaxLength="128" Disabled="@State.Busy" />
+                <MudTextField T="string" Label="Receiving evidence reference" @bind-Value="_reference" Required="true" MaxLength="512" Disabled="@State.Busy" />
+                <MudTextField T="string" Label="Receiving evidence review notes" @bind-Value="_notes" Required="true" MaxLength="4096" Disabled="@State.Busy" />
+                <MudText Typo="Typo.caption">Enter the reviewed UTC timestamp explicitly. No company timezone or receiving evidence is substituted.</MudText>
+                <MudButton OnClick="Prepare" Disabled="@State.Busy">Record delivery preparation for independent review</MudButton>
+            </MudForm>
+        }
+        else if(review.Recorded is null){<MudAlert Severity="Severity.Info">Preparation access, certified measured quantity or independently approved applicable terms are unavailable. Review the original evidence.</MudAlert>}
+        @if(State.HasPendingIntent){<MudButton OnClick="Retry" Disabled="@(!State.CanRetryPending || State.PendingPreparation is not null && !_canPrepare || State.PendingDecision is not null && !_canDecide || State.PendingOriginal?.Correction is not null && !_canRecoverCorrection)">Retry original delivery intent</MudButton>}
+    }
+    @if(_authorized && State.PendingPreparation is {} pending)
+    {<MudText>Retained delivery intent: @pending.IntentId · Acceptance UTC: @pending.Facts.AcceptedAtUtc.ToString("O") · Buyer: @pending.Facts.ReceivingBusinessAssociateId · Evidence: @pending.Facts.EvidenceReference · Notes: @pending.Facts.Notes · Accepted quantity: @(pending.Facts.AcceptedQuantity?.ToString(CultureInfo.CurrentCulture) ?? "Unavailable") @(pending.Facts.AcceptedQuantityUnit ?? "Unavailable")</MudText>}
+    @if(_authorized && State.PendingDecision is {} pendingDecision)
+    {<MudText>Retained delivery decision intent: @pendingDecision.IntentId · Decision: @pendingDecision.Decision · Reason: @pendingDecision.Reason</MudText>}
+    @if(_authorized && State.PendingOriginal is {} original)
+    {<MudText>Original recovery source: FIELD @original.Original.Source.Source.Source.FieldId · Stored window @original.Original.Source.Source.Source.From.ToString("yyyy-MM-dd") through @original.Original.Source.Source.Source.Through.ToString("yyyy-MM-dd") · Revenue transaction @original.Original.Source.Source.TransactionId · Intent @original.IntentId</MudText>
+        @if(original.Correction is {} correction){<MudText>Retained correction · Original process: @correction.Review.InstanceId · Previous record: @correction.Correction.Previous.Revision · Reason: @correction.Correction.Reason · Accepted quantity: @correction.Correction.Preparation.Facts.AcceptedQuantity @correction.Correction.Preparation.Facts.AcceptedQuantityUnit · Evidence: @correction.Correction.Preparation.Facts.EvidenceReference · Notes: @correction.Correction.Preparation.Facts.Notes</MudText>}}
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public string FieldId{get;set;}=string.Empty;
+    [Parameter] public DateTime From{get;set;}
+    [Parameter] public DateTime Through{get;set;}
+    [Parameter,EditorRequired] public string TransactionId{get;set;}=string.Empty;
+    [Parameter] public CompanyDeliveryProcessSourceReview? AssignedSource{get;set;}
+    [Parameter] public CompanyDeliveryCorrectionReview? CorrectionReview{get;set;}
+    [Parameter] public DELIVERY_ACCEPTANCE_INTENT? RecoveryIntent{get;set;}
+    [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
+    private MudForm? _form;
+    private static string BillingBasisMessage(RevenueDeliveryBillingBasisStatus status)=>status switch
+    {
+        RevenueDeliveryBillingBasisStatus.HistoricalReceivingEvidence=>"Historical receiving evidence cannot supply the current invoice price basis.",
+        RevenueDeliveryBillingBasisStatus.CommercialTermsRequired=>"Record explicit commercial terms before reviewing the billing basis.",
+        RevenueDeliveryBillingBasisStatus.CommercialApprovalRequired=>"Independent approval of the recorded commercial terms is required.",
+        RevenueDeliveryBillingBasisStatus.CommercialTermsRejected=>"Commercial terms are rejected; review their recorded return before billing.",
+        RevenueDeliveryBillingBasisStatus.CommercialApplicabilityRequired=>"Approved terms do not establish the current recorded date/currency applicability.",
+        RevenueDeliveryBillingBasisStatus.ReceivingPreparationRequired=>"Record explicit receiving evidence before billing review.",
+        RevenueDeliveryBillingBasisStatus.ReceivingApprovalRequired=>"Independent approval of the current receiving version is required.",
+        RevenueDeliveryBillingBasisStatus.ReceivingRejected=>"Receiving evidence is rejected; its quantity is not approved for billing.",
+        RevenueDeliveryBillingBasisStatus.AcceptedQuantityRequired=>"The original approval has no explicit accepted quantity/unit; measurement is not substituted.",
+        RevenueDeliveryBillingBasisStatus.PricingMethodUnresolved=>"The recorded pricing method does not establish explicit fixed-unit pricing. Review approved commercial terms; free-text descriptions are not interpreted.",
+        RevenueDeliveryBillingBasisStatus.QuantityUnitMismatch=>"The approved price unit differs from the exact accepted quantity unit. No unit or currency conversion is assumed.",
+        RevenueDeliveryBillingBasisStatus.ZeroPricePolicyRequired=>"A zero-price policy must be reviewed before invoice preparation.",
+        RevenueDeliveryBillingBasisStatus.AmountOutOfRange=>"The exact price extension exceeds supported decimal range or precision. Review the calculation policy before billing.",
+        RevenueDeliveryBillingBasisStatus.CompatibleFixedUnitPrice=>"Current independently approved receiving quantity and fixed-unit price have an exact unit/currency basis. Continue company invoice-policy review before preparation.",
+        _=>throw new InvalidOperationException("The source-bound billing basis is unconfirmed.")
+    };
+    private DateTime? _dateUtc;
+    private TimeSpan? _timeUtc;
+    private decimal? _quantity;
+    private string _buyer="",_reference="",_notes="",_reason="",_correctionReason="";
+    private string? _error;
+    private bool _authorized,_canPrepare,_canDecide,_canApprove,_canRecoverCorrection,_canCorrect,_disposed;
+    private long _epoch;
+    private (string Field,DateTime From,DateTime Through,string Transaction,string? Process,string? ProcessRevision,string? SavedRevision,string? CorrectionRevision)? _parameters;
+    private async Task Access()
+    {
+        _authorized=false;_canPrepare=false;_canDecide=false;_canApprove=false;_canRecoverCorrection=false;_canCorrect=false;var snapshot=Company.Snapshot;var epoch=_epoch;
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ??user.FindFirstValue("sub");var field=AssignedSource is null && RecoveryIntent is null?await Fields.GetCurrentFieldIdAsync():null;
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selection || actor!=selection.UserId || user.Identity?.IsAuthenticated!=true ||
+            !selection.Roles.Any(user.IsInRole) || !selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || AssignedSource is null && RecoveryIntent is null && field!=FieldId)throw new UnauthorizedAccessException();
+        if(RecoveryIntent is {} saved)
+        {
+            if(AssignedSource is not null)throw new InvalidOperationException("One original delivery recovery owner is required.");
+            var original=saved.Restore(selection.Scope,actor,saved.SCOPE_KEY);var source=original.Original.Source.Source.Source;
+            if(source.FieldId!=FieldId || source.From!=From || source.Through!=Through || original.Original.Source.Source.TransactionId!=TransactionId ||
+                State.SavedIntent is {} observed && System.Text.Json.JsonSerializer.Serialize(saved)!=System.Text.Json.JsonSerializer.Serialize(observed))throw new InvalidOperationException("The original saved delivery recovery changed.");
+        }
+        if(AssignedSource is {} assigned)
+        {
+            assigned.Require(selection.Scope,actor,assigned.InstanceId);if(assigned.IsHistorical)throw new InvalidOperationException("Historical receiving evidence is read-only.");var original=assigned.Delivery.Source.Source.Source;
+            if(original.FieldId!=FieldId || original.From!=From || original.Through!=Through || assigned.Delivery.Source.Source.TransactionId!=TransactionId ||
+                State.Review is {} current && (current.Recorded is null || CompanyAccountingSourceTypes.DeliveryPreparationRevision(current.Recorded)!=assigned.PreparationRevision))
+                throw new InvalidOperationException("The original process delivery preparation changed.");
+        }
+        _authorized=true;
+        _canRecoverCorrection=State.PendingOriginal?.Correction is not null && selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal);
+        if(CorrectionReview is {} correction)
+        {
+            correction.Require(selection.Scope,actor,correction.InstanceId);
+            if(AssignedSource is null || AssignedSource.IsHistorical || AssignedSource.InstanceId!=correction.InstanceId || AssignedSource.ProcessRevision!=correction.ProcessRevision || System.Text.Json.JsonSerializer.Serialize(AssignedSource.Delivery.Recorded)!=System.Text.Json.JsonSerializer.Serialize(correction.Previous))throw new InvalidOperationException("The correction differs from its displayed original process.");
+            _canCorrect=selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal) && State.Review is {} live && !live.IsHistorical && System.Text.Json.JsonSerializer.Serialize(live.Recorded)==System.Text.Json.JsonSerializer.Serialize(correction.Previous);
+        }
+        if(State.Review is {} review)
+        {
+            if(AssignedSource is null && review.Recorded is null && selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal))
+            {try{RevenueDeliveryAcceptancePreparation.RequireSource(review.Source);_canPrepare=true;}catch(InvalidOperationException){}}
+            if(review.Recorded is {} record && record.Decision is null && selection.Permissions.Contains("ProductionAccounting.Approve",StringComparer.Ordinal))
+            {try{RevenueDeliveryAcceptanceDecisionCommand.RequireReviewer(record,actor);_canDecide=true;_canApprove=record.Preparation.Facts.HasExplicitQuantity;}catch(InvalidOperationException){}}
+        }
+    }
+    protected override void OnInitialized(){State.Changed+=StateChanged;Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){var next=(FieldId,From,Through,TransactionId,AssignedSource?.InstanceId,AssignedSource?.ProcessRevision,RecoveryIntent?.RECORDED_REVISION,CorrectionReview?.ProcessRevision);if(_parameters==next)return;++_epoch;_parameters=next;State.AttachOwner(this,FieldId,From,Through,TransactionId);ResetDraft();await Reload();}
+    private void ResetDraft(){_dateUtc=null;_timeUtc=null;_quantity=null;_buyer="";_reference="";_notes="";_reason="";_correctionReason="";}
+    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();if(RecoveryIntent is {} saved)State.RecoverSaved(saved);await State.LoadAsync(Accounting);if(epoch==_epoch && !_disposed)await Access();}catch{if(epoch==_epoch && !_disposed)_error="Delivery acceptance could not be confirmed. Return to the original context, check access and provisioning, then reload.";}}
+    private async Task Prepare()
+    {
+        var epoch=_epoch;_error=null;try{await Access();if(!_canPrepare)throw new UnauthorizedAccessException();if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
+            if(_dateUtc is null || _timeUtc is null || _timeUtc<TimeSpan.Zero || _timeUtc>=TimeSpan.FromDays(1))throw new ArgumentException();
+            var facts=new RevenueDeliveryAcceptanceFacts(DateTime.SpecifyKind(_dateUtc.Value.Date+_timeUtc.Value,DateTimeKind.Utc),_buyer,_reference,_notes){AcceptedQuantity=_quantity,AcceptedQuantityUnit=State.Review?.Source.VolumeUnit};await State.PrepareAsync(Accounting,facts);if(epoch==_epoch && !_disposed){ResetDraft();await Access();}}
+        catch{if(epoch==_epoch && !_disposed)_error="Delivery preparation was not confirmed. Check explicit UTC acceptance, positive accepted quantity in the certified unit, receiving buyer, evidence and notes. Retain any pending intent and reload its original context.";}
+    }
+    private async Task Decide(RevenueDeliveryAcceptanceDecision decision){var epoch=_epoch;_error=null;try{await Access();if(!_canDecide || decision==RevenueDeliveryAcceptanceDecision.Approve && !_canApprove)throw new UnauthorizedAccessException();await State.DecideAsync(Accounting,decision,_reason);if(epoch==_epoch && !_disposed){_reason="";await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="Delivery decision was not confirmed. Check explicit accepted quantity, independent reviewer access and reason. Retain any pending intent and reload its original context.";}}
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(State.PendingPreparation is not null && !_canPrepare || State.PendingDecision is not null && !_canDecide || State.PendingOriginal?.Correction is not null && !_canRecoverCorrection)throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(epoch==_epoch && !_disposed){await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="The original delivery intent remains unconfirmed. Reload and reconcile before another command.";}}
+    private async Task Correct()
+    {
+        var epoch=_epoch;_error=null;try{await Access();if(!_canCorrect || CorrectionReview is null)throw new UnauthorizedAccessException();if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
+            if(_dateUtc is null || _timeUtc is null || _timeUtc<TimeSpan.Zero || _timeUtc>=TimeSpan.FromDays(1))throw new ArgumentException();
+            var facts=new RevenueDeliveryAcceptanceFacts(DateTime.SpecifyKind(_dateUtc.Value.Date+_timeUtc.Value,DateTimeKind.Utc),_buyer,_reference,_notes){AcceptedQuantity=_quantity,AcceptedQuantityUnit=State.Review?.Source.VolumeUnit};
+            await State.CorrectAsync(Accounting,CorrectionReview,facts,_correctionReason);if(epoch==_epoch && !_disposed){ResetDraft();await RecordedOutcomeChanged.InvokeAsync();}
+        }catch{if(epoch==_epoch && !_disposed)_error="Receiving correction was not confirmed. Check changed explicit facts, certified quantity/unit, original preparer access and correction reason. Retain and recover the original saved command before another correction.";}
+    }
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_canDecide=false;_canApprove=false;_canRecoverCorrection=false;_canCorrect=false;_error=null;ResetDraft();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string value){if(AssignedSource is not null || RecoveryIntent is not null)return;State.Invalidate();ContextChanged();}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}
+    public void Dispose(){_disposed=true;State.Changed-=StateChanged;Company.Changed-=ContextChanged;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.DetachOwner(this);}
+}

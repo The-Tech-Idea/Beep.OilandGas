@@ -1,0 +1,44 @@
+@using Beep.OilandGas.Web.Services
+@if(State.Current is {} review && State.CanPrepareDecision)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Independent physical completion acceptance</MudText>
+        @if(!State.AcceptanceEligible)
+        {
+            <MudAlert Severity="Severity.Warning">Acceptance requires the current final configured stage, all tests reported as passing and no unresolved work. Resolve the source report through its recorder before acceptance; ordinary review judgment remains separate.</MudAlert>
+        }
+        else
+        {
+            <MudText>Verify every reported test using the explicit native lookup. You sign off against referenced acceptance criteria and the certificate's actual reported UTC; the app does not compute a passing threshold or infer a native timezone.</MudText>
+            @if(State.TestInspection is {} evidence)
+            {
+                <MudText Typo="Typo.subtitle1">Verify test @(evidence.Selection.ReportedTestIndex+1): @evidence.Reported.Reference / native result @evidence.Native.ResultCode</MudText>
+                <MudTextField T="string" Label="Acceptance criteria reference" @bind-Value="criteria" Required="true" MaxLength="1600" />
+                <MudTextField T="string" Label="Certificate evidence for reported UTC" @bind-Value="utcCertificate" Required="true" MaxLength="1600" />
+                <MudTextField T="string" Label="Native calendar-date discrepancy resolution" @bind-Value="dateResolution" Required="@(!evidence.CalendarDateMatches)" MaxLength="1600" Lines="2" />
+                <MudTextField T="string" Label="Independent test acceptance reason" @bind-Value="testReason" Required="true" MaxLength="1600" Lines="2" />
+                <MudCheckBox T="bool" @bind-Value="passing">I independently verified that this native test/certificate meets the referenced passing criteria.</MudCheckBox>
+                <MudCheckBox T="bool" @bind-Value="reportedUtc">I checked the certificate and verified the exact reported test UTC, including any native calendar-date discrepancy.</MudCheckBox>
+                <MudButton OnClick="Sign" Disabled="@(!State.CanSignTest)" Variant="Variant.Outlined">Include independently verified test</MudButton>
+            }
+            <MudText>Checked test signoffs @State.AcceptedTests.Count / @review.Original.Source.ReportedCompletion!.Report.Tests.Count</MudText>
+            @foreach(var test in State.AcceptedTests){<MudText>Test @(test.ReportedTestIndex+1): @test.Native.ReportReference; criteria @test.CriteriaReference; UTC evidence @test.UtcCertificateReference</MudText>}
+            <MudTextField T="string" Label="Actual physical acceptance UTC (Z or +00:00)" @bind-Value="acceptedUtc" Required="true" />
+            <MudTextField T="string" Label="Independent completion acceptance rationale" @bind-Value="reason" Required="true" MaxLength="1600" Lines="3" />
+            <MudCheckBox T="bool" @bind-Value="confirmed">I independently accept this current reported completion and every checked physical test with no unresolved work.</MudCheckBox>
+            <MudButton OnClick="Prepare" Disabled="@(!State.CanPrepareAcceptance)" Variant="Variant.Outlined">Review physical completion acceptance</MudButton>
+        }
+        <MudAlert Severity="Severity.Info">Acceptance records the original independent signoff. It does not close ongoing reporting responsibility or update WELL, financial actuals, construction acceptance or production handover.</MudAlert>
+    </MudPaper>
+}
+@code {
+    [Parameter,EditorRequired]public DrillingCompletionAssignedState State{get;set;}=default!;
+    private string criteria="",utcCertificate="",dateResolution="",testReason="",acceptedUtc="",reason="";private bool passing,reportedUtc,confirmed;private string? revision,testRevision;
+    protected override void OnParametersSet()
+    {
+        var next=State.Current?.Revision;if(next!=revision){revision=next;criteria=utcCertificate=dateResolution=testReason=acceptedUtc=reason="";passing=reportedUtc=confirmed=false;testRevision=null;}
+        var native=State.TestInspection?.Revision;if(native!=testRevision){testRevision=native;criteria=utcCertificate=dateResolution=testReason="";passing=reportedUtc=false;}
+    }
+    private void Sign()=>State.SignTest(criteria,utcCertificate,dateResolution,testReason,passing,reportedUtc);
+    private void Prepare()=>State.PrepareAcceptance(acceptedUtc,reason,confirmed);
+}

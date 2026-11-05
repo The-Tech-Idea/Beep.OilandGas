@@ -1,0 +1,8 @@
+### Result
+{
+  "blockRemoval": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => { window.__oilgasBlockRemoval=true;return {blockRemoval:window.__oilgasBlockRemoval}; }');
+```

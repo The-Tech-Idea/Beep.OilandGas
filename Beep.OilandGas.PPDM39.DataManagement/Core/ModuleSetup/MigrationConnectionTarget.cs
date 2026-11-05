@@ -10,7 +10,9 @@ public static class MigrationConnectionTarget
 {
     public static void Validate(IDMEEditor editor, IDataSource source, string connectionName)
     {
-        var matches = editor.ConfigEditor.DataConnections.Where(connection =>
+        var connections = editor.ConfigEditor?.DataConnections
+            ?? throw new InvalidOperationException("The configured datasource target registry is unavailable.");
+        var matches = connections.Where(connection =>
             string.Equals(connection.ConnectionName, connectionName, StringComparison.OrdinalIgnoreCase)).ToList();
         if (matches.Count != 1 || !string.Equals(source.DatasourceName, connectionName, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("The migration datasource is missing or ambiguous.");

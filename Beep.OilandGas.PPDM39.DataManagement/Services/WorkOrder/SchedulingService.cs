@@ -2,7 +2,8 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
@@ -20,7 +21,7 @@ public class SchedulingService : ISchedulingService
     private readonly ICommonColumnHandler      _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository   _metadata;
-    private readonly string                    _connectionName;
+    private readonly WorkOrderDatabaseBinding _database;
     private readonly ILogger<SchedulingService> _logger;
 
     public SchedulingService(
@@ -28,14 +29,14 @@ public class SchedulingService : ISchedulingService
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName,
+        Func<Task<(CompanyScope Company,string Actor,AssetDatabaseScope Database)>> resolveDatabase,
         ILogger<SchedulingService> logger)
     {
         _editor              = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults            = defaults;
         _metadata            = metadata;
-        _connectionName      = connectionName;
+        _database = new(resolveDatabase ?? throw new ArgumentNullException(nameof(resolveDatabase)));
         _logger              = logger;
     }
 
@@ -60,19 +61,20 @@ public class SchedulingService : ISchedulingService
         // Persist plan to PROJECT_PLAN
         var meta       = await _metadata.GetTableMetadataAsync("PROJECT_PLAN");
         var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT_PLAN");
+        var repo       = await BuildRepoAsync(entityType, "PROJECT_PLAN");
 
         // Remove any existing plan for this WO
-        var existing = (await repo.GetAsync(new List<AppFilter>
+        var existing = (await _database.ReadAsync(() => repo.GetAsync(new List<AppFilter>
         {
             new() { FieldName = "PROJECT_ID",  Operator = "=", FilterValue = instanceId  },
             new() { FieldName = "ACTIVE_IND",  Operator = "=", FilterValue = "Y"         }
-        })).ToList();
+        }))).ToList();
 
         foreach (var old in existing)
         {
             dynamic d = old;
             string  planId = WorkOrderRowValues.Str(d, "PLAN_ID");
+            await _database.RequireAsync(userId);
             await repo.SoftDeleteAsync(planId, userId);
         }
 
@@ -83,6 +85,7 @@ public class SchedulingService : ISchedulingService
         plan.PLAN_START_DATE = proposedStart;
         plan.PLAN_END_DATE   = proposedEnd;
         plan.ACTIVE_IND      = "Y";
+        await _database.RequireAsync(userId);
         await repo.InsertAsync(plan, userId);
 
         _logger.LogInformation("WO {InstanceId} scheduled {Start}–{End}", instanceId, proposedStart, proposedEnd);
@@ -96,7 +99,7 @@ public class SchedulingService : ISchedulingService
     {
         var meta       = await _metadata.GetTableMetadataAsync("PROJECT_PLAN");
         var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT_PLAN");
+        var repo       = await BuildRepoAsync(entityType, "PROJECT_PLAN");
 
         var filters = new List<AppFilter>
         {
@@ -104,7 +107,7 @@ public class SchedulingService : ISchedulingService
             new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"         }
         };
 
-        var plans = (await repo.GetAsync(filters)).ToList();
+        var plans = (await _database.ReadAsync(() => repo.GetAsync(filters))).ToList();
 
         return plans
             .Select(p => (dynamic)p)
@@ -128,13 +131,13 @@ public class SchedulingService : ISchedulingService
     {
         var meta       = await _metadata.GetTableMetadataAsync("PROJECT_PLAN");
         var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT_PLAN");
+        var repo       = await BuildRepoAsync(entityType, "PROJECT_PLAN");
 
-        var existing = (await repo.GetAsync(new List<AppFilter>
+        var existing = (await _database.ReadAsync(() => repo.GetAsync(new List<AppFilter>
         {
             new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
             new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
-        })).ToList();
+        }))).ToList();
 
         if (existing.Count == 0)
             return new ScheduleResult(false, newStart, newStart, "No existing plan found");
@@ -152,6 +155,7 @@ public class SchedulingService : ISchedulingService
 
         plan.PLAN_START_DATE = newStart;
         plan.PLAN_END_DATE   = newStart + duration;
+        await _database.RequireAsync(userId);
         await repo.UpdateAsync(plan, userId);
 
         return new ScheduleResult(true, newStart, newStart + duration, null);
@@ -163,11 +167,11 @@ public class SchedulingService : ISchedulingService
         // Join PROJECT_PLAN + PROJECT in C# to get state and name
         var planMeta       = await _metadata.GetTableMetadataAsync("PROJECT_PLAN");
         var planEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{planMeta.EntityTypeName}");
-        var planRepo       = BuildRepo(planEntityType, "PROJECT_PLAN");
+        var planRepo       = await BuildRepoAsync(planEntityType, "PROJECT_PLAN");
 
         var projMeta       = await _metadata.GetTableMetadataAsync("PROJECT");
         var projEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{projMeta.EntityTypeName}");
-        var projRepo       = BuildRepo(projEntityType, "PROJECT");
+        var projRepo       = await BuildRepoAsync(projEntityType, "PROJECT");
 
         // Get all plans in range for the field
         var projFilters = new List<AppFilter>
@@ -176,7 +180,7 @@ public class SchedulingService : ISchedulingService
             new() { FieldName = "PROJECT_TYPE", Operator = "=", FilterValue = "WORK_ORDER" },
             new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"          }
         };
-        var projects = (await projRepo.GetAsync(projFilters)).ToList();
+        var projects = (await _database.ReadAsync(() => projRepo.GetAsync(projFilters))).ToList();
 
         var result  = new List<CalendarSlot>();
         foreach (var proj in projects)
@@ -188,7 +192,7 @@ public class SchedulingService : ISchedulingService
                 new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
                 new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
             };
-            var plans = (await planRepo.GetAsync(planFilters)).ToList();
+            var plans = (await _database.ReadAsync(() => planRepo.GetAsync(planFilters))).ToList();
             foreach (var plan in plans)
             {
                 dynamic pl   = plan;
@@ -212,7 +216,9 @@ public class SchedulingService : ISchedulingService
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private PPDMGenericRepository BuildRepo(Type? entityType, string tableName) =>
-        new(_editor, _commonColumnHandler, _defaults, _metadata,
-            entityType, _connectionName, tableName);
+    private async Task<PPDMGenericRepository> BuildRepoAsync(Type? entityType, string tableName)
+    {
+        var connection = await _database.RequireAsync();
+        return new(_editor, _commonColumnHandler, _defaults, _metadata, entityType, connection, tableName);
+    }
 }

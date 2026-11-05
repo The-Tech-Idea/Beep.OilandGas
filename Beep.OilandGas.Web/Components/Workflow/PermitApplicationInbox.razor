@@ -1,0 +1,62 @@
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject AuthenticationStateProvider Authentication
+@inject IPermitServiceClient Client
+@inject OilGasCallFailures Calls
+@inject ILogger<PermitApplicationInbox> Logger
+<MudPaper Outlined="true" Class="pa-4 my-3 permit-workflow">
+    <MudText Typo="Typo.h6" HtmlTag="h2">Permit work queues</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap">
+        <MudButton OnClick="Load" Disabled="@_state.Busy">Refresh permit work queues</MudButton>
+        @if(_state.CanAuthor){<MudButton Href="/ppdm39/permits/new" Variant="Variant.Outlined">New application</MudButton>}
+    </MudStack>
+    @if(_state.Busy){<MudProgressLinear Indeterminate="true" />}
+    else if(_state.Review is {} review)
+    {
+        <MudText>FIELD @review.Authority.Context.Field.FieldId · @_state.Applications.Count returned applications · read UTC @review.ReadAtUtc.ToString("u")</MudText>
+        <MudText Typo="Typo.caption">Counts cover the returned records. Open the exact application and review its current source before acting; these queues do not establish regulator clearance or complete provider inventory.</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-2">
+            @foreach(var group in new[]{"All returned","Drafts","Corrections","Independent review","Other returned records"})
+            {
+                if(group=="Drafts" || group=="Corrections"){if(!_state.CanAuthor)continue;}
+                if(group=="Independent review" && !_state.CanReview)continue;
+                <MudButton OnClick="@(()=>_state.Select(group))" aria-pressed="@(_state.SelectedQueue==group?"true":"false")" Variant="@(_state.SelectedQueue==group?Variant.Filled:Variant.Outlined)">@group (@_state.Count(group))</MudButton>
+            }
+        </MudStack>
+        <MudTextField T="string" Value="@_state.Search" ValueChanged="SearchChanged" Immediate="true" Label="Search returned permit records" />
+        @if(_state.FilteredCount==0){<MudText role="status">No returned permit records match this group and search.</MudText>}
+        else
+        {
+            <MudTable T="PermitApplicationSummary" Items="@_state.PageItems" Dense="true" Hover="true">
+                <HeaderContent><MudTh>Application</MudTh><MudTh>Applicant</MudTh><MudTh>Country / region / authority</MudTh><MudTh>Status / handoff</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Application"><MudLink Href="@($"/ppdm39/permits/detail?applicationId={Uri.EscapeDataString(context.PermitApplicationId)}")">@context.PermitApplicationId</MudLink></MudTd>
+                    <MudTd DataLabel="Applicant">@context.ApplicantName</MudTd><MudTd DataLabel="Country / region / authority">@context.Country / @context.Region / @context.RegulatoryAuthority</MudTd>
+                    <MudTd DataLabel="Status / handoff">@StatusLabel(context.Status) · @_state.Category(context)</MudTd>
+                </RowTemplate>
+            </MudTable>
+            <MudText Class="mt-2">Page @(_state.Page+1) · @_state.FilteredCount matching returned records</MudText>
+            <MudStack Row="true" Wrap="Wrap.Wrap"><MudButton OnClick="_state.Previous" aria-label="Previous permit records" Disabled="@(_state.Page==0)">Previous</MudButton><MudButton OnClick="_state.Next" aria-label="Next permit records" Disabled="@((_state.Page+1)*10>=_state.FilteredCount)">Next</MudButton></MudStack>
+        }
+    }
+    else if(!string.IsNullOrEmpty(_message)){<MudAlert Severity="Severity.Warning">@_message</MudAlert>}
+</MudPaper>
+@code {
+    private PermitApplicationInboxState _state=null!;private string _message="";private bool _disposed;private long _seen=-1;
+    protected override async Task OnInitializedAsync(){_state=new(Company,Fields,Authentication,Client);_state.Changed+=Changed;await Load();}
+    private void Changed(){if(_seen!=_state.Epoch){_seen=_state.Epoch;_message="";}if(!_disposed)_ = InvokeAsync(StateHasChanged);}
+    private async Task Load()
+    {
+        var selection=Company.Snapshot;var epoch=_state.Epoch+1;_message="";
+        try{await _state.LoadAsync();}
+        catch(Exception error){if(!_disposed && _state.Epoch==epoch && Company.Snapshot==selection)_message=Calls.Explain(error,"reading current permit work queues","Permit work queues could not be confirmed");else Logger.LogDebug(error,"Permit inbox context changed");}
+    }
+    private static string StatusLabel(string status)=>status switch{"AdditionalInformationRequired"=>"Additional information required","UnderReview"=>"Under review",_=>status};
+    private void SearchChanged(string value)=>_state.SetSearch(value);
+    public void Dispose(){_disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

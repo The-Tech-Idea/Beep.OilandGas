@@ -1,0 +1,61 @@
+async (page) => {
+ const observations=[];
+ const url='http://127.0.0.1:58788/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original';
+ const reason='PRIVATE_A_APPROVAL_REASON — reviewed only for company A.';
+ const meta=()=>page.evaluate(async()=>await(await fetch('/fixture/metadata')).json());
+ const until=async predicate=>{const deadline=Date.now()+10000;while(true){const m=await meta();if(predicate(m))return m;if(Date.now()>deadline)throw Error('Metadata condition timed out: '+JSON.stringify(m));await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));}};
+ const body=()=>page.locator('body').innerText();
+ const keys=()=>page.evaluate(()=>Object.keys(sessionStorage).filter(x=>x.toLowerCase().includes('closure')));
+ const require=(v,m)=>{if(!v)throw Error(m)};
+ const capture=async name=>observations.push({name,url:page.url(),keys:await keys(),body:await body(),metadata:await meta()});
+ const btn=n=>page.getByRole('button',{name:n,exact:true});
+ try {
+  await page.goto(url); await page.getByText('INJURY — PRIVATE COMPANY A INCIDENT',{exact:true}).waitFor();
+  await btn('Review assigned closure stage').click();
+  await page.getByRole('textbox',{name:'Stage approval evidence and reason',exact:true}).fill(reason);
+  await btn('Approve final closure and record CLOSED status').click();
+  await until(m=>m.a.approvals===1);
+  await capture('A approval persisted; acknowledgement held');
+  const saved=await keys();require(saved.length===1,'A original must be protected before transport');
+  const original=(await meta()).a.approvedIntent;
+  await btn('Switch other company').click();
+  await page.getByText('Company or FIELD changed. Reload the incident for the current selection.',{exact:true}).waitFor();
+  require(!(await body()).includes('PRIVATE COMPANY A INCIDENT'),'A incident remained after company switch');
+  require(!(await body()).includes(reason),'A reason remained after company switch');
+  await btn('Reload incident').click();await page.getByText('INJURY — PRIVATE COMPANY B INCIDENT',{exact:true}).waitFor();
+  await btn('Review assigned closure stage').click();await page.getByRole('textbox',{name:'Stage approval evidence and reason',exact:true}).waitFor();
+  await capture('B own incident and closure review with colliding local IDs');
+  require(!(await body()).includes(reason),'B leaked A reason');require(await btn('Reconcile original closure stage').count()===0,'B adopted A original');
+  require((await meta()).a.nativeWrites===0 && (await meta()).b.nativeWrites===0,'Native effect before original recovery');
+  await page.screenshot({path:'C:/Users/f_ald/source/repos/The-Tech-Idea/Beep.OilandGas/Plans/FrameworkAppEnhancement/evidence/353-two-company-browser/company-b.png',fullPage:true});
+  await page.evaluate(async()=>await fetch('/fixture/release-company-a',{method:'POST'}));
+  await until(m=>m.completedCalls>=1);
+  await capture('Late A acknowledgement settled while B selected');
+  let m=await meta();require(m.a.nativeAttempts===0 && m.b.nativeAttempts===0,'Late A response attempted native closure');
+  require((await body()).includes('PRIVATE COMPANY B INCIDENT') && !(await body()).includes(reason),'Late A reply changed B');
+  require(JSON.stringify(await keys())===JSON.stringify(saved),'Late A reply removed protected original');
+  await btn('Restore original company').click();
+  await page.getByText('Company or FIELD changed. Reload the incident for the current selection.',{exact:true}).waitFor();
+  await btn('Reload incident').click();await page.getByText('INJURY — PRIVATE COMPANY A INCIDENT',{exact:true}).waitFor();
+  await btn('Reconcile original closure stage').waitFor();
+  require((await body()).includes(reason),'Original reason not restored for A');
+  await capture('A exact protected original restored');
+  await btn('Reconcile original closure stage').click();
+  await until(m=>m.completedCalls>=2 && m.a.state==='CLOSED');
+  await page.getByText('New lifecycle approvals and correction returns are unavailable for a closed, cancelled or unconfirmed incident state. Recover recorded approval evidence to confirm an earlier outcome.',{exact:true}).waitFor();
+  await capture('Explicit A reconciliation closed A only and cleared original');
+  m=await meta();
+  require(m.a.approvalAttempts===2 && m.a.approvals===1 && m.a.nativeAttempts===1 && m.a.nativeWrites===1,'A counters do not prove one effect');
+  require(m.b.approvalAttempts===0 && m.b.approvals===0 && m.b.nativeAttempts===0 && m.b.nativeWrites===0 && m.b.reviewReads===1,'B must remain reviewed without mutations');
+  require(m.a.approvedIntent===original && m.a.reviewReads===1,'A original replaced or fresh approval reviewed');
+  require(m.genericActionReads===0,'Generic action path invoked');
+  require((await keys()).length===0,'Confirmed A original not cleared');
+  require(!m.requests.some(r=>r.company==='other' && r.method==='POST'),'Mutation sent to B');
+  require(page.url()===url,'Route changed');
+  await page.screenshot({path:'C:/Users/f_ald/source/repos/The-Tech-Idea/Beep.OilandGas/Plans/FrameworkAppEnhancement/evidence/353-two-company-browser/company-a-closed.png',fullPage:true});
+  return {status:'pass',original,observations};
+ }catch(e){await capture('Failure state');return{status:'failed',error:String(e),observations};}
+}
+
+
+

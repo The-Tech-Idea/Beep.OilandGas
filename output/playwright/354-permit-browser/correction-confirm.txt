@@ -1,0 +1,4 @@
+### Ran Playwright code
+```js
+await page.getByRole('checkbox', { name: 'I checked this application,' }).check();
+```

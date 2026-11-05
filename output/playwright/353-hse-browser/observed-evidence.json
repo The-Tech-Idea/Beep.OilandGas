@@ -1,0 +1,98 @@
+{
+  "status": "verified-selected-browser",
+  "checks": [
+    {
+      "name": "landing-open-page",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\landing-page-two-snapshot.txt",
+      "observation": "17 open records; second page exposes open-11 through open-17."
+    },
+    {
+      "name": "landing-closed-record",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\landing-closed-snapshot.txt",
+      "observation": "Closed count selects one exactly encoded reserved/non-ASCII incident ID."
+    },
+    {
+      "name": "landing-company-clearing",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\company-cleared-snapshot.txt",
+      "observation": "Company change removes earlier count and incident links."
+    },
+    {
+      "name": "approval-required-reason",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\metadata-required.json",
+      "observation": "Empty reason refused with zero backend attempts/writes."
+    },
+    {
+      "name": "unconfirmed-outcome",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\closure-lost-ack-snapshot.txt",
+      "observation": "Controlled committed outcome/lost acknowledgement remains unconfirmed; no false closed message."
+    },
+    {
+      "name": "protected-original",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\storage-lost-ack.txt",
+      "observation": "One protected session entry (3035 characters); no plaintext reason."
+    },
+    {
+      "name": "full-reload-original",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\reloaded-closure-snapshot.txt",
+      "observation": "Fresh circuit finds same retained original under CLOSED state and offers reconciliation."
+    },
+    {
+      "name": "private-company-context",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\private-company-switch-snapshot.txt",
+      "observation": "Fixture parent withholds original incident details for another company; restores same original on return."
+    },
+    {
+      "name": "exact-reconciliation",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\metadata-reconciled.json",
+      "observation": "Second attempt confirms one recorded effect, with protected entry cleared."
+    },
+    {
+      "name": "recorded-approval-recovery",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\metadata-final.json",
+      "observation": "Explicit recorded recovery followed by third same-original confirmation; still one recorded effect."
+    },
+    {
+      "name": "keyboard-count-filter",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\keyboard-closed-snapshot.txt",
+      "observation": "Tab from open count and Space activate closed count; pressed state and exact contributor update."
+    },
+    {
+      "name": "narrow-closure",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\narrow-closure-dimensions.txt",
+      "observation": "390px viewport/document; confirmed terminal state and recovery control visible."
+    },
+    {
+      "name": "narrow-landing",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-hse-browser\\narrow-landing-dimensions.txt",
+      "observation": "390px viewport/document; group buttons wrap without horizontal document overflow."
+    }
+  ],
+  "controlled_backend": {
+    "state": "CLOSED",
+    "attempts": 3,
+    "writes": 1,
+    "recorded": true
+  },
+  "limitations": [
+    "Actual components, Blazor SignalR connection and ProtectedSessionStorage; authentication, FIELD selection, typed service client, native evidence and backend effects are explicitly controlled fixtures.",
+    "The fixture stores a single outcome in process memory. One effect across retries proves component/original transport behavior, not native database persistence or production transaction qualification.",
+    "Company privacy observation uses a controlled parent/context switch; existing production parent/API boundaries retain separate evidence.",
+    "Application app.css and favicon returned 404 in the isolated host. MudBlazor CSS/JS loaded; full branding/theme/layout acceptance is not claimed.",
+    "Selected pointer/keyboard/narrow viewport checks only; no full accessibility, screen-reader, RTL or browser matrix.",
+    "No production host/OIDC/API/provider or multi-store concurrency acceptance. No SQL, domain EF or schema change.",
+    "Full company roadmap/goal and commit/push remain pending."
+  ]
+}

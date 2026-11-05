@@ -1,0 +1,8 @@
+### Result
+{
+  "keys": []
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({ keys: Object.keys(sessionStorage) })');
+```

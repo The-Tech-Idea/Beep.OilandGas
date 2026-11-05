@@ -1,0 +1,48 @@
+# Implementation 341: Approved FDP to company AFE request
+
+2026-10-25. Scoped app slice locally verified under CA-22 / FG-52. Extends [340: approved FDP baseline](Implementation-340-Approved-FDP-Baseline.md), [asset delivery](Feature-07-Asset-Delivery-and-Interventions.md) and the existing company/book/AFE owners. Full goal remains active.
+
+Replace the obsolete generic `/economics/afe` implementation with an explicit source-bound journey: approved FDP baseline -> configured company books -> entered request amount in the selected book currency/precision -> explicit company calendar effective date/rationale -> frozen confirmation -> native DRAFT AFE -> exact reload/original recovery. Estimated FDP CAPEX is displayed as an estimate with its original currency; it never becomes approved USD or an inferred conversion. No approved/committed/actual totals are fabricated.
+
+TheTechIdea.Data owns shared contracts and nullable development lineage on the existing AFE model. Reuse AfeService, the configured company-book reader, current standard app roles/company/FIELD grants and original baseline owner. Financial source readers have explicit Accounting.View, DevelopmentPlanning.View and Workflow.View authority; preparation adds the development-budget capability. They need not impersonate an original technical reviewer. Business schema evolves through the existing PRODUCTION Beep manifest, without SQL, new business EF or live schema apply.
+
+Preparation requires current Accounting.PrepareDevelopmentBudget plus Accounting.View, DevelopmentPlanning.View, Workflow.View and exact original FIELD WRITE access. A separate independent investment decision/routing remains the next feature. Source-bound reads/recovery are read-only. Keep the original budget request in the existing encrypted tab journal before transport; never generate a local successful AFE after a failed/null response.
+
+Retire the unqualified controller actions and client methods, default connection argument, USD query prefill, local summary models, active-flag approval mapping and success-shaped null list. Update current links to use the new source-bound entry or the existing source-selection workspace, without compatibility aliases.
+
+Acceptance: actual page/typed HTTP/native draft request and reload/recovery; company/book/currency/source/role isolation; exact dates/precision; source changes and mid-write revocation; rollback/duplicate/lost-response recovery; encrypted original input and late/context fences. Run affected focused tests after coherent changes and retain the baseline/work-order budget/book regressions. Record source-only, component, native-provider and host/browser evidence separately.
+
+## Implemented app journey
+
+The approved baseline panel links its exact review process to `/economics/afe?processId=...`. The actual AFE page displays the recorded approved FDP version, original draft/FIELD, approver/UTC and optional original CAPEX estimate in millions of its recorded currency. It requires an explicitly chosen configured company book, AFE number/name, nullable explicit amount, effective calendar date and rationale, followed by a frozen confirmation. It shows only native DRAFT request facts after a confirmed receipt. Reload reads the same baseline/book AFE. A contextless workspace offers the development plans and work-order board as actual source entry points.
+
+The existing DevelopmentDraftIntentStore retains the exact request in a distinct encrypted ProtectedSessionStorage entry before transport. Retention failure prevents transport. Unknown response, changed receipt and failed cleanup preserve the pending original and block another request. Read-only recovery confirms that original record or its checked absence. Company/account/persona/route changes clear displayed private evidence and fence late responses. Neither the page nor client invents a local record or a successful empty review.
+
+## Authority and canonical owners
+
+- `DevelopmentAssignedReviewService.ReadBudgetSourceAsync` grants an explicit financial-purpose read only for a recorded approved review and existing approved baseline. It requires current Accounting.View, DevelopmentPlanning.View, Workflow.View, standard company roles and exact original FIELD READ authority. The finance actor need not be a technical review recipient. Existing technical participant/history/decision restrictions remain in their original methods.
+- `CompanyDevelopmentAfeService` uses actual RepositoryRequestAccount, CompanyModuleConnection, ModuleConnectionResolver, app roles/grants and FIELD resource checks. Preparation adds Accounting.PrepareDevelopmentBudget and exact FIELD WRITE. Recovery keeps current company/account/source/View/READ checks without requiring a new prepare grant, FIELD WRITE or a requalified mutable book. No user/company/connection is taken from an unqualified query argument.
+- TheTechIdea.Data owns DevelopmentAfeReview/Command/Receipt/public facts and nullable FDP_BASELINE_ID, DEVELOPMENT_BUDGET_JSON and DEVELOPMENT_BUDGET_REVISION on the existing AFE entity. Null fields preserve existing work-order serialization/digests. Existing PRODUCTION Beep manifest discovery evolves this same AFE entity; no duplicate finance table/store or SQL/business EF path.
+- The existing AfeService owns Serializable Beep reads/insertion/readback. The selected canonical COMPANY_LEDGER_BOOK and AFE are validated within the same PRODUCTION transaction, including currency/precision, complete bounded AFE membership, company/book number reservation, schema/physical binding and fresh app authority. Core/FDP/lifecycle/resource reads bracket that transaction. A changed closing source leaves the committed outcome unconfirmed; there is no distributed transaction claim.
+- One deterministic company/baseline/book AFE is admitted. Exact original retries/recovery do not add writes. Inactive, moved, corrupt or duplicated records cannot become a successful absence or be silently repaired. Original body/header/audit comparisons preserve actual maker/UTC and explicit calendar date. Generic AFE creation/approval/cost/line mutations and the separate generic authorization service refuse development-owned rows.
+- Configured books continue through ICompanyLedgerBookReader / GLAccountService. The actual API/controller/client/page use shared failure/refusal reporting. API Program registers the new company admission service; host startup remains a separate gate.
+
+## Replaced surfaces
+
+The former AFE controller's unqualified list/create/get/approve/reject/line/cost/variance actions and connectionName default are removed. Its only routes are authenticated, no-store GET `api/accounting/cost/afe/development?processId=...`, POST `.../development` and POST `.../development/recover`. The typed IAfeServiceClient/AfeServiceClient are replaced with these exact contracts. Unused AfeSummaryModel/CreateAfeResponse/CreateAFERequest files and page-local AFE models/success fallbacks are removed.
+
+The decommissioning, well-performance and intervention links no longer generate USD/number/well/returnTo query prefills against an unqualified AFE creator. They open the source workspace; a well recommendation does not impersonate an approved FDP or work order. Help content describes the source-bound request and separate investment/actual-expenditure steps. The affected intervention parent is compiled/tested; the other simple link edits are source-inspected only.
+
+## Verification policy
+
+Run affected focused tests after every coherent change, including refusal/uncertainty paths and relevant retained regressions. Fix failures before treating a slice as complete. Do not broaden a passed gate without a new change, failure or unresolved concern. Focused evidence does not establish full-solution, browser/OIDC, live provider or deployed migration acceptance.
+
+**763 focused tests pass**, zero failures/skips, **230.82 seconds**, terminal exit 0. Separate retained work-order budget/decision/cost checks: **64 pass** (15.4313 seconds); actual intervention parent: **20 pass** (2.1014 seconds), zero failures/skips, terminal exit 0. Data builds with zero errors and one existing missing IdentityServer-analyzer warning (3.98 seconds). Counts overlap prior gates and are not added.
+
+[Exact filters, class counts, logs, source/generated/runtime hashes, resolved fixture failure and limits](evidence/341-development-afe-request/observed-evidence.json). This clean combined gate retains the previous 693-check baseline/source/review/landing/inbox/schema group and adds the AFE/book journey. A test-only stale-row restoration failure was corrected without weakening the product's source-change refusal. The full-length Arabic-name regression passes. No failed or skipped checks remain in these final gates.
+
+## Remaining app and delivery work
+
+1. Continue through [342: development AFE investment review](Implementation-342-Development-Investment-Review.md), which owns the company finance queue, independent native decision and cross-role public outcome/recovery. Its current verification status is recorded there. Explicit lifecycle assignment/notifications, configured policy tiers and financial commitments/actual expenditure remain separate gates.
+2. Continue source-backed design/program/scenario, drilling/construction actuals, approved changes and operations acceptance/handoff under the existing feature/persona owners.
+3. Qualify deployed Beep migration/provider LOB/constraint support, real concurrency/reconciliation, hosted role/company/OIDC composition and browser keyboard/accessibility/RTL/localization/multinational acceptance separately. No full feature/phase/goal completion or commit/push.

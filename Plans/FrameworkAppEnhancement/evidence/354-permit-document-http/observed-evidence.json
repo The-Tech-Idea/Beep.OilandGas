@@ -1,0 +1,239 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Protected document HTTP, two native targets, current company isolation and bounded read authority",
+  "status": "26 distinct focused cases passed; broader goal remains active",
+  "timestamp": "2026-10-29T21:26:38.095828+00:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "dirty_worktree": true,
+  "gates": [
+    {
+      "log": "oilgas-354-document-read-authority-01.log",
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "20.5731s",
+      "exit_code": 0,
+      "selection": "PermitReadAuthorityBoundsNativeChecksAndRefusesCurrentAuthorityDrift (12); affected PermitCommandAuthorityKeepsCoreReadsOutsideOwnedModuleTransaction (9)",
+      "proves": "Repeated/nested reads retain fresh app permissions/grants/stored selection/module bindings while native FIELD policy/payload is checked at operation boundaries. Early/late permission/grant, selected account revision, module binding, CORE target, native FIELD/entitlement drift refuses; callback cleanup restores full checking; no next-operation result cache; writes nested in read authority refuse. Existing owned command/cross-source transaction checks remain."
+    },
+    {
+      "log": "oilgas-354-document-http-05.log",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "4.9900 minutes",
+      "exit_code": 0,
+      "selection": "PermitDocumentProviderHttpOwnsTwoTargetsAndCompanyPrivateRecovery",
+      "proves": "Actual loopback MVC/company middleware, current app RBAC/module binding/profile/FIELD/row-policy/native lifecycle with two current companies sharing FIELD and physical targets. Setup-installed native SQLite CORE FIELD/entitlement/reference/document rows plus separate PERMITS ledger/journal, all created with Beep Migration. Missing selector400, foreign source404, private recovery/download403. Fault after CORE commit before PERMITS confirmation, absent confirmation, same-original retry with one file/journal; exact reviewed link/history/command receipt; binary and content DTO exact bytes; no-store on successful private responses and downloads, attachment MIME/disposition/nosniff. Fresh IssuePermit removal denies new intent with absent proof; confirmed stage replay and stage/link recovery work read-only. Final exact one stage/file/link/history/command row populations; controlled mock-source Writes list empty."
+    },
+    {
+      "log": "oilgas-354-document-read-native-01.log",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "29.0698s",
+      "exit_code": 0,
+      "selection": "InstalledNativeDocumentStagingOwnsTwoTargetsAndSameOriginal: link-download, link-rollback, linked-change, reader only",
+      "proves": "Affected native link/current binary, lifecycle receipt failure rollback/retry, changed same-length native bytes withhold stale download/submit while historical recovery remains, and independent current-scope reader after new bounded read wrappers."
+    }
+  ],
+  "prior_failed_observations": [
+    {
+      "log": "oilgas-354-document-http-01.log",
+      "failed": 1,
+      "duration": "20.4191s",
+      "detail": "Fixture used an unnormalized ownership key; existing tenant-owner guard returned409 before document work. Fixed fixture; no production guard weakened."
+    },
+    {
+      "log": "oilgas-354-document-http-02.log",
+      "failed": 1,
+      "duration": "2.4528 minutes",
+      "detail": "Initial source review exceeded unchanged100-second HTTP timeout with real CORE entitlement reads."
+    },
+    {
+      "log": "oilgas-354-document-http-03.log",
+      "failed": 1,
+      "duration": "2.4504 minutes",
+      "timing_artifact": "http-observations-03.jsonl",
+      "detail": "At source timeout1577 completed native entitlement evaluations consumed71.94 inclusive seconds. Tracing decorator invokes the actual authority owner, with no result caching or substitution."
+    },
+    {
+      "log": "oilgas-354-document-http-04.log",
+      "failed": 1,
+      "duration": "4.5157 minutes",
+      "timing_artifact": "http-observations-04.jsonl",
+      "detail": "Bounded source returned200; staging fault/pending/retry converged, but remaining proposed-document/command-receipt reads exceeded linking100-second timeout with1246 evaluations/54.52 inclusive seconds. Those reads now use the same bounded owner."
+    }
+  ],
+  "final_request_timings": [
+    {
+      "Route": "application-review",
+      "Status": 400,
+      "Seconds": 0.0818782,
+      "EntitlementEvaluations": 0,
+      "EntitlementSecondsInclusive": 0
+    },
+    {
+      "Route": "application-review",
+      "Status": 200,
+      "Seconds": 16.6698627,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 3.265705399999999
+    },
+    {
+      "Route": "application-review",
+      "Status": 200,
+      "Seconds": 12.2539017,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.4455203000000005
+    },
+    {
+      "Route": "application-review",
+      "Status": 404,
+      "Seconds": 2.8078415,
+      "EntitlementEvaluations": 45,
+      "EntitlementSecondsInclusive": 2.0006085000000002
+    },
+    {
+      "Route": "application-document-stage/recovery",
+      "Status": 403,
+      "Seconds": 2.1807188,
+      "EntitlementEvaluations": 36,
+      "EntitlementSecondsInclusive": 1.5810799
+    },
+    {
+      "Route": "application-document-stage",
+      "Status": 500,
+      "Seconds": 32.0411953,
+      "EntitlementEvaluations": 59,
+      "EntitlementSecondsInclusive": 2.6997472000000005
+    },
+    {
+      "Route": "application-document-stage/recovery",
+      "Status": 200,
+      "Seconds": 5.347641,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.6215426
+    },
+    {
+      "Route": "application-document-stage",
+      "Status": 200,
+      "Seconds": 41.620882,
+      "EntitlementEvaluations": 86,
+      "EntitlementSecondsInclusive": 3.8347328
+    },
+    {
+      "Route": "application-review",
+      "Status": 200,
+      "Seconds": 12.3435596,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.4448661
+    },
+    {
+      "Route": "application-command",
+      "Status": 200,
+      "Seconds": 50.8644545,
+      "EntitlementEvaluations": 142,
+      "EntitlementSecondsInclusive": 6.414654300000001
+    },
+    {
+      "Route": "application-review",
+      "Status": 200,
+      "Seconds": 16.7196772,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.4456078
+    },
+    {
+      "Route": "application-attachment-download",
+      "Status": 403,
+      "Seconds": 2.1356711,
+      "EntitlementEvaluations": 36,
+      "EntitlementSecondsInclusive": 1.5732591000000002
+    },
+    {
+      "Route": "application-attachment-download",
+      "Status": 200,
+      "Seconds": 32.227098,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.5233727000000004
+    },
+    {
+      "Route": "application-attachment-content",
+      "Status": 200,
+      "Seconds": 31.582783,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.4213764000000007
+    },
+    {
+      "Route": "application-document-stage/recovery",
+      "Status": 200,
+      "Seconds": 4.9526133,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.3679465000000004
+    },
+    {
+      "Route": "application-document-stage",
+      "Status": 200,
+      "Seconds": 4.9943983,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.4151203000000003
+    },
+    {
+      "Route": "application-document-stage",
+      "Status": 403,
+      "Seconds": 4.9223563,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.3225003999999996
+    },
+    {
+      "Route": "application-document-stage/recovery",
+      "Status": 200,
+      "Seconds": 4.8715406,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.2929287000000005
+    },
+    {
+      "Route": "application-command/recovery",
+      "Status": 200,
+      "Seconds": 4.2363682,
+      "EntitlementEvaluations": 54,
+      "EntitlementSecondsInclusive": 2.3030399000000004
+    }
+  ],
+  "performance_scope": "Unchanged100-second HttpClient timeout. Final source reviews12.25-16.72s/54 entitlement evaluations; link50.86s/142, owner binary32.23s/54, confirmed recovery/replay4.24-4.99s/54. These are selected local fixture observations, not production latency/load acceptance. Inclusive times overlap other work and are not additive.",
+  "architecture": "One bounded WithReadAuthorityAsync callback using AsyncLocal scope only during the operation. Native FIELD permission and payload before/after; every nested RequireReadScopeAsync refreshes app view authority, active FIELD grant population, stored account/FIELD selection and current module/target binding. No authorization result survives the callback. Existing command-owned reads share their command owner; new writes inside a read boundary refuse. Native document/header/version/bytes and immutable receipt comparisons remain.",
+  "limits": [
+    "Controlled HTTP authentication and seeded qualification accounts/vocabulary; no production OIDC/IdentityServer or legal-policy certification.",
+    "The setup DMEEditor constructs/owns both actual SQLite targets. HTTP fixture IDMEEditor routing/open calls are configured mocks returning those real sources and ConfigEditor; actual data reads/writes/transactions run through the real driver.",
+    "Canonical metadata fixtures and reflective Beep Migration create complete columns/keys with optional nonkeys; production reference catalogs and enforced foreign-key rollout remain unqualified.",
+    "Actual app-owned RBAC uses its existing EF fixture; no new EF migration/business schema owner or handwritten SQL introduced.",
+    "No actual process/power-loss/concurrency/provider-I/O qualification for document staging, other providers/public connector distribution or existing-schema conversion.",
+    "Selected local response times are still substantial; no production load/performance acceptance.",
+    "Earlier failures retain logs/timings; exact earlier source/runtime snapshots were not retained. Source/runtime hashes here describe the final passing implementation.",
+    "Regional/jurisdiction/binding reconciliation, wider company/persona/finance/release and whole approved goal remain open; no commit or push."
+  ],
+  "source_sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationDataAccess.cs": "8236207c229567fd15efdeab1c88c5196208a957aba7507117fc8d6cbc9671d0",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "1377e4a5b3ee29f2b17c81a0ba7be4e8200453909a66c4a9552b8ed3afe37cbe",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "43a6440f2ff435c416eb03797ee51bc7bb616f228b6cff708e074395734859d7",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "871af2b6a3155b6ce5a110715f96b412f97e33d7363c3bb27f18e9ad9a58b4ab",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "52d4767f1ec76ff673be4e1ff2e1153e7993054af0a2d91c4f5bf10f15a8d66b",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Documents.cs": "cf6ad8bab2c8bc5b8ef22f267b9c479a8683c79edc2a3d0f1b3fc32cc187c715",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.AttachmentContent.cs": "8ed7ab0ad4a533f2e2d32ff9bc294592860a7dd9708e4b5c605db5c56fa44292",
+    "Beep.OilandGas.Repository.Tests/PermitDocumentProviderHttpTests.cs": "8921e6dd6979ecd598e25e60758d099f59d543f81b2daad8e3bb19ed62b9a17c",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "f2e050b76e6bf755769cdd1606d52d8f3c7e16644ee78c9d18fff30301d47d7e",
+    "Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs": "93376d3d33b0c6c2a8a22db2a5fcbab8c00d1ed1ffc47bb206e64fae485b0ecb",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "ee856c9b72a200d45bc0f1f107851c8159d904da0c50a96cf07aff164d0c754c",
+    "Beep.OilandGas.Repository.Tests/PermitDocumentStagingTests.cs": "bdacb729d3b2e6bd938fe35f8c27325f159f076bcd912b41eba37ba2cb40fe5a",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "ab66f6539894cc51561e9f664170b0d51ac6cb6f4fddc7c9b28ed0bff5d54705"
+  },
+  "native_files_sha256": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-c328561c804d40ffb156762921f88f86\\document-http-core.db": "349ee61d94f0325a1787af2cc28a32f2fbf1863e7fa1b5702d599fd517471dc0",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-c328561c804d40ffb156762921f88f86\\permits.db": "5b712013c5daff84ddbd62633ea78fd6b783b0c73966a32d45576757e09edf19"
+  },
+  "runtime_sha256": {
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "7e9c035610ff8623c0b7dccd202027c0dc5a9277b041db6b2b12819884883c84",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "1628602d950e27bf84647b0ce90f9eef3c8096b5ff1b5d47d57b687fa40acf0d",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "c52019365d6f9fb160278c37031ace40872c15f53e1a48a935a594bf6a5e6af2"
+  }
+}

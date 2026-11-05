@@ -2,6 +2,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Compliance;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.Models;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
@@ -42,9 +43,17 @@ public class ComplianceService : IComplianceService
 
     private async Task<PPDMGenericRepository> MakeRepoAsync(string table)
     {
-        var meta       = await _metadata.GetTableMetadataAsync(table);
-        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}")
-                         ?? typeof(object);
+        var (entityType, required) = table switch
+        {
+            "OBLIGATION" => (typeof(OBLIGATION), new[] { "OBLIGATION_ID", "FIELD_ID", "ACTIVE_IND", "OBLIG_TYPE", "OBLIG_STATUS", "DUE_DATE", "JURISDICTION_CODE" }),
+            "OBLIG_PAYMENT" => (typeof(OBLIG_PAYMENT), new[] { "PAYMENT_ID", "OBLIGATION_ID", "PAYMENT_TYPE", "PAYMENT_DATE", "PAYMENT_CURRENCY", "GROSS_AMT", "ACTUAL_AMT", "VARIANCE_AMT" }),
+            _ => throw new InvalidOperationException("The compliance table is not supported.")
+        };
+        if (required.Any(name => entityType.GetProperty(name) is null))
+            throw new NativeSchemaCompatibilityException($"The canonical {table} model does not contain the columns required by the compliance workflow.");
+        var meta = await _metadata.GetTableMetadataAsync(table);
+        if (meta is null || meta.EntityTypeName != entityType.Name)
+            throw new NativeSchemaCompatibilityException($"The configured {table} metadata does not match its canonical model.");
         return new PPDMGenericRepository(
             _editor, _commonColumnHandler, _defaults, _metadata,
             entityType, _connectionName, table);
@@ -168,15 +177,26 @@ public class ComplianceService : IComplianceService
         }
     }
 
-    public async Task<ObligationDetailModel?> GetByIdAsync(string obligationId)
+    public async Task<ObligationDetailModel?> GetByIdAsync(string obligationId, string fieldId)
     {
         try
         {
-            var repo   = await MakeRepoAsync("OBLIGATION");
-            var entity = await repo.GetByIdAsync(obligationId);
-            if (entity is null) return null;
+            if (string.IsNullOrWhiteSpace(obligationId) || string.IsNullOrWhiteSpace(fieldId))
+                throw new ArgumentException("An exact obligation and FIELD are required.");
+            var repo = await MakeRepoAsync("OBLIGATION");
+            var matches = (await repo.GetAsync(new List<AppFilter>
+            {
+                new() { FieldName = "OBLIGATION_ID", Operator = "=", FilterValue = obligationId },
+                new() { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            })).ToList();
+            if (matches.Count == 0) return null;
+            if (matches.Count != 1) throw new InvalidOperationException("The obligation identity is ambiguous in the selected FIELD.");
+            var entity = matches[0];
 
             var detail = MapToDetail(entity);
+            if (detail.ObligationId != obligationId || detail.FieldId != fieldId)
+                throw new InvalidOperationException("The returned obligation differs from the selected FIELD or identity.");
 
             // Load payments
             var payRepo = await MakeRepoAsync("OBLIG_PAYMENT");
@@ -186,6 +206,9 @@ public class ComplianceService : IComplianceService
             };
             var payments = (await payRepo.GetAsync(payFilters)).ToList();
             detail.Payments = payments.Select(MapToPayment).ToList();
+            if (detail.Payments.Any(payment => payment.ObligationId != obligationId || string.IsNullOrWhiteSpace(payment.PaymentId)) ||
+                detail.Payments.Select(payment => payment.PaymentId).Distinct(StringComparer.Ordinal).Count() != detail.Payments.Count)
+                throw new InvalidOperationException("The obligation payment population could not be confirmed.");
 
             return detail;
         }

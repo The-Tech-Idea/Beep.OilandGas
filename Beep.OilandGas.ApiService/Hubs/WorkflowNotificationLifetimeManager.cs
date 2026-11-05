@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,137 +8,35 @@ using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Hubs;
 
-/// <summary>
-/// Extends the existing in-process SignalR transport with fresh authorization at delivery.
-/// Subscription membership is a routing hint, never a cached grant of access.
-/// </summary>
 public sealed class WorkflowNotificationLifetimeManager(
-    ILogger<DefaultHubLifetimeManager<WorkflowNotificationHub>> transportLogger,
-    IServiceScopeFactory scopeFactory,
-    IFailureReporter failures) : DefaultHubLifetimeManager<WorkflowNotificationHub>(transportLogger)
+    ILogger<DefaultHubLifetimeManager<WorkflowNotificationHub>> logger, IServiceScopeFactory scopes,
+    IFailureReporter failures) : CompanyHubLifetimeManager<WorkflowNotificationHub>(logger, scopes)
 {
-    private sealed class ConnectionState(HubConnectionContext connection)
+    protected override bool Supports(CompanyHubChannel channel) => channel.Kind is
+        CompanyChannelKind.User or CompanyChannelKind.Persona or CompanyChannelKind.Process;
+    protected override string? RequiredRole(CompanyHubChannel channel, object?[] args) =>
+        channel.Kind is CompanyChannelKind.User or CompanyChannelKind.Persona ? ((RoleNotification)args[0]!).RequiredRole : null;
+    protected override object?[] DeliveryArguments(CompanyHubChannel channel, object?[] args)
     {
-        public HubConnectionContext Connection { get; } = connection;
-        public ConcurrentDictionary<string, byte> Groups { get; } = new(StringComparer.Ordinal);
+        if (channel.Kind == CompanyChannelKind.Process) return args;
+        if (args.Length != 1 || args[0] is not RoleNotification notification ||
+            channel.Kind == CompanyChannelKind.Persona && string.IsNullOrWhiteSpace(notification.RequiredRole))
+            throw new InvalidOperationException("User and persona publishers must declare their delivery requirement.");
+        return [notification.Payload];
     }
-
-    private readonly ConcurrentDictionary<string, ConnectionState> _connections = new(StringComparer.Ordinal);
-
-    public override async Task OnConnectedAsync(HubConnectionContext connection)
+    protected override Task<bool> ResourceAccessAsync(IServiceProvider services, CompanyHubChannel channel,
+        RepositoryCompanyContext company, object?[]? args)
     {
-        _connections[connection.ConnectionId] = new(connection);
-        try { await base.OnConnectedAsync(connection); }
-        catch { _connections.TryRemove(connection.ConnectionId, out _); throw; }
-    }
-
-    public override async Task OnDisconnectedAsync(HubConnectionContext connection)
-    {
-        _connections.TryRemove(connection.ConnectionId, out _);
-        await base.OnDisconnectedAsync(connection);
-    }
-
-    public override async Task AddToGroupAsync(string connectionId, string groupName, CancellationToken cancellationToken = default)
-    {
-        await base.AddToGroupAsync(connectionId, groupName, cancellationToken);
-        if (_connections.TryGetValue(connectionId, out var state)) state.Groups[groupName] = 0;
-    }
-
-    public override async Task RemoveFromGroupAsync(string connectionId, string groupName, CancellationToken cancellationToken = default)
-    {
-        if (_connections.TryGetValue(connectionId, out var state)) state.Groups.TryRemove(groupName, out _);
-        await base.RemoveFromGroupAsync(connectionId, groupName, cancellationToken);
-    }
-
-    public override Task SendGroupAsync(string groupName, string methodName, object?[] args, CancellationToken cancellationToken = default)
-        => SendAuthorizedGroupsAsync(new[] { groupName }, methodName, args, Array.Empty<string>(), cancellationToken);
-
-    public override Task SendGroupsAsync(IReadOnlyList<string> groupNames, string methodName, object?[] args,
-        CancellationToken cancellationToken = default)
-        => SendAuthorizedGroupsAsync(groupNames, methodName, args, Array.Empty<string>(), cancellationToken);
-
-    public override Task SendGroupExceptAsync(string groupName, string methodName, object?[] args,
-        IReadOnlyList<string> excludedConnectionIds, CancellationToken cancellationToken = default)
-        => SendAuthorizedGroupsAsync(new[] { groupName }, methodName, args, excludedConnectionIds, cancellationToken);
-
-    // Unscoped broadcasting cannot establish a role/resource decision for its payload.
-    public override Task SendAllAsync(string methodName, object?[] args, CancellationToken cancellationToken = default)
-        => throw new InvalidOperationException("Workflow notifications require an authorized user, persona/field or process channel.");
-
-    public override Task SendAllExceptAsync(string methodName, object?[] args, IReadOnlyList<string> excludedConnectionIds,
-        CancellationToken cancellationToken = default)
-        => throw new InvalidOperationException("Workflow notifications require an authorized user, persona/field or process channel.");
-
-    private async Task SendAuthorizedGroupsAsync(IReadOnlyList<string> groupNames, string methodName,
-        object?[] args, IReadOnlyList<string> excludedConnectionIds, CancellationToken cancellationToken)
-    {
-        var excluded = excludedConnectionIds.ToHashSet(StringComparer.Ordinal);
-        foreach (var (connectionId, state) in _connections)
+        var authorization = services.GetRequiredService<WorkflowNotificationAuthorization>();
+        return channel.Kind switch
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (excluded.Contains(connectionId) || state.Connection.ConnectionAborted.IsCancellationRequested) continue;
-            foreach (var group in groupNames.Distinct(StringComparer.Ordinal))
-            {
-                if (!state.Groups.ContainsKey(group)) continue;
-                var allowed = false;
-                try { allowed = await CanDeliverAsync(state.Connection.User, group); }
-                // Whatever stops the access lookup, this connection is not sent the notification and leaves the group:
-                // failure resolving current app access must never reuse an earlier grant. The other connections are
-                // still served.
-                catch (Exception exception)
-                {
-                    failures.ReportHandled(exception, $"checking access to workflow notifications ({group}) for connection {connectionId}",
-                        "the notification is not delivered to this connection, which leaves the group; it can subscribe again");
-                }
-                if (!allowed)
-                {
-                    await RemoveFromGroupAsync(connectionId, group, cancellationToken);
-                    continue;
-                }
-                if (state.Groups.ContainsKey(group) && !state.Connection.ConnectionAborted.IsCancellationRequested)
-                {
-                    var deliveryArgs = args;
-                    if (group.StartsWith("persona:", StringComparison.Ordinal))
-                    {
-                        if (args.Length != 1 || args[0] is not RoleNotification notification) continue;
-                        try
-                        {
-                            await using var scope = scopeFactory.CreateAsyncScope();
-                            var subject = state.Connection.User.FindActingUserId();
-                            if (subject is null || !await scope.ServiceProvider.GetRequiredService<WorkflowNotificationAuthorization>()
-                                .HasRoleAsync(subject, notification.RequiredRole)) continue;
-                        }
-                        // Whatever stops the role lookup, this connection is not sent the notification; the others still are.
-                        catch (Exception exception)
-                        {
-                            failures.ReportHandled(exception, $"checking the role a workflow notification requires for connection {connectionId}",
-                                "the notification is not delivered to this connection");
-                            continue;
-                        }
-                        deliveryArgs = new object?[] { notification.Payload };
-                    }
-                    await base.SendConnectionAsync(connectionId, methodName, deliveryArgs, cancellationToken);
-                    break; // Multiple matching channels must not duplicate a delivery.
-                }
-            }
-        }
+            CompanyChannelKind.Persona => authorization.CanAccessPersonaAsync(company.UserId, channel.Resource, channel.Field!),
+            CompanyChannelKind.Process => authorization.CanAccessProcessAsync(company.UserId, channel.Resource),
+            _ => Task.FromResult(false)
+        };
     }
-
-    private async Task<bool> CanDeliverAsync(ClaimsPrincipal? user, string group)
-    {
-        var subject = user.FindActingUserId();
-        if (user?.Identity?.IsAuthenticated != true || string.IsNullOrWhiteSpace(subject)) return false;
-        if (group.StartsWith("user:", StringComparison.Ordinal)) return group[5..] == subject;
-
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var authorization = scope.ServiceProvider.GetRequiredService<WorkflowNotificationAuthorization>();
-        var segments = group.Split(':');
-        if (segments.Length == 4 && segments[0] == "persona" && segments[2] == "field")
-            return await authorization.CanAccessPersonaAsync(subject, Uri.UnescapeDataString(segments[1]), Uri.UnescapeDataString(segments[3]));
-        if (segments.Length == 2 && segments[0] == "process")
-            return await authorization.CanAccessProcessAsync(subject, Uri.UnescapeDataString(segments[1]));
-        return false;
-    }
+    protected override void ReportFailure(Exception exception, string operation, string outcome) =>
+        failures.ReportHandled(exception, operation, outcome);
 }
 
 public static class WorkflowNotificationServiceCollectionExtensions
@@ -146,6 +44,9 @@ public static class WorkflowNotificationServiceCollectionExtensions
     public static IServiceCollection AddWorkflowNotificationAuthorization(this IServiceCollection services)
     {
         services.AddScoped<WorkflowNotificationAuthorization>();
+        services.AddScoped<CompanyHubScope>();
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton<Func<ClaimsPrincipal, string?>>(services,
+            (Func<ClaimsPrincipal, string?>)(principal => principal.FindActingUserId()));
         Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<INotificationPersonaReader, RepositoryNotificationPersonaReader>(services);
         services.AddSingleton<HubLifetimeManager<WorkflowNotificationHub>, WorkflowNotificationLifetimeManager>();
         return services;

@@ -1,0 +1,67 @@
+#if WORKFLOW_INBOX_FOCUSED
+using System.Net;
+using System.Reflection;
+using System.Security.Claims;
+using Beep.OilandGas.Client.App;
+using Beep.OilandGas.Web.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.JSInterop;
+using Moq;
+using MudBlazor.Services;
+using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
+using Xunit;
+namespace Beep.OilandGas.ApiService.Tests;
+public sealed class InvoiceVarianceDecisionScreenTests
+{
+    private sealed class Authentication:AuthenticationStateProvider
+    {public override Task<AuthenticationState> GetAuthenticationStateAsync()=>Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.Role,"ConfiguredControllerRole")],"test"))));}
+    [Theory][InlineData("valid")][InlineData("correction")][InlineData("unknown")][InlineData("retry")][InlineData("recreate")][InlineData("grant")][InlineData("changed")]
+    public async Task CompleteControllerPageRecordsOrRetainsAndReconcilesOneOriginalDisposition(string scenario)
+    {
+        var f=new InvoiceVarianceDecisionCommandTests.Fixture();await f.Prepare(scenario!="correction");var n=f.Existing.Existing.ReadOwner.Native;
+        await using var host=await AccountingSourceHttpTests.Start(configureAccounting:(services,_)=>{services.AddSingleton(f.Existing.Existing.Owner);services.AddSingleton(n.AP);services.AddSingleton(n.PO);});
+        host.Context.Actor="reviewer";host.Context.Roles=["ConfiguredControllerRole"];host.Context.PolicyBinding=f.Command.BindingRevision;host.Context.Permissions=["Accounting.View","Procurement.View","Accounting.ReviewInvoiceVariance","Accounting.RecordInvoiceVarianceDecision"];
+        host.Client.DefaultRequestHeaders.Add("X-Test-Actor","reviewer");host.Client.DefaultRequestHeaders.Add("X-Test-Assigned-Role","ConfiguredControllerRole");
+        using var company=InvoiceVarianceDecisionWorkspaceTests.Selected();var api=new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company);var client=new AccountingServiceClient(api,NullLogger<AccountingServiceClient>.Instance);
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime,APInvoiceFinancialHttpTests.NoBrowser>();services.AddSingleton(company);
+        services.AddSingleton<NavigationManager,APInvoiceFinancialHttpTests.Navigation>();services.AddSingleton<AuthenticationStateProvider,Authentication>();services.AddSingleton<IAccountingServiceClient>(client);
+        services.AddScoped<CompanyAccountingHandoffState>();services.AddScoped<APInvoiceWorkspaceState>();services.AddScoped<PurchaseOrderWorkspaceState>();services.AddSingleton<IBusinessProcessServiceClient>(new BusinessProcessServiceClient(api,NullLogger<BusinessProcessServiceClient>.Instance));services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));services.AddSingleton<IComponentActivator,APInvoiceFinancialHttpTests.Components>();
+        await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());var state=provider.GetRequiredService<APInvoiceWorkspaceState>();string? originalIntent=null;
+        var html=await renderer.Dispatcher.InvokeAsync(async()=>
+        {
+            async Task<Microsoft.AspNetCore.Components.Web.HtmlRendering.HtmlRootComponent> Render()=>await renderer.RenderComponentAsync<Beep.OilandGas.Web.Pages.PPDM39.Accounting.PayablesWorkbench>(ParameterView.FromDictionary(new Dictionary<string,object?>{{"Id","invoice"}}));
+            var root=await Render();var page=((APInvoiceFinancialHttpTests.Components)provider.GetRequiredService<IComponentActivator>()).Page!;
+            async Task Invoke(string method,params object[] args){var result=page.GetType().GetMethod(method,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(page,args);if(result is Task task)await task;}
+            await Invoke("ReviewVarianceDecision");Assert.NotNull(state.VarianceDecisionReview);await Invoke("ControllerDispositionChanged",f.Command.Disposition);await Invoke("ControllerReasonChanged",f.Command.Reason);
+            if(scenario=="grant")host.Context.Permissions=["Accounting.View","Procurement.View","Accounting.ReviewInvoiceVariance"];
+            if(scenario is "unknown" or "retry" or "recreate" or "changed")n.Native.FailCommit=true;
+            await Invoke("RecordVarianceDecision");
+            if(scenario is not ("valid" or "correction"))
+            {
+                Assert.True(state.HasUnconfirmedVarianceDecisionIntent);Assert.Null(state.VarianceDecisionResult);originalIntent=state.VarianceDecisionIntent!.Command.IntentId;
+                if(scenario is "retry" or "recreate" or "changed")
+                {
+                    n.Native.FailCommit=false;
+                    if(scenario=="recreate"){((IDisposable)page).Dispose();root=await Render();page=((APInvoiceFinancialHttpTests.Components)provider.GetRequiredService<IComponentActivator>()).Page!;Assert.Equal(originalIntent,state.VarianceDecisionIntent!.Command.IntentId);}
+                    if(scenario=="changed")n.Native.Rows.OfType<AP_RECEIPT_ALLOCATION>().Single(row=>row.AP_RECEIPT_ALLOCATION_ID=="competitor").ALLOCATED_QUANTITY=4m;
+                    await Invoke("RecordVarianceDecision");
+                }
+            }
+            await Invoke("StateHasChanged");return WebUtility.HtmlDecode(root.ToHtmlString());
+        });
+        if(scenario is "valid" or "correction" or "retry" or "recreate")
+        {
+            Assert.False(state.HasUnconfirmedVarianceDecisionIntent);Assert.NotNull(state.VarianceDecisionResult);Assert.Contains("Recorded controller disposition confirmed against current invoice source",html);Assert.Contains("Verified recorded controller variance disposition",html);Assert.Contains(f.Command.Reason,html);
+            if(originalIntent is not null)Assert.Equal(originalIntent,state.RecordedVarianceDecision!.Command.IntentId);
+        }
+        else{Assert.True(state.HasUnconfirmedVarianceDecisionIntent);Assert.DoesNotContain("Recorded controller disposition confirmed against current invoice source",html);Assert.Contains("Original controller disposition outcome is unconfirmed",html);Assert.Contains(originalIntent!,html);}
+        Assert.Equal(scenario=="grant"?1:2,n.Native.Writes);Assert.Equal("DRAFT",f.Existing.Stored.STATUS);Assert.Contains("Task",html,StringComparison.OrdinalIgnoreCase);
+    }
+}
+#endif

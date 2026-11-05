@@ -1,0 +1,234 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Selected HSE/permit browser journey and responsive/canonical-classification corrections",
+  "status": "selected observations passed; full qualification remains open",
+  "observations": [
+    {
+      "name": "hse-role-queue",
+      "result": "observed-pass",
+      "observation": "Actual HSE root and assigned-work panel render alongside the current permit queue; one independent record excludes self.",
+      "artifact": "artifacts/current-reviewer-snapshot.txt"
+    },
+    {
+      "name": "exact-identity-handoff",
+      "result": "observed-pass",
+      "observation": "Clicking the encoded Arabic/slash/query identity opens its exact current detail.",
+      "artifact": "artifacts/detail-snapshot.txt"
+    },
+    {
+      "name": "correction-confirmation",
+      "result": "observed-pass",
+      "observation": "Explicit reason/confirmation enables correction and records one controlled return result separately from current detail.",
+      "artifact": "artifacts/correction-result.txt"
+    },
+    {
+      "name": "field-clearing",
+      "result": "observed-pass",
+      "observation": "FIELD switch clears prior application detail and recorded result.",
+      "artifact": "artifacts/field-cleared.txt"
+    },
+    {
+      "name": "author-handoff",
+      "result": "observed-pass",
+      "observation": "Author queues show drafts and returned corrections, with role-specific creation link.",
+      "artifact": "artifacts/author-hse-snapshot.txt"
+    },
+    {
+      "name": "role-clearing",
+      "result": "observed-pass",
+      "observation": "Role/company selection change removes prior record projection before refresh.",
+      "artifact": "artifacts/final-author-cleared.txt"
+    },
+    {
+      "name": "changed-proposal",
+      "result": "observed-pass",
+      "observation": "Editing applicant after review disables creation; controlled metadata remains zero attempts/effects.",
+      "artifact": "artifacts/proposal-changed-snapshot.txt"
+    },
+    {
+      "name": "lost-ack-retention",
+      "result": "observed-pass",
+      "observation": "One controlled creation effect loses its acknowledgement; exact protected original remains visible and blocks replacement.",
+      "artifact": "artifacts/create-uncertain.txt"
+    },
+    {
+      "name": "reload-readonly",
+      "result": "observed-pass",
+      "observation": "Full browser reload under read-only permissions restores the same protected creation original.",
+      "artifact": "artifacts/creation-reloaded-readonly.txt"
+    },
+    {
+      "name": "read-only-recovery",
+      "result": "observed-pass",
+      "observation": "Read-only recovery confirms the same original with no extra attempt/effect and clears its protected tab key.",
+      "artifact": "artifacts/creation-recovered.txt"
+    },
+    {
+      "name": "created-detail",
+      "result": "observed-pass",
+      "observation": "The recorded result opens the exact created application under read-only permission.",
+      "artifact": "artifacts/created-detail-snapshot.txt"
+    },
+    {
+      "name": "narrow-final",
+      "result": "observed-pass",
+      "observation": "At390px labels/status/count/pager render without cramped word-column controls; screenshot visually inspected.",
+      "artifact": "artifacts/final-queue-390.png"
+    },
+    {
+      "name": "canonical-classification",
+      "result": "observed-pass",
+      "observation": "Final browser dropdown contains canonical Drilling and no duplicate DRILLING_PERMIT value.",
+      "artifact": "artifacts/last-type-options.txt"
+    },
+    {
+      "name": "clean-console",
+      "result": "observed-pass",
+      "observation": "Final selected circuit reports zero console errors/warnings.",
+      "artifact": "artifacts/last-console-errors.txt"
+    }
+  ],
+  "focused_gates": [
+    {
+      "name": "labels",
+      "methods": [
+        "ActualPermitDashboardRendersScopedRoleQueuesAndExactApplicationLinks"
+      ],
+      "filter": "FullyQualifiedName~ActualPermitDashboardRendersScopedRoleQueuesAndExactApplicationLinks",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "488 ms",
+      "full_log_sha256": "1c1261826de6f83f613211788e1d7add6a2ab2bee35299b058d82c1f41d4227a"
+    },
+    {
+      "name": "final-presentation-and-classification",
+      "methods": [
+        "ActualPermitDashboardRendersScopedRoleQueuesAndExactApplicationLinks",
+        "PermitCreationRejectsRetiredDuplicateDrillingClassificationBeforeAccess"
+      ],
+      "filter": "FullyQualifiedName~ActualPermitDashboardRendersScopedRoleQueuesAndExactApplicationLinks|FullyQualifiedName~PermitCreationRejectsRetiredDuplicateDrillingClassificationBeforeAccess",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "487 ms",
+      "full_log_sha256": "2020b3c9ebee9c989cd6357040c8e035da4e8a1dc60414deecf1b3b662cec6bb"
+    }
+  ],
+  "focused_distinct_cases": 3,
+  "focused_passing_observations": 5,
+  "controlled_creation": {
+    "original": "08d6e6b2-acc0-43f9-8705-ff9df2028556",
+    "attempts_before": 0,
+    "effects_before": 0,
+    "attempts_after_recovery": 1,
+    "effects_after_recovery": 1,
+    "role_after_reload": "readonly",
+    "creation_tab_keys_after_recovery": []
+  },
+  "production_changes": [
+    "Remove contradictory HSE text saying permit totals are unavailable.",
+    "Add mobile MudTd labels and selected queue aria-pressed.",
+    "Separate pager caption from compact accessible Previous/Next controls and format correction/under-review statuses for reading.",
+    "Remove duplicate enum value8 DRILLING_PERMIT and its native mapper/fee branches; canonical Drilling stays, invalid removed value refuses before access."
+  ],
+  "builds": [
+    {
+      "target": "Data",
+      "duration": "8.75s",
+      "warnings": 1,
+      "errors": 0
+    },
+    {
+      "target": "Native Permits",
+      "duration": "5.76s",
+      "warnings": 2,
+      "errors": 0
+    },
+    {
+      "target": "Current isolated host final",
+      "duration": "2.26s",
+      "warnings": 1,
+      "errors": 0
+    }
+  ],
+  "construction": [
+    "Initial fixture build required actual CompanyEnvironmentDisplay source and corrected fixture imports/diagnostics reference selection.",
+    "Initial HTTP navigation refused anonymous access; add a clearly controlled standard authentication scheme to the isolated host. This is not production OIDC qualification.",
+    "Initial favicon404 is fixture-only; subsequent host uses a data favicon and final circuits have zero errors/warnings.",
+    "Host restarts happen only after known effects are confirmed and originals cleared. Controlled ledger resets across host restarts are not persistence/restart proof."
+  ],
+  "runtime_ordering": [
+    "Reviewer correction/FIELD observations use the host after the stale HSE text fix, before mobile labels; one confirmed effect is retained in metadata-before-label-rebuild.",
+    "Creation reload/read-only recovery uses actual unchanged creation page/state/store and canonical Drilling value0, after labels but before final pager/enum cleanup. Its earlier runtime binary hash was not captured before final host rebuild; raw browser artifacts and controlled ledger metadata are retained.",
+    "Final HSE/narrow/dropdown observations run the final rebuilt host; its fresh ledger is zero. No creation-source/state/store behavior changed after the recovery observations."
+  ],
+  "limitations": [
+    "Controlled identity, company/FIELD services, typed clients and in-memory business outcome ledger; no actual ApiService/native provider/transaction/durability or OIDC proof.",
+    "Delivery/maintenance-only panel branches explicitly throw if reached and are not qualified. HSE incident and assigned-work source services are controlled; unrelated incident/financial flows are not tested.",
+    "Detail history/date fields in this fixture are deliberately minimal; real API history/date projection is not inferred from this browser host.",
+    "Default Mud theme plus actual app CSS; production branding, full keyboard/screen-reader/RTL/browser matrix and performance qualification remain open.",
+    "No schema/SQL/EF migration. Existing stored duplicate type8 records are not converted or supported by a compatibility path.",
+    "Full goal remains active; no commit/push."
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.Web/Pages/PPDM39/HSE/HSEDashboard.razor": "1c374484c7ca4854159ee154dfaebd53997541b8114c868a372f7a0b8b165dc9",
+    "Beep.OilandGas.Web/Components/Workflow/PermitApplicationInbox.razor": "192c4e753d0ba981789a8c47cc3716f2130c5d157584b5cb1d2cf46044a586ab",
+    "Beep.OilandGas.Web/Services/PermitApplicationInboxState.cs": "ce553493c22d00381328310d572f370de28f2876a0bf8460ff705e68ad4dacf2",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/NewPermitApplication.razor": "69b9ea484d95f91fd0f2facd8c685a6b6039f7be6601440ce77b0e60fab554fd",
+    "Beep.OilandGas.Web/Pages/PPDM39/Permits/PermitDetail.razor": "52113a7a07c1356522960de145915afe7b16cf9713df237d5e18ff3c2838fb67",
+    "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs": "48eb014b4220438bee22de1bd56b7acf405ad629b5c9a58b6ed359e6803ad1a8",
+    "Beep.OilandGas.Web/Services/PermitApplicationIntentStore.cs": "00340e7802bfe3f1c856733277063af861c48fc016c5ab9fd03147e5719b0400",
+    "Beep.OilandGas.Web/wwwroot/css/app.css": "b6117589f6ec253886ea565b84fa99c303dd140f5aed8a4a9f094e84cb3785a0",
+    "TheTechIdea.Data/OilGas/PermitApplicationType.cs": "0b18c102492de817055924f30ee301d3984c444592910de96b7c833a03ca3cfc",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationWorkflowService.cs": "04d3031a287ccec11e8fc4c448e849ef69b38c2a71d328681d33c277ac7cf2a9",
+    "Beep.OilandGas.PermitsAndApplications/DataMapping/ApplicationMapper.cs": "e404abd66741c13995785230e6d4a2b166a40ddbcd580c2a9ee75959b3a35585",
+    "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs": "68d50e32ccf17f0c9c64480f141067b51eac9737ba6651df6b2a9eded34978a5",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "7a34c9b8d9c05be0addd9ede23785a0cfe412344cc2929b08d9d13bcfbf3a402"
+  },
+  "final_runtime_sha256": {
+    "bin\\Debug\\net10.0\\PermitBrowser.dll": "4cf06e9be1216ef506d273a316a05fc9e3a89edf15ddd17b63dbefc147b7b217",
+    "bin\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll": "aad1d6b1276e014a52144f5ec19c41cb066111b6c5ac18009e7649c8ea2e1a37",
+    "bin\\Debug\\net10.0\\TheTechIdea.Data.dll": "147377f47186cb092f27625974f4f1d2e18753e7a5276bc19180f08176a6331b"
+  },
+  "artifact_sha256": {
+    "artifacts\\author-corrections-390.png": "760b63b79d98e8f73bc902ba9b2fa2288c2c9142c921ebcc15b54013027bee14",
+    "artifacts\\author-corrections-snapshot.txt": "ba8ef9a04293bdab01feffedf612eb1875c5cfdd9e2c305556dc5424187b2a19",
+    "artifacts\\author-hse-snapshot.txt": "3cb1735cf2e22a85997f43b2e7b74bffcf4f7a9582126f3eca048bbe3e18ed00",
+    "artifacts\\browser-final-close.txt": "9ec819ec89e32a398d6eabae356e12bf4b758a5cdbc3e904ee769c5a4490f521",
+    "artifacts\\correction-ready.txt": "99ae6fdfea697a7baaa89372f08c0b9c5e9e4eae9a6818c12703d74a4fb8e29d",
+    "artifacts\\correction-result.txt": "0102637a581c3d50fd2099d8eb495c7a906c2b291f950c4118e1cd0482747777",
+    "artifacts\\create-uncertain.txt": "4bff2a4ea597724484e23e47e44f8ee893106dab640222dee131df30b4706f0b",
+    "artifacts\\created-detail-snapshot.txt": "9c29c8cf1567768a1674da8a757bcf53f1eee97c04ca897c971746cccc5e8441",
+    "artifacts\\creation-recovered-390.png": "c156499894b4d82fb77ce9063d8f500dcedbc9b5824b9b60a77c94076a298f0d",
+    "artifacts\\creation-recovered.txt": "401bf9d78796a89e42a384100318446e54770323b97b438000541b59a9bf76f0",
+    "artifacts\\creation-reloaded-readonly.txt": "8a5af4f6daeb2154e9d29c4d7d3385f3540722bb01ef650ff4de97b1c29b2168",
+    "artifacts\\creation-storage-after-recovery.txt": "195e8714338f6f660b91a4895de722626c609daaa21b3979cce847d1e16b1bb0",
+    "artifacts\\current-hse-ready.txt": "18198e61b76a43aa253f4c47708805d2ec0cd607ea92c5c2c9d6afd35ab81fc1",
+    "artifacts\\current-reviewer-snapshot.txt": "aaa21e77bf334b689bfb68a83cfb52991695a7a41e9fea5a8fc0bf1269b70d6b",
+    "artifacts\\detail-snapshot.txt": "b8eddc73232b3c328d58a2003e7499183b4764b1505269616e5bfc6ac4d8c571",
+    "artifacts\\field-cleared.txt": "bbbe3b9090e583ca1bb21d09a90819039e387e7d7426d51cce5f3c5b42b40371",
+    "artifacts\\final-author-cleared.txt": "3991044c88506b01b51d10fba9b9747d63828413abede1c0ade0b4d0066556f8",
+    "artifacts\\final-queue-390.png": "6ec2939992a3ead9c38e9cd7775cef3b81c449b184d22f5b48bb906b8597b9e0",
+    "artifacts\\labeled-rows-390.png": "63409ab9f8c086674cb21721b533d1c016de0064a5046bd8e7637cfb165d978d",
+    "artifacts\\last-console-errors.txt": "bd97be5c2ad83024485e38ed8161c8216137a54c905224bf656bc3cf2eaba3b4",
+    "artifacts\\last-correction-snapshot.txt": "6e3ebe81217f0978c192d9d7e7a4a57b2ef9ed0f23b0eb99c9124f0461292020",
+    "artifacts\\last-hse-snapshot.txt": "39f409b1359c58b3c493970c5bb3e9f53022b21c8ea3fa19c1d6a3999384b605",
+    "artifacts\\last-metadata.json": "cfd8222690c13e02efa99ca61d1928af52eee12c8f5b1eac28ccd85ed9099f35",
+    "artifacts\\last-type-options.txt": "73d3809dfb25acad06bcbbea41feb804078b759c1376d163f4cb05cf5022d9b1",
+    "artifacts\\metadata-after-lost-ack.json": "1a2da043a54355860817ef938c223b064eb7969c27e91b533efeca2cd8893393",
+    "artifacts\\metadata-after-readonly-recovery.json": "721fc8a89c524b8f1ecbfe8af1932abc540e8c2a14cb754a24cfea21d7a8faed",
+    "artifacts\\metadata-after-readonly-reload.json": "721fc8a89c524b8f1ecbfe8af1932abc540e8c2a14cb754a24cfea21d7a8faed",
+    "artifacts\\metadata-before-creation.json": "cfd8222690c13e02efa99ca61d1928af52eee12c8f5b1eac28ccd85ed9099f35",
+    "artifacts\\metadata-before-label-rebuild.json": "19ec238250ba9066a578c8816b8798b85743e847fc0b9baccf2f52d57647dbaa",
+    "artifacts\\metadata-final-recovery-run.json": "721fc8a89c524b8f1ecbfe8af1932abc540e8c2a14cb754a24cfea21d7a8faed",
+    "artifacts\\proposal-changed-snapshot.txt": "f5cbc2964a654f8eed4ee1f72a3d8b65b75ff8cf41db8fb63b934f04ac9ef298"
+  },
+  "teardown": {
+    "browser_closed": true,
+    "owned_host_session": "58369",
+    "host_stopped": true
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md environmental/injection supporting amendments",
+  "observed_at": "2026-10-29T21:33:53.487811+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; previous work preserved; no commit/push; full approved goal remains active",
+  "policy": "Master tracker AND active plan read immediately before every exact-method test command. No whole classes/full suites/unrelated incident checks.",
+  "methods": {
+    "InstalledPermitSupportingAmendmentUsesReviewedOwnedLedger": {
+      "inputs": 6,
+      "criteria": "Both types physical create/update,2048-character narrative, paired units, immutable parent/well, rollback/retry, stale supporting review refusal and historical read-only original recovery/replay. Physical removed alias absence and canonical pressure unit."
+    },
+    "PermitSupportingOriginalRefusesForeignInvalidAndChangedEvidence": {
+      "inputs": 16,
+      "criteria": "Both types exact parent, missing/orphan unit, terminal stage, mismatch action, invalid flag, changed source and audit tamper refusal."
+    },
+    "ActualSupportingAmendmentFormUsesRoleStageAndRetainedOriginal": {
+      "inputs": 8,
+      "criteria": "Actual component render, author unsaved-submit/save handlers, read-only and independent reviewer refusal, lost response, retained exact proposal and reload/read-only recovery; controlled service/storage."
+    },
+    "PermitSupportingOriginalUsesExistingApiWebAndSdkCommandRecoveryWire": {
+      "inputs": 12,
+      "criteria": "Both types record/recovery through existing controller and typed Web/SDK wire, exact original/proposal/result."
+    },
+    "InstalledPermitDrillingAmendmentUsesReviewedOwnedLedger": {
+      "inputs": 3,
+      "criteria": "Affected existing supporting owner generalized for all three types; physical drilling create/update/recovery, rollback/retry, stale source."
+    },
+    "ActualDrillingAmendmentFormUsesRoleStageAndRetainedOriginal": {
+      "inputs": 4,
+      "criteria": "Affected existing screen/dirty-state path and retained drilling original/result."
+    },
+    "SupportingDraftRequiresExactStageTypeUnitsAndBounds": {
+      "inputs": 14,
+      "criteria": "Both types correction-stage unknown numeric/unit values, wrong type, missing well (field environmental accepted/injection refused), negative, zero waste accepted/zero pressure refused,4097-character text and mixed subtype payload refusal."
+    }
+  },
+  "gates": [
+    {
+      "log": "oilgas-354-support-01.log",
+      "passed": 49,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "24s",
+      "exit_code": 0,
+      "attempt": 1,
+      "methods": "First six listed methods only."
+    },
+    {
+      "log": "oilgas-354-support-02.log",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "182ms",
+      "exit_code": 0,
+      "attempt": 1,
+      "methods": "SupportingDraftRequiresExactStageTypeUnitsAndBounds only. Production sources unchanged after49-case gate."
+    }
+  ],
+  "distinct_selected_inputs": 63,
+  "command_template": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<workspace>/TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter <exact listed method OR selection> --logger console;verbosity=minimal",
+  "changes": [
+    "Data-owned typed environmental/injection proposals; author draft/correction, exact parent type, injection recorded well, paired nullable numeric/units, bounded strings and tri-state flags.",
+    "One shared supporting preparation/shape/write/result projection extends the existing reviewed command and immutable receipt owner. No new transaction owner, persistence API or compatibility path.",
+    "Removed unused MAX_INJECTION_PRESSURE/MAX_INJECTION_RATE/FLUID_TYPE and WASTE_DISPOSAL_METHOD; retained active DISPOSAL_METHOD used by rules/templates. Added explicit INJECTION_PRESSURE_UNIT and4096-character narrative widths through canonical Beep Migration entity definitions.",
+    "Actual existing workflow forms, retained proposals/results and unsaved-submit protection for all three types.",
+    "Repaired corrupted Unicode chunks in the touched workflow and two test source files; all subsequent edits use explicit UTF-8. Source-linked wire cases include actual Arabic/reserved identity literals."
+  ],
+  "construction_observation": "Initial Data build failed because DISPOSAL_METHOD was removed while active rules/templates/projector consume it. Kept active canonical field, removed unused WASTE_DISPOSAL_METHOD instead; final Data/native/focused builds pass with warnings. No failed test attempt.",
+  "self_review": "Existing Data contracts, source reviews, app author-action permission mapping, native Serializable/history/receipt/recovery, typed clients and workflow screen remain the owners. Unknown values are preserved rather than inferred. Current-child changes invalidate reviews; immutable historical recovery remains valid after later child amendments. Active README reconciled.",
+  "limits": [
+    "Physical setup-loaded local SQLite connector1.0.59/provider1.0.119 and prior changed engine runtime; source metadata/defaults/authority/faults controlled. No public driver distribution or other-provider qualification.",
+    "Fresh physical six-entity ledger/supporting migration only; existing-schema column removal/width/unit conversion not executed or qualified. No automatic adoption/compatibility or handwritten SQL/new EF migration.",
+    "Controller/Web/SDK transports and HtmlRenderer/actual handler tests use controlled service/authentication/storage. Not protected hosted HTTP/OIDC/new real-browser/a11y/RTL qualification.",
+    "Attachments, binding reconciliation, explicit company jurisdiction policy and other roadmap requirements remain open. Full goal not complete; no commit/push."
+  ],
+  "source_files": [
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitEnvironmentalDraftChanges.cs",
+      "sha256": "e2ebd4e011c5bfbc9cf408bac7e8aa1f434e271033626c544bc9dccb5be283a1"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitInjectionDraftChanges.cs",
+      "sha256": "0478e2f2e51965b5419bf12f6174322b02938bd9e38f94f23453277cac977f5e"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitSupportingDraftRules.cs",
+      "sha256": "e52c85463d848d7dd7950867145c1fd14a6c805a8762abe221133035d16b76e7"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitSupportingAmendments.cs",
+      "sha256": "2f2af96950f39d506f8419ca13f532dc6323b2d8bde7336a4943fb505b919df6"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs",
+      "sha256": "54be525eb8139b8c6fde9708fad227f1813071e4176ac1540358c12c6b8561fd"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationCommandOutcome.cs",
+      "sha256": "2a4e3c0af397b8d3ff97f8b5c0149d14baddbf364e94cb64e198c56151b06f2c"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationSupportingRecords.cs",
+      "sha256": "838d7f315a3efdee338daec0e60231c1a00e377a9cafd39d593e4c7ad7a0c3dc"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/ENVIRONMENTAL_PERMIT_APPLICATION.cs",
+      "sha256": "7f294bfe67588deda6e98a513ffd4666c0c14b61ebd7330dba9e45874786af34"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/INJECTION_PERMIT_APPLICATION.cs",
+      "sha256": "c9859cff8fe7cfeaef962514d77470bb0e6611a1890c89280af89884b208243a"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs",
+      "sha256": "3b2eed176068de0048997ba1df7096902c4cd8b498697cf61138b498737eff5d"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs",
+      "sha256": "9c1d2fe196f88d6d5e62141c381ade7fb5c903b220856470616adb86c41d05ac"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor",
+      "sha256": "5cc3f986f3a4d0aa8153c5fe7b91defeb163429624d35a4ab07dc67f711b0289"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs",
+      "sha256": "fea62090f30408494273e15a643f01bfc62fcb046cfb8eae78aa40ae02c4e425"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs",
+      "sha256": "51ef82b957f75df34f3ca7604e692fa8323d56854c7a807c40f14095606efd8b"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs",
+      "sha256": "2f3c1217d488f37e359914377103d03fea0431db7af9b26c71ff5d66455c8142"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/README.md",
+      "sha256": "4d7efbfe7968a44df445c0e36580445c1d1f43198fecfe0f40e0ba0ac7896bc5"
+    }
+  ],
+  "runtime_hashes": [
+    {
+      "path": "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll",
+      "sha256": "4db6b5526364860e7aa41e3be1f2f292d6d4322b10579e9245c447d154a6630b"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll",
+      "sha256": "70e4554aa1230096256fb10c2343c6b2c87a3550f377198f13c3ffe4524b435d"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "37789bc764eb4448d37ed652226462699e96e153c2dff7ed9f606b32778b616d"
+    }
+  ],
+  "logs": [
+    {
+      "path": "oilgas-354-support-01.log",
+      "sha256": "d0add37f2893ed81361c9270c53ef09fc438e2eb7973268d719aa32d10fa3072"
+    },
+    {
+      "path": "oilgas-354-support-02.log",
+      "sha256": "d9cf30e19730b3adc33d7250abf5c34ffcadbbf8a399406aa37a9696889a935e"
+    },
+    {
+      "path": "oilgas-354-support-data-build-02.log",
+      "sha256": "14be17ac0804b36c044335e753745c03ea394a5f32e3801cba3d77174605827b"
+    },
+    {
+      "path": "oilgas-354-support-data-build.log",
+      "sha256": "2e5ca915f720b1abe0bdf7ca67b4c280a6e253a62323039345d8d32b1c646c06"
+    },
+    {
+      "path": "oilgas-354-support-native-build.log",
+      "sha256": "c24cd87dd62ff1443b79e578eb10e2ccfc8b554b33699aa0f33394485b18cc5f"
+    },
+    {
+      "path": "oilgas-354-support-tests-build-02.log",
+      "sha256": "6b9f268d10c24a92bb271f0f5e25109833a87a56631d330b7f46b87251583f8e"
+    },
+    {
+      "path": "oilgas-354-support-tests-build.log",
+      "sha256": "222da35aaf9e22743d55bc52c8beab3d85d4ac360aa52dba0a31d12d0396615d"
+    }
+  ]
+}

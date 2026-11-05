@@ -13,10 +13,15 @@ public sealed class BoundProcessService(Func<Task<string>> resolveConnection, Fu
         => await operation(await CreateBoundServiceAsync());
 
     public async Task<IProcessService> CreateBoundServiceAsync()
+        =>await CreateBoundServiceAsync(null);
+
+    public async Task<IProcessService> CreateBoundServiceAsync(string? expectedConnection)
     {
         var connection = await resolveConnection();
         if (string.IsNullOrWhiteSpace(connection))
             throw new InvalidOperationException("Process operations require a bound LIFECYCLE database.");
+        if(expectedConnection is not null && !string.Equals(connection,expectedConnection,StringComparison.Ordinal))
+            throw new InvalidOperationException("The original LIFECYCLE database binding changed.");
         return createService(connection);
     }
 

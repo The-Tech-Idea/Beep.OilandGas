@@ -1,0 +1,125 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "criterion": "Reduce repeated fresh SQLite target-resolution cost on incident closure binding checks without caching authority or target identity.",
+  "timestamp": "2026-10-30T00:34:26.118567+00:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "working_tree": "Dirty pre-existing implementation; source digests identify this boundary only.",
+  "status": "Four distinct identity/binding boundary inputs have passing executions; both exact normal-Web closure deadline executions failed. Deadline requirement remains open.",
+  "tests": [
+    "ModuleDatabaseTargetTests.Sqlite_target_rechecks_parent_junction_after_retarget_and_records_regular_path_cost",
+    "ModuleDatabaseTargetTests.Relative_file_properties_match_the_absolute_file_and_never_change_configuration"
+  ],
+  "baseline": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 3.6969,
+    "measurement": {
+      "Iterations": 128,
+      "RegularPathMilliseconds": 86.9299,
+      "ParentRetargetRechecked": true
+    },
+    "production_source_sha256": "AD1869EE0A75EAD90A01B360764AB61A24B1081C8D516888715FAEEEDFE93AA7"
+  },
+  "after": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 3.5026,
+    "measurement": {
+      "Iterations": 128,
+      "RegularPathMilliseconds": 43.0646,
+      "ParentRetargetRechecked": true
+    }
+  },
+  "builds": {
+    "baseline_seconds": 42.18,
+    "after_seconds": 23.55,
+    "errors": 0,
+    "warnings_each": 649,
+    "scope": "Source-linked focused company/obligation target, no project-reference build."
+  },
+  "source_sha256": {
+    "Beep.OilandGas.ApiService/Services/ModuleDatabaseTarget.cs": "31ba98dc8b9f11f16c5b857323f5df452e94b8f317f8b03c70216542887017fc",
+    "Beep.OilandGas.Repository.Tests/ModuleDatabaseTargetTests.cs": "d8d4e980f75939dc9ad2ac315d0f54b0aed635ab5661ab402c1ae97e39e7b09e",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "231bf9e91eabf20fc0d06e4743c5af89ba013f1b2b845ae569399cd987791e65",
+    "Beep.OilandGas.ApiService/Services/ModuleConnectionResolver.cs": "d3710b15f0d0203df4bcda856909e80bbd19643ab81fc2e79167f06622ac852f"
+  },
+  "implementation": "Read fresh File.GetAttributes for each path component; query/resolve link only on reparse points. Missing file/directory components remain valid before setup creation; permission and other I/O errors propagate. No cached targets, binding values or roles.",
+  "review": "Self-reviewed: existing path normalization and final identity hashing unchanged. Junction target is checked again each call; generated link removal is nonrecursive and both physical targets survive. No DB/model/schema/SQL/EF change.",
+  "limits": [
+    "Single-process local 128-call timing, not a statistical benchmark or closure request performance proof.",
+    "No full/class/permit tests, timeout increase, auth cache, source-check removal, commit or push.",
+    "Compiled-query qualification runtime hash was not captured before subsequent fixture-timeout-only rebuild; its exact source and passing log remain recorded. Do not combine source digests across the two checkpoint runtimes.",
+    "Historical300s protected journey passed, but the two current100s executions failed; neither current execution qualifies retry/reopen or full closure acceptance."
+  ],
+  "commands": {
+    "build": "dotnet build Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute current TheTechIdea.Data.dll> -p:BuildProjectReferences=false --verbosity quiet",
+    "test": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute current TheTechIdea.Data.dll> -p:BuildProjectReferences=false --filter FullyQualifiedName=Beep.OilandGas.Repository.Tests.ModuleDatabaseTargetTests.Sqlite_target_rechecks_parent_junction_after_retarget_and_records_regular_path_cost|FullyQualifiedName=Beep.OilandGas.Repository.Tests.ModuleDatabaseTargetTests.Relative_file_properties_match_the_absolute_file_and_never_change_configuration --logger console;verbosity=normal"
+  },
+  "binding_queries": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 3.6311,
+    "build_seconds": 19.77,
+    "tests": [
+      "ModuleDatabaseTargetTests.Closure_binding_queries_observe_current_owner_stamp_and_tenant_state",
+      "ModuleDatabaseTargetTests.Configuration_redirection_is_refused_by_routing_planning_and_rebinding"
+    ],
+    "implementation": "Existing per-IModel weak compiled-query delegate pattern reused; identical tenant/module/key predicates execute fresh AsNoTracking reads every call. Current revocation/restoration, binding stamp, tenant isolation/deactivation and configured physical redirection are checked. No cached authority/results."
+  },
+  "normal_web_deadline": {
+    "status": "failed",
+    "request_seconds": 100,
+    "method": "CurrentFieldLifecycleGateTests.InstalledSqliteClosureRecoversLostHttpAcknowledgementAndReopens",
+    "command_log": "%TEMP%/oilgas-353-web-deadline-tests.log",
+    "scope": "Only the existing exact native/protected HTTP/reopen journey; no other methods selected. Default HttpClient deadline asserted, historical300s override removed. No production deadline changed.",
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "exit_code": 1,
+    "minutes": 5.5727,
+    "failure": "First protected request exceeded unchanged default HttpClient.Timeout100s; TaskCanceledException/TimeoutException. Retry and fresh-owner recovery not reached in this execution.",
+    "source_sha256": {
+      "Beep.OilandGas.ApiService\\Services\\ModuleConnectionResolver.cs": "d3710b15f0d0203df4bcda856909e80bbd19643ab81fc2e79167f06622ac852f",
+      "Beep.OilandGas.ApiService\\Services\\ModuleDatabaseTarget.cs": "31ba98dc8b9f11f16c5b857323f5df452e94b8f317f8b03c70216542887017fc",
+      "Beep.OilandGas.Repository.Tests\\HseClosureProviderQualificationTests.cs": "892d65ef44b1f8bd04b341e09fbe5b1a59745836942914d290cefdf2b23fb511",
+      "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll": "d97edc9d09231b98df648c1a529a32f15e426dffdc84a101c8623bafbe65f2a9"
+    }
+  },
+  "consolidated_snapshot": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 3.509,
+    "build_seconds": 19.22,
+    "scope": "Same two selected binding criteria, extended to the actual ResolveAssetScopeAsync contract. No authority/target values cached, no caller source/authority fences changed.",
+    "source_sha256": {
+      "Beep.OilandGas.ApiService\\Services\\ModuleConnectionResolver.cs": "f961a78b9dcde013a9b16b551acec5cac10751346f0ef0a5743970ca6d7eb87a",
+      "Beep.OilandGas.Repository.Tests\\ModuleDatabaseTargetTests.cs": "f05f3f3f697c980707209deef6387e5d6bf8a43d2a9217f0119915df31530017",
+      "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll": "03f97a19c06c6b71ec7c9ce34df31c6824407bafc3da2b06e11712a334af1a62"
+    }
+  },
+  "normal_web_deadline_retry": {
+    "status": "failed",
+    "request_seconds": 100,
+    "method": "CurrentFieldLifecycleGateTests.InstalledSqliteClosureRecoversLostHttpAcknowledgementAndReopens",
+    "log": "%TEMP%/oilgas-353-web-deadline-02-tests.log",
+    "source_scope": "consolidated_snapshot",
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "exit_code": 1,
+    "minutes": 4.3295,
+    "failure": "First protected request still exceeded unchanged HttpClient default100s. TaskCanceledException/TimeoutException. No retry/reopen or successful response timing qualified.",
+    "source_sha256": {
+      "Beep.OilandGas.ApiService\\Services\\ModuleConnectionResolver.cs": "f961a78b9dcde013a9b16b551acec5cac10751346f0ef0a5743970ca6d7eb87a",
+      "Beep.OilandGas.Repository.Tests\\ModuleDatabaseTargetTests.cs": "f05f3f3f697c980707209deef6387e5d6bf8a43d2a9217f0119915df31530017",
+      "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll": "03f97a19c06c6b71ec7c9ce34df31c6824407bafc3da2b06e11712a334af1a62"
+    }
+  },
+  "next": "Measure the protected closure request with bounded quantitative profiling/phase timings before choosing another change. Existing stack samples identify repeated target resolution but do not quantify its causal contribution; do not increase timeouts, cache authority or weaken source checks.",
+  "completed_at": "2026-10-30T00:49:45.107431+00:00",
+  "web_route_source": "Web HSEServiceClient.Closure CompleteClosureStageAsync uses ApiClient; Web/Program.cs AddHttpClient<ApiClient> has no timeout override. No equivalent closure route was found in the SDK client source search. This gate targets the current Web surface, not general SDK deadlines."
+}

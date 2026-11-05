@@ -634,17 +634,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     _editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, connectionName, "JOURNAL_ENTRY");
 
-                var entryNumber = $"PC-{fieldId}-{asOfDate:yyyyMM}";
-                var entries = await repo.GetAsync(new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ENTRY_NUMBER", Operator = "=", FilterValue = entryNumber },
-                    new AppFilter { FieldName = "ENTRY_TYPE", Operator = "=", FilterValue = JournalEntryTypeCodes.PeriodClose },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
-                });
-
-                var periodStatus = entries != null && entries.Any()
-                    ? PeriodCloseStatusCodes.Closed
-                    : PeriodCloseStatusCodes.Open;
+                var active=_defaults.GetActiveIndicatorYes();
+                var entries=await repo.GetAsync(PeriodCloseJournalRecords.Filters(fieldId,asOfDate,active));
+                var periodStatus=PeriodCloseJournalRecords.Status(entries?.Cast<JOURNAL_ENTRY>().ToList(),fieldId,asOfDate,active);
                 _logger?.LogDebug("Period status for field {FieldId} and period {Period}: {Status}", fieldId, asOfDate.ToString("yyyy-MM"), periodStatus);
                 return periodStatus;
             }

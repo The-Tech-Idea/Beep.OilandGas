@@ -1,0 +1,124 @@
+### Page
+- Page URL: http://127.0.0.1:65142/
+### Snapshot
+```yaml
+- generic [ref=f1e1]:
+  - generic [ref=f1e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e44]
+    - paragraph [ref=f1e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e46]:
+      - button "Use read-only unmapped profile" [ref=f1e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e49] [cursor=pointer]
+      - button "Switch other company" [ref=f1e51] [cursor=pointer]
+      - button "Switch other account" [ref=f1e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e57] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f1e59] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e61] [cursor=pointer]
+    - status [ref=f1e84]: Exact original start retained in its own protected tab key.
+  - generic [ref=f1e119]:
+    - heading "Observed drilling progress" [level=1] [ref=f1e120]
+    - group [ref=f1e121]:
+      - link "Original execution" [ref=f1e122] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-26B6303D53DBA89774319391018BC23D1E63011141808431AE02F467F4CE923F
+      - button "Reload original report history" [ref=f1e124] [cursor=pointer]
+    - generic [ref=f1e432]:
+      - heading "Recorded execution and report history" [level=2] [ref=f1e433]
+      - paragraph [ref=f1e434]: Original drilling program · Version 1 · Operation drilling-execution-C9872A5B77C6CD9AD52BF5E1C99F2A989FBAC392C12ABABB015FF2A5C732AE75
+      - paragraph [ref=f1e435]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=f1e436]: 1 recorded observed reports · History checked 2026-10-26 13:18:02Z UTC
+      - table [ref=f1e439]:
+        - caption [ref=f1e440]: Observed drilling report history — UTC periods, source provenance and accountable recorders
+        - rowgroup [ref=f1e441]:
+          - row [ref=f1e442]:
+            - columnheader "Report / UTC period" [ref=f1e443]
+            - columnheader "Observed hole MD" [ref=f1e444]
+            - columnheader "Rotating / NPT hours" [ref=f1e445]
+            - columnheader "Recorder / audit UTC" [ref=f1e446]
+        - rowgroup [ref=f1e447]:
+          - row [ref=f1e448]:
+            - rowheader "1 · RECORDED 2026-10-26 13:01:00Z to 2026-10-26 13:01:01Z" [ref=f1e449]: 1 · RECORDED2026-10-26 13:01:00Z to 2026-10-26 13:01:01Z
+            - cell "100 to 125 m" [ref=f1e450]
+            - cell "Unknown / Unknown" [ref=f1e451]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 13:04:31Z" [ref=f1e452]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 13:04:31Z
+          - row [ref=f1e453]:
+            - cell [ref=f1e454]:
+              - paragraph [ref=f1e455]: Report drilling-report-251623DF8ABE9AEEFC95B043EAA1DA713D934FAFB0FBE7C428CA1ACFF70CDC17
+              - paragraph [ref=f1e456]: "Source: Browser source log 471"
+              - paragraph [ref=f1e457]: "Observed operations: Observed browser recovery report"
+      - button "Inspect current report basis" [ref=f1e458] [cursor=pointer]
+    - generic [ref=f1e460]:
+      - heading "Report observed drilling period" [level=2] [ref=f1e461]
+      - paragraph [ref=f1e462]: Next report 2 · Previous report drilling-report-251623DF8ABE9AEEFC95B043EAA1DA713D934FAFB0FBE7C428CA1ACFF70CDC17 · Workspace DRILLING_RECORDER
+      - generic [ref=f1e465]:
+        - combobox "Current report recorder role" [ref=f1e586] [cursor=pointer]: ConfiguredExecutionRecorder
+        - generic: Current report recorder role*
+      - generic [ref=f1e472]:
+        - generic [ref=f1e473]:
+          - textbox "Observed period start UTC*" [ref=f1e475]: 2026-10-26T13:01:01.3765709Z
+          - generic: Observed period start UTC*
+        - generic [ref=f1e476]: Enter Z or +00:00. The period must begin at or after actual spud and the prior report end.
+      - generic [ref=f1e479]:
+        - generic [ref=f1e480]:
+          - textbox "Observed period end UTC*" [ref=f1e482]: 2026-10-26T13:19:35.6222886Z
+          - generic: Observed period end UTC*
+        - generic [ref=f1e483]: Completed observed period, up to 24 hours. No midnight or local-time default.
+      - generic [ref=f1e487]:
+        - generic [ref=f1e488]:
+          - spinbutton "Observed hole MD at start*" [ref=f1e489]: "125"
+          - generic [ref=f1e490]:
+            - button "Increment" [ref=f1e491] [cursor=pointer]
+            - button "Decrement" [ref=f1e496] [cursor=pointer]
+        - generic: Observed hole MD at start*
+      - generic [ref=f1e502]:
+        - generic [ref=f1e503]:
+          - spinbutton "Observed hole MD at end*" [ref=f1e504]: "150"
+          - generic [ref=f1e505]:
+            - button "Increment" [ref=f1e506] [cursor=pointer]
+            - button "Decrement" [ref=f1e511] [cursor=pointer]
+        - generic: Observed hole MD at end*
+      - generic [ref=f1e518]:
+        - combobox "Observed MD unit" [ref=f1e596] [cursor=pointer]: m
+        - generic: Observed MD unit*
+      - generic [ref=f1e525]:
+        - generic [ref=f1e526]:
+          - generic [ref=f1e527]:
+            - spinbutton "Observed rotating hours (optional)" [ref=f1e528]
+            - generic [ref=f1e529]:
+              - button "Increment" [ref=f1e530] [cursor=pointer]
+              - button "Decrement" [ref=f1e535] [cursor=pointer]
+          - generic: Observed rotating hours (optional)
+        - generic [ref=f1e540]: Leave unknown values empty. Zero means observed zero.
+      - generic [ref=f1e544]:
+        - generic [ref=f1e545]:
+          - spinbutton "Observed NPT hours (optional)" [ref=f1e546]
+          - generic [ref=f1e547]:
+            - button "Increment" [ref=f1e548] [cursor=pointer]
+            - button "Decrement" [ref=f1e553] [cursor=pointer]
+        - generic: Observed NPT hours (optional)
+      - generic [ref=f1e559]:
+        - textbox "NPT reason (required when NPT is positive)" [ref=f1e561]
+        - generic: NPT reason (required when NPT is positive)
+      - generic [ref=f1e562]:
+        - generic [ref=f1e563]:
+          - textbox "Report source provenance*" [ref=f1e565]: Restored encrypted log 473
+          - generic: Report source provenance*
+        - generic [ref=f1e566]: Identify the observed site log, report or measurement reference.
+      - generic [ref=f1e570]:
+        - textbox "Observed operations summary*" [ref=f1e572]: Corruption must preserve unavailable evidence
+        - generic: Observed operations summary*
+      - generic [ref=f1e574]:
+        - textbox "Next period plan (optional)" [ref=f1e576]
+        - generic: Next period plan (optional)
+      - button "Review observed drilling report" [active] [ref=f1e577] [cursor=pointer]
+    - generic [ref=f1e599]:
+      - heading "Confirm original observed report" [level=2] [ref=f1e600]
+      - paragraph [ref=f1e601]: Company company · Well recorded-well/one · Report 2
+      - paragraph [ref=f1e602]: 2026-10-26 13:01:01Z to 2026-10-26 13:19:35Z UTC · Observed MD 125 to 150 m
+      - paragraph [ref=f1e603]: Recorder execution-recorder · Role ConfiguredExecutionRecorder · Workspace DRILLING_RECORDER · Rotating Unknown / NPT Unknown hours
+      - paragraph [ref=f1e604]: "Source: Restored encrypted log 473"
+      - paragraph [ref=f1e605]: Corruption must preserve unavailable evidence
+      - button "Confirm and retain observed report" [ref=f1e606] [cursor=pointer]
+      - button "Cancel report confirmation" [ref=f1e608] [cursor=pointer]
+    - generic [ref=f1e133]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

@@ -16,7 +16,8 @@ public static class LifeCycleServiceCollectionExtensions
 {
     public static IServiceCollection AddLifeCycleServices(
         this IServiceCollection services, IConfiguration configuration,
-        Func<IServiceProvider, CancellationToken, Task<string?>>? backgroundConnection = null,
+        Func<IServiceProvider, CancellationToken, Task<IReadOnlyList<string>>>? backgroundTenants = null,
+        Func<IServiceProvider, string, CancellationToken, Task<string?>>? backgroundConnection = null,
         Func<IServiceProvider, Task<string>>? workflowConnection = null)
     {
 
@@ -120,7 +121,7 @@ public static class LifeCycleServiceCollectionExtensions
 
         // SLA Monitor background service
         services.AddHostedService(sp => new SlaMonitorService(sp.GetRequiredService<IServiceScopeFactory>(),
-            sp.GetRequiredService<ILogger<SlaMonitorService>>(), resolveConnection: backgroundConnection));
+            sp.GetRequiredService<ILogger<SlaMonitorService>>(), resolveTenants: backgroundTenants, resolveConnection: backgroundConnection));
 
         // Phase 3: Multi-entity workflow chain orchestrator
         services.AddScoped<IMultiEntityWorkflowOrchestrator>(sp =>

@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -16,7 +15,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// IAS 8 accounting policy changes with effective dating and audit trail.
     /// </summary>
-    public class AccountingPolicyService
+    public partial class AccountingPolicyService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -24,14 +23,16 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<AccountingPolicyService> _logger;
         private const string ConnectionName = "PPDM39";
+        private readonly Func<Task<string>>? _resolveConnection;
 
         public AccountingPolicyService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<AccountingPolicyService> logger)
+            ILogger<AccountingPolicyService> logger, Func<Task<string>>? resolveConnection=null)
         {
+            _resolveConnection=resolveConnection;
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
@@ -49,6 +50,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? costCenterId = null,
             string cn = "PPDM39")
         {
+            if(methodType==CompanyMatchingPolicyReview.MethodType || methodType==CompanyBillingPolicyProof.MethodType)throw new InvalidOperationException("Company policy requires its reviewed company-owned policy workflow.");
             if (string.IsNullOrWhiteSpace(methodType))
                 throw new ArgumentNullException(nameof(methodType));
             if (string.IsNullOrWhiteSpace(description))
@@ -99,6 +101,7 @@ namespace Beep.OilandGas.Accounting.Services
             string? costCenterId = null,
             string cn = "PPDM39")
         {
+            if(methodType==CompanyMatchingPolicyReview.MethodType || methodType==CompanyBillingPolicyProof.MethodType)throw new InvalidOperationException("Company policy requires its reviewed company-owned policy workflow.");
             if (string.IsNullOrWhiteSpace(methodType))
                 throw new ArgumentNullException(nameof(methodType));
 

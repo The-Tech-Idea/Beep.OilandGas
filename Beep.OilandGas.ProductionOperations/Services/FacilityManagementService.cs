@@ -15,6 +15,7 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using TheTechIdeaWeb.Diagnostics;
 using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ProductionOperations.Services;
 
@@ -34,6 +35,8 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
     private readonly string _connectionName;
     private readonly ILogger<FacilityManagementService>? _logger;
     private readonly Func<string, Task<string>>? _resolveModuleConnection;
+    private readonly IPPDMRowAccessPolicy? _maintenanceAssetAccess;
+    private readonly string? _maintenanceEvidenceZone;
 
     public FacilityManagementService(
         IDMEEditor editor,
@@ -43,7 +46,8 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
         IFailureReporter failures,
         string connectionName = "PPDM39",
         ILogger<FacilityManagementService>? logger = null,
-        Func<string, Task<string>>? resolveModuleConnection = null)
+        Func<string, Task<string>>? resolveModuleConnection = null,
+        IPPDMRowAccessPolicy? maintenanceAssetAccess = null, string? maintenanceEvidenceZone = null)
     {
         _editor = editor ?? throw new ArgumentNullException(nameof(editor));
         _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -53,6 +57,7 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
         _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
         _logger = logger;
         _resolveModuleConnection = resolveModuleConnection;
+        _maintenanceAssetAccess=maintenanceAssetAccess;_maintenanceEvidenceZone=maintenanceEvidenceZone;
     }
 
     private async Task<PPDMGenericRepository> RepoAsync<T>(string tableName)
@@ -70,23 +75,35 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
     private async Task<FACILITY?> ResolveFacilityRowAsync(string facilityId, string? facilityType, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        var repo = await RepoAsync<FACILITY>("FACILITY");
-        var formattedId = _defaults.FormatIdForTable("FACILITY", facilityId);
-        var byId = await repo.GetByIdAsync(formattedId) as FACILITY;
-        if (byId != null && byId.ACTIVE_IND == "Y" &&
-            (string.IsNullOrWhiteSpace(facilityType) || string.Equals(byId.FACILITY_TYPE, facilityType, StringComparison.Ordinal)))
-            return byId;
-
+        static bool Identifier(string? value) => !string.IsNullOrWhiteSpace(value) && value.Length <= 128 && value == value.Trim() && !value.Any(char.IsControl);
+        if (!Identifier(facilityId) || !Identifier(facilityType))
+            throw RefusalException.Invalid("The original FACILITY_ID and FACILITY_TYPE are both required.");
+        var definition = await _metadata.GetTableMetadataAsync("FACILITY");
+        if (definition?.EntityTypeName != nameof(FACILITY) || !new[] { "FACILITY_ID", "FACILITY_TYPE" }.SequenceEqual(
+            (definition.PrimaryKeyColumn ?? "").Split(',').Select(key => key.Trim()).Order(StringComparer.Ordinal)))
+            throw RefusalException.Conflict("Canonical FACILITY metadata must preserve both native identity keys.");
+        var connection = _resolveModuleConnection is null ? _connectionName : await _resolveModuleConnection("PPDM_CORE");
+        if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("The original facility CORE binding is required.");
+        var source = _editor.GetDataSource(connection) ?? throw new InvalidOperationException("The original facility datasource is unavailable.");
+        var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(FACILITY), connection, "FACILITY");
         var filters = new List<AppFilter>
         {
             new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = facilityId },
+            new AppFilter { FieldName = "FACILITY_TYPE", Operator = "=", FilterValue = facilityType },
             new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
         };
-        if (!string.IsNullOrWhiteSpace(facilityType))
-            filters.Add(new AppFilter { FieldName = "FACILITY_TYPE", Operator = "=", FilterValue = facilityType });
-
-        var rows = (await repo.GetAsync(filters)).Cast<FACILITY>().ToList();
-        return rows.OrderByDescending(f => f.ROW_CHANGED_DATE ?? f.ROW_CREATED_DATE).FirstOrDefault();
+        var rows = (await repo.GetAsync(filters)).ToArray();
+        ct.ThrowIfCancellationRequested();
+        var closingDefinition = await _metadata.GetTableMetadataAsync("FACILITY");
+        if (closingDefinition?.EntityTypeName != nameof(FACILITY) || !new[] { "FACILITY_ID", "FACILITY_TYPE" }.SequenceEqual(
+            (closingDefinition.PrimaryKeyColumn ?? "").Split(',').Select(key => key.Trim()).Order(StringComparer.Ordinal)))
+            throw RefusalException.Conflict("The original qualified facility metadata changed during its read.");
+        if (!ReferenceEquals(source, _editor.GetDataSource(connection)) ||
+            (_resolveModuleConnection is not null && await _resolveModuleConnection("PPDM_CORE") != connection))
+            throw RefusalException.Conflict("The original facility CORE binding changed during the qualified read.");
+        if (rows.Length > 1 || rows.Any(row => row is not FACILITY value || value.FACILITY_ID != facilityId || value.FACILITY_TYPE != facilityType || value.ACTIVE_IND != "Y"))
+            throw RefusalException.Conflict("The provider must return one exact active qualified facility, without choosing a latest or first match.");
+        return rows.Length == 0 ? null : (FACILITY)rows[0];
     }
 
     public async Task<IReadOnlyList<FACILITY>> ListFacilitiesAsync(string? primaryFieldId, CancellationToken cancellationToken = default)
@@ -108,69 +125,6 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
 
     public Task<FACILITY?> GetFacilityAsync(string facilityId, string? facilityType, CancellationToken cancellationToken = default) =>
         ResolveFacilityRowAsync(facilityId, facilityType, cancellationToken);
-
-    public async Task<FACILITY> CreateFacilityAsync(FACILITY facility, string userId, CancellationToken cancellationToken = default)
-    {
-        if (facility == null) throw new ArgumentNullException(nameof(facility));
-        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required.", nameof(userId));
-
-        facility.ACTIVE_IND ??= "Y";
-        if (facility is IPPDMEntity e)
-            _commonColumnHandler.PrepareForInsert(e, userId);
-
-        var repo = await RepoAsync<FACILITY>("FACILITY");
-        var created = await repo.InsertAsync(facility, userId) as FACILITY
-                      ?? throw new InvalidOperationException("Insert did not return a FACILITY row.");
-
-        if (!string.IsNullOrWhiteSpace(created.PRIMARY_FIELD_ID))
-            await TryInsertFacilityFieldLinkAsync(created, userId, cancellationToken).ConfigureAwait(false);
-
-        return created;
-    }
-
-    private async Task TryInsertFacilityFieldLinkAsync(FACILITY created, string userId, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        if (await _metadata.GetTableMetadataAsync("FACILITY_FIELD") == null)
-            return;
-
-        var linkRepo = await RepoAsync<FACILITY_FIELD>("FACILITY_FIELD");
-        var link = new FACILITY_FIELD
-        {
-            FACILITY_ID = created.FACILITY_ID,
-            FACILITY_TYPE = created.FACILITY_TYPE,
-            FIELD_ID = created.PRIMARY_FIELD_ID,
-            ACTIVE_IND = "Y"
-        };
-        if (link is IPPDMEntity e)
-            _commonColumnHandler.PrepareForInsert(e, userId);
-        try
-        {
-            await linkRepo.InsertAsync(link, userId);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        // Any failure of the link's write: the facility row is already stored, so answering the create as failed would
-        // invite a retry that collides with it. The facility's own PRIMARY_FIELD_ID still names the field — the create
-        // met its contract — and the missing association is reported, not only logged.
-        catch (Exception ex)
-        {
-            _failures.ReportHandled(ex, $"linking facility {created.FACILITY_ID} to field {created.PRIMARY_FIELD_ID} in FACILITY_FIELD",
-                "the facility is created and its PRIMARY_FIELD_ID names the field; the FACILITY_FIELD association row is not written",
-                FailureSeverity.Degraded);
-        }
-    }
-
-    public async Task UpdateFacilityAsync(FACILITY facility, string userId, CancellationToken cancellationToken = default)
-    {
-        if (facility == null) throw new ArgumentNullException(nameof(facility));
-        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required.", nameof(userId));
-
-        var repo = await RepoAsync<FACILITY>("FACILITY");
-        await repo.UpdateAsync(facility, userId);
-    }
 
     public async Task<IReadOnlyList<FACILITY_CLASS>> ListFacilityClassesAsync(string facilityId, string? facilityType, CancellationToken cancellationToken = default)
     {
@@ -258,34 +212,11 @@ public sealed partial class FacilityManagementService : IFacilityManagementServi
             .OrderByDescending(s => s.EFFECTIVE_DATE ?? s.ROW_CREATED_DATE).ToList();
     }
 
-    public async Task<FACILITY_STATUS> AddFacilityStatusAsync(FACILITY_STATUS status, string userId, bool enforceActiveLicenseForOperationalStatus = true, CancellationToken cancellationToken = default)
+    public Task<FACILITY_STATUS> AddFacilityStatusAsync(FACILITY_STATUS status, string userId, bool enforceActiveLicenseForOperationalStatus = true, CancellationToken cancellationToken = default)
     {
         if (status == null) throw new ArgumentNullException(nameof(status));
         if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID is required.", nameof(userId));
-
-        if (enforceActiveLicenseForOperationalStatus && StatusImpliesOperational(status))
-        {
-            var ok = await FacilityHasActiveLicenseAsync(
-                status.FACILITY_ID ?? string.Empty, status.FACILITY_TYPE, DateTime.UtcNow.Date, cancellationToken).ConfigureAwait(false);
-            if (!ok)
-                throw RefusalException.Conflict("Operational/active status requires at least one active facility license.");
-        }
-
-        if (string.IsNullOrWhiteSpace(status.STATUS_ID))
-            status.STATUS_ID = Guid.NewGuid().ToString("N");
-
-        if (status is IPPDMEntity e)
-            _commonColumnHandler.PrepareForInsert(e, userId);
-        var repo = await RepoAsync<FACILITY_STATUS>("FACILITY_STATUS");
-        return (await repo.InsertAsync(status, userId) as FACILITY_STATUS)!;
-    }
-
-    private static bool StatusImpliesOperational(FACILITY_STATUS s)
-    {
-        var a = (s.STATUS ?? string.Empty).ToUpperInvariant();
-        var t = (s.STATUS_TYPE ?? string.Empty).ToUpperInvariant();
-        return a.Contains("ACTIVE", StringComparison.Ordinal) || a.Contains("OPER", StringComparison.Ordinal)
-               || t.Contains("ACTIVE", StringComparison.Ordinal) || t.Contains("OPER", StringComparison.Ordinal);
+        throw RefusalException.Forbidden("Facility status changes require the reviewed company maintenance return command with original closure, policy and native state evidence.");
     }
 
     public async Task<IReadOnlyList<FACILITY_RATE>> ListFacilityRatesAsync(string facilityId, string? facilityType, CancellationToken cancellationToken = default)

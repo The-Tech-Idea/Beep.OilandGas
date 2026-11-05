@@ -1,0 +1,58 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e44]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e45]
+    - paragraph [ref=f1e46]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e47]:
+      - button "Use read-only unmapped profile" [ref=f1e48] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e50] [cursor=pointer]
+      - button "Switch other company" [ref=f1e52] [cursor=pointer]
+      - button "Switch other account" [ref=f1e54] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e56] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e58] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [disabled]
+      - button "Retain an unrecorded competing start" [ref=f1e60] [cursor=pointer]
+      - button "Retain a different unrecorded report" [disabled]
+      - button "Show actual start recovery" [ref=f1e62] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e64] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f1e66] [cursor=pointer]
+      - button "Show actual reporting closure" [ref=f1e68] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=f1e70]:
+    - heading "Reporting responsibility and closure" [level=1] [ref=f1e71]
+    - group [ref=f1e72]:
+      - link "Drilling workspace" [ref=f1e73] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=f1e75] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload reporting status" [ref=f1e80] [cursor=pointer]
+    - generic [ref=f1e110]:
+      - heading "Original reporting responsibility" [level=2] [ref=f1e111]
+      - paragraph [ref=f1e112]: Company tenant / company · Reader execution-recorder
+      - paragraph [ref=f1e113]: Original drilling program · Well recorded-well/one · Original FIELD original-field/واحد
+      - paragraph [ref=f1e114]: Accountable sender execution-recorder · ConfiguredExecutionAssigner / EXECUTION_COORDINATION
+      - paragraph [ref=f1e115]: Reporting role ConfiguredReportingRole · Workspaces SITE-1
+      - paragraph [ref=f1e116]: Pending reporting tasks 0 · Checked 2026-10-27 04:51:56Z UTC
+      - link "Open observed report history" [ref=f1e117] [cursor=pointer]:
+        - /url: /drilling/program-execution/reports?reviewId=drilling-program-review-A76F42CCABCA9047C16D3DB932DC3AF51EDBBCA090C48CAE37B23FA8657869D2
+    - generic [ref=f1e119]:
+      - heading "Recorded reporting closure" [level=2] [ref=f1e120]
+      - generic [ref=f1e121]: This original reporting responsibility is closed. Its original recipients and acceptance signoff remain recorded.
+      - paragraph [ref=f1e127]: Closed by execution-recorder · ConfiguredExecutionAssigner / EXECUTION_COORDINATION · Actual UTC 2026-10-27 04:47:55Z
+      - paragraph [ref=f1e128]: Checked independent acceptance; close original reporting after all work completed.
+      - generic [ref=f1e129]: The acceptance and test evidence below is the historical snapshot checked for this closure. Reloading this history does not requalify current physical tests or authorize construction acceptance, WELL changes, financial actuals or production release.
+      - generic [ref=f1e136]:
+        - heading "Original physical completion acceptance evidence" [level=3] [ref=f1e137]
+        - paragraph [ref=f1e138]: Claim drilling-report-265246D9558733DD5B0D69DF458A355D740FDD0AEB84751D306A099E16BC15C5; independent reviewer completion-inspector-1 / ConfiguredCompletionReviewer / COMPLETION-1; actual acceptance 2026-10-27 04:39:08Z UTC
+        - paragraph [ref=f1e139]: "Test 1: Signed test certificate / site reference 42"
+        - paragraph [ref=f1e140]: Native well recorded-well/one / source LAB-CERTIFICATES / type PRESSURE_TEST / run run-1 / test test-1; recorded result code RECORDED_RESULT_CODE
+        - paragraph [ref=f1e141]: Criteria Approved acceptance criteria / specification 42; reviewer-verified certificate UTC evidence Signed UTC certificate / reference Signed test certificate / site reference 42; reported test UTC 2026-10-27 04:38:58Z
+        - paragraph [ref=f1e142]: Native recorded date 2026-10-27 04:38:58; created by lab-recorder; last changed by lab-recorder; checked native revision A54A89977D60E528B4770691572F3851E15FC2B4AA3BB5B32356B3726C8401DF
+        - paragraph
+        - paragraph [ref=f1e143]: Independent checked certificate meets the referenced acceptance criteria
+        - paragraph [ref=f1e144]: "Test 2: Signed cement certificate / site reference 43"
+        - paragraph [ref=f1e145]: Native well recorded-well/one / source LAB-CERTIFICATES / type PRESSURE_TEST / run run-1 / test test-2; recorded result code RECORDED_RESULT_CODE
+        - paragraph [ref=f1e146]: Criteria Approved acceptance criteria / specification 42; reviewer-verified certificate UTC evidence Signed UTC certificate / reference Signed cement certificate / site reference 43; reported test UTC 2026-10-27 04:38:58Z
+        - paragraph [ref=f1e147]: Native recorded date 2026-10-27 04:38:58; created by lab-recorder; last changed by lab-recorder; checked native revision E93310488A224A9793C04EF49504493B579EB58577C99BB8EAD3316CCF451727
+        - paragraph
+        - paragraph [ref=f1e148]: Independent checked certificate meets the referenced acceptance criteria
+        - generic [ref=f1e149]: These are the independent reviewer's explicit certificate and criteria signoffs. The app does not execute physical tests, infer native timezones or compute passing thresholds.

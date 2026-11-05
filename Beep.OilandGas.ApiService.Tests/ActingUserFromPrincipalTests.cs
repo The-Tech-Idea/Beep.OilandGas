@@ -8,7 +8,6 @@ using Beep.OilandGas.ApiService.Controllers.PPDM39;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DataManagement;
-using Beep.OilandGas.UserManagement.Contracts.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -197,7 +196,7 @@ public sealed class ActingUserFromPrincipalTests
     public async Task InsertIsRecordedAgainstThePrincipalEvenWhenTheQueryNamesSomeoneElse()
     {
         var data = new Mock<IPPDM39DataService>(MockBehavior.Strict);
-        data.Setup(x => x.InsertEntityAsync("WELL", It.IsAny<Dictionary<string, object>>(), "real-actor", "PPDM39"))
+        data.Setup(x => x.InsertEntityAsync("WELL", It.IsAny<Dictionary<string, object>>(), "real-actor", null))
             .ReturnsAsync(new GenericEntityResponse { Success = true });
         var controller = new PPDM39DataController(data.Object, NullLogger<PPDM39DataController>.Instance,
             Mock.Of<IProgressTrackingService>(), new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
@@ -209,26 +208,12 @@ public sealed class ActingUserFromPrincipalTests
         var response = await controller.InsertEntity("WELL", body.RootElement);
 
         Assert.IsType<OkObjectResult>(response.Result);
-        data.Verify(x => x.InsertEntityAsync("WELL", It.IsAny<Dictionary<string, object>>(), "real-actor", "PPDM39"), Times.Once);
+        data.Verify(x => x.InsertEntityAsync("WELL", It.IsAny<Dictionary<string, object>>(), "real-actor", null), Times.Once);
         data.VerifyNoOtherCalls();
     }
 
-    [Fact]
-    public async Task AccessScopeIsReadForThePrincipalNotForAQueriedUser()
-    {
-        var security = new Mock<IRowLevelSecurityService>(MockBehavior.Strict);
-        security.Setup(x => x.GetUserAccessibleFieldsAsync("real-actor")).ReturnsAsync(new[] { "FIELD-1" });
-        var controller = new RowLevelSecurityController(security.Object, NullLogger<RowLevelSecurityController>.Instance)
-        {
-            ControllerContext = SignedIn("real-actor", "?userId=someone-else")
-        };
-
-        var response = await controller.GetAccessibleFields();
-
-        Assert.Equal(new[] { "FIELD-1" }, Assert.IsType<string[]>(Assert.IsType<OkObjectResult>(response).Value));
-        security.Verify(x => x.GetUserAccessibleFieldsAsync("real-actor"), Times.Once);
-        security.VerifyNoOtherCalls();
-    }
+    // Scope-query actor and company checks are covered with the real account gate and company store in
+    // the focused CompanyRowSecurityTests.Controller_scope_queries_ignore_subject_query_strings_and_use_fresh_actor_authority.
 
     private static ClaimsPrincipal Principal(params Claim[] claims) => new(new ClaimsIdentity(claims, "test"));
 

@@ -1,0 +1,53 @@
+{
+  "observed_at_utc": "2026-10-20T08:31:18.864108+00:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "branch": "master",
+  "dirty_tree": true,
+  "scope": "Complete native return coordinator and participant in focused rollback-aware provider fixture. Report, physical and closure DTO sources are controlled seams; no API activation, native lifecycle closure, installation-at-original-work, provider or release claim.",
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceQualifiedReturnParticipant.cs",
+      "sha256": "1925fd7566e2f204b429d6fe2a1f7559034f5a933a21d822e7ae756622a29125"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturnCommand.cs",
+      "sha256": "21eefd9d82889bee7de3e7ba6597472023273083344d1b4756bc15bc6041339f"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturnStatus.cs",
+      "sha256": "bd858c3f679648fce72012fb52b5b5bacbecebe8c7d53987c7485bc9c474e8c5"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.cs",
+      "sha256": "2ac57501fb9a6b9abf6e7091933ac25345c1e2d30df9730eea5e13ccdb9f79cc"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "34eea25aea651a3d724d24b5ff9f2dd7070a6c05ba33745f50eb13c33ae5c75a"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "89c103185edbf707d388fa5cffc22c2f5793de1b51e6a0161e82293938dde0d2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "f6676e306a57ae2373acfc6b28818db6a3da3c42c5325aa37baaaba23f1720b9"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "a2852b7290751df3d54b8f0df63cad5563b836e1d7138c7bf58ca526fe3621b7"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnTests.cs",
+      "sha256": "b3430915d12759ce2b580057529f24b3edaefea4c81430318ab4e56db7107039"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "b55bfe02c5647d4566f1796931e62291fee521864c3acd4406f8470a9060dacf"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+      "sha256": "b2f1529b5d46444551ef03826b0a293bf6c3a4bbc8b8a63df8c55c2fa2073ba2"
+    }
+  ]
+}

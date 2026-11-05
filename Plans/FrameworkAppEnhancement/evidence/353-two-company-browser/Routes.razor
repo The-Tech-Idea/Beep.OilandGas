@@ -1,0 +1,19 @@
+<MudRTLProvider RightToLeft="true">
+@inject Scope Scope
+<MudThemeProvider /><MudPopoverProvider /><MudDialogProvider /><MudSnackbarProvider />
+<MudPaper Outlined="true" Class="ma-4 pa-4">
+    <MudText Typo="Typo.h5" HtmlTag="h1">Isolated assigned HSE navigation</MudText>
+    <MudText>Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap">
+        <MudButton Href="@($"/ppdm39/process/instances/{Uri.EscapeDataString(Scope.WorkflowId)}")">Open assigned HSE process</MudButton>
+        <MudButton Href="/">Fixture home</MudButton>
+        <MudButton OnClick="Scope.Other">Switch other company</MudButton>
+        <MudButton OnClick="Scope.Restore">Restore original company</MudButton>
+    </MudStack>
+</MudPaper>
+<Router AppAssembly="typeof(App).Assembly">
+    <Found Context="routeData"><RouteView RouteData="routeData" /></Found>
+    <NotFound><MudText>Fixture route unavailable.</MudText></NotFound>
+</Router>
+
+</MudRTLProvider>

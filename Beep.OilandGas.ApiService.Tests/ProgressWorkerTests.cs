@@ -17,7 +17,19 @@ public class ProgressWorkerTests
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
-    private static ProgressTrackingService Create(Func<string, object?[], CancellationToken, Task> send, TimeProvider? clock = null,
+    private sealed class Harness(CompanyProgressState state, IHubContext<ProgressHub> hub,
+        Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter failures)
+        : ProgressTrackingService(state, Beep.OilandGas.ApiService.Tests.Infrastructure.TestCompanyProgress.Tenant(),
+            NullLogger<ProgressTrackingService>.Instance), IDisposable
+    {
+        private readonly ProgressTrackingPublisher _publisher = new(state, hub,
+            (exception, operation, outcome) => failures.ReportHandled(exception, operation, outcome, TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded));
+        public Task StartAsync(CancellationToken token) => _publisher.StartAsync(token);
+        public Task StopAsync(CancellationToken token) => _publisher.StopAsync(token);
+        public void Dispose() => _publisher.Dispose();
+    }
+
+    private static Harness Create(Func<string, object?[], CancellationToken, Task> send, TimeProvider? clock = null,
         Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter? failures = null)
     {
         var client = new Mock<IClientProxy>();
@@ -25,8 +37,8 @@ public class ProgressWorkerTests
             .Returns(send);
         var hub = new Mock<IHubContext<ProgressHub>> { DefaultValue = DefaultValue.Mock };
         hub.Setup(h => h.Clients.Group(It.IsAny<string>())).Returns(client.Object);
-        return new(hub.Object, NullLogger<ProgressTrackingService>.Instance,
-            failures ?? new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), clock: clock);
+        return new(new CompanyProgressState(clock), hub.Object,
+            failures ?? new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
     }
 
     [Fact]
@@ -36,7 +48,7 @@ public class ProgressWorkerTests
         var complete = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var service = Create((_, args, _) =>
         {
-            seen.Enqueue(((JsonElement)args[0]!).GetProperty("progressPercentage").GetInt32());
+            seen.Enqueue(((CompanyProgressNotification)args[0]!).Payload.GetProperty("progressPercentage").GetInt32());
             if (seen.Count == 3) complete.TrySetResult();
             return Task.CompletedTask;
         });
@@ -119,17 +131,18 @@ public class ProgressWorkerTests
     public void PollingAndCallerMutationCannotChangeStoredOrTerminalStatus()
     {
         using var service = Create((_, _, _) => Task.CompletedTask);
-        var input = new ProgressUpdate { OperationId = "id", StatusMessage = "original" };
+        var id = service.StartOperation("test", "starting");
+        var input = new ProgressUpdate { OperationId = id, StatusMessage = "original" };
         service.UpdateProgress(input);
         input.StatusMessage = "mutated";
-        Assert.Equal("original", service.GetProgress("id")!.StatusMessage);
-        service.CompleteOperation("id", true);
-        var returned = service.GetProgress("id")!;
+        Assert.Equal("original", service.GetProgress(id)!.StatusMessage);
+        service.CompleteOperation(id, true);
+        var returned = service.GetProgress(id)!;
         returned.IsComplete = false;
-        service.UpdateProgress("id", 1, "late");
-        service.UpdateProgress(new ProgressUpdate { OperationId = "id", IsComplete = false });
-        service.CancelOperation("id");
-        var status = service.GetProgress("id")!;
+        service.UpdateProgress(id, 1, "late");
+        service.UpdateProgress(new ProgressUpdate { OperationId = id, IsComplete = false });
+        service.CancelOperation(id);
+        var status = service.GetProgress(id)!;
         Assert.True(status.IsComplete);
         Assert.False(status.HasError);
         Assert.Equal(100, status.ProgressPercentage);

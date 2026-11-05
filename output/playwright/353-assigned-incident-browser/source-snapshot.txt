@@ -1,0 +1,45 @@
+### Page
+- Page URL: http://127.0.0.1:60559/ppdm39/process/instances/hse-process-assigned-original
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e16]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=e17]
+    - paragraph [ref=e18]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=e19]:
+      - link "Open assigned HSE process" [active] [ref=e20] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=e22] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=e24] [cursor=pointer]
+      - button "Restore original company" [ref=e26] [cursor=pointer]
+  - generic [ref=e30]:
+    - link "Assigned work" [ref=e31] [cursor=pointer]:
+      - /url: /tasks/inbox
+    - heading "Source process" [level=5] [ref=e37]
+    - generic [ref=e38]:
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43] [cursor=pointer]:
+            - combobox "Active field" [ref=e44]: North FIELD
+            - group "Active field"
+          - generic: Active field
+        - generic [ref=e49]: Choose a FIELD for available workbenches in the selected company.
+      - button "Refresh fields" [ref=e53] [cursor=pointer]
+    - button "Reload recorded process" [ref=e59] [cursor=pointer]
+    - paragraph [ref=e65]: "Company: tenant / company"
+    - paragraph [ref=e66]: "FIELD: field"
+    - heading "HSE_INCIDENT_REPORTING · IN_PROGRESS" [level=6] [ref=e67]
+    - paragraph [ref=e68]: "Source: HSE_INCIDENT / case/شركة?one#2"
+    - paragraph [ref=e69]: "Started: 2026-10-28T10:00:25.1771553Z by originator"
+    - paragraph [ref=e70]: "Current state: PENDING_CLOSE_OUT · Current step: INC_CLOSURE"
+    - paragraph [ref=e71]: Continue investigation, corrective work, independent verification or final closure on the recorded incident.
+    - link "Open recorded incident workflow" [ref=e72] [cursor=pointer]:
+      - /url: /ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+    - heading "Recorded steps" [level=6] [ref=e74]
+    - paragraph [ref=e75]: "Final incident closure (INC_CLOSURE / step-instance) · PENDING · Assigned: actor · Role: Safety"
+    - heading "Recorded history" [level=6] [ref=e76]
+    - paragraph [ref=e77]: No recorded history entries were returned.
+    - paragraph [ref=e78]: Generic state actions are unavailable for an incident. Use its recorded incident workflow for the assigned reviewed stage.
+```

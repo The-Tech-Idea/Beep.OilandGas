@@ -1,0 +1,72 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase 4, initial physical permit ledger schema only",
+  "observed_at": "2026-10-29T18:44:54.861916+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; existing application work preserved; no commit or push",
+  "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~SetupInstalledSqliteMigratesPermitApplicationLedger --logger console;verbosity=minimal",
+  "method": "SetupInstalledSqliteMigratesPermitApplicationLedger",
+  "attempts": [
+    {
+      "log": "oilgas-354-provider-01.log",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "duration": "4s",
+      "cause": "Canonical permit ledger classes did not declare primary keys; Beep Migration refused creation."
+    },
+    {
+      "log": "oilgas-354-provider-02.log",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "3s",
+      "scope": "Corrected keys, physical columns, no repeated create."
+    },
+    {
+      "log": "oilgas-354-provider-03.log",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "duration": "3s",
+      "cause": "Fixture incorrectly expected empty repeat plan; Beep intentionally emits UpToDate markers."
+    },
+    {
+      "log": "oilgas-354-provider-04.log",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "3s",
+      "scope": "Final exact single physical keys, required columns, three strict UpToDate results."
+    }
+  ],
+  "distinct_cases": 1,
+  "criteria": [
+    "Actual SetupDriverService.InstallAsync with pinned SQLite connector 1.0.58 and provider 1.0.119, actual Beep loader; no manual assembly scan.",
+    "Current installer authority callback invoked before/after.",
+    "Actual physical isolated SQLite database opened using installed provider.",
+    "Beep Migration creates PERMIT_APPLICATION, PERMIT_STATUS_HISTORY and PERMIT_APPLICATION_COMMAND from canonical Data classes.",
+    "Exactly one expected physical key in each table; header status/submitter/facility type and ownership/FIELD columns read back.",
+    "Repeat plan contains exactly three UpToDate operations and no structural action."
+  ],
+  "limits": [
+    "Configuration catalog and authority callbacks are mocks; not actual application authorization.",
+    "Cached packages reused; no fresh network-download claim.",
+    "Only initial three-table schema, not the full PERMITS manifest/supporting tables or existing database key evolution.",
+    "No typed row roundtrip, native lifecycle transaction/rollback/recovery/restart durability, API HTTP, OIDC, two-company, legal policy or production performance qualification.",
+    "Existing analyzer-project and package vulnerability-feed warnings retained; no unrelated tests selected."
+  ],
+  "sha256": {
+    "TheTechIdea.Data/OilGas/PERMIT_APPLICATION.cs": "0e8aeabb1e9565842873e359fa89742cef93acaa06785caaaa87ce856f4bb47c",
+    "TheTechIdea.Data/OilGas/PERMIT_STATUS_HISTORY.cs": "595ca7605b142993c9093d6842f8f369313129a290a48c909c03bb66667ff442",
+    "TheTechIdea.Data/OilGas/PERMIT_APPLICATION_COMMAND.cs": "e64a603672e49759454a73e4a2d2f49f227534b300c59e373e7b413e172c0675",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "fde067b98105e53da7bfb0900f7a4cbb23cf4da51be914b3f213dbfbb91d0841",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "1b0ee305ef5a9780b069cabd7edc00b8659b0659ac46b6d76e5de517bc45111f",
+    "Beep.OilandGas.ApiService/Services/SetupDriverService.cs": "eda491a5fc53f29603fcb4b07573c6b4500fafe473b341c5c12114b09f0cc9ec",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "b824e462ee5518d43a77295903c9395a0e109752729cb1676e0f3bf4a158aced",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "3e281cc0ce2c48d1ecd2f807c153b2d562183ea4577d7884f81be962ceaf125c"
+  }
+}

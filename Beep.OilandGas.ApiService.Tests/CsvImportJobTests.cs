@@ -12,32 +12,56 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.ConfigUtil;
+using TheTechIdea.Beep.Utilities;
+using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Repository;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 using FileImportResult = Beep.OilandGas.PPDM39.Core.FileImportResult;
 using FileImportError = Beep.OilandGas.PPDM39.Core.FileImportError;
 
 namespace Beep.OilandGas.ApiService.Tests;
 
-public class CsvImportJobTests
+public class CsvImportJobTests : IDisposable
 {
+    private sealed class Context(DbContextOptions<Context> options) : RepositoryDbContext(options);
+    private readonly SqliteConnection database = new("Data Source=:memory:");
+    private readonly Context db;
+    private readonly CompanyModuleConnection company;
+
+    public CsvImportJobTests()
+    {
+        database.Open();
+        db = new(new DbContextOptionsBuilder<Context>().UseSqlite(database).Options);
+        db.Database.EnsureCreated();
+        var configured = new ConnectionProperties { ConnectionName = "selected", DatabaseType = DataSourceType.SqlServer, Host = "server", Database = "assets" };
+        var config = new Mock<IConfigEditor>(); config.SetupGet(editor => editor.DataConnections).Returns([configured]);
+        var editor = new Mock<IDMEEditor>(); editor.SetupGet(value => value.ConfigEditor).Returns(config.Object);
+        var scope = new CompanyScope("tenant", "company");
+        var access = new Mock<IRepositoryAccessService>();
+        access.Setup(value => value.GetCompanyAccessAsync("real-actor", scope, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RepositoryCompanyAccess(scope, ["Admin"], [Beep.OilandGas.Models.Data.Security.PermissionConstants.DataManagement.ImportData]));
+        var companies = new RepositoryCompanyContextResolver(access.Object);
+        var tenant = new RepositoryTenantContext(); tenant.SelectCompany(companies.ResolveAsync("real-actor", scope).GetAwaiter().GetResult()!);
+        db.Add(new AppTenant { TenantId = scope.TenantId });
+        db.Add(new AppModuleConnection { TenantId = scope.TenantId, ConnectionKey = "SELECTED", AssignedByUserId = "admin", PhysicalTargetKey = ModuleDatabaseTarget.Key(editor.Object, configured) });
+        db.Add(new ModuleDatabaseBinding { TenantId = scope.TenantId, ModuleId = "PPDM_CORE", ConnectionName = "selected", ConnectionKey = "SELECTED", ConcurrencyStamp = "v1" });
+        db.SaveChanges();
+        company = new(new(db, editor.Object, tenant), tenant, companies);
+    }
+
+    public void Dispose() { db.Dispose(); database.Dispose(); }
     [Theory]
     [InlineData(BackgroundOperationState.Failed)]
     [InlineData(BackgroundOperationState.Cancelled)]
-    public async Task ProgressPollingReconcilesJobsThatNeverReachTheRunner(BackgroundOperationState state)
+    public void ProgressPollingReconcilesJobsThatNeverReachTheRunner(BackgroundOperationState state)
     {
-        var sent = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var client = new Mock<Microsoft.AspNetCore.SignalR.IClientProxy>();
-        client.Setup(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object?[]>(), It.IsAny<CancellationToken>()))
-            .Returns(() => { sent.TrySetResult(); return Task.CompletedTask; });
-        var hub = new Mock<Microsoft.AspNetCore.SignalR.IHubContext<ProgressHub>> { DefaultValue = DefaultValue.Mock };
-        hub.Setup(h => h.Clients.Group(It.IsAny<string>())).Returns(client.Object);
         var queue = new Mock<IBackgroundOperationQueue>();
-        using var service = new ProgressTrackingService(hub.Object, NullLogger<ProgressTrackingService>.Instance,
-            new RecordingFailureReporter(), queue.Object);
+        var service = new ProgressTrackingService(new CompanyProgressState(), TestCompanyProgress.Tenant(),
+            NullLogger<ProgressTrackingService>.Instance, queue.Object);
         var id = service.StartOperation("ImportCsv", "queued");
-        await service.StartAsync(default);
-        await sent.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        await service.StopAsync(default);
         queue.Setup(q => q.GetStatus(CsvImportJob.QueueKey(id))).Returns(new BackgroundOperationStatus(CsvImportJob.QueueKey(id), state));
         var status = service.GetProgress(id)!;
         Assert.True(status.IsComplete);
@@ -67,7 +91,7 @@ public class CsvImportJobTests
         var progress = new Mock<IProgressTrackingService>();
         var executor = new Mock<ICsvImportExecutor>();
         string? tempPath = null;
-        var job = new CsvImportJob("id", "WELL", "selected", "actor", true, new byte[] { 1, 2, 3 });
+        var job = new CsvImportJob("id", "WELL", company.Company.Scope, await company.ResolveAsync(), company.Company.UserId, true, new byte[] { 1, 2, 3 });
         executor.Setup(e => e.ExecuteAsync(job, It.IsAny<string>())).Returns(async (CsvImportJob _, string path) =>
         {
             tempPath = path;
@@ -75,7 +99,7 @@ public class CsvImportJobTests
             if (outcome == 2) throw new InvalidOperationException("provider detail");
             return new FileImportResult { SuccessCount = 1, Errors = outcome == 1 ? new() { new FileImportError() } : new() };
         });
-        var worker = new CsvImportJobRunner(executor.Object, progress.Object);
+        var worker = new CsvImportJobRunner(executor.Object, progress.Object, company);
         if (outcome == 0) await worker.RunAsync(job, default);
         else await Assert.ThrowsAsync<InvalidOperationException>(() => worker.RunAsync(job, default));
         Assert.NotNull(tempPath);
@@ -87,16 +111,16 @@ public class CsvImportJobTests
     public async Task CancelledWorkerNeverInvokesRepository()
     {
         var executor = new Mock<ICsvImportExecutor>(MockBehavior.Strict);
-        var worker = new CsvImportJobRunner(executor.Object, Mock.Of<IProgressTrackingService>());
+        var worker = new CsvImportJobRunner(executor.Object, Mock.Of<IProgressTrackingService>(), company);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => worker.RunAsync(
-            new("id", "WELL", "db", "actor", true, new byte[] { 1 }), new CancellationToken(true)));
+            new("id", "WELL", company.Company.Scope, await company.ResolveAsync(), company.Company.UserId, true, new byte[] { 1 }), new CancellationToken(true)));
         executor.VerifyNoOtherCalls();
     }
 
-    private static PPDM39ImportExportController Controller(IBackgroundOperationQueue queue, IProgressTrackingService progress, bool actor = true) => new(
+    private PPDM39ImportExportController Controller(IBackgroundOperationQueue queue, IProgressTrackingService progress, bool actor = true) => new(
         Mock.Of<IDMEEditor>(), Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(),
         Mock.Of<IPPDMMetadataRepository>(), NullLogger<PPDM39ImportExportController>.Instance,
-        NullLoggerFactory.Instance, progress, queue, new RecordingFailureReporter())
+        NullLoggerFactory.Instance, progress, queue, new RecordingFailureReporter(), actor ? company : new(null!, new(), null!), Mock.Of<IPPDMRowAccessPolicy>())
     {
         ControllerContext = new() { HttpContext = new DefaultHttpContext
         { User = new ClaimsPrincipal(new ClaimsIdentity(actor ? new[] { new Claim("party_id", "real-actor") } : Array.Empty<Claim>(), "test")) } }

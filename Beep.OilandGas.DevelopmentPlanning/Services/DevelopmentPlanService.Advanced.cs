@@ -17,7 +17,6 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
     /// </summary>
     public partial class DevelopmentPlanService
     {
-        private readonly ILogger<DevelopmentPlanService>? _logger;
 
         /// <summary>
         /// Analyzes field development strategy based on field characteristics, reserves, and market conditions.
@@ -1412,7 +1411,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
 
         private string IdentifyCriticalPath(List<DevelopmentPhase> phases)
         {
-            return "Design → Procurement → Execution";
+            return "Design â†’ Procurement â†’ Execution";
         }
 
         private CostComparisonResult CompareCosts(List<DevelopmentStrategy> strategies)

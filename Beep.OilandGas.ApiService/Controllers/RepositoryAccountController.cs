@@ -21,7 +21,8 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [ApiController]
 [Route("api/auth/repository")]
 [Authorize(Policy = RepositoryAuthorization.SignedIn)]
-public sealed class RepositoryAccountController(IRepositoryAccessService access, IFailureReporter failures) : ControllerBase
+public sealed class RepositoryAccountController(IRepositoryAccessService access, IFailureReporter failures,
+    RepositoryCompanyContextResolver companyContext) : ControllerBase
 {
     [HttpGet("me")]
     [ProducesResponseType<RepositoryUserAccess>(StatusCodes.Status200OK)]
@@ -47,6 +48,35 @@ public sealed class RepositoryAccountController(IRepositoryAccessService access,
                 statusCode: StatusCodes.Status403Forbidden, title: RepositoryAccountRefusals.Deactivated);
 
         return Ok(result);
+    }
+
+    [HttpGet("me/companies")]
+    [ProducesResponseType<CompanyScope[]>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> MyCompanies(CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        var userId = User.FindActingUserId();
+        if (userId is null)
+            return Problem("Your OilGas account could not be resolved just now. Try again shortly.",
+                statusCode: StatusCodes.Status503ServiceUnavailable, title: RepositoryAccountRefusals.Unresolved);
+        return Ok(await access.GetCompaniesAsync(userId, cancellationToken));
+    }
+
+    [HttpGet("me/company-access")]
+    [ProducesResponseType<RepositoryCompanyAccess>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MyCompanyAccess([FromQuery] string tenantId,
+        [FromQuery] string businessAssociateId, CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        var userId = User.FindActingUserId();
+        if (userId is null)
+            return Problem("Your OilGas account could not be resolved just now. Try again shortly.",
+                statusCode: StatusCodes.Status503ServiceUnavailable, title: RepositoryAccountRefusals.Unresolved);
+        if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(businessAssociateId))
+            return BadRequest(new { Error = "Select a tenant and company." });
+        var result = await companyContext.ResolveAsync(userId, new(tenantId, businessAssociateId), cancellationToken);
+        return result is null ? Forbid() : Ok(result.ToAccess());
     }
 
     /// <summary>What the last active administrator is told when they try to delete their account.</summary>
@@ -91,7 +121,7 @@ public sealed class RepositoryAccountController(IRepositoryAccessService access,
         // handler answers (409) in its own words; the save itself losing a race is answered here.
         try
         {
-            await users.UpdateAsync(userId, new RepositoryUserUpdate(account.FullName, false, account.ConcurrencyStamp));
+            await users.DeactivateSelfAsync();
             return NoContent();
         }
         catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException changed)

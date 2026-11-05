@@ -1,0 +1,25 @@
+{
+  "observed_at_utc": "2026-10-21T07:06:19.6151496Z",
+  "sources": [
+    {
+      "path": "Beep.OilandGas.Web/Services/MaintenanceAssetReturnState.cs",
+      "sha256": "33f1f7f11e2ff4a6655ff36bca8665741b026543442204fa64e9367545735be4"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnPanel.razor",
+      "sha256": "a676043939ff800ca441d8efa8b2749dd37aa35554d65ecd77c878c02a1c9cf9"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStateTests.cs",
+      "sha256": "8191c81cd6776f550c756c29809055ca0c9be54c314e8f5149b8a4183dd9dd3b"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "76cba1aa36c5d8d0dedf635c3b0342b2a2ac6b246208e3c96db4a843da587169"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "62d38acdfd5d7431575bc4544d2108fdc299680f5471f491dc6de9da144219df"
+    }
+  ]
+}

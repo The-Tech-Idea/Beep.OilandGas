@@ -1,4 +1,5 @@
 using System.Data;
+using Microsoft.EntityFrameworkCore;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.Repository;
@@ -19,11 +20,21 @@ namespace Beep.OilandGas.ApiService.Services;
 /// </remarks>
 public sealed class WorkflowBackgroundConnection(IRepositoryReadinessService readiness,
     ModuleConnectionResolver resolver, IDMEEditor editor, IEnumerable<IModuleSetup> modules,
-    IFailureReporter failures)
+    IFailureReporter failures, RepositoryDbContext repository, RepositoryTenantContext tenant)
 {
-    public async Task<string?> ResolveAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<string>> ListTenantsAsync(CancellationToken cancellationToken)
+    {
+        if (await readiness.CheckAsync(cancellationToken) != RepositoryReadiness.Ready) return [];
+        return await (from binding in repository.ModuleDatabases.AsNoTracking()
+                      join owner in repository.Set<AppTenant>().AsNoTracking() on binding.TenantId equals owner.TenantId
+                      where binding.ModuleId == "LIFECYCLE" && owner.IsActive
+                      select owner.TenantId).Distinct().OrderBy(x => x).ToArrayAsync(cancellationToken);
+    }
+
+    public async Task<string?> ResolveAsync(string tenantId, CancellationToken cancellationToken)
     {
         if (await readiness.CheckAsync(cancellationToken) != RepositoryReadiness.Ready) return null;
+        tenant.SelectTenant(tenantId);
         var module = modules.Single(x => x.ModuleId == "LIFECYCLE");
         var name = await resolver.FindAsync(module.ModuleId, cancellationToken);
         if (name is null) return null;

@@ -54,7 +54,7 @@ public class ProductionDashboardControllerTests
         Assert.NotNull(typeof(ProductionDashboardController).GetCustomAttribute<AuthorizeAttribute>());
         var guard = typeof(ProductionDashboardController).GetMethod("Get")!.GetCustomAttribute<RequireAssetAccessAttribute>()!;
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
-        access.Setup(a => a.CheckAssetAccessAsync("user", "field-b", "FIELD", null)).ReturnsAsync(new AccessCheckResponse { HasAccess = allowed });
+        access.Setup(a => a.CheckAssetAccessAsync("user", "field-b", "FIELD", null, null)).ReturnsAsync(new AccessCheckResponse { HasAccess = allowed });
         using var services = new ServiceCollection().AddSingleton(access.Object).BuildServiceProvider();
         var http = new DefaultHttpContext { RequestServices = services, User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("party_id", "user") }, "test")) };
         var routes = new RouteData(); routes.Values["fieldId"] = "field-b";

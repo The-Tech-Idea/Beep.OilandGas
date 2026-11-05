@@ -16,16 +16,12 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
     public class AssetHierarchyController : ControllerBase
     {
         private readonly IAssetHierarchyService _assetHierarchyService;
-        private bool IsLocalUser => User.Identity?.IsAuthenticated == true
-            && !string.IsNullOrWhiteSpace(User.FindActingUserId());
-        private bool IsAdministrator => IsLocalUser && User.IsInRole("Administrator");
-        // Self or Administrator: the route/body id names the subject whose hierarchy is read, never the actor.
-        private bool CanAccess(string targetUserId) => IsLocalUser
-            && (User.FindActingUserId() == targetUserId || IsAdministrator);
+        private readonly CompanyModuleConnection _company;
 
-        public AssetHierarchyController(IAssetHierarchyService assetHierarchyService)
+        public AssetHierarchyController(IAssetHierarchyService assetHierarchyService, CompanyModuleConnection company)
         {
             _assetHierarchyService = assetHierarchyService;
+            _company = company;
         }
 
         /// <summary>
@@ -36,13 +32,14 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult<AssetHierarchyNode>> GetAssetHierarchy(
             string organizationId,
             [FromQuery] string? rootAssetId = null,
-            [FromQuery] string? rootAssetType = null)
+            [FromQuery] string? rootAssetType = null,
+            [FromQuery] string? rootFacilityType = null)
         {
-            if (!IsAdministrator) return Forbid();
+            await _company.ResolveHierarchyCompanyAsync(null);
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
             var hierarchy = await _assetHierarchyService.GetAssetHierarchyAsync(
-                organizationId, rootAssetId, rootAssetType);
+                organizationId, rootAssetId, rootAssetType, rootFacilityType);
             
             if (hierarchy == null)
                 return NotFound(new { message = "Hierarchy not found" });
@@ -58,13 +55,14 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string targetUserId,
             [FromQuery] string? organizationId = null,
             [FromQuery] string? rootAssetId = null,
-            [FromQuery] string? rootAssetType = null)
+            [FromQuery] string? rootAssetType = null,
+            [FromQuery] string? rootFacilityType = null)
         {
-            if (!CanAccess(targetUserId)) return Forbid();
+            await _company.ResolveHierarchyCompanyAsync(targetUserId);
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
             var hierarchy = await _assetHierarchyService.GetAssetHierarchyForUserAsync(
-                targetUserId, organizationId, rootAssetId, rootAssetType);
+                targetUserId, organizationId, rootAssetId, rootAssetType, rootFacilityType);
             
             if (hierarchy == null)
                 return NotFound(new { message = "Hierarchy not found" });
@@ -80,14 +78,15 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult<List<AssetHierarchyNode>>> GetAssetChildren(
             string assetId,
             string assetType,
-            [FromQuery] string? organizationId = null)
+            [FromQuery] string? organizationId = null,
+            [FromQuery] string? facilityType = null)
         {
-            if (!IsAdministrator) return Forbid();
+            await _company.ResolveHierarchyCompanyAsync(null);
             if (string.IsNullOrWhiteSpace(assetId))
                 return BadRequest(new { error = "Asset ID is required." });
             if (string.IsNullOrWhiteSpace(assetType))
                 return BadRequest(new { error = "Asset type is required." });
-            var children = await _assetHierarchyService.GetAssetChildrenAsync(assetId, assetType, organizationId);
+            var children = await _assetHierarchyService.GetAssetChildrenAsync(assetId, assetType, organizationId, facilityType);
             return Ok(children);
         }
 
@@ -99,14 +98,15 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         public async Task<ActionResult<List<AssetHierarchyNode>>> GetAssetPath(
             string assetId,
             string assetType,
-            [FromQuery] string? organizationId = null)
+            [FromQuery] string? organizationId = null,
+            [FromQuery] string? facilityType = null)
         {
-            if (!IsAdministrator) return Forbid();
+            await _company.ResolveHierarchyCompanyAsync(null);
             if (string.IsNullOrWhiteSpace(assetId))
                 return BadRequest(new { error = "Asset ID is required." });
             if (string.IsNullOrWhiteSpace(assetType))
                 return BadRequest(new { error = "Asset type is required." });
-            var path = await _assetHierarchyService.GetAssetPathAsync(assetId, assetType, organizationId);
+            var path = await _assetHierarchyService.GetAssetPathAsync(assetId, assetType, organizationId, facilityType);
             return Ok(path);
         }
 
@@ -116,7 +116,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpPost("validate-access")]
         public async Task<ActionResult<bool>> ValidateAccess([FromBody] ValidateAccessRequest request)
         {
-            if (!CanAccess(request.UserId)) return Forbid();
+            await _company.ResolveHierarchyCompanyAsync(request.UserId);
             var result = await _assetHierarchyService.ValidateAccessAsync(request.UserId, request.AssetPath);
             return Ok(result);
         }
@@ -128,7 +128,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<List<HierarchyConfig>>> GetHierarchyConfig(string organizationId)
         {
-            if (!IsAdministrator) return Forbid();
+            await _company.ResolveHierarchyCompanyAsync(null);
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
             var config = await _assetHierarchyService.GetHierarchyConfigAsync(organizationId);
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string organizationId,
             [FromBody] List<HierarchyConfig> config)
         {
-            if (!IsAdministrator) return Forbid();
+            await _company.ResolveHierarchyCompanyAsync(null);
             if (string.IsNullOrWhiteSpace(organizationId))
                 return BadRequest(new { error = "Organization ID is required." });
             var result = await _assetHierarchyService.UpdateHierarchyConfigAsync(organizationId, config);

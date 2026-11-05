@@ -36,7 +36,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             }
 
             var ppdmAssembly = typeof(ANL_ANALYSIS_REPORT).Assembly;
-            var modelAssembly = typeof(ModelEntityBase).Assembly;
+            // The shared base belongs to Data; locate persistent result models by a model owned by their assembly.
+            var modelAssembly = typeof(Beep.OilandGas.Models.Data.NodalAnalysis.NODAL_ANALYSIS_RESULT).Assembly;
 
             return FindEntityTypeInAssembly(ppdmAssembly, entityTypeName)
                 ?? FindEntityTypeInAssembly(modelAssembly, entityTypeName);

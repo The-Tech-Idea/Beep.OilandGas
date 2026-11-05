@@ -1,0 +1,26 @@
+### Page
+- Page URL: http://127.0.0.1:51176/ppdm39/permits/detail?applicationId=review%2F%D8%B4%D8%B1%D9%83%D8%A9%3F1
+### Snapshot
+```yaml
+- generic [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - generic [ref=f2e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=f2e10]:
+      - button "Fixture author" [ref=f2e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=f2e13] [cursor=pointer]
+      - button "Fixture read only" [ref=f2e15] [cursor=pointer]
+      - button "Fixture other FIELD" [active] [ref=f2e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=f2e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=f2e21] [cursor=pointer]
+      - link "HSE landing" [ref=f2e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=f2e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=f2e203]:
+    - heading "Recorded permit application" [level=1] [ref=f2e204]
+    - group [ref=f2e205]:
+      - link "Permit applications" [ref=f2e206] [cursor=pointer]:
+        - /url: /ppdm39/permits
+      - button "Reload recorded application" [ref=f2e208] [cursor=pointer]
+    - generic [ref=f2e277]: Company, account or FIELD changed. Reload the recorded application.
+```

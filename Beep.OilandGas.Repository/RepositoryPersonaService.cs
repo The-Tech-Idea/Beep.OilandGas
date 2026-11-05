@@ -6,7 +6,7 @@ using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Repository;
 
-public sealed class RepositoryPersonaService(RepositoryDbContext db)
+public sealed partial class RepositoryPersonaService(RepositoryDbContext db)
 {
     public async Task<AppPersona> SaveCatalogAsync(string code, PersonaCatalogUpdate request, string actor, CancellationToken token = default)
     {
@@ -33,18 +33,22 @@ public sealed class RepositoryPersonaService(RepositoryDbContext db)
     public Task<List<AppPersona>> CatalogAsync(CancellationToken token = default) => db.Set<AppPersona>().AsNoTracking()
         .Where(x => x.IsActive).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Code).ToListAsync(token);
 
-    public Task<AppUserPersona?> GetAsync(string userId, CancellationToken token = default) => db.Set<AppUserPersona>()
-        .AsNoTracking().SingleOrDefaultAsync(x => x.UserId == userId, token);
+    public Task<AppUserPersona?> GetAsync(string userId, CompanyScope company, CancellationToken token = default) => db.Set<AppUserPersona>()
+        .AsNoTracking().SingleOrDefaultAsync(x => x.UserId == userId && x.TenantId == company.TenantId && x.BusinessAssociateId == company.BusinessAssociateId, token);
 
-    public async Task<AppUserPersona> SaveAsync(string userId, PersonaProfileUpdate request, string actor, CancellationToken token = default)
+    public async Task<AppUserPersona> SaveAsync(string userId, PersonaProfileUpdate request, string actor,
+        CompanyScope company, IRepositoryAccessService access, CancellationToken token = default)
     {
         ValidateRequest(request);
         await ValidateUserAsync(userId, actor, token);
         await ValidatePersonaAsync(request.PersonaCode, token);
-        var profile = await db.Set<AppUserPersona>().SingleOrDefaultAsync(x => x.UserId == userId, token);
+        ArgumentNullException.ThrowIfNull(company); ArgumentNullException.ThrowIfNull(access);
+        await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, token);
+        var reviewed = await ReviewProfileAuthorityAsync(userId, actor, company, request.PersonaCode, access, token);
+        var profile = await db.Set<AppUserPersona>().SingleOrDefaultAsync(x => x.UserId == userId && x.TenantId == company.TenantId && x.BusinessAssociateId == company.BusinessAssociateId, token);
         CheckVersion(profile?.ConcurrencyStamp, request.ConcurrencyStamp);
         var before = profile is null ? null : JsonSerializer.Serialize(profile);
-        if (profile is null) { profile = new AppUserPersona { UserId = userId }; db.Add(profile); }
+        if (profile is null) { profile = new AppUserPersona { UserId = userId, TenantId = company.TenantId, BusinessAssociateId = company.BusinessAssociateId }; db.Add(profile); }
         profile.PersonaCode = request.PersonaCode;
         profile.Locale = request.Locale;
         profile.TimeZone = request.TimeZone;
@@ -55,27 +59,34 @@ public sealed class RepositoryPersonaService(RepositoryDbContext db)
         profile.ConcurrencyStamp = Guid.NewGuid().ToString();
         Audit(userId, actor, "ProfileSaved", before, profile);
         await db.SaveChangesAsync(token);
+        var closing = await ReviewProfileAuthorityAsync(userId, actor, company, request.PersonaCode, access, token);
+        if (reviewed.Revision != closing.Revision)
+            throw new InvalidOperationException("Company roles or workspace configuration changed during the save.");
+        await transaction.CommitAsync(token);
         return profile;
     }
 
-    public Task<List<AppPersonaPreference>> PreferencesAsync(string userId, string personaCode, CancellationToken token = default) =>
-        db.Set<AppPersonaPreference>().AsNoTracking().Where(x => x.UserId == userId && x.PersonaCode == personaCode)
+    public Task<List<AppPersonaPreference>> PreferencesAsync(string userId, CompanyScope company, string personaCode, CancellationToken token = default) =>
+        db.Set<AppPersonaPreference>().AsNoTracking().Where(x => x.UserId == userId && x.TenantId == company.TenantId && x.BusinessAssociateId == company.BusinessAssociateId && x.PersonaCode == personaCode)
             .OrderBy(x => x.ViewKey).ToListAsync(token);
 
-    public async Task<AppPersonaPreference> SavePreferenceAsync(string userId, string personaCode, string viewKey,
-        PersonaPreferenceUpdate request, string actor, CancellationToken token = default)
+    public async Task<AppPersonaPreference> SavePreferenceAsync(string userId, CompanyScope company, string personaCode, string viewKey,
+        PersonaPreferenceUpdate request, string actor, IRepositoryAccessService access, CancellationToken token = default)
     {
         ValidateRequest(request);
         if (string.IsNullOrWhiteSpace(viewKey) || viewKey.Length > 128) throw new ArgumentException("Invalid view key.");
         if (string.IsNullOrWhiteSpace(personaCode)) throw new ArgumentException("Persona is required.");
         await ValidateUserAsync(userId, actor, token);
         await ValidatePersonaAsync(personaCode, token);
-        var preference = await db.Set<AppPersonaPreference>().FindAsync([userId, personaCode, viewKey], token);
+        ArgumentNullException.ThrowIfNull(company); ArgumentNullException.ThrowIfNull(access);
+        await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, token);
+        var reviewed = await ReviewProfileAuthorityAsync(userId, actor, company, personaCode, access, token);
+        var preference = await db.Set<AppPersonaPreference>().FindAsync([userId, company.TenantId, company.BusinessAssociateId, personaCode, viewKey], token);
         CheckVersion(preference?.ConcurrencyStamp, request.ConcurrencyStamp);
         var before = preference is null ? null : JsonSerializer.Serialize(preference);
         if (preference is null)
         {
-            preference = new AppPersonaPreference { UserId = userId, PersonaCode = personaCode, ViewKey = viewKey };
+            preference = new AppPersonaPreference { UserId = userId, TenantId = company.TenantId, BusinessAssociateId = company.BusinessAssociateId, PersonaCode = personaCode, ViewKey = viewKey };
             db.Add(preference);
         }
         preference.Value = request.Value;
@@ -84,7 +95,28 @@ public sealed class RepositoryPersonaService(RepositoryDbContext db)
         preference.ConcurrencyStamp = Guid.NewGuid().ToString();
         Audit(userId, actor, "PreferenceSaved", before, preference);
         await db.SaveChangesAsync(token);
+        var closing = await ReviewProfileAuthorityAsync(userId, actor, company, personaCode, access, token);
+        if (reviewed.Revision != closing.Revision) throw new InvalidOperationException("Company roles or workspace configuration changed during the save.");
+        await transaction.CommitAsync(token);
         return preference;
+    }
+
+    private async Task<CompanyPersonaWorkspaceReview> ReviewProfileAuthorityAsync(string userId, string actor, CompanyScope company,
+        string? personaCode, IRepositoryAccessService access, CancellationToken token)
+    {
+        var actorMembership = await access.GetCompanyAccessAsync(actor, company, token);
+        if (actorMembership is null || actorMembership.Scope != company)
+            throw new UnauthorizedAccessException("Current company membership is required.");
+        if (actor != userId)
+        {
+            var authority = await access.GetAccessAsync(actor, token);
+            if (authority is not { IsActive: true } || !authority.Roles.Contains("Administrator", StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current application administrator access is required.");
+        }
+        var eligible = await ReviewWorkspacesAsync(userId, company, access, token);
+        if (personaCode is not null && !eligible.Personas.Any(x => x.Code == personaCode))
+            throw new UnauthorizedAccessException("The workspace is not assigned to this company's current roles.");
+        return eligible;
     }
 
     private static void ValidateRequest<T>(T request) where T : class

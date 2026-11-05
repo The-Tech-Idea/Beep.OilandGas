@@ -140,6 +140,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 var approvalResult = await _setupService.ApproveSchemaMigrationPlanAsync(new SchemaMigrationApprovalRequest
                 {
                     PlanId = planResult.PlanId,
+                    ExpectedPlanHash = planResult.PlanHash,
+                    ExpectedManifestHash = planResult.ManifestHash,
                     ApprovedBy = $"demo-service:{request.UserId}",
                     Notes = "Auto-approved for demo database bootstrap."
                 });

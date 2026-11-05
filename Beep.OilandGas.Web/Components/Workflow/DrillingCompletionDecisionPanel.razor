@@ -1,0 +1,59 @@
+@using Beep.OilandGas.Web.Services
+@if(State.DecisionConfirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
+@if(State.PendingDecision is {} pending)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">@State.PendingTitle</MudText>
+        <MudAlert Severity="@(State.TabCopyConfirmed?Severity.Info:Severity.Warning)" role="status">@State.PendingExplanation</MudAlert>
+        <MudText>Original @pending.IntentId; claim @pending.Review.Original.ClaimId; stage @pending.Review.StageNumber / @pending.Review.Stage().Definition.StepName</MudText>
+        <MudText>Reviewer @pending.Scope().ActorUserId / @pending.Review.AssignedRole / @pending.Review.PersonaCode; original decision @pending.Decision</MudText>
+        <MudText Class="development-draft-description">@pending.Rationale</MudText>
+        <DrillingCompletionAcceptanceEvidenceView Decision="pending" />
+        <MudButton OnClick="State.RecoverDecisionAsync" Disabled="@(!State.CanRecoverDecision)" Variant="Variant.Outlined">Recover original completion decision</MudButton>
+    </MudPaper>
+}
+else if(State.RetainedDecisionProcessId is {} other)
+{
+    <MudAlert Severity="Severity.Warning">Recover the retained completion decision before preparing another.</MudAlert>
+    <MudButton Href="@("/drilling/completion-review/assigned?processId="+Uri.EscapeDataString(other))">Open retained completion decision</MudButton>
+}
+@if(State.DecisionReceipt is {} receipt)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Original completion decision outcome</MudText>
+        <MudText>Review @receipt.InstanceId; recorded @receipt.Recorded; current review state @receipt.WorkflowState; checked @receipt.CheckedAtUtc.ToString("u") UTC</MudText>
+        @if(receipt.Recorded){<MudText>Approval audit @receipt.ApprovalId; history @receipt.HistoryId; original next-stage destination @(receipt.NextStepInstanceId??"No further review stage routed by this decision")</MudText>}
+        @if(receipt.CompletionAccepted){<MudAlert Severity="Severity.Success">The original independent physical completion acceptance was confirmed recorded. Open complete history for current claim status; ongoing reporting closure and production release remain separate.</MudAlert>}
+        else{<MudAlert Severity="Severity.Info">Review approval does not establish accepted physical tests, close ongoing reporting or authorize production handover. Open the complete history for current review progress.</MudAlert>}
+    </MudPaper>
+}
+@if(State.PreparedDecision is {} original)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">@(original.Acceptance is null?"Confirm independent completion stage decision":"Confirm independent physical completion acceptance")</MudText>
+        <MudText>Claim @original.Review.Original.ClaimId; stage @original.Review.StageNumber / @original.Review.Stage().Definition.StepName; reviewer @original.Scope().ActorUserId / @original.Review.AssignedRole / @original.Review.PersonaCode</MudText>
+        <MudText>Decision @original.Decision</MudText><MudText Class="development-draft-description">@original.Rationale</MudText>
+        <DrillingCompletionAcceptanceEvidenceView Decision="original" />
+        <MudAlert Severity="Severity.Info">@(original.Acceptance is null?"This records your review of the reported claim. Independent physical test acceptance and reporting closure remain separate.":"This freezes your explicit physical completion acceptance and every checked test signoff. Reporting closure, WELL/financial updates and production handover remain separate.")</MudAlert>
+        <MudButton OnClick="State.SubmitDecisionAsync" Disabled="@(!State.CanSubmitDecision)" Variant="Variant.Filled" Color="Color.Primary">@(original.Acceptance is null?"Confirm and retain completion decision":"Confirm and retain physical completion acceptance")</MudButton>
+        <MudButton OnClick="State.CancelDecision" Disabled="@State.Busy">Cancel completion decision preparation</MudButton>
+    </MudPaper>
+}
+else if(State.CanPrepareDecision && State.Current is {} review)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Review this reported completion claim</MudText>
+        <MudSelect T="string" Label="Independent completion review decision" @bind-Value="decision" Required="true">
+            <MudSelectItem T="string" Value="@("APPROVE")" Disabled="@(!review.IsCurrentClaim)">Approve review stage</MudSelectItem>
+            <MudSelectItem T="string" Value="@("REJECT")">Reject reported claim</MudSelectItem>
+        </MudSelect>
+        <MudTextField T="string" Label="Independent completion review reason" @bind-Value="reason" Required="true" MaxLength="1600" Lines="3" />
+        <MudButton OnClick="Prepare" Variant="Variant.Outlined">Review original completion decision</MudButton>
+    </MudPaper>
+}
+@code {
+    [Parameter,EditorRequired]public DrillingCompletionAssignedState State{get;set;}=default!;
+    private string? revision;private string decision="",reason="";
+    protected override void OnParametersSet(){var next=State.Current?.Revision;if(next!=revision){revision=next;decision=reason="";}}
+    private void Prepare()=>State.PrepareDecision(decision,reason);
+}

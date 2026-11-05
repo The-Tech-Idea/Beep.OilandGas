@@ -21,7 +21,8 @@ namespace Beep.OilandGas.DrillingAndConstruction.Modules
         private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
         {
             typeof(DRILLING_PROGRAM),
-            typeof(DRILLING_DAILY_REPORT),
+            typeof(TheTechIdea.Data.OilGas.DRILLING_OPERATION),
+            typeof(TheTechIdea.Data.OilGas.DRILLING_DAILY_REPORT),
             typeof(DRILLING_ACTIVITY),
             typeof(DRILLING_FLUID),
             typeof(DRILLING_BIT),
@@ -37,7 +38,6 @@ namespace Beep.OilandGas.DrillingAndConstruction.Modules
             _referenceSeeder = referenceSeeder ?? throw new ArgumentNullException(nameof(referenceSeeder));
         }
 
-        // Legacy name retained for file compatibility; semantic ownership is Drilling & Construction execution.
         // Planning ownership belongs to DevelopmentPlanning/Modules/DevelopmentPlanningModule.
         public override string ModuleId => "DRILLING_EXECUTION";
         public override string ModuleName => "Drilling & Construction Execution";

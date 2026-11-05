@@ -1,0 +1,76 @@
+@page "/setup/drivers"
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject ApiClient Api
+@inject ILogger<SetupDrivers> Logger
+
+<PageTitle>Database drivers</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Database drivers and connectors</MudText>
+    <MudText Class="my-3">Install a registered Beep driver or datasource package on the API server before creating a connection. The server uses its configured package sources and version.</MudText>
+    @if (_message is not null) { <MudAlert Severity="Severity.Info" Class="my-3" role="status">@_message</MudAlert> }
+    <MudButton OnClick="Reload" Disabled="@_busy" Variant="Variant.Outlined">Refresh drivers</MudButton>
+    <MudButton Href="/ppdm39/database-management" Variant="Variant.Outlined" Class="mx-2">Create and test connections</MudButton>
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="my-3" /> }
+    @if (!_busy && _items.Count == 0) { <MudText Class="my-3">No registered driver packages are available. Check the API server's Beep driver catalog.</MudText> }
+    @if (_items.Count > 0)
+    {
+        <MudTextField T="string" @bind-Value="_driverSearch" Immediate="true" Label="Find a database or package" Disabled="@_busy" />
+        @if (!VisibleDrivers.Any()) { <MudText Class="my-2">No drivers match this search. Clear it to see the catalog.</MudText> }
+    }
+    @foreach (var item in VisibleDrivers)
+    {
+        <MudPaper Outlined="true" Class="pa-3 my-2">
+            <MudText>@item.DataSourceType · @item.Category</MudText>
+            <MudText Typo="Typo.body2">Beep connector: @(item.BundledConnector ? "bundled with the API server" : item.ConnectorPackage ?? "not configured") — @(item.ConnectorLoaded ? "loaded" : "not loaded")</MudText>
+            @if (!item.BundledConnector && item.ConnectorPackage is not null) { <MudText Typo="Typo.body2">Connector version: @(item.ConnectorVersion ?? "not specified")</MudText> }
+            <MudText Typo="Typo.body2">Database provider: @item.Package (@(item.PackageVersion ?? "not specified")) — @(item.ProviderLoaded ? "loaded" : "not loaded")</MudText>
+            @if (item.SqlServerOwnedTransactionContract == false)
+            {
+                <MudAlert Severity="Severity.Warning" Class="my-2">This SQL Server connector lacks the owned transaction contract required for the shared system repository. Configure a current connector from a trusted feed and restart the API server before setting up that repository.</MudAlert>
+            }
+            @if (!item.CanInstall) { <MudText Typo="Typo.body2">Configure exact package names and versions for the missing connector and provider on the API server before installing.</MudText> }
+            <MudButton OnClick="@(() => Install(item))" Disabled="@(_busy || item.Loaded || !item.CanInstall)" Variant="Variant.Outlined">@(item.Cached ? "Load driver" : "Download and load")</MudButton>
+        </MudPaper>
+    }
+    <MudButton Href="/setup/repository" Variant="Variant.Text" Class="mt-4">Back to setup</MudButton>
+</MudContainer>
+
+@code {
+    private List<SetupDriverItem> _items = [];
+    private string _driverSearch = "";
+    private IEnumerable<SetupDriverItem> VisibleDrivers => _items.Where(item => string.IsNullOrWhiteSpace(_driverSearch) ||
+        new[] { item.DataSourceType, item.Category, item.Package, item.ConnectorPackage }.Any(value =>
+            value?.Contains(_driverSearch.Trim(), StringComparison.OrdinalIgnoreCase) == true));
+    private bool _busy;
+    private string? _message;
+    protected override Task OnInitializedAsync() => Reload();
+    private async Task Reload()
+    {
+        if (_busy) return; _busy = true; _message = null;
+        try { _items = await Api.GetAsync<List<SetupDriverItem>>("/api/setup/drivers") ?? throw new InvalidOperationException("The driver catalog response is unavailable."); }
+        catch (Exception error) { Logger.LogWarning(error, "Beep driver catalog could not be loaded"); _items = []; _message = "The driver catalog could not be loaded. Check the API server."; }
+        finally { _busy = false; }
+    }
+    private async Task Install(SetupDriverItem item)
+    {
+        if (_busy || item.Loaded || !item.CanInstall || !_items.Contains(item)) return;
+        _busy = true; _message = null;
+        try
+        {
+            var result = await Api.PostAsync<SetupDriverItem, SetupDriverItem>($"/api/setup/drivers/{Uri.EscapeDataString(item.Id)}/install", item);
+            if (result is null || result.Id != item.Id || result.DataSourceType != item.DataSourceType || result.Category != item.Category || result.Package != item.Package || result.PackageVersion != item.PackageVersion || result.ConnectorPackage != item.ConnectorPackage || result.ConnectorVersion != item.ConnectorVersion || !result.Loaded || !result.ProviderLoaded || !result.ConnectorLoaded)
+                throw new InvalidOperationException("The loaded driver was not confirmed.");
+            _items = _items.Select(x => x.Id == item.Id ? result : x).ToList();
+            _message = "Driver loaded. Create or test a connection before applying a migration.";
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning(error, "Beep driver installation was not confirmed");
+            // The server may have loaded one or both packages before the response failed.
+            _items = [];
+            _message = "The driver installation was not confirmed. Refresh the catalog before trying again. If it still fails, ask the server operator to check the package cache, feeds and server logs.";
+        }
+        finally { _busy = false; }
+    }
+}

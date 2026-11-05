@@ -1,0 +1,67 @@
+### Page
+- Page URL: http://127.0.0.1:55005/ppdm39/permits/new
+### Snapshot
+```yaml
+- generic [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=f3e10]:
+      - button "Fixture author" [ref=f3e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=f3e13] [cursor=pointer]
+      - button "Fixture read only" [ref=f3e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=f3e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=f3e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [active] [ref=f3e21] [cursor=pointer]
+      - link "HSE landing" [ref=f3e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=f3e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=f3e238]:
+    - heading "New permit application" [level=1] [ref=f3e239]
+    - paragraph [ref=f3e240]: Review the explicit draft and linked company resources before retaining one creation original.
+    - button "Read retained creation original" [ref=f3e241] [cursor=pointer]
+    - group [ref=f3e243]:
+      - generic [ref=f3e246]:
+        - combobox "Application type" [ref=f3e333] [cursor=pointer]: Drilling
+        - generic: Application type*
+      - generic [ref=f3e255]:
+        - combobox "Country" [ref=f3e421] [cursor=pointer]: Kuwait
+        - generic: Country*
+      - generic [ref=f3e264]:
+        - combobox "State or region" [ref=f3e707] [cursor=pointer]: Other
+        - generic: State or region*
+      - generic [ref=f3e273]:
+        - combobox "Recorded authority" [ref=f3e819] [cursor=pointer]: Other
+        - generic: Recorded authority*
+      - generic [ref=f3e281]:
+        - textbox "Applicant*" [ref=f3e283]: Browser reviewed applicant
+        - generic: Applicant*
+      - generic [ref=f3e285]:
+        - textbox "Well UWI (optional)" [ref=f3e287]
+        - generic: Well UWI (optional)
+      - generic [ref=f3e289]:
+        - textbox "Facility ID (optional)" [ref=f3e291]
+        - generic: Facility ID (optional)
+      - generic [ref=f3e293]:
+        - textbox "Facility type (required with facility ID)" [ref=f3e295]
+        - generic: Facility type (required with facility ID)
+      - generic [ref=f3e297]:
+        - textbox "Description" [ref=f3e299]: Explicit draft entered for the selected company FIELD.
+        - generic: Description
+      - button "Review draft and linked resources" [ref=f3e822] [cursor=pointer]
+      - paragraph [ref=f3e824]: Reviewed FIELD A · account actor · applicant Browser reviewed applicant
+      - paragraph [ref=f3e825]: Country Kuwait · region Other · authority Other
+      - paragraph [ref=f3e826]: Reviewed source 01AF9D29C2C7775346522BCEF528E723492A6245F16057019DE8577B65140F2A
+      - generic [ref=f3e827]:
+        - generic [ref=f3e828]:
+          - textbox "Reason for creating this draft*" [ref=f3e830]: The author confirms this explicit company draft and its selected FIELD evidence.
+          - generic: Reason for creating this draft*
+        - generic [ref=f3e831]: Enter 20 to 2000 characters.
+      - generic [ref=f3e836] [cursor=pointer]:
+        - checkbox "I checked this proposal, company FIELD and exact linked resource identities." [checked] [ref=f3e838]
+        - generic [ref=f3e842]: I checked this proposal, company FIELD and exact linked resource identities.
+      - button "Retain original and create draft" [ref=f3e852] [cursor=pointer]
+    - text: A draft or internal decision does not establish regulator clearance, jurisdiction applicability or permission to operate.
+    - link "Back to permits" [ref=f3e300] [cursor=pointer]:
+      - /url: /ppdm39/permits
+```

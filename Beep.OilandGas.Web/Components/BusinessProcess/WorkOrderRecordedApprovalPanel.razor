@@ -1,0 +1,131 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Recorded work-permit approval</MudText>
+        <MudTextField @bind-Value="_reference" Label="Original permit issue reference" Disabled="@_busy" />
+        <MudButton OnClick="ReviewAsync" Disabled="@(_busy || Task is null || !CanRead)" Color="Color.Primary">Read recorded approval facts</MudButton>
+        <MudButton OnClick="RecordedStartAsync" Disabled="@(_busy || Task is null || !CanRead)">Read recorded work-start facts</MudButton>
+        <MudButton OnClick="RequirementsAsync" Disabled="@(_busy || Task is null || !CanRead)">Compare current native requirements</MudButton>
+        <MudButton OnClick="PrerequisitesAsync" Disabled="@(_busy || Task is null || !CanReviewExecution)" Color="Color.Primary">Review current execution prerequisites</MudButton>
+        @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Reading recorded approval" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_approval is {} approval)
+        {
+            <MudText>Company @approval.Company.BusinessAssociateId · FIELD @approval.Permit.Task.FieldId · Order @approval.Permit.Task.WorkOrderId</MudText>
+            <MudText>Recorded approval @approval.DecisionId · Permit @approval.PermitId</MudText>
+            <MudText>Issuer @approval.Issuer · Independent approver @approval.Approver · Approved UTC @approval.ApprovedAtUtc.ToString("O")</MudText>
+            <MudText>Scope @approval.ScopeDescription · Type @approval.PermitType · Reported jurisdiction @approval.Jurisdiction</MudText>
+            <MudText>Validity UTC @approval.ValidFromUtc.ToString("O") to @approval.ValidToUtc.ToString("O")</MudText>
+            <MudText Typo="Typo.caption">Original requirement proof @approval.OriginalRequirementRevision · Recorded revision @approval.RecordedRevision</MudText>
+        }
+        @if(_startCompared)
+        {
+            @if(_recordedStart is {} start)
+            {
+                <MudText Typo="Typo.subtitle1">Recorded work start @start.StartId</MudText>
+                <MudText>Executor @start.ExecutorUserId · employee @start.EmployeeBaId · recorded role @start.AssignedRole · stage @start.StepId</MudText>
+                <MudText>Started UTC @start.StartedAtUtc.ToString("O") · recorded UTC @start.RecordedAtUtc.ToString("O")</MudText>
+                <MudAlert Severity="Severity.Info">Recorded start is historical evidence. Actual work submission, independent completion verification and return to service remain separate outcomes.</MudAlert>
+            }
+            else{<MudAlert Severity="Severity.Info">Complete authorized lookup found no recorded start for this original permit/task.</MudAlert>}
+        }
+        @if(_requirements is {} requirements)
+        {
+            <MudText Typo="Typo.subtitle1">Current requirements · comparison UTC @requirements.ComparedAtUtc.ToString("O")</MudText>
+            <MudText>Current order instructions: @(string.IsNullOrWhiteSpace(requirements.Order.Instructions) ? "Not recorded" : requirements.Order.Instructions)</MudText>
+            @foreach(var blocker in requirements.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            <MudTable Items="@requirements.Requirements" Dense="true" Hover="true" Bordered="true" RowsPerPage="10" aria-label="Current native work-order requirements">
+                <HeaderContent>
+                    <MudTh>Requirement</MudTh><MudTh>Applies at</MudTh><MudTh>Result</MudTh><MudTh>Recorded evidence</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="row">
+                    <MudTd DataLabel="Requirement"><MudText>@row.CondSeq · @row.CondType · @row.RequiredText</MudText><MudText Typo="Typo.caption">@row.InspectionId · @row.Jurisdiction · @row.RegulatoryRef</MudText></MudTd>
+                    <MudTd DataLabel="Applies at">@(row.ApplicableStage ?? "Not explicitly classified")</MudTd>
+                    <MudTd DataLabel="Result">@row.Status</MudTd>
+                    <MudTd DataLabel="Recorded evidence"><MudText>@(string.IsNullOrWhiteSpace(row.ResultText) ? "No result recorded" : row.ResultText)</MudText><MudText Typo="Typo.caption">Inspector: @(string.IsNullOrWhiteSpace(row.Inspector) ? "Not recorded" : row.Inspector) · UTC: @(row.InspectDate?.ToString("O") ?? "Not recorded")</MudText></MudTd>
+                </RowTemplate>
+                <PagerContent><MudTablePager PageSizeOptions="@(new[] {10,25,50})" /></PagerContent>
+            </MudTable>
+            @if(_prerequisites is null){<MudText Typo="Typo.caption">This compares requirements and recorded permit validity. Current stock, personnel, documents and execution authority still require separate proof.</MudText>}
+        }
+        @if(_prerequisites is {} prerequisites)
+        {
+            <MudText Typo="Typo.subtitle1">Execution prerequisites compared UTC @prerequisites.ComparedAtUtc.ToString("O")</MudText>
+            <MudText>Reserved material @prerequisites.Material.ItemId · @prerequisites.Material.Quantity @prerequisites.Material.Unit · warehouse @prerequisites.Material.Warehouse · location @prerequisites.Material.Location</MudText>
+            <MudText>Recorded crew duty @prerequisites.Personnel.DutyCode · employee @prerequisites.Personnel.EmployeeBaId · licence @prerequisites.Personnel.LicenseId · assignment @prerequisites.Personnel.AssignmentId</MudText>
+            @foreach(var document in prerequisites.Documents){<MudText>@document.Kind · @document.DocumentId · version @document.Version · accepted by @document.Reviewer · UTC @document.AcceptedAtUtc.ToString("O")</MudText>}
+            <MudAlert Severity="Severity.Info">@(prerequisites.StockSharesCore ? "Stock and core evidence share the owned transaction boundary." : "Separate stock was compared before and after the core transaction; these providers are not atomic together.") This review records no start, stock consumption or completed work.</MudAlert>
+        }
+        <MudAlert Severity="Severity.Info">Recorded approval is historical evidence. Current prerequisites, execution authority, actual work, independent completion verification and return to service require their separate checks and records.</MudAlert>
+    </MudStack>
+</MudPaper>
+@if(Task is not null && Company.Selection?.Permissions.Contains("Maintenance.ExecuteWork",StringComparer.Ordinal)==true && Guid.TryParse(_reference,out var permitId) && permitId!=Guid.Empty)
+{
+    <WorkOrderExecutionStartPanel Permit="@(new CompanyWorkOrderExecutionPermitReference(Task,permitId))" />
+}
+
+@code {
+    [Parameter] public CompanyMaintenanceReceivingQuery? Task {get;set;}
+    [Parameter] public Guid? OriginalReference {get;set;}
+    private string _reference="",_key="";
+    private string? _error;
+    private CompanyWorkOrderRecordedApproval? _approval;
+    private CompanyWorkOrderExecutionRequirements? _requirements;
+    private CompanyWorkOrderExecutionPrerequisites? _prerequisites;
+    private CompanyWorkOrderRecordedStart? _recordedStart;
+    private bool _startCompared;
+    private bool _busy,_disposed;
+    private long _version;
+    private bool CanRead=>Company.Selection?.Permissions.Contains("Maintenance.ViewApprovedPermit",StringComparer.Ordinal)==true;
+    private bool CanReviewExecution=>Company.Selection?.Permissions.Contains("Maintenance.ExecuteWork",StringComparer.Ordinal)==true && Company.Selection.Permissions.Contains("Inventory.View",StringComparer.Ordinal);
+    protected override void OnInitialized(){Company.Changed+=Changed;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet(){var key=System.Text.Json.JsonSerializer.Serialize(new{Task,OriginalReference});if(key==_key)return;_key=key;Clear();_reference=OriginalReference?.ToString("D")??"";}
+    private void Clear(){_version++;_approval=null;_requirements=null;_prerequisites=null;_recordedStart=null;_startCompared=false;_error=null;_reference="";}
+    private void Changed(){Clear();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string _) => Changed();
+    private void AuthenticationChanged(System.Threading.Tasks.Task<AuthenticationState> _) => Changed();
+    private async System.Threading.Tasks.Task Authority(string permission="Maintenance.ViewApprovedPermit",bool inventory=false)
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Task is null || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains(permission,StringComparer.Ordinal) || inventory && !selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current company actor, standard roles, original FIELD and the required review capabilities are required.");
+    }
+    private System.Threading.Tasks.Task ReviewAsync()=>ReadAsync(false);
+    private System.Threading.Tasks.Task RequirementsAsync()=>ReadAsync(true);
+    private System.Threading.Tasks.Task PrerequisitesAsync()=>ReadAsync(true,true);
+    private System.Threading.Tasks.Task RecordedStartAsync()=>ReadAsync(false,false,true);
+    private async System.Threading.Tasks.Task ReadAsync(bool requirements,bool prerequisites=false,bool recordedStart=false)
+    {
+        if(_busy || _disposed)return;_approval=null;_requirements=null;_prerequisites=null;_recordedStart=null;_startCompared=false;_error=null;var version=_version;var snapshot=Company.Snapshot;_busy=true;
+        try
+        {
+            var permission=prerequisites?"Maintenance.ExecuteWork":"Maintenance.ViewApprovedPermit";
+            await Authority(permission,prerequisites);if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original permit issue reference.");var query=new CompanyWorkOrderExecutionPermitReference(Task!,id);
+            if(recordedStart)
+            {
+                var result=await Workflows.ReadRecordedWorkOrderStartAsync(query);await Authority();if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;
+                result?.Require(snapshot.Selection!.Scope,query);_recordedStart=result;_startCompared=true;
+            }
+            else if(prerequisites)
+            {
+                var result=await Workflows.ReadWorkOrderExecutionPrerequisitesAsync(query);await Authority(permission,true);if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;
+                result.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,query);_prerequisites=result;_requirements=result.Requirements;_approval=result.Requirements.Approval;
+            }
+            else if(requirements)
+            {
+                var result=await Workflows.ReadWorkOrderExecutionRequirementsAsync(query);await Authority();if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;result.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,query);_requirements=result;_approval=result.Approval;
+            }
+            else{var result=await Workflows.ReadRecordedWorkOrderPermitApprovalAsync(query);await Authority();if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;result.Require(snapshot.Selection!.Scope,query);_approval=result;}
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"reading recorded permit approval","Recorded approval could not be confirmed");}
+        finally{_busy=false;if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Changed;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Clear();}
+}

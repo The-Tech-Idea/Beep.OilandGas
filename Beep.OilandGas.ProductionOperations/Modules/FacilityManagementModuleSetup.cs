@@ -32,6 +32,9 @@ namespace Beep.OilandGas.ProductionOperations.Modules
         {
             typeof(FACILITY_MEASUREMENT),
             typeof(FACILITY_EQUIPMENT_ACTIVITY),
+            typeof(TheTechIdea.Data.OilGas.FACILITY_EDIT_INTENT),
+            typeof(TheTechIdea.Data.OilGas.FACILITY_CREATE_INTENT),
+            typeof(TheTechIdea.Data.OilGas.FACILITY_EQUIPMENT_INSTALL_INTENT),
             typeof(R_FACILITY_MONITORING_CODE)
         };
 

@@ -1,0 +1,113 @@
+@page "/drilling/program-execution/reporting/transfer"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+<PageTitle>Transfer reporting responsibility</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4 development-draft-identity">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Transfer reporting responsibility</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        <MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton>
+        <MudButton Href="@StatusUrl(AssignmentId)" Variant="Variant.Outlined">Reporting history</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload generation and receiving teams</MudButton>
+    </MudStack>
+    <MudAlert Severity="Severity.Info">Transfer ongoing reporting to a configured team under your current management role. This ends the former reporting generation and starts the receiving generation. It does not accept physical work, finish drilling, release the well or post financial actuals.</MudAlert>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming reporting transfer" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(_state?.Confirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
+    @if(_state?.BlockedClosureId is {} closure)
+    {
+        <MudAlert Severity="Severity.Warning">Recover the retained reporting closure before preparing a transfer.</MudAlert>
+        <MudButton Href="@StatusUrl(closure)">Open retained reporting closure</MudButton>
+    }
+    @if(_state?.Pending is {} pending)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">@_state.PendingTitle</MudText>
+            <MudAlert Severity="Severity.Warning" role="status">@_state.PendingExplanation</MudAlert>
+            <MudText>Generation @pending.Review.Responsibility.Number to @(pending.Review.Responsibility.Number+1) · Actual UTC @pending.ReassignedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+            <MudText>Manager @pending.Scope().ActorUserId / @pending.Review.ManagerRole · Receiving role @pending.Review.Destination.Step.AssignedRole · @string.Join(", ",pending.Review.Destination.Step.PersonaCodes)</MudText>
+            <MudText Class="development-draft-description">@pending.Reason</MudText>
+            <MudButton OnClick="_state.RecoverAsync" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined">Recover original reporting transfer</MudButton>
+        </MudPaper>
+    }
+    else if(_state?.Retained is {} other)
+    {
+        <MudAlert Severity="Severity.Warning">Recover the retained reporting transfer before preparing another.</MudAlert>
+        <MudButton Href="@TransferUrl(other.Review.Responsibility.Root.InstanceId())">Open retained reporting transfer</MudButton>
+    }
+    @if(_state?.Catalog is {} catalog && _state.Prepared is null && _state.Pending is null)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Current reporting generation @catalog.Responsibility.Number</MudText>
+            <MudText>@catalog.Responsibility.Root.Source.Basis.Source.Program.PROGRAM_NAME · Well @catalog.Execution.Recorded!.WELL_UWI · FIELD @catalog.Scope().FieldId</MudText>
+            <MudText>Current manager @catalog.Responsibility.ManagerUserId / @catalog.Responsibility.ManagerRole</MudText>
+            <MudText>Current receiving role @catalog.Responsibility.Workflow.Step.AssignedRole · @string.Join(", ",catalog.Responsibility.Workflow.Step.PersonaCodes) · @catalog.Responsibility.TaskIds().Count pending reporting tasks</MudText>
+            <MudText>Your management account @catalog.Scope().ActorUserId · Workspace @catalog.ManagerPersona</MudText>
+            <MudSelect T="string" Label="Receiving reporting workflow" Value="@workflowId" ValueChanged="ChooseWorkflow" Required="true" Disabled="@_state.Busy">
+                @foreach(var option in catalog.Options){<MudSelectItem T="string" Value="@option.ProcessId" Disabled="@(!option.Ready)">@option.ProcessName · @option.Step.AssignedRole · @option.Authority.Recipients.Count eligible accounts</MudSelectItem>}
+            </MudSelect>
+            <MudSelect T="string" Label="Your accountable management role" Value="@managerRole" ValueChanged="ChooseRole" Required="true" Disabled="@_state.Busy">
+                @foreach(var role in catalog.ManagerRoles){<MudSelectItem T="string" Value="@role">@role</MudSelectItem>}
+            </MudSelect>
+            @if(catalog.Options.Count==0){<MudAlert Severity="Severity.Info">No configured ongoing-reporting workflow is available.</MudAlert>}
+            <MudText Typo="Typo.caption">Choose a changed receiving responsibility or accountable manager/role. An unchanged assignment cannot create another generation.</MudText>
+            <MudButton OnClick="Review" Disabled="@(!_state.CanReview)" Variant="Variant.Outlined">Check reporting transfer</MudButton>
+        </MudPaper>
+    }
+    @if(_state?.Review is {} review && _state.Prepared is null && _state.Pending is null)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Reviewed receiving responsibility</MudText>
+            <MudText>Generation @(review.Responsibility.Number+1) · Manager @review.Scope().ActorUserId / @review.ManagerRole · Workspace @review.ManagerPersona</MudText>
+            <MudText>@review.Destination.ProcessName · Role @review.Destination.Step.AssignedRole · @review.Destination.Step.PersonaCodes.Count new reporting tasks</MudText>
+            @foreach(var recipient in review.Destination.Authority.Recipients){<MudText>Receiving account @recipient.UserId · Workspace @recipient.PersonaCode</MudText>}
+            <MudTextField T="string" Label="Actual reporting transfer UTC" HelperText="Use an explicit UTC value ending in Z or +00:00, after the review." @bind-Value="actualUtc" Required="true" Disabled="@_state.Busy" />
+            <MudTextField T="string" Label="Transfer reason" @bind-Value="reason" Lines="3" MaxLength="1600" Required="true" Disabled="@_state.Busy" />
+            <MudCheckBox T="bool" @bind-Value="confirmed" Label="I accept management accountability and confirm this receiving reporting team." Disabled="@_state.Busy" />
+            <MudButton OnClick="Prepare" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Review transfer confirmation</MudButton>
+        </MudPaper>
+    }
+    @if(_state?.Prepared is {} prepared)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Confirm reporting transfer</MudText>
+            <MudText>End generation @prepared.Review.Responsibility.Number · Start generation @(prepared.Review.Responsibility.Number+1) · Actual UTC @prepared.ReassignedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+            <MudText>Manager @prepared.Scope().ActorUserId / @prepared.Review.ManagerRole · Receiving role @prepared.Review.Destination.Step.AssignedRole · @string.Join(", ",prepared.Review.Destination.Step.PersonaCodes)</MudText>
+            <MudText Class="development-draft-description">@prepared.Reason</MudText>
+            <MudAlert Severity="Severity.Info">Confirmation retains this exact transfer in this tab before sending. Recover this original if its response is missing.</MudAlert>
+            <MudButton OnClick="_state.SubmitAsync" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Confirm and retain reporting transfer</MudButton>
+            <MudButton OnClick="_state.Cancel" Disabled="@_state.Busy" Variant="Variant.Outlined">Back to transfer</MudButton>
+        </MudPaper>
+    }
+    @if(Company.Selection is null){<MudAlert Severity="Severity.Info">Choose your company before opening its reporting responsibility.</MudAlert>}
+    else if(_state?.CanView==false){<MudAlert Severity="Severity.Warning">Current company drilling, report and workflow read access is required.</MudAlert>}
+    else if(_state?.NeedsReload==true){<MudAlert Severity="Severity.Info" role="status">Reload reporting transfer for this company/account.</MudAlert>}
+    else if(_state?.WriteRights==false && _state.Retained is null){<MudAlert Severity="Severity.Info">Current management, report edit and workflow-start authority are required to prepare a transfer.</MudAlert>}
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="assignmentId")]public string? AssignmentId{get;set;}
+    private DrillingReportingReassignmentState? _state;
+    private bool disposed,interactive,confirmed;
+    private string workflowId="",managerRole="",actualUtc="",reason="";
+    private static string StatusUrl(string? id)=>"/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(id??"");
+    private static string TransferUrl(string id)=>"/drilling/program-execution/reporting/transfer?assignmentId="+Uri.EscapeDataString(id);
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
+    private void ClearForm(){actualUtc="";reason="";confirmed=false;}
+    private Task Reload(){workflowId="";managerRole="";ClearForm();return _state!.LoadAsync(AssignmentId);}
+    private void ChooseWorkflow(string value){workflowId=value;ClearForm();_state!.Select(workflowId,managerRole);}
+    private void ChooseRole(string value){managerRole=value;ClearForm();_state!.Select(workflowId,managerRole);}
+    private Task Review(){ClearForm();return _state!.ReviewAsync();}
+    private void Prepare()=>_state!.Prepare(actualUtc,reason,confirmed);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

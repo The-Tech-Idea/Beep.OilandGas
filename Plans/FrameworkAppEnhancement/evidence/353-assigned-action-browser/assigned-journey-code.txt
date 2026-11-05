@@ -1,0 +1,47 @@
+async (page) => {
+ const observations=[];const base='http://127.0.0.1:59552';const out='C:/Users/f_ald/source/repos/The-Tech-Idea/Beep.OilandGas/Plans/FrameworkAppEnhancement/evidence/353-assigned-action-browser/';
+ const panel=()=>page.getByRole('region',{name:'My overdue corrective actions'});
+ const section=()=>page.locator('section[aria-label="My overdue corrective actions"]');
+ const btn=name=>page.getByRole('button',{name,exact:true});
+ const meta=()=>page.evaluate(async()=>await(await fetch('/fixture/metadata')).json());
+ const require=(v,m)=>{if(!v)throw Error(m)};
+ const until=async predicate=>{const end=Date.now()+10000;while(true){const m=await meta();if(predicate(m))return m;if(Date.now()>end)throw Error('Metadata condition timeout');await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(resolve)));}};
+ const capture=async name=>observations.push({name,url:page.url(),viewport:page.viewportSize(),body:await page.locator('body').innerText(),metadata:await meta(),layout:await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,keys:Object.keys(sessionStorage)}))});
+ const enter=async locator=>{await locator.focus();await locator.press('Enter');};
+ try{
+  await page.setViewportSize({width:1280,height:900});await page.goto(base+'/assigned-actions');await page.getByText('Interactive fixture ready',{exact:true}).waitFor();
+  await enter(btn('Review my overdue actions'));await page.getByText(/^11 overdue assigned actions/).waitFor();
+  require(await section().getByRole('link').count()===10,'First assigned-action page must contain10 exact records');
+  await capture('A first assigned-action page by keyboard');
+  await enter(btn('Next assigned actions'));await section().getByRole('link',{name:/Action 11:/}).waitFor();
+  require(await section().getByRole('link').count()===1,'Second page must contain only action11');
+  await page.screenshot({path:out+'wide-page-two.png',fullPage:true});await capture('A second page has exact action11 link');
+  require(await section().getByRole('status').evaluate(e=>getComputedStyle(e).direction)==='ltr','Queue summary reordered in RTL');
+  require(await section().getByRole('link').locator('bdi').first().getAttribute('dir')==='ltr','Mixed incident identifier not isolated LTR');
+  await enter(btn('Review my overdue actions'));await until(m=>m.a.queueReads===2);await section().getByRole('progressbar').waitFor();
+  require(await section().getByRole('link').count()===0,'Refresh retained old actionable links');
+  await btn('Switch other company').click();await page.getByText('Company or FIELD changed. Review assignments for the current selection.',{exact:true}).waitFor();
+  require(!(await page.locator('body').innerText()).includes('PRIVATE A action'),'Company switch leaked A descriptions');
+  await enter(btn('Review my overdue actions'));await section().getByRole('link',{name:/PRIVATE B action 1/}).waitFor();
+  await page.setViewportSize({width:390,height:844});await capture('B own queue after switch while A response held');
+  await page.screenshot({path:out+'narrow-company-b.png',fullPage:true});
+  await page.evaluate(async()=>await fetch('/fixture/release-queue-a',{method:'POST'}));await until(m=>m.queueCompleted>=3);
+  require(!(await section().innerText()).includes('PRIVATE A action'),'Late A response restored foreign queue');
+  require(await section().getByRole('link',{name:/PRIVATE B action 1/}).count()===1,'Late A response erased B queue');
+  await capture('Late A response settled without changing B queue');
+  await btn('Restore original company').click();await page.getByText('Company or FIELD changed. Review assignments for the current selection.',{exact:true}).waitFor();
+  await enter(btn('Review my overdue actions'));await page.getByText(/^11 overdue assigned actions/).waitFor();
+  await enter(btn('Next assigned actions'));const link=section().getByRole('link',{name:/Action 11:/});await link.waitFor();
+  await capture('A restored and exact second page available at390px');await page.screenshot({path:out+'narrow-restored-a.png',fullPage:true});
+  const target=await link.getAttribute('href');require(target.endsWith('#hse-action-11'),'Missing exact action fragment');
+  require(target.includes('case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232'),'Encoded incident identity changed');
+  await enter(link);await page.getByText('INJURY — PRIVATE COMPANY A INCIDENT',{exact:true}).waitFor();
+  const cell=page.locator('#hse-action-11');await cell.waitFor({state:'visible'});require((await cell.innerText())==='PRIVATE A action 11','Target action differs from assigned link');
+  const box=await cell.boundingBox();require(box && box.y>=0 && box.y<844,'Native fragment navigation did not bring action11 into view');
+  await capture('Keyboard exact incident/action11 navigation');await page.screenshot({path:out+'narrow-exact-action.png',fullPage:true});
+  const m=await meta();require(m.a.approvalAttempts===0 && m.b.approvalAttempts===0 && m.a.nativeAttempts===0 && m.b.nativeAttempts===0,'Read journey attempted mutation');require(m.genericActionReads===0,'Generic action path invoked');require(m.requests.every(r=>r.method==='GET'),'Unexpected backend mutation');
+  require(observations.every(x=>x.layout.scrollWidth<=x.layout.width+1),'Document overflow at tested width');
+  require(observations.every(x=>x.layout.keys.length===0),'Read-only queue retained mutation originals');
+  return {status:'pass',observations,target,final:m};
+ }catch(e){await capture('Failure state');return{status:'failed',error:String(e),observations};}
+}

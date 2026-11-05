@@ -1,0 +1,334 @@
+@page "/accounting/processes/{Id}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@inject IBusinessProcessServiceClient Processes
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@inject CompanyAccountingStepState Completion
+@implements IDisposable
+<PageTitle>Company accounting process</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudButton Href="/tasks/inbox" StartIcon="@Icons.Material.Filled.ArrowBack">Assigned work</MudButton>
+    <MudText Typo="Typo.h5">Company accounting process</MudText>
+    <MudButton OnClick="Reload" Disabled="_busy">Reload recorded process</MudButton>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Loading company accounting process" />}
+    else if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Select a company to open its accounting process.</MudAlert><MudButton Href="/landing">Company workspace</MudButton>}
+    else{<RecordedProcessSourcePanel State="_state" />}
+    @if(!_busy && _error is null && _state?.Instance is not null)
+    {
+        @if(_paymentSource is {} paymentSource)
+        {
+            <MudPaper Class="pa-4 mt-3" Outlined="true">
+                <MudText Typo="Typo.h6">Assigned payment review and maker return</MudText>
+                <Beep.OilandGas.Web.Components.Workflow.AssignedSalesPaymentWorkbench AssignedSource="paymentSource" RecordedOutcomeChanged="NativeOutcomeChanged" @key="paymentSource.InstanceId" />
+            </MudPaper>
+        }
+        @if(_journalSource is {} journalSource)
+        {
+            var journal=journalSource.Journal.Journal.Header;
+            <MudPaper Class="pa-4 mt-3" Outlined="true">
+                <MudText Typo="Typo.h6">Assigned journal review and posting</MudText>
+                <MudText>Journal @journal.ENTRY_NUMBER · @journal.JOURNAL_ENTRY_ID · @journal.STATUS</MudText>
+                <MudText>Book @journal.BOOK_ID · Currency @journal.CURRENCY_CODE · FIELD @journal.FIELD_ID · Original maker @journal.ROW_CREATED_BY</MudText>
+                <MudText Typo="Typo.caption">Original preparation @journalSource.SourceRevision</MudText>
+                <MudAlert Severity="Severity.Info">Record the independent journal decision before observing review. Posting has a separate assignment and requires confirmed native ledger entries. Rejection returns to the original maker and skips posting. Task observation records no payment.</MudAlert>
+                <Beep.OilandGas.Web.Components.Workflow.AssignedSalesJournalWorkbench AssignedSource="journalSource" RecordedOutcomeChanged="NativeOutcomeChanged" @key="journalSource.InstanceId" />
+                <MudButton Href='@("/accounting/sales-receivables?invoice="+Uri.EscapeDataString(CompanySalesJournalPreparationProof.Require(journal).Command.Source.Receivable.Invoice.InvoiceId))' Variant="Variant.Outlined">Open original receivable workspace</MudButton>
+            </MudPaper>
+        }
+        @if(_receivableSource is {} receivableSource)
+        {
+            <MudPaper Class="pa-4 mt-3" Outlined="true">
+                <MudText Typo="Typo.h6">Assigned receivable financial review</MudText>
+                <MudText>Receivable: @receivableSource.Receivable.Original.Receivable.INVOICE_NUMBER · Status: @receivableSource.Receivable.Original.Receivable.STATUS · FIELD: @receivableSource.Receivable.FieldId</MudText>
+                <MudAlert Severity="Severity.Info">Record the independent financial/source decision first, then review current assigned task authority to complete or route rejection. Task completion performs no financial posting or payment.</MudAlert>
+                <Beep.OilandGas.Web.Components.Workflow.SalesReceivableWorkbench InvoiceId="@receivableSource.Receivable.InvoiceId" AssignedSource="receivableSource" RecordedOutcomeChanged="NativeOutcomeChanged" @key="receivableSource.InstanceId" />
+            </MudPaper>
+        }
+        @if(_invoiceSource is {} invoiceSource)
+        {
+            var invoice=invoiceSource.Invoice.Original.Invoice;
+            <MudPaper Class="pa-4 mt-3" Outlined="true">
+                <MudText Typo="Typo.h6">Assigned sales invoice review</MudText>
+                <MudText>Invoice: @invoice.INVOICE_NUMBER · Status: @invoice.STATUS · FIELD: @invoiceSource.Invoice.Current.FieldId · Delivery: @invoiceSource.Invoice.Current.TicketId</MudText>
+                <MudText>Maker: @invoice.ROW_CREATED_BY · Total: @invoice.TOTAL_AMOUNT @invoice.CURRENCY_CODE · Original preparation receipt: @invoiceSource.SourceRevision</MudText>
+                @if(invoice.REVIEW_WORKFLOW_JSON is not null)
+                {
+                    var proof=CompanySalesInvoiceDecisionProof.Require(invoiceSource.Company,invoice);var decision=proof.Intent.Restore(invoiceSource.Company,proof.Intent.ROW_CREATED_BY);
+                    <MudText>Recorded reviewer: @decision.ActorUserId · UTC: @proof.DecidedAtUtc.ToString("O") · Decision: @decision.Decision</MudText>
+                    <MudText>Tax: @decision.TaxDisposition · @decision.TaxEvidence</MudText><MudText>Charges: @decision.ChargesDisposition · @decision.ChargesEvidence</MudText><MudText>Entitlement: @decision.EntitlementDisposition · @decision.EntitlementEvidence</MudText><MudText>Reviewer reason: @decision.Reason</MudText>
+                }
+                <MudAlert Severity="Severity.Info">Record the independent invoice decision first, then review current assigned task authority to complete or route rejection. Task observation creates no receivable, payment or ledger posting.</MudAlert>
+                @if(Company.Selection?.Permissions.Contains("Accounting.ReviewSalesInvoice",StringComparer.Ordinal)==true)
+                {<Beep.OilandGas.Web.Components.Workflow.SalesInvoiceReviewWorkbench @key="invoiceSource.InstanceId" InvoiceId="@invoiceSource.InvoiceId" AssignedSource="invoiceSource" RecordedOutcomeChanged="NativeOutcomeChanged" />}
+                <MudButton Href="@($"/accounting/sales-invoices?ticket={Uri.EscapeDataString(invoiceSource.Invoice.Current.TicketId)}")" Variant="Variant.Outlined">Open original billing preparation</MudButton>
+            </MudPaper>
+        }
+        @if(_deliverySource is {} delivery)
+        {
+            @if(delivery.IsHistorical)
+            {
+                var recorded=delivery.Delivery.Recorded!;
+                var facts=recorded.Preparation.Facts;
+                <MudPaper Class="pa-4 mt-3" Outlined="true">
+                    <MudText Typo="Typo.h6">Historical delivery receiving evidence</MudText>
+                    <MudAlert Severity="Severity.Info">This process preserves its original rejected receiving version. Corrected evidence requires its own independent review. This history is read-only.</MudAlert>
+                    <MudText>Ticket: @delivery.TicketId · FIELD: @delivery.Delivery.Source.Source.Source.FieldId · Revenue transaction: @delivery.Delivery.Source.Source.TransactionId</MudText>
+                    <MudText>Captured window: @delivery.Delivery.Source.Source.Source.From.ToString("yyyy-MM-dd") through @delivery.Delivery.Source.Source.Source.Through.ToString("yyyy-MM-dd")</MudText>
+                    <MudText>Receiving UTC: @facts.AcceptedAtUtc.ToString("O") · Receiving associate: @facts.ReceivingBusinessAssociateId · Evidence: @facts.EvidenceReference</MudText>
+                    <MudText>Recorded accepted quantity: @(facts.AcceptedQuantity?.ToString(System.Globalization.CultureInfo.CurrentCulture) ?? "Unavailable") · Accepted unit: @(facts.AcceptedQuantityUnit ?? "Unavailable")</MudText>
+                    <MudText>Receiving notes: @facts.Notes</MudText>
+                    <MudText>Original preparer: @recorded.Preparation.ActorUserId · Prepared UTC: @recorded.PreparedAtUtc.ToString("O") · Intent: @recorded.Preparation.IntentId</MudText>
+                    <MudText>Recorded decision: @recorded.Decision!.Decision · Reviewer: @recorded.Decision.ActorUserId · Decided UTC: @recorded.DecidedAtUtc?.ToString("O")</MudText>
+                    <MudText>Decision reason: @recorded.Decision.Reason</MudText>
+                    <MudAlert Severity="Severity.Info">Historical rejection supplies no approved receiving quantity or billing authority. Open the assigned work queue to review the current version.</MudAlert>
+                    <MudButton Href="/tasks/inbox">Assigned work</MudButton>
+                    @if(delivery.Delivery.CurrentSource is {} currentSource)
+                    {
+                        var currentRecord=RevenueDeliveryAcceptanceProof.RequireEnvelope(Company.Selection!.Scope,currentSource.Ticket).Record;
+                        <MudText>Current receiving intent: @currentRecord.Preparation.IntentId · Current preparer: @currentRecord.Preparation.ActorUserId · Current accepted quantity: @currentRecord.Preparation.Facts.AcceptedQuantity @currentRecord.Preparation.Facts.AcceptedQuantityUnit</MudText>
+                        @if(currentRecord.Preparation.ActorUserId==Company.Selection.UserId)
+                        {<MudButton Href="@($"/accounting/delivery-intents/{currentRecord.Preparation.IntentId}")">Review current saved receiving command</MudButton>}
+                    }
+                </MudPaper>
+            }
+            else
+            {
+            @if(_state.Instance.Status==Beep.OilandGas.Models.Processes.ProcessStatus.COMPLETED && _state.Instance.CurrentState=="REJECTION_REVIEWED" && delivery.Delivery.Recorded!.Preparation.ActorUserId==Company.Selection?.UserId && Company.Selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal))
+            {<MudButton OnClick="ReviewDeliveryCorrection" Disabled="@(_busy || _correctionBusy)">Review original receiving correction</MudButton>}
+            @if(_correctionError is not null){<MudAlert Severity="Severity.Error" role="alert">@_correctionError</MudAlert>}
+            <MudAlert Severity="Severity.Info">Review this task's original receiving evidence. Its FIELD and stored window come from the recorded preparation. After a decision, review current task authority to complete or route rejection.</MudAlert>
+            <Beep.OilandGas.Web.Components.Workflow.DeliveryAcceptanceWorkbench @key="delivery.InstanceId" FieldId="@delivery.Delivery.Source.Source.Source.FieldId" From="@delivery.Delivery.Source.Source.Source.From" Through="@delivery.Delivery.Source.Source.Source.Through" TransactionId="@delivery.Delivery.Source.Source.TransactionId" AssignedSource="delivery" CorrectionReview="_deliveryCorrection" RecordedOutcomeChanged="NativeOutcomeChanged" />
+            }
+        }
+        @if(_commercialSource is {} commercial)
+        {
+            @if(commercial.IsHistorical)
+            {
+                var recorded=commercial.Terms.Recorded!;
+                var terms=recorded.Preparation.Terms;
+                var decision=recorded.Decision!;
+                <MudPaper Class="pa-4 mt-3" Outlined="true">
+                    <MudText Typo="Typo.h6">Historical commercial terms</MudText>
+                    <MudAlert Severity="Severity.Info">This process retains its original rejected version. Revenue rows and terms below are captured evidence from that preparation. Current contract terms require their own process and independent decision.</MudAlert>
+                    <MudText>Contract: @commercial.ContractId · Version: @terms.Version</MudText>
+                    <MudText>FIELD: @commercial.Terms.Source.Source.FieldId · Revenue transaction: @commercial.Terms.Source.TransactionId</MudText>
+                    <MudText>Captured window: @commercial.Terms.Source.Source.From.ToString("yyyy-MM-dd") through @commercial.Terms.Source.Source.Through.ToString("yyyy-MM-dd")</MudText>
+                    <MudText>Effective from: @terms.EffectiveFrom.ToString("yyyy-MM-dd") · Through: @(terms.EffectiveThrough?.ToString("yyyy-MM-dd") ?? "No recorded end date")</MudText>
+                    <MudText>Proposed price: @terms.Price.ToString(System.Globalization.CultureInfo.InvariantCulture) @terms.CurrencyCode / @terms.PriceUnit · Method: @terms.PricingMethod</MudText>
+                    <MudText>Terms notes: @terms.Notes</MudText>
+                    <MudText>Original preparer: @recorded.Preparation.ActorUserId · Prepared UTC: @recorded.PreparedAtUtc.ToString("O")</MudText>
+                    <MudText>Recorded decision: @decision.Decision · Reviewer: @decision.ActorUserId · Decided UTC: @recorded.DecidedAtUtc?.ToString("O")</MudText>
+                    <MudText>Decision reason: @decision.Reason</MudText>
+                    <MudText Typo="Typo.caption">Original preparation revision: @commercial.PreparationRevision</MudText>
+                    <MudSimpleTable Dense="true" Class="mt-3">
+                        <thead><tr><th scope="col">Captured revenue transaction</th><th scope="col">Stored date</th><th scope="col">Currency</th><th scope="col">Gross revenue</th><th scope="col">Net revenue</th><th scope="col">Oil price</th></tr></thead>
+                        <tbody>
+                            @foreach(var row in commercial.Terms.Source.Source.Rows)
+                            {
+                                <tr><td>@row.REVENUE_TRANSACTION_ID</td><td>@row.TRANSACTION_DATE?.ToString("yyyy-MM-dd")</td><td>@row.CURRENCY_CODE</td><td>@(row.GROSS_REVENUE?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "Not recorded")</td><td>@(row.NET_REVENUE?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "Not recorded")</td><td>@(row.OIL_PRICE?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "Not recorded")</td></tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </MudPaper>
+                @if(_state.Instance.CurrentState=="REJECTION_REVIEWED" && _state.Instance.Status==Beep.OilandGas.Models.Processes.ProcessStatus.COMPLETED && Company.Selection is {} commercialSelection && commercialSelection.UserId==recorded.Preparation.ActorUserId && commercialSelection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal))
+                {
+                    <Beep.OilandGas.Web.Components.Workflow.CommercialAmendmentWorkbench Source="commercial" RecordedOutcomeChanged="NativeOutcomeChanged" />
+                }
+            }
+            else
+            {
+            <MudAlert Severity="Severity.Info">Review this task's recorded commercial source. Its FIELD and date window come from the original preparation. After recording a decision, review current step authority to complete the task.</MudAlert>
+            <Beep.OilandGas.Web.Components.Workflow.CommercialTermsWorkbench @key="commercial.InstanceId" FieldId="@commercial.Terms.Source.Source.FieldId" From="@commercial.Terms.Source.Source.From" Through="@commercial.Terms.Source.Source.Through" TransactionId="@commercial.Terms.Source.TransactionId" AssignedProcessId="@commercial.InstanceId" RecordedOutcomeChanged="NativeOutcomeChanged" />
+            }
+        }
+        @if(_commercialSource?.IsHistorical!=true && _deliverySource?.IsHistorical!=true)
+        {
+        <MudPaper Class="pa-4 mt-3" Outlined="true">
+            @if(_state.Instance.Status==Beep.OilandGas.Models.Processes.ProcessStatus.IN_PROGRESS)
+            {
+                <MudText Typo="Typo.h6">Current assigned step eligibility</MudText>
+                <MudButton OnClick="ReviewStep" Disabled="@(_stepBusy || Completion.Busy || Completion.HasUnconfirmedIntent)" Variant="Variant.Outlined">Review current step authority</MudButton>
+            }
+            @if(_stepBusy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing current company step" />}
+            @if(_stepError is not null){<MudAlert Severity="Severity.Error">@_stepError</MudAlert>}
+            @if(Completion.HasUnconfirmedIntent){<MudAlert Severity="Severity.Warning">The previous completion outcome is unconfirmed. Keep this session open and return to the original company/account/process to reconcile the same intent.</MudAlert>}
+            @if(Completion.CanReconcile){<MudText>Original completion reason: @Completion.Intent!.Notes</MudText><MudButton OnClick="CompleteStep" Disabled="@(Completion.Busy || _busy || _stepBusy)" Variant="Variant.Outlined">Reconcile original completion</MudButton>}
+            @if(Completion.Busy){<MudProgressLinear Indeterminate="true" aria-label="Completing or reconciling company step" />}
+            @if(Completion.Review is {} review)
+            {
+                <MudText>Step: @review.StepName · Assigned role: @review.AssignedRole</MudText>
+                <MudText>Source maker: @review.SourceMakerUserId · Workflow starter: @review.WorkflowStarterUserId</MudText>
+                <MudText>Required permission: @review.RequiredPermission · Independent actor required: @review.RequiresIndependentActor</MudText>
+                @if(review.CorrectionEvidence is {} corrected)
+                {
+                    <MudAlert Severity="Severity.Info">@(corrected.Action==CompanyAccountingStepEvidence.InvoiceCorrectionReturn?"A newer correction requires return to the original preparer; acknowledgement cannot reuse prior-version work.":corrected.Action==CompanyAccountingStepEvidence.InvoiceCorrectionAcknowledgement?"This step records independent correction acknowledgement; financial approval remains separate.":"This step records completion of source correction work and opens its configured independent acknowledgement task.")</MudAlert>
+                    <MudText>Correction version: @corrected.CorrectionVersion · Intent: @corrected.CorrectionIntentId · Preparer: @corrected.CorrectionPreparerUserId</MudText>
+                    <MudText>Current financial revision: @corrected.FinancialRevision · Current source revision: @corrected.SourceRevision</MudText>
+                }
+                @if(review.EntityType=="AR_PAYMENT"){<MudAlert Severity="@(review.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesPaymentMessage(review)</MudAlert>} else if(review.EntityType=="JOURNAL_ENTRY"){<MudAlert Severity="@(review.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesJournalMessage(review)</MudAlert>} else if(review.EntityType=="AR_INVOICE"){<MudAlert Severity="@(review.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesReceivableMessage(review)</MudAlert>} else if(review.EntityType=="INVOICE"){<MudAlert Severity="@(review.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesInvoiceMessage(review)</MudAlert>} else if(review.EntityType=="RUN_TICKET"){<MudAlert Severity="@(review.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.DeliveryMessage(review)</MudAlert>}
+                else
+                {
+                <MudAlert Severity="@(review.Eligible?Severity.Info:Severity.Warning)">@(review.Eligible?review.EntityType=="SALES_CONTRACT"?review.RequiresIndependentActor?"Recorded commercial approval by this reviewer and current role checks permit completion.":"Recorded rejection and current original-preparer authority permit rejection-review completion. Terms remain rejected.":review.AccountingEvidenceRevision is not null?review.CorrectionEvidence is not null?"Recorded correction and current role checks permit this workflow step review.":"Recorded controller disposition and current role checks permit this workflow step review.":"Current role and maker checks permit this workflow step review.":review.Eligibility is "COMMERCIAL_REJECTION_RECORDED" or "DELIVERY_REJECTION_RECORDED" or "SALES_INVOICE_REJECTION_RECORDED" or "SALES_RECEIVABLE_REJECTION_RECORDED" or "SALES_JOURNAL_REJECTION_RECORDED" or "SALES_PAYMENT_REJECTION_RECORDED"?"The native terms rejection is recorded. Route it to the configured original-preparer review step.":review.Eligibility=="COMMERCIAL_RETURN_CONFIGURATION_REQUIRED"?"The recorded workflow has no rejection-review step. Ask the workflow administrator to reconcile this original handoff; changing its definition invalidates existing evidence.":review.Eligibility=="COMMERCIAL_PREPARER_REQUIRED"?"Only the original terms preparer can complete rejection review.":review.Eligibility=="COMMERCIAL_PREPARATION_PERMISSION_REQUIRED"?"Current company commercial preparation permission is required for rejection review.":review.Eligibility=="COMMERCIAL_APPROVAL_REQUIRED"?"Record an independent approval of these exact commercial terms before completing this task. A rejection cannot complete approval work.":review.Eligibility=="COMMERCIAL_REVIEWER_REQUIRED"?"Only the account that recorded the native commercial approval can complete this task.":review.Eligibility=="COMMERCIAL_APPROVAL_PERMISSION_REQUIRED"?"Current company commercial approval permission is required to complete this task.":review.Eligibility=="RECORDED_DISPOSITION_REQUIRED"?"Record an independent controller variance disposition on the invoice before completing this task.":review.Eligibility=="RECORDED_CONTROLLER_REQUIRED"?"Only the controller account that recorded this disposition can complete this task.":review.Eligibility=="REQUEST_CORRECTION_REQUIRED"?"This correction workflow requires a recorded request for correction.":review.Eligibility=="ORIGINAL_PREPARER_REQUIRED"?"Only the original proposal preparer can perform this correction work.":review.Eligibility=="CORRECTION_ACKNOWLEDGEMENT_REQUIRED"?"Configure the immediately following independent correction acknowledgement step before completing correction work.":review.Eligibility=="CORRECTION_WORK_EVIDENCE_REQUIRED"?"Complete correction work for this exact latest version before independent acknowledgement.":review.Eligibility=="CORRECTION_DATA_REQUIRED"?"Accountant correction is pending. A recorded corrected invoice is required before this task can complete.":review.Eligibility=="WORKFLOW_PERMISSION_REQUIRED"?"The current company assignment lacks the required workflow permission.":"The current role assignment or independent actor requirement refuses this step.")</MudAlert>
+                }
+                <MudText Typo="Typo.caption">@(review.EntityType=="AR_PAYMENT"?"This observes the actual native payment decision or acknowledges maker rejection. Release, allocation, cash posting and settlement remain separate.":review.EntityType=="JOURNAL_ENTRY"?"This observes confirmed journal review or posting, or routes rejection to the maker. Native financial writes use their separate authorized forms.":review.EntityType=="AR_INVOICE"?"This observes the recorded receivable decision or routes rejection to its maker. Posting, payment, credit and replacement remain separate.":review.EntityType=="INVOICE"?"This observes the recorded invoice decision or routes rejection to the maker. Invoice cancellation/replacement, receivable, payment and posting remain separate.":review.EntityType=="RUN_TICKET"?"This records workflow completion or routes a recorded rejection. Delivery evidence, correction, billing and recognition remain separate.":review.Eligibility is "COMMERCIAL_REJECTION_RECORDED" or "DELIVERY_REJECTION_RECORDED" or "SALES_INVOICE_REJECTION_RECORDED" or "SALES_RECEIVABLE_REJECTION_RECORDED" or "SALES_JOURNAL_REJECTION_RECORDED" or "SALES_PAYMENT_REJECTION_RECORDED"?"This routes the recorded rejection and creates its configured preparer review tasks. It does not approve or amend terms.":review.EntityType=="SALES_CONTRACT" && !review.RequiresIndependentActor?"This closes review of rejected terms. A new amendment remains a separate versioned command.":review.CorrectionEvidence?.Action==CompanyAccountingStepEvidence.InvoiceCorrectionReturn?"This returns the acknowledgement assignment and reopens correction work. It does not record acknowledgement or financial approval.":"This completes the reviewed workflow step and records its approval when required. Financial matching, posting and payment remain separate.")</MudText>
+                @if((review.Eligible || review.Eligibility is "COMMERCIAL_REJECTION_RECORDED" or "DELIVERY_REJECTION_RECORDED" or "SALES_INVOICE_REJECTION_RECORDED" or "SALES_RECEIVABLE_REJECTION_RECORDED" or "SALES_JOURNAL_REJECTION_RECORDED" or "SALES_PAYMENT_REJECTION_RECORDED" || review.CorrectionEvidence?.Action==CompanyAccountingStepEvidence.InvoiceCorrectionReturn) && !Completion.HasUnconfirmedIntent)
+                {
+                    <MudTextField T="string" Label="Completion reason" @bind-Value="_notes" Lines="3" MaxLength="2000" Required="true" Disabled="Completion.Busy" HelperText="Explain the source evidence reviewed and the workflow decision." />
+                    <MudButton OnClick="CompleteStep" Disabled="@(Completion.Busy || _busy || _stepBusy)" Color="Color.Primary" Variant="Variant.Filled">@(review.Eligibility is "COMMERCIAL_REJECTION_RECORDED" or "DELIVERY_REJECTION_RECORDED" or "SALES_INVOICE_REJECTION_RECORDED" or "SALES_RECEIVABLE_REJECTION_RECORDED" or "SALES_JOURNAL_REJECTION_RECORDED" or "SALES_PAYMENT_REJECTION_RECORDED"?"Route recorded rejection to original preparer":review.CorrectionEvidence?.Action==CompanyAccountingStepEvidence.InvoiceCorrectionReturn?"Return newer correction to original preparer":"Complete reviewed workflow step")</MudButton>
+                }
+            }
+            @if(Completion.Receipt is {} receipt)
+            {
+                <MudAlert Severity="Severity.Success">@(Completion.Intent?.Action=="RETURN_CORRECTION_WORK"?"Recorded correction return and process reload confirmed.":"Recorded step completion and process reload confirmed.") Closed assignments: @receipt.CompletedTaskIds.Count · Next assignments: @receipt.NextTaskIds.Count.</MudAlert>
+                <MudText>Recorded completion history: @receipt.HistoryId</MudText>
+                <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">@(receipt.NextStepInstanceId is null?"Return to assigned work":"Open next assigned work")</MudButton>
+            }
+        </MudPaper>
+        }
+    }
+</MudContainer>
+@code {
+    [Parameter] public string Id {get;set;}="";
+    private ProcessInstanceDetailState? _state;
+    private CompanyCommercialProcessSourceReview? _commercialSource;
+    private CompanyDeliveryProcessSourceReview? _deliverySource;
+    private CompanySalesInvoiceProcessSourceReview? _invoiceSource;
+    private CompanySalesReceivableProcessSourceReview? _receivableSource;
+    private CompanySalesJournalProcessSourceReview? _journalSource;
+    private CompanySalesPaymentProcessSourceReview? _paymentSource;
+    private CompanyDeliveryCorrectionReview? _deliveryCorrection;
+    private bool _correctionBusy;
+    private long _authorityEpoch;
+    private string? _correctionError;
+    private bool _busy,_disposed,_reloadRequested;
+    private string? _error;
+    private string _notes="";
+    private bool _stepBusy;
+    private string? _stepError;
+    protected override void OnInitialized()
+    {
+        _state=new(Company,_=>throw new InvalidOperationException("Use the company accounting source reader."),_=>throw new InvalidOperationException("Company history must come from the reviewed accounting process."));
+        Company.Changed+=ContextChanged;
+        Authentication.AuthenticationStateChanged+=AuthenticationChanged;
+        Completion.Changed+=RenderCompletion;
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        try{Id=RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"accounting/processes/");}
+        catch(FormatException){_state?.Clear();_error="The recorded accounting process location is invalid.";AttachCompletion();return;}
+        await Reload();
+    }
+    private async Task Reload()
+    {
+        if(_disposed)return;_commercialSource=null;_deliverySource=null;_invoiceSource=null;_receivableSource=null;_journalSource=null;_paymentSource=null;_deliveryCorrection=null;_correctionError=null;_stepError=null;if(_busy){_state?.Clear();_reloadRequested=true;return;}_busy=true;
+        try{do{
+            _reloadRequested=false;_error=null;var original=Company.Snapshot;var id=Id;var authorityEpoch=_authorityEpoch;
+            if(original.Selection is null){_state?.Clear();break;}
+            try{
+                var user=(await Authentication.GetAuthenticationStateAsync()).User;
+                if(original!=Company.Snapshot || authorityEpoch!=_authorityEpoch)continue;
+                var selected=original.Selection;
+                bool Allowed(string? type)=>user.Identity?.IsAuthenticated==true && (user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??user.FindFirst("sub")?.Value)==selected.UserId && selected.Roles.Any(user.IsInRole) &&
+                    selected.Permissions.Any(permission=>type is "AP_INVOICE" or "SALES_CONTRACT" or "RUN_TICKET" or "INVOICE" or "AR_INVOICE" or "JOURNAL_ENTRY"?permission=="Accounting.View":type=="PURCHASE_ORDER"?permission=="Procurement.View":permission is "Accounting.View" or "Procurement.View");
+                if(!Allowed(null)){_state?.Clear();throw new UnauthorizedAccessException("Current company accounting source read access is required.");}
+                await _state!.LoadAccountingAsync(id,value=>Processes.GetCompanyAccountingInstanceAsync(value));
+                if(original!=Company.Snapshot || id!=Id || authorityEpoch!=_authorityEpoch)continue;
+                if(!Allowed(_state.Instance?.EntityType)){_state.Clear();throw new UnauthorizedAccessException("This recorded source requires current company read authority.");}
+                if(_state.Instance is {EntityType:"SALES_CONTRACT"} process)
+                {
+                    var commercial=await Processes.GetCompanyCommercialSourceAsync(id);
+                    if(original!=Company.Snapshot || id!=Id || authorityEpoch!=_authorityEpoch)continue;
+                    if(commercial.ContractId!=process.EntityId || commercial.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(process)))
+                        throw new InvalidOperationException("The displayed commercial process changed.");
+                    _commercialSource=commercial;
+                }
+                if(_state.Instance is {EntityType:"RUN_TICKET"} deliveryProcess)
+                {
+                    var delivery=await Processes.GetCompanyDeliverySourceAsync(id);
+                    if(original!=Company.Snapshot || id!=Id || authorityEpoch!=_authorityEpoch)continue;
+                    if(delivery.TicketId!=deliveryProcess.EntityId || delivery.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(deliveryProcess)))
+                        throw new InvalidOperationException("The displayed delivery process changed.");
+                    _deliverySource=delivery;
+                }
+                if(_state.Instance is {EntityType:"INVOICE"} invoiceProcess)
+                {
+                    var invoice=await Processes.GetCompanySalesInvoiceSourceAsync(id);
+                    if(original!=Company.Snapshot || id!=Id || authorityEpoch!=_authorityEpoch)continue;
+                    if(invoice.InvoiceId!=invoiceProcess.EntityId || invoice.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(invoiceProcess)))throw new InvalidOperationException("The displayed invoice workflow changed.");_invoiceSource=invoice;
+                }
+                if(_state.Instance is {EntityType:"AR_PAYMENT"} paymentProcess)
+                {
+                    var payment=await Processes.GetCompanySalesPaymentSourceAsync(id);if(original!=Company.Snapshot || id!=Id || authorityEpoch!=_authorityEpoch)continue;
+                    if(payment.PaymentId!=paymentProcess.EntityId || payment.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(paymentProcess)))throw new InvalidOperationException("The displayed payment workflow changed.");_paymentSource=payment;
+                }
+                if(_state.Instance is {EntityType:"JOURNAL_ENTRY"} journalProcess)
+                {
+                    var journal=await Processes.GetCompanySalesJournalSourceAsync(id);if(original!=Company.Snapshot || id!=Id || authorityEpoch!=_authorityEpoch)continue;
+                    if(journal.JournalId!=journalProcess.EntityId || journal.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(journalProcess)))throw new InvalidOperationException("The displayed journal workflow changed.");_journalSource=journal;
+                }
+                if(_state.Instance is {EntityType:"AR_INVOICE"} receivableProcess)
+                {
+                    var receivable=await Processes.GetCompanySalesReceivableSourceAsync(id);if(original!=Company.Snapshot || id!=Id || authorityEpoch!=_authorityEpoch)continue;
+                    if(receivable.ReceivableId!=receivableProcess.EntityId || receivable.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(receivableProcess)))throw new InvalidOperationException("The displayed receivable workflow changed.");_receivableSource=receivable;
+                }
+            }
+            catch(Exception error){var message=Calls.Explain(error,"loading a company accounting process","The recorded company process could not be confirmed. Reload company access and sources");if(!_disposed && original==Company.Snapshot && id==Id && authorityEpoch==_authorityEpoch)_error=message;}
+        }while(_reloadRequested && !_disposed);}finally{_busy=false;AttachCompletion();}
+    }
+    private async Task NativeOutcomeChanged(){Completion.AttachProcess(null,null);await Reload();}
+    private async Task ReviewDeliveryCorrection()
+    {
+        if(_disposed || _busy || _correctionBusy || _deliverySource is not {} source || source.IsHistorical)return;var snapshot=Company.Snapshot;var id=Id;var epoch=_authorityEpoch;_correctionBusy=true;_correctionError=null;
+        try{var user=(await Authentication.GetAuthenticationStateAsync()).User;if(snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || !selected.Roles.Any(user.IsInRole))throw new UnauthorizedAccessException();
+            var review=await Accounting.GetDeliveryCorrectionReviewAsync(id);review.Require(selected.Scope,selected.UserId,id);
+            if(_disposed || epoch!=_authorityEpoch || snapshot!=Company.Snapshot || id!=Id)return;if(review.ProcessRevision!=source.ProcessRevision || review.Previous.Preparation.Source.TicketId!=source.TicketId)throw new InvalidOperationException("The original process/source changed.");_deliveryCorrection=review;
+        }catch{if(!_disposed && epoch==_authorityEpoch && snapshot==Company.Snapshot && id==Id)_correctionError="The original correction review could not be confirmed. Check the completed preparer review and current company/source access.";}finally{_correctionBusy=false;}
+    }
+    private async Task ReviewStep()
+    {
+        if(_disposed || _busy || _stepBusy || Completion.Busy || Completion.HasUnconfirmedIntent || _commercialSource?.IsHistorical==true || _deliverySource?.IsHistorical==true || _state?.Instance is not {} source || source.Status!=Beep.OilandGas.Models.Processes.ProcessStatus.IN_PROGRESS)return;
+        _stepError=null;_stepBusy=true;var original=Company.Snapshot;var id=Id;
+        var revision=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(source));
+        bool Current()=>!_disposed && original==Company.Snapshot && id==Id && _state?.Instance is {} current &&
+            ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(current))==revision;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(!Current())return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole))throw new UnauthorizedAccessException("Current company roles are required.");
+            var review=await Processes.ReviewCompanyAccountingStepAsync(id) ?? throw new InvalidOperationException("The recorded step is unavailable.");
+            review.Require(original.Selection.Scope,original.Selection.UserId,id);
+            if(!Current())return;
+            if(review.ProcessRevision!=revision)throw new InvalidOperationException("The displayed process changed. Reload before reviewing its step.");
+            Completion.AcceptReview(review);
+        }
+        catch(Exception failure){var message=Calls.Explain(failure,"reviewing the assigned company step","Current step or source-maker evidence could not be confirmed. Reload the process and company access");if(Current())_stepError=message;}
+        finally{_stepBusy=false;}
+    }
+    private void AttachCompletion(){var source=_error is null && _commercialSource?.IsHistorical!=true && _deliverySource?.IsHistorical!=true?_state?.Instance:null;Completion.AttachProcess(source?.InstanceId,source is null?null:ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(source)));}
+    private void RenderCompletion(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private async Task CompleteStep()
+    {
+        if(_disposed || _busy || _stepBusy || Completion.Busy || _commercialSource?.IsHistorical==true || _deliverySource?.IsHistorical==true || Completion.Receipt is not null && Completion.Review is null)return;_stepError=null;var original=Company.Snapshot;var id=Id;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || id!=Id)return;
+            var review=Completion.Intent?.Review ?? Completion.Review ?? throw new InvalidOperationException("Review the original step first.");
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is not {} selected || selected.Scope!=review.Company || selected.UserId!=review.ActorUserId ||
+                !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains(review.RequiredPermission,StringComparer.Ordinal))throw new UnauthorizedAccessException("Current company step authority is required.");
+            await Completion.SubmitAsync(Processes,_notes,CompanyAccountingSourceTypes.IsNativeDecision(review.EntityType) && review.Eligibility==CompanyAccountingSourceTypes.RejectionEligibility(review.EntityType)?CompanyAccountingSourceTypes.RejectionRoute(review.EntityType):review.CorrectionEvidence?.Action==CompanyAccountingStepEvidence.InvoiceCorrectionReturn?"RETURN_CORRECTION_WORK":null);
+            if(!_disposed && original==Company.Snapshot && id==Id && Completion.Receipt is not null){_notes="";await Reload();}
+        }
+        catch(Exception failure){var message=Calls.Explain(failure,"completing the company workflow step","The step outcome is unconfirmed. Retain this session and reconcile the original completion");if(!_disposed && original==Company.Snapshot && id==Id)_stepError=message;}
+    }
+    private void ContextChanged(){++_authorityEpoch;_notes="";_stepError=null;_deliveryCorrection=null;_deliverySource=null;_commercialSource=null;_invoiceSource=null;_receivableSource=null;_journalSource=null;_paymentSource=null;_state?.Clear();AttachCompletion();if(!_disposed)_=InvokeAsync(async()=>{StateHasChanged();await Reload();if(!_disposed)StateHasChanged();});}
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)=>ContextChanged();
+    public void Dispose(){_disposed=true;++_authorityEpoch;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Completion.Changed-=RenderCompletion;_state?.Dispose();}
+}

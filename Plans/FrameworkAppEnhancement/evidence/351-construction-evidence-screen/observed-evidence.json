@@ -1,0 +1,36 @@
+{
+  "recorded_at": "2026-10-27T12:51:01.606853+03:00",
+  "status": "focused_screen_passed",
+  "passed": 1,
+  "failed": 0,
+  "test_time": "3.6405 seconds",
+  "command": "Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath ./TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -IncludeWorkflowInbox -TestFilter 'FullyQualifiedName~ConstructionEvidenceScreenTests'",
+  "scope": "Actual rendered authorized construction evidence navigation; no live API, browser or construction acceptance tested.",
+  "limitations": [
+    "Construction milestones, punch lists, financial and safety aggregates and production handover remain unimplemented here.",
+    "Existing target screens and their data were not qualified by this test.",
+    "Removing the legacy construction-progress API is intentional and is an externally visible breaking change."
+  ],
+  "sha256": {
+    "Beep.OilandGas.Web/Pages/PPDM39/Development/ConstructionProgress.razor": "c32f994fc0bf95cab381a4861c64374c4fd07397ef9db683ee3426641bcdc483",
+    "Beep.OilandGas.Web.Auth.Tests/ConstructionEvidenceScreenTests.cs": "26f3c60733615c9dc7613c031d8de0a920e3fb84e296c19e35429f38e444b22d",
+    "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs": "97a9be1416df8fb0d35c88fd4a24163c30538c73efddc2eb13e5f12cafbcee8e",
+    "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs": "fb71692f96ff4382cff83f14c8948bc75f9feaa224e499f6a438eb8fb8ddc191",
+    "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs": "b7b5abaacd88079be5589bd14baf57036af4214d1da0c1a3c4730f3148682b69",
+    "Scripts/Test-PurchaseOrderOwnership.ps1": "0aea956f974690c08ecc9145162c0a7517d50502185d1394c856b78a06672e8c"
+  },
+  "log_sha256": "239a23aeef49629ea28f9727a92c8c204566c0e75bd3568b886a44750b10b71c",
+  "final_screen_gate": {
+    "status": "passed",
+    "passed": 1,
+    "log": "oilgas-construction-evidence-screen-final.log",
+    "sha256": "1fb5c728fb8c2d3419cd05fac83bc1c598ac5271725563ecbde2bbf07ee1a7e3"
+  },
+  "development_well_regression": {
+    "status": "passed",
+    "passed": 35,
+    "log": "oilgas-construction-development-well-regression.log",
+    "sha256": "c50d813e4018fe874251a1632e6bba888bbce9fc708ac4ae0470b14ef38b2201",
+    "scope": "Affected development well evidence and shared typed client; not construction acceptance."
+  }
+}

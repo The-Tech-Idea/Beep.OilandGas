@@ -9,11 +9,6 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Repositories;
-using Beep.OilandGas.PPDM39.DataManagement.Services;
-using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -40,7 +35,8 @@ namespace Beep.OilandGas.ApiService.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly string _connectionName;
+        private readonly CompanyModuleConnection _company;
+        private readonly TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy _rows;
         private readonly ILogger<PPDM39GenericDataService> _logger;
 
         public PPDM39GenericDataService(
@@ -48,18 +44,20 @@ namespace Beep.OilandGas.ApiService.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            string connectionName,
-            ILogger<PPDM39GenericDataService> logger)
+            CompanyModuleConnection company,
+            ILogger<PPDM39GenericDataService> logger,
+            TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy rows)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _connectionName = connectionName ?? "PPDM39";
+            _company = company ?? throw new ArgumentNullException(nameof(company));
             _logger = logger;
+            _rows = rows ?? throw new ArgumentNullException(nameof(rows));
         }
 
-        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter> filters, string connectionName = "PPDM39")
+        public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter> filters, string? connectionName = null)
         {
             var (repo, _) = await RepositoryForAsync(tableName, connectionName);
             var entities = await repo.GetAsync(filters ?? new List<AppFilter>());
@@ -69,7 +67,7 @@ namespace Beep.OilandGas.ApiService.Services
             return response;
         }
 
-        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> GetEntityByIdAsync(string tableName, object id, string? connectionName = null)
         {
             var (repo, _) = await RepositoryForAsync(tableName, connectionName);
             var entity = await repo.GetByIdAsync(id);
@@ -81,8 +79,9 @@ namespace Beep.OilandGas.ApiService.Services
             };
         }
 
-        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> entityData, string userId, string? connectionName = null)
         {
+            _company.RequireActor(userId);
             var (repo, entityType) = await RepositoryForAsync(tableName, connectionName);
             var (entity, refusal) = DictionaryToObject(entityType, entityData);
             if (refusal != null)
@@ -91,18 +90,23 @@ namespace Beep.OilandGas.ApiService.Services
             return new GenericEntityResponse { Success = result != null, Message = string.Empty };
         }
 
-        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string entityId, Dictionary<string, object> entityData, string userId, string? connectionName = null)
         {
+            _company.RequireActor(userId);
             var (repo, entityType) = await RepositoryForAsync(tableName, connectionName);
             var (entity, refusal) = DictionaryToObject(entityType, entityData);
             if (refusal != null)
                 return new GenericEntityResponse { Success = false, ErrorMessage = refusal };
+            var keys = (await _metadata.GetPrimaryKeyColumnsAsync(tableName)).ToArray();
+            if (keys.Length != 1 || !string.Equals(Convert.ToString(entityType.GetProperty(keys[0])?.GetValue(entity), CultureInfo.InvariantCulture), entityId, StringComparison.Ordinal))
+                throw RefusalException.Invalid("The update body must match the route's single primary key.");
             var result = await repo.UpdateAsync(entity!, userId);
             return new GenericEntityResponse { Success = result != null, Message = string.Empty };
         }
 
-        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string connectionName = "PPDM39")
+        public async Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string? connectionName = null)
         {
+            _company.RequireActor(userId);
             var (repo, _) = await RepositoryForAsync(tableName, connectionName);
             var result = await repo.SoftDeleteAsync(id, userId);
             return new GenericEntityResponse { Success = result, Message = string.Empty };
@@ -112,13 +116,15 @@ namespace Beep.OilandGas.ApiService.Services
         // application does not have is a fault in the metadata, not a reason to read rows as plain objects.
         private async Task<(PPDMGenericRepository Repository, Type EntityType)> RepositoryForAsync(string tableName, string? connectionName)
         {
+            var scope = await _company.ResolveAsync(connectionName);
             var tableMetadata = await _metadata.GetTableMetadataAsync(tableName)
                 ?? throw RefusalException.NotFound($"Table '{tableName}' is not a PPDM table.");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{tableMetadata.EntityTypeName}")
+            var entityType = typeof(Beep.OilandGas.PPDM.Models.IPPDMEntity).Assembly
+                .GetType($"Beep.OilandGas.PPDM39.Models.{tableMetadata.EntityTypeName}")
                 ?? throw new InvalidOperationException(
                     $"PPDM table '{tableName}' maps to entity type '{tableMetadata.EntityTypeName}', which this application does not have.");
             return (new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, entityType,
-                connectionName ?? _connectionName, tableName), entityType);
+                scope.ConnectionName, tableName, rowAccess: _rows), entityType);
         }
 
         private static Dictionary<string, object> ObjectToDictionary(object obj)

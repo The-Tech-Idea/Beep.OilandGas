@@ -1,0 +1,15 @@
+using Microsoft.AspNetCore.Mvc;
+using TheTechIdea.Data.OilGas;
+namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
+public sealed partial class CompanyGLAccountController
+{
+    private static bool FxDate(string value,out DateTime date)=>DateTime.TryParseExact(value,"yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out date);
+    [HttpGet("fx-rates")]
+    public Task<ActionResult> FxRates([FromQuery]string book,[FromQuery]string sourceCurrency,[FromQuery]string date){if(!FxDate(date,out var calendar))return Task.FromResult<ActionResult>(BadRequest());return ConfigurationExecute(async()=>{var authority=await Authority();var review=await accounts.GetCompanyFxRatesAsync(authority.Company,authority.Actor,book,sourceCurrency,calendar,authority.Guard);review.Require(authority.Company,authority.Actor,book,sourceCurrency,calendar);await authority.Guard();return Ok(review);});}
+    [HttpGet("fx-rates/configuration-review")]
+    public Task<ActionResult> FxReview([FromQuery]string book,[FromQuery]string sourceCurrency,[FromQuery]string date,[FromQuery]string? through=null){if(!FxDate(date,out var calendar) || through is not null && !FxDate(through,out _))return Task.FromResult<ActionResult>(BadRequest());var end=through is null?calendar:DateTime.ParseExact(through,"yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture);return ConfigurationExecute(async()=>{var authority=await Authority(true);var review=new CompanyFxRateConfigurationReview(await accounts.GetCompanyFxRateWindowAsync(authority.Company,authority.Actor,book,sourceCurrency,calendar,end,authority.Guard),authority.Binding);review.Require(authority.Company,authority.Actor,book,sourceCurrency,calendar);review.Source.RequireWindow(calendar,end);await authority.Guard();return Ok(review);});}
+    [HttpPost("fx-rates/configuration")]
+    public Task<ActionResult> ConfigureFx([FromBody]CompanyFxRateConfigurationSubmission submission){if(submission?.Command is null)return Task.FromResult<ActionResult>(BadRequest());return ConfigurationExecute(async()=>{submission=CompanyInventorySourceReview.Copy(submission);submission.Command.Require();var authority=await Authority(true,fx:submission.Command);var row=await accounts.ConfigureCompanyFxRateAsync(submission,authority.Guard);if(CompanyFxRateProof.Require(row).Command!=submission.Command)throw new InvalidOperationException("The original native rate is unconfirmed.");await authority.Guard();return Ok(row);});}
+    [HttpGet("fx-rates/configuration/{id}")]
+    public Task<ActionResult> RecoverFx(string id)=>ConfigurationExecute(async()=>{var authority=await Authority();var row=await accounts.GetCompanyFxRateConfigurationAsync(authority.Company,authority.Actor,id,authority.Guard);await authority.Guard();if(row is null)return NotFound();if(CompanyFxRateProof.Require(row).Command.BindingRevision!=authority.Binding)throw new InvalidOperationException("Return to the original rate binding.");return Ok(row);});
+}

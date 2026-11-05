@@ -1,0 +1,89 @@
+{
+  "observed_at": "2026-10-29T10:22:39.953160+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "working_tree": "dirty; pre-existing unrelated work retained; no staging/commit/push",
+  "environment": "Windows PowerShell, .NET SDK 10.0.401, net10.0 focused source-linked harnesses",
+  "checks": [
+    {
+      "name": "lifecycle-ui",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 127,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 35,
+      "scope": "Source-linked lifecycle, cross-persona routing, screen, typed client and protected intent checks",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~CompanyHseWorkflowStartTests|FullyQualifiedName~PersonaTaskRoutingTests|FullyQualifiedName~HseIncidentScreenTests|FullyQualifiedName~ProtectedClosure|FullyQualifiedName~ProtectedCorrectionReturn\" --logger \"console;verbosity=minimal\"",
+      "completed_at": "2026-10-29T10:20:31.398475+03:00",
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-correction-return/lifecycle-ui.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-correction-final-gate.log",
+      "original_output_sha256": "6e928fe97c673d26c8c5738e0b61d6b618b24a9aa33638d2cf5752a0ed87d6fe"
+    },
+    {
+      "name": "coordinator",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 55,
+      "scope": "Current API coordinator with controlled app authority and lifecycle/native command boundaries",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~FinalIncidentClosureConfirmsLifecycleBeforeNativeStatus --logger \"console;verbosity=minimal\"",
+      "completed_at": "2026-10-29T10:18:50.533566+03:00",
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-correction-return/coordinator.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-correction-coordinator-final.log",
+      "original_output_sha256": "b511f33bcda937270e621b949890bccc0c963a9fb02b76679cf6972ccd9a448c"
+    },
+    {
+      "name": "sqlite",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 16,
+      "scope": "Actual local Beep SQLite connector, MigrationManager schema creation and lifecycle enrollment/approval/correction/retry graph; incident/action evidence supplied by controlled callbacks",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-beep-loader-7216c8101d4b466a903ca8b9865c08a3\\BeepLoader.csproj --no-restore -p:BuildProjectReferences=false --filter FullyQualifiedName~RealSqliteDatasourcePersistsAndReconcilesHseWorkflowGraph --logger \"console;verbosity=minimal\"",
+      "completed_at": "2026-10-29T10:20:51.988762+03:00",
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-correction-return/sqlite.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-correction-sqlite-final.log",
+      "original_output_sha256": "cae793649c1ac1b6833aa0728f97c15bb945cee4145c4744b17e14c60aa76b1c"
+    },
+    {
+      "name": "data-build",
+      "status": "verified",
+      "exit_code": 0,
+      "command": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false --nologo --verbosity quiet",
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-correction-return/data-build.stdout.txt",
+      "scope": "Shared Data contracts only; existing missing IdentityServer analyzer project warning"
+    }
+  ],
+  "source_sha256": {
+    "TheTechIdea.Data/OilGas/CompanyHseCorrection.cs": "dc63ce34d9f0efca698e038a64c1d42721a72eec73a54fc71e15a22c841bb383",
+    "TheTechIdea.Data/OilGas/CompanyHseClosure.cs": "9ec3ab6c935dbb8acdaf60d32f80e7744673eed2e38b3da83d19372e8f39d5ce",
+    "TheTechIdea.Data/OilGas/CompanyHseWorkflowStart.cs": "8aafeeb4e7dc895c7498ef698ab97a207bf8ae6fabc986b3254650fa4ec34e9e",
+    "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.HseCorrection.cs": "2e2d637e695a4e4ef0fa516212de94b5dd485f4dd30fb302a25127038f99152e",
+    "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.HseClosure.cs": "e980edf76f95ec70036b391399c54330fdad624295cb6cf3d5bc3cebe48ef25c",
+    "Beep.OilandGas.LifeCycle/Services/Processes/CrossPersonaTaskRouter.cs": "ecd13ec3a58dcf686ca1d28f916ecbc3ac850650730decb01d5e85444c833249",
+    "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.Closure.cs": "f695ca8252be5692c2832bb2be1ff91963636451303dc07e41e8b1db40a7f57d",
+    "Beep.OilandGas.ApiService/Controllers/HSE/IncidentWorkflowController.cs": "184beab7d4d162c04f8158daee0e5ebe835f936a383b2a2438f7703aa85d4a28",
+    "Beep.OilandGas.Web/Components/Workflow/HseClosureWorkflow.razor": "61518e177c36e7f7212041a6551e162fb1ce4a5cb8c69c0ad0285837cf21de4a",
+    "Beep.OilandGas.Web/Services/HSEServiceClient.Closure.cs": "d38b4491738872f290931540368521973016e8c54daea67b715396b37d59075e",
+    "Beep.OilandGas.Web/Services/CorrectiveActionIntentStore.Closure.cs": "fcc06d75785936f8dd875ccc62731430a8ae566b9a934a3aa86855e011bec6f6",
+    "Beep.OilandGas.Web/Services/IHSEServiceClient.cs": "eb56debe9709f2cfe547922ca15a3e0d3cc8c2b39b8ce6be40193ce4a7f8d2df",
+    "Beep.OilandGas.Web/Services/CorrectiveActionIntentStore.cs": "e8ed11fddeb6a62cea1edf158065159e023d717aff49a95caeac6c7a920f8123",
+    "Beep.OilandGas.ApiService.Tests/CompanyHseWorkflowStartTests.cs": "d3d8aaa3521f3273f273a2711c93e046531c721e4a63a3a87b35ad9f7b90a3f6",
+    "Beep.OilandGas.ApiService.Tests/CompanyHseWorkflowSqliteTests.cs": "1be260087ecf00a8e1a96578babc10c1a691ca0758c1f29b8b045a061af69f70",
+    "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowServiceTests.cs": "ec46806bd3e358bed93b10861842f64838985e0f89ea020f23c9a8108b900f0e",
+    "Beep.OilandGas.Web.Auth.Tests/HseIncidentScreenTests.cs": "9b969e21a8f1f63d4a7eac00e2f33dfb01947010d4a87168717c871834b53bc8",
+    "Beep.OilandGas.Web.Auth.Tests/CompanyHseWorkflowIntentStoreTests.cs": "caa1477eb3968672208933e4261d3d0bfc59092e4500e34c9338a7df6823dd6e"
+  },
+  "sqlite_connector": "C:/Users/f_ald/source/repos/The-Tech-Idea/BeepDataSources/DataSourcesPluginsCore/SqliteDatasourceCore/bin/Debug/net10.0/SqliteDatasourceCore.dll",
+  "limitations": [
+    "No full test suite or solution build.",
+    "Component rendering is controlled bUnit, not a hosted browser, RTL or OIDC journey.",
+    "SQLite proves the native lifecycle graph with supplied incident/action source callbacks; it does not prove a hosted multi-store PPDM incident correction/closure journey.",
+    "Additional providers, concurrency matrix and changes to terminally approved action/cause evidence remain open.",
+    "Console excerpts are verbatim final output; full local temporary output paths and hashes are retained above."
+  ]
+}

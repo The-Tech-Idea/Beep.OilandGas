@@ -1,0 +1,44 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@if(State?.Instance is {} source)
+{
+    <MudText>Company: @State.Company?.TenantId / @State.Company?.BusinessAssociateId</MudText>
+    @if(State.IsCompanyAccounting){<MudText>Scope: Company accounting</MudText>}
+    else{<MudText>FIELD: @source.FieldId</MudText>}
+    <MudText Typo="Typo.h6">@source.ProcessId · @source.Status</MudText>
+    <MudText>Source: @source.EntityType / @source.EntityId</MudText>
+    <MudText>Started: @source.StartDate.ToString("O") by @source.StartedBy</MudText>
+    <MudText>Current state: @source.CurrentState · Current step: @source.CurrentStepId</MudText>
+    @if(State.IsCompanyAccounting && source.Status==Beep.OilandGas.Models.Processes.ProcessStatus.COMPLETED)
+    {
+        <MudAlert Severity="Severity.Info">Recorded workflow is completed. Financial matching, posting and payment require their separate recorded source outcomes.</MudAlert>
+        <MudText>Recorded completion: @source.CompletionDate?.ToString("O") · Completed by account: @source.CompletedBy</MudText>
+    }
+    @if(State.AccountingSourceRoute is {} route){<MudButton Href="@route" Variant="Variant.Outlined">Open owned accounting source</MudButton>}
+    @if(State.IsHseIncident)
+    {
+        @if(State.HseIncidentRoute is {} incidentRoute)
+        {
+            <MudText>Continue investigation, corrective work, independent verification or final closure on the recorded incident.</MudText>
+            <MudButton Href="@incidentRoute" Variant="Variant.Outlined">Open recorded incident workflow</MudButton>
+        }
+        else { <MudAlert Severity="Severity.Warning">The recorded incident workflow link could not be confirmed. Reload its source before continuing.</MudAlert> }
+    }
+    <MudText Typo="Typo.h6" Class="mt-4">Recorded steps</MudText>
+    @if(source.StepInstances is not {Count:>0}){<MudText>No recorded steps were returned.</MudText>}
+    @foreach(var step in source.StepInstances ?? [])
+    {
+        <MudText>@step.StepName (@step.StepId / @step.StepInstanceId) · @step.Status · Assigned: @step.AssignedTo · Role: @step.RequiredRole</MudText>
+    }
+    <MudText Typo="Typo.h6" Class="mt-4">Recorded history</MudText>
+    @if(State.History.Count==0){<MudText>No recorded history entries were returned.</MudText>}
+    @foreach(var row in State.History)
+    {
+        <MudPaper Outlined="true" Class="pa-3 my-2"><MudText>@row.Timestamp.ToString("O") · @row.Action · @row.PerformedBy</MudText><MudText>@row.Notes</MudText></MudPaper>
+    }
+    @if(State.IsCompanyAccounting){<MudAlert Severity="Severity.Info">Recorded workflow steps and history do not establish invoice matching, receipt acceptance or payment. Submission and independent accounting decisions require their reviewed command and source contracts.</MudAlert>}
+}
+@code {
+    [Microsoft.AspNetCore.Components.Parameter] public ProcessInstanceDetailState? State {get;set;}
+}

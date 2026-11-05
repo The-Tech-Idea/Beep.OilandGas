@@ -1,0 +1,9 @@
+### Ran Playwright code
+```js
+await page.getByRole('link', { name: 'Open assigned HSE process' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:60559/ppdm39/process/instances/hse-process-assigned-original
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-assigned-incident-browser\artifacts\page-2026-10-29T10-00-25-645Z.yml)

@@ -1,0 +1,136 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+@if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+@if(_authorized && Review is not null && (Review.CanViewCorrection || Review.CanViewCorrectionIntent))
+{
+    <MudPaper Outlined="true" Class="pa-4 mt-3">
+        <MudText Typo="Typo.h6">Accountant invoice correction</MudText>
+        <MudAlert Severity="Severity.Info">Edit explicit billed values against the recorded controller request. Currency, units and purchase references stay recorded. Saving records source correction and history; independent financial rereview and workflow completion remain separate.</MudAlert>
+        <MudText>Controller request: @Review.RecordedVarianceDecision?.Command.Reason</MudText>
+        @if(Review.HasUnconfirmedCorrectionIntent)
+        {
+            <MudAlert Severity="Severity.Warning">Correction outcome is unconfirmed. Retain and reconcile the original intent before another source command.</MudAlert>
+            @if(Review.CanViewCorrectionIntent && Review.CorrectionIntent is {} pending)
+            {
+                <MudText>Original correction intent: @pending.Command.IntentId · Invoice: @pending.Command.InvoiceId</MudText>
+                <MudText>Original correction reason: @pending.Command.Draft.Reason</MudText>
+                <MudButton OnClick="SaveCorrection" Disabled="@(!Review.CanReconcileCorrection)">Reconcile original correction intent</MudButton>
+                <MudButton Href="@Review.CorrectionRecoveryRoute" Disabled="Review.CorrectionCommandBusy">Return to original correction invoice</MudButton>
+            }
+        }
+        else if(Review.CorrectionResult is {} saved)
+        {
+            <MudAlert Severity="Severity.Success">Exact corrected invoice source and history confirmed. Independent financial rereview and correction task completion remain pending.</MudAlert>
+            <MudText>Recorded correction version: @saved.Command.Version · Total: @saved.Invoice.TOTAL_AMOUNT</MudText>
+        }
+        else if(!Review.CorrectionEditing)
+        {
+            <MudText>Load complete current financial evidence before preparing correction.</MudText>
+            <MudButton OnClick="Begin" Disabled="@(Review.FinancialReview is null || Review.CorrectionReviewBusy)">Prepare explicit correction</MudButton>
+        }
+        else
+        {
+            <MudNumericField T="decimal?" Label="Proposed invoice total" Value="Review.CorrectionTotal" ValueChanged="TotalChanged" Required="true" Disabled="Review.CorrectionReviewBusy" />
+            <MudTextField T="string" Label="Correction reason" Value="Review.CorrectionReason" ValueChanged="ReasonChanged" Required="true" MaxLength="1000" Disabled="Review.CorrectionReviewBusy" />
+            @foreach(var row in Review.CorrectionLines)
+            {
+                <MudPaper Outlined="true" Class="pa-3 my-3">
+                    <MudText>Recorded invoice line: @row.Id</MudText>
+                    <MudNumericField T="decimal?" Label="Proposed quantity" Value="row.Quantity" ValueChanged='@(value=>AmountChanged(row.Id,"QUANTITY",value))' Required="true" Disabled="Review.CorrectionReviewBusy" />
+                    <MudNumericField T="decimal?" Label="Proposed unit price" Value="row.UnitPrice" ValueChanged='@(value=>AmountChanged(row.Id,"UNIT_PRICE",value))' Required="true" Disabled="Review.CorrectionReviewBusy" />
+                    <MudNumericField T="decimal?" Label="Proposed line total" Value="row.LineTotal" ValueChanged='@(value=>AmountChanged(row.Id,"LINE_TOTAL",value))' Required="true" Disabled="Review.CorrectionReviewBusy" />
+                    <MudTextField T="string" Label="Proposed line description" Value="row.Description" ValueChanged="@(value=>DescriptionChanged(row.Id,value))" MaxLength="1024" Disabled="Review.CorrectionReviewBusy" />
+                </MudPaper>
+            }
+            <MudButton OnClick="ReviewCorrection" Disabled="Review.CorrectionReviewBusy" Color="Color.Primary">Review explicit correction</MudButton>
+            <MudButton OnClick="Cancel" Disabled="Review.CorrectionReviewBusy">Discard correction edits</MudButton>
+            @if(Review.CorrectionReviewBusy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing accountant correction" />}
+            @if(Review.CorrectionReview is {} result)
+            {
+                <MudAlert Severity="Severity.Info">Current source and correction request confirmed for these proposed edits. The invoice and correction task are unchanged.</MudAlert>
+                <MudText>Recorded invoice total: @result.Current.Invoice.Invoice.TOTAL_AMOUNT · Proposed total: @result.Draft.TotalAmount</MudText>
+                <MudText>Reviewed correction reason: @result.Draft.Reason</MudText>
+                <MudButton OnClick="SaveCorrection" Disabled="Review.CorrectionCommandUnsettled" Color="Color.Primary">Save reviewed source correction</MudButton>
+            }
+        }
+        @if(Review.CorrectionCommandBusy){<MudProgressLinear Indeterminate="true" aria-label="Recording or reconciling accountant correction" />}
+    </MudPaper>
+}
+@code {
+    [Parameter] public APInvoiceWorkspaceState? Review {get;set;}
+    private APInvoiceWorkspaceState? subscribed;
+    private bool _authorized,_disposed;
+    private string? _error;
+    protected override void OnInitialized(){Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        if(subscribed!=Review){if(subscribed is not null)subscribed.CorrectionChanged-=Render;subscribed=Review;if(subscribed is not null)subscribed.CorrectionChanged+=Render;}
+        var original=Company.Snapshot;var version=Review?.Version;_authorized=false;
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(!_disposed && original==Company.Snapshot && version==Review?.Version && original.Selection is {} selected)
+            _authorized=user.Identity?.IsAuthenticated==true && Subject(user)==selected.UserId && selected.Roles.Any(user.IsInRole);
+    }
+    private static string? Subject(System.Security.Claims.ClaimsPrincipal user)=>user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value??user.FindFirst("sub")?.Value;
+    private async Task RequireAuthority()
+    {
+        var original=Company.Snapshot;var version=Review?.Version;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Review is null || original!=Company.Snapshot || version!=Review.Version || original.Selection is null ||
+            user.Identity?.IsAuthenticated!=true || Subject(user)!=original.Selection.UserId || !original.Selection.Roles.Any(user.IsInRole) ||
+            !original.Selection.Permissions.Contains("Accounting.CorrectInvoice",StringComparer.Ordinal) ||
+            !original.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal) ||
+            !(Review.CanViewCorrection || Review.CanReconcileCorrection))
+            throw new UnauthorizedAccessException("Current original accountant company roles and correction grant are required.");
+    }
+    private async Task Begin()
+    {
+        _error=null;var original=Company.Snapshot;var version=Review?.Version;
+        try{await RequireAuthority();Review!.BeginCorrection();}
+        catch(Exception failure){var message=Calls.Explain(failure,"preparing accountant correction","Load complete current source evidence and review original accountant correction authority");if(!_disposed && original==Company.Snapshot && version==Review?.Version)_error=message;}
+    }
+    private async Task ReviewCorrection()
+    {
+        if(_disposed || Review is null || Review.CorrectionReviewBusy)return;
+        _error=null;var original=Company.Snapshot;var version=Review.Version;
+        try{await RequireAuthority();await Review.LoadCorrectionReviewAsync(Accounting.ReviewAPInvoiceCorrectionAsync);}
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"reviewing accountant correction","Correction review could not be confirmed. Enter exact complete values and reload current source and controller request evidence");
+            if(!_disposed && original==Company.Snapshot && version==Review.Version)
+            {
+                _error=message;
+                if(failure is UnauthorizedAccessException || failure is OilGasApiException{StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_authorized=false;Review.ClearCorrection();}
+            }
+        }
+    }
+    private void Edit(Action change)
+    {
+        if(_disposed || !_authorized || Review?.CanViewCorrection!=true)return;
+        _error=null;try{change();}catch(InvalidOperationException failure){_error=Calls.Explain(failure,"editing accountant correction","Reload current correction source before editing");}
+    }
+    private async Task SaveCorrection()
+    {
+        if(_disposed || Review is null || Review.CorrectionCommandBusy)return;
+        _error=null;var original=Company.Snapshot;var version=Review.Version;
+        try{await RequireAuthority();await Review.RecordCorrectionAsync(Accounting.RecordAPInvoiceCorrectionAsync,Accounting.GetAPInvoiceAsync);}
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"recording accountant correction","Correction outcome could not be confirmed. Retain and reconcile the original intent before another source command");
+            if(!_disposed && original==Company.Snapshot && version==Review.Version)_error=message;
+        }
+    }
+    private void TotalChanged(decimal? value)=>Edit(()=>Review!.SetCorrectionTotal(value));
+    private void ReasonChanged(string value)=>Edit(()=>Review!.SetCorrectionReason(value));
+    private void AmountChanged(string id,string field,decimal? value)=>Edit(()=>Review!.SetCorrectionAmount(id,field,value));
+    private void DescriptionChanged(string id,string value)=>Edit(()=>Review!.SetCorrectionDescription(id,value));
+    private void Cancel(){_error=null;Review?.ClearCorrection();}
+    private void Render(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){_authorized=false;_error=null;Review?.ClearCorrection();Render();}
+    private void AuthenticationChanged(Task<AuthenticationState> changed){_authorized=false;_error=null;Review?.Clear();Render();}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;if(subscribed is not null)subscribed.CorrectionChanged-=Render;}
+}

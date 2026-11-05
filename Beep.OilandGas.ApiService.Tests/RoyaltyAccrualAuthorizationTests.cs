@@ -45,7 +45,7 @@ public class RoyaltyAccrualAuthorizationTests
         var access = new Mock<IAccessControlService>(MockBehavior.Strict);
         access.Setup(a => a.HasPermissionAsync("local", "Accounting.PostJournal", null)).ReturnsAsync(true);
         royalties.Setup(r => r.GetAllocationFieldAsync("detail")).ReturnsAsync("stored-field");
-        access.Setup(a => a.CheckAssetAccessAsync("local", "stored-field", "FIELD", null))
+        access.Setup(a => a.CheckAssetAccessAsync("local", "stored-field", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = allowed });
         if (allowed) royalties.Setup(r => r.CalculateAsync("detail", "local")).ReturnsAsync(new ROYALTY_CALCULATION());
         var result = await Controller(royalties.Object, access.Object).Accrue("detail");

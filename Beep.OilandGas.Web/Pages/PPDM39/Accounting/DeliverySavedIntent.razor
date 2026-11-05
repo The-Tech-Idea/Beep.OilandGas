@@ -1,0 +1,62 @@
+@page "/accounting/delivery-intents/{IntentId}"
+@namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Workflow
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+<PageTitle>Original saved delivery work</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4">Original saved delivery work</MudText>
+    <MudButton OnClick="Reload" Disabled="@_busy">Reload original saved delivery evidence</MudButton>
+    <MudButton Href="/tasks/inbox">Return to my work inbox</MudButton>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Loading original saved delivery evidence" />}
+    else if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Select the original company and account to recover this delivery command.</MudAlert>}
+    else if(_review is {} review)
+    {
+        var command=review.Entry.Restore(review.Company,review.ActorUserId,review.Entry.SCOPE_KEY);var source=command.Original.Source.Source.Source;
+        <MudText>Original command: @command.Kind · @command.IntentId · Ticket @review.Entry.RUN_TICKET_ID · FIELD @source.FieldId</MudText>
+        <MudText>Original stored window: @source.From.ToString("yyyy-MM-dd") through @source.Through.ToString("yyyy-MM-dd") · Revenue transaction @command.Original.Source.Source.TransactionId</MudText>
+        <MudText>Saved by @review.ActorUserId · Saved UTC @review.Entry.ROW_CREATED_DATE?.ToString("O")</MudText>
+        @if(review.Status=="RECONCILIATION_REQUIRED"){<MudAlert Severity="Severity.Warning">Current delivery evidence or the exact original outcome is unconfirmed. The saved command remains preserved. Reload original evidence and access before any retry.</MudAlert>}
+        else{<MudAlert Severity="Severity.Info">@(review.Status=="RECORDED"?"The exact original outcome is recorded. Opening it performs no business write.":"The original command is saved but unsent. Review current evidence before an explicit retry.")</MudAlert>}
+        <DeliveryAcceptanceWorkbench @key="review.Entry.RECORDED_REVISION" FieldId="@source.FieldId" From="@source.From" Through="@source.Through" TransactionId="@command.Original.Source.Source.TransactionId" RecoveryIntent="@review.Entry" RecordedOutcomeChanged="Reload" />
+    }
+</MudContainer>
+@code {
+    [Parameter] public string IntentId{get;set;}=string.Empty;
+    private string? _attached,_error;
+    private CompanyDeliverySavedWorkReview? _review;
+    private bool _busy,_disposed,_reload;
+    private int _epoch;
+    protected override void OnInitialized(){Company.Changed+=Changed;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){if(_attached==IntentId)return;_attached=IntentId;++_epoch;await Reload();}
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;var selected=snapshot.Selection;var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ??user.FindFirstValue("sub");
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || selected is null || actor!=selected.UserId || user.Identity?.IsAuthenticated!=true || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal))throw new UnauthorizedAccessException();
+    }
+    private async Task Reload()
+    {
+        if(_disposed)return;if(_busy){_reload=true;return;}_busy=true;
+        try
+        {
+            do
+            {
+                _reload=false;_review=null;_error=null;var snapshot=Company.Snapshot;var epoch=_epoch;var id=IntentId;if(snapshot.Selection is null)continue;
+                try{CompanyDeliverySavedWorkReview.RequireIntentId(id);await Authority();if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)continue;var result=await Accounting.GetDeliverySavedIntentAsync(id);await Authority();if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || id!=IntentId)continue;result.Require(snapshot.Selection.Scope,snapshot.Selection.UserId,id);_review=CompanyInventorySourceReview.Copy(result);}
+                catch{if(!_disposed && epoch==_epoch && snapshot==Company.Snapshot && id==IntentId)_error="The original saved delivery command or current company/account/FIELD access could not be confirmed. Reload in its original context.";}
+            }while(_reload && !_disposed);
+        }
+        finally{_busy=false;}
+    }
+    private void Changed(){++_epoch;_review=null;_error=null;if(!_disposed)_=InvokeAsync(async()=>{StateHasChanged();await Reload();if(!_disposed)StateHasChanged();});}
+    private void AuthChanged(Task<AuthenticationState> state)=>Changed();
+    public void Dispose(){_disposed=true;++_epoch;_review=null;Company.Changed-=Changed;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

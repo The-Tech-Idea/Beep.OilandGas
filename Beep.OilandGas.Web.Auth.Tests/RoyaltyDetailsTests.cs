@@ -10,7 +10,7 @@ namespace Beep.OilandGas.Web.Auth.Tests;
 
 public class RoyaltyDetailsTests
 {
-    private static AccountingServiceClient Client(HttpClient http) => new(new ApiClient(http, new RecordingFailureReporter()), NullLogger<AccountingServiceClient>.Instance);
+    private static AccountingServiceClient Client(HttpClient http) => new(new ApiClient(http, new RecordingFailureReporter(), TestCompany.Selected()), NullLogger<AccountingServiceClient>.Instance);
     private static HttpResponseMessage Json(object? data) => new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(data)) };
     private sealed class Handler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     {

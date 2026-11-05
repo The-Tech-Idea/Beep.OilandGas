@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- OilandGasTools is a sibling source dependency; deploy its core assembly with the API. -->
+    <ProjectReference Include="..\..\OilandGasTools\src\TheTechIdea.OilGas.Core\TheTechIdea.OilGas.Core.csproj" />
+    <ProjectReference Include="..\..\OilandGasTools\src\TheTechIdea.OilGas.Loaders\TheTechIdea.OilGas.Loaders.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Repository\Beep.OilandGas.Repository.csproj" />
     <!-- The identity server's client library: local validation of signed access tokens and each person's account. -->
     <ProjectReference Include="$(IdentitySharedProject)" />
@@ -24,6 +27,7 @@
     <ProjectReference Include="..\Beep.OilandGas.Diagnostics\Beep.OilandGas.Diagnostics.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
     <PackageReference Include="Microsoft.OpenApi" Version="3.5.2" />
+    <PackageReference Include="NuGet.Versioning" Version="7.6.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
     <PackageReference Include="SkiaSharp" Version="3.119.4" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="$(BeepDMVersion)" />
@@ -31,11 +35,11 @@
     <PackageReference Include="TheTechIdea.Beep.DuckDBDataSourceCore" Version="1.0.45" />
     <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
     <PackageReference Include="TheTechIdea.Beep.MongoDBDataSourceCore" Version="1.0.56" />
-    <PackageReference Include="TheTechIdea.Beep.MySqlDataSourceCore" Version="1.0.2" />
-    <PackageReference Include="TheTechIdea.Beep.OracleDataSourceCore" Version="1.0.19" />
-    <PackageReference Include="TheTechIdea.Beep.PostgreDataSourceCore" Version="1.0.2" />
-    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.0.21" />
-    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.56" />
+    <!-- Other relational connectors are acquired by SetupDriverService when selected. -->
+    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.1.1" />
+    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.58" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
     <PackageReference Include="TheTechIdea.Beep.SqlServerDataSourceCore" Version="1.0.1" />
     <PackageReference Include="TheTechIdea.Beep.TxtXlsCSVFileSourceCore" Version="1.0.13" />
   </ItemGroup>

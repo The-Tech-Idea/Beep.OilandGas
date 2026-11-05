@@ -1,0 +1,42 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IDevelopmentServiceClient Development
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Recorded facilities</MudText>
+        <MudText Class="my-2">These source rows do not establish equipment condition, construction acceptance or operational readiness.</MudText>
+        @if(Company.Selection is null){<MudAlert Severity="Severity.Info">Choose a company to review field facilities.</MudAlert>}
+        else if(!CanView()){<MudAlert Severity="Severity.Info">Your current company role cannot view development facility records.</MudAlert>}
+        else
+        {
+            <MudButton OnClick="Reload" Disabled="@(_state?.Loading==true)" Variant="Variant.Outlined">Reload facilities</MudButton>
+            @if(_state?.Loading==true){<MudProgressLinear Indeterminate="true" aria-label="Loading field facilities" />}
+            else if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+            else if(_state?.NeedsField==true){<MudAlert Severity="Severity.Info">Choose an available FIELD, then reload facilities.</MudAlert>}
+            else if(_state?.Loaded==true && _state.Review is {} review)
+            {
+                <MudText Class="my-2">Company @review.Company.BusinessAssociateId · FIELD @review.FieldId · @Recorded(_state.FieldName)</MudText>
+                @if(_state.Rows.Count==0){<MudAlert Severity="Severity.Info">No facility rows were returned for this company and FIELD.</MudAlert>}
+                else{<MudTable Items="@_state.Rows" Dense="true" aria-label="Field facility records"><HeaderContent><MudTh>Facility ID</MudTh><MudTh>Type</MudTh><MudTh>Name</MudTh><MudTh>Operator</MudTh><MudTh>Evidence</MudTh></HeaderContent><RowTemplate><MudTd DataLabel="Facility ID">@context.FACILITY_ID</MudTd><MudTd DataLabel="Type">@context.FACILITY_TYPE</MudTd><MudTd DataLabel="Name">@Recorded(context.FACILITY_LONG_NAME ?? context.FACILITY_SHORT_NAME)</MudTd><MudTd DataLabel="Operator">@Recorded(context.CURRENT_OPERATOR)</MudTd><MudTd DataLabel="Evidence"><MudButton Href="@FacilityEvidenceRoute.For(review,context)" Variant="Variant.Outlined" Size="Size.Small">Open facility evidence</MudButton></MudTd></RowTemplate></MudTable>}
+            }
+            else{<MudAlert Severity="Severity.Info">Reload to confirm current facility records.</MudAlert>}
+        }
+    </MudPaper>
+
+@code {
+    private DevelopmentFacilityEvidenceState? _state;
+    private bool disposed;
+    private static string Recorded(string? value)=>string.IsNullOrWhiteSpace(value)?"Not recorded":value;
+    private bool CanView()=>Company.Selection is {} selected && selected.Permissions.Contains("DevelopmentPlanning.View",StringComparer.Ordinal);
+    protected override void OnInitialized(){_state=new(Company,Fields,Development,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnAfterRenderAsync(bool firstRender)=>firstRender?Reload():Task.CompletedTask;
+    private Task Reload()=>CanView()?_state!.LoadAsync():Task.CompletedTask;
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

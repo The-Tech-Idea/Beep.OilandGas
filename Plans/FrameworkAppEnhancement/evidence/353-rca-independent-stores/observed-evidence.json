@@ -1,0 +1,140 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "status": "implemented canonical definition reuse and physical integral storage fix; three selected inputs pass",
+  "changes": [
+    "Moved the existing eight-step incident definition unchanged into IncidentReportingDefinition.Create; existing setup initializer delegates to this factory. No copied test definition remains.",
+    "RCA command schema guard accepts signed Int64 storage for bounded Int32 observations; identical-type rules for other values, primary keys and all widths remain. Narrow integral/fractional descriptors refuse.",
+    "Schema refusal identifies field, expected/reported type and width without including actual field values."
+  ],
+  "verification": [
+    {
+      "method": "HseClosureProviderQualificationTests.InstalledSqliteRcaHandoffClosesIncidentAcrossIndependentNativeStores",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "minutes": 5.8146,
+      "exit": 0,
+      "runtime_hashes": "provider-source-and-runtime-hashes.json"
+    },
+    {
+      "method": "CompanyIncidentCommandTests.RcaWriteRejectsNarrowOrFractionalObservationStorage",
+      "inputs": [
+        "System.Int16",
+        "System.Double"
+      ],
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 16.0611,
+      "exit": 0,
+      "runtime_hashes": "current_sha256"
+    }
+  ],
+  "builds": [
+    {
+      "project": "Beep.OilandGas.LifeCycle",
+      "seconds": 6.47,
+      "errors": 0,
+      "warnings": 23
+    },
+    {
+      "project": "source-linked focused repository target after provider fix",
+      "seconds": 17.75,
+      "errors": 0,
+      "warnings": 646
+    },
+    {
+      "project": "same focused target after test-only refusal cases",
+      "seconds": 20.78,
+      "errors": 0,
+      "warnings": 646
+    }
+  ],
+  "observed": [
+    "SetupDriverService-installed connector/provider; same actual editor owns separate real SQLite native and lifecycle files. All schema creation uses Beep Migration.",
+    "App canonical eight-step definition is created by the real lifecycle owner; first four steps/task progression are explicit fixture composition of existing owners.",
+    "Actual native RCA source review, immutable intent/cause write and current shared-cause proof; real lifecycle owner records reviewed RCA handoff before verification.",
+    "Actual native verification records independent VERIFIED evidence and lifecycle records corrective handoff, independent verification approval and final closure approval.",
+    "Real app HSE.ManageIncidents claim removal after lifecycle completion refuses native closure and leaves closure receipt absent. Restored permission reconciles same original.",
+    "One RCA cause/intent, one verification row, one CLOSED response among three local response rows, one closure receipt, two approvals and every persona task completed after exact retry.",
+    "Current shared cause re-read through lifecycle confirmation remains valid after native CLOSED. No lifecycle table on native source or closure receipt table on lifecycle source.",
+    "Captured schema reports RCA intent observation Int64, native PPDM observation Decimal, RCA JSON16384 and native closure JSON65536.",
+    "Int16 and Double source descriptors refuse actual RCA write before a native transaction; no native cause/intent/write occurs."
+  ],
+  "construction": [
+    "Run01 failed because fixture completed prior task after changing its current step. Corrected order; no router guard weakened.",
+    "Run02 failed because general router entry point refused reviewed HSE task ownership. Fixture now routes through existing actual owned transaction entry point.",
+    "Run03 reached real RCA record but exact Int32 schema string check rejected physical SQLite Int64. Beep maps both to SQLite INTEGER. Added only lossless signed integral widening and retained other type/width/key checks.",
+    "Run04 final provider journey passes. Test-only refusal cases added afterward; provider runtime/source hashes captured before rebuilding to keep evidence precise."
+  ],
+  "limits": [
+    "Earlier reporting/classification/notification/investigation steps and task progression are fixture-composed preconditions. Production client entrypoints and atomicity of that earlier progression are unqualified.",
+    "Native completion/operator audit and reference vocabularies are controlled seeds; role/persona callback is controlled. Actual app HSE permission revocation, native source/causes/proofs/verification/closure, lifecycle receipts/tasks/approvals and transactions use their active owners.",
+    "No production OIDC/HTTP/browser qualification; current identity/registry/editor-routing fixture seams remain explicit.",
+    "No real-provider lost transport/commit acknowledgement, concurrent writers, process restart/reopen, public NuGet feed, other providers or production performance acceptance.",
+    "No handwritten SQL, EF migration, compatibility owner, class/full/permit test execution, commit or push. Overall goal remains active."
+  ],
+  "logs": [
+    {
+      "file": "oilgas-353-rca-provider-lifecycle-build.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-provider-lifecycle-build.log",
+      "sha256": "fadcbd36951434391958d71b5bb91b8081e0f44abf231a15cac68b22bbb557f2"
+    },
+    {
+      "file": "oilgas-353-rca-provider-tests-build-05.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-provider-tests-build-05.log",
+      "sha256": "b4d921d7738928595de0a76c43ac53dff31ef4e8c9733c4b144397f5801ed4f7"
+    },
+    {
+      "file": "oilgas-353-rca-schema-build.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-schema-build.log",
+      "sha256": "9a1c58587f93159a50184d126f744210d376fac4073016cc51c9999067530cb5"
+    },
+    {
+      "file": "oilgas-353-rca-schema-01.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-schema-01.log",
+      "sha256": "10668b08a6e36639dc12d9f0fd6251dd3a1feeabebabdb04d67add976b211422"
+    },
+    {
+      "file": "oilgas-353-rca-provider-01.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-provider-01.log",
+      "sha256": "6f306994165f050674b02e8afe47dcfff4cf7097ee1386b4da0fda7174d039d9"
+    },
+    {
+      "file": "oilgas-353-rca-provider-02.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-provider-02.log",
+      "sha256": "1127d5e0877c64caf6cae1aedee34676033e4d5c478e8f75fafc2f615fee05dd"
+    },
+    {
+      "file": "oilgas-353-rca-provider-03.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-provider-03.log",
+      "sha256": "2543a384eba3a61b19e1638e306a752a9a2b89bfe83b90ea710f0fa8060ee688"
+    },
+    {
+      "file": "oilgas-353-rca-provider-04.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-rca-provider-04.log",
+      "sha256": "6ebb55d18be45ca5fcec90a9b574ea3b73885f5336393cd3133330ef0b4fc180"
+    }
+  ],
+  "current_sha256": {
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.RcaWrite.cs": "bf5d8fa93bef889e76ab6e12d5f28a97253dc8a0238e9c7344a60bd678db8d09",
+    "Beep.OilandGas.LifeCycle/Services/Processes/IncidentReportingDefinition.cs": "ceae2eedddb6de1f69e142333e01db7b50a4e8140d7b9c3903ed0375410f1a9a",
+    "Beep.OilandGas.LifeCycle/Services/Processes/ProcessDefinitionInitializer.HSECompliance.cs": "e1267a94d7437ea1bc6f008b573c0046590c5d8681c6fea53c2687cd76eca426",
+    "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs": "3dec0d4cdbc65245b7a527df17f1c4685b9f3fd64f57d388ffea4d153e1e5ae6",
+    "Beep.OilandGas.Repository.Tests/CompanyIncidentCommandTests.cs": "beb948615730ebd16021b6cbff35fdb9b826d66d849399687c6f48c810357b28",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "04b6fd486b5d02dde41a44f8b071507438943371b5a20e7ae59e2f60b4246984",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "2f7c96c2a9e9c66aef3b16c9fa466ad6fbfae53c48a24e8d1153b4be34d5f092"
+  },
+  "physical_files": [
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-f48ba17fb6ef4e398e018dc9f3a46025\\permits.db",
+      "bytes": 348160,
+      "sha256": "42dcb5a5b6cd810c93dc6dd3f1cf8cb93df219ea0ee60d0dcbe1cbd082849bad"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-f48ba17fb6ef4e398e018dc9f3a46025\\lifecycle.db",
+      "bytes": 258048,
+      "sha256": "160758f78569a70c2ef61f978385d027a6b613134e87c290f6e7100e45626faf"
+    }
+  ]
+}

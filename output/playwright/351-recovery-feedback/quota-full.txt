@@ -1,0 +1,10 @@
+### Result
+{
+  "keys": 55,
+  "characters": 5241344,
+  "error": "QuotaExceededError"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {let writes=0,error=null;for(const size of [131072,16384,2048,256])for(let i=0;i<256;i++){try{sessionStorage.setItem("oilgas-feedback-quota-"+(writes++),"Q".repeat(size));}catch(e){error=e.name;break;}}const keys=Object.keys(sessionStorage).filter(k=>k.startsWith("oilgas-feedback-quota-"));return {keys:keys.length,characters:keys.reduce((sum,k)=>sum+sessionStorage.getItem(k).length,0),error};}');
+```

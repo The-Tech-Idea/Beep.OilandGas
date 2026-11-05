@@ -1,0 +1,111 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject MaintenanceClosureState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Class="pa-3 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Close the final maintenance return duty</MudText>
+        @if(State.Busy || _discovering){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reviewing or recording maintenance closure" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        @if(Query is null)
+        {
+            <MudTextField @bind-Value="_process" @bind-Value:after="InputsChanged" Label="Original maintenance process identity" Disabled="@(State.Busy || _discovering)" Required="true" />
+            <MudTextField @bind-Value="_submission" @bind-Value:after="InputsChanged" Label="Original recorded work report identity" Disabled="@(State.Busy || _discovering)" Required="true" />
+        }
+        <MudButton OnClick="ReadStatusAsync" Disabled="@(State.Busy || _discovering)">Read recorded maintenance closure</MudButton>
+        @if(OriginalTask is not null){<MudButton OnClick="DiscoverAsync" Disabled="@(State.Busy || _discovering)">Discover this return assignment's report</MudButton>}
+        @if(State.Status is {} status)
+        {
+            @if(status.Recorded is {} recorded)
+            {<MudAlert Severity="Severity.Success">Maintenance workflow completed</MudAlert><MudText>Closed by @recorded.ActorUserId · role @recorded.Role · UTC @recorded.RecordedAtUtc.ToString("O") · @recorded.ClosedTaskIds.Count final tasks</MudText><MudText Typo="Typo.caption">Closure history @recorded.HistoryId · original physical acceptance @recorded.AcceptanceRevision</MudText>}
+            else{<MudAlert Severity="Severity.Info">No recorded maintenance closure was found for this original report.</MudAlert>}
+        }
+        @if(CanExecute)
+        {
+            <MudButton OnClick="ReviewAsync" Disabled="@(!State.CanReview || _discovering)">Review final duty and recorded physical acceptance</MudButton>
+            @if(State.Review is {} review)
+            {
+                <MudText>Original report @review.Current.Completion.Report.Query.SubmissionId · @review.Current.Completion.Report.WorkPerformed</MudText>
+                <MudText>Final configured role @review.Stage.AssignedRole · step @review.Stage.StepName · current native person @review.Current.Completion.ReviewerPerson?.PersonBaId</MudText>
+                <MudText>Physical return accepted by @review.Acceptance.ApproverUserId · native person @review.Acceptance.ApproverPersonBaId · actual return UTC @review.Acceptance.ReturnedAtUtc.ToString("O")</MudText>
+                <MudText Typo="Typo.caption">Recorded acceptance @review.Acceptance.ApprovalId · acceptance history @review.Acceptance.HistoryId · compared UTC @review.Current.Completion.ComparedAtUtc.ToString("O")</MudText>
+                <MudTable Items="@review.Current.Completion.Requirements.Where(row=>row.ApplicableStage=="RETURN_TO_SERVICE").ToArray()" Dense="true">
+                    <HeaderContent><MudTh>Approved return condition</MudTh><MudTh>Current accepted observation</MudTh><MudTh>Inspector and UTC</MudTh></HeaderContent>
+                    <RowTemplate><MudTd DataLabel="Approved return condition">@context.RequiredText · @context.Jurisdiction</MudTd><MudTd DataLabel="Current accepted observation">@context.Status · @context.ResultText</MudTd><MudTd DataLabel="Inspector and UTC">@context.Inspector · @context.InspectDate?.ToString("O")</MudTd></RowTemplate>
+                </MudTable>
+                <MudTextField @bind-Value="_reason" Label="Explicit final duty closure reason" Lines="3" Required="true" Disabled="@(State.Busy || _discovering)" />
+                <MudCheckBox @bind-Value="_confirm" Label="I confirm the final assigned duty, recorded physical acceptance and unchanged current return evidence" Disabled="@(State.Busy || _discovering)" />
+                <MudButton OnClick="RecordAsync" Disabled="@(!State.CanRecord || !_confirm)" Color="Color.Primary">Retain reference and complete maintenance workflow</MudButton>
+            }
+            <MudTextField @bind-Value="_reference" Label="Original maintenance closure intent" Disabled="@(State.Busy || _discovering)" />
+            <MudButton OnClick="RecoverAsync" Disabled="@(State.Busy || _discovering)">Recover original maintenance closure</MudButton>
+            @if(State.VisibleReference is {} id){<MudText>Retained original closure @id</MudText>}
+            @if(State.Receipt is {} saved)
+            {<MudAlert Severity="Severity.Success">Recorded maintenance workflow completion</MudAlert><MudText>Closed by @saved.Receipt.ActorUserId · UTC @saved.Receipt.RecordedAtUtc.ToString("O") · @saved.Receipt.ClosedTaskIds.Count final tasks</MudText><MudText Typo="Typo.caption">Closure history @saved.Receipt.HistoryId</MudText><MudButton Href="@("/ppdm39/process/instances/"+Uri.EscapeDataString(saved.Receipt.InstanceId))">Open completed process</MudButton>}
+        }
+        <MudText>Closure completes the final workflow duty. Asset operating-state advancement and financial close require their own recorded transitions.</MudText>
+    </MudStack>
+</MudPaper>
+@if((RecordedQuery ?? ReadableQuery) is {} assetQuery)
+{
+    <MaintenanceAssetEvidencePanel Query="@assetQuery" />
+}
+@if(RecordedQuery is {} closedQuery && CanExecute)
+{
+    <MaintenanceAssetReturnPanel Query="@closedQuery" />
+}
+@code {
+    [Parameter] public CompanyWorkOrderCompletionQuery? Query{get;set;}
+    [Parameter] public CompanyMaintenanceReceivingQuery? OriginalTask{get;set;}
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    private CompanyWorkOrderCompletionQuery? _attached;
+    private string _resource="",_reason="",_reference="",_process="",_submission="";
+    private bool _confirm,_disposed,_discovering;
+    private int _generation;
+    private string? _error;
+    private bool CanExecute=>Company.Selection is {} selected && selected.Roles.Count>0 && selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) && selected.Permissions.Contains("Workflow.Execute",StringComparer.Ordinal);
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet()
+    {
+        var resource=WorkOrderId+"\n"+FieldId+"\n"+OriginalTask?.InstanceId;if(_attached!=Query || _resource!=resource){Invalidate();_attached=Query;_resource=resource;_process=OriginalTask?.InstanceId??"";}if(Query is not null)State.Attach(Query);
+        var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);if(values.TryGetValue("maintenanceClosure",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        if(values.TryGetValue("closureProcess",out var process) && process.Count==1)_process=process[0]??"";if(values.TryGetValue("closureSubmission",out var submission) && submission.Count==1)_submission=submission[0]??"";
+    }
+    private CompanyWorkOrderCompletionQuery CurrentQuery()=>Query??new(new(_process,FieldId,WorkOrderId),_submission);
+    private CompanyWorkOrderCompletionQuery? RecordedQuery=>State.Receipt?.Command.Reference().Query ?? State.Status?.Recorded?.Query;
+    private CompanyWorkOrderCompletionQuery? ReadableQuery
+    {
+        get{if(Query is not null)return Query;if(string.IsNullOrWhiteSpace(_process) || string.IsNullOrWhiteSpace(_submission))return null;try{var query=CurrentQuery();query.Require();return query;}catch(ArgumentException){return null;}}
+    }
+    private void InputsChanged(){_generation++;State.Attach(null);_confirm=false;_error=null;}
+    private async Task Authority(bool approve=true,bool discover=false)
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;var task=discover?OriginalTask??throw new InvalidOperationException("Original return assignment is required."):CurrentQuery().Task;task.Require();if(!discover)CurrentQuery().Require();
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) || approve && (!selected.Permissions.Contains("Workflow.Execute",StringComparer.Ordinal) || State.Review is {} review && !user.IsInRole(review.Stage.AssignedRole)) || task.WorkOrderId!=WorkOrderId || task.FieldId!=FieldId || await Fields.GetCurrentFieldIdAsync()!=task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Original standard return role/company/account/FIELD and explicit return/execution capabilities are required.");
+    }
+    private Task Retain(Guid id){var query=State.VisibleCommand?.Reference().Query??CurrentQuery();_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"maintenanceClosure",_reference},{"closureProcess",query.Task.InstanceId},{"closureSubmission",query.SubmissionId}}),replace:true);return Task.CompletedTask;}
+    private Task ReviewAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());await State.ReviewAsync(Workflows);_reason="";_confirm=false;},"reviewing original maintenance closure evidence");
+    private Task RecordAsync()=>Run(async()=>{await Authority();if(!_confirm || State.Review?.Current.Completion.Report.Query!=CurrentQuery())throw new ArgumentException("Confirm the exact reviewed work, inspections and independent return role.");await State.RecordAsync(Workflows,_reason,Retain);},"recording original maintenance closure");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Use the original maintenance closure intent.");await State.RecoverAsync(Workflows,id,Retain);},"recovering original maintenance closure");
+    private Task ReadStatusAsync()=>Run(async()=>{await Authority(false);State.Attach(CurrentQuery());await State.ReadStatusAsync(Workflows);},"reading original maintenance closure status");
+    private Task DiscoverAsync()=>Run(async()=>
+    {
+        await Authority(false,true);var snapshot=Company.Snapshot;var generation=_generation;var task=OriginalTask!;_discovering=true;
+        try{var query=await Workflows.DiscoverReturnAcceptanceReportAsync(task);if(_disposed || generation!=_generation || snapshot!=Company.Snapshot)return;if(query.Task!=task)throw new InvalidOperationException("Discovered report differs from the original return assignment.");_process=query.Task.InstanceId;_submission=query.SubmissionId;State.Attach(query);}
+        finally{_discovering=false;}
+    },"discovering original return report");
+    private async Task Run(Func<Task> action,string operation){if(State.Busy || _discovering || _disposed)return;_error=null;var snapshot=Company.Snapshot;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original maintenance workflow closure is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}}
+    private void Invalidate(){_generation++;State.Attach(null);_process="";_submission="";_reason="";_reference="";_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

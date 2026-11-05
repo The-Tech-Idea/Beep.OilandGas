@@ -1,0 +1,68 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudText Typo="Typo.h6">Retire or replace a recorded mapping</MudText>
+    <MudText>Company @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable") · Book @Book · Currency @Currency</MudText>
+    <MudText>Retirement records an explicit last effective date. Replacement starts on the following company calendar day. Historical mapping versions and posted financial facts remain recorded.</MudText>
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.HasPendingMappingTransition)
+    {
+        <MudAlert Severity="Severity.Warning">An original mapping transition remains retained. Reconcile it before another ledger configuration.</MudAlert>
+        @if(State.PendingMappingTransition is {} pending){<MudText>Original mapping @pending.Command.MappingId · Last effective date @Calendar(pending.Command.EffectiveThrough) · Request @pending.Command.IntentId · @pending.Command.Reason</MudText><MudButton OnClick="Retry" Disabled="State.Busy">Reconcile exact original transition</MudButton><MudButton OnClick='@(()=>Recover(pending.Command.MappingId,pending.Command.BookId,pending.Command.CurrencyCode))' Disabled="State.Busy">Recover original transition outcome</MudButton>}
+    }
+    else
+    {
+        <MudButton OnClick="Review" Disabled="State.Busy" Variant="Variant.Outlined">Review original mapping change authority</MudButton>
+        @if(State.MappingConfigurationReview is {} current && current.History.Accounts.BookId==Book && current.History.Accounts.CurrencyCode==Currency && current.History.AsOfDate==ReviewDate)
+        {
+            <MudForm @ref="_form">
+                <MudSelect T="string" Label="Original mapping version" @bind-Value="_mapping" Required="true" Disabled="State.Busy">
+                    @foreach(var row in current.History.Records){<MudSelectItem T="string" Value="@row.GL_ACCOUNT_MAPPING_ID">@row.MAPPING_KEY · ID @row.GL_ACCOUNT_MAPPING_ID · Account @row.GL_ACCOUNT_NUMBER · From @row.EFFECTIVE_DATE</MudSelectItem>}
+                </MudSelect>
+                <MudDatePicker Label="Last effective company calendar date" @bind-Date="_through" Required="true" Disabled="State.Busy" />
+                <MudSelect T="string" Label="Transition action" @bind-Value="_action" Required="true" Disabled="State.Busy"><MudSelectItem T="string" Value='@("RETIRE")'>Retire without replacement</MudSelectItem><MudSelectItem T="string" Value='@("REPLACE")'>Replace on following day</MudSelectItem></MudSelect>
+                @if(_action=="REPLACE")
+                {
+                    <MudSelect T="string" Label="Reviewed native replacement account" @bind-Value="_account" Required="true" Disabled="State.Busy">@foreach(var account in current.History.Accounts.Accounts){<MudSelectItem T="string" Value="@account.GL_ACCOUNT_ID">@account.ACCOUNT_NUMBER · ID @account.GL_ACCOUNT_ID · @account.ACCOUNT_TYPE / @account.NORMAL_BALANCE</MudSelectItem>}</MudSelect>
+                    <MudDatePicker Label="Optional replacement last effective date" @bind-Date="_replacementThrough" Disabled="State.Busy" />
+                }
+                <MudTextField T="string" Label="Mapping transition reason" @bind-Value="_reason" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudButton OnClick="Record" Color="Color.Primary" Variant="Variant.Filled" Disabled="State.Busy">Record reviewed mapping transition</MudButton>
+            </MudForm>
+        }
+        <MudForm @ref="_recoveryForm"><MudTextField T="string" Label="Original mapping transition ID" @bind-Value="_recovery" Required="true" MaxLength="32" /><MudButton OnClick="RecoverSelected" Disabled="State.Busy">Recover my recorded transition</MudButton></MudForm>
+    }
+    @if(State.MappingTransitionResult is {} result){<MudAlert Severity="Severity.Success">The original native retirement@(result.Replacement is null?"":" and adjacent replacement") and durable receipt are confirmed.</MudAlert><MudText>Mapping @result.Retired.MAPPING_KEY · Last date @Calendar(result.Command.EffectiveThrough) · Actor @result.Command.ActorUserId · UTC @result.Retired.ROW_CHANGED_DATE?.ToString("O")</MudText>}
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public CompanyLedgerAccountState State{get;set;}=default!;
+    [Parameter] public string Book{get;set;}="";
+    [Parameter] public string Currency{get;set;}="";
+    [Parameter] public DateTime? ReviewDate{get;set;}
+    private MudForm? _form,_recoveryForm;
+    private string _mapping="",_account="",_action="",_reason="",_recovery="";
+    private DateTime? _through,_replacementThrough;
+    private string? _error;
+    private bool _disposed;
+    private long _epoch;
+    private static string Calendar(DateTime date)=>date.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture);
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    private async Task Access(bool write){var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || (user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value)!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || write && !selected.Permissions.Contains("Accounting.ConfigureLedger",StringComparer.Ordinal))throw new UnauthorizedAccessException();}
+    private async Task Execute(Func<Task> action,bool write=true){var epoch=_epoch;_error=null;try{await Access(write);await action();}catch{if(!_disposed && epoch==_epoch)_error="The original mapping transition is unconfirmed. Check company/account, reviewed history and current authority. Recover any retained original request before another configuration.";}}
+    private Task Review()=>Execute(async()=>{if(ReviewDate is not {} date)throw new InvalidOperationException();await State.LoadMappingConfigurationReviewAsync(Book,Currency,DateTime.SpecifyKind(date,DateTimeKind.Unspecified),Accounting);});
+    private Task Record()=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_through is null || _action is not ("RETIRE" or "REPLACE") || _action=="REPLACE" && string.IsNullOrWhiteSpace(_account))throw new InvalidOperationException();await State.TransitionMappingAsync(_mapping,DateTime.SpecifyKind(_through.Value,DateTimeKind.Unspecified),_action=="REPLACE"?_account:null,_replacementThrough is {} end?DateTime.SpecifyKind(end,DateTimeKind.Unspecified):null,_reason,Accounting);});
+    private Task Retry()=>Execute(()=>State.SubmitMappingTransitionAsync(Accounting));
+    private Task Recover(string id,string book,string currency)=>Execute(()=>State.RecoverMappingTransitionAsync(book,currency,id,Accounting),false);
+    private Task RecoverSelected()=>Execute(async()=>{if(_recoveryForm is not null){await _recoveryForm.ValidateAsync();if(!_recoveryForm.IsValid)return;}await State.RecoverMappingTransitionAsync(Book,Currency,_recovery,Accounting);},false);
+    private void Reset(){++_epoch;_mapping=_account=_action=_reason=_recovery="";_through=_replacementThrough=null;_error=null;Changed();}
+    private void AuthChanged(Task<AuthenticationState> state){State.Invalidate();Reset();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

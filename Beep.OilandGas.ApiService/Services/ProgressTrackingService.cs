@@ -1,7 +1,5 @@
 using System;
 using System.Text.Json;
-using System.Threading.Channels;
-using Microsoft.Extensions.Hosting;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,33 +9,47 @@ using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using TheTechIdeaWeb.Diagnostics;
+using Beep.OilandGas.Repository;
+using Beep.OilandGas.ApiService.Hubs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Beep.OilandGas.ApiService.Services
 {
     /// <summary>
     /// SignalR hub for progress updates
     /// </summary>
-    public class ProgressHub : Hub
+    [Authorize]
+    public class ProgressHub(RepositoryTenantContext tenant, CompanyProgressState progress) : Hub
     {
+        private string Group(string resource, CompanyChannelKind kind) => CompanyHubGroups.Name(new(
+            (tenant.Company ?? throw new HubException("A validated company is required.")).Scope, kind, resource));
         public async Task JoinOperationGroup(string operationId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, operationId);
+            RequireOwned(operationId, CompanyChannelKind.Operation);
+            await Groups.AddToGroupAsync(Context.ConnectionId, Group(operationId, CompanyChannelKind.Operation), Context.ConnectionAborted);
         }
 
         public async Task LeaveOperationGroup(string operationId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, operationId);
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, Group(operationId, CompanyChannelKind.Operation), Context.ConnectionAborted);
         }
 
         public async Task JoinWorkflowGroup(string workflowId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, workflowId);
+            RequireOwned(workflowId, CompanyChannelKind.Workflow);
+            await Groups.AddToGroupAsync(Context.ConnectionId, Group(workflowId, CompanyChannelKind.Workflow), Context.ConnectionAborted);
         }
 
         public async Task LeaveWorkflowGroup(string workflowId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, workflowId);
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, Group(workflowId, CompanyChannelKind.Workflow), Context.ConnectionAborted);
+        }
+
+        private void RequireOwned(string resource, CompanyChannelKind kind)
+        {
+            var company = tenant.Company ?? throw new HubException("A validated company is required.");
+            if (!progress.CanRead(company, new(company.Scope, kind, resource)))
+                throw new HubException("The progress resource is unavailable to this account and company.");
         }
     }
 
@@ -45,34 +57,29 @@ namespace Beep.OilandGas.ApiService.Services
     /// Implementation of progress tracking service
     /// SignalR-based implementation for web/API scenarios
     /// </summary>
-    public class ProgressTrackingService : BackgroundService, IProgressTrackingService
-        {
-            private readonly IHubContext<ProgressHub> _hubContext;
-            private readonly ILogger<ProgressTrackingService> _logger;
-            private readonly IFailureReporter _failures;
-            private readonly IBackgroundOperationQueue? _queue;
-            private readonly object _gate = new();
-            private readonly TimeProvider _clock;
-            private static readonly JsonSerializerOptions SnapshotOptions = new(JsonSerializerDefaults.Web);
-            private sealed record Notification(string Group, string Method, JsonElement Payload);
-            private readonly Channel<Notification> _notifications = Channel.CreateBounded<Notification>(new BoundedChannelOptions(256)
-            { SingleReader = true, FullMode = BoundedChannelFullMode.DropOldest });
-            private readonly ConcurrentDictionary<string, ProgressUpdate> _progressStore = new();
-            private readonly ConcurrentDictionary<string, WorkflowProgress> _workflowStore = new();
-            private readonly ConcurrentDictionary<string, MultiOperationProgress> _operationGroups = new();
+    public class ProgressTrackingService : IProgressTrackingService
+    {
+        private readonly CompanyProgressState _state;
+        private readonly RepositoryTenantContext _tenant;
+        private readonly ILogger<ProgressTrackingService> _logger;
+        private readonly IBackgroundOperationQueue? _queue;
+        private object _gate => _state.Gate;
+        private TimeProvider _clock => _state.Clock;
+        private ConcurrentDictionary<CompanyProgressKey, ProgressUpdate> _progressStore => _state.Operations;
+        private ConcurrentDictionary<CompanyProgressKey, WorkflowProgress> _workflowStore => _state.Workflows;
+        private ConcurrentDictionary<CompanyProgressKey, MultiOperationProgress> _operationGroups => _state.Groups;
+        private static readonly JsonSerializerOptions SnapshotOptions = new(JsonSerializerDefaults.Web);
 
-        public ProgressTrackingService(
-            IHubContext<ProgressHub> hubContext,
-            ILogger<ProgressTrackingService> logger,
-            IFailureReporter failures,
-            IBackgroundOperationQueue? queue = null,
-            TimeProvider? clock = null)
+        public ProgressTrackingService(CompanyProgressState state, RepositoryTenantContext tenant,
+            ILogger<ProgressTrackingService> logger, IBackgroundOperationQueue? queue = null)
+        { _state = state; _tenant = tenant; _logger = logger; _queue = queue; }
+
+        private RepositoryCompanyContext Company => _tenant.Company ??
+            throw new InvalidOperationException("Progress requires a validated company and account.");
+        private CompanyProgressKey Key(string resource)
         {
-            _hubContext = hubContext;
-            _logger = logger;
-            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
-            _queue = queue;
-            _clock = clock ?? TimeProvider.System;
+            _ = CompanyHubGroups.Name(new(Company.Scope, CompanyChannelKind.Operation, resource));
+            return new(Company.Scope, Company.UserId, resource);
         }
 
         public string StartOperation(string operationType, string description)
@@ -92,7 +99,8 @@ namespace Beep.OilandGas.ApiService.Services
                     Timestamp = _clock.GetUtcNow().UtcDateTime
                 };
 
-                _progressStore.TryAdd(operationId, progress);
+                _progressStore.TryAdd(Key(operationId), progress);
+                _state.Register(Company, CompanyChannelKind.Operation, operationId);
                 _logger.LogInformation("Started operation {OperationId} of type {OperationType}: {Description}",
                     operationId, operationType, description);
 
@@ -107,7 +115,8 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (!_progressStore.TryGetValue(operationId, out var progress))
+                if (!CanRead(operationId, CompanyChannelKind.Operation)) return;
+                if (!_progressStore.TryGetValue(Key(operationId), out var progress))
                 {
                     _logger.LogWarning("Progress update for unknown operation {OperationId}", operationId);
                     return;
@@ -132,11 +141,11 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (!_progressStore.TryGetValue(progressUpdate.OperationId, out var progress))
+                if (!CanRead(progressUpdate.OperationId, CompanyChannelKind.Operation)) return;
+                if (!_progressStore.TryGetValue(Key(progressUpdate.OperationId), out var progress))
                 {
-                    progress = Snapshot(progressUpdate)!;
-                    progress.Timestamp = _clock.GetUtcNow().UtcDateTime;
-                    _progressStore.TryAdd(progressUpdate.OperationId, progress);
+                    _logger.LogWarning("Progress update for unknown operation {OperationId}", progressUpdate.OperationId);
+                    return;
                 }
                 else
                 {
@@ -164,7 +173,8 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (!_progressStore.TryGetValue(operationId, out var progress))
+                if (!CanRead(operationId, CompanyChannelKind.Operation)) return;
+                if (!_progressStore.TryGetValue(Key(operationId), out var progress))
                 {
                     _logger.LogWarning("Completion for unknown operation {OperationId}", operationId);
                     return;
@@ -189,8 +199,9 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
+                if (!CanRead(operationId, CompanyChannelKind.Operation)) return null;
                 PruneExpired();
-                _progressStore.TryGetValue(operationId, out var progress);
+                _progressStore.TryGetValue(Key(operationId), out var progress);
                 var job = _queue?.GetStatus(CsvImportJob.QueueKey(operationId));
                 if (progress != null && job?.State is BackgroundOperationState.Failed or BackgroundOperationState.Cancelled)
                 {
@@ -208,7 +219,21 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (_progressStore.TryGetValue(operationId, out var progress))
+                if (CanRead(operationId, CompanyChannelKind.Workflow) && _workflowStore.TryGetValue(Key(operationId), out var workflow))
+                {
+                    if (workflow.Status is WorkflowStatus.Completed or WorkflowStatus.Failed or WorkflowStatus.Cancelled) return;
+                    workflow.Status = WorkflowStatus.Cancelled;
+                    workflow.CompletedAt = _clock.GetUtcNow().UtcDateTime;
+                    workflow.IsComplete = true;
+                    workflow.HasError = true;
+                    workflow.ErrorMessage = "Workflow tracking cancelled by user";
+                    foreach (var step in workflow.Steps.Where(step => step.Status is OperationStatus.Pending or OperationStatus.Running))
+                    { step.Status = OperationStatus.Cancelled; step.CompletedAt = workflow.CompletedAt; }
+                    Publish(operationId, "WorkflowProgress", workflow);
+                    return;
+                }
+                if (!CanRead(operationId, CompanyChannelKind.Operation)) return;
+                if (_progressStore.TryGetValue(Key(operationId), out var progress))
                 {
                     if (progress.IsComplete) return;
                     progress.IsComplete = true;
@@ -251,7 +276,8 @@ namespace Beep.OilandGas.ApiService.Services
                     ProgressPercentage = 0
                 };
 
-                _workflowStore.TryAdd(workflowId, workflow);
+                _workflowStore.TryAdd(Key(workflowId), workflow);
+                _state.Register(Company, CompanyChannelKind.Workflow, workflowId);
                 _logger.LogInformation("Started workflow {WorkflowId}: {WorkflowName} with {StepCount} steps",
                     workflowId, workflowName, steps.Count);
 
@@ -266,11 +292,14 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (!_workflowStore.TryGetValue(workflowId, out var workflow))
+                if (!CanRead(workflowId, CompanyChannelKind.Workflow)) return;
+                if (!_workflowStore.TryGetValue(Key(workflowId), out var workflow))
                 {
                     _logger.LogWarning("Workflow step update for unknown workflow {WorkflowId}", workflowId);
                     return;
                 }
+
+                if (workflow.Status is WorkflowStatus.Completed or WorkflowStatus.Failed or WorkflowStatus.Cancelled) return;
 
                 var step = workflow.Steps.FirstOrDefault(s => s.StepId == stepId);
                 if (step == null)
@@ -278,6 +307,8 @@ namespace Beep.OilandGas.ApiService.Services
                     _logger.LogWarning("Step {StepId} not found in workflow {WorkflowId}", stepId, workflowId);
                     return;
                 }
+
+                if (step.Status is OperationStatus.Completed or OperationStatus.Failed or OperationStatus.Cancelled) return;
 
                 step.Status = OperationStatus.Running;
                 step.ProgressPercentage = Math.Min(100, Math.Max(0, progress));
@@ -316,11 +347,14 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (!_workflowStore.TryGetValue(workflowId, out var workflow))
+                if (!CanRead(workflowId, CompanyChannelKind.Workflow)) return;
+                if (!_workflowStore.TryGetValue(Key(workflowId), out var workflow))
                 {
                     _logger.LogWarning("Workflow step completion for unknown workflow {WorkflowId}", workflowId);
                     return;
                 }
+
+                if (workflow.Status is WorkflowStatus.Completed or WorkflowStatus.Failed or WorkflowStatus.Cancelled) return;
 
                 var step = workflow.Steps.FirstOrDefault(s => s.StepId == stepId);
                 if (step == null)
@@ -328,6 +362,8 @@ namespace Beep.OilandGas.ApiService.Services
                     _logger.LogWarning("Step {StepId} not found in workflow {WorkflowId}", stepId, workflowId);
                     return;
                 }
+
+                if (step.Status is OperationStatus.Completed or OperationStatus.Failed or OperationStatus.Cancelled) return;
 
                 step.Status = success ? OperationStatus.Completed : OperationStatus.Failed;
                 step.ProgressPercentage = 100;
@@ -369,13 +405,18 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (!_workflowStore.TryGetValue(workflowId, out var workflow))
+                if (!CanRead(workflowId, CompanyChannelKind.Workflow)) return;
+                if (!_workflowStore.TryGetValue(Key(workflowId), out var workflow))
                 {
                     _logger.LogWarning("Workflow completion for unknown workflow {WorkflowId}", workflowId);
                     return;
                 }
 
+                if (workflow.Status is WorkflowStatus.Completed or WorkflowStatus.Failed or WorkflowStatus.Cancelled) return;
+
                 workflow.Status = success ? WorkflowStatus.Completed : WorkflowStatus.Failed;
+                workflow.IsComplete = true;
+                workflow.HasError = !success;
                 workflow.CompletedAt = _clock.GetUtcNow().UtcDateTime;
                 workflow.ProgressPercentage = 100;
                 workflow.OverallProgress = 100;
@@ -396,8 +437,9 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
+                if (!CanRead(workflowId, CompanyChannelKind.Workflow)) return null;
                 PruneExpired();
-                _workflowStore.TryGetValue(workflowId, out var workflow);
+                _workflowStore.TryGetValue(Key(workflowId), out var workflow);
                 return Snapshot(workflow);
             }
         }
@@ -410,23 +452,13 @@ namespace Beep.OilandGas.ApiService.Services
                 var operations = new Dictionary<string, ProgressUpdate>();
                 foreach (var id in operationIds)
                 {
-                    if (_progressStore.TryGetValue(id, out var progress))
+                    if (CanRead(id, CompanyChannelKind.Operation) && _progressStore.TryGetValue(Key(id), out var progress))
                     {
                         operations[id] = progress;
                     }
                     else
                     {
-                        // Create a placeholder progress for operations that haven't started yet
-                        operations[id] = new ProgressUpdate
-                        {
-                            OperationId = id,
-                            OperationType = "Unknown",
-                            ProgressPercentage = 0,
-                            StatusMessage = "Not started",
-                            IsComplete = false,
-                            HasError = false,
-                            Timestamp = _clock.GetUtcNow().UtcDateTime
-                        };
+                        throw new InvalidOperationException("All grouped operations must belong to the current account and company.");
                     }
                 }
 
@@ -444,11 +476,15 @@ namespace Beep.OilandGas.ApiService.Services
                         : 0
                 };
 
-                _operationGroups.TryAdd(groupId, group);
+                if (_progressStore.ContainsKey(Key(groupId)) || !_operationGroups.TryAdd(Key(groupId), group))
+                    throw new InvalidOperationException("The operation group identifier is already in use.");
+                _state.Register(Company, CompanyChannelKind.Operation, groupId);
                 _logger.LogInformation("Registered operation group {GroupId}: {GroupName} with {Count} operations",
                     groupId, groupName, operationIds.Count);
 
                 // Broadcast group registration
+                group.Timestamp = _clock.GetUtcNow().UtcDateTime;
+                group.IsComplete = group.Operations.Values.All(operation => operation.IsComplete);
                 Publish(groupId, "MultiOperationProgress", group);
             }
         }
@@ -457,7 +493,8 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                if (!_operationGroups.TryGetValue(groupId, out var group))
+                if (!CanRead(groupId, CompanyChannelKind.Operation)) return;
+                if (!_operationGroups.TryGetValue(Key(groupId), out var group))
                 {
                     _logger.LogWarning("Update for unknown operation group {GroupId}", groupId);
                     return;
@@ -467,7 +504,7 @@ namespace Beep.OilandGas.ApiService.Services
                 foreach (var kvp in group.Operations.ToList())
                 {
                     var operationId = kvp.Key;
-                    if (_progressStore.TryGetValue(operationId, out var progress))
+                    if (_progressStore.TryGetValue(Key(operationId), out var progress))
                     {
                         group.Operations[operationId] = progress;
                     }
@@ -482,6 +519,8 @@ namespace Beep.OilandGas.ApiService.Services
                     : 0;
 
                 // Broadcast group update
+                group.Timestamp = _clock.GetUtcNow().UtcDateTime;
+                group.IsComplete = group.Operations.Values.All(operation => operation.IsComplete);
                 Publish(groupId, "MultiOperationProgress", group);
             }
         }
@@ -490,7 +529,8 @@ namespace Beep.OilandGas.ApiService.Services
         {
             lock (_gate)
             {
-                _operationGroups.TryGetValue(groupId, out var group);
+                if (!CanRead(groupId, CompanyChannelKind.Operation)) return null;
+                _operationGroups.TryGetValue(Key(groupId), out var group);
                 return Snapshot(group);
             }
         }
@@ -498,60 +538,15 @@ namespace Beep.OilandGas.ApiService.Services
         private static T? Snapshot<T>(T? value) where T : class => value == null ? null :
             JsonSerializer.Deserialize<T>(JsonSerializer.SerializeToElement(value, SnapshotOptions), SnapshotOptions);
 
-        private void Publish<T>(string group, string method, T value)
+        private void Publish<T>(string resource, string method, T value)
         {
-            _notifications.Writer.TryWrite(new(group, method, JsonSerializer.SerializeToElement(value, SnapshotOptions)));
+            var kind = method == "WorkflowProgress" ? CompanyChannelKind.Workflow : CompanyChannelKind.Operation;
+            _state.Notifications.Writer.TryWrite(new(Company, kind, resource,
+                JsonSerializer.SerializeToElement(value, SnapshotOptions)));
         }
 
-        private void PruneExpired()
-        {
-            lock (_gate)
-            {
-                var now = _clock.GetUtcNow().UtcDateTime;
-                foreach (var item in _progressStore)
-                    if (item.Value.IsComplete && now - item.Value.Timestamp >= TimeSpan.FromMinutes(5))
-                        _progressStore.TryRemove(item.Key, out _);
-                foreach (var item in _workflowStore)
-                    if (item.Value.CompletedAt is DateTime completed && now - completed >= TimeSpan.FromMinutes(10))
-                        _workflowStore.TryRemove(item.Key, out _);
-            }
-        }
+        private bool CanRead(string resource, CompanyChannelKind kind) => _state.CanRead(Company, new(Company.Scope, kind, resource));
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
-            Task.WhenAll(BroadcastAsync(stoppingToken), CleanupAsync(stoppingToken));
-
-        // The host's own cancellation ends both loops as cancelled, which is what BackgroundService expects of a stop it
-        // started; it is never caught here (OILGAS-CATCH-01: both loops swallowed it).
-        private async Task BroadcastAsync(CancellationToken token)
-        {
-            try
-            {
-                await foreach (var item in _notifications.Reader.ReadAllAsync(token))
-                {
-                    token.ThrowIfCancellationRequested();
-                    try { await _hubContext.Clients.Group(item.Group).SendAsync(item.Method, item.Payload, token); }
-                    // One group's broadcast failing leaves the others served; the update stays readable through
-                    // GetProgress / GetWorkflowProgress, which is how a client that missed it catches up.
-                    catch (Exception ex) when (!token.IsCancellationRequested)
-                    {
-                        _failures.ReportHandled(ex, $"broadcasting {item.Method} to progress group {item.Group}",
-                            "the live update is not delivered; the progress stays readable by polling", FailureSeverity.Degraded);
-                    }
-                }
-            }
-            finally { while (_notifications.Reader.TryRead(out _)) { } }
-        }
-
-        private async Task CleanupAsync(CancellationToken token)
-        {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
-            while (await timer.WaitForNextTickAsync(token)) PruneExpired();
-        }
-
-        public override Task StopAsync(CancellationToken token)
-        {
-            _notifications.Writer.TryComplete();
-            return base.StopAsync(token);
-        }
+        private void PruneExpired() => _state.PruneExpired();
     }
 }

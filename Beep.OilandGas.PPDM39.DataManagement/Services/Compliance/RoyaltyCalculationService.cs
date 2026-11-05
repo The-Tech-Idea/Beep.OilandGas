@@ -181,7 +181,7 @@ public class RoyaltyCalculationService : IRoyaltyCalculationService
             var result = new List<RoyaltyVariance>();
             foreach (var obl in royalties)
             {
-                var detail = await _compliance.GetByIdAsync(obl.ObligationId);
+                var detail = await _compliance.GetByIdAsync(obl.ObligationId, fieldId);
                 if (detail?.Payments.Count > 0)
                 {
                     var pay = detail.Payments.First();

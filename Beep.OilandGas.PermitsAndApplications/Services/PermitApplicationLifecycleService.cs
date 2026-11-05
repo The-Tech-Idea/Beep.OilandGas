@@ -1,6 +1,7 @@
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,73 +21,20 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
     /// <summary>
     /// Domain-level permit application service.
     /// </summary>
-    public class PermitApplicationLifecycleService : PermitsServiceBase, IPermitApplicationLifecycleService
+    public partial class PermitApplicationLifecycleService : PermitsServiceBase, IPermitApplicationLifecycleService
     {
         private readonly ILogger<PermitApplicationLifecycleService>? _logger;
-        private readonly DataMapping.PermitApplicationMapper _mapper = new();
 
         public PermitApplicationLifecycleService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitApplicationLifecycleService>? logger = null,
-            string connectionName = "PPDM39")
-            : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
+            ICompanyPermitApplicationDataAccess dataAccess,
+            ILogger<PermitApplicationLifecycleService>? logger = null)
+            : base(editor, commonColumnHandler, defaults, metadata, dataAccess, logger)
         {
             _logger = logger;
-        }
-
-        public async Task<PERMIT_APPLICATION> CreateAsync(PERMIT_APPLICATION application, string userId)
-        {
-            if (application == null)
-                throw new ArgumentNullException(nameof(application));
-
-            var data = _mapper.MapToData(application);
-            SetAuditFields(data, userId);
-            data.ACTIVE_IND = "Y";
-            // New filings always enter the workflow in Draft (ignore client-supplied status on create).
-            data.STATUS = PermitApplicationStatus.Draft;
-            data.SUBMISSION_COMPLETE_IND = "N";
-            data.CREATED_DATE ??= DateTime.UtcNow;
-
-            if (string.IsNullOrWhiteSpace(data.PERMIT_APPLICATION_ID))
-            {
-                data.PERMIT_APPLICATION_ID = GeneratePermitApplicationId();
-            }
-
-            var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
-            await repo.InsertAsync(data, userId);
-
-            await AddStatusHistoryAsync(data.PERMIT_APPLICATION_ID, data.STATUS, "Application created", userId);
-
-            _logger?.LogInformation("Permit application created (domain) with ID {ApplicationId}", data.PERMIT_APPLICATION_ID);
-            return _mapper.MapToDomain(data);
-        }
-
-        public async Task<PERMIT_APPLICATION> UpdateAsync(string applicationId, PERMIT_APPLICATION application, string userId)
-        {
-            if (string.IsNullOrWhiteSpace(applicationId))
-                throw new InvalidApplicationException("The permit application ID is required.");
-            if (application == null)
-                throw new ArgumentNullException(nameof(application));
-
-            var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
-            var existing = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
-            if (existing == null)
-                throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
-
-            // The status change is judged before anything is written: the update had been saved and the refusal
-            // thrown after it, so a refused status was stored anyway.
-            var previousStatus = existing.STATUS;
-            var data = _mapper.MapToData(application, existing);
-            var statusChanged = EnsureStatusChangeAllowed(previousStatus, data.STATUS);
-            SetAuditFields(data, userId);
-
-            await repo.UpdateAsync(data, userId);
-            if (statusChanged)
-                await AddStatusHistoryAsync(applicationId, data.STATUS, "Status updated", userId);
-            return _mapper.MapToDomain(data);
         }
 
         public async Task<PERMIT_APPLICATION?> GetByIdAsync(string applicationId)
@@ -96,147 +44,76 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var result = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
-            return result == null ? null : _mapper.MapToDomain(result);
+            return result;
         }
 
+        public Task<PermitApplicationSourceReview> ReviewSourceAsync(string applicationId)=>DataAccess.WithReadAuthorityAsync(()=>ReviewSourceAsync(applicationId,null));
+        private async Task<PermitApplicationSourceReview> ReviewSourceAsync(string applicationId,IReadOnlyList<PermitAttachmentDocumentEvidence>? capturedDocuments)
+        {
+            var scope = await DataAccess.RequireReadScopeAsync();
+            async Task<PermitApplicationSourceReview> Read()
+            {
+                var application = await GetByIdAsync(applicationId) ?? throw new PermitNotFoundException("The reviewed permit is unavailable.", applicationId);
+                var repository = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY", applicationId);
+                var history = (await repository.GetAsync(new List<AppFilter>())).ToArray();
+                if (history.Any(row => row is not PERMIT_STATUS_HISTORY)) throw new InvalidOperationException("The recorded permit history has an unexpected native type.");
+                return PermitApplicationSourceReview.Capture(scope, application, history.Cast<PERMIT_STATUS_HISTORY>().ToArray(), await ReadSupportingAsync(application,capturedDocuments));
+            }
+            var original = await Read();
+            original.RequireCurrent(await Read());
+            if (scope != await DataAccess.RequireReadScopeAsync()) throw new InvalidOperationException("The permit review authority changed.");
+            return original;
+        }
+
+        private async Task<PermitApplicationSupportingSnapshot> ReadSupportingAsync(PERMIT_APPLICATION parent,IReadOnlyList<PermitAttachmentDocumentEvidence>? capturedDocuments=null)
+        {
+            var scope=await DataAccess.RequireReadScopeAsync();var source=OpenReviewedSource(scope);
+            async Task<T[]> ReadRows<T>(string key) where T : class
+            {
+                var type=typeof(T);var table=type.Name;
+                var metadata=await Metadata.GetTableMetadataAsync(table);
+                if(metadata is null || metadata.EntityTypeName!=type.FullName || metadata.PrimaryKeyColumn!=key)
+                    throw new NativeSchemaCompatibilityException("Exact canonical supporting metadata is required before reviewing a permit.");
+                var shape=source.GetEntityStructure(table,true);
+                if(shape?.Fields is null || !shape.Fields.Where(x=>x.IsKey).Select(x=>x.FieldName).SequenceEqual([key]) ||
+                    type.GetProperties().Where(x=>x.CanRead && x.CanWrite).Any(property=>
+                        shape.Fields.Count(column=>column.FieldName==property.Name && column.Fieldtype==(Nullable.GetUnderlyingType(property.PropertyType)??property.PropertyType).FullName)!=1))
+                    throw new NativeSchemaCompatibilityException("Install every canonical supporting column/key using Beep Migration before reviewing a permit; unavailable evidence cannot mean absent.");
+                var repository = await CreateRepositoryAsync<T>(table,parent.PERMIT_APPLICATION_ID);
+                var rows=(await repository.GetAsync(new List<AppFilter> { new() { FieldName="PERMIT_APPLICATION_ID",Operator="=",FilterValue=parent.PERMIT_APPLICATION_ID } })).ToArray();
+                if(rows.Any(row=>row is not T) || source.ErrorObject?.Flag==TheTechIdea.Beep.ConfigUtil.Errors.Failed ||
+                    !ReferenceEquals(source,Editor.GetDataSource(scope.Database.ConnectionName)) || await DataAccess.RequireReadScopeAsync()!=scope)
+                    throw new InvalidOperationException("The supporting permit read failed or its current source changed; absence is unconfirmed.");
+                return rows.Cast<T>().ToArray();
+            }
+            var drilling=(await ReadRows<DRILLING_PERMIT_APPLICATION>("PERMIT_APPLICATION_ID")).SingleOrDefault();
+            var environmental=(await ReadRows<ENVIRONMENTAL_PERMIT_APPLICATION>("PERMIT_APPLICATION_ID")).SingleOrDefault();
+            var injection=(await ReadRows<INJECTION_PERMIT_APPLICATION>("PERMIT_APPLICATION_ID")).SingleOrDefault();
+            var attachments=await ReadRows<APPLICATION_ATTACHMENT>("APPLICATION_ATTACHMENT_ID");
+            var documents=capturedDocuments??await ReadLinkedDocumentsAsync(scope,parent,attachments);
+            return PermitApplicationSupportingSnapshot.Capture(parent,drilling,environmental,injection,attachments,documents);
+        }
+
+        public async Task<IReadOnlyList<PERMIT_APPLICATION>> GetApplicationsAsync()
+        {
+            var scope=await DataAccess.RequireReadScopeAsync();
+            var source=OpenReviewedSource(scope);
+            if(source.ErrorObject?.Flag==TheTechIdea.Beep.ConfigUtil.Errors.Failed)throw new InvalidOperationException("The permit population provider reported a failure.");
+            var shape=source.GetEntityStructure(new TheTechIdea.Beep.DataBase.EntityStructure{EntityName=nameof(PERMIT_APPLICATION),DatasourceEntityName=nameof(PERMIT_APPLICATION)},true);
+            var required=new[]{"PERMIT_APPLICATION_ID","OWNER_TENANT_ID","OWNER_COMPANY_ID","FIELD_ID","ACTIVE_IND","APPLICATION_TYPE","REGULATORY_AUTHORITY","COUNTRY","STATE_PROVINCE","APPLICANT_ID","STATUS","CREATED_DATE","SUBMITTED_BY_USER_ID","SUBMITTED_DATE","DECISION_DATE","DECISION"};
+            if(shape?.Fields is null || required.Any(name=>shape.Fields.Count(column=>column.FieldName==name)!=1))
+                throw new NativeSchemaCompatibilityException("Install the canonical permit population columns using Beep Migration before reading role work queues.");
+            var repository=await CreateRepositoryAsync<PERMIT_APPLICATION>(nameof(PERMIT_APPLICATION));
+            var rows=(await repository.GetAsync(new List<AppFilter>())).ToArray();
+            if(!ReferenceEquals(source,Editor.GetDataSource(scope.Database.ConnectionName)) || source.ErrorObject?.Flag==TheTechIdea.Beep.ConfigUtil.Errors.Failed || await DataAccess.RequireReadScopeAsync()!=scope)
+                throw new InvalidOperationException("The permit population provider failed or its reviewed source changed.");
+            if(rows.Any(row=>row is not PERMIT_APPLICATION))throw new InvalidOperationException("The permit population contains an unexpected native row.");
+            return rows.Cast<PERMIT_APPLICATION>().ToArray();
+        }
         public async Task<IReadOnlyList<PERMIT_APPLICATION>> GetByStatusAsync(PermitApplicationStatus status)
         {
-            var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = PermitApplicationStatusCodes.ToStorageKey(status) },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
-
-            var results = await repo.GetAsync(filters);
-            return results
-                .OfType<PERMIT_APPLICATION>()
-                .Select(r => _mapper.MapToDomain(r))
-                .ToList();
-        }
-
-        public async Task<PERMIT_APPLICATION> SubmitAsync(string applicationId, string userId)
-        {
-            var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
-            var application = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
-            if (application == null)
-                throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
-
-            ValidateStatusTransition(application.STATUS, nameof(PermitApplicationStatus.Submitted));
-            application.STATUS = PermitApplicationStatus.Submitted;
-            application.SUBMITTED_DATE = DateTime.UtcNow;
-            application.SUBMISSION_COMPLETE_IND = "Y";
-            SetAuditFields(application, userId);
-
-            await repo.UpdateAsync(application, userId);
-            await AddStatusHistoryAsync(applicationId, application.STATUS, "Application submitted", userId);
-            return _mapper.MapToDomain(application);
-        }
-
-        public async Task<PERMIT_APPLICATION> ProcessDecisionAsync(
-            string applicationId,
-            string decision,
-            string decisionRemarks,
-            string userId)
-        {
-            var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
-            var application = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
-            if (application == null)
-                throw new PermitNotFoundException($"Permit application {applicationId} was not found.", applicationId);
-
-            application.DECISION = decision;
-            application.DECISION_DATE = DateTime.UtcNow;
-            application.REMARKS = decisionRemarks;
-
-            if (string.Equals(decision, "Approved", StringComparison.OrdinalIgnoreCase))
-            {
-                ValidateStatusTransition(application.STATUS, nameof(PermitApplicationStatus.Approved));
-                application.STATUS = PermitApplicationStatus.Approved;
-                application.EFFECTIVE_DATE = DateTime.UtcNow;
-            }
-            else if (string.Equals(decision, "Rejected", StringComparison.OrdinalIgnoreCase))
-            {
-                ValidateStatusTransition(application.STATUS, nameof(PermitApplicationStatus.Rejected));
-                application.STATUS = PermitApplicationStatus.Rejected;
-            }
-            else
-            {
-                throw new InvalidApplicationException(
-                    "The regulator's decision must be \"Approved\" or \"Rejected\".", applicationId);
-            }
-
-            SetAuditFields(application, userId);
-            await repo.UpdateAsync(application, userId);
-            await AddStatusHistoryAsync(applicationId, application.STATUS, decisionRemarks, userId);
-            return _mapper.MapToDomain(application);
-        }
-
-        private string GeneratePermitApplicationId()
-        {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            return $"PA-{timestamp}";
-        }
-
-        /// <summary>
-        /// Refuses a status change the rules do not allow; answers whether the status changes at all.
-        /// </summary>
-        private static bool EnsureStatusChangeAllowed(PermitApplicationStatus? previousStatus, PermitApplicationStatus? nextStatus)
-        {
-            var normalizedPrevious = PermitStatusTransitionRules.Normalize(previousStatus?.ToString());
-            var normalizedNext = PermitStatusTransitionRules.Normalize(nextStatus?.ToString());
-
-            if (string.Equals(normalizedPrevious, normalizedNext, StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            if (!PermitStatusTransitionRules.IsTransitionAllowed(normalizedPrevious, normalizedNext))
-                throw PermitStatusTransitionRules.RefuseTransition(normalizedPrevious, normalizedNext);
-
-            return true;
-        }
-
-        private async Task AddStatusHistoryAsync(string applicationId, PermitApplicationStatus? status, string? remarks, string userId)
-        {
-            var historyRepo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY");
-            var history = new PERMIT_STATUS_HISTORY
-            {
-                PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),
-                PERMIT_APPLICATION_ID = applicationId,
-                STATUS = PermitApplicationStatusCodes.ToStorageKey(status),
-                STATUS_DATE = DateTime.UtcNow,
-                STATUS_REMARKS = remarks,
-                UPDATED_BY = userId,
-                ACTIVE_IND = "Y"
-            };
-
-            SetAuditFields(history, userId);
-            await historyRepo.InsertAsync(history, userId);
-        }
-
-        private string GenerateStatusHistoryId()
-        {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
-            return $"PSH-{timestamp}";
-        }
-
-        /// <summary>
-        /// Validates a transition using the same rules as <see cref="PermitApplicationWorkflowService"/>
-        /// and <see cref="PermitStatusHistoryService"/> (agency workflow gate).
-        /// </summary>
-        /// <param name="currentStatus">Current stored status.</param>
-        /// <param name="nextStatusEnumName">Name of the <see cref="PermitApplicationStatus"/> member (e.g. Submitted, Approved).</param>
-        private static void ValidateStatusTransition(PermitApplicationStatus? currentStatus, string nextStatusEnumName)
-        {
-            if (string.IsNullOrWhiteSpace(nextStatusEnumName))
-                throw new ArgumentException("Next status is required.", nameof(nextStatusEnumName));
-
-            if (!Enum.TryParse<PermitApplicationStatus>(nextStatusEnumName, ignoreCase: true, out var nextEnum))
-                throw new InvalidOperationException($"Unknown permit status: {nextStatusEnumName}");
-
-            var normalizedCurrent = PermitStatusTransitionRules.Normalize(currentStatus?.ToString());
-            var normalizedNext = PermitStatusTransitionRules.Normalize(nextEnum.ToString());
-
-            if (!PermitStatusTransitionRules.IsTransitionAllowed(normalizedCurrent, normalizedNext))
-                throw PermitStatusTransitionRules.RefuseTransition(normalizedCurrent, normalizedNext);
+            if(!Enum.IsDefined(status))throw new InvalidOperationException("An explicit supported permit status is required.");
+            return (await GetApplicationsAsync()).Where(row=>row.STATUS==status).ToArray();
         }
     }
 }

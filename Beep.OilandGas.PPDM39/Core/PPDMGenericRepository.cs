@@ -8,6 +8,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Globalization;
+using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
@@ -36,6 +38,20 @@ namespace Beep.OilandGas.PPDM39.Core
         protected readonly string _tableName;
         protected readonly Type _entityType;
         protected readonly ILogger<PPDMGenericRepository>? _logger;
+        private readonly IPPDMRowAccessPolicy? _rowAccess;
+        private bool RequiresControlledNativeMutation => RequiresControlledMutation(_entityType,_tableName);
+        private static bool RequiresControlledMutation(Type? entityType,string? tableName) =>
+            PermitApplicationSchema.Entities.Any(type=>string.Equals(tableName,type.Name,StringComparison.OrdinalIgnoreCase) || string.Equals(entityType?.Name,type.Name,StringComparison.OrdinalIgnoreCase)) ||
+            new[]{"SYSTEM_SETUP_RECORD","COMPANY_OILGAS_ENVIRONMENT","WELL_STATUS","FACILITY","FACILITY_FIELD","FACILITY_EQUIPMENT","FACILITY_STATUS","EQUIPMENT_STATUS","WORK_ORDER_ASSET_RETURN","WORK_ORDER_MAINTENANCE_RETURN_POLICY","FIELD_DEVELOPMENT_PLAN","DRILLING_PROGRAM","DRILLING_OPERATION","DRILLING_DAILY_REPORT","FACILITY_EDIT_INTENT","FACILITY_CREATE_INTENT","FACILITY_EQUIPMENT_INSTALL_INTENT","OBLIGATION","OBLIGATION_COMPONENT"}.Any(name=>
+                string.Equals(tableName,name,StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(entityType?.Name,name,StringComparison.OrdinalIgnoreCase));
+        private void RequireBatchCommandOwner()
+        {
+            if (_rowAccess != null || RequiresControlledNativeMutation)
+                throw RefusalException.Forbidden("Batch mutations require a reviewed company mutation command.");
+        }
+        private readonly string[] _requiredReadColumns;
+        private readonly string[] _requiredProjectionColumns = Array.Empty<string>();
         private readonly Dictionary<Type, IUnitOfWorkWrapper> _unitOfWorkCache = new Dictionary<Type, IUnitOfWorkWrapper>();
         private readonly object _unitOfWorkLock = new object();
         private static readonly ConcurrentDictionary<string, string> _pkNameCache = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -90,7 +106,9 @@ namespace Beep.OilandGas.PPDM39.Core
             Type entityType,
             string connectionName = "PPDM39",
             string tableName = null,
-            ILogger<PPDMGenericRepository>? logger = null)
+            ILogger<PPDMGenericRepository>? logger = null,
+            IPPDMRowAccessPolicy? rowAccess = null,
+            IReadOnlyList<string>? requiredReadColumns = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -100,6 +118,10 @@ namespace Beep.OilandGas.PPDM39.Core
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _tableName = tableName ?? entityType.Name;
             _logger = logger;
+            _rowAccess = rowAccess;
+            _requiredReadColumns = requiredReadColumns?.ToArray() ?? Array.Empty<string>();
+            if (_requiredReadColumns.Any(column => _entityType.GetProperty(column) is null))
+                throw new ArgumentException("Required read columns must belong to the canonical entity model.", nameof(requiredReadColumns));
 
             // Validate entity type implements IPPDMEntity
             if (!typeof(IPPDMEntity).IsAssignableFrom(_entityType))
@@ -108,12 +130,26 @@ namespace Beep.OilandGas.PPDM39.Core
             }
         }
 
+        /// <summary>Requires column presence while retaining legitimate nullable values in complete native proofs.</summary>
+        public PPDMGenericRepository(
+            IDMEEditor editor,ICommonColumnHandler commonColumnHandler,IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,Type entityType,string connectionName,string tableName,ILogger<PPDMGenericRepository>? logger,
+            IPPDMRowAccessPolicy? rowAccess,IReadOnlyList<string>? requiredReadColumns,IReadOnlyList<string> requiredProjectionColumns)
+            : this(editor,commonColumnHandler,defaults,metadata,entityType,connectionName,tableName,logger,rowAccess,requiredReadColumns)
+        {
+            _requiredProjectionColumns = requiredProjectionColumns?.ToArray() ?? throw new ArgumentNullException(nameof(requiredProjectionColumns));
+            if (_requiredProjectionColumns.Any(column=>_entityType.GetProperty(column) is not { CanRead:true,CanWrite:true }))
+                throw new ArgumentException("Required projection columns must belong to the canonical entity model.",nameof(requiredProjectionColumns));
+        }
+
         /// <summary>
         /// Gets or creates a UnitOfWork instance for the specified entity type
         /// Uses UnitOfWorkFactory to create UnitOfWork dynamically for any entity type
         /// </summary>
         protected IUnitOfWorkWrapper GetOrCreateUnitOfWork(Type entityType, string tableName = null, string primaryKey = null)
         {
+            if (_rowAccess != null || RequiresControlledNativeMutation || RequiresControlledMutation(entityType,tableName))
+                throw RefusalException.Forbidden("Direct UnitOfWork operations require a reviewed company mutation command.");
             if (entityType == null)
                 throw new ArgumentNullException(nameof(entityType));
 
@@ -219,6 +255,48 @@ namespace Beep.OilandGas.PPDM39.Core
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
 
+            if (_rowAccess != null)
+            {
+                var requested = CopyAndValidateFilters(entityType, filters);
+                // Each review receives its own copy; a policy cannot rewrite the admitted caller predicates.
+                Task<IReadOnlyList<IReadOnlyList<AppFilter>>> ReviewPredicates() => _rowAccess is IPPDMFilteredReadPolicy filtered
+                    ? filtered.GetReadConjunctionsForFiltersAsync(entityType, tableName, CopyAndValidateFilters(entityType, requested).AsReadOnly())
+                    : _rowAccess.GetReadConjunctionsAsync(entityType, tableName);
+                Task ValidateReadRows(IReadOnlyList<object> values) => _rowAccess is IPPDMFilteredReadPolicy filtered
+                    ? filtered.ValidateRowsForFiltersAsync(entityType, tableName, CopyAndValidateFilters(entityType, requested).AsReadOnly(), values)
+                    : _rowAccess.ValidateRowsAsync(entityType, tableName, values);
+                var predicates = await ReviewPredicates();
+                if (predicates.Count == 0) return Array.Empty<object>();
+                var keys = await RowKeyColumnsAsync(entityType, tableName);
+                var rows = new Dictionary<string, object>(StringComparer.Ordinal);
+                foreach (var predicate in predicates)
+                {
+                    // Separate bounded SDK conjunctions express the union without SQL or an IN fragment.
+                    var query = CopyAndValidateFilters(entityType, requested);
+                    if (predicate.Count == 0) throw RefusalException.Forbidden("An empty grant conjunction cannot authorize a PPDM read.");
+                    query.AddRange(CopyAndValidateFilters(entityType, predicate.ToList()));
+                    var current = await ReviewPredicates();
+                    if (!current.Any(group => group.Count == predicate.Count && group.All(filter => predicate.Any(value => value.FieldName == filter.FieldName && value.FilterValue == filter.FilterValue && value.Operator == filter.Operator))))
+                        throw RefusalException.Forbidden("Asset access changed before the PPDM provider query.");
+                    query.AddRange(CopyAndValidateFilters(entityType,
+                        (await _rowAccess.GetReadConstraintsAsync(entityType, tableName)).ToList()));
+                    var source = _editor.GetDataSource(_connectionName) ?? throw new InvalidOperationException("Data source is unavailable.");
+                    var resultRows = await PPDMDataSourceTransaction.WithSourceAsync(source, () => ReadProviderRowsAsync(source, tableName, query, entityType));
+                    if (source.ErrorObject?.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Failed)
+                        throw new InvalidOperationException("The PPDM provider failed the scoped row read.");
+                    await ValidateReadRows(resultRows);
+                    foreach (var row in resultRows)
+                        foreach (var filter in query.Where(filter => filter.Operator == "="))
+                            if (!string.Equals(Convert.ToString(entityType.GetProperty(filter.FieldName)!.GetValue(row), CultureInfo.InvariantCulture),
+                                filter.FilterValue, StringComparison.Ordinal))
+                                throw RefusalException.Conflict("The provider did not honor a required PPDM equality filter.");
+                    foreach (var row in resultRows) rows[RowKey(row, keys)] = row;
+                }
+                var output = rows.Values.ToList();
+                await ValidateReadRows(output);
+                return output;
+            }
+
             // Use IDataSource.GetEntityAsync directly - preferred for simple single-table queries
             var dataSource = _editor.GetDataSource(_connectionName);
             if (dataSource == null)
@@ -227,8 +305,135 @@ namespace Beep.OilandGas.PPDM39.Core
             }
 
             // GetEntityAsync handles parameter delimiters automatically
-            var result = await dataSource.GetEntityAsync(tableName, filters ?? new List<AppFilter>());
-            return ConvertToTypedList(result, entityType);
+            return await PPDMDataSourceTransaction.WithSourceAsync(dataSource, () =>
+                ReadProviderRowsAsync(dataSource, tableName, filters ?? new List<AppFilter>(), entityType));
+        }
+
+        private async Task<List<object>> ReadProviderRowsAsync(TheTechIdea.Beep.IDataSource source, string table, List<AppFilter> filters, Type type)
+        {
+            if (_requiredProjectionColumns.Length == 0)
+                return ConvertToTypedList(await source.GetEntityAsync(table, filters), type).ToList();
+#if BEEP_SECURE_CONNECTIONS
+            if (source is not TheTechIdea.Beep.DataBase.IOwnedEntityProjectionDataSource projection || !projection.SupportsOwnedEntityProjections)
+                throw new NotSupportedException("The Beep connector cannot acknowledge the required native projection.");
+            var required = _requiredReadColumns.Concat(_requiredProjectionColumns).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var result = await projection.ReadEntityProjectionAsync(table, filters, required)
+                ?? throw new InvalidOperationException("The Beep connector did not acknowledge the native projection.");
+            if (result.Outcome.Flag != TheTechIdea.Beep.ConfigUtil.Errors.Ok)
+                throw new InvalidOperationException("The Beep connector could not confirm the native projection.", result.Outcome.Ex);
+            if (result.Rows.Any(row => row is not IDictionary<string, object> && row is not System.Data.DataRow))
+                throw new InvalidOperationException("The Beep connector returned a projection without observable source columns.");
+            return ConvertToTypedList(result.Rows, type).ToList();
+#elif WORKFLOW_INBOX_FOCUSED
+            // Controlled package-mode fixtures exercise mapping only; deployed package mode cannot acknowledge a projection.
+            return ConvertToTypedList(await source.GetEntityAsync(table, filters), type).ToList();
+#else
+            throw new NotSupportedException("The Beep connector cannot acknowledge the required native projection.");
+#endif
+        }
+
+        public static List<AppFilter> CopyAndValidateFilters(Type type, List<AppFilter>? filters)
+        {
+            var result = new List<AppFilter>();
+            foreach (var filter in filters ?? new List<AppFilter>())
+            {
+                if (filter == null || type.GetProperty(filter.FieldName ?? "") == null ||
+                    filter.Operator is not ("=" or "<>" or ">" or ">=" or "<" or "<="))
+                    throw RefusalException.Invalid("A scoped PPDM filter requires a model column and supported comparison operator.");
+                result.Add(new AppFilter { FieldName = filter.FieldName, Operator = filter.Operator,
+                    FilterValue = filter.FilterValue, FilterValue1 = filter.FilterValue1, valueType = filter.valueType });
+            }
+            return result;
+        }
+
+        /// <summary>Returns a bounded sample of authorized rows. It is not a complete population or count.</summary>
+        public async Task<IReadOnlyList<object>> GetScopedSampleAsync(int limit, CancellationToken token = default)
+        {
+            if (_rowAccess is null) throw RefusalException.Forbidden("A company row policy is required for a scoped sample.");
+            if (limit is < 1 or > 20) throw RefusalException.Invalid("The sample limit must be between one and twenty.");
+            var predicates = await _rowAccess.GetReadConjunctionsAsync(_entityType, _tableName);
+            if (predicates.Count > 32) throw RefusalException.Conflict("The authorized scope is too large for a bounded sample.");
+            if (predicates.Count == 0) return Array.Empty<object>();
+            var keys = await RowKeyColumnsAsync(_entityType, _tableName);
+            var rows = new Dictionary<string, object>(StringComparer.Ordinal);
+            foreach (var predicate in predicates)
+            {
+                token.ThrowIfCancellationRequested();
+                if (predicate.Count == 0) throw RefusalException.Forbidden("An empty grant conjunction cannot authorize a sample.");
+                var current = await _rowAccess.GetReadConjunctionsAsync(_entityType, _tableName);
+                if (!current.Any(group => group.Count == predicate.Count && group.All(filter => predicate.Any(value => value.FieldName == filter.FieldName && value.FilterValue == filter.FilterValue && value.Operator == filter.Operator))))
+                    throw RefusalException.Forbidden("Asset access changed before the sample read.");
+                var query = CopyAndValidateFilters(_entityType, predicate.ToList());
+                query.AddRange(CopyAndValidateFilters(_entityType, (await _rowAccess.GetReadConstraintsAsync(_entityType, _tableName)).ToList()));
+                var source = _editor.GetDataSource(_connectionName) ?? throw new InvalidOperationException("Data source is unavailable.");
+                var page = await PPDMDataSourceTransaction.WithSourceAsync(source, () => Task.FromResult(source.GetEntity(_tableName, query, 1, limit + 1)));
+                token.ThrowIfCancellationRequested();
+                if (page is null || page.Data is null || page.PageNumber != 1 || page.PageSize != limit + 1 || source.ErrorObject?.Flag == TheTechIdea.Beep.ConfigUtil.Errors.Failed)
+                    throw new InvalidOperationException("The provider did not confirm a bounded sample.");
+                var selected = ConvertToTypedList(page.Data, _entityType).ToList();
+                if (selected.Count > limit + 1) throw RefusalException.Conflict("The provider exceeded the sample bound.");
+                await _rowAccess.ValidateRowsAsync(_entityType, _tableName, selected);
+                var pageKeys = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var row in selected)
+                {
+                    foreach (var filter in query.Where(filter => filter.Operator == "="))
+                        if (!string.Equals(Convert.ToString(_entityType.GetProperty(filter.FieldName)!.GetValue(row), CultureInfo.InvariantCulture), filter.FilterValue, StringComparison.Ordinal))
+                            throw RefusalException.Conflict("The provider did not honor a required sample filter.");
+                    var key = RowKey(row, keys);
+                    if (!pageKeys.Add(key)) throw RefusalException.Conflict("The provider returned duplicate sample identities.");
+                    if (rows.TryGetValue(key, out var existing) && System.Text.Json.JsonSerializer.Serialize(existing, _entityType) != System.Text.Json.JsonSerializer.Serialize(row, _entityType))
+                        throw RefusalException.Conflict("The sample contains inconsistent records for one identity.");
+                    rows[key] = row;
+                }
+            }
+            var output = rows.OrderBy(row => row.Key, StringComparer.Ordinal).Take(limit).Select(row => row.Value).ToArray();
+            await _rowAccess.ValidateRowsAsync(_entityType, _tableName, output);
+            return output;
+        }
+
+        private async Task<string[]> RowKeyColumnsAsync(Type type, string table)
+        {
+            var keys = (await _metadata.GetPrimaryKeyColumnsAsync(table)).ToArray();
+            if (keys.Length == 0 || keys.Any(key => type.GetProperty(key) == null))
+                throw RefusalException.Conflict("The PPDM primary key metadata is incomplete.");
+            return keys;
+        }
+
+        private static string RowKey(object row, string[] keys)
+        {
+            var values = keys.Select(key => row.GetType().GetProperty(key)!.GetValue(row)?.ToString()).ToArray();
+            if (values.Any(string.IsNullOrWhiteSpace)) throw RefusalException.Conflict("A scoped PPDM row has an incomplete primary key.");
+            return System.Text.Json.JsonSerializer.Serialize(values);
+        }
+
+        private void RequireControlledMutationOwner(Type? requestedType=null)
+        {
+            if(RequiresControlledNativeMutation || RequiresControlledMutation(requestedType,null))
+            {
+                if(_rowAccess is null)throw RefusalException.Forbidden("Controlled native records require their reviewed company command owner.");
+                var source=_editor.GetDataSource(_connectionName)??throw new InvalidOperationException("Native command source is unavailable.");
+                PPDMDataSourceTransaction.RequireOwned(source,System.Data.IsolationLevel.Serializable);
+            }
+        }
+
+        private async Task CheckMutationAsync(object entity, PPDMRowMutation operation, string? actor)
+        {
+            RequireControlledMutationOwner();
+            if (_rowAccess == null) return;
+            var keys = await RowKeyColumnsAsync(_entityType, _tableName);
+            RowKey(entity, keys);
+            object? previous = null;
+            if (operation != PPDMRowMutation.Insert)
+            {
+                var filters = keys.Select(key => new AppFilter { FieldName = key, Operator = "=",
+                    FilterValue = entity.GetType().GetProperty(key)!.GetValue(entity)!.ToString() }).ToList();
+                var found = (await GetEntitiesWithFiltersAsync(_entityType, _tableName, filters)).ToList();
+                if (found.Count > 1) throw RefusalException.Conflict("The provider returned multiple rows for a primary key.");
+                previous = found.SingleOrDefault();
+                if (previous != null && RowKey(previous, keys) != RowKey(entity, keys))
+                    throw RefusalException.Conflict("The existing PPDM row does not match the mutation's primary key.");
+            }
+            await _rowAccess.ValidateMutationAsync(_entityType, _tableName, entity, previous, operation, actor);
         }
 
         /// <summary>
@@ -237,7 +442,7 @@ namespace Beep.OilandGas.PPDM39.Core
         protected virtual IEnumerable<object> ConvertToTypedList(dynamic result, Type targetType)
         {
             if (result == null)
-                return Enumerable.Empty<object>();
+                throw new InvalidOperationException($"The provider did not return a confirmed query result for {targetType.Name}.");
 
             if (result is System.Data.DataTable table)
                 return table.Rows.Cast<System.Data.DataRow>().Select(row => MapDataSourceRow(row, targetType)).ToList();
@@ -249,7 +454,9 @@ namespace Beep.OilandGas.PPDM39.Core
             {
                 foreach (var item in enumerable)
                 {
-                    if (item != null) list.Add(MapDataSourceRow(item, targetType));
+                    if (item == null)
+                        throw new InvalidOperationException($"The provider returned an incomplete query row for {targetType.Name}.");
+                    list.Add(MapDataSourceRow(item, targetType));
                 }
             }
             else if (result != null)
@@ -260,23 +467,40 @@ namespace Beep.OilandGas.PPDM39.Core
             return list;
         }
 
-        private static object MapDataSourceRow(object row, Type targetType)
+        private object MapDataSourceRow(object row, Type targetType)
         {
-            if (targetType.IsInstanceOfType(row)) return row;
+            if (targetType.IsInstanceOfType(row))
+            {
+                if (_requiredProjectionColumns.Length != 0)
+                    throw new InvalidOperationException($"A typed provider row cannot prove the required projected columns for {targetType.Name}.");
+                if (_requiredReadColumns.Any(column => targetType.GetProperty(column)!.GetValue(row) is null))
+                    throw new InvalidOperationException($"Query row has a null required column for {targetType.Name}.");
+                return row;
+            }
             var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            void AddColumn(string name, object? value)
+            {
+                if (!values.TryAdd(name, value))
+                    throw new InvalidOperationException($"Query row has ambiguous column names for {targetType.Name}.");
+            }
             if (row is System.Data.DataRow dataRow)
             {
-                foreach (System.Data.DataColumn column in dataRow.Table.Columns) values[column.ColumnName] = dataRow[column];
+                foreach (System.Data.DataColumn column in dataRow.Table.Columns) AddColumn(column.ColumnName, dataRow[column]);
             }
             else if (row is IDictionary<string, object> dictionary)
             {
-                foreach (var pair in dictionary) values[pair.Key] = pair.Value;
+                foreach (var pair in dictionary) AddColumn(pair.Key, pair.Value);
             }
             else
             {
                 foreach (var property in row.GetType().GetProperties().Where(p => p.CanRead && p.GetIndexParameters().Length == 0))
-                    values[property.Name] = property.GetValue(row);
+                    AddColumn(property.Name, property.GetValue(row));
             }
+            // Check presence before constructing value-type properties; absence must never become a default numeric key.
+            if (_requiredReadColumns.Any(column => !values.TryGetValue(column, out var value) || value is null || value == DBNull.Value))
+                throw new InvalidOperationException($"Query row is missing a required column for {targetType.Name}.");
+            if (_requiredProjectionColumns.Any(column => !values.ContainsKey(column)))
+                throw new InvalidOperationException($"Query row is missing a projected native proof column for {targetType.Name}.");
             var entity = Activator.CreateInstance(targetType)
                 ?? throw new InvalidOperationException($"Cannot create query entity {targetType.Name}.");
             var mapped = 0;
@@ -803,6 +1027,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <param name="parentKeys">Dictionary of parent table names and their key values</param>
         protected virtual async Task ValidateAndSetParentKeysAsync(object entity, Dictionary<string, object> parentKeys)
         {
+            RequireControlledMutationOwner(entity?.GetType());
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
@@ -854,6 +1079,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <returns>Inserted entity</returns>
         public virtual async Task<object> InsertWithParentKeysAsync(object entity, string userId, Dictionary<string, object> parentKeys = null)
         {
+            RequireControlledMutationOwner();
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
@@ -876,6 +1102,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <returns>Inserted entities</returns>
         public virtual async Task<IEnumerable<object>> InsertBatchWithParentKeysAsync(IEnumerable<object> entities, string userId, Dictionary<string, object> parentKeys = null)
         {
+            RequireBatchCommandOwner();
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
 
@@ -976,6 +1203,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// </summary>
         public virtual async Task<object> InsertAsync(object entity, string userId)
         {
+            RequireControlledMutationOwner();
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
@@ -993,6 +1221,8 @@ namespace Beep.OilandGas.PPDM39.Core
             // Prepare entity for insertion
             _commonColumnHandler.PrepareForInsert(entity as IPPDMEntity, userId);
 
+            await CheckMutationAsync(entity, PPDMRowMutation.Insert, userId);
+
             // Insert into database using IDataSource.InsertEntity directly
             var dataSource = _editor.GetDataSource(_connectionName);
             if (dataSource == null)
@@ -1000,8 +1230,10 @@ namespace Beep.OilandGas.PPDM39.Core
                 throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
             }
 
-            var result = dataSource.InsertEntity(_tableName, entity);
-            BeepOperationResult.EnsureSuccess(result, "Insert", _tableName);
+            await PPDMDataSourceTransaction.WithSourceAsync(dataSource, () => {
+                BeepOperationResult.EnsureSuccess(dataSource.InsertEntity(_tableName, entity), "Insert", _tableName);
+                return Task.FromResult(true);
+            });
 
             _logger?.LogDebug("Successfully inserted entity into table {TableName}", _tableName);
             return entity;
@@ -1012,6 +1244,8 @@ namespace Beep.OilandGas.PPDM39.Core
         /// </summary>
         public virtual async Task<IEnumerable<object>> InsertBatchAsync(IEnumerable<object> entities, string userId)
         {
+            if (_rowAccess != null || RequiresControlledNativeMutation)
+                throw RefusalException.Forbidden("Batch mutations require a reviewed company mutation command.");
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
 
@@ -1030,8 +1264,10 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
 
                 _commonColumnHandler.PrepareForInsert(entity as IPPDMEntity, userId);
-                var result = dataSource.InsertEntity(_tableName, entity);
-                BeepOperationResult.EnsureSuccess(result, "Batch insert", _tableName);
+                await PPDMDataSourceTransaction.WithSourceAsync(dataSource, () => {
+                    BeepOperationResult.EnsureSuccess(dataSource.InsertEntity(_tableName, entity), "Batch insert", _tableName);
+                    return Task.FromResult(true);
+                });
             }
 
             return entityList;
@@ -1042,6 +1278,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// </summary>
         public virtual async Task<object> UpdateAsync(object entity, string userId)
         {
+            RequireControlledMutationOwner();
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
@@ -1059,6 +1296,8 @@ namespace Beep.OilandGas.PPDM39.Core
             // Prepare entity for update
             _commonColumnHandler.PrepareForUpdate(entity as IPPDMEntity, userId);
 
+            await CheckMutationAsync(entity, PPDMRowMutation.Update, userId);
+
             // Update in database using IDataSource.UpdateEntity directly
             var dataSource = _editor.GetDataSource(_connectionName);
             if (dataSource == null)
@@ -1066,8 +1305,10 @@ namespace Beep.OilandGas.PPDM39.Core
                 throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
             }
 
-            var result = dataSource.UpdateEntity(_tableName, entity);
-            BeepOperationResult.EnsureSuccess(result, "Update", _tableName);
+            await PPDMDataSourceTransaction.WithSourceAsync(dataSource, () => {
+                BeepOperationResult.EnsureSuccess(dataSource.UpdateEntity(_tableName, entity), "Update", _tableName);
+                return Task.FromResult(true);
+            });
 
             _logger?.LogDebug("Successfully updated entity in table {TableName}", _tableName);
             return entity;
@@ -1078,6 +1319,8 @@ namespace Beep.OilandGas.PPDM39.Core
         /// </summary>
         public virtual async Task<IEnumerable<object>> UpdateBatchAsync(IEnumerable<object> entities, string userId)
         {
+            if (_rowAccess != null || RequiresControlledNativeMutation)
+                throw RefusalException.Forbidden("Batch mutations require a reviewed company mutation command.");
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
 
@@ -1096,8 +1339,10 @@ namespace Beep.OilandGas.PPDM39.Core
                 }
 
                 _commonColumnHandler.PrepareForUpdate(entity as IPPDMEntity, userId);
-                var result = dataSource.UpdateEntity(_tableName, entity);
-                BeepOperationResult.EnsureSuccess(result, "Batch update", _tableName);
+                await PPDMDataSourceTransaction.WithSourceAsync(dataSource, () => {
+                    BeepOperationResult.EnsureSuccess(dataSource.UpdateEntity(_tableName, entity), "Batch update", _tableName);
+                    return Task.FromResult(true);
+                });
             }
 
             return entityList;
@@ -1109,12 +1354,14 @@ namespace Beep.OilandGas.PPDM39.Core
         /// </summary>
         public virtual async Task<bool> SoftDeleteAsync(object id, string userId)
         {
+            RequireControlledMutationOwner();
             // Format ID according to table's ID type configuration (PPDM uses string IDs)
             var formattedId = _defaults.FormatIdForTable(_tableName, id);
             var entity = await GetByIdAsync(formattedId);
             if (entity == null)
                 return false;
 
+            await CheckMutationAsync(entity, PPDMRowMutation.Delete, userId);
             _commonColumnHandler.SoftDelete(entity as IPPDMEntity, userId);
             await UpdateAsync(entity, userId);
 
@@ -1131,6 +1378,8 @@ namespace Beep.OilandGas.PPDM39.Core
 
             _logger?.LogDebug("Deleting entity of type {EntityType} from table {TableName}", _entityType.Name, _tableName);
 
+            await CheckMutationAsync(entity, PPDMRowMutation.Delete, null);
+
             // Delete from database using IDataSource.DeleteEntity directly
             var dataSource = _editor.GetDataSource(_connectionName);
             if (dataSource == null)
@@ -1138,7 +1387,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
             }
 
-            var result = dataSource.DeleteEntity(_tableName, entity);
+            var result = await PPDMDataSourceTransaction.WithSourceAsync(dataSource, () => Task.FromResult(dataSource.DeleteEntity(_tableName, entity)));
             bool success = BeepOperationResult.IsSuccess(result);
 
             if (success)
@@ -1347,6 +1596,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <returns>List of inserted entities</returns>
         public virtual async Task<List<object>> InsertBatchWithSizeAsync(IEnumerable<object> entities, string userId, int batchSize = 100)
         {
+            RequireBatchCommandOwner();
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
 
@@ -1406,6 +1656,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <returns>List of updated entities</returns>
         public virtual async Task<List<object>> UpdateBatchAsync(IEnumerable<object> entities, string userId, int batchSize = 100)
         {
+            RequireBatchCommandOwner();
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
 
@@ -1466,6 +1717,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <returns>Number of entities deleted</returns>
         public virtual async Task<int> DeleteBatchAsync(IEnumerable<string> ids, string userId, bool softDelete = true, int batchSize = 100)
         {
+            RequireBatchCommandOwner();
             if (ids == null)
                 throw new ArgumentNullException(nameof(ids));
 
@@ -1542,6 +1794,7 @@ namespace Beep.OilandGas.PPDM39.Core
         /// <returns>List of upserted entities</returns>
         public virtual async Task<List<object>> UpsertBatchAsync(IEnumerable<object> entities, string userId, int batchSize = 100)
         {
+            RequireBatchCommandOwner();
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
 
@@ -1891,7 +2144,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 relatedEntityType,
                 _connectionName,
                 relatedTableName,
-                _logger);
+                _logger, _rowAccess);
 
             // Build filter
             var formattedId = _defaults.FormatIdForTable(_tableName, entityId);
@@ -1975,7 +2228,7 @@ namespace Beep.OilandGas.PPDM39.Core
                 parentEntityType,
                 _connectionName,
                 parentTableName,
-                _logger);
+                _logger, _rowAccess);
 
             // Get parent metadata
             var parentMetadata = await _metadata.GetTableMetadataAsync(parentTableName);
@@ -2616,63 +2869,6 @@ namespace Beep.OilandGas.PPDM39.Core
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Result of file import operation
-    /// </summary>
-    public class FileImportResult
-    {
-        /// <summary>
-        /// Path to the imported file
-        /// </summary>
-        public string FilePath { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Total number of rows processed
-        /// </summary>
-        public int TotalRows { get; set; }
-
-        /// <summary>
-        /// Number of successfully imported rows
-        /// </summary>
-        public int SuccessCount { get; set; }
-
-        /// <summary>
-        /// Number of rows with errors
-        /// </summary>
-        public int ErrorCount { get; set; }
-
-        /// <summary>
-        /// List of import errors
-        /// </summary>
-        public List<FileImportError> Errors { get; set; } = new List<FileImportError>();
-
-        /// <summary>
-        /// Whether the import was successful (no errors)
-        /// </summary>
-        public bool IsSuccess => ErrorCount == 0;
-    }
-
-    /// <summary>
-    /// Represents an error during file import
-    /// </summary>
-    public class FileImportError
-    {
-        /// <summary>
-        /// Row number where error occurred (1-based)
-        /// </summary>
-        public int RowNumber { get; set; }
-
-        /// <summary>
-        /// Error message
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Column name where error occurred (if applicable)
-        /// </summary>
-        public string ColumnName { get; set; } = string.Empty;
     }
 
     /// <summary>

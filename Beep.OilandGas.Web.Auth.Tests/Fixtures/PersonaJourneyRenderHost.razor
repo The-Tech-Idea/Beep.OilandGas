@@ -1,0 +1,15 @@
+@namespace Beep.OilandGas.Web.Auth.Tests.Fixtures
+@using MudBlazor
+@using Beep.OilandGas.Web.Pages.PPDM39.Workflow
+@using Beep.OilandGas.Web.Pages.PPDM39.Accounting
+<MudPopoverProvider />
+@if (ShowProcurementLanding) { <ProcurementWorkbench /> }
+else if (ShowAccountingLanding) { <AccountingDashboard /> }
+else if (ShowProcess) { <CompanyAccountingProcessDetail Id="@ProcessId" /> }
+else { <TaskInbox /> }
+@code {
+    [Microsoft.AspNetCore.Components.Parameter] public bool ShowProcess {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool ShowProcurementLanding {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public bool ShowAccountingLanding {get;set;}
+    [Microsoft.AspNetCore.Components.Parameter] public string ProcessId {get;set;}="";
+}

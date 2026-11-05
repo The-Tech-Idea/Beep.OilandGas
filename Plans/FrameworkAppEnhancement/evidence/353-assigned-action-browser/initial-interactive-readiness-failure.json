@@ -1,0 +1,50 @@
+{
+  "status": "failed",
+  "error": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText(/^11 overdue assigned actions/) to be visible\u001b[22m\n",
+  "observations": [
+    {
+      "name": "Failure state",
+      "url": "http://127.0.0.1:55601/assigned-actions",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nMy overdue corrective actions\n\nOpen actions across all open incident stages, assigned to your current recorded company person. Due dates are compared in UTC.\n\nREVIEW MY OVERDUE ACTIONS\n\nReview your current assignment evidence. Missing identity mapping or unavailable data does not mean zero actions.",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 0,
+          "approvedIntent": null
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 0,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 0,
+        "queueCompleted": 0,
+        "requests": []
+      },
+      "layout": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "keys": []
+      }
+    }
+  ]
+}

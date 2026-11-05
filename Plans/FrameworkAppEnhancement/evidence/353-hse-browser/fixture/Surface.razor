@@ -1,0 +1,30 @@
+@page "/"
+@inject Scope Scope
+@inject Backend Backend
+<MudThemeProvider /><MudPopoverProvider /><MudDialogProvider /><MudSnackbarProvider />
+<MudPaper Outlined="true" Class="ma-4 pa-4">
+    <MudText HtmlTag="h1" Typo="Typo.h5">Isolated HSE browser fixture</MudText>
+    <MudText>Actual HSE components and protected tab storage. Controlled clients and authentication; production API/provider qualification is separate.</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap">
+        <MudButton OnClick="@(() => closure = false)">Show HSE landing</MudButton>
+        <MudButton OnClick="@(() => closure = true)">Show closure workflow</MudButton>
+        <MudButton OnClick="Scope.Other">Switch other company</MudButton>
+        <MudButton OnClick="Scope.Restore">Restore original company</MudButton>
+    </MudStack>
+</MudPaper>
+@if (closure)
+{
+    @if (Scope.Company.Selection?.Scope == Scope.Context.Company)
+    {
+        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+            <MudText HtmlTag="h2" Typo="Typo.h6">Controlled incident @Scope.Context.FieldId / case · @Backend.State</MudText>
+            <HseClosureWorkflow Context="Scope.Context" IncidentId="case" CurrentIncidentState="@Backend.State" CanApprove="true" OnConfirmed="Confirmed" />
+        </MudContainer>
+    }
+    else { <MudText>Current company has no fixture incident. Original incident details are withheld.</MudText> }
+}
+else { <HSEDashboard /> }
+@code {
+    private bool closure;
+    private void Confirmed() => StateHasChanged();
+}

@@ -67,28 +67,6 @@ public class ProductionAccountingControllerFacadeCompatibilityTests
     }
 
     [Fact]
-    public void TraditionalAccounting_PurchaseOrder_CreatePurchaseOrder_ReturnsPurchaseOrder_WhenRepositoryInsertFails()
-    {
-        var deps = CreateDependencies();
-        deps.Metadata
-            .Setup(x => x.GetTableMetadataAsync(It.IsAny<string>()))
-            .ThrowsAsync(new InvalidOperationException("metadata unavailable"));
-
-        var service = CreateService(deps);
-        var request = new CreatePurchaseOrderRequest
-        {
-            VendorBaId = "VENDOR-1",
-            Description = "compatibility purchase order"
-        };
-
-        var purchaseOrder = service.TraditionalAccounting.PurchaseOrder.CreatePurchaseOrder(request, "user-2");
-
-        Assert.NotNull(purchaseOrder);
-        Assert.Equal("VENDOR-1", purchaseOrder.VENDOR_BA_ID);
-        Assert.Equal("DRAFT", purchaseOrder.STATUS);
-    }
-
-    [Fact]
     public void TraditionalAccounting_AccountsPayable_CreateAPInvoice_ReturnsInvoice_WhenRepositoryInsertFails()
     {
         var deps = CreateDependencies();
@@ -114,7 +92,7 @@ public class ProductionAccountingControllerFacadeCompatibilityTests
     }
 
     [Fact]
-    public void TraditionalAccounting_GeneralLedger_CreateAccount_ReturnsAccount_WhenRepositoryInsertFails()
+    public void TraditionalAccounting_GeneralLedger_CreateAccount_RefusesTheRetiredGlobalFacade()
     {
         var deps = CreateDependencies();
         deps.Metadata
@@ -131,15 +109,13 @@ public class ProductionAccountingControllerFacadeCompatibilityTests
             OpeningBalance = 0m
         };
 
-        var account = service.TraditionalAccounting.GeneralLedger.CreateAccount(request, "user-4");
-
-        Assert.NotNull(account);
-        Assert.Equal("4000", account.ACCOUNT_NUMBER);
-        Assert.Equal("Revenue", account.ACCOUNT_NAME);
+        var metadataCalls=deps.Metadata.Invocations.Count;
+        Assert.Throws<InvalidOperationException>(()=>service.TraditionalAccounting.GeneralLedger.CreateAccount(request, "user-4"));
+        Assert.Equal(metadataCalls,deps.Metadata.Invocations.Count);
     }
 
     [Fact]
-    public void TraditionalAccounting_JournalEntry_CreateJournalEntry_ReturnsEntry_WhenRepositoryInsertFails()
+    public void TraditionalAccounting_JournalEntry_CreateJournalEntry_RefusesTheRetiredGlobalFacade()
     {
         var deps = CreateDependencies();
         deps.Metadata
@@ -153,18 +129,15 @@ public class ProductionAccountingControllerFacadeCompatibilityTests
             new() { GlAccountId = "1000", DebitAmount = 0m, CreditAmount = 100m, Description = "Credit line" }
         };
 
-        var entry = service.TraditionalAccounting.JournalEntry.CreateJournalEntry(
+        var metadataCalls=deps.Metadata.Invocations.Count;
+        Assert.Throws<InvalidOperationException>(()=>service.TraditionalAccounting.JournalEntry.CreateJournalEntry(
             "JE-1",
             new DateTime(2026, 4, 1),
             "MANUAL",
             "compatibility journal entry",
             lines,
-            "user-5");
-
-        Assert.NotNull(entry);
-        Assert.Equal("JE-1", entry.ENTRY_NUMBER);
-        Assert.Equal(100m, entry.TOTAL_DEBIT);
-        Assert.Equal(100m, entry.TOTAL_CREDIT);
+            "user-5"));
+        Assert.Equal(metadataCalls,deps.Metadata.Invocations.Count);
     }
 
     [Fact]

@@ -653,7 +653,11 @@ public class DefaultSecuritySeedService : IDefaultSecuritySeedService
 
     private static Dictionary<string, string[]> GetRolePermissionMap()
     {
-        var allPermissions = GetAllPermissionCodes().ToArray();
+        // Physical maintenance capabilities require an explicit company role assignment.
+        // Catalog discovery must not make an existing Administrator an execution/verifier/return actor.
+        var allPermissions = GetAllPermissionCodes().Where(code=>code is not (
+            PermissionConstants.Maintenance.ViewApprovedPermit or PermissionConstants.Maintenance.ExecuteWork or
+            PermissionConstants.Maintenance.VerifyCompletion or PermissionConstants.Maintenance.ReturnToService)).ToArray();
 
         return new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {

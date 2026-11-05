@@ -1,0 +1,6 @@
+### Result
+true
+### Ran Playwright code
+```js
+await page.evaluate('() => (window.__oilgasBlockRemoval = true)');
+```

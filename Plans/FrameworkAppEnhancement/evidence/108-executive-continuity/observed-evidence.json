@@ -1,0 +1,205 @@
+{
+  "observed_at_utc": "2026-10-21T08:28:51.5043683Z",
+  "scope": "Executive portfolio and assigned-work landing account/standard-role admission, canonical typed envelope and authentication/source-generation privacy.",
+  "git": {
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "staging_commit_push_performed": false,
+    "branch": "master"
+  },
+  "environment": {
+    "sdk": "10.0.401",
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "framework_snapshot": "a80d41ad0affd81b549f5f063787e186d162e37f"
+  },
+  "sources": [
+    {
+      "sha256": "efaaf53bdd5af9b1d16b54b974b35891be1f50bfbbae69ef257bb804035e8873",
+      "path": "Beep.OilandGas.Web/Pages/PPDM39/ExecutiveDashboard.razor"
+    },
+    {
+      "sha256": "8e401fc98f58ba4f3259b6f0dc32dca7ed98634e0e264bd547aa0ca8376d5616",
+      "path": "Beep.OilandGas.Web/Services/ExecutiveServiceClient.cs"
+    },
+    {
+      "sha256": "6c4b6ce754e54f703de89a2a473521115289109e08bc43dda4c04964e05a8f87",
+      "path": "Beep.OilandGas.Web.Auth.Tests/ExecutivePortfolioLandingTests.cs"
+    },
+    {
+      "sha256": "322a8ddd9f8bfd98fb8eeb1c7d23ef096b35fb59c4586c6141d01a8e1ff8d1df",
+      "path": "Beep.OilandGas.Web.Auth.Tests/ExecutivePortfolioTests.cs"
+    },
+    {
+      "sha256": "dea7d407f69f24497befd5d8ff96e1e0771aad769f891f13ef8ea81ea1dda7d0",
+      "path": "Scripts/Test-PurchaseOrderOwnership.ps1"
+    }
+  ],
+  "related_sources": [
+    {
+      "sha256": "939ed119e4eacd79b0f6027a7b2de6dd57663c5dd28364b7a666f09343865742",
+      "path": "Beep.OilandGas.Web/Services/ExecutivePortfolioState.cs"
+    },
+    {
+      "sha256": "7a434bd3a27e29b377156fbdfaa544f42d6df0c3487afce3d10f9664bb8f8125",
+      "path": "Beep.OilandGas.Web/Services/ApiClient.cs"
+    },
+    {
+      "sha256": "57de7c41875a7fbc011d48905fac3cf3c7887516c7ba5d902cb51dcf3ea47989",
+      "path": "Beep.OilandGas.Web/Components/Workflow/PersonaTaskInbox.razor"
+    },
+    {
+      "sha256": "d9be4ae8d206b7250e132de0bef7f4eb1f31a03abad1f8b6f94c6dc8f017c3af",
+      "path": "Beep.OilandGas.Client/App/CompanyClientContext.cs"
+    },
+    {
+      "sha256": "2f6c5e2329fcb6a3878cc13c6f84b4889dd365d2e2ac6758dc75c981c3724820",
+      "path": "TheTechIdea.Data/OilGas/ExecutivePortfolioReview.cs"
+    },
+    {
+      "sha256": "b90c015a354dd794e4b487c4c3370456f5a3a213b94bb432982287c755de46ef",
+      "path": "Beep.OilandGas.ApiService/Services/ExecutivePortfolioReviews.cs"
+    }
+  ],
+  "data_assembly": {
+    "sha256": "1f0a5419ad0d98aaec486823583c2432f4c374738a16d3a163eb20e9d624f14d",
+    "note": "Unchanged canonical Data8. No native/API/shared-output rebuild in this slice.",
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll"
+  },
+  "checks": [
+    {
+      "failed": 0,
+      "passed": 137,
+      "note": "Before final extra selected-FIELD/disposal assertions; overlaps final executive gate.",
+      "name": "actual-executive-and-existing-inbox-landings",
+      "status": "verified",
+      "duration": "4.6308 seconds",
+      "command": "./Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -IncludeWorkflowInbox -TestFilter \"FullyQualifiedName~ExecutivePortfolio|FullyQualifiedName~MaintenanceRecordedWorkLandingTests|FullyQualifiedName~PersonaTaskInboxStateTests\"",
+      "log": "oilgas-108-executive-auth-landing.log",
+      "exit_code": 0
+    },
+    {
+      "failed": 0,
+      "passed": 50,
+      "name": "final-executive-state-client-rendered-page",
+      "status": "verified",
+      "duration": "5.9276 seconds",
+      "seams": "Actual ExecutiveDashboard/ExecutiveServiceClient/ApiClient/ExecutivePortfolioState/PersonaTaskInbox with controlled HTTP/auth/company role/catalog/inbox/JS seams; actual canonical Data envelope and native FIELD projection helper. No hosted endpoint/provider/OIDC/browser assertion.",
+      "command": "./Scripts/Test-PurchaseOrderOwnership.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -IncludeWorkflowInbox -TestFilter \"FullyQualifiedName~ExecutivePortfolio\"",
+      "log": "oilgas-108-executive-auth-landing-final.log",
+      "exit_code": 0
+    }
+  ],
+  "outputs": [
+    {
+      "sha256": "464ef3100d247e04c523970907d18ae2c7e39958d9e731f381f219164b043725",
+      "path": "oilgas-108-executive-auth-landing.log"
+    },
+    {
+      "sha256": "3608fd4e7ff398ceef47c5624f6a78bee84016f8c68f6a349889f11673c44043",
+      "path": "oilgas-108-executive-auth-landing-final.log"
+    }
+  ],
+  "review": {
+    "kind": "self-review",
+    "limits": "Self-review plus scoped rendered/transport checks; no independent review or complete manager/API/provider/browser acceptance claim.",
+    "checks": [
+      "Actual current authenticated party matches selected account and uses standard User.IsInRole against the selected app-role set.",
+      "Portfolio transport and actual assigned-work child begin only after current authority; auth/company changes remove child and selected FIELD data.",
+      "Existing shared validator rejects wrong company/actor/source, null/duplicate/negative evidence; API client still fences selection changes.",
+      "Independent page generation fences delayed auth/read/failure/finally; state version fences stale data and disposal; newer reload remains current.",
+      "Existing CallFailures reports source errors without displaying stale failure to another context; real empty envelope remains distinct from failed source.",
+      "No hardcoded seeded business role, new model/store/endpoint/grant/database path/KPI/default total/CSS/JS/theme or native owner."
+    ]
+  },
+  "scope_processes_terminal": true,
+  "limitations": [
+    "Native executive endpoint/service/DI, current server role/resource enforcement and real-provider company isolation remain separate gates.",
+    "Controlled headless auth/catalog/HTTP/inbox/JS proof does not verify OIDC, keyboard, screen-reader, RTL, browser or production.",
+    "Approved KPI period/unit/currency/source/freshness and management decision/outcome/handoff/consolidation requirements remain open.",
+    "Full goal/plan remains active; commit/push deferred until completion.",
+    "Existing focused source-type/nullable/analyzer/unrelated PersonaSelector warnings remain outside this slice."
+  ],
+  "final_verification": {
+    "internal_links_checked": 746,
+    "status": "verified",
+    "source_output_hashes": "verified",
+    "documentation_encoding": "Master, index and persona workflow index retained Latin1; executive owner/persona/phase E UTF8.",
+    "changed_source_whitespace_conflicts": "verified, including untracked files",
+    "missing_links": []
+  },
+  "documentation": [
+    {
+      "sha256": "1fac665e97c786d5d0f732febadf2acf6ed52fad9e3d0a2f13ad1156cbb292a7",
+      "path": "Plans/FrameworkAppEnhancement/Implementation-108-Executive-Company-Portfolio-Evidence.md"
+    },
+    {
+      "sha256": "062f7aaea125cbbf25f04aefbfbeed5bd6d20d248fa3d2fab4e10a0b1c5aff24",
+      "path": "Plans/FrameworkAppEnhancement/Persona-10-Manager-and-Executive.md"
+    },
+    {
+      "sha256": "f3d14b06cf22c3d7731d897e47b85b17a2b602cd35cfa38316e2033ea547204d",
+      "path": "Plans/FrameworkAppEnhancement/Company-Phase-E-Company-Release.md"
+    },
+    {
+      "sha256": "202e7be59e1af3065d6c066dd50bd763b9d353d932c223eaad1bcce2fc3dae6a",
+      "path": "Plans/FrameworkAppEnhancement/Company-Persona-Data-Workflows.md"
+    },
+    {
+      "sha256": "d39331284bf18763c397059ae29268e1b60901d45f5afdd7e3e64b35064dfa05",
+      "path": "Plans/FrameworkAppEnhancement/Company-Plan-Index.md"
+    },
+    {
+      "sha256": "ae36699cd5460c6311aa3e760a5c86fc6bc97dfbb8fe2e199aa010aea9a9e44d",
+      "path": "MASTER-TODO-TRACKER.md"
+    }
+  ],
+  "independent_native_return_gate": {
+    "status": "failed",
+    "session": 48596,
+    "note": "Independent executive12 within current protected52 pass; initial157/exact-status10 pass. The same full protected mixed case48596 fails in 11.6537 Minutes, exit1. Original whole case failed during authorized review at unchanged100s (100.6s observed), before recording. Evidence58.7s passed; its3654 preference checks took16.9s versus28.4s in previous22986, while app reads remained1.9s. Review completed2753 authority spans/55.1 inclusive seconds and three qualified source compositions/74.9s; preference5656 calls/26.4s and grants5661/14.8s. A second evidence read/closure remained active at timeout. Request-stage timings vary and nested totals are not additive. No full mixed recording/retry/private recovery/public outcome or end-to-end latency pass is proved. Nested times are not additive. Prior whole failures remain distinct retained evidence. Original preparation/provider seams and wider company/persona/role/screens/landing/dashboard/finance/multinational/release gates remain open. Commit/push follows full goal and plan completion.",
+    "exit_code": 1
+  },
+  "shared_authority_regression": {
+    "status": "verified",
+    "whole_gate_passed": 61,
+    "executive_cases": 12,
+    "other_company_access_cases": 49,
+    "duration": "10.5505 seconds",
+    "exit_code": 0,
+    "source": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+    "sha256": "cf761a414fbabd8d6e02c87e507fa94a277e920e1b92fbb47164a36e88f3c9d0",
+    "evidence": "../335-qualified-preparation/qualified-record-post-observed-evidence.json",
+    "note": "Actual protected executive cases repeated in whole shared authority gate after query plan change; both distinct EF models execute current rows. Prior UI/API/native results retain their original scope; no aggregate unique count."
+  },
+  "shared_authority_projection_regression": {
+    "status": "verified",
+    "whole_gate_passed": 66,
+    "executive_cases": 12,
+    "other_company_access_cases": 54,
+    "duration": "11.6673 seconds",
+    "exit_code": 0,
+    "source": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+    "sha256": "2e0b6d73e4c0331cc57a8f1447c9fee338bb5dd200938ebf6d419abb3de708ce",
+    "evidence": "../335-qualified-preparation/qualified-record-post-observed-evidence.json",
+    "note": "Actual protected executive and distinct EF model cases execute fresh current rows with preserved per-column comparison settings. Original UI/portfolio/native source scope remains unchanged; no unique aggregate or whole persona completion inferred."
+  },
+  "shared_schema_boundary_regression": {
+    "status": "verified",
+    "whole_gate_passed": 70,
+    "executive_cases": 12,
+    "duration": "4.5551 minutes",
+    "exit_code": 0,
+    "runtime_sha256": "3d805c53db26ffe798d946aa29513cd1a87273d20c4e1f315719c747b8d0fcf7",
+    "current_clean_rebuild_reproduced_runtime": true,
+    "evidence": "../335-qualified-preparation/qualified-record-post-observed-evidence.json",
+    "note": "Actual protected executive cases repeated alongside owned native tests; executive app-authority projection source unchanged. Counts overlap earlier gates; complete persona/KPI/handoff/provider/browser/OIDC acceptance remains open."
+  },
+  "shared_account_preference_regression": {
+    "status": "verified",
+    "whole_gate_passed": 52,
+    "executive_cases": 12,
+    "duration": "47.0698 seconds",
+    "exit_code": 0,
+    "evidence": "../335-qualified-preparation/qualified-record-post-observed-evidence.json",
+    "note": "Actual protected executive current company/account/role/native FIELD cases repeat after account admission optimization. Full roles/claims and administrator decisions remain authoritative; no permission result cache. Counts overlap earlier gates and do not close complete executive/KPI/handoff/provider/browser/OIDC scope."
+  }
+}

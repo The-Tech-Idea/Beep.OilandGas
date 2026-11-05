@@ -1,0 +1,110 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e165]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=f2e166]
+    - paragraph [ref=f2e167]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=f2e168]:
+      - link "Open assigned HSE process" [ref=f2e169] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=f2e171] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=f2e173] [cursor=pointer]
+      - button "Restore original company" [ref=f2e175] [cursor=pointer]
+  - generic [ref=f2e177]:
+    - group [ref=f2e178]:
+      - button [ref=f2e179] [cursor=pointer]
+      - group [ref=f2e184]:
+        - heading "INJURY — Recorded assigned incident" [level=5] [ref=f2e185]
+        - group [ref=f2e186]:
+          - generic [ref=f2e187]: Tier 4
+          - generic [ref=f2e193]: PENDING_CLOSE_OUT
+          - generic [ref=f2e199]: 29-Oct-2026 01:54 · North FIELD · originator
+    - separator [ref=f2e200]
+    - generic [ref=f2e201]:
+      - generic [ref=f2e202]:
+        - generic [ref=f2e203]:
+          - paragraph [ref=f2e206]: Incident Details
+          - table [ref=f2e210]:
+            - rowgroup [ref=f2e211]:
+              - row [ref=f2e212]:
+                - cell "Date/Time" [ref=f2e213]
+                - cell [ref=f2e214]:
+                  - paragraph [ref=f2e215]: 29-Oct-2026 01:54
+              - row [ref=f2e216]:
+                - cell "Type" [ref=f2e217]
+                - cell [ref=f2e218]:
+                  - paragraph [ref=f2e219]: INJURY
+              - row [ref=f2e220]:
+                - cell "Tier" [ref=f2e221]
+                - cell "Tier 4" [ref=f2e222]
+              - row [ref=f2e229]:
+                - cell "Location" [ref=f2e230]
+                - cell [ref=f2e231]:
+                  - paragraph [ref=f2e232]: North FIELD
+              - row [ref=f2e233]:
+                - cell "Reported jurisdiction" [ref=f2e234]
+                - cell [ref=f2e235]:
+                  - paragraph [ref=f2e236]: KUWAIT
+              - row [ref=f2e237]:
+                - cell "Reported By" [ref=f2e238]
+                - cell [ref=f2e239]:
+                  - paragraph [ref=f2e240]: originator
+        - generic [ref=f2e241]:
+          - paragraph [ref=f2e248]: Root Cause Analysis
+          - generic [ref=f2e249]:
+            - button "Review recorded causes and classifications" [ref=f2e250] [cursor=pointer]
+            - button "Find my recorded causes" [ref=f2e252] [cursor=pointer]
+            - button "View shared recorded causes" [ref=f2e254] [cursor=pointer]
+            - button "Find my recorded RCA handoff" [ref=f2e256] [cursor=pointer]
+            - paragraph [ref=f2e258]: No root cause is displayed in the incident detail.
+      - generic [ref=f2e259]:
+        - generic [ref=f2e260]:
+          - paragraph [ref=f2e263]: Corrective Actions
+          - generic [ref=f2e264]:
+            - paragraph [ref=f2e265]: Add an action to the recorded corrective plan. The action does not complete the workflow step.
+            - link "Review or create corrective plan" [ref=f2e266] [cursor=pointer]:
+              - /url: /hse/incidents/corrective-plan?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232
+            - button "Review recorded action choices" [ref=f2e268] [cursor=pointer]
+            - separator [ref=f2e270]
+            - button "Review verification evidence" [ref=f2e271] [cursor=pointer]
+            - button "Review incident closure prerequisites" [ref=f2e273] [cursor=pointer]
+            - separator [ref=f2e275]
+            - heading "Lifecycle approval and incident closure" [level=6] [ref=f2e276]
+            - generic [ref=f2e277]: The original final incident closure approval request awaits confirmation.
+            - paragraph [ref=f2e284]: Reviewed final independent evidence; preserve this exact original through both acknowledgements.
+            - button "Reconcile original closure stage" [active] [ref=f2e285] [cursor=pointer]
+            - button "Review changed native incident history" [ref=f2e287] [cursor=pointer]
+            - status [ref=f2e359]: The original outcome is still unconfirmed. Its evidence is retained; the incident has not been confirmed closed.
+            - table [ref=f2e292]:
+              - rowgroup [ref=f2e293]:
+                - row [ref=f2e294]:
+                  - columnheader "Action Sort Column options" [ref=f2e295]:
+                    - generic [ref=f2e296]:
+                      - generic [ref=f2e297] [cursor=pointer]: Action
+                      - generic [ref=f2e298] [cursor=pointer]:
+                        - button "Sort" [ref=f2e299]
+                        - button "Column options" [ref=f2e305]
+                  - columnheader "Assigned To Sort Column options" [ref=f2e310]:
+                    - generic [ref=f2e311]:
+                      - generic [ref=f2e312] [cursor=pointer]: Assigned To
+                      - generic [ref=f2e313] [cursor=pointer]:
+                        - button "Sort" [ref=f2e314]
+                        - button "Column options" [ref=f2e320]
+                  - columnheader "Due Sort Column options" [ref=f2e325]:
+                    - generic [ref=f2e326]:
+                      - generic [ref=f2e327] [cursor=pointer]: Due
+                      - generic [ref=f2e328] [cursor=pointer]:
+                        - button "Sort" [ref=f2e329]
+                        - button "Column options" [ref=f2e335]
+                  - columnheader "Status" [ref=f2e340]
+              - rowgroup [ref=f2e342]:
+                - row [ref=f2e343]:
+                  - cell "Inspect valve" [ref=f2e344]
+                  - cell "worker" [ref=f2e345]
+                  - cell "31-Oct-26" [ref=f2e346]
+                  - cell "COMPLETED" [ref=f2e347]
+              - rowgroup:
+                - row
+        - generic [ref=f2e355]:
+          - paragraph [ref=f2e356]: Incident close-out
+          - paragraph [ref=f2e357]: "Recorded corrective actions: 1; not completed: 0."
+          - paragraph [ref=f2e358]: Independent verification and reviewed closure are required before this incident can be closed.

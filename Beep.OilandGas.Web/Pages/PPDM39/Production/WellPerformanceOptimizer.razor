@@ -1,4 +1,4 @@
-﻿@page "/production/well-performance"
+@page "/production/well-performance"
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Models.Data.Production
 @using Beep.OilandGas.Web.Services
@@ -204,8 +204,8 @@
                             </MudButton>
                             <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Success"
                                        StartIcon="@Icons.Material.Filled.RequestQuote"
-                                       Href="@GetAfeIntakeHref()">
-                                Open AFE Intake
+                                       Href="/economics/afe">
+                                Choose AFE source
                             </MudButton>
                         }
                         <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default"
@@ -517,7 +517,7 @@
                     ? $"/production/intervention?wellId={Uri.EscapeDataString(_selectedWellId)}&type=INTERVENTION&returnTo={Uri.EscapeDataString(GetReturnToHref())}"
                     : null,
                 WorkOrder = HasOperationalFollowUp() ? GetWorkOrderIntakeHref() : null,
-                Afe = HasOperationalFollowUp() ? GetAfeIntakeHref() : null,
+                Afe = HasOperationalFollowUp() ? "/economics/afe" : null,
                 ReturnTo = GetReturnToHref()
             },
             History = _history.Select(item => new
@@ -592,17 +592,6 @@
             ("description", _recommendation?.Rationale));
     }
 
-    private string GetAfeIntakeHref()
-    {
-        return BuildFollowUpHref(
-            "/economics/afe",
-            ("wellId", _selectedWellId),
-            ("openCreate", "true"),
-            ("returnTo", GetReturnToHref()),
-            ("description", _recommendation?.Action),
-            ("budgetUsd", GetSuggestedAfeBudgetUsd()));
-    }
-
     private string GetReturnToHref()
     {
         return string.IsNullOrWhiteSpace(_selectedWellId)
@@ -618,18 +607,6 @@
         return HasOperationalFollowUp()
             ? WorkOrderSubType.Corrective
             : WorkOrderSubType.Preventive;
-    }
-
-    private string? GetSuggestedAfeBudgetUsd()
-    {
-        if (_analysis?.Recommendation?.SuggestedAfeBudgetUsd is decimal suggestedBudget && suggestedBudget > 0)
-            return suggestedBudget.ToString("F0");
-
-        if (!HasOperationalFollowUp())
-            return null;
-
-        var budget = Math.Max(_recommendation?.UpliftBopd ?? 0, 0) * 1000;
-        return budget > 0 ? budget.ToString("F0") : null;
     }
 
     private static string BuildFollowUpHref(string basePath, params (string Key, string? Value)[] parameters)

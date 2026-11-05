@@ -1,3 +1,5 @@
+using TheTechIdea.Data.OilGas;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -8,7 +10,6 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
-using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
@@ -28,7 +29,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly PPDMMappingService _mappingService;
-        private readonly string _connectionName;
+        private readonly ICompanyFieldSelectionService _selections;
+        private readonly IPPDMRowAccessPolicy _rowAccess;
+        private FieldSelectionReview? _review;
         private readonly ILogger<PPDMDecommissioningService>? _logger;
 
         public PPDMDecommissioningService(
@@ -37,7 +40,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             PPDMMappingService mappingService,
-            string connectionName = "PPDM39",
+            ICompanyFieldSelectionService selections,
+            IPPDMRowAccessPolicy rowAccess,
             ILogger<PPDMDecommissioningService>? logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -45,22 +49,38 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
-            _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
+            _selections = selections ?? throw new ArgumentNullException(nameof(selections));
+            _rowAccess = rowAccess ?? throw new ArgumentNullException(nameof(rowAccess));
             _logger = logger;
         }
 
+        // Captures the existing profile review for this phase request; never chooses or persists another FIELD.
+        private async Task<string> RequireCurrentBindingAsync(string? fieldId = null, string? actor = null)
+        {
+            var current = await _selections.GetCurrentFieldSelectionAsync();
+            if (current.SelectionContext is not { } review)
+                throw RefusalException.Conflict("The current FIELD review is unavailable.");
+            FieldSelectionReviewValidator.RequireCurrent(current, review.Company, review.ActorUserId);
+            if (!current.SelectionAvailable || fieldId is not null && fieldId != current.FieldId ||
+                actor is not null && actor != review.ActorUserId || _review is not null && _review != review)
+                throw RefusalException.Conflict("The retirement account, company, database or FIELD differs from its reviewed request.");
+            _review = review;
+            return review.Database.ConnectionName;
+        }
         public async Task<List<WellAbandonmentResponse>> GetAbandonedWellsForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId);
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("WELL_ABANDONMENT");
+                var metadata = await _metadata.GetTableMetadataAsync("WELL_ABANDONMENT") ?? throw RefusalException.Conflict("WELL_ABANDONMENT metadata is unavailable; review the canonical module setup.");
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT");
+                    typeof(WELL_ABANDONMENT), await RequireCurrentBindingAsync(), "WELL_ABANDONMENT", rowAccess: _rowAccess);
 
                 // WELL_ABANDONMENT is linked to WELL, which is linked to FIELD
                 // Get wells for field first, then get abandonments for those wells
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL), _connectionName, "WELL", null);
+                    typeof(WELL), await RequireCurrentBindingAsync(), "WELL", null, rowAccess: _rowAccess);
 
                 var wells = await wellRepo.GetAsync(new List<AppFilter>
                 {
@@ -78,7 +98,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     .ToList();
 
                 if (!wellIds.Any())
+                {
+                    await RequireCurrentBindingAsync(fieldId);
                     return new List<WellAbandonmentResponse>();
+                }
 
                 var filters = new List<AppFilter>();
                 foreach (var wellId in wellIds)
@@ -98,6 +121,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(WellAbandonmentResponse), typeof(WELL_ABANDONMENT));
+                await RequireCurrentBindingAsync(fieldId);
                 return dtoList.Cast<WellAbandonmentResponse>().ToList();
             }
             catch (Exception ex)
@@ -109,11 +133,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<WellAbandonmentResponse> AbandonWellForFieldAsync(string fieldId, string wellId, WellAbandonmentRequest abandonmentData, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
             try
             {
                 // Validate well belongs to field
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL), _connectionName, "WELL", null);
+                    typeof(WELL), await RequireCurrentBindingAsync(), "WELL", null, rowAccess: _rowAccess);
 
                 var formattedWellId = _defaults.FormatIdForTable("WELL", wellId);
                 var well = await wellRepo.GetByIdAsync(formattedWellId);
@@ -126,13 +152,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (wellObj != null)
                 {
                     var formattedFieldId = _defaults.FormatIdForTable("WELL", fieldId);
-                    if (!string.Equals(wellObj.ASSIGNED_FIELD, formattedFieldId, StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(wellObj.ASSIGNED_FIELD, formattedFieldId, StringComparison.Ordinal))
                         throw new InvalidOperationException($"Well {wellId} does not belong to field {fieldId}");
                 }
 
-                var metadata = await _metadata.GetTableMetadataAsync("WELL_ABANDONMENT");
+                var metadata = await _metadata.GetTableMetadataAsync("WELL_ABANDONMENT") ?? throw RefusalException.Conflict("WELL_ABANDONMENT metadata is unavailable; review the canonical module setup.");
                 if (metadata == null)
-                    throw new InvalidOperationException("WELL_ABANDONMENT table metadata not found");
+                    throw RefusalException.Conflict("WELL_ABANDONMENT metadata is unavailable; review the canonical module setup.");
 
                 // Convert DTO to PPDM model
                 var abandonmentEntity = _mappingService.ConvertDTOToPPDMModelRuntime(abandonmentData, typeof(WellAbandonmentRequest), typeof(WELL_ABANDONMENT));
@@ -145,7 +171,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT");
+                    typeof(WELL_ABANDONMENT), await RequireCurrentBindingAsync(), "WELL_ABANDONMENT", rowAccess: _rowAccess);
 
                 var result = await repo.InsertAsync(abandonmentEntity, userId);
 
@@ -158,6 +184,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     remark: "Well abandonment planned");
                 
                 // Convert PPDM model back to DTO
+                await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
                 return (WellAbandonmentResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(WellAbandonmentResponse), typeof(WELL_ABANDONMENT));
             }
             catch (Exception ex)
@@ -169,6 +196,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<WellAbandonmentResponse?> GetWellAbandonmentForFieldAsync(string fieldId, string abandonmentId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId);
             try
             {
                 var abandonedWells = await GetAbandonedWellsForFieldAsync(fieldId, new List<AppFilter>
@@ -181,6 +210,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     }
                 });
 
+                await RequireCurrentBindingAsync(fieldId);
+
                 return abandonedWells.FirstOrDefault();
             }
             catch (Exception ex)
@@ -192,22 +223,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<List<FacilityDecommissioningResponse>> GetDecommissionedFacilitiesForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId);
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("FACILITY_DECOMMISSIONING");
                 var entityType = metadata == null ? null : typeof(FACILITY_DECOMMISSIONING);
-                if (metadata == null)
-                {
-                    _logger?.LogWarning("FACILITY_DECOMMISSIONING table/entity not found — falling back to FACILITY_STATUS decommission events");
-                    return await GetDecommissionedFacilitiesFromStatusAsync(fieldId, additionalFilters);
-                }
+                if (metadata == null) throw RefusalException.Conflict("FACILITY_DECOMMISSIONING metadata is unavailable; review the canonical module setup.");
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FACILITY_DECOMMISSIONING), _connectionName, "FACILITY_DECOMMISSIONING");
+                    typeof(FACILITY_DECOMMISSIONING), await RequireCurrentBindingAsync(), "FACILITY_DECOMMISSIONING", rowAccess: _rowAccess);
 
                 // FACILITY_DECOMMISSIONING is linked to FACILITY, which is linked to FIELD
                 var facilityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FACILITY), _connectionName, "FACILITY", null);
+                    typeof(FACILITY), await RequireCurrentBindingAsync(), "FACILITY", null, rowAccess: _rowAccess);
 
                 var facilities = await facilityRepo.GetAsync(new List<AppFilter>
                 {
@@ -225,7 +254,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     .ToList();
 
                 if (!facilityIds.Any())
+                {
+                    await RequireCurrentBindingAsync(fieldId);
                     return new List<FacilityDecommissioningResponse>();
+                }
 
                 var filters = new List<AppFilter>();
                 foreach (var facilityId in facilityIds)
@@ -245,6 +277,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(FacilityDecommissioningResponse), typeof(FACILITY_DECOMMISSIONING));
+                await RequireCurrentBindingAsync(fieldId);
                 return dtoList.Cast<FacilityDecommissioningResponse>().ToList();
             }
             catch (Exception ex)
@@ -256,11 +289,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<FacilityDecommissioningResponse> DecommissionFacilityForFieldAsync(string fieldId, string facilityId, FacilityDecommissioningRequest decommissionData, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
             try
             {
                 // Validate facility belongs to field
                 var facilityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FACILITY), _connectionName, "FACILITY", null);
+                    typeof(FACILITY), await RequireCurrentBindingAsync(), "FACILITY", null, rowAccess: _rowAccess);
 
                 var formattedFacilityId = _defaults.FormatIdForTable("FACILITY", facilityId);
                 var facility = await facilityRepo.GetByIdAsync(formattedFacilityId);
@@ -273,13 +308,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (facilityObj != null)
                 {
                     var formattedFieldId = _defaults.FormatIdForTable("FACILITY", fieldId);
-                    if (!string.Equals(facilityObj.PRIMARY_FIELD_ID, formattedFieldId, StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(facilityObj.PRIMARY_FIELD_ID, formattedFieldId, StringComparison.Ordinal))
                         throw new InvalidOperationException($"Facility {facilityId} does not belong to field {fieldId}");
                 }
 
                 var metadata = await _metadata.GetTableMetadataAsync("FACILITY_DECOMMISSIONING");
                 if (metadata == null)
-                    throw new InvalidOperationException("FACILITY_DECOMMISSIONING table metadata not found");
+                    throw RefusalException.Conflict("FACILITY_DECOMMISSIONING metadata is unavailable; review the canonical module setup.");
 
                 // Convert DTO to PPDM model
                 var decommissionEntity = _mappingService.ConvertDTOToPPDMModelRuntime(decommissionData, typeof(FacilityDecommissioningRequest), typeof(FACILITY_DECOMMISSIONING));
@@ -292,11 +327,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FACILITY_DECOMMISSIONING), _connectionName, "FACILITY_DECOMMISSIONING");
+                    typeof(FACILITY_DECOMMISSIONING), await RequireCurrentBindingAsync(), "FACILITY_DECOMMISSIONING", rowAccess: _rowAccess);
 
                 var result = await repo.InsertAsync(decommissionEntity, userId);
                 
                 // Convert PPDM model back to DTO
+                await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
                 return (FacilityDecommissioningResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(FacilityDecommissioningResponse), typeof(FACILITY_DECOMMISSIONING));
             }
             catch (Exception ex)
@@ -308,6 +344,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<FacilityDecommissioningResponse?> GetFacilityDecommissioningForFieldAsync(string fieldId, string decommissioningId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId);
             try
             {
                 var decommissionedFacilities = await GetDecommissionedFacilitiesForFieldAsync(fieldId, new List<AppFilter>
@@ -320,6 +358,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     }
                 });
 
+                await RequireCurrentBindingAsync(fieldId);
+
                 return decommissionedFacilities.FirstOrDefault();
             }
             catch (Exception ex)
@@ -331,17 +371,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<List<EnvironmentalRestorationResponse>> GetEnvironmentalRestorationsForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId);
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("ENVIRONMENTAL_RESTORATION");
-                if (metadata == null)
-                {
-                    _logger?.LogWarning("ENVIRONMENTAL_RESTORATION table metadata not found");
-                    return new List<EnvironmentalRestorationResponse>();
-                }
+                if (metadata == null) throw RefusalException.Conflict("ENVIRONMENTAL_RESTORATION metadata is unavailable; review the canonical module setup.");
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(ENVIRONMENTAL_RESTORATION), _connectionName, "ENVIRONMENTAL_RESTORATION");
+                    typeof(ENVIRONMENTAL_RESTORATION), await RequireCurrentBindingAsync(), "ENVIRONMENTAL_RESTORATION", rowAccess: _rowAccess);
 
                 var filters = new List<AppFilter>
                 {
@@ -360,6 +398,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(EnvironmentalRestorationResponse), typeof(ENVIRONMENTAL_RESTORATION));
+                await RequireCurrentBindingAsync(fieldId);
                 return dtoList.Cast<EnvironmentalRestorationResponse>().ToList();
             }
             catch (Exception ex)
@@ -371,11 +410,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<EnvironmentalRestorationResponse> CreateEnvironmentalRestorationForFieldAsync(string fieldId, EnvironmentalRestorationRequest restorationData, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("ENVIRONMENTAL_RESTORATION");
                 if (metadata == null)
-                    throw new InvalidOperationException("ENVIRONMENTAL_RESTORATION table metadata not found");
+                    throw RefusalException.Conflict("ENVIRONMENTAL_RESTORATION metadata is unavailable; review the canonical module setup.");
 
                 // Convert DTO to PPDM model
                 var restorationEntity = _mappingService.ConvertDTOToPPDMModelRuntime(restorationData, typeof(EnvironmentalRestorationRequest), typeof(ENVIRONMENTAL_RESTORATION));
@@ -387,11 +428,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(ENVIRONMENTAL_RESTORATION), _connectionName, "ENVIRONMENTAL_RESTORATION");
+                    typeof(ENVIRONMENTAL_RESTORATION), await RequireCurrentBindingAsync(), "ENVIRONMENTAL_RESTORATION", rowAccess: _rowAccess);
 
                 var result = await repo.InsertAsync(restorationEntity, userId);
                 
                 // Convert PPDM model back to DTO
+                await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
                 return (EnvironmentalRestorationResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(EnvironmentalRestorationResponse), typeof(ENVIRONMENTAL_RESTORATION));
             }
             catch (Exception ex)
@@ -403,24 +445,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<List<DecommissioningCostResponse>> GetDecommissioningCostsForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId);
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("DECOMMISSIONING_COST");
-                if (metadata == null)
-                {
-                    _logger?.LogWarning("DECOMMISSIONING_COST table metadata not found");
-                    return new List<DecommissioningCostResponse>();
-                }
+                if (metadata == null) throw RefusalException.Conflict("DECOMMISSIONING_COST metadata is unavailable; review the canonical module setup.");
 
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                {
-                    _logger?.LogWarning($"Entity type not found for DECOMMISSIONING_COST: {metadata.EntityTypeName}");
-                    return new List<DecommissioningCostResponse>();
-                }
+                if (entityType == null) throw RefusalException.Conflict("The canonical retirement cost entity is unavailable.");
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "DECOMMISSIONING_COST");
+                    entityType, await RequireCurrentBindingAsync(), "DECOMMISSIONING_COST", rowAccess: _rowAccess);
 
                 var filters = new List<AppFilter>
                 {
@@ -439,6 +475,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(DecommissioningCostResponse), entityType);
+                await RequireCurrentBindingAsync(fieldId);
                 return dtoList.Cast<DecommissioningCostResponse>().ToList();
             }
             catch (Exception ex)
@@ -450,6 +487,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         public async Task<DecommissioningCostEstimateResponse> EstimateCostsForFieldAsync(string fieldId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId);
             try
             {
                 // Cost calculation constants (configurable)
@@ -470,7 +509,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 var wellBreakdown = new List<WellAbandonmentCostBreakdown>();
 
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Beep.OilandGas.PPDM39.Models.WELL), _connectionName, "WELL");
+                    typeof(Beep.OilandGas.PPDM39.Models.WELL), await RequireCurrentBindingAsync(), "WELL", rowAccess: _rowAccess);
 
                 foreach (var abandonedWell in abandonedWells)
                 {
@@ -514,7 +553,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 var facilityBreakdown = new List<FacilityDecommissioningCostBreakdown>();
 
                 var facilityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Beep.OilandGas.PPDM39.Models.FACILITY), _connectionName, "FACILITY");
+                    typeof(Beep.OilandGas.PPDM39.Models.FACILITY), await RequireCurrentBindingAsync(), "FACILITY", rowAccess: _rowAccess);
 
                 foreach (var decommissionedFacility in decommissionedFacilities)
                 {
@@ -564,6 +603,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 // Calculate total cost
                 var totalCost = totalWellCost + totalFacilityCost + restorationCost + regulatoryCost;
 
+                await RequireCurrentBindingAsync(fieldId);
+
                 return new DecommissioningCostEstimateResponse
                 {
                     FieldId = fieldId,
@@ -596,11 +637,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
         /// </summary>
         public async Task<WellAbandonmentResponse> PlanDecommissioningAsync(string fieldId, string wellId, WellAbandonmentRequest abandonmentData, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
             try
             {
                 _logger?.LogInformation("Planning decommissioning for well: {WellId} in field: {FieldId}", wellId, fieldId);
 
                 // Use existing AbandonWellForFieldAsync method
+                await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
                 return await AbandonWellForFieldAsync(fieldId, wellId, abandonmentData, userId);
             }
             catch (Exception ex)
@@ -615,6 +659,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
         /// </summary>
         public async Task<WellAbandonmentResponse> ExecuteDecommissioningAsync(string fieldId, string wellId, string abandonmentId, Dictionary<string, object> executionParameters, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
             try
             {
                 _logger?.LogInformation("Executing decommissioning for well: {WellId}, AbandonmentId: {AbandonmentId}", wellId, abandonmentId);
@@ -631,7 +677,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (activityMeta != null)
                 {
                     var activityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                        typeof(WELL_ACTIVITY), await RequireCurrentBindingAsync(), "WELL_ACTIVITY", null, rowAccess: _rowAccess);
                     var activity = new WELL_ACTIVITY
                     {
                         UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", wellId),
@@ -656,6 +702,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     userId: userId,
                     remark: $"Abandonment {abandonmentId} execution started");
 
+                await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
+
                 return new WellAbandonmentResponse
                 {
                     AbandonmentId = abandonmentId,
@@ -676,6 +724,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
         /// </summary>
         public async Task<WellAbandonmentResponse> VerifyDecommissioningAsync(string fieldId, string wellId, string abandonmentId, string verifiedBy, bool passed, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
             try
             {
                 _logger?.LogInformation("Verifying decommissioning for well: {WellId}, AbandonmentId: {AbandonmentId}, Passed: {Passed}", 
@@ -693,7 +743,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (activityMeta != null)
                 {
                     var activityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                        typeof(WELL_ACTIVITY), await RequireCurrentBindingAsync(), "WELL_ACTIVITY", null, rowAccess: _rowAccess);
                     var activity = new WELL_ACTIVITY
                     {
                         UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", wellId),
@@ -718,6 +768,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     userId: userId,
                     remark: $"Abandonment {abandonmentId} verification by {verifiedBy}");
 
+                await RequireCurrentBindingAsync(fieldId, userId ?? throw RefusalException.Invalid("An exact application actor is required."));
+
                 return new WellAbandonmentResponse
                 {
                     AbandonmentId = abandonmentId,
@@ -736,7 +788,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
         #endregion
 
-        #region Private Fallback Helpers
+        #region Private Status Helpers
 
         private async Task UpsertWellStatusAsync(
             string wellId,
@@ -750,7 +802,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             await ValidateWellStatusReferencesAsync(statusType, statusCode);
 
             var wsRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL_STATUS), _connectionName, "WELL_STATUS", null);
+                typeof(WELL_STATUS), await RequireCurrentBindingAsync(), "WELL_STATUS", null, rowAccess: _rowAccess);
 
             var now = DateTime.UtcNow;
             var statusRow = new WELL_STATUS
@@ -776,7 +828,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
         private async Task ValidateWellStatusReferencesAsync(string statusType, string statusCode)
         {
             var typeRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(R_WELL_STATUS_TYPE), _connectionName, "R_WELL_STATUS_TYPE", null);
+                typeof(R_WELL_STATUS_TYPE), await RequireCurrentBindingAsync(), "R_WELL_STATUS_TYPE", null, rowAccess: _rowAccess);
             var statusTypeRows = await typeRepo.GetAsync(new List<AppFilter>
             {
                 new AppFilter { FieldName = "STATUS_TYPE", Operator = "=", FilterValue = statusType },
@@ -786,7 +838,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 throw new InvalidOperationException($"Invalid WELL_STATUS.STATUS_TYPE '{statusType}'.");
 
             var statusRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(R_WELL_STATUS), _connectionName, "R_WELL_STATUS", null);
+                typeof(R_WELL_STATUS), await RequireCurrentBindingAsync(), "R_WELL_STATUS", null, rowAccess: _rowAccess);
             var statusRows = await statusRepo.GetAsync(new List<AppFilter>
             {
                 new AppFilter { FieldName = "STATUS_TYPE", Operator = "=", FilterValue = statusType },
@@ -795,101 +847,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             });
             if (!statusRows.OfType<R_WELL_STATUS>().Any())
                 throw new InvalidOperationException($"Invalid WELL_STATUS code '{statusCode}' for type '{statusType}'.");
-        }
-
-        private async Task<List<WellAbandonmentResponse>> GetAbandonedWellsFromActivityAsync(string fieldId, List<AppFilter>? additionalFilters)
-        {
-            // Get well IDs for this field
-            var wellMeta = await _metadata.GetTableMetadataAsync("WELL");
-            if (wellMeta == null) return new List<WellAbandonmentResponse>();
-
-            var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL), _connectionName, "WELL", null);
-            var wellFilters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL", fieldId) }
-            };
-            var wells = await wellRepo.GetAsync(wellFilters);
-            var wellList = wells?.OfType<WELL>().Where(w => !string.IsNullOrEmpty(w.UWI)).ToList()
-                          ?? new List<WELL>();
-            if (!wellList.Any()) return new List<WellAbandonmentResponse>();
-
-            // Query WELL_ACTIVITY for decommission events
-            var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
-            var responses = new List<WellAbandonmentResponse>();
-            foreach (var well in wellList)
-            {
-                var actFilters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL_ACTIVITY", well.UWI!) },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-                var acts = await actRepo.GetAsync(actFilters);
-                foreach (var act in acts?.OfType<WELL_ACTIVITY>()
-                    .Where(a => (a.ACTIVITY_TYPE_ID ?? string.Empty).StartsWith("DECOMMISSION_", StringComparison.OrdinalIgnoreCase))
-                    ?? Enumerable.Empty<WELL_ACTIVITY>())
-                {
-                    responses.Add(new WellAbandonmentResponse
-                    {
-                        AbandonmentId = act.PPDM_GUID ?? Guid.NewGuid().ToString(),
-                        WellId = well.UWI,
-                        FieldId = fieldId,
-                        AbandonmentType = act.ACTIVITY_TYPE_ID?.Length > 13 ? act.ACTIVITY_TYPE_ID.Substring(13) : act.ACTIVITY_TYPE_ID,
-                        Status = "COMPLETED",
-                        AbandonmentStartDate = act.EVENT_DATE
-                    });
-                }
-            }
-            return responses;
-        }
-
-        private async Task<List<FacilityDecommissioningResponse>> GetDecommissionedFacilitiesFromStatusAsync(string fieldId, List<AppFilter>? additionalFilters)
-        {
-            // Get facility IDs for this field
-            var facMeta = await _metadata.GetTableMetadataAsync("FACILITY");
-            if (facMeta == null) return new List<FacilityDecommissioningResponse>();
-
-            var facRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FACILITY), _connectionName, "FACILITY", null);
-            var facFilters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("FACILITY", fieldId) }
-            };
-            var facilities = await facRepo.GetAsync(facFilters);
-            var facilityList = facilities?.OfType<FACILITY>()
-                .Where(f => !string.IsNullOrEmpty(f.FACILITY_ID)).ToList()
-                ?? new List<FACILITY>();
-            if (!facilityList.Any()) return new List<FacilityDecommissioningResponse>();
-
-            // Query FACILITY_STATUS for decommission events
-            var fsRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
-            var responses = new List<FacilityDecommissioningResponse>();
-            foreach (var facility in facilityList)
-            {
-                var fsFilters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("FACILITY_STATUS", facility.FACILITY_ID!) },
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-                var statuses = await fsRepo.GetAsync(fsFilters);
-                foreach (var fs in statuses?.OfType<FACILITY_STATUS>()
-                    .Where(s => (s.STATUS_TYPE ?? string.Empty).StartsWith("DECOMMISSION_", StringComparison.OrdinalIgnoreCase))
-                    ?? Enumerable.Empty<FACILITY_STATUS>())
-                {
-                    responses.Add(new FacilityDecommissioningResponse
-                    {
-                        DecommissioningId = fs.PPDM_GUID ?? Guid.NewGuid().ToString(),
-                        FacilityId = facility.FACILITY_ID,
-                        FieldId = fieldId,
-                        DecommissioningType = fs.STATUS_TYPE?.Length > 13 ? fs.STATUS_TYPE.Substring(13) : fs.STATUS_TYPE,
-                        Status = fs.STATUS ?? "COMPLETED",
-                        DecommissioningStartDate = fs.START_TIME
-                    });
-                }
-            }
-            return responses;
         }
 
         #endregion

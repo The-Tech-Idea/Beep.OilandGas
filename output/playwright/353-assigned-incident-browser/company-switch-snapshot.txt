@@ -1,0 +1,19 @@
+### Page
+- Page URL: http://127.0.0.1:60559/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+### Snapshot
+```yaml
+- generic [ref=f2e1]:
+  - generic [ref=f2e147]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=f2e148]
+    - paragraph [ref=f2e149]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=f2e150]:
+      - link "Open assigned HSE process" [ref=f2e151] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=f2e153] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [active] [ref=f2e155] [cursor=pointer]
+      - button "Restore original company" [ref=f2e157] [cursor=pointer]
+  - generic [ref=f2e159]:
+    - generic [ref=f2e318]: Company or FIELD changed. Reload the incident for the current selection.
+    - button "Reload incident" [ref=f2e325] [cursor=pointer]
+```

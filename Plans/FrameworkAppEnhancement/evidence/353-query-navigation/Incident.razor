@@ -1,0 +1,15 @@
+@page "/ppdm39/hse/incident-detail"
+@inject NavigationManager Navigation
+@inject Scope Scope
+<nav aria-label="Controlled query navigation" data-query-circuit="@_circuit" data-query-ready="@_ready.ToString().ToLowerInvariant()">
+    <button @onclick="() => Go(Scope.WorkflowId)">Exact workflow query</button>
+    <button @onclick='() => Go("hse-process-other")'>Mismatched workflow query</button>
+    <button @onclick='() => Go(" invalid workflow")'>Invalid workflow query</button>
+</nav>
+<HSEIncidentDetail />
+@code {
+    private bool _ready;
+    protected override void OnAfterRender(bool firstRender) { if(firstRender) { _ready=true; StateHasChanged(); } }
+    private readonly string _circuit = Guid.NewGuid().ToString("N");
+    private void Go(string workflow) => Navigation.NavigateTo("/ppdm39/hse/incident-detail?incidentId=" + Uri.EscapeDataString(Scope.IncidentId) + "&workflowInstanceId=" + Uri.EscapeDataString(workflow));
+}

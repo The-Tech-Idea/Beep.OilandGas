@@ -1,0 +1,104 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject WorkOrderCompletionReviewState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Independent completion evidence review</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudTextField @bind-Value="_process" @bind-Value:after="InputsChanged" Label="Original recorded maintenance process identity" Required="true" Disabled="@(State.Busy || _reading)" />
+        <MudTextField @bind-Value="_submission" @bind-Value:after="InputsChanged" Label="Recorded work-submission identity" Required="true" Disabled="@(State.Busy || _reading)" />
+        @if(OriginalTask is not null){<MudButton OnClick="DiscoverAsync" Disabled="@(State.Busy || _reading)">Discover the report for this recorded assignment</MudButton>}
+        <MudButton OnClick="ReadAsync" Disabled="@(State.Busy || _reading)">Read recorded report and current completion evidence</MudButton>
+        <MudButton OnClick="ReadDecisionStatusAsync" Disabled="@(State.Busy || _reading)">Read recorded decision outcome</MudButton>
+        @if(Company.Selection?.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal)==true)
+        {<MudButton OnClick="ReadReturnReviewAsync" Disabled="@(State.Busy || _reading)">Review configured return approval role</MudButton>}
+        @if(State.ReturnReview is {} next)
+        {
+            <MudAlert Severity="Severity.Info">Verified work matches the current evidence. Configured return approval role: @next.NextRole</MudAlert>
+            <MudText>Return step @next.NextStepId · assignment @next.NextStepInstanceId · recorded verification UTC @next.Decision.RecordedAtUtc.ToString("O")</MudText>
+            <MudText>The return assignment is still blocked. This review does not route tasks, accept physical return or advance the asset lifecycle.</MudText>
+        }
+        @if(State.DecisionStatus is {} status)
+        {
+            @if(status.Recorded is {} recorded)
+            {
+                <MudAlert Severity="@(recorded.Decision=="VERIFIED"?Severity.Success:Severity.Warning)">Recorded independent completion outcome: @recorded.Decision</MudAlert>
+                <MudText>Reviewer @recorded.ReviewerUserId · native person @recorded.ReviewerPersonBaId · role @recorded.ReviewerRole · recorded UTC @recorded.RecordedAtUtc.ToString("O")</MudText>
+                <MudText Typo="Typo.caption">Original report @recorded.Query.SubmissionId · approval @recorded.ApprovalId · history @recorded.HistoryId · report revision @recorded.ReportRevision</MudText>
+                <MudText>The recorded outcome does not establish current return-to-service acceptance or lifecycle advancement.</MudText>
+            }
+            else{<MudAlert Severity="Severity.Info">No recorded independent completion decision was found for this original report.</MudAlert>}
+        }
+        @if(State.Current is {} review)
+        {
+            var report=review.Report;
+            <MudText>Original report @report.Query.SubmissionId · executor @report.ExecutorUserId · native employee @report.EmployeeBaId</MudText>
+            <MudText>Actual completed UTC @report.CompletedAtUtc.ToString("O") · recorded UTC @report.RecordedAtUtc.ToString("O")</MudText>
+            <MudText Typo="Typo.subtitle1">Reported work performed</MudText>
+            <MudText>@report.WorkPerformed</MudText>
+            @if(report.OutstandingDefects.Count==0){<MudText>The original executor explicitly reported no outstanding defects.</MudText>}
+            @foreach(var defect in report.OutstandingDefects){<MudAlert Severity="Severity.Warning">@defect</MudAlert>}
+            <MudText>Current reviewer @review.Context.ActorUserId · native person @(review.ReviewerPerson?.PersonBaId ?? "Unconfirmed")</MudText>
+            <MudText>Original submission revision @report.Revision</MudText>
+            <MudTable Items="@review.Requirements.Where(row=>row.ApplicableStage=="COMPLETION_VERIFICATION").ToArray()" Dense="true" Hover="true">
+                <HeaderContent><MudTh>Recorded requirement</MudTh><MudTh>Observed result</MudTh><MudTh>Inspector and UTC</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="Recorded requirement">@context.RequiredText · @context.Jurisdiction</MudTd><MudTd DataLabel="Observed result">@context.Status · @context.ResultText</MudTd><MudTd DataLabel="Inspector and UTC">@context.Inspector · @context.InspectDate?.ToString("O")</MudTd></RowTemplate>
+            </MudTable>
+            @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            <MudText>Compared UTC @review.ComparedAtUtc.ToString("O")</MudText>
+        }
+        <MudText>This read compares the original report, current inspections and authoritative person identities. Recorded verification, return acceptance and lifecycle advancement remain separate actions.</MudText>
+        @if(Company.Selection is {} reviewer && reviewer.Permissions.Contains("Maintenance.VerifyCompletion",StringComparer.Ordinal) && reviewer.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal))
+        {
+            <WorkOrderCompletionDecisionPanel Query="@(State.Current?.Report.Query)" WorkOrderId="@WorkOrderId" FieldId="@FieldId" />
+            <WorkOrderReturnHandoffPanel Query="@(State.Current?.Report.Query)" WorkOrderId="@WorkOrderId" FieldId="@FieldId" />
+        }
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    [Parameter] public CompanyMaintenanceReceivingQuery? OriginalTask{get;set;}
+    private string _attached="",_process="",_submission="";
+    private string? _error;
+    private bool _disposed,_reading;
+    private int _generation;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet(){var key=FieldId+"\n"+WorkOrderId+"\n"+OriginalTask?.InstanceId;if(_attached!=key){Invalidate();_attached=key;_process=OriginalTask?.InstanceId??"";}}
+    private Task ReadAsync()=>ReadCoreAsync(false);
+    private Task DiscoverAsync()=>ReadCoreAsync(true);
+    private Task ReadDecisionStatusAsync()=>ReadCoreAsync(false,true);
+    private Task ReadReturnReviewAsync()=>ReadCoreAsync(false,false,true);
+    private async Task ReadCoreAsync(bool discover,bool statusOnly=false,bool returnOnly=false)
+    {
+        if(State.Busy || _reading || _disposed)return;_reading=true;_error=null;State.Clear();var snapshot=Company.Snapshot;var generation=_generation;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) ||
+                !selected.Permissions.Contains("Maintenance.VerifyCompletion",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current standard completion reviewer roles, original company/account/FIELD and capability are required.");
+            if(discover)
+            {
+                var task=OriginalTask??throw new InvalidOperationException("Original configured assignment is required for report discovery.");var report=await Workflows.DiscoverWorkOrderSubmissionAsync(task);
+                if(_disposed || generation!=_generation || snapshot!=Company.Snapshot)return;
+                if(report.Task!=task || task.FieldId!=FieldId || task.WorkOrderId!=WorkOrderId)throw new InvalidOperationException("Discovered report differs from the original assignment.");_process=task.InstanceId;_submission=report.SubmissionId;
+            }
+            State.Attach(new(new(_process,FieldId,WorkOrderId),_submission));if(returnOnly)await State.ReadReturnReviewAsync(Workflows);else if(statusOnly)await State.ReadDecisionStatusAsync(Workflows);else await State.ReadAsync(Workflows);
+        }
+        catch(Exception error){if(!_disposed && generation==_generation && snapshot==Company.Snapshot)_error=Calls.Explain(error,"reviewing recorded work and current completion evidence","Original independent completion evidence is unavailable");}
+        finally{_reading=false;if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    private void InputsChanged(){_generation++;State.Clear();_error=null;}
+    private void Invalidate(){_generation++;State.Clear();_process="";_submission="";_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

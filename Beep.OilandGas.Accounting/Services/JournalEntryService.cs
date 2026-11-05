@@ -9,8 +9,6 @@ using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -20,7 +18,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// Journal Entry Service - Double-entry posting with GL validation
     /// Enforces: Debits = Credits (golden rule of accounting)
     /// </summary>
-    public class JournalEntryService : IJournalEntryService
+    public partial class JournalEntryService : IJournalEntryService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -67,6 +65,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             if (lineItems == null || lineItems.Count == 0)
                 throw RefusalException.Invalid("A journal entry must have at least one line item.");
+            foreach(var line in lineItems)RequireUnownedJournalLine(line);
 
             _logger?.LogInformation("Creating journal entry with {LineCount} items", lineItems.Count);
 
@@ -332,7 +331,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
 
             var entries = await repo.GetAsync(filters);
-            return entries?.Cast<GL_ENTRY>().OrderBy(e => e.ENTRY_DATE).ToList() ?? new List<GL_ENTRY>();
+            var result=entries?.Cast<GL_ENTRY>().OrderBy(e => e.ENTRY_DATE).ToList() ?? new List<GL_ENTRY>();foreach(var entry in result)RequireUnownedGLEntry(entry);return result;
         }
 
         /// <summary>
@@ -365,6 +364,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var entries = await repo.GetAsync(filters);
             var entryList = entries?.Cast<GL_ENTRY>().ToList() ?? new List<GL_ENTRY>();
+            foreach(var entry in entryList)RequireUnownedGLEntry(entry);
 
             return entryList.Sum(e => (e.DEBIT_AMOUNT ?? 0m) - (e.CREDIT_AMOUNT ?? 0m));
         }
@@ -512,14 +512,15 @@ namespace Beep.OilandGas.Accounting.Services
             var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
             var entry = await repo.GetByIdAsync(journalEntryId);
-            return entry as JOURNAL_ENTRY;
+            if(entry is JOURNAL_ENTRY header)RequireUnownedJournal(header);return entry as JOURNAL_ENTRY;
         }
 
         /// <summary>
         /// Get journal entry line items
         /// </summary>
-        private async Task<List<JOURNAL_ENTRY_LINE>> GetEntryLineItemsAsync(string journalEntryId)
+        public async Task<List<JOURNAL_ENTRY_LINE>> GetEntryLineItemsAsync(string journalEntryId)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(journalEntryId);
             try
             {
                 var repo = await GetRepoAsync<JOURNAL_ENTRY_LINE>("JOURNAL_ENTRY_LINE");
@@ -530,7 +531,7 @@ namespace Beep.OilandGas.Accounting.Services
                 };
 
                 var lines = await repo.GetAsync(filters);
-                return lines?.Cast<JOURNAL_ENTRY_LINE>().ToList() ?? new List<JOURNAL_ENTRY_LINE>();
+                var rows=lines?.Cast<JOURNAL_ENTRY_LINE>().ToList() ?? throw new InvalidOperationException("Recorded journal lines are unavailable.");foreach(var row in rows)RequireUnownedJournalLine(row);return rows;
             }
             catch (Exception ex)
             {
@@ -644,6 +645,7 @@ namespace Beep.OilandGas.Accounting.Services
             var result = new List<JournalPostingEvidence>();
             foreach (var header in rows.OfType<JOURNAL_ENTRY>())
             {
+                RequireUnownedJournal(header);
                 if (string.IsNullOrWhiteSpace(header.JOURNAL_ENTRY_ID))
                     throw new InvalidOperationException("Journal evidence has no journal identity.");
                 var lines = await GetEntryLineItemsAsync(header.JOURNAL_ENTRY_ID);
@@ -651,13 +653,15 @@ namespace Beep.OilandGas.Accounting.Services
                 var entries = await ledger.GetAsync(new List<AppFilter> {
                     new() { FieldName = "JOURNAL_ENTRY_ID", Operator = "=", FilterValue = header.JOURNAL_ENTRY_ID }
                 });
-                result.Add(new(header, lines, entries.OfType<GL_ENTRY>().ToList()));
+                var nativeEntries=entries.OfType<GL_ENTRY>().ToList();foreach(var entry in nativeEntries)RequireUnownedGLEntry(entry);result.Add(new(header, lines, nativeEntries));
             }
             return result;
         }
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn = "PPDM39")
         {
+            if (_resolveConnection is not null)
+                throw new InvalidOperationException("Selected-company journal reads and writes require the recorded company/book/currency source workflow; legacy defaults, unscoped balances and posting are unavailable.");
             var connection = _resolveConnection is null ? cn ?? ConnectionName : await _resolveConnection();
             if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
             

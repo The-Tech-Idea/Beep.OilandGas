@@ -1,0 +1,52 @@
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IAfeServiceClient AfeClient
+@inject OilGasCallFailures Calls
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6" HtmlTag="h2">Company development investment work</MudText>
+    <MudText>Recorded AFE requests within your current company and FIELD access. An independent authorized reviewer can record the first investment decision.</MudText>
+    <MudButton OnClick="Load" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined" Class="my-3">Refresh investment work</MudButton>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Loading current company investment work" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+    @if(_state?.Current is {} queue)
+    {
+        var visible=queue.Items.Where(item=>string.IsNullOrEmpty(selectedField) || item.Source.FieldId==selectedField).ToArray();
+        @if(queue.Items.Count>0)
+        {
+            <MudSelect T="string" Label="Filter investment work by FIELD" @bind-Value="selectedField">
+                <MudSelectItem T="string" Value="@string.Empty">All accessible FIELDs</MudSelectItem>
+                @foreach(var field in queue.Items.Select(item=>item.Source.FieldId).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)){<MudSelectItem T="string" Value="@field">@field</MudSelectItem>}
+            </MudSelect>
+        }
+        <MudText>@visible.Length of @queue.Items.Count accessible AFE requests · Checked @queue.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+        @if(queue.Items.Count==0){<MudAlert Severity="Severity.Info">No accessible native development AFE requests are recorded in this company queue.</MudAlert>}
+        else if(visible.Length==0){<MudAlert Severity="Severity.Info">No accessible AFE requests match the selected FIELD.</MudAlert>}
+        @foreach(var item in visible)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-3">
+                <MudText Typo="Typo.subtitle1">@item.Source.Afe.Number · @item.Source.Afe.Name</MudText><MudText>@item.Source.PlanName · Approved version @item.Source.BaselineVersion · FIELD @item.Source.FieldId</MudText>
+                <MudText>@item.Source.Afe.RequestedAmount.ToString("N"+item.Source.Afe.CurrencyDecimals,CultureInfo.InvariantCulture) @item.Source.Afe.CurrencyCode · Book @item.Source.Afe.BookId · Effective @item.Source.Afe.EffectiveDate.ToString("yyyy-MM-dd")</MudText>
+                @if(item.Recorded is {} decision){<MudText>Recorded budget decision: @decision.Decision · @decision.Reviewer · @decision.AtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>}
+                else{<MudText>Awaiting independent investment decision</MudText>}
+                <MudText>Request maker: @item.Source.Afe.CreatedBy · @item.Source.Afe.CreatedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+                <MudButton Href="@("/economics/afe?processId="+Uri.EscapeDataString(item.Source.ProcessId)+"#"+Uri.EscapeDataString(item.Source.Afe.AfeId))" Variant="Variant.Outlined" Class="mt-2">Open exact AFE and investment evidence</MudButton>
+            </MudPaper>
+        }
+    }
+</MudPaper>
+@code{
+    private DevelopmentInvestmentQueueState? _state;private bool disposed;private string selectedField=string.Empty;
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls.Explain);_state.Changed+=Changed;Company.Changed+=ContextChanged;Personas.Changed+=ContextChanged;}
+    protected override Task OnInitializedAsync()=>Load();
+    private async Task Load()
+    {
+        await _state!.LoadAsync();
+        if(!disposed && _state.Current is {} queue && !string.IsNullOrEmpty(selectedField) && !queue.Items.Any(item=>item.Source.FieldId==selectedField)){selectedField=string.Empty;await InvokeAsync(StateHasChanged);}
+    }
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}private void ContextChanged(){selectedField=string.Empty;if(!disposed)_=InvokeAsync(Load);}
+    public void Dispose(){disposed=true;Company.Changed-=ContextChanged;Personas.Changed-=ContextChanged;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

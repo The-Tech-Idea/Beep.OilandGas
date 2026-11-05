@@ -15,6 +15,5 @@ namespace Beep.OilandGas.Client.App.Services.Connection
         Task<ConnectionTestResult> TestConnectionAsync(string connectionName, CancellationToken cancellationToken = default);
         Task<CurrentConnectionResponse> GetCurrentConnectionAsync(CancellationToken cancellationToken = default);
         Task<SetCurrentConnectionResult> SetCurrentConnectionAsync(string connectionName, CancellationToken cancellationToken = default);
-        Task<CreateConnectionResult> CreateConnectionAsync(string connectionName, CancellationToken cancellationToken = default);
     }
 }

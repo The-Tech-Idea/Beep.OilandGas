@@ -1,0 +1,120 @@
+### Page
+- Page URL: http://127.0.0.1:52246/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=f3e1]:
+  - generic [ref=f3e63]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=f3e64]
+    - paragraph [ref=f3e65]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=f3e66]:
+      - link "Open assigned HSE process" [ref=f3e67] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=f3e69] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=f3e71] [cursor=pointer]
+      - button "Restore original company" [ref=f3e73] [cursor=pointer]
+  - generic [ref=f3e124]:
+    - group [ref=f3e125]:
+      - button [ref=f3e126] [cursor=pointer]
+      - group [ref=f3e131]:
+        - heading "INJURY — Recorded assigned incident" [level=5] [ref=f3e132]
+        - group [ref=f3e133]:
+          - generic [ref=f3e134]: Tier 4
+          - generic [ref=f3e140]: 28-Oct-2026 10:03 · North FIELD · originator
+    - separator [ref=f3e141]
+    - generic [ref=f3e142]:
+      - generic [ref=f3e143]:
+        - generic [ref=f3e144]:
+          - paragraph [ref=f3e147]: Incident Details
+          - table [ref=f3e151]:
+            - rowgroup [ref=f3e152]:
+              - row [ref=f3e153]:
+                - cell "Date/Time" [ref=f3e154]
+                - cell [ref=f3e155]:
+                  - paragraph [ref=f3e156]: 28-Oct-2026 10:03
+              - row [ref=f3e157]:
+                - cell "Type" [ref=f3e158]
+                - cell [ref=f3e159]:
+                  - paragraph [ref=f3e160]: INJURY
+              - row [ref=f3e161]:
+                - cell "Tier" [ref=f3e162]
+                - cell "Tier 4" [ref=f3e163]
+              - row [ref=f3e170]:
+                - cell "Location" [ref=f3e171]
+                - cell [ref=f3e172]:
+                  - paragraph [ref=f3e173]: North FIELD
+              - row [ref=f3e174]:
+                - cell "Reported jurisdiction" [ref=f3e175]
+                - cell [ref=f3e176]:
+                  - paragraph [ref=f3e177]: KUWAIT
+              - row [ref=f3e178]:
+                - cell "Reported By" [ref=f3e179]
+                - cell [ref=f3e180]:
+                  - paragraph [ref=f3e181]: originator
+        - generic [ref=f3e182]:
+          - paragraph [ref=f3e189]: Root Cause Analysis
+          - generic [ref=f3e190]:
+            - button "Review recorded causes and classifications" [ref=f3e191] [cursor=pointer]
+            - button "Find my recorded causes" [ref=f3e193] [cursor=pointer]
+            - button "View shared recorded causes" [ref=f3e195] [cursor=pointer]
+            - button "Find my recorded RCA handoff" [ref=f3e197] [cursor=pointer]
+            - paragraph [ref=f3e199]: No root cause is displayed in the incident detail.
+      - generic [ref=f3e200]:
+        - generic [ref=f3e201]:
+          - paragraph [ref=f3e204]: Corrective Actions
+          - generic [ref=f3e205]:
+            - paragraph [ref=f3e206]: Add an action to the recorded corrective plan. The action does not complete the workflow step.
+            - link "Review or create corrective plan" [ref=f3e207] [cursor=pointer]:
+              - /url: /hse/incidents/corrective-plan?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232
+            - button "Review recorded action choices" [ref=f3e209] [cursor=pointer]
+            - separator [ref=f3e211]
+            - button "Review verification evidence" [ref=f3e212] [cursor=pointer]
+            - button "Review incident closure prerequisites" [ref=f3e214] [cursor=pointer]
+            - separator [ref=f3e216]
+            - heading "Lifecycle approval and incident closure" [level=6] [ref=f3e217]
+            - paragraph [ref=f3e218]: Review and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.
+            - button "Review assigned closure stage" [ref=f3e219] [cursor=pointer]
+            - button "Review rejected verification for correction" [ref=f3e221] [cursor=pointer]
+            - paragraph [ref=f3e289]: final incident closure approval · assigned role Safety · 1 completed actions
+            - paragraph [ref=f3e290]: A verified independent decision matches the current action evidence.
+            - generic [ref=f3e292]:
+              - textbox "Stage approval evidence and reason" [active] [ref=f3e294]: The assigned reviewer checked the recorded action evidence and approves this exact incident closure.
+              - generic: Stage approval evidence and reason
+            - button "Approve final closure and record CLOSED status" [ref=f3e295] [cursor=pointer]
+            - button "Recover recorded closure approval" [ref=f3e223] [cursor=pointer]
+            - table [ref=f3e228]:
+              - rowgroup [ref=f3e229]:
+                - row [ref=f3e230]:
+                  - columnheader "Action Sort Column options" [ref=f3e231]:
+                    - generic [ref=f3e232]:
+                      - generic [ref=f3e233] [cursor=pointer]: Action
+                      - generic [ref=f3e234] [cursor=pointer]:
+                        - button "Sort" [ref=f3e235]
+                        - button "Column options" [ref=f3e241]
+                  - columnheader "Assigned To Sort Column options" [ref=f3e246]:
+                    - generic [ref=f3e247]:
+                      - generic [ref=f3e248] [cursor=pointer]: Assigned To
+                      - generic [ref=f3e249] [cursor=pointer]:
+                        - button "Sort" [ref=f3e250]
+                        - button "Column options" [ref=f3e256]
+                  - columnheader "Due Sort Column options" [ref=f3e261]:
+                    - generic [ref=f3e262]:
+                      - generic [ref=f3e263] [cursor=pointer]: Due
+                      - generic [ref=f3e264] [cursor=pointer]:
+                        - button "Sort" [ref=f3e265]
+                        - button "Column options" [ref=f3e271]
+                  - columnheader "Status" [ref=f3e276]
+              - rowgroup [ref=f3e278]:
+                - row [ref=f3e279]:
+                  - cell "Inspect valve" [ref=f3e280]
+                  - cell "worker" [ref=f3e281]
+                  - cell "30-Oct-26" [ref=f3e282]
+                  - cell [ref=f3e283]
+              - rowgroup:
+                - row
+        - generic [ref=f3e285]:
+          - paragraph [ref=f3e286]: Incident close-out
+          - paragraph [ref=f3e287]: "Recorded corrective actions: 1; not completed: 0."
+          - paragraph [ref=f3e288]: Independent verification and reviewed closure are required before this incident can be closed.
+```

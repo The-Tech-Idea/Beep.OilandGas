@@ -1,0 +1,99 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderBudgetState State
+@inject IWorkOrderServiceClient Orders
+@inject ICompanyLedgerBookClient Accounting
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Work-order budget preparation</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        @if(!_authorized){<MudAlert Severity="Severity.Info">Budget preparation requires the current company's financial role and explicit preparation capability.</MudAlert>}
+        <MudButton OnClick="LoadBooksAsync" Disabled="@(!_authorized || State.Busy)">Read configured company books</MudButton>
+        @if(_books is {} books)
+        {
+            @if(books.Books.Count==0){<MudAlert Severity="Severity.Info">No company books are configured.</MudAlert>}
+            <MudSelect T="string" Value="@_book" ValueChanged="BookChanged" Label="Recorded company book" Disabled="@State.Busy" Required="true">
+                @foreach(var book in books.Books){<MudSelectItem Value="@book.BookId">@book.Name · @book.BookId · @book.FunctionalCurrency</MudSelectItem>}
+            </MudSelect>
+        }
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || string.IsNullOrEmpty(_book) || !State.CanReview)">Review native order and existing budgets</MudButton>
+        @if(_authorized && State.Review is {} review)
+        {
+            <MudText>Order @review.Query.WorkOrderId · FIELD @review.Query.FieldId · book @review.Book.BookId</MudText>
+            <MudText>Recorded currency @review.Book.FunctionalCurrency · decimal places @review.Book.CurrencyDecimals · compared UTC @review.ComparedAtUtc.ToString("O")</MudText>
+            @if(review.Budgets.Count==0){<MudAlert Severity="Severity.Info">The reviewed native population contains no work-order budget.</MudAlert>}
+            @foreach(var budget in review.Budgets){<MudText>@budget.Number · @budget.Name · @budget.BudgetAmount.ToString("N"+budget.CurrencyDecimals) @budget.CurrencyCode · @budget.Status · original AFE @budget.AfeId</MudText>}
+            @if(State.CanRecord)
+            {
+                <MudTextField @bind-Value="_number" Label="Explicit AFE number" Required="true" Disabled="@State.Busy" />
+                <MudTextField @bind-Value="_name" Label="Explicit AFE name" Required="true" Disabled="@State.Busy" />
+                <MudNumericField T="decimal?" @bind-Value="_amount" Label="Budget amount in the recorded currency" Required="true" Disabled="@State.Busy" />
+                <MudTextField @bind-Value="_effective" Label="Effective UTC (ISO timestamp ending Z)" Required="true" Disabled="@State.Busy" />
+                <MudTextField @bind-Value="_reason" Label="Budget basis and rationale" Required="true" Lines="3" Disabled="@State.Busy" />
+                <MudCheckBox @bind-Value="_confirm" Label="I confirm the original work scope, book, currency and explicit budget" Disabled="@State.Busy" />
+                <MudButton OnClick="CreateAsync" Disabled="@(!_confirm || !State.CanRecord)" Color="Color.Primary">Retain original reference and create draft AFE</MudButton>
+            }
+        }
+        <MudTextField @bind-Value="_reference" Label="Original budget intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy || string.IsNullOrEmpty(_book))">Read original budget without replay</MudButton>
+        @if(_authorized && State.VisibleReference is {} saved){<MudText>Retained original budget reference @saved</MudText>}
+        @if(_authorized && State.Receipt is {} receipt){<MudAlert Severity="Severity.Success">Recorded draft AFE @receipt.Recorded.AFE_ID · @receipt.Command.BudgetAmount.ToString("N"+receipt.Command.Review.Book.CurrencyDecimals) @receipt.Command.Review.Book.FunctionalCurrency. Independent approval and actual costs remain separate.</MudAlert>}
+        <MudAlert Severity="Severity.Info">Budget and actual cost require recorded amounts and currency. An uncertain budget must use its original book and retained reference; recovery does not create or approve another AFE.</MudAlert>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    private string _attached="",_book="",_number="",_name="",_effective="",_reason="",_reference="";
+    private decimal? _amount;
+    private bool _authorized,_confirm,_disposed;
+    private string? _error;
+    private CompanyLedgerBookReview? _books;
+    protected override void OnInitialized(){Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;State.Changed+=Changed;}
+    protected override async Task OnParametersSetAsync()
+    {
+        var key=FieldId+"\n"+WorkOrderId;if(_attached!=key){Invalidate();_attached=key;}
+        var query=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
+        if(query.TryGetValue("budgetBook",out var book) && book.Count==1)_book=book[0]??"";
+        if(query.TryGetValue("budgetIntent",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        Attach();try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+    }
+    private void Attach()=>State.Attach(string.IsNullOrEmpty(_book)?null:new CompanyWorkOrderBudgetQuery(WorkOrderId,FieldId,_book));
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId ||
+            !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !selected.Permissions.Contains("Accounting.PrepareWorkOrderBudget",StringComparer.Ordinal) ||
+            !LeaseSummaryValidator.Identifier(WorkOrderId) || await Fields.GetCurrentFieldIdAsync()!=FieldId || snapshot!=Company.Snapshot)
+            throw new UnauthorizedAccessException("Current standard financial roles, company/account and original FIELD/order are required.");
+    }
+    private Task BookChanged(string value){_book=value;_number="";_name="";_effective="";_reason="";_amount=null;_confirm=false;Attach();return Task.CompletedTask;}
+    private Task LoadBooksAsync()=>Run(async()=>{await Authority();var snapshot=Company.Snapshot;var books=await Accounting.GetCompanyLedgerBooksAsync();books.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId);if(snapshot!=Company.Snapshot)throw new OperationCanceledException("Original books company changed.");_books=CompanyInventorySourceReview.Copy(books);},"reading configured company books");
+    private Task ReviewAsync()=>Run(async()=>{await Authority();Attach();await State.ReviewAsync(Orders);_amount=null;_confirm=false;},"reviewing the original native budget source");
+    private Task Retain(Guid id){_reference=id.ToString("D");var uri=Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"budgetBook",_book},{"budgetIntent",_reference}});Navigation.NavigateTo(uri,replace:true);return Task.CompletedTask;}
+    private Task CreateAsync()=>Run(async()=>
+    {
+        await Authority();if(!_confirm || _amount is not {} amount)throw new ArgumentException("Confirm an explicit budget amount in the recorded currency.");
+        if(!DateTime.TryParseExact(_effective,new[]{"yyyy-MM-dd'T'HH:mm:ss'Z'","yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'"},System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal|System.Globalization.DateTimeStyles.AdjustToUniversal,out var utc))throw new ArgumentException("Enter an explicit ISO UTC effective date ending in Z.");
+        await State.CreateAsync(Orders,_number,_name,amount,utc,_reason,Retain);
+    },"creating the original draft work-order AFE");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();Attach();if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original budget intent reference.");await State.RecoverAsync(Orders,id,Retain);},"reading original budget history");
+    private async Task Run(Func<Task> action,string operation)
+    {
+        if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original budget outcome is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    private void Invalidate(){State.Attach(null);_authorized=false;_books=null;_book="";_number="";_name="";_effective="";_reason="";_reference="";_amount=null;_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.Changed-=Changed;}
+}

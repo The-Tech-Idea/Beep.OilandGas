@@ -1,0 +1,9 @@
+@page "/accounting/ledger-accounts"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Components.Workflow
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3">Company ledger accounts</MudText>
+    <MudButton Href="/accounting/sales-receivables" Variant="Variant.Outlined">Return to receivables</MudButton>
+    <CompanyLedgerAccounts />
+</MudContainer>

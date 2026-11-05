@@ -1,0 +1,90 @@
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IAfeServiceClient AfeClient
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+@if(_state?.CanView==true)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h4">Assign investment review</MudText>
+        <MudButton OnClick="ReloadOriginal" Disabled="@_state.Busy" Variant="Variant.Outlined" Class="my-3">Read original handoff recovery</MudButton>
+        <MudButton OnClick="ReadStatus" Disabled="@_state.Busy" Variant="Variant.Outlined" Class="my-3">Read recorded investment handoff</MudButton>
+        @if(_state.Busy){<MudProgressLinear Indeterminate="true" aria-label="Confirming original investment handoff" />}
+        @if(_state.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+        @if(_state.Confirmation is {} confirmation){<MudAlert Severity="Severity.Success">@confirmation</MudAlert>}
+        @if(_state.RetainedProcessId is {} retained)
+        {
+            @if(_state.Pending is {} pending){<MudText>Retained original handoff: @pending.Workflow.ProcessName · @pending.Review.Source.Afe().Number</MudText><MudButton OnClick="Recover" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined" Class="my-3">Recover original investment handoff</MudButton>}
+            else{<MudButton Href="@("/economics/afe?processId="+Uri.EscapeDataString(retained)+"#"+Uri.EscapeDataString(_state.RetainedAfeId!))">Open retained handoff source</MudButton>}
+        }
+        else if(_state.Prepared is {} command)
+        {
+            <MudText Typo="Typo.subtitle1">Confirm independent investment review handoff</MudText>
+            <MudText>@command.Workflow.ProcessName · Version @command.Workflow.Version · FIELD @command.Scope().FieldId</MudText>
+            <MudText>@command.Review.Source.Afe().Number · @command.Review.Source.Afe().RequestedAmount.ToString("N"+command.Review.Source.Afe().CurrencyDecimals,CultureInfo.InvariantCulture) @command.Review.Source.Afe().CurrencyCode · Book @command.Review.Source.Afe().BookId</MudText>
+            @foreach(var stage in command.Workflow.Steps){<MudText>@stage.StepName · Role @stage.AssignedRole</MudText>@foreach(var recipient in command.Option().Stages.Single(item=>item.StepId==stage.StepId).Recipients){<MudText>Reviewer @recipient.UserId · Workspace @recipient.PersonaCode</MudText>}}
+            <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton OnClick="Submit" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Confirm investment handoff</MudButton><MudButton OnClick="Cancel" Disabled="@_state.Busy" Variant="Variant.Outlined">Change workflow</MudButton></MudStack>
+        }
+        else if(_state.CanPrepare && Review is {} review)
+        {
+            <MudSelect T="string" Label="Investment review workflow" @bind-Value="workflow" Required="true" Class="my-3">@foreach(var option in review.Options){<MudSelectItem T="string" Value="@option.ProcessId" Disabled="@(!option.Ready)">@option.Name · Version @option.Version</MudSelectItem>}</MudSelect>
+            <MudButton OnClick="Prepare" Variant="Variant.Outlined">Review investment handoff</MudButton>
+        }
+        @if(_state.Recorded is {Recorded:true} recorded){<MudText>Recorded handoff: @recorded.InstanceId · Initial handoff task destinations: @recorded.TaskIds.Count</MudText>}
+        @if(_state.Status is {} status)
+        {
+            @if(status.HandoffId is null)
+            {
+                <MudText>No recorded investment handoff was found for this AFE. Its recorded-process absence was checked.</MudText>
+                @if(status.Source.Recorded is not null){<MudAlert Severity="Severity.Warning">A financial decision is recorded without a confirmed investment workflow. Native review completion requires reconciliation.</MudAlert>}
+            }
+            else
+            {
+                var progress=status.Progress!;
+                <MudText Typo="Typo.h6" HtmlTag="h5">Investment review progress</MudText>
+                <MudText>@status.WorkflowName · Version @progress.WorkflowVersion · Sender @status.Sender · @status.StartedAtUtc?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+                <MudText Typo="Typo.caption">Handoff @status.HandoffId · Checked @status.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+                <MudAlert Severity="@(progress.State is "APPROVED" or "REJECTED"?Severity.Success:progress.State=="RECONCILIATION_REQUIRED"?Severity.Warning:Severity.Info)" Class="my-3">@ProgressText(progress.State)</MudAlert>
+                <MudText>Pending review tasks: @progress.PendingTasks</MudText>
+                @if(progress.ReservedBy is {} reserved){<MudText>An original decision is reserved by @reserved. Completion requires the same original decision and current authority.</MudText>}
+                @foreach(var stage in progress.Stages)
+                {
+                    <MudPaper Outlined="true" Class="pa-3 my-3">
+                        <MudText Typo="Typo.subtitle1">Stage @stage.Number of @progress.Stages.Count · @stage.Name</MudText>
+                        <MudText>Role @stage.Role · Workspaces @string.Join(", ",stage.Personas) · @StageText(stage.Status)</MudText>
+                        @if(stage.Reviewer is {} reviewer)
+                        {
+                            <MudText>@stage.Decision · Reviewer @reviewer · @stage.AtUtc?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+                            <MudText Class="development-draft-description">@stage.Rationale</MudText>
+                            <MudText Typo="Typo.caption">Approval @stage.ApprovalId · History @stage.HistoryId</MudText>
+                        }
+                    </MudPaper>
+                }
+            }
+        }
+        <MudText Typo="Typo.caption">A review assignment does not approve the AFE or create a financial commitment.</MudText>
+    </MudPaper>
+}
+@code{
+    [Parameter,EditorRequired]public string ProcessId{get;set;}=default!;[Parameter,EditorRequired]public string AfeId{get;set;}=default!;[Parameter]public DevelopmentInvestmentRoutingReview? Review{get;set;}
+    private DevelopmentInvestmentHandoffState? _state;private string? process,afe,workflow;private bool disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override async Task OnParametersSetAsync(){if(process!=ProcessId || afe!=AfeId){process=ProcessId;afe=AfeId;workflow=null;await _state!.LoadAsync(ProcessId,AfeId);}_state!.UseReview(Review);}
+    private async Task ReloadOriginal(){await _state!.LoadAsync(ProcessId,AfeId);_state.UseReview(Review);await _state.ReadStatusAsync();}
+    private static string ProgressText(string state)=>state switch{
+        "APPROVED"=>"Final investment approval and native workflow/task completion are confirmed.",
+        "REJECTED"=>"Investment rejection and native workflow/task closure are confirmed.",
+        "FINANCIAL_RECORDED"=>"The financial decision is recorded; native workflow completion is still pending.",
+        "RECONCILIATION_REQUIRED"=>"The financial evidence is not reconciled with this workflow. Final workflow completion is not confirmed.",
+        "RESERVED"=>"An original stage decision is reserved. It is not confirmed complete.",
+        _=>"Investment review is in progress. Intermediate approvals do not establish final budget approval."};
+    private static string StageText(string state)=>state switch{"APPROVED"=>"Approved stage","REJECTED"=>"Rejected stage","PENDING"=>"Awaiting independent review","RESERVED"=>"Original decision pending completion",_=>"Not reached"};
+    private Task ReadStatus()=>_state!.ReadStatusAsync();
+    private Task Prepare()=>_state!.PrepareAsync(workflow);private Task Submit()=>_state!.SubmitAsync();private Task Recover()=>_state!.RecoverAsync();private void Cancel()=>_state!.Cancel();
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

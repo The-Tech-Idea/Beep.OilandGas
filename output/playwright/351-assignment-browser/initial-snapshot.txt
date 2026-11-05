@@ -1,0 +1,37 @@
+### Page
+- Page URL: http://127.0.0.1:54712/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e45]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e46]
+    - paragraph [ref=e47]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e48]:
+      - button "Use read-only unmapped profile" [ref=e49] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e51] [cursor=pointer]
+      - button "Switch other company" [ref=e53] [cursor=pointer]
+      - button "Switch other account" [ref=e55] [cursor=pointer]
+      - button "Restore original company/account" [ref=e57] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e59] [cursor=pointer]
+      - button "Show actual start recovery" [ref=e61] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e63] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e65] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e67]:
+    - heading "Observed drilling progress" [level=1] [ref=e68]
+    - group [ref=e69]:
+      - link "Original execution" [ref=e70] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-D94F6C2916BBDAA6D78FAF9A6D774E68F88A7C158AFCC1FD8F20AD9472482BFB
+      - button "Reload original report history" [ref=e72] [cursor=pointer]
+    - generic [ref=e74]:
+      - heading "Recorded execution and report history" [level=2] [ref=e75]
+      - paragraph [ref=e76]: Original drilling program · Version 1 · Operation drilling-execution-3BF80F5DDF35B6000BB7075750DDAC588AF5917C6CCB3E380B482A693E3E4B27
+      - paragraph [ref=e77]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=e78]: 0 recorded observed reports · History checked 2026-10-26 16:07:50Z UTC
+      - paragraph [ref=e79]: No observed reports are recorded for this exact execution.
+      - button "Inspect current report basis" [ref=e80] [cursor=pointer]
+    - generic [ref=e82]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```
+### Events
+- New console entries: output\playwright\351-assignment-browser\artifacts\console-2026-10-26T16-07-49-767Z.log#L3

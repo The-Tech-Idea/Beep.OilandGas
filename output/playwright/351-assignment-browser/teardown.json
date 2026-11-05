@@ -1,0 +1,16 @@
+{
+  "timeUtc": "2026-10-26T16:19:44.4346181+00:00",
+  "browser": "Dedicated oilgas351assignment CLI browser closed",
+  "ownedRoot": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-protected-tab-2bfba7b32afb47e183c105d342f8617e",
+  "stopped": [
+    {
+      "ProcessId": 36424,
+      "Name": "dotnet.exe"
+    },
+    {
+      "ProcessId": 26724,
+      "Name": "WorkflowProtectedTab.exe"
+    }
+  ],
+  "remaining": []
+}

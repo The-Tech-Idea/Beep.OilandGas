@@ -1,0 +1,60 @@
+@using TheTechIdea.Data.OilGas
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject CompanyPersonnelIdentityState State
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6">Company account and native person identity</MudText>
+    <MudText>Verify an actual company account and native employee/person relationship. Names and identifiers from different systems do not establish identity by themselves. This relationship grants no roles, document ownership or permit authority.</MudText>
+    @if(!Allowed){<MudAlert Severity="Severity.Warning">Current company Administrator and explicit personnel identity configuration permission are required.</MudAlert>}
+    <MudTextField T="string" Value="@_user" ValueChanged="UserChanged" Label="Exact application account ID" Disabled="@(State.Busy || !State.CanReview)" />
+    <MudTextField T="string" Value="@_person" ValueChanged="PersonChanged" Label="Exact native employee/person BA ID" Disabled="@(State.Busy || !State.CanReview)" />
+    <MudButton OnClick="ReviewAsync" Color="Color.Primary" Disabled="@(State.Busy || !State.CanReview || !Allowed || string.IsNullOrWhiteSpace(_user) || string.IsNullOrWhiteSpace(_person))">Review current company account and native person</MudButton>
+    @if(State.Review is {} review)
+    {
+        <MudText>Actual account @review.Account.UserId · @review.Account.UserName · active @review.Account.Active</MudText>
+        <MudText>Recorded person @review.Person.PersonBaId · @(review.Person.Name??"Name unconfirmed") · type @(review.Person.Type??"Type unconfirmed")</MudText>
+        <MudText>Employer @review.Person.Employment.EmployerBaId · employee @review.Person.Employment.EmployeeBaId · observation @review.Person.Employment.Observation</MudText>
+        <MudText>Native person UTC @Date(review.Person.EffectiveFromUtc) to @Date(review.Person.EffectiveToUtc) · employment UTC @Date(review.Person.Employment.EffectiveDate) to @Date(review.Person.Employment.ExpiryDate)</MudText>
+        @if(review.Catalog.Versions.Count==0){<MudAlert Severity="Severity.Info">No identity links are recorded for this company. Missing schema is reported separately as an error.</MudAlert>}
+        @foreach(var link in review.Catalog.Versions){<MudText>Recorded link @link.RecordId · account @link.UserId · person @link.PersonBaId · version @link.Version · @link.EffectiveFromUtc.ToString("O") to @link.EffectiveToUtc.ToString("O")</MudText>}
+        <MudTextField T="string" @bind-Value="_from" Label="Identity link valid from UTC (ISO 8601 ending Z)" Disabled="@(!State.CanRecord)" />
+        <MudTextField T="string" @bind-Value="_to" Label="Identity link valid to UTC (ISO 8601 ending Z)" Disabled="@(!State.CanRecord)" />
+        <MudTextField T="string" @bind-Value="_source" Label="Actual identity verification evidence reference" Required="true" MaxLength="2048" Disabled="@(!State.CanRecord)" />
+        <MudTextField T="string" @bind-Value="_reason" Label="Administrator verification rationale" Required="true" MaxLength="2048" Disabled="@(!State.CanRecord)" />
+        <MudCheckBox T="bool" @bind-Value="_verified" Label="I verified this actual account/person identity against the recorded evidence" Disabled="@(!State.CanRecord)" />
+        <MudButton OnClick="RecordAsync" Color="Color.Primary" Disabled="@(!State.CanRecord || !Allowed || !_verified || string.IsNullOrWhiteSpace(_from) || string.IsNullOrWhiteSpace(_to) || string.IsNullOrWhiteSpace(_source) || string.IsNullOrWhiteSpace(_reason))">Retain and record verified identity relationship</MudButton>
+        <MudText Typo="Typo.caption">Original source revision @review.Revision · compared UTC @review.ComparedAtUtc.ToString("O")</MudText>
+    }
+    <MudTextField T="string" @bind-Value="_record" Label="Original identity-link record reference" Disabled="@State.Busy" />
+    <MudTextField T="string" @bind-Value="_intent" Label="Original identity-link intent" Disabled="@State.Busy" />
+    <MudButton OnClick="RecoverAsync" Disabled="@(State.Busy || !Allowed || string.IsNullOrWhiteSpace(_record) || string.IsNullOrWhiteSpace(_intent))">Recover original identity link read-only</MudButton>
+    @if(State.VisibleReference is {} retained){<MudText>Retained original link @retained.RecordId · intent @retained.IntentId. Reconcile the original outcome before replacing it.</MudText>}
+    @if(State.Receipt is {} receipt){<MudAlert Severity="Severity.Success">Verified identity link recorded: @receipt.IDENTITY_RECORD_ID · account @receipt.APP_USER_ID · person @receipt.PERSON_BA_ID · @Date(receipt.ROW_CREATED_DATE)</MudAlert><MudButton OnClick="BeginNextAsync" Disabled="@(State.Busy || !Allowed)">Begin another review after confirmed identity link</MudButton>}
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing original company personnel identity" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+</MudPaper>
+@code {
+    private string _user="",_person="",_from="",_to="",_source="",_reason="",_record="",_intent="";private bool _verified,_disposed;private string? _error;private long _generation;
+    private bool Allowed=>Company.Selection is {} selected && selected.Roles.Contains("Administrator",StringComparer.Ordinal) && selected.Permissions.Contains("HSE.ConfigurePersonnelIdentity",StringComparer.Ordinal);
+    private static string Date(DateTime? value)=>value is {} date && date.Kind==DateTimeKind.Utc?date.ToString("O"):"Unconfirmed UTC";
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Clear;Authentication.AuthenticationStateChanged+=AuthenticationChanged;var query=Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);if(query.TryGetValue("personnelIdentityRecord",out var record))_record=record.ToString();if(query.TryGetValue("personnelIdentityIntent",out var intent))_intent=intent.ToString();}
+    private async Task Guard(){var selected=Company.Selection;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || !Allowed || selected is null || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !user.IsInRole("Administrator"))throw new UnauthorizedAccessException("Current company/account/standard Administrator role and identity permission are required.");}
+    private void UserChanged(string value){if(State.CanReview){ClearDraft();State.ClearDisplay();_user=value;}}
+    private void PersonChanged(string value){if(State.CanReview){ClearDraft();State.ClearDisplay();_person=value;}}
+    private async Task Run(Func<Task> work,string action){var generation=_generation;var snapshot=Company.Snapshot;_error=null;try{await Guard();await work();await Guard();}catch(Exception error){if(!_disposed && generation==_generation && snapshot==Company.Snapshot)_error=Calls.Explain(error,action,"Original identity proof/outcome could not be confirmed; retain any existing intent");}}
+    private Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows,new(_user,_person)),"reviewing company account/person identity");
+    private Task RecordAsync()=>Run(()=>State.RecordAsync(Workflows,Utc(_from),Utc(_to),_source,_reason,_verified,RetainAsync),"recording verified account/person identity");
+    private Task RecoverAsync()=>Run(()=>{if(!Guid.TryParse(_intent,out var intent) || intent==Guid.Empty)throw new ArgumentException("Enter the original identity intent.");return State.RecoverAsync(Workflows,new(_record,intent),RetainAsync);},"recovering original identity relationship");
+    private async Task RetainAsync(CompanyPersonnelIdentityReference reference){await Guard();_record=reference.RecordId;_intent=reference.IntentId.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"personnelIdentityRecord",_record},{"personnelIdentityIntent",_intent}}),new NavigationOptions{ReplaceHistoryEntry=true});await Guard();}
+    private async Task BeginNextAsync(){await Guard();State.BeginNextReview();Clear();Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"personnelIdentityRecord",null},{"personnelIdentityIntent",null}}),new NavigationOptions{ReplaceHistoryEntry=true});}
+    private static DateTime Utc(string value){if(!value.Contains('T') || !value.EndsWith("Z",StringComparison.Ordinal) || !DateTime.TryParse(value,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out var utc) || utc.Kind!=DateTimeKind.Utc)throw new ArgumentException("Enter explicit ISO 8601 UTC ending Z.");return utc;}
+    private void ClearDraft(){_generation++;_from="";_to="";_source="";_reason="";_verified=false;_error=null;}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void Clear(){_generation++;_user="";_person="";_from="";_to="";_source="";_reason="";_record="";_intent="";_verified=false;_error=null;Changed();}
+    private void AuthenticationChanged(Task<AuthenticationState> _){State.ClearDisplay();Clear();}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Clear;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Clear();}
+}

@@ -1,0 +1,9 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Reconcile original closure' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-hse-browser\artifacts\page-2026-10-29T09-35-39-419Z.yml)

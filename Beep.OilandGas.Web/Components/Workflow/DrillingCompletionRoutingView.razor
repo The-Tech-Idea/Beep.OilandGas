@@ -1,0 +1,43 @@
+@using TheTechIdea.Data.OilGas
+<MudPaper Outlined="true" Class="pa-3 my-3">
+    <MudText Typo="Typo.h6" HtmlTag="h3">Independent completion review routing</MudText>
+    <MudAlert Severity="Severity.Info" role="status">Routing inspection only. No review has been submitted by this inspection, no test is independently accepted, and reporting responsibility remains ongoing.</MudAlert>
+    <MudText>Claim entry @Review.Source.ReportedCompletion!.Number / @Review.Source.ReportedCompletion.ReportId; routing checked @Review.CheckedAtUtc.ToString("u") UTC.</MudText>
+    @if (Review.ExistingReviewInstanceId is {} existing)
+    {
+        <MudText>A review is already recorded for this exact completion claim: @existing. A second submission is unavailable.</MudText>
+        <MudButton Href="@("/drilling/completion-review/history?processId="+Uri.EscapeDataString(existing))" Variant="Variant.Outlined">Open recorded completion review history</MudButton>
+    }
+    else if (Review.SenderRoles.Count == 0)
+    {
+        <MudAlert Severity="Severity.Warning">Current configured sender role/workspace, workflow-start and original FIELD WRITE authority are required to inspect private approval recipients.</MudAlert>
+    }
+    else if (Review.Options.Count == 0)
+    {
+        <MudAlert Severity="Severity.Warning">No completion approval workflow is configured for this source. Company workflow administration must configure mandatory ordered DRILLING approval stages for DRILLING_DAILY_REPORT; routing is not ready.</MudAlert>
+    }
+    else
+    {
+        @foreach (var option in Review.Options)
+        {
+            <MudText Typo="Typo.subtitle1">@option.ProcessName / @option.Version</MudText>
+            <MudText>@(option.Ready ? "Every configured stage has an eligible independent recipient." : "Routing is blocked: at least one configured stage has no eligible independent recipient.")</MudText>
+            <MudSimpleTable Dense="true">
+                <caption>Configured completion approval stages and current independent recipients for @option.ProcessName</caption>
+                <thead><tr><th scope="col">Stage</th><th scope="col">Company role</th><th scope="col">Workspace / recipients</th><th scope="col">SLA hours</th></tr></thead>
+                <tbody>
+                    @foreach (var stage in option.Stages)
+                    {
+                        <tr><td>@stage.Definition.Sequence / @stage.Definition.StepName</td><td>@stage.Definition.AssignedRole</td><td>
+                            @if (stage.Authority.Recipients.Count == 0) { <span>No eligible independent recipient</span> }
+                            else { @foreach (var receiver in stage.Authority.Recipients) { <MudText>@receiver.PersonaCode / @receiver.UserId</MudText> } }
+                        </td><td>@stage.Definition.SlaHours</td></tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    }
+</MudPaper>
+@code {
+    [Parameter, EditorRequired] public DrillingCompletionReviewReadiness Review { get; set; } = default!;
+}

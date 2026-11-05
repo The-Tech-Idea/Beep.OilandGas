@@ -1,0 +1,31 @@
+@using TheTechIdea.Data.OilGas
+<MudStack Spacing="2">
+    <MudText>Actual activation UTC @Facts.ActivatedAtUtc.ToString("O") · recorded UTC @Facts.RecordedAtUtc.ToString("O") · actor @Facts.ActorUserId · role @Facts.Role</MudText>
+    @if(Facts.Wells.Count>0)
+    {
+        <MudTable Items="@Facts.Wells" Dense="true" aria-label="Recorded well return transitions">
+            <HeaderContent><MudTh>Affected well</MudTh><MudTh>Recorded transition</MudTh><MudTh>Observed capability</MudTh><MudTh>Native source keys</MudTh></HeaderContent>
+            <RowTemplate><MudTd DataLabel="Affected well">@context.WellId</MudTd><MudTd DataLabel="Recorded transition">@context.PreviousCondition to Active</MudTd><MudTd DataLabel="Observed capability">@context.ObservedCapabilityPercent%</MudTd><MudTd DataLabel="Native source keys">@context.Source · @context.PreviousStatusId to @context.RecordedStatusId</MudTd></RowTemplate>
+            <PagerContent><MudTablePager /></PagerContent>
+        </MudTable>
+    }
+    @if(Facts.QualifiedAssets is {Count:>0} qualified)
+    {
+        <MudTable Items="@qualified" Dense="true" aria-label="Recorded facility and equipment return transitions">
+            <HeaderContent><MudTh>Affected asset</MudTh><MudTh>Recorded transition</MudTh><MudTh>Observed capability</MudTh><MudTh>Native source keys</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Affected asset">@context.AssetType @context.AssetId @context.FacilityType</MudTd>
+                <MudTd DataLabel="Recorded transition">@context.StatusType: @context.PreviousValue to @context.RecordedValue</MudTd>
+                <MudTd DataLabel="Observed capability">@context.ObservedCapabilityPercent%</MudTd>
+                <MudTd DataLabel="Native source keys">@context.PreviousSource / @context.PreviousStatusId to @context.RecordedSource / @context.RecordedStatusId</MudTd>
+            </RowTemplate>
+            <PagerContent><MudTablePager /></PagerContent>
+        </MudTable>
+    }
+    <MudText Typo="Typo.caption">Recorded return @Facts.ReturnId · source report @Facts.ReportRevision · closure @Facts.ClosureRevision</MudText>
+    <MudText Typo="Typo.caption">This records the original transition. Read current native evidence separately to establish each asset's present condition.</MudText>
+</MudStack>
+@code {
+    [Parameter,EditorRequired] public CompanyMaintenanceAssetReturnFacts Facts{get;set;}=null!;
+    protected override void OnParametersSet()=>Facts.Require();
+}

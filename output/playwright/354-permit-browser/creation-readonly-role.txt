@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Fixture read only' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:55005/ppdm39/permits/new
+### Snapshot
+- [Snapshot](output\playwright\354-permit-browser\artifacts\page-2026-10-29T15-12-51-088Z.yml)

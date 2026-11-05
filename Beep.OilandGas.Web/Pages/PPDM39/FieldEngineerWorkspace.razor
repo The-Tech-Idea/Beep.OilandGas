@@ -1,0 +1,17 @@
+@page "/field/dashboard"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+
+<PageTitle>Field engineer workspace</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-3">Field engineer workspace</MudText>
+    <MudText Class="mb-3">Review assigned work and recorded facilities for your current company and FIELD.</MudText>
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/field/dashboard"})' />
+    <CompanyFacilityEvidencePanel />
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2"><MudButton Href="/production/intervention" Variant="Variant.Outlined">Review interventions</MudButton><MudButton Href="/ppdm39/workorder" Variant="Variant.Outlined">Maintenance work</MudButton><MudButton Href="/development/construction" Variant="Variant.Outlined">Construction evidence</MudButton></MudStack>
+</MudContainer>
+

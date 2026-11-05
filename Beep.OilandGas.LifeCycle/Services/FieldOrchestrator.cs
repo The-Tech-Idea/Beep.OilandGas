@@ -20,7 +20,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 
@@ -37,11 +37,15 @@ namespace Beep.OilandGas.LifeCycle.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly PPDMMappingService _mappingService;
-        private readonly string _connectionName;
+        private string? _connectionName;
         private readonly IFailureReporter _failures;
         private readonly ILogger<FieldOrchestrator>? _logger;
-        private readonly IAccessControlService? _accessControlService;
-        private readonly IHttpContextAccessor? _httpContextAccessor;
+        private readonly IAccessControlService _accessControlService;
+        private readonly ICompanyFieldSelectionService _selections;
+        private readonly IPPDMRowAccessPolicy _rowAccess;
+        private readonly ICompanyCorrectiveActionCommands _correctiveActions;
+        private readonly ICompanyIncidentCommands _incidentCommands;
+        private FieldSelectionReview? _review;
 
         private string? _currentFieldId;
         private PPDMGenericRepository? _fieldRepository;
@@ -66,100 +70,85 @@ namespace Beep.OilandGas.LifeCycle.Services
             PPDMMappingService mappingService,
             IFieldExplorationService fieldExplorationService,
             IFailureReporter failures,
-            string connectionName = "PPDM39",
-            ILogger<FieldOrchestrator>? logger = null,
-            IAccessControlService? accessControlService = null,
-            IHttpContextAccessor? httpContextAccessor = null)
+            ICompanyFieldSelectionService selections,
+            IPPDMRowAccessPolicy rowAccess,
+            ICompanyCorrectiveActionCommands correctiveActions,
+            ICompanyIncidentCommands incidentCommands,
+            IAccessControlService accessControlService,
+            ILogger<FieldOrchestrator>? logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
-            _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _logger = logger;
-            _accessControlService = accessControlService;
-            _httpContextAccessor = httpContextAccessor;
+            _accessControlService = accessControlService ?? throw new ArgumentNullException(nameof(accessControlService));
+            _selections = selections ?? throw new ArgumentNullException(nameof(selections));
+            _correctiveActions = correctiveActions ?? throw new ArgumentNullException(nameof(correctiveActions));
+            _incidentCommands = incidentCommands ?? throw new ArgumentNullException(nameof(incidentCommands));
+            _rowAccess = rowAccess ?? throw new ArgumentNullException(nameof(rowAccess));
             _fieldExplorationService = fieldExplorationService ?? throw new ArgumentNullException(nameof(fieldExplorationService));
         }
 
-        private string? GetCurrentUserId()
+        private string GetCurrentUserId() => _review?.ActorUserId
+            ?? throw RefusalException.Forbidden("A reviewed application account is required.");
+
+        // A request captures one existing profile review. It cannot choose a FIELD or adopt a changed preference.
+        private async Task RequireReviewedFieldAsync(string? assertion = null)
         {
-            return _httpContextAccessor?.HttpContext?.User?.Identity?.Name
-                ?? _httpContextAccessor?.HttpContext?.User?.FindFirst("sub")?.Value
-                ?? _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var current = await _selections.GetCurrentFieldSelectionAsync();
+            if (current.SelectionContext is not { } review)
+                throw RefusalException.Conflict("The current FIELD review is unavailable.");
+            FieldSelectionReviewValidator.RequireCurrent(current, review.Company, review.ActorUserId);
+            if (!current.SelectionAvailable)
+            {
+                ClearActiveField();
+                throw RefusalException.Conflict("Choose a currently available FIELD before opening its lifecycle.");
+            }
+            if (assertion is not null && assertion != current.FieldId)
+                throw RefusalException.Conflict("The lifecycle FIELD differs from the reviewed profile selection.");
+            if (_review is not null && _review != review)
+            {
+                ClearActiveField();
+                throw RefusalException.Conflict("The account, company, database or FIELD preference changed during this lifecycle request.");
+            }
+            _review = review;
+            _currentFieldId = current.FieldId;
+            _connectionName = review.Database.ConnectionName;
         }
 
-        /// <returns>
-        /// False when no field is named, the field is not there, or the person may not open it. A failure to look the field up
-        /// reaches the caller (the API's handler reports it with its reference): it had been answered as false, which reads
-        /// as a field that does not exist.
-        /// </returns>
         public async Task<bool> SetActiveFieldAsync(string fieldId)
         {
-            if (string.IsNullOrWhiteSpace(fieldId))
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireReviewedFieldAsync(fieldId);
+            _fieldRepository ??= new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(FIELD), _connectionName!, "FIELD", rowAccess: _rowAccess);
+            var field = await _fieldRepository.GetByIdAsync(fieldId);
+            if (field is not FIELD { ACTIVE_IND: "Y" } row || row.FIELD_ID != fieldId)
             {
-                _logger?.LogWarning("Attempted to set active field with null or empty fieldId");
-                return false;
+                ClearActiveField();
+                throw RefusalException.Forbidden("The reviewed FIELD is not currently available in its company database.");
             }
-
-            // Validate field exists
-            var fieldMetadata = await _metadata.GetTableMetadataAsync("FIELD");
-            if (fieldMetadata == null)
-            {
-                _logger?.LogError("FIELD table metadata not found");
-                return false;
-            }
-
-            _fieldRepository = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FIELD), _connectionName, "FIELD");
-
-            var formattedFieldId = _defaults.FormatIdForTable("FIELD", fieldId);
-            var field = await _fieldRepository.GetByIdAsync(formattedFieldId);
-            
-            if (field == null)
-            {
-                _logger?.LogWarning($"Field not found: {fieldId}");
-                return false;
-            }
-
-            // Check access control if service is available
-            var currentUserId = GetCurrentUserId();
-            if (_accessControlService != null && !string.IsNullOrEmpty(currentUserId))
-            {
-                var accessCheck = await _accessControlService.CheckAssetAccessAsync(currentUserId, formattedFieldId, "FIELD");
-                if (!accessCheck.HasAccess)
-                {
-                    _logger?.LogWarning($"User {currentUserId} does not have access to field: {fieldId}");
-                    return false;
-                }
-            }
-
-            _currentFieldId = formattedFieldId;
-            _logger?.LogInformation($"Active field set to: {fieldId}");
-
-            // Phase services (except injected exploration) are created on demand; reset so they bind to the new field
-            _developmentService = null;
-            _productionService = null;
-            _decommissioningService = null;
-            _hseService = null;
-            _processService = null;
-
+            await RequireReviewedFieldAsync(fieldId);
             return true;
         }
 
         public async Task<object?> GetCurrentFieldAsync()
         {
-            if (string.IsNullOrEmpty(_currentFieldId) || _fieldRepository == null)
-                return null;
-
-            return await _fieldRepository.GetByIdAsync(_currentFieldId);
+            await RequireReviewedFieldAsync();
+            await SetActiveFieldAsync(_currentFieldId!);
+            var field = await _fieldRepository!.GetByIdAsync(_currentFieldId!);
+            await RequireReviewedFieldAsync();
+            if (field is not FIELD { ACTIVE_IND: "Y" } row || row.FIELD_ID != _currentFieldId)
+                throw RefusalException.Conflict("The current FIELD read could not be confirmed.");
+            return row;
         }
 
         public async Task<FieldLifecycleSummary> GetFieldLifecycleSummaryAsync()
         {
+            await RequireReviewedFieldAsync();
             if (string.IsNullOrEmpty(_currentFieldId))
             {
                 throw RefusalException.Conflict("No field is active: choose a field first.");
@@ -222,6 +211,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 var decommissionedFacilities = await decommissioningSvc.GetDecommissionedFacilitiesForFieldAsync(_currentFieldId);
                 summary.DecommissionedFacilityCount = decommissionedFacilities?.Count ?? 0;
 
+                await RequireReviewedFieldAsync();
                 return summary;
             }
             catch (Exception ex)
@@ -233,6 +223,7 @@ namespace Beep.OilandGas.LifeCycle.Services
 
         public async Task<List<WELL>> GetFieldWellsAsync()
         {
+            await RequireReviewedFieldAsync();
             if (string.IsNullOrEmpty(_currentFieldId))
             {
                 throw RefusalException.Conflict("No field is active: choose a field first.");
@@ -256,17 +247,18 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 // Filter by access control if service is available
                 var currentUserId = GetCurrentUserId();
-                if (_accessControlService != null && !string.IsNullOrEmpty(currentUserId))
+                if (!string.IsNullOrEmpty(currentUserId))
                 {
                     var accessibleAssets = await _accessControlService.GetUserAccessibleAssetsAsync(currentUserId, "WELL");
                     var accessibleWellIds = accessibleAssets.Where(a => a.Active).Select(a => a.AssetId).ToHashSet();
                     allWells = allWells.Where(w => 
                     {
                         var wellId = GetWellId(w);
-                        return string.IsNullOrEmpty(wellId) || accessibleWellIds.Contains(wellId);
+                        return LeaseSummaryValidator.Identifier(wellId) && accessibleWellIds.Contains(wellId);
                     }).ToList();
                 }
 
+                await RequireReviewedFieldAsync();
                 return allWells;
             }
             catch (Exception ex)
@@ -276,10 +268,11 @@ namespace Beep.OilandGas.LifeCycle.Services
             }
         }
 
-        private static string? GetWellId(WELL well) => well.WELL_ID;
+        private static string? GetWellId(WELL well) => well.UWI;
 
         public async Task<FieldStatistics> GetFieldStatisticsAsync()
         {
+            await RequireReviewedFieldAsync();
             if (string.IsNullOrEmpty(_currentFieldId))
             {
                 throw RefusalException.Conflict("No field is active: choose a field first.");
@@ -321,7 +314,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Get production statistics from PDEN_VOL_SUMMARY
                 var productionRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY");
+                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", rowAccess: _rowAccess);
                 
                 var productionFilters = new List<AppFilter>
                 {
@@ -388,7 +381,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Get facility counts
                 var facilityRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FACILITY), _connectionName, "FACILITY");
+                    typeof(FACILITY), _connectionName, "FACILITY", rowAccess: _rowAccess);
                 
                 var facilityFilters = new List<AppFilter>
                 {
@@ -410,6 +403,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 stats.TotalFacilityCount = totalFacilities;
                 stats.ActiveFacilityCount = activeFacilities;
 
+                await RequireReviewedFieldAsync();
                 return stats;
             }
             catch (Exception ex)
@@ -421,6 +415,7 @@ namespace Beep.OilandGas.LifeCycle.Services
 
         public async Task<FieldTimeline> GetFieldTimelineAsync()
         {
+            await RequireReviewedFieldAsync();
             if (string.IsNullOrEmpty(_currentFieldId))
             {
                 throw RefusalException.Conflict("No field is active: choose a field first.");
@@ -444,7 +439,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Query PROSPECT table for exploration events
                 var prospectRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PROSPECT), _connectionName, "PROSPECT");
+                    typeof(PROSPECT), _connectionName, "PROSPECT", rowAccess: _rowAccess);
                 var prospectFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
@@ -493,7 +488,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Query WELL table for development and production events
                 var wellRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL), _connectionName, "WELL");
+                    typeof(WELL), _connectionName, "WELL", rowAccess: _rowAccess);
                 var wellFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
@@ -543,7 +538,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Query PDEN_VOL_SUMMARY for monthly production events (aggregate by month)
                 var productionRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY");
+                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", rowAccess: _rowAccess);
                 var productionFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
@@ -587,7 +582,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Query WELL_ABANDONMENT or WELL_STATUS for decommissioning events
                 var wellAbandonmentRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT");
+                    typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT", rowAccess: _rowAccess);
                 var abandonmentFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
@@ -619,7 +614,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Query FACILITY table for facility events
                 var facilityRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FACILITY), _connectionName, "FACILITY");
+                    typeof(FACILITY), _connectionName, "FACILITY", rowAccess: _rowAccess);
                 var facilityFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
@@ -668,7 +663,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 // Query POOL table for pool definition events
                 var poolRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(POOL), _connectionName, "POOL");
+                    typeof(POOL), _connectionName, "POOL", rowAccess: _rowAccess);
                 var poolFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _currentFieldId }
@@ -711,6 +706,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                         .ToDictionary(g => g.Key, g => g.Count());
                 }
 
+                await RequireReviewedFieldAsync();
                 return timeline;
             }
             catch (Exception ex)
@@ -722,6 +718,7 @@ namespace Beep.OilandGas.LifeCycle.Services
 
         public async Task<FieldDashboard> GetFieldDashboardAsync()
         {
+            await RequireReviewedFieldAsync();
             if (string.IsNullOrEmpty(_currentFieldId))
             {
                 throw RefusalException.Conflict("No field is active: choose a field first.");
@@ -1079,7 +1076,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                     if (activityMeta != null)
                     {
                         var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                            typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                            typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", rowAccess: _rowAccess);
 
                         // Look for active activities older than 30 days that imply pending work (INSP_ or MAINT_ prefix)
                         var cutoff = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
@@ -1129,6 +1126,7 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 dashboard.Alerts = alerts;
 
+                await RequireReviewedFieldAsync();
                 return dashboard;
             }
             catch (Exception ex)
@@ -1158,7 +1156,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             if (_developmentService == null)
             {
                 _developmentService = new Beep.OilandGas.LifeCycle.Services.Development.PPDMDevelopmentService(
-                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _failures, _connectionName, null);
+                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _selections, _rowAccess, null);
             }
 
             return _developmentService;
@@ -1175,7 +1173,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             {
                 // PPDMProductionService now implements IFieldProductionService directly
                 _productionService = new Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService(
-                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _failures, _connectionName);
+                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _selections, _rowAccess);
             }
 
             return _productionService;
@@ -1196,7 +1194,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                     _commonColumnHandler,
                     _defaults,
                     _metadata,
-                    _connectionName);
+                    _selections, _rowAccess, _correctiveActions, _incidentCommands);
             }
 
             return _hseService;
@@ -1212,7 +1210,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             if (_decommissioningService == null)
             {
                 _decommissioningService = new Beep.OilandGas.LifeCycle.Services.Decommissioning.PPDMDecommissioningService(
-                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _connectionName, null);
+                    _editor, _commonColumnHandler, _defaults, _metadata, _mappingService, _selections, _rowAccess);
             }
 
             return _decommissioningService;

@@ -1,0 +1,181 @@
+### Page
+- Page URL: http://127.0.0.1:58870/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e47]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e48]
+    - paragraph [ref=e49]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e50]:
+      - button "Use read-only unmapped profile" [ref=e51] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e53] [cursor=pointer]
+      - button "Switch other company" [ref=e55] [cursor=pointer]
+      - button "Switch other account" [ref=e57] [cursor=pointer]
+      - button "Restore original company/account" [ref=e59] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e61] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [disabled]
+      - button "Retain an unrecorded competing start" [ref=e63] [cursor=pointer]
+      - button "Retain a different unrecorded report" [disabled]
+      - button "Show actual start recovery" [ref=e65] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e67] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e69] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e71]:
+    - heading "Observed drilling progress" [level=1] [ref=e72]
+    - group [ref=e73]:
+      - link "Original execution" [ref=e74] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-09698F601E27A467BC24CBFF814A355C2166526DDECCB0ACD1E0B4DADF3FF2EA
+      - button "Reload original report history" [ref=e76] [cursor=pointer]
+    - generic [ref=e236]:
+      - heading "Prepare independent completion review" [level=3] [ref=e237]
+      - generic [ref=e240]:
+        - combobox "Configured completion review workflow" [ref=e242] [cursor=pointer]
+        - generic: Configured completion review workflow*
+      - generic [ref=e249]:
+        - combobox "Current completion review sender role" [ref=e251] [cursor=pointer]
+        - generic: Current completion review sender role*
+      - generic [ref=e257]:
+        - textbox "Reason for independent completion review*" [ref=e259]
+        - generic: Reason for independent completion review*
+      - button "Review original completion submission" [ref=e260] [cursor=pointer]
+    - generic [ref=e97]:
+      - heading "Recorded execution and report history" [level=2] [ref=e98]
+      - paragraph [ref=e99]: Original drilling program · Version 1 · Operation drilling-execution-25DB47DC7F684D544A0DD55D63B10178A9B9C61E6CB183B56C6D43E5478C848C
+      - paragraph [ref=e100]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=e101]: 4 recorded history entries · History checked 2026-10-26 23:26:36Z UTC
+      - heading "Current completion report, pending independent acceptance" [level=3] [ref=e102]
+      - paragraph [ref=e103]: Recorder execution-recorder; role ConfiguredExecutionRecorder / DRILLING_RECORDER; reported 2026-10-26 23:26:27Z UTC; source entry 4.
+      - generic [ref=e104]:
+        - heading "Reported completion evidence" [level=3] [ref=e105]
+        - generic [ref=e106]: This is the recorder's report, pending independent acceptance. It does not establish accepted tests, close reporting responsibility or authorize production handover.
+        - paragraph [ref=e113]: Reported actual completion 2026-10-26 23:26:27Z UTC
+        - paragraph [ref=e114]: "Work reported complete: Controlled work reported complete pending independent review"
+        - table [ref=e117]:
+          - caption [ref=e118]: Supporting tests as reported by the recorder
+          - rowgroup [ref=e119]:
+            - row [ref=e120]:
+              - columnheader "Test / reference" [ref=e121]
+              - columnheader "Reported UTC / result" [ref=e122]
+              - columnheader "Provenance / result notes" [ref=e123]
+          - rowgroup [ref=e124]:
+            - row [ref=e125]:
+              - rowheader "Reported site inspection Controlled completion certificate" [ref=e126]: Reported site inspectionControlled completion certificate
+              - cell "2026-10-26 23:26:27Z UTC Fail (reported)" [ref=e127]: 2026-10-26 23:26:27Z UTCFail (reported)
+              - cell "Controlled site evidence Requires independent acceptance" [ref=e128]: Controlled site evidenceRequires independent acceptance
+        - paragraph [ref=e129]: The recorder explicitly reviewed known outstanding work and defects.
+        - listbox "Reported outstanding work and defects" [ref=e130]:
+          - option [ref=e131] [cursor=pointer]:
+            - paragraph [ref=e133]: Independent inspection discrepancy remains unresolved
+      - button "Inspect independent completion routing" [active] [ref=e134] [cursor=pointer]
+      - generic [ref=e262]:
+        - heading "Independent completion review routing" [level=3] [ref=e263]
+        - status [ref=e264]:
+          - generic [ref=e265]: Routing inspection only. No review has been submitted by this inspection, no test is independently accepted, and reporting responsibility remains ongoing.
+        - paragraph [ref=e271]: Claim entry 4 / drilling-report-C693B3A3D2D235C91C305C64A9632FB98FB897909EFDED10515083A2D55FCCD7; routing checked 2026-10-26 23:26:45Z UTC.
+        - paragraph [ref=e272]: Company completion review / 1.0
+        - paragraph [ref=e273]: Every configured stage has an eligible independent recipient.
+        - table [ref=e276]:
+          - caption [ref=e277]: Configured completion approval stages and current independent recipients for Company completion review
+          - rowgroup [ref=e278]:
+            - row [ref=e279]:
+              - columnheader "Stage" [ref=e280]
+              - columnheader "Company role" [ref=e281]
+              - columnheader "Workspace / recipients" [ref=e282]
+              - columnheader "SLA hours" [ref=e283]
+          - rowgroup [ref=e284]:
+            - row [ref=e285]:
+              - cell "1 / Independent completion and test review" [ref=e286]
+              - cell "ConfiguredCompletionReviewer" [ref=e287]
+              - cell [ref=e288]:
+                - paragraph [ref=e289]: INDEPENDENT_COMPLETION / completion-inspector
+              - cell "24" [ref=e290]
+      - table [ref=e138]:
+        - caption [ref=e139]: Observed drilling report history — UTC periods, source provenance and accountable recorders
+        - rowgroup [ref=e140]:
+          - row [ref=e141]:
+            - columnheader "Report / UTC period" [ref=e142]
+            - columnheader "Observed hole MD" [ref=e143]
+            - columnheader "Rotating / NPT hours" [ref=e144]
+            - columnheader "Recorder / audit UTC" [ref=e145]
+        - rowgroup [ref=e146]:
+          - row [ref=e147]:
+            - rowheader "1 · CURRENT OBSERVATION 2026-10-26 23:25:59Z to 2026-10-26 23:25:59Z" [ref=e148]: 1 · CURRENT OBSERVATION2026-10-26 23:25:59Z to 2026-10-26 23:25:59Z
+            - cell "100 to 125 m" [ref=e149]
+            - cell "Unknown / Unknown" [ref=e150]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 23:26:27Z" [ref=e151]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 23:26:27Z
+          - row [ref=e152]:
+            - cell [ref=e153]:
+              - paragraph [ref=e154]: History entry drilling-report-98CF8D8F3E78B7F90865C9759A1C0CBF9A74EBABC49A94175084089ECC7F04F2
+              - button "Correct observations from entry 1" [ref=e155] [cursor=pointer]
+              - paragraph [ref=e157]: "Source: Qualified observed site log 1"
+              - paragraph [ref=e158]: "Observed operations: Observed hole drilling progress"
+              - paragraph [ref=e159]: "Next period plan: Continue only after site clearance"
+          - row [ref=e160]:
+            - rowheader "2 · CURRENT OBSERVATION 2026-10-26 23:25:59Z to 2026-10-26 23:25:59Z" [ref=e161]: 2 · CURRENT OBSERVATION2026-10-26 23:25:59Z to 2026-10-26 23:25:59Z
+            - cell "100 to 125 m" [ref=e162]
+            - cell "Unknown / Unknown" [ref=e163]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 23:26:27Z" [ref=e164]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 23:26:27Z
+          - row [ref=e165]:
+            - cell [ref=e166]:
+              - paragraph [ref=e167]: History entry drilling-report-0345F2D2D1B677114ABFF892BF26D261B967108146FB794CD1C62057FFF6284B
+              - button "Correct observations from entry 2" [ref=e168] [cursor=pointer]
+              - paragraph [ref=e170]: "Source: Qualified observed site log 2"
+              - paragraph [ref=e171]: "Observed operations: Observed hole drilling progress"
+              - paragraph [ref=e172]: "Next period plan: Continue only after site clearance"
+          - row [ref=e173]:
+            - rowheader "3 · SUPERSEDED 2026-10-26 23:25:59Z to 2026-10-26 23:26:00Z" [ref=e174]: 3 · SUPERSEDED2026-10-26 23:25:59Z to 2026-10-26 23:26:00Z
+            - cell "100 to 125 m" [ref=e175]
+            - cell "Unknown / Unknown" [ref=e176]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 23:26:27Z" [ref=e177]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 23:26:27Z
+          - row [ref=e178]:
+            - cell [ref=e179]:
+              - paragraph [ref=e180]: History entry drilling-report-94AF98260C45269E28ABEC51A4A4A72CF00825DBC0F3BCDFBEAD2A30B56D9EA2
+              - paragraph [ref=e181]: Superseded by drilling-report-C693B3A3D2D235C91C305C64A9632FB98FB897909EFDED10515083A2D55FCCD7. These original observations are retained for audit.
+              - paragraph [ref=e182]: "Source: Qualified observed site log 3"
+              - paragraph [ref=e183]: "Observed operations: Observed hole drilling progress"
+              - paragraph [ref=e184]: "Next period plan: Continue only after site clearance"
+          - row [ref=e185]:
+            - rowheader "4 · CURRENT CORRECTION 2026-10-26 23:25:59Z to 2026-10-26 23:26:00Z" [ref=e186]: 4 · CURRENT CORRECTION2026-10-26 23:25:59Z to 2026-10-26 23:26:00Z
+            - cell "100 to 125 m" [ref=e187]
+            - cell "Unknown / Unknown" [ref=e188]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 23:26:27Z" [ref=e189]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 23:26:27Z
+          - row [ref=e190]:
+            - cell [ref=e191]:
+              - paragraph [ref=e192]: History entry drilling-report-C693B3A3D2D235C91C305C64A9632FB98FB897909EFDED10515083A2D55FCCD7
+              - paragraph [ref=e193]: Corrects entry 3 / drilling-report-94AF98260C45269E28ABEC51A4A4A72CF00825DBC0F3BCDFBEAD2A30B56D9EA2, revision 06D23980CBE608422EA54127315F2EFA157EE660201139F5F93D3961CC8BB5C9
+              - paragraph [ref=e194]: "Correction reason: Explicit controlled completion claim"
+              - button "Correct observations from entry 4" [ref=e195] [cursor=pointer]
+              - generic [ref=e197]:
+                - heading "Reported completion evidence" [level=3] [ref=e198]
+                - generic [ref=e199]: This is the recorder's report, pending independent acceptance. It does not establish accepted tests, close reporting responsibility or authorize production handover.
+                - paragraph [ref=e206]: Reported actual completion 2026-10-26 23:26:27Z UTC
+                - paragraph [ref=e207]: "Work reported complete: Controlled work reported complete pending independent review"
+                - table [ref=e210]:
+                  - caption [ref=e211]: Supporting tests as reported by the recorder
+                  - rowgroup [ref=e212]:
+                    - row [ref=e213]:
+                      - columnheader "Test / reference" [ref=e214]
+                      - columnheader "Reported UTC / result" [ref=e215]
+                      - columnheader "Provenance / result notes" [ref=e216]
+                  - rowgroup [ref=e217]:
+                    - row [ref=e218]:
+                      - rowheader "Reported site inspection Controlled completion certificate" [ref=e219]: Reported site inspectionControlled completion certificate
+                      - cell "2026-10-26 23:26:27Z UTC Fail (reported)" [ref=e220]: 2026-10-26 23:26:27Z UTCFail (reported)
+                      - cell "Controlled site evidence Requires independent acceptance" [ref=e221]: Controlled site evidenceRequires independent acceptance
+                - paragraph [ref=e222]: The recorder explicitly reviewed known outstanding work and defects.
+                - listbox "Reported outstanding work and defects" [ref=e223]:
+                  - option [ref=e224] [cursor=pointer]:
+                    - paragraph [ref=e226]: Independent inspection discrepancy remains unresolved
+              - paragraph [ref=e227]: "Source: Qualified observed site log 3"
+              - paragraph [ref=e228]: "Observed operations: Observed hole drilling progress"
+              - paragraph [ref=e229]: "Next period plan: Continue only after site clearance"
+      - paragraph [ref=e230]: 3 observed periods; 1 corrections; 4 immutable history entries.
+      - status [ref=e231]: Showing history entries 1 to 4 of 4 in this checked history.
+      - group "Observed report history pages" [ref=e232]:
+        - button "Previous reports" [disabled]
+        - button "Next reports" [disabled]
+      - paragraph [ref=e233]: "Current checked head: entry 4 · drilling-report-C693B3A3D2D235C91C305C64A9632FB98FB897909EFDED10515083A2D55FCCD7. New-report preparation uses this complete head, including when earlier reports are shown."
+      - button "Inspect current report basis" [ref=e234] [cursor=pointer]
+    - generic [ref=e87]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

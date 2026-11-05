@@ -1,0 +1,19 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@if(Review is {} review)
+{
+    var line=review.Purchase.Lines.Single(row=>row.PO_LINE_ITEM_ID==review.LineId);var proposal=PurchaseOrderInventoryLinkProposalProof.Require(review.Purchase.Company,line);var item=review.Target.Item;
+    <MudPaper Outlined="true" Class="pa-4 mt-3">
+        <MudText Typo="Typo.h6">Reviewed independent inventory-link decision</MudText>
+        <MudText>Order: @review.Purchase.Header.PURCHASE_ORDER_ID · Line: @review.LineId · Current reference: @(line.INVENTORY_ITEM_ID ?? "Unavailable")</MudText>
+        <MudText>Preparer: @proposal.Command.ActorUserId · Prepared UTC: @line.ROW_CHANGED_DATE?.ToString("O") · @proposal.Command.Reason</MudText>
+        <MudText>Proposed target: <MudLink Href='@("/warehouse/items/"+Uri.EscapeDataString(item.INVENTORY_ITEM_ID))'>@item.INVENTORY_ITEM_ID</MudLink></MudText>
+        <MudText>Warehouse: @item.WAREHOUSE_ID · Location: @item.LOCATION_ID · Recorded unit: @item.UNIT_OF_MEASURE</MudText>
+        <MudText>Recorded on-hand quantity: @(item.QUANTITY_ON_HAND?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable")</MudText>
+        <MudAlert Severity="Severity.Info">Approval applies this recorded reference. Rejection preserves the current reference. Both retain independent decision evidence; stock movement and financial posting remain unconfirmed.</MudAlert>
+        <MudText Typo="Typo.caption">Prepared order source: @review.Purchase.Revision · Target source: @review.Target.Revision · Decision review: @review.Revision</MudText>
+    </MudPaper>
+}
+@code { [Parameter] public PurchaseOrderInventoryLinkDecisionReview? Review {get;set;} }

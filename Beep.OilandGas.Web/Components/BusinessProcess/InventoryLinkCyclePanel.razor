@@ -1,0 +1,40 @@
+@using TheTechIdea.Data.OilGas
+@if(History is {} source)
+{
+    <MudPaper Class="pa-3 mt-3" Outlined="true">
+        <MudText Typo="Typo.h6">Verified inventory-link cycle history</MudText>
+        <MudText>As of @source.Purchase.RetrievedAtUtc UTC · Order revision: @source.Purchase.Revision</MudText>
+        <MudText>Complete retained cycles: @source.History.Entries.Count · History revision: @source.History.Revision</MudText>
+        @if(source.History.Entries.Count==0){<MudAlert Severity="Severity.Info">No archived cycles are recorded for this line.</MudAlert>}
+        @foreach(var entry in source.History.Entries)
+        {
+            var archived=PurchaseOrderInventoryLinkHistoryReview.RequireEntry(source.Purchase.Company,source.History.OrderId,source.History.LineId,entry);
+            var proposal=PurchaseOrderInventoryLinkProposalProof.Require(source.Purchase.Company,archived);
+            var prepared=archived.INVENTORY_LINK_DECISION_JSON is null?archived:PurchaseOrderInventoryLinkDecisionProof.Require(source.Purchase.Company,archived).Review.Purchase.Lines.Single(row=>row.PO_LINE_ITEM_ID==source.History.LineId);
+            <MudDivider Class="my-2" />
+            <MudText>Cycle @entry.SEQUENCE_NUMBER · Archived by @entry.ROW_CREATED_BY at @entry.ROW_CREATED_DATE UTC · Reason: @entry.REASON</MudText>
+            <MudText>Original preparer: @proposal.Command.ActorUserId · Prepared at @prepared.ROW_CHANGED_DATE UTC · Target: @proposal.Command.TargetItemId · Reason: @proposal.Command.Reason</MudText>
+            @if(archived.INVENTORY_LINK_DECISION_JSON is not null)
+            {
+                var decision=PurchaseOrderInventoryLinkDecisionProof.Require(source.Purchase.Company,archived);
+                <MudText>Archived independent outcome: @decision.Command.Decision · Reviewer: @decision.Command.ActorUserId · Decided at @archived.ROW_CHANGED_DATE UTC · Reason: @decision.Command.Reason</MudText>
+            }
+            else{<MudText>Archived preparation was pending; no independent decision is recorded.</MudText>}
+            <MudText>Archived reference: @(archived.INVENTORY_ITEM_ID ?? "Unavailable") · Original source revision: @entry.SOURCE_REVISION</MudText>
+        }
+    </MudPaper>
+}
+@if(Review is {} review)
+{
+    var line=review.Purchase.Lines.Single(row=>row.PO_LINE_ITEM_ID==review.LineId);
+    <MudPaper Class="pa-3 mt-3" Outlined="true">
+        <MudText Typo="Typo.h6">Reviewed inventory-link cycle</MudText>
+        <MudText>Explicit action: @review.Action · Line: @review.LineId · Current reference: @(line.INVENTORY_ITEM_ID ?? "Unavailable")</MudText>
+        <MudText>Order revision: @review.Purchase.Revision · Retained history revision: @review.History.Revision</MudText>
+        <MudAlert Severity="Severity.Info">Saving archives the original proposal and reviewer evidence, then clears active review evidence for a new cycle. The current reference is preserved. A new target requires a separate preparation and independent decision; stock movement remains unconfirmed.</MudAlert>
+    </MudPaper>
+}
+@code {
+    [Parameter] public PurchaseOrderInventoryLinkCycleResult? History {get;set;}
+    [Parameter] public PurchaseOrderInventoryLinkCycleReview? Review {get;set;}
+}

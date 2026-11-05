@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Switch other company' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:60559/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+### Snapshot
+- [Snapshot](output\playwright\353-assigned-incident-browser\artifacts\page-2026-10-29T10-01-47-859Z.yml)

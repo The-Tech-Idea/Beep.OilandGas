@@ -12,6 +12,7 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Data.OilGas;
 using Xunit;
 using Xunit.Abstractions;
+using Beep.OilandGas.ApiService.Tests.Infrastructure;
 
 namespace Beep.OilandGas.ApiService.Tests;
 
@@ -35,21 +36,22 @@ public class AssetApplicationAuthorizationTests(ITestOutputHelper output)
             new IdentityRoleClaim<string> { RoleId = "reader", ClaimType = "role", ClaimValue = "asset.write" });
         await db.SaveChangesAsync();
         var editor = new Mock<IDMEEditor>(MockBehavior.Strict);
-        var service = Create(editor.Object, new RepositoryApplicationAuthorizationReader(db));
+        var service = Create(editor.Object, new RepositoryApplicationAuthorizationReader(await TestCompanyModules.CreateAsync(db, user.Id)));
         Assert.Equal(new[] { "Reader" }, await service.GetUserRolesAsync(user.Id));
         Assert.True(await service.HasPermissionAsync(user.Id, "asset.read"));
         Assert.False(await service.HasPermissionAsync(user.Id, "ASSET.READ"));
         Assert.False(await service.HasPermissionAsync(user.Id, "asset.write"));
-        Assert.Empty(await service.GetUserRolesAsync("missing"));
-        Assert.False(await service.HasPermissionAsync("missing", "asset.read"));
+        await Refusals.ForbiddenAsync(() => service.GetUserRolesAsync("missing"));
+        await Refusals.ForbiddenAsync(() => service.HasPermissionAsync("missing", "asset.read"));
 
         user.IsActive = false;
         await db.SaveChangesAsync();
-        Assert.Empty(await service.GetUserRolesAsync(user.Id));
-        Assert.False(await service.HasPermissionAsync(user.Id, "asset.read"));
+        await Refusals.ForbiddenAsync(() => service.GetUserRolesAsync(user.Id));
+        await Refusals.ForbiddenAsync(() => service.HasPermissionAsync(user.Id, "asset.read"));
         user.IsActive = true;
         db.UserRoles.Remove(membership);
         await db.SaveChangesAsync();
+        service = Create(editor.Object, new RepositoryApplicationAuthorizationReader(await TestCompanyModules.CreateAsync(db, user.Id)));
         Assert.Empty(await service.GetUserRolesAsync(user.Id));
         Assert.False(await service.HasPermissionAsync(user.Id, "asset.read"));
         editor.VerifyNoOtherCalls();
@@ -82,6 +84,7 @@ public class AssetApplicationAuthorizationTests(ITestOutputHelper output)
 
     private static UserAssetAccessService Create(IDMEEditor editor, IApplicationAuthorizationReader reader) => new(editor,
         Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>(),
-        new PPDMMappingService(), reader, Mock.Of<IApplicationRolePermissionStore>(),
-        Mock.Of<TheTechIdea.Data.OilGas.IUserAssetAccessStore>(), () => throw new InvalidOperationException("Application roles must not resolve a module database."));
+        reader, Mock.Of<IApplicationRolePermissionStore>(),
+        Mock.Of<TheTechIdea.Data.OilGas.IUserAssetAccessStore>(), () => throw new InvalidOperationException("Application roles must not resolve a module database."),
+            _ => throw new InvalidOperationException("Application roles must not query asset rows."));
 }

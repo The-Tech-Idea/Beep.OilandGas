@@ -1,0 +1,91 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderMaterialCostState State
+@inject IWorkOrderServiceClient Orders
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Value recorded work-order material</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudTextField @bind-Value="_book" Label="Original company book" Required="true" Disabled="@State.Busy" />
+        <MudTextField @bind-Value="_afe" Label="Original independently approved AFE" Required="true" Disabled="@State.Busy" />
+        <MudTextField @bind-Value="_material" Label="Original recorded material identity" Required="true" Disabled="@State.Busy" />
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || !State.CanReview)">Review actual quantity and current approved budget</MudButton>
+        @if(_authorized && State.Review is {} review)
+        {
+            <MudText>Recorded material @review.Material.Quantity @review.Material.Unit · item @review.Material.ItemId · warehouse @review.Material.Warehouse · location @review.Material.Location</MudText>
+            <MudText>Actual UTC @review.Material.UsedAtUtc.ToString("O") · source @review.Material.UsageId</MudText>
+            <MudText>Approved budget @review.Budget.Original().BudgetAmount.ToString("N"+review.Budget.Current.Book.CurrencyDecimals) @review.Budget.Current.Book.FunctionalCurrency · recorded actuals @review.RecordedTotal().ToString("N"+review.Budget.Current.Book.CurrencyDecimals)</MudText>
+            <MudText>Explicit rounding @review.Budget.Current.Book.RoundingPolicy · decimals @review.Budget.Current.Book.CurrencyDecimals · compared UTC @review.ComparedAtUtc.ToString("O")</MudText>
+            @foreach(var blocker in review.Budget.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            @if(review.Costs.Any(row=>row.SourceKind=="WORK_ORDER_MATERIAL_USAGE" && row.SourceId==review.Material.UsageId)){<MudAlert Severity="Severity.Info">This original material source already has a recorded actual cost.</MudAlert>}
+            @if(State.CanRecord)
+            {
+                <MudNumericField T="decimal?" @bind-Value="_rate" Label="Explicit rate per recorded material unit" Required="true" Disabled="@State.Busy" />
+                <MudText>Rate unit @review.Material.Unit · recorded currency @review.Budget.Current.Book.FunctionalCurrency</MudText>
+                <MudTextField @bind-Value="_valued" Label="Actual valuation UTC (ISO timestamp ending Z)" Required="true" Disabled="@State.Busy" />
+                <MudTextField @bind-Value="_category" Label="Explicit cost category" Required="true" Disabled="@State.Busy" />
+                <MudTextField @bind-Value="_reason" Label="Rate and valuation source rationale" Lines="3" Required="true" Disabled="@State.Busy" />
+                <MudCheckBox @bind-Value="_confirm" Label="I confirm the recorded quantity, explicit rate, date and original approved currency" Disabled="@State.Busy" />
+                <MudButton OnClick="RecordAsync" Disabled="@(!_confirm || !State.CanRecord)" Color="Color.Primary">Retain original reference and record actual material cost</MudButton>
+            }
+        }
+        <MudTextField @bind-Value="_reference" Label="Original actual-cost intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy)">Read original valuation without re-costing</MudButton>
+        @if(_authorized && State.VisibleReference is {} id){<MudText>Retained original actual-cost reference @id</MudText>}
+        @if(_authorized && State.Receipt is {} result){<MudAlert Severity="Severity.Success">Recorded actual cost @result.Recorded.ACCOUNTING_COST_ID · amount @result.Recorded.AMOUNT.ToString("N"+result.Command.Review.Budget.Current.Book.CurrencyDecimals) @result.Recorded.CURRENCY_CODE · material source @result.Recorded.SOURCE_ID.</MudAlert>}
+        <MudAlert Severity="Severity.Info">The actual cost uses the exact recorded material quantity/unit and explicit rate in the approved book currency. An uncertain valuation uses its original source and reference. This records no stock movement, journal posting or return acceptance.</MudAlert>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    private string _attached="",_book="",_afe="",_material="",_valued="",_category="",_reason="",_reference="";
+    private decimal? _rate;
+    private bool _authorized,_confirm,_disposed;
+    private string? _error;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        var key=FieldId+"\n"+WorkOrderId;if(_attached!=key){Invalidate();_attached=key;}
+        var query=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
+        if(query.TryGetValue("materialCostBook",out var book) && book.Count==1)_book=book[0]??"";
+        if(query.TryGetValue("materialCostAfe",out var afe) && afe.Count==1)_afe=afe[0]??"";
+        if(query.TryGetValue("materialCostUsage",out var source) && source.Count==1)_material=source[0]??"";
+        if(query.TryGetValue("materialCostIntent",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        if(!string.IsNullOrEmpty(_book) && !string.IsNullOrEmpty(_afe) && !string.IsNullOrEmpty(_material))Attach();
+        try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+    }
+    private void Attach()=>State.Attach(new(new(new(WorkOrderId,FieldId,_book),_afe),_material));
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId ||
+            !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !selected.Permissions.Contains("Accounting.RecordWorkOrderActualCost",StringComparer.Ordinal) ||
+            !LeaseSummaryValidator.Identifier(WorkOrderId) || await Fields.GetCurrentFieldIdAsync()!=FieldId || snapshot!=Company.Snapshot)
+            throw new UnauthorizedAccessException("Current financial roles, original company/account/FIELD and actual-cost capability are required.");
+    }
+    private Task ReviewAsync()=>Run(async()=>{await Authority();Attach();await State.ReviewAsync(Orders);_rate=null;_valued="";_category="";_reason="";_confirm=false;},"reviewing original material and approved budget");
+    private Task Retain(Guid id){_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"materialCostBook",_book},{"materialCostAfe",_afe},{"materialCostUsage",_material},{"materialCostIntent",_reference}}),replace:true);return Task.CompletedTask;}
+    private Task RecordAsync()=>Run(async()=>
+    {
+        await Authority();if(!_confirm || _rate is not {} rate || State.Review is not {} review)throw new ArgumentException("Confirm an explicit rate and original actual material source.");
+        if(!DateTime.TryParseExact(_valued,new[]{"yyyy-MM-dd'T'HH:mm:ss'Z'","yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'"},System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal|System.Globalization.DateTimeStyles.AdjustToUniversal,out var utc))throw new ArgumentException("Enter an explicit ISO valuation UTC ending in Z.");
+        await State.RecordAsync(Orders,rate,review.Material.Unit,review.Budget.Current.Book.FunctionalCurrency,utc,_category,_reason,Retain);
+    },"recording original actual material valuation");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();Attach();if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original actual-cost intent reference.");await State.RecoverAsync(Orders,id,Retain);},"reading original actual-cost history");
+    private async Task Run(Func<Task> action,string operation){if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original actual-cost outcome is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}}
+    private void Invalidate(){State.Attach(null);_authorized=false;_book="";_afe="";_material="";_valued="";_category="";_reason="";_reference="";_rate=null;_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

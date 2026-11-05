@@ -269,7 +269,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
                     if (metadata != null && metadata.Count > 0)
                     {
                         _logger.LogInformation("Loaded {Count} tables from JSON file: {Path}", metadata.Count, _jsonMetadataPath);
-                        return metadata;
+                        return PermitApplicationNativeMetadata.AddTo(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(metadata))))));
                     }
                 }
 
@@ -278,14 +278,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
                 if (jsonMetadata != null && jsonMetadata.Count > 0)
                 {
                     _logger.LogInformation("Loaded {Count} tables from JSON (auto-detected)", jsonMetadata.Count);
-                    return jsonMetadata;
+                    return PermitApplicationNativeMetadata.AddTo(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(jsonMetadata))))));
                 }
 
                 // Fallback to generated class
                 _logger.LogInformation("JSON metadata not found, falling back to generated class");
                 var generatedMetadata = LoadFromGeneratedClass();
                 _logger.LogInformation("Loaded {Count} tables from generated class", generatedMetadata.Count);
-                return generatedMetadata;
+                return PermitApplicationNativeMetadata.AddTo(HseIncidentNativeMetadata.AddTo(WorkOrderFinancialMetadata.AddTo(WorkOrderMaterialMetadata.AddTo(ProductionInterventionNativeMetadata.AddTo(WorkOrderInspectionMetadata.AddTo(generatedMetadata))))));
             }
         }
 

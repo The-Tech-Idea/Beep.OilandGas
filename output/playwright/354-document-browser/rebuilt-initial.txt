@@ -1,0 +1,52 @@
+### Open tabs
+- 0: (current) [](http://127.0.0.1:64076/ppdm39/permits/detail?applicationId=draft)
+- 1: [Downloads](edge://downloads-hub/)
+### Page
+- Page URL: http://127.0.0.1:64076/ppdm39/permits/detail?applicationId=draft
+### Snapshot
+```yaml
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=f3e10]:
+      - button "Fixture author" [ref=f3e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=f3e13] [cursor=pointer]
+      - button "Fixture read only" [ref=f3e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=f3e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=f3e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=f3e21] [cursor=pointer]
+      - link "HSE landing" [ref=f3e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=f3e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=f3e27]:
+    - heading "Recorded permit application" [level=1] [ref=f3e28]
+    - group [ref=f3e29]:
+      - link "Permit applications" [ref=f3e30] [cursor=pointer]:
+        - /url: /ppdm39/permits
+      - button "Reload recorded application" [ref=f3e32] [cursor=pointer]
+    - paragraph [ref=f3e34]: Company company · FIELD Fixture FIELD A · application draft
+    - generic [ref=f3e35]: Read checked 2026-10-29 20:40:11Z. Source dates below are displayed as recorded; their time zones are not established here.
+    - generic [ref=f3e36]:
+      - heading "Application details" [level=2] [ref=f3e37]
+      - paragraph [ref=f3e38]: "Type: Drilling"
+      - paragraph [ref=f3e39]: "Authority: Other"
+      - paragraph [ref=f3e40]: "Applicant: Recorded applicant"
+      - paragraph [ref=f3e41]: "Status: Draft"
+      - paragraph [ref=f3e42]: "Decision: Not recorded"
+      - paragraph [ref=f3e43]: "Created: Not recorded · Submitted: Not recorded · Decision date: Not recorded"
+    - generic [ref=f3e44]:
+      - heading "Recorded status history" [level=2] [ref=f3e45]
+      - paragraph [ref=f3e46]: No status history was returned for this application.
+    - generic [ref=f3e47]:
+      - heading "Automated checker result" [level=2] [ref=f3e48]
+      - paragraph [ref=f3e49]: No automated checker result was returned.
+    - group [ref=f3e51]:
+      - heading "Reviewed permit workflow" [level=2] [ref=f3e52]
+      - paragraph [ref=f3e53]: Review the exact application before submission or an independent decision. The server rechecks current permissions and FIELD write authority.
+      - button "Read retained permit original" [ref=f3e54] [cursor=pointer]
+      - button "Review application for workflow" [ref=f3e56] [cursor=pointer]
+      - generic [ref=f3e58]: An internal workflow decision does not establish regulator clearance, legal compliance or permission to operate.
+```
+### Events
+- New console entries: .playwright-cli\console-2026-10-29T20-40-10-506Z.log#L2

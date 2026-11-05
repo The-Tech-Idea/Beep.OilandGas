@@ -1,10 +1,13 @@
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Models.Data.HSE;
 
 namespace Beep.OilandGas.Models.Core.Interfaces;
 
 public interface ICorrectiveActionService
 {
-    Task<string>       CreateCAPlanAsync(string incidentId, string userId);
+    Task<CAPlanResolution> CreateCAPlanAsync(string incidentId, CreateCAPlanSubmission submission, string userId);
+    Task<CAPlanCreationReview> ReviewCAPlanCreationAsync(string incidentId);
+    Task<CAPlanResolution> GetCAPlanAsync(string incidentId);
     Task<string>       AddCorrectiveActionAsync(string incidentId, AddCARequest request, string userId);
     Task               AssignResponsiblePersonAsync(string incidentId, int stepSeq, string baId, string userId);
     Task               SetDueDateAsync(string incidentId, int stepSeq, DateTime dueDate, string userId);

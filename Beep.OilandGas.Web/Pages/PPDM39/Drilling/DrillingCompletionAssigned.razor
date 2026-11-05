@@ -1,0 +1,51 @@
+@page "/drilling/completion-review/assigned"
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+@using TheTechIdea.Data.OilGas
+<PageTitle>Assigned completion review</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Assigned independent completion review</MudText>
+    <MudStack Row="true" Class="my-3"><MudButton Href="/tasks/inbox">Company inbox</MudButton><MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload assigned completion review</MudButton></MudStack>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming individual independent completion task" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(_state is not null){<DrillingCompletionDecisionPanel State="_state" />}
+    @if(_state is not null){<DrillingCompletionTestPanel State="_state" />}
+    @if(_state is not null){<DrillingCompletionAcceptancePanel State="_state" />}
+    @if(!string.IsNullOrWhiteSpace(ProcessId)){<MudButton Href="@("/drilling/completion-review/history?processId="+Uri.EscapeDataString(ProcessId))" Variant="Variant.Outlined">Open complete completion review history</MudButton>}
+    @if(Company.Selection is null){<MudAlert Severity="Severity.Info" role="status">Choose your company, then reopen the independent completion review from its inbox.</MudAlert>}
+    @if(_state?.Current is {} assigned)
+    {
+        var original=assigned.Original;var scope=assigned.Source.History.Execution.Basis.Scope();
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Your pending independent review task</MudText>
+            <MudText>Stage @assigned.StageNumber / @assigned.Original.Workflow.Stages.Count: @assigned.Stage().Definition.StepName</MudText>
+            <MudText>Company @scope.Company.TenantId / @scope.Company.BusinessAssociateId; reviewer @scope.ActorUserId; role @assigned.AssignedRole / @assigned.PersonaCode</MudText>
+            <MudText>FIELD @scope.FieldId; well @assigned.Source.History.Execution.Basis.Source.Basis.Well.Uwi; execution @assigned.Source.History.Execution.Recorded!.DRILLING_OPERATION_ID</MudText>
+            <MudText>Task @assigned.TaskId; original @assigned.InstanceId; sender @original.Scope().ActorUserId / @original.SenderRole / @original.SenderPersonaCode</MudText>
+            <MudText Class="development-draft-description">@original.Reason</MudText>
+            <MudText>Source claim @original.ClaimId; reported by @original.Source.ReportedCompletion!.RecorderUserId / @original.Source.ReportedCompletion.RecorderRole / @original.Source.ReportedCompletion.RecorderPersonaCode; recorded @original.Source.ReportedCompletion.RecordedAtUtc.ToString("u") UTC</MudText>
+            <MudText>Current history and individual task checked @assigned.CheckedAtUtc.ToString("u") UTC</MudText>
+            @if(!assigned.IsCurrentClaim){<MudAlert Severity="Severity.Warning">This original claim is historical or withdrawn in the current checked history. No current completion acceptance is established.</MudAlert>}
+            <DrillingCompletionEvidenceView Report="original.Source.ReportedCompletion!.Report" />
+            <MudAlert Severity="Severity.Info">Pending independent decision. This task does not close ongoing reporting responsibility, accept physical test results or authorize production handover.</MudAlert>
+            <MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(assigned.Source.History.Execution.Basis.ReviewInstanceId))" Variant="Variant.Outlined">Open current execution report history</MudButton>
+        </MudPaper>
+    }
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
+    private DrillingCompletionAssignedState? _state;private bool interactive,disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool first){if(!first)return Task.CompletedTask;interactive=true;return Reload();}
+    private Task Reload()=>_state!.LoadAsync(ProcessId);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

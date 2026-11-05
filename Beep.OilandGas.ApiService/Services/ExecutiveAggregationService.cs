@@ -1,88 +1,45 @@
-using System;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Core.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Repository;
+using Beep.OilandGas.Models.Core.Refusals;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using TheTechIdea.Data.OilGas;
+using System.Security.Claims;
 using PpdmEntities=Beep.OilandGas.PPDM39.Models;
-
-namespace Beep.OilandGas.ApiService.Services
+namespace Beep.OilandGas.ApiService.Services;
+public sealed class ExecutiveAggregationService(IDMEEditor editor,ICommonColumnHandler commonColumnHandler,
+    IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,CompanyModuleConnection company,
+    IPPDMRowAccessPolicy rowAccess)
 {
-    public class ExecutiveAggregationService
+    public async Task<ExecutivePortfolioReview> GetPortfolioAsync(ClaimsPrincipal user)
     {
-        private readonly IDMEEditor _editor;
-        private readonly ICommonColumnHandler _commonColumnHandler;
-        private readonly IPPDM39DefaultsRepository _defaults;
-        private readonly IPPDMMetadataRepository _metadata;
-        private readonly string _connectionName;
-        private readonly ILogger<ExecutiveAggregationService> _logger;
-
-        public ExecutiveAggregationService(IDMEEditor editor,ICommonColumnHandler commonColumnHandler,
-            IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,
-            string connectionName="PPDM39",ILogger<ExecutiveAggregationService>? logger=null)
+        var actor=user.ActingUserId();
+        async Task<RepositoryCompanyContext> Access()
         {
-            _editor = editor;
-            _commonColumnHandler = commonColumnHandler;
-            _defaults = defaults;
-            _metadata = metadata;
-            _connectionName = connectionName;
-            _logger = logger;
+            var current=await company.RefreshCompanyAsync();company.RequireActor(actor);
+            if(user.Identity?.IsAuthenticated!=true || !current.Roles.Any(user.IsInRole))throw RefusalException.Forbidden("Current selected company/account and standard app roles are required for executive evidence.");
+            return current;
         }
-
-        private PPDMGenericRepository GetRepo<T>(string t)=>new(_editor,_commonColumnHandler,_defaults,_metadata,typeof(T),_connectionName,t);
-
-        public async Task<ExecutiveKpi> GetExecutiveKpiAsync()
+        var original=await Access();var roles=original.Roles.Order(StringComparer.Ordinal).ToArray();var permissions=original.Permissions.Order(StringComparer.Ordinal).ToArray();
+        var binding=await company.ResolveAsync();var source=editor.GetDataSource(binding.ConnectionName)??throw RefusalException.Conflict("The original executive FIELD source is unavailable.");
+        async Task Guard()
         {
-            var kpi=new ExecutiveKpi();
-            // Production from PDEN_VOL_SUMMARY
-            var pdenRepo=GetRepo<PpdmEntities.PDEN_VOL_SUMMARY>("PDEN_VOL_SUMMARY");
-            var activeFilter=new AppFilter{FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"};
-            var monthStart=new DateTime(DateTime.UtcNow.Year,DateTime.UtcNow.Month,1);
-            // PDEN uses EFFECTIVE_DATE for production period tracking (no PRODUCTION_DATE column)
-            var pdenFilters=new List<AppFilter>{activeFilter,new(){FieldName="EFFECTIVE_DATE",Operator=">=",FilterValue=monthStart.ToString("yyyy-MM-dd")}};
-            var pdenEntities=(await pdenRepo.GetAsync(pdenFilters)).OfType<PpdmEntities.PDEN_VOL_SUMMARY>().ToList();
-            kpi.TotalProductionBoe=pdenEntities.Sum(e=>e.OIL_VOLUME+(e.GAS_VOLUME/6m));
-
-            // Previous month trend
-            var prevMonth=monthStart.AddMonths(-1);
-            pdenFilters[1]=new AppFilter{FieldName="EFFECTIVE_DATE",Operator=">=",FilterValue=prevMonth.ToString("yyyy-MM-dd")};
-            pdenFilters.Add(new AppFilter{FieldName="EFFECTIVE_DATE",Operator="<",FilterValue=monthStart.ToString("yyyy-MM-dd")});
-            var prevEntities=(await pdenRepo.GetAsync(pdenFilters)).OfType<PpdmEntities.PDEN_VOL_SUMMARY>().ToList();
-            decimal prevBoe=prevEntities.Sum(e=>e.OIL_VOLUME+(e.GAS_VOLUME/6m));
-            kpi.ProductionTrend=prevBoe>0?((kpi.TotalProductionBoe-prevBoe)/prevBoe)*100:0;
-
-            // Well counts
-            var wellRepo=GetRepo<PpdmEntities.WELL>("WELL");
-            var wells=(await wellRepo.GetAsync(new List<AppFilter>{activeFilter})).OfType<PpdmEntities.WELL>().ToList();
-            kpi.TotalWells=wells.Count;
-
-            // HSE incidents YTD
-            var hseRepo=GetRepo<PpdmEntities.HSE_INCIDENT>("HSE_INCIDENT");
-            var yearStart=new DateTime(DateTime.UtcNow.Year,1,1);
-            var hseFilters=new List<AppFilter>{activeFilter,new(){FieldName="INCIDENT_DATE",Operator=">=",FilterValue=yearStart.ToString("yyyy-MM-dd")}};
-            var incidents=(await hseRepo.GetAsync(hseFilters)).OfType<PpdmEntities.HSE_INCIDENT>().ToList();
-            kpi.TotalIncidentsYtd=incidents.Count;
-            return kpi;
+            var current=await Access();
+            if(!CompanyBackgroundScope.SameOwner(original,current) || !roles.SequenceEqual(current.Roles.Order(StringComparer.Ordinal)) || !permissions.SequenceEqual(current.Permissions.Order(StringComparer.Ordinal)))throw RefusalException.Forbidden("Executive company/account or app authority changed during the read.");
+            if(await company.ResolveAsync()!=binding || !ReferenceEquals(source,editor.GetDataSource(binding.ConnectionName)))throw RefusalException.Conflict("Executive portfolio database/source binding changed during the read.");
         }
-
-        public async Task<List<AssetPerformance>> GetAssetPerformanceAsync()
+        await Guard();
+        var repo=new PPDMGenericRepository(editor,commonColumnHandler,defaults,metadata,typeof(PpdmEntities.FIELD),binding.ConnectionName,"FIELD",rowAccess:rowAccess);
+        var fields=(await repo.GetAsync([new AppFilter{FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}])).ToArray();await Guard();
+        foreach(var field in fields)
         {
-            var r=new List<AssetPerformance>();
-            var repo=GetRepo<PpdmEntities.FIELD>("FIELD");
-            var fields=(await repo.GetAsync(new List<AppFilter>{new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}})).OfType<PpdmEntities.FIELD>().ToList();
-            foreach(var f in fields)
-                r.Add(new AssetPerformance{FieldId=f.FIELD_ID??"N/A",FieldName=f.FIELD_NAME??f.FIELD_ID??"Unknown"});
-            return r.OrderByDescending(a=>a.FieldName).ToList();
+            if(!AssetAccessLevelChecks.Meets(await rowAccess.GetEffectiveAccessLevelAsync(typeof(PpdmEntities.FIELD),"FIELD",field),"READ"))throw RefusalException.Forbidden("Current FIELD read access changed before the executive evidence was returned.");
+            await Guard();
         }
+        var result=ExecutivePortfolioReviews.Create(fields,original.Scope,actor,DateTimeOffset.UtcNow);await Guard();return result;
     }
-
-    public class ExecutiveKpi{public decimal TotalProductionBoe{get;set;}public decimal ProductionTrend{get;set;}public int TotalWells{get;set;}public int ActiveWells{get;set;}public int Tier1Events{get;set;}public int TotalIncidentsYtd{get;set;}}
-    public class AssetPerformance{public string FieldId{get;set;}="";public string FieldName{get;set;}="";public string LifecyclePhase{get;set;}="";public int ActiveWells{get;set;}}
 }

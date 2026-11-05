@@ -1,0 +1,9 @@
+{
+  "state": "PENDING_CLOSE_OUT",
+  "attempts": 0,
+  "writes": 0,
+  "sourceReads": 1,
+  "incidentReads": 5,
+  "genericActionReads": 0,
+  "recorded": false
+}

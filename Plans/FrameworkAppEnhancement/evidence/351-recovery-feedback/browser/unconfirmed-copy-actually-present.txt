@@ -1,0 +1,11 @@
+### Result
+[
+  {
+    "kind": "drilling-report",
+    "characters": 101787
+  }
+]
+### Ran Playwright code
+```js
+await page.evaluate('() => Object.entries(sessionStorage).filter(([key])=>key.endsWith(".drilling-report")).map(([key,value])=>({kind:key.split(".").at(-1),characters:value.length}))');
+```

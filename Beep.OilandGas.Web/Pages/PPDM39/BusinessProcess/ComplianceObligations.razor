@@ -1,173 +1,87 @@
 @page "/ppdm39/compliance/obligations"
-@inject ApiClient ApiClient
-@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
-@inject ILifeCycleService LifeCycleService
-@inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IComplianceServiceClient ComplianceClient
+@inject ILogger<ComplianceObligations> Logger
 
-<PageTitle>Compliance Obligations</PageTitle>
-
+<PageTitle>Recorded compliance obligations</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-
-    @* ── Header ──────────────────────────────────────────────────────── *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Track Compliance Obligations</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Regulatory obligations calendar and overdue alerts</MudText>
-        </MudStack>
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.PostAdd"
-                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance/report")'>
-            Submit Report
-        </MudButton>
+    <MudText Typo="Typo.h5" HtmlTag="h1">Recorded FIELD obligations</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">Review obligation records explicitly linked to the selected FIELD.</MudText>
+    <MudStack Row="true" Spacing="2" Class="mb-3">
+        <MudButton OnClick="LoadAsync" Disabled="@_loading" Variant="Variant.Outlined">Refresh records</MudButton>
+        <MudButton Href="/ppdm39/compliance/obligations/new" Variant="Variant.Outlined">Record a FIELD obligation</MudButton>
+        <MudButton Href="/ppdm39/compliance/report" Variant="Variant.Outlined">Open report workspace</MudButton>
     </MudStack>
-
-    @* ── Alert: overdue count ────────────────────────────────────────── *@
-    @if (_overdueCount > 0)
+    <MudAlert Severity="Severity.Info" Class="mb-3">These are recorded PPDM facts. Critical dates, fulfilled indicators and component types are shown as recorded; they are not a determination of regulatory deadlines, legal status or jurisdiction.</MudAlert>
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else if (_review is null) { <MudAlert Severity="Severity.Warning">@_message</MudAlert> }
+    else
     {
-        <MudAlert Severity="Severity.Error" Class="mb-4" Icon="@Icons.Material.Filled.Error">
-            <MudText Typo="Typo.body2"><strong>@_overdueCount obligation(s) are overdue.</strong> Immediate action required.</MudText>
-        </MudAlert>
+        <MudText Class="mb-3">@_fieldName · @_review.Obligations.Count recorded obligation(s)</MudText>
+        @if (_review.Obligations.Count == 0) { <MudText>No active FIELD-linked obligation records were returned.</MudText> }
+        else
+        {
+            <MudTextField @bind-Value="_search" Label="Search recorded ID, type or description" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-3" />
+            @if (!FilteredObligations.Any()) { <MudText>No recorded obligations match the search.</MudText> }
+            <MudExpansionPanels MultiExpansion="true">
+                @foreach (var row in FilteredObligations)
+                {
+                    <MudExpansionPanel @key="(row.ObligationId, row.ObligationSequence)">
+                        <TitleContent><MudText>@row.ObligationId / @row.ObligationSequence · @(row.ObligationType ?? "Type not recorded")</MudText></TitleContent>
+                        <ChildContent>
+                            <MudText>Description: @(row.Description ?? "Not recorded")</MudText>
+                            <MudText>Recorded critical date: @(row.CriticalDate?.ToString("yyyy-MM-dd") ?? "Not recorded")</MudText>
+                            <MudText>Recorded fulfilled indicator: @(row.FulfilledIndicator ?? "Not recorded")</MudText>
+                            <MudText>Recorded fulfilled date: @(row.FulfilledDate?.ToString("yyyy-MM-dd") ?? "Not recorded")</MudText>
+                            <MudTable T="RecordedObligationComponent" Items="@row.Components" Dense="true">
+                                <HeaderContent><MudTh>Component</MudTh><MudTh>Type</MudTh><MudTh>Critical date</MudTh><MudTh>Fulfilled indicator</MudTh><MudTh>Fulfilled date</MudTh><MudTh>Description</MudTh></HeaderContent>
+                                <RowTemplate><MudTd>@context.Observation</MudTd><MudTd>@context.ComponentType</MudTd><MudTd>@context.CriticalDate?.ToString("yyyy-MM-dd")</MudTd><MudTd>@context.FulfilledIndicator</MudTd><MudTd>@context.FulfilledDate?.ToString("yyyy-MM-dd")</MudTd><MudTd>@context.Description</MudTd></RowTemplate>
+                            </MudTable>
+                        </ChildContent>
+                    </MudExpansionPanel>
+                }
+            </MudExpansionPanels>
+        }
     }
-
-    <MudGrid Spacing="3">
-
-        @* ── Due within 30 days ───────────────────────────────────────── *@
-        <MudItem xs="12" md="5">
-            <MudCard Elevation="2" Class="h-100">
-                <MudCardHeader>
-                    <CardHeaderAvatar>
-                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Warning" />
-                    </CardHeaderAvatar>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.subtitle1">Due Within 30 Days</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <ObligationCalendar Items="@_dueSoon" />
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-
-        @* ── All obligations table ────────────────────────────────────── *@
-        <MudItem xs="12" md="7">
-            <MudCard Elevation="2">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.subtitle1">All Obligations</MudText>
-                    </CardHeaderContent>
-                    <CardHeaderActions>
-                        <JurisdictionFilterChips @bind-SelectedJurisdiction="_jurisdiction" />
-                    </CardHeaderActions>
-                </MudCardHeader>
-                <MudCardContent Class="pa-0">
-                    <MudDataGrid T="ObligationRow"
-                                 Items="@FilteredObligations"
-                                 Dense="true"
-                                 Hover="true"
-                                 Striped="true"
-                                 Sortable="true">
-                        <Columns>
-                            <PropertyColumn Property="o => o.ObligationType"  Title="Type" />
-                            <PropertyColumn Property="o => o.JurisdictionTag" Title="Jurisdiction" />
-                            <PropertyColumn Property="o => o.DueDate"         Title="Due"    Format="dd-MMM-yy" />
-                            <TemplateColumn Title="Days Left" Sortable="false">
-                                <CellTemplate>
-                                    @{
-                                        var days = context.Item.DaysUntilDue;
-                                        var color = days < 0 ? Color.Error : days <= 14 ? Color.Warning : Color.Success;
-                                    }
-                                    <MudChip T="string" Size="Size.Small" Color="@color">
-                                        @(days < 0 ? $"{Math.Abs(days)}d OD" : $"{days}d")
-                                    </MudChip>
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <TemplateColumn Title="Status" Sortable="false">
-                                <CellTemplate>
-                                    <StatusBadge Status="@context.Item.Status" />
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <PropertyColumn Property="o => o.AssignedTo"      Title="Assigned To" />
-                        </Columns>
-                        <PagerContent>
-                            <MudDataGridPager T="ObligationRow" />
-                        </PagerContent>
-                    </MudDataGrid>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-
-    </MudGrid>
-
 </MudContainer>
-
-@using Beep.OilandGas.Models.Data.Compliance
-@using Beep.OilandGas.Models.Data
-@using Beep.OilandGas.Models.Data.Process
-
 @code {
-    private string _fieldName = string.Empty;
-    private string _jurisdiction = "ALL";
-    private int    _overdueCount = 0;
-
-    private List<ObligationRow>            _obligations = new();
-    private List<ComplianceObligationSummary> _dueSoon  = new();
-
-    private IEnumerable<ObligationRow> FilteredObligations => _obligations.Where(o =>
-        _jurisdiction == "ALL" || o.JurisdictionTag == _jurisdiction);
-
-    protected override async Task OnInitializedAsync()
+    private FieldObligationSourceReview? _review;
+    private string _fieldName = "", _message = "Choose a company and FIELD, then load obligations.";
+    private string _search = "";
+    private IEnumerable<RecordedFieldObligation> FilteredObligations => _review?.Obligations.Where(row => string.IsNullOrWhiteSpace(_search) || row.ObligationId.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase) || (row.ObligationType?.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false) || (row.Description?.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)) ?? [];
+    private static bool ValidObservation(decimal value) => value >= 0 && decimal.Truncate(value) == value;
+    private bool _loading, _disposed;
+    private long _generation;
+    protected override async Task OnInitializedAsync() { Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; await LoadAsync(); }
+    private async Task LoadAsync()
     {
+        _review = null; _fieldName = ""; _loading = true; var generation = ++_generation; var selected = Company.Snapshot;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot;
         try
         {
-            var summaryTask = LifeCycleService.GetFieldLifecycleSummaryAsync();
-            var obligationsTask = ComplianceClient.GetAllObligationsAsync(DateTime.Today.Year);
-            var upcomingTask = ComplianceClient.GetUpcomingObligationsAsync(30);
-
-            await Task.WhenAll(summaryTask, obligationsTask, upcomingTask);
-
-            _fieldName = summaryTask.Result?.FieldName ?? _fieldName;
-
-            var obligations = obligationsTask.Result;
-            if (obligations.Count > 0)
-            {
-                _obligations = obligations.Select(o => new ObligationRow(
-                    o.ObligationId,
-                    o.ObligType,
-                    o.Jurisdiction,
-                    o.DueDate,
-                    o.Status,
-                    string.Empty,
-                    o.DaysUntilDue
-                )).ToList();
-
-                _overdueCount = _obligations.Count(o => o.DaysUntilDue < 0);
-                _dueSoon = upcomingTask.Result.Select(o => new ComplianceObligationSummary
-                {
-                    ObligationId = o.ObligationId,
-                    ObligationType = o.ObligType,
-                    JurisdictionTag = o.Jurisdiction,
-                    DueDate = o.DueDate,
-                    Status = o.Status,
-                    AssignedTo = string.Empty,
-                    DaysUntilDue = o.DaysUntilDue
-                }).ToList();
-            }
-            else
-            {
-                _obligations = new();
-                _overdueCount = 0;
-                _dueSoon = new();
-            }
+            if (selected.Selection is null) { _message = "Choose a company and FIELD, then load obligations."; return; }
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, selected.Selection.Scope, selected.Selection.UserId);
+            if (!before.SelectionAvailable) { _message = "Choose an available FIELD, then load obligations."; return; }
+            var source = await ComplianceClient.GetRecordedFieldObligationsAsync(); if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, selected.Selection.Scope, selected.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext || source is null || source.Context != before.SelectionContext || source.Obligations is null ||
+                source.Obligations.Any(row => row is null || !LeaseSummaryValidator.Identifier(row.ObligationId) || !ValidObservation(row.ObligationSequence) || row.Components is null || row.Components.Count == 0 || row.Components.Any(link => link is null || !ValidObservation(link.Observation)) || row.Components.Select(link => link.Observation).Distinct().Count() != row.Components.Count) ||
+                source.Obligations.Select(row => (row.ObligationId, row.ObligationSequence)).Distinct().Count() != source.Obligations.Count)
+                throw new InvalidOperationException("The recorded obligation evidence or selected FIELD could not be confirmed.");
+            _review = source; _fieldName = string.IsNullOrWhiteSpace(before.FieldName) ? before.FieldId : before.FieldName;
         }
-        catch
-        {
-            Snackbar.Add("Could not load compliance obligations.", Severity.Warning);
-        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Could not confirm FIELD obligation evidence"); _message = "Obligations could not be confirmed for the current company and FIELD."; } }
+        finally { if (Current()) _loading = false; }
     }
-
-    private record ObligationRow(
-        string ObligationId, string ObligationType, string JurisdictionTag,
-        DateTime DueDate, string Status, string AssignedTo, int DaysUntilDue);
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged() { ++_generation; _review = null; _loading = false; _fieldName = ""; _search = ""; _message = "Company or FIELD changed. Refresh obligations for the current selection."; if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }
 }

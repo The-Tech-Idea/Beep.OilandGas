@@ -1,0 +1,23 @@
+# Implementation 337: Development well evidence screen
+
+2026-10-25. Recorded-evidence stage implemented; complete design workflow remains open under CA-22/23 and FG-52. Extends [the engineering feature](Feature-07-Asset-Delivery-and-Interventions.md), [the drilling persona](Persona-07-Exploration-Drilling-and-Development.md), [landing owner 107](Implementation-107-Company-Persona-Landing-Queues.md) and [the development data boundary](Implementation-60-Company-Development-Request-and-Failure-Boundary.md). The master tracker retains the whole plan.
+
+## Existing owners and observed gap
+
+The existing `/development/well-design` list/detail/new routes use DevelopmentServiceClient -> DevelopmentController -> PPDMDevelopmentService -> company-aware PPDM repository/WELL. The prior page mapped FINAL_TD into an AFE money column, guessed Producer/DRAFT/Vertical, presented unsupported design/casing/financial content and changed local status for approval/spud/TD/completion without a persistent command. Rig assignment currently writes `STATUS_TYPE = RIG:<name>` in the existing backend; this is not canonical rig/design evidence and must be repaired under its actual owner before promotion. These are observed source findings, not production data observations.
+
+## Delivery and acceptance
+
+1. Replace the page's invented outcomes with a functioning recorded development well list -> exact well detail, current company/FIELD context, original source units and recorded dates. Preserve existing route ownership; no duplicate dashboard or domain model.
+2. Use current IFieldSelectionContext reviews before and after the existing API read. Assert the reviewed FIELD in the request query so the actual API's RequireCurrentFieldAccess filter independently rejects a different active FIELD. Validate active development membership, exact UWI, duplicate identities and unchanged company/account/database/preference. Clear earlier evidence on changes, failures, newer loads and disposal.
+3. Keep unavailable design approval/AFE/rig authoring explicit and retain the existing assigned-work entry point. No local status mutation or false saved/approved/completed acknowledgement. Null list transport is an error, while a confirmed empty population remains a distinct result.
+4. Focused checks compile the actual parent, state and typed client; cover list/detail, empty/failure, foreign/ambiguous/inactive source identities, company/FIELD/preference changes, units/date fidelity, encoded opaque identifiers and no unsupported writes. Test standard auth/current backend authority separately from static rendering.
+5. Continue the actual design/program -> independent technical approval -> approved AFE -> drilling progress -> construction/operations handover. Canonical design versions, persistence, state transitions and rig relationships belong to the existing DevelopmentPlanning/development/native owners and Data-owned shared contracts, using Beep MigrationManager for business schema. Do not reuse WELL status or FIELD_VERSION/WELL_ACTIVITY as a surrogate approval/design ledger.
+
+## Verification
+
+**223 focused checks passed**, zero failures/skips, 26.9394 seconds. This includes **35 new development cases**, of which **eight render the actual WellDesign parent**, plus the 188 engineering/inbox/maintenance/executive/HTTP regressions from the prior app checkpoint. The initial gate passed 27 in 3.5703 seconds; the final gate adds route conflicts, reserved UWI and delayed/newer-load/disposal/account-review cases. [Retained logs and source/runtime hashes](evidence/337-development-well-evidence/observed-evidence.json).
+
+The actual typed client asserts the reviewed FIELD query on list and detail; null list transport refuses rather than becoming an empty population. The actual list -> detail uses an encoded `wellUwi` query so UWI `new`, slash, percent and Arabic text remain source identities. The subsequent user direction removes legacy/compatibility support: the path-ID route has been removed, the development dashboard caller now uses the canonical wellUwi query, and an authoring-route/query conflict refuses before a source call. Current verification is recorded under [owner 338](Implementation-338-Company-Development-Draft-Authoring.md). The actual company/FIELD API filter and native development owner remain unchanged and are source-inspected here; this run does not compile or execute their registered development HTTP chain. Their earlier focused evidence stays with owner 60.
+
+Full solution, browser/keyboard/RTL/responsive, live OIDC/role catalog, real-provider and complete design/AFE/execution/handover evidence remain open. No commit or push until the full plan is finished, as requested.

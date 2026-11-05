@@ -1,0 +1,91 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject IAccountingServiceClient Accounting
+@inject InventoryWorkspaceState Workspace
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6">Current FIELD material reservations</MudText>
+    <MudText>Recorded requirements for work orders you can currently read. Counts describe records; quantities retain each original unit.</MudText>
+    <MudButton OnClick="ReviewAsync" Disabled="@(_busy || !CanRead)" Color="Color.Primary">Review current FIELD reservations</MudButton>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing current FIELD reservations" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(Workspace.MaterialReservations is {} queue)
+    {
+        <MudText>FIELD: @queue.Context.FieldId · Compared UTC: @queue.ComparedAtUtc.ToString("O")</MudText>
+        @if(LocalTime(queue, queue.ComparedAtUtc) is { } comparedLocal)
+        { <MudText Typo="Typo.caption">Compared in company time zone: @comparedLocal</MudText> }
+        <MudStack Row="true" Wrap="Wrap.Wrap">
+            <MudButton OnClick="@(()=>Workspace.FilterReservations(null))">All (@queue.Count())</MudButton>
+            @foreach(var status in Enum.GetValues<CompanyMaterialReservationStatus>())
+            {<MudButton OnClick="@(()=>Workspace.FilterReservations(status))">@status (@queue.Count(status))</MudButton>}
+        </MudStack>
+        @if(Workspace.VisibleReservations?.Count==0){<MudText>No recorded reservations match this current authorized selection.</MudText>}
+        @foreach(var entry in Workspace.VisibleReservations ?? [])
+        {
+            var row=entry.Reservation;
+            <MudPaper Outlined="true" Class="pa-3 my-2">
+                <MudText>@entry.StatusAt(queue.ComparedAtUtc) · Order: @row.Task.WorkOrderId · Item: @row.ItemId</MudText>
+                <MudText>Original reservation: @row.Quantity @row.Unit · Warehouse: @row.Warehouse · Location: @row.Location</MudText>
+                @if(entry.ConsumedQuantity is {} consumed){<MudText>Recorded physical use: @consumed @row.Unit</MudText>}
+                else{<MudText>Recorded physical use: unavailable in this queue evidence</MudText>}
+                @if(entry.RemainingReservedAt(queue.ComparedAtUtc) is {} remaining){<MudText>Remaining reserved: @remaining @row.Unit</MudText>}
+                else{<MudText>Remaining reserved: unconfirmed</MudText>}
+                <MudText>Valid UTC: @row.ValidFromUtc.ToString("O") to @row.ValidToUtc.ToString("O") · Reserved by: @row.ReservedBy</MudText>
+                @if(LocalTime(queue, row.ValidFromUtc) is { } validFrom && LocalTime(queue, row.ValidToUtc) is { } validTo)
+                { <MudText Typo="Typo.caption">Valid in company time zone: @validFrom to @validTo</MudText> }
+                @if(entry.Release is {} release)
+                {
+                    <MudText>Full release UTC: @release.ReleasedAtUtc.ToString("O")</MudText>
+                    @if(LocalTime(queue, release.ReleasedAtUtc) is { } releasedLocal)
+                    { <MudText Typo="Typo.caption">Released in company time zone: @releasedLocal</MudText> }
+                }
+                <MudButton Href="@("/warehouse/items/"+Uri.EscapeDataString(row.ItemId))">Recorded item evidence</MudButton>
+                <MudButton Href="@("/ppdm39/workorder/detail?workOrderId="+Uri.EscapeDataString(row.Task.WorkOrderId))">Original work order</MudButton>
+                <MudButton Href="@ProcessRoute(row)">Original workflow</MudButton>
+            </MudPaper>
+        }
+        <MudText Typo="Typo.caption">Source revision: @queue.Revision</MudText>
+    }
+</MudPaper>
+@code {
+    [CascadingParameter] public CompanyEnvironmentDisplay? CompanyEnvironment { get; set; }
+    private bool _busy,_disposed;
+    private long _version;
+    private string? _error;
+    private string? LocalTime(CompanyMaterialReservationQueue queue, DateTime value) =>
+        CompanyEnvironment?.Matches(Company) == true && queue.Context.Company == Company.Selection?.Scope && queue.Context.ActorUserId == Company.Selection?.UserId
+            ? CompanyEnvironment.LocalTime(value) : null;
+    private bool CanRead=>Company.Selection?.Permissions.Contains("Inventory.View",StringComparer.Ordinal)==true;
+    private string ProcessRoute(CompanyWorkOrderMaterialReservationFacts row)=>"/ppdm39/process/instances/"+Uri.EscapeDataString(row.Task.InstanceId)+(Company.Selection is {} selected && selected.UserId==row.ReservedBy && selected.Permissions.Contains("Inventory.ReserveWorkOrderMaterial",StringComparer.Ordinal)?"?materialAllocationId="+row.IntentId.ToString("D"):"");
+    protected override void OnInitialized(){Company.Changed+=Clear;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    private async Task ReviewAsync()
+    {
+        if(_busy || _disposed)return;Clear();_busy=true;var version=_version;var snapshot=Company.Snapshot;
+        try
+        {
+            var field=await Fields.GetCurrentFieldIdAsync();var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(snapshot.Selection is not {} selected || string.IsNullOrWhiteSpace(field) || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !CanRead || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Select the current FIELD with the resolved company account, standard app roles and Inventory.View.");
+            await Workspace.LoadMaterialReservationsAsync(field,async originalField=>
+            {
+                var result=await Accounting.GetCompanyMaterialReservationsAsync(originalField);
+                var closing=(await Authentication.GetAuthenticationStateAsync()).User;
+                if(_disposed || version!=_version || snapshot!=Company.Snapshot || await Fields.GetCurrentFieldIdAsync()!=originalField || closing.Identity?.IsAuthenticated!=true || closing.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(closing.IsInRole))throw new UnauthorizedAccessException("Original FIELD/account/role changed before reservation evidence could be displayed.");
+                return result;
+            });
+            user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;
+            if(await Fields.GetCurrentFieldIdAsync()!=field || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole))throw new UnauthorizedAccessException("Original FIELD/account/role changed during the reservation review.");
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot){Workspace.ClearReservations();_error=Calls.Explain(error,"reading FIELD material reservations","Complete authorized reservation evidence could not be confirmed");}}
+        finally{_busy=false;}
+    }
+    private void Clear(){_version++;Workspace.ClearReservations();_error=null;if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string _) => Clear();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Clear();
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Clear;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Clear();}
+}

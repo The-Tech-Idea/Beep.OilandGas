@@ -1,107 +1,119 @@
 @page "/ppdm39/permits/new"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.PermitsAndApplications
 @using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
 @inject IPermitServiceClient PermitClient
-@inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
+@inject IPermitApplicationIntentStore Originals
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@inject ILogger<NewPermitApplication> Logger
 
-<PageTitle>New Permit Application</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
-               OnClick="NavigateBack">
-        Back to Permits
-    </MudButton>
-    <MudText Typo="Typo.h5" Class="ml-2">New Permit Application</MudText>
-</MudStack>
-
-<MudPaper Elevation="2" Class="pa-4">
-    <MudForm @ref="_form" Model="_request">
-        <MudGrid Spacing="4">
-            <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_request.ApplicationType" Label="Application Type" Required="true"
-                           HelperText="Select the type of permit application">
-                    <MudSelectItem Value="@("Drilling")">Drilling Permit</MudSelectItem>
-                    <MudSelectItem Value="@("Environmental")">Environmental Permit</MudSelectItem>
-                    <MudSelectItem Value="@("Injection")">Injection Permit</MudSelectItem>
-                    <MudSelectItem Value="@("Facility")">Facility Permit</MudSelectItem>
-                    <MudSelectItem Value="@("Pipeline")">Pipeline Permit</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_request.RegulatoryAuthority" Label="Regulatory Authority" Required="true"
-                           HelperText="Select the regulatory authority">
-                    <MudSelectItem Value="@("RRC")">Railroad Commission (RRC)</MudSelectItem>
-                    <MudSelectItem Value="@("BSEE")">Bureau of Safety and Environmental Enforcement (BSEE)</MudSelectItem>
-                    <MudSelectItem Value="@("BOEM")">Bureau of Ocean Energy Management (BOEM)</MudSelectItem>
-                    <MudSelectItem Value="@("AER")">Alberta Energy Regulator (AER)</MudSelectItem>
-                    <MudSelectItem Value="@("BCER")">British Columbia Energy Regulator (BCER)</MudSelectItem>
-                    <MudSelectItem Value="@("TCEQ")">Texas Commission on Environmental Quality (TCEQ)</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField T="string" @bind-Value="_request.ApplicantName" Label="Applicant Name" Required="true"
-                              HelperText="Name of the applicant or company" />
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField T="string" @bind-Value="_request.WellId" Label="Well ID (Optional)"
-                              HelperText="Associated well identifier" />
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField T="string" @bind-Value="_request.FacilityId" Label="Facility ID (Optional)"
-                              HelperText="Associated facility identifier" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField T="string" @bind-Value="_request.Description" Label="Description" Lines="4"
-                              HelperText="Detailed description of the permit application" />
-            </MudItem>
-        </MudGrid>
-
-        <MudStack Row="true" Class="mt-4" Justify="Justify.FlexEnd">
-            <MudButton Variant="Variant.Text" OnClick="NavigateBack">Cancel</MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="@_submitting">
-                @(_submitting ? "Creating..." : "Create Application")
-            </MudButton>
+<PageTitle>New permit application</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4 permit-workflow">
+    <MudText Typo="Typo.h5" HtmlTag="h1">New permit application</MudText>
+    <MudText>Review the explicit draft and linked company resources before retaining one creation original.</MudText>
+    @if(!string.IsNullOrEmpty(_message)){<MudAlert Severity="Severity.Warning" Class="my-3">@_message</MudAlert>}
+    <MudButton OnClick="ReadOriginal" Disabled="@_state.Busy" Variant="Variant.Outlined">Read retained creation original</MudButton>
+    @if(_state.HasPending)
+    {
+        <MudAlert Severity="Severity.Warning">@_state.OriginalTitle · original @_state.PendingReference</MudAlert>
+        <MudText>@_state.OriginalExplanation</MudText>
+        @if(_state.VisibleOriginal is {} original)
+        {
+            var proposed=original.Review.ReadApplication();
+            <MudText>Proposed application @proposed.PERMIT_APPLICATION_ID · FIELD @proposed.FIELD_ID · applicant @proposed.APPLICANT_ID</MudText>
+            <MudText>Country @proposed.COUNTRY · region @proposed.STATE_PROVINCE · authority @proposed.REGULATORY_AUTHORITY</MudText>
+            <MudText>Well @(proposed.WELL_ID??"None") · facility @(proposed.FACILITY_ID??"None") · type @(proposed.FACILITY_TYPE??"None")</MudText>
+            <MudText>Original reason: @original.Reason</MudText>
+        }
+        <MudStack Row="true" Wrap="Wrap.Wrap">
+            <MudButton OnClick="Recover" Disabled="@(!_state.CanRecover)">Recover recorded creation</MudButton>
+            <MudButton OnClick="Resend" Disabled="@(!_state.CanResend)">Resend the same creation original</MudButton>
         </MudStack>
-    </MudForm>
-</MudPaper>
-
+        @if(_state.AbsenceObserved){<MudText role="status">No receipt was observed. An earlier request could still commit; keep this original and use only the same intent.</MudText>}
+    }
+    else if(_state.Ready && _state.Outcome is null)
+    {
+        <MudStack Spacing="3" Class="my-3">
+            <MudSelect T="string" @bind-Value="_type" Label="Application type" Required="true" Disabled="@(!_state.CanReviewCreation)">@foreach(var value in Enum.GetNames<PermitApplicationType>()){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}</MudSelect>
+            <MudSelect T="string" @bind-Value="_country" Label="Country" Required="true" Disabled="@(!_state.CanReviewCreation)">@foreach(var value in Enum.GetNames<Country>().Where(x=>x!=nameof(Country.Other))){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}</MudSelect>
+            <MudSelect T="string" @bind-Value="_region" Label="State or region" Required="true" Disabled="@(!_state.CanReviewCreation)">@foreach(var value in Enum.GetNames<StateProvince>()){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}</MudSelect>
+            <MudSelect T="string" @bind-Value="_authority" Label="Recorded authority" Required="true" Disabled="@(!_state.CanReviewCreation)">@foreach(var value in Enum.GetNames<RegulatoryAuthority>()){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}</MudSelect>
+            <MudTextField T="string" @bind-Value="_applicant" Immediate="true" Label="Applicant" Required="true" MaxLength="128" Disabled="@(!_state.CanReviewCreation)" />
+            <MudTextField T="string" @bind-Value="_well" Immediate="true" Label="Well UWI (optional)" MaxLength="128" Disabled="@(!_state.CanReviewCreation)" />
+            <MudTextField T="string" @bind-Value="_facility" Immediate="true" Label="Facility ID (optional)" MaxLength="128" Disabled="@(!_state.CanReviewCreation)" />
+            <MudTextField T="string" @bind-Value="_facilityType" Immediate="true" Label="Facility type (required with facility ID)" MaxLength="128" Disabled="@(!_state.CanReviewCreation)" />
+            <MudTextField T="string" @bind-Value="_description" Immediate="true" Label="Description" Lines="3" MaxLength="4096" Disabled="@(!_state.CanReviewCreation)" />
+            <MudButton OnClick="ReviewProposal" Disabled="@(!_state.CanReviewCreation || Proposal() is null)" Variant="Variant.Outlined">Review draft and linked resources</MudButton>
+            @if(_state.CreationReview is {} review)
+            {
+                <MudText>Reviewed FIELD @review.Context.Field.FieldId · account @review.Context.Field.ActorUserId · applicant @review.Proposal.Header.Applicant</MudText>
+                <MudText>Country @review.Proposal.Header.Country · region @review.Proposal.Header.Region · authority @review.Proposal.Header.Authority</MudText>
+                <MudText>Reviewed source @review.Revision</MudText>
+                @if(Proposal()!=review.Proposal){<MudAlert Severity="Severity.Warning">The proposal changed. Review its current values and linked resources again before creating.</MudAlert>}
+                <MudTextField T="string" @bind-Value="_reason" Immediate="true" Label="Reason for creating this draft" Lines="3" MaxLength="2000" HelperText="Enter 20 to 2000 characters." Required="true" Disabled="@_state.Busy" />
+                <MudCheckBox T="bool" @bind-Value="_confirmed" Label="I checked this proposal, company FIELD and exact linked resource identities." Disabled="@_state.Busy" />
+                <MudButton OnClick="Create" Disabled="@(!CanCreate)" Variant="Variant.Filled" Color="Color.Primary">Retain original and create draft</MudButton>
+            }
+        </MudStack>
+    }
+    @if(_state.Outcome is {} result)
+    {
+        var saved=result.ReadApplication();
+        <MudAlert Severity="Severity.Success">Recorded draft creation · original @result.Original.IntentId</MudAlert>
+        <MudText>Application @saved.PERMIT_APPLICATION_ID · recorded status @saved.STATUS · recorded UTC @result.RecordedAtUtc.ToString("u")</MudText>
+        @if(!_state.HasPending){<MudButton Href="@($"/ppdm39/permits/detail?applicationId={Uri.EscapeDataString(saved.PERMIT_APPLICATION_ID)}")" Variant="Variant.Filled">Open created application</MudButton>}
+        <MudText>This confirms that original creation. Application details show its current state separately.</MudText>
+    }
+    <MudText Typo="Typo.caption">A draft or internal decision does not establish regulator clearance, jurisdiction applicability or permission to operate.</MudText>
+    <MudButton Href="/ppdm39/permits">Back to permits</MudButton>
+</MudContainer>
 @code {
-    private MudForm? _form;
-    private bool _submitting;
-    private CreatePermitApplicationRequest _request = new();
-
-    private async Task CreateAsync()
+    private PermitApplicationCommandState _state=null!;private PermitApplicationCreationReview? _shown;
+    private string _type="",_country="",_region="",_authority="",_applicant="",_well="",_facility="",_facilityType="",_description="",_reason="",_message="";
+    private bool _confirmed,_disposed,_initializing;private long _seen=-1,_attempted=-1;
+    protected override void OnInitialized(){_state=new(Company,Fields,Authentication,PermitClient,Originals);_state.SetCreation();_state.Changed+=Changed;Sync();}
+    private static string? Optional(string value)=>string.IsNullOrWhiteSpace(value)?null:value.Trim();
+    private PermitApplicationCreationProposal? Proposal()
     {
-        if (_form is null)
-        {
-            return;
-        }
-
-        await _form.ValidateAsync();
-        if (!_form.IsValid)
-        {
-            return;
-        }
-
-        _submitting = true;
-        try
-        {
-            var applicationId = await PermitClient.CreateAsync(_request);
-            Snackbar.Add("Permit application created successfully.", Severity.Success);
-            NavigationManager.NavigateTo($"/ppdm39/permits/{applicationId}");
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to create application: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _submitting = false;
-        }
+        if(!Enum.TryParse<PermitApplicationType>(_type,out var type) || !Enum.TryParse<Country>(_country,out var country) ||
+            !Enum.TryParse<StateProvince>(_region,out var region) || !Enum.TryParse<RegulatoryAuthority>(_authority,out var authority))return null;
+        var proposal=new PermitApplicationCreationProposal(new(type,authority,country,region,_applicant.Trim(),Optional(_description)),Optional(_well),Optional(_facility),Optional(_facilityType));
+        try{proposal.Require();return proposal;}catch(InvalidOperationException){return null;}
     }
-
-    private void NavigateBack()
+    private bool CanCreate=>_state.CanPrepare("CREATE_DRAFT") && Proposal()==_state.CreationReview?.Proposal && _confirmed && _reason.Trim().Length is >=20 and <=2000;
+    private void Sync()
     {
-        NavigationManager.NavigateTo("/ppdm39/permits");
+        if(_seen!=_state.Epoch)
+        {_seen=_state.Epoch;_type=_country=_region=_authority=_applicant=_well=_facility=_facilityType=_description="";_message="";_reason="";_confirmed=false;}
+        if(!ReferenceEquals(_shown,_state.CreationReview)){_shown=_state.CreationReview;_reason="";_confirmed=false;}
     }
+    private void Changed(){if(_disposed)return;Sync();_ = InvokeAsync(StateHasChanged);}
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(_disposed || _initializing || _state.Ready || _state.Busy || _attempted==_state.Epoch)return;
+        _attempted=_state.Epoch;_initializing=true;try{await ReadOriginal();}finally{_initializing=false;}
+    }
+    private async Task Run(Func<Task> action,string operation)
+    {
+        var epoch=_state.Epoch;_message="";
+        try{await action();}
+        catch(Exception error){if(!_disposed && epoch==_state.Epoch)_message=Calls.Explain(error,operation,"The permit creation outcome is unconfirmed");else Logger.LogDebug(error,"Permit creation context changed");}
+    }
+    private Task ReadOriginal()=>Run(_state.AttachCreationAsync,"reading retained permit creation input");
+    private Task ReviewProposal()=>Run(()=>_state.ReviewCreationAsync(Proposal()??throw new InvalidOperationException("Choose explicit valid draft values and complete optional resource identities.")),"reviewing the creation proposal");
+    private Task Create()=>Run(async()=>
+    {
+        if(!CanCreate)throw new InvalidOperationException("Review the unchanged proposal and confirm its creation reason first.");
+        await _state.RecordAsync("CREATE_DRAFT",_reason,_confirmed);
+    },"recording the reviewed draft creation");
+    private Task Recover()=>Run(_state.RecoverAsync,"recovering the exact creation original");
+    private Task Resend()=>Run(_state.ResendAsync,"resending the exact creation original");
+    public void Dispose(){_disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
 }

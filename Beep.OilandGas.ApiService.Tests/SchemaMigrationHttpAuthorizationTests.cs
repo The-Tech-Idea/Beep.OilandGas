@@ -31,12 +31,18 @@ public class SchemaMigrationHttpAuthorizationTests
     [InlineData("unresolved", HttpStatusCode.Forbidden)]
     [InlineData("disabled", HttpStatusCode.Forbidden)]
     [InlineData("unavailable", HttpStatusCode.Forbidden)]
+    [InlineData("revoked-before-dispatch", HttpStatusCode.Forbidden)]
     [InlineData("admin", HttpStatusCode.OK)]
     public async Task MigrationEndpointsUseRepositoryRolesAndLocalAuditActor(string scenario, HttpStatusCode expected)
     {
         var access = new Mock<IRepositoryAccessService>(MockBehavior.Strict);
         var lookup = access.Setup(x => x.GetAccessAsync("local-user", It.IsAny<CancellationToken>()));
         if (scenario == "unavailable") lookup.ThrowsAsync(new InvalidOperationException("Test repository unavailable"));
+        else if (scenario == "revoked-before-dispatch")
+        {
+            var calls = 0;
+            lookup.ReturnsAsync(() => new RepositoryUserAccess("local-user", true, ++calls % 2 == 1 ? ["Administrator"] : [], []));
+        }
         else lookup.ReturnsAsync(new RepositoryUserAccess(
             "local-user", scenario != "disabled", scenario == "admin" ? ["Administrator"] : [], []));
         var migration = new Mock<IPPDM39SchemaMigrationService>(MockBehavior.Strict);

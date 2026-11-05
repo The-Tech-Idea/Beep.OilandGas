@@ -1,0 +1,18 @@
+### Page
+- Page URL: http://127.0.0.1:60559/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e16]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=e17]
+    - paragraph [ref=e18]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=e19]:
+      - link "Open assigned HSE process" [ref=e20] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=e22] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=e24] [cursor=pointer]
+      - button "Restore original company" [ref=e26] [cursor=pointer]
+  - paragraph [ref=e29]: Open the assigned HSE process to continue to its exact recorded incident workflow.
+```

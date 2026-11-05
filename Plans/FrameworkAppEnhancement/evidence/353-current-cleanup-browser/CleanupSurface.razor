@@ -1,0 +1,17 @@
+@page "/fixture/closure"
+@inject Scope Scope
+@inject Backend Backend
+@if (Id == Scope.IncidentId && Workflow == Scope.WorkflowId)
+{
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+        <MudAlert Severity="Severity.Info">Controlled browser fixture: actual current closure component, protected store and typed completion client. Auth, reviews, recorded recovery and HTTP handler outcomes are controlled.</MudAlert>
+        <HseBrowser.CurrentClosure.HseClosureWorkflow Context="Scope.Context" IncidentId="@Scope.IncidentId" CurrentIncidentState="@initialState" CanApprove="true" />
+    </MudContainer>
+}
+else { <MudAlert Severity="Severity.Warning">Fixture incident/workflow identity mismatch.</MudAlert> }
+@code {
+    [SupplyParameterFromQuery(Name="incidentId")] public string? Id { get; set; }
+    [SupplyParameterFromQuery(Name="workflowInstanceId")] public string? Workflow { get; set; }
+    private string? initialState;
+    protected override void OnInitialized() => initialState = Backend.State;
+}

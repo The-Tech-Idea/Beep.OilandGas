@@ -1,0 +1,29 @@
+{
+  "scope": "Native authorized incident-key paging only; not final lifecycle approval or incident closure acceptance",
+  "selected_methods": [
+    "CompanyHseRowAccessTests.VisibleIncidentPageBoundsProviderWorkAfterAuthorityAndRejectsUnconfirmedWindows",
+    "CompanyHseRowAccessTests.Actual_incident_and_RCA_owners_return_recorded_data_through_current_profile_and_canonical_policy"
+  ],
+  "results": {
+    "passed": 13,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "19 seconds"
+  },
+  "limits": [
+    "Controlled bounded producer; not installed-driver qualification",
+    "Authorization candidate index bounded to 256; selected window 10",
+    "No private detail reads or native writes",
+    "API/client/landing still use existing queue path",
+    "No schema change, SQL or EF migration",
+    "Paging integration deferred pending explicit active-plan prioritization; closure focus restored"
+  ],
+  "sha256": {
+    "TheTechIdea.Data/OilGas/HseIncidentPage.cs": "59cb89cd7c4c8973b9761e5afdba6c27ca5e63266666f59988ca6c5adab2ab6b",
+    "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HSEIncidentService.cs": "59e0c2a2484d6e390363f72098ad9d10631d90440db4d1b2b125fcc49e488749",
+    "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs": "6fa9ec92b5d33357d86b172faa11f13019ec0958ce2f81a22acf2b1aa819c967",
+    "Beep.OilandGas.Repository.Tests/CompanyHseRowAccessTests.cs": "620a57526f6a949c364a930ef4ffcfa2867592e8c69dab326ad92855971f02c0",
+    "Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs": "d1ce99a969b95cc4b20c9238dee06be5a9c4c4c866d6c63e5d4b1b0091f66924",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "7bda2d119f279f06822e713daaa5e3d394f4824871f78a021631f148f45687aa"
+  }
+}

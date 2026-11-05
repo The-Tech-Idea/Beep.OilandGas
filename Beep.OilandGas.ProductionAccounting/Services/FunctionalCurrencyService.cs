@@ -7,17 +7,17 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.PPDM39.Repositories;
+
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.ProductionAccounting.Constants;
+
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
     /// <summary>
     /// IAS 21 functional currency and FX translation service.
-    /// Base/reporting currency tokens use <see cref="AccountingCurrencyCodes"/> (seed <c>FUNCTIONAL_CURRENCY_CODE</c>).
-    /// Automated rows use <see cref="ProductionAccountingAuditActors.System"/> for <c>ROW_CREATED_BY</c> when no caller user id exists.
+    /// Company translation requires recorded book and original source evidence.
+    /// Missing rates and unavailable balances are refused without substitute values.
     /// </summary>
     public class FunctionalCurrencyService : IFunctionalCurrencyService
     {
@@ -53,66 +53,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(toCurrency))
                 throw new ArgumentNullException(nameof(toCurrency));
 
+            if(string.Equals(fromCurrency,toCurrency,StringComparison.Ordinal))return amount;
             var rate = await GetFxRateAsync(fromCurrency, toCurrency, rateDate, connectionName);
             return amount * rate;
         }
 
-        public async Task<CURRENCY_TRANSLATION_RESULT> TranslateBalancesAsync(
-            string entityId,
-            DateTime periodEnd,
-            string reportingCurrency,
-            string connectionName = "PPDM39")
+        public Task<CURRENCY_TRANSLATION_RESULT> TranslateBalancesAsync(string entityId,DateTime periodEnd,string reportingCurrency,string connectionName="PPDM39")
         {
-            if (string.IsNullOrWhiteSpace(entityId))
-                throw new ArgumentNullException(nameof(entityId));
-            if (string.IsNullOrWhiteSpace(reportingCurrency))
-                throw new ArgumentNullException(nameof(reportingCurrency));
-
-            // Placeholder: in a full implementation, fetch trial balance by entity.
-            const decimal placeholderBalance = 0m;
-            var baseCurrency = AccountingCurrencyCodes.Usd;
-
-            var translatedAmount = await TranslateAmountAsync(
-                placeholderBalance,
-                baseCurrency,
-                reportingCurrency,
-                periodEnd,
-                connectionName);
-
-            var rate = await GetFxRateAsync(baseCurrency, reportingCurrency, periodEnd, connectionName);
-
-            var result = new CURRENCY_TRANSLATION_RESULT
-            {
-                TRANSLATION_RESULT_ID = Guid.NewGuid().ToString(),
-                ENTITY_ID = entityId,
-                PERIOD_END = periodEnd,
-                REPORTING_CURRENCY = reportingCurrency,
-                ORIGINAL_CURRENCY = baseCurrency,
-                TRANSLATED_AMOUNT = translatedAmount,
-                RATE_USED = rate,
-                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                PPDM_GUID = Guid.NewGuid().ToString(),
-                ROW_CREATED_BY = ProductionAccountingAuditActors.System,
-                ROW_CREATED_DATE = DateTime.UtcNow
-            };
-
-            var metadata = await _metadata.GetTableMetadataAsync("CURRENCY_TRANSLATION_RESULT");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(CURRENCY_TRANSLATION_RESULT);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, "CURRENCY_TRANSLATION_RESULT");
-
-            await repo.InsertAsync(result, result.ROW_CREATED_BY);
-
-            _logger?.LogInformation(
-                "Translated balances for entity {EntityId} to {Currency} at rate {Rate}",
-                entityId, reportingCurrency, rate);
-
-            return result;
+            if(string.IsNullOrWhiteSpace(entityId))throw new ArgumentNullException(nameof(entityId));
+            if(string.IsNullOrWhiteSpace(reportingCurrency))throw new ArgumentNullException(nameof(reportingCurrency));
+            throw new InvalidOperationException("Recorded entity/book balances and explicit original currency are required. No placeholder balance or default USD currency is persisted.");
         }
-
         private async Task<decimal> GetFxRateAsync(
             string fromCurrency,
             string toCurrency,
@@ -136,14 +87,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
 
             var results = await repo.GetAsync(filters);
-            var rates = results?.Cast<FX_RATE>().OrderByDescending(r => r.RATE_DATE).ToList()
-                ?? new List<FX_RATE>();
+            var rows=results?.ToArray() ??throw new InvalidOperationException("The complete recorded FX query is unavailable.");
+            if(rows.Any(row=>row is not FX_RATE || TheTechIdea.Data.OilGas.CompanyFxRateProof.IsCompanyMarked((FX_RATE)row)))throw new InvalidOperationException("Company FX requires the recorded functional book, precision and original company source.");
+            var rates=rows.Cast<FX_RATE>().OrderByDescending(row=>row.RATE_DATE).ToArray();
+            var rateValue=rates.FirstOrDefault()?.RATE;
+            if(rateValue is null || rateValue<=0)throw new InvalidOperationException("No positive recorded directed FX rate is available; no rate is substituted.");
 
-            var rateValue = rates.FirstOrDefault()?.RATE ?? 1m;
-            if (rateValue <= 0m)
-                rateValue = 1m;
-
-            return rateValue;
+            return rateValue.Value;
         }
     }
 }

@@ -2,9 +2,18 @@ using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 
-public sealed class PersonaClient(ApiClient api)
+public sealed class PersonaClient(ApiClient api) : IPersonaClient
 {
+    public async Task<CompanyPersonaWorkspaceReview> ReviewWorkspacesAsync() =>
+        await api.GetAsync<CompanyPersonaWorkspaceReview>("/api/personas/workspaces/current")
+        ?? throw new InvalidOperationException("Company workspace review was empty.");
     private static string Segment(string value) => Uri.EscapeDataString(value);
+    public async Task<RoleWorkspaceReview> ReviewRoleWorkspacesAsync(string roleId) =>
+        await api.GetAsync<RoleWorkspaceReview>($"/api/personas/roles/{Segment(roleId)}/workspaces")
+        ?? throw new InvalidOperationException("Role workspace review was empty.");
+    public Task SaveRoleWorkspaceAsync(string roleId, string code, bool enabled, string expectedRevision) =>
+        api.PutAsync($"/api/personas/roles/{Segment(roleId)}/workspaces/{Segment(code)}", new RoleWorkspaceMappingRequest(enabled, expectedRevision));
+
     public async Task<List<AppPersona>> CatalogAsync() => await api.GetAsync<List<AppPersona>>("/api/personas") ?? throw new InvalidOperationException("Persona catalog response was empty.");
     public async Task<AppUserPersona?> GetAsync(string userId) =>
         (await api.GetAsync<PersonaProfileResult>($"/api/personas/users/{Segment(userId)}") ?? throw new InvalidOperationException("Persona profile response was empty.")).Profile;

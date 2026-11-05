@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
+    <ProjectReference Include="..\TheTechIdea.Data\TheTechIdea.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

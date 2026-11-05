@@ -1,8 +1,10 @@
-﻿@page "/admin/access-control/user-roles"
+@page "/admin/access-control/user-roles"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Web.Services
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject PersonaClient Personas
+@inject OilGasCallFailures Calls
 @inject UserAdministrationClient Users
 @inject ISnackbar Snackbar
 @inject OilGasApiFailures Answers
@@ -84,9 +86,77 @@
             </MudDataGrid>
         }
     </MudPaper>
+    <MudPaper Elevation="2" Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6">Role workspace navigation</MudText>
+        <MudText Class="mb-3">These assignments choose landing pages for company-approved roles. They do not grant access to data or actions. Changes apply wherever this app role is assigned.</MudText>
+        <MudSelect T="string" Label="Workspace role" Value="@_workspaceRoleId" ValueChanged="LoadWorkspaces" Disabled="@(_busy || _workspaceBusy)" Variant="Variant.Outlined">
+            @foreach (var role in _roleCatalog)
+            {
+                <MudSelectItem T="string" Value="@role.RoleId">@role.RoleName</MudSelectItem>
+            }
+        </MudSelect>
+        <MudButton OnClick="@(() => LoadWorkspaces(_workspaceRoleId))" Disabled="@(_workspaceBusy || string.IsNullOrEmpty(_workspaceRoleId))" StartIcon="@Icons.Material.Filled.Refresh">Reload workspace assignments</MudButton>
+        @if (_workspaceBusy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading workspace assignments" /> }
+        @if (_workspaceError is not null) { <MudAlert Severity="Severity.Error" role="alert">@_workspaceError</MudAlert> }
+        @if (_workspaceReview is { } review)
+        {
+            @if (review.Choices.Count == 0) { <MudAlert Severity="Severity.Info">No workspace catalog entries are available.</MudAlert> }
+            <MudList T="string">
+                @foreach (var choice in review.Choices)
+                {
+                    <MudListItem T="string">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                            <MudText>@choice.Persona.Name (@choice.Persona.Code) — @(choice.Enabled ? "Assigned" : "Unassigned") @(choice.Persona.IsActive ? "" : "· Inactive")</MudText>
+                            <MudButton Variant="Variant.Outlined" Disabled="@(_workspaceBusy || (!choice.Enabled && !choice.Persona.IsActive))" OnClick="@(() => ChangeWorkspace(choice.Persona.Code, !choice.Enabled))">@(choice.Enabled ? "Remove assignment" : "Assign workspace")</MudButton>
+                        </MudStack>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    </MudPaper>
 </MudContainer>
 
 @code {
+    private List<TheTechIdea.Data.OilGas.RepositoryRoleSummary> _roleCatalog = [];
+    private TheTechIdea.Data.OilGas.RoleWorkspaceReview? _workspaceReview;
+    private string _workspaceRoleId = "";
+    private string? _workspaceError;
+    private bool _workspaceBusy;
+    private async Task LoadWorkspaces(string roleId)
+    {
+        if (_workspaceBusy || string.IsNullOrEmpty(roleId)) return;
+        _workspaceRoleId = roleId; _workspaceReview = null; _workspaceError = null; _workspaceBusy = true;
+        try
+        {
+            var review = await Personas.ReviewRoleWorkspacesAsync(roleId);
+            if (review.RoleId != roleId) throw new InvalidOperationException("Workspace review names another role.");
+            _workspaceReview = review;
+        }
+        catch (Exception ex) { _workspaceError = Calls.Explain(ex, "reviewing role workspace assignments", "Workspace assignments could not be loaded. Reload before editing"); }
+        finally { _workspaceBusy = false; }
+    }
+    private async Task ChangeWorkspace(string code, bool enabled)
+    {
+        if (_workspaceBusy || _workspaceReview is not { } original) return;
+        _workspaceBusy = true; _workspaceError = null;
+        try
+        {
+            await Personas.SaveRoleWorkspaceAsync(original.RoleId, code, enabled, original.Revision);
+            // Only recorded readback confirms success; a failed write is never automatically repeated.
+            var recorded = await Personas.ReviewRoleWorkspacesAsync(original.RoleId);
+            if (recorded.RoleId != original.RoleId || recorded.Choices.SingleOrDefault(row => row.Persona.Code == code)?.Enabled != enabled)
+                throw new InvalidOperationException("Workspace assignment readback could not be confirmed.");
+            _workspaceReview = recorded;
+            Snackbar.Add("Workspace assignment confirmed.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _workspaceReview = null;
+            _workspaceError = Calls.Explain(ex, "changing role workspace assignments", "The assignment outcome could not be confirmed. Reload assignments before deciding whether to try again");
+        }
+        finally { _workspaceBusy = false; }
+    }
+
     private string _newRole = "";
     private string? _roleDescription;
 
@@ -97,7 +167,8 @@
         try
         {
             await Users.CreateRoleAsync(_newRole.Trim(), _roleDescription);
-            _availableRoles = (await Users.GetRolesAsync()).Select(role => role.RoleName).ToList();
+            _roleCatalog = await Users.GetRolesAsync();
+            _availableRoles = _roleCatalog.Select(role => role.RoleName).ToList();
             _newRole = "";
             _roleDescription = null;
             Snackbar.Add("Role created.", Severity.Success);
@@ -124,7 +195,8 @@
         try
         {
             _users = await Users.GetUsersAsync();
-            _availableRoles = (await Users.GetRolesAsync()).Select(role => role.RoleName).ToList();
+            _roleCatalog = await Users.GetRolesAsync();
+            _availableRoles = _roleCatalog.Select(role => role.RoleName).ToList();
         }
         catch { Snackbar.Add("Could not load user administration.", Severity.Error); }
         finally { _busy = false; }

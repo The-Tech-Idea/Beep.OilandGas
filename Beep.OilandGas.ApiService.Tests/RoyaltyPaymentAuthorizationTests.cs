@@ -46,7 +46,7 @@ public class RoyaltyPaymentAuthorizationTests
         access.Setup(a => a.HasPermissionAsync("local", "Accounting.PostJournal", null)).ReturnsAsync(true);
         royalties.Setup(r => r.GetAsync("royalty", "PPDM39")).ReturnsAsync(new ROYALTY_CALCULATION { ALLOCATION_DETAIL_ID = "detail" });
         royalties.Setup(r => r.GetAllocationFieldAsync("detail")).ReturnsAsync("stored-field");
-        access.Setup(a => a.CheckAssetAccessAsync("local", "stored-field", "FIELD", null))
+        access.Setup(a => a.CheckAssetAccessAsync("local", "stored-field", "FIELD", null, null))
             .ReturnsAsync(new AccessCheckResponse { HasAccess = allowed });
         if (allowed) royalties.Setup(r => r.RecordPaymentAsync("royalty", It.IsAny<Guid>(), 10m, "local")).ReturnsAsync(new ROYALTY_PAYMENT());
         var result = await Controller(royalties.Object, access.Object).RecordPayment("royalty", new(Guid.NewGuid(), 10m));

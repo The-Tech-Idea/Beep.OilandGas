@@ -1,0 +1,8 @@
+### Result
+{
+  "removalFailureEnabled": false
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {window.__oilgasBlockRemoval=false;return {removalFailureEnabled:false};}');
+```

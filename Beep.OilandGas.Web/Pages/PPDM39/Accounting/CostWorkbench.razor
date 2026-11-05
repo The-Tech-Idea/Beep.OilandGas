@@ -1,6 +1,11 @@
 @page "/accounting/cost-workbench"
+@using Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Web.Components.Shared
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using MudBlazor
 @inject NavigationManager Nav
+
+<PersonaTaskInbox WorkspaceRoutes='@(new[]{"/accounting/cost-workbench"})' />
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudText Typo="Typo.h3" GutterBottom="true"><MudIcon Icon="@Icons.Material.Filled.MoneyOff" Class="mr-2" Color="Color.Primary"/>Cost Workbench</MudText>

@@ -91,8 +91,11 @@
                                         <MudTextField @bind-Value="@_connectionName" 
                                                      Label="Connection Name" 
                                                      Variant="Variant.Outlined" 
+                                                     HelperText="Use letters, digits and underscores; start with a letter or underscore."
                                                      Required="true" />
                                     </MudItem>
+                                    @if (_selectedDatabaseType != "SQLite")
+                                    {
                                     <MudItem xs="12" md="6">
                                         <MudTextField @bind-Value="@_host" 
                                                      Label="Host/Server" 
@@ -107,9 +110,10 @@
                                                      Variant="Variant.Outlined"
                                                      HelperText="@GetPortHelperText()" />
                                     </MudItem>
+                                    }
                                     <MudItem xs="12" md="6">
                                         <MudTextField @bind-Value="@_database" 
-                                                     Label="Database Name" 
+                                                     Label="@(_selectedDatabaseType == "SQLite" ? "Database file path" : "Database name")"
                                                      Variant="Variant.Outlined" 
                                                      Required="true" />
                                     </MudItem>
@@ -169,7 +173,7 @@
                                           Color="Color.Primary" 
                                           StartIcon="@Icons.Material.Filled.Save"
                                           OnClick="SaveConnection"
-                                          Disabled="@(_isSavingConnection)">
+                                          Disabled="@(_isSavingConnection || !TestMatches())">
                                     @if (_isSavingConnection)
                                     {
                                         <text>Saving...</text>
@@ -218,7 +222,7 @@
         </MudContainer>
     </DialogContent>
     <DialogActions>
-        @if (!_modeSelected || _currentMode == SetupMode.FullWizard)
+        @if (!IsBlocking && _saveResult?.Success != true || !_modeSelected || _currentMode == SetupMode.FullWizard)
         {
             <MudButton OnClick="Cancel">@(IsBlocking ? "Cancel" : "Close")</MudButton>
         }
@@ -232,6 +236,7 @@
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public bool IsBlocking { get; set; } = false;
+    [Parameter] public bool ConnectionOnly { get; set; }
     [Parameter] public EventCallback OnConnectionCreated { get; set; }
 
     [Inject] ApiClient ApiClient { get; set; } = default!;
@@ -278,6 +283,14 @@
     // Save connection
     private bool _isSavingConnection = false;
     private SaveConnectionResult? _saveResult;
+    private sealed record TestedConnection(string? Type, string Name, string Host, int? Port, string Database, string Schema, string Username, string Password);
+    private TestedConnection? _tested;
+    private TestedConnection Snapshot() => new(_selectedDatabaseType, _connectionName, _host, _port, _database, _schema, _username, _password);
+    private bool TestMatches() => _connectionTestResult?.Success == true && _tested == Snapshot();
+    protected override void OnInitialized()
+    {
+        if (ConnectionOnly) { _modeSelected = true; _currentMode = SetupMode.ConnectionOnly; _setAsCurrent = false; }
+    }
 
     private void SelectMode(SetupMode mode)
     {
@@ -299,8 +312,8 @@
     private bool CanTestConnection()
     {
         return !string.IsNullOrEmpty(_selectedDatabaseType) &&
-               !string.IsNullOrEmpty(_connectionName) &&
-               !string.IsNullOrEmpty(_host) &&
+               TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(_connectionName) &&
+               (_selectedDatabaseType == "SQLite" || !string.IsNullOrWhiteSpace(_host)) &&
                !string.IsNullOrEmpty(_database);
     }
 
@@ -315,18 +328,22 @@
 
     private async Task TestConnection()
     {
+        if (_isTestingConnection || !CanTestConnection()) return;
         _isTestingConnection = true;
         _connectionTestResult = null;
+        _tested = null;
 
         try
         {
+            var snapshot = Snapshot();
             var config = BuildConnectionConfig();
             // Post ConnectionProperties instead of ConnectionConfig
             _connectionTestResult = await ApiClient.PostAsync<ConnectionProperties, ConnectionTestResult>(
                 "/api/ppdm39/setup/test-connection", config.ToConnectionProperties());
 
-            if (_connectionTestResult?.Success == true)
+            if (_connectionTestResult?.Success == true && snapshot == Snapshot())
             {
+                _tested = snapshot;
                 Snackbar.Add("Connection test successful", Severity.Success);
                 // Auto-advance to next step
                 if (_activeStep < 2)
@@ -336,6 +353,7 @@
             }
             else
             {
+                if (snapshot != Snapshot()) _connectionTestResult = new ConnectionTestResult { Success = false, Message = "Connection settings changed. Test them again." };
                 Snackbar.Add($"Connection test failed: {_connectionTestResult?.Message}", Severity.Error);
             }
         }
@@ -367,12 +385,15 @@
             Database = _database,
             Schema = _schema,
             Username = _username,
-            Password = _password
+            Password = _password,
+            ConnectionString = _selectedDatabaseType == "SQLite"
+                ? new System.Data.Common.DbConnectionStringBuilder { ["Data Source"] = _database }.ConnectionString : null
         };
     }
 
     private async Task SaveConnection()
     {
+        if (!TestMatches() || _isSavingConnection) return;
         _isSavingConnection = true;
         _saveResult = null;
 

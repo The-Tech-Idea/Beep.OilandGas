@@ -11,6 +11,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.Report;
 using WELL = Beep.OilandGas.PPDM39.Models.WELL;
+using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
 {
@@ -35,6 +37,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
         protected readonly IPPDMMetadataRepository _metadata;
         protected readonly IDMEEditor _editor;
         protected readonly string _connectionName;
+        private readonly IPPDMRowAccessPolicy? _companyWellAccess;
+        private readonly string? _wellEvidenceTimeZoneId;
+        private readonly ICompanyMaintenanceQualifiedReturnParticipant? _qualifiedReturnParticipant;
 
         // Well Status XREF UnitOfWork (lazy initialization)
         private IUnitOfWorkWrapper _wellStatusXrefUnitOfWork;
@@ -119,22 +124,44 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
 
         #region Constructor
 
+        public WellServices(IDMEEditor editor, ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults, IPPDMMetadataRepository metadata, string connectionName,
+            IPPDMRowAccessPolicy? rowAccess, string? evidenceTimeZoneId,
+            ICompanyMaintenanceQualifiedReturnParticipant qualifiedReturnParticipant)
+            : this(editor, commonColumnHandler, defaults, metadata, connectionName, rowAccess, evidenceTimeZoneId)
+        {
+            _qualifiedReturnParticipant = qualifiedReturnParticipant ?? throw new ArgumentNullException(nameof(qualifiedReturnParticipant));
+        }
+
         public WellServices(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            string connectionName = "PPDM39")
+            string connectionName = "PPDM39") : this(editor,commonColumnHandler,defaults,metadata,connectionName,null,null)
+        {
+        }
+
+        public WellServices(
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,
+            string connectionName,
+            IPPDMRowAccessPolicy? rowAccess,
+            string? evidenceTimeZoneId = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
+            _companyWellAccess = rowAccess;
+            _wellEvidenceTimeZoneId = evidenceTimeZoneId;
 
             // Create generic repositories for each table
             _wellRepository = new PPDMGenericRepository(
                 editor, commonColumnHandler, defaults, metadata,
-                typeof(Beep.OilandGas.PPDM39.Models.WELL), connectionName, "WELL");
+                typeof(Beep.OilandGas.PPDM39.Models.WELL), connectionName, "WELL", rowAccess: rowAccess);
 
             _wellXrefRepository = new PPDMGenericRepository(
                 editor, commonColumnHandler, defaults, metadata,

@@ -1,0 +1,335 @@
+@page "/procurement"
+@page "/procurement/orders/{Id}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Services
+@using System.Security.Claims
+@inject IAccountingServiceClient Accounting
+@inject PurchaseOrderWorkspaceState Workspace
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<PageTitle>Company purchase-order sources</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4">Company purchase-order sources</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable")</MudText>
+    <AuthorizeView><Authorized Context="warehouseUser">
+        @if(Company.Selection is {} warehouseCompany && warehouseCompany.Roles.Any(warehouseUser.User.IsInRole) && warehouseCompany.Permissions.Contains("Inventory.View",StringComparer.Ordinal))
+        {<MudButton Href="/warehouse" Variant="Variant.Outlined">Company warehouse evidence</MudButton>}
+    </Authorized></AuthorizeView>
+    <MudAlert Severity="Severity.Info">Read access requires a current assigned company role and Procurement.View permission. Supplier identity does not establish the owning company. Unassigned legacy orders require reviewed reconciliation.</MudAlert>
+    @if(string.IsNullOrWhiteSpace(Id))
+    {
+        <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/procurement"})' />
+        <MudTextField T="string" Value="_vendor" ValueChanged="VendorChanged" Immediate="true" Label="Optional recorded supplier business-associate ID" Disabled="_busy" />
+        <MudButton OnClick="Reload" Disabled="_busy">Reload company order queue</MudButton>
+    }
+    else
+    {
+        <MudButton Href="/procurement">Purchase-order source workbench</MudButton>
+        <MudButton OnClick="Reload" Disabled="_busy">Reload recorded order</MudButton>
+    }
+    @if(_busy){<MudProgressLinear Indeterminate="true" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(Workspace.WarehouseWorkBlocked)
+    {
+        <MudAlert Severity="Severity.Warning">Warehouse stock work is busy or unconfirmed. Reconcile its original intent before receiving, reviewing inventory links or handing off this order.</MudAlert>
+        @if(Workspace.WarehouseRecoveryRoute is {} recovery){<MudButton Href="@recovery">Return to original warehouse stock intent</MudButton>}
+    }
+    @if(!_busy && _error is null){<PurchaseOrderSourcePanel Review="@_state" OnReviewReceipt="ReviewReceiptRow" OnReviewInventory="ReviewInventoryRow" InventoryDisabled="@(!InventoryAllowed || _state?.InventoryLinkBusy==true || _state?.ReceiverBusy==true || _state?.HasUnconfirmedReceiverIntent==true || _state?.LinkPreparationBlocked==true || (_state?.LinkDecisionBlocked==true || _state?.LinkCycleBlocked==true))" ReceivingDisabled="@(!ReceiverAllowed || _state?.ReceiverBusy==true || _state?.HasUnconfirmedReceiverIntent==true || _state?.LinkPreparationBlocked==true || (_state?.LinkDecisionBlocked==true || _state?.LinkCycleBlocked==true))" />}
+    @if(_state?.InventoryLinkBusy==true){<MudProgressLinear Indeterminate="true" />}
+    @if(!_busy && _error is null){<ReceiptInventoryReviewPanel Review="_state?.InventoryLink" />}
+    @if(!_busy && _error is null && !Workspace.WarehouseWorkBlocked && _state?.ReceiverBusy!=true && _state?.HasUnconfirmedReceiverIntent!=true && _state?.LinkPreparationBlocked!=true && _state?.LinkDecisionBlocked!=true && _state?.LinkCycleBlocked!=true && _state?.Detail is {} source && _state.SourceRevision is {} revision){<CompanyAccountingHandoffPanel EntityType="PURCHASE_ORDER" EntityId="@source.Id" SourceRevision="@revision" />}
+    @if(_state?.HasUnconfirmedReceiverIntent==true)
+    {
+        <MudAlert Severity="Severity.Warning">Receiver outcome is unconfirmed. Retain and reconcile the original intent before another decision. Return to its original company and account.</MudAlert>
+        @if(_state.ReceiverRecoveryRoute is {} route){<MudButton Href="@route">Open original receiving order</MudButton>}
+        <MudButton OnClick="RecordReceiver" Disabled="@(_busy || !ReceiverAllowed || !_state.CanReconcileReceiver)">Reconcile original receiver intent</MudButton>
+    }
+    @if(_state?.Detail is not null && !_busy)
+    {
+        <MudSelect T="string" Value="_receipt" ValueChanged="ReceiptChanged" Label="Recorded receipt for receiver decision" Disabled="@(_state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent || _state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))">
+            @foreach(var row in _state.Receipts ?? []){<MudSelectItem T="string" Value="@row.Id">@row.Id · Received @row.Quantity @row.QuantityUnit</MudSelectItem>}
+        </MudSelect>
+        <MudButton OnClick="ReviewReceiver" Disabled="@(!ReceiverAllowed || string.IsNullOrWhiteSpace(_receipt) || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent || _state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))">Review receiver source</MudButton>
+        @if(_state.ReceiverReview is {} review)
+        {
+            var physical=review.Source.Receipts.Single(row=>row.PO_RECEIPT_ID==review.ReceiptId);
+            <MudText>Reviewed received quantity: @physical.RECEIVED_QUANTITY · Unit: @physical.QUANTITY_UOM. Accepted plus rejected must equal this quantity.</MudText>
+            <MudNumericField T="decimal" @bind-Value="_accepted" Label="Accepted quantity" Min="0" Disabled="@(!ReceiverAllowed || _state.ReceiverBusy || _state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))" />
+            <MudNumericField T="decimal" @bind-Value="_rejected" Label="Rejected quantity" Min="0" Disabled="@(!ReceiverAllowed || _state.ReceiverBusy || _state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))" />
+            <MudTextField T="string" @bind-Value="_reason" Label="Receiver decision reason" MaxLength="512" Required="true" Disabled="@(!ReceiverAllowed || _state.ReceiverBusy || _state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))" />
+            <MudButton OnClick="RecordReceiver" Disabled="@(!ReceiverAllowed || _state.ReceiverBusy || _state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))">Record final receiver decision</MudButton>
+            <MudAlert Severity="Severity.Info">Recording requires current company roles and Procurement.RecordReceiptDecision. This records physical acceptance/rejection; stock, returns, matching and financial approval remain separate workflows.</MudAlert>
+        }
+        @if(_state.ReceiverResult is {} result){<MudAlert Severity="Severity.Success">Receiver decision confirmed for @result.Command.ReceiptId. Accepted @result.Command.AcceptedQuantity · Rejected @result.Command.RejectedQuantity. Reviewed order evidence has been refreshed for accountant handoff.</MudAlert>}
+    }
+    @if(_state?.ReceiverBusy==true){<MudProgressLinear Indeterminate="true" />}
+    <MudButton Href="/tasks/inbox" Variant="Variant.Outlined" Class="mt-3">Open assigned workflow tasks</MudButton>
+    @if(_state?.HasUnconfirmedLinkPreparationIntent==true)
+    {
+        <MudAlert Severity="Severity.Warning">Inventory-link preparation outcome is unconfirmed. Retain and reconcile the original intent before another preparation or receiver decision. Return to its original company and account.</MudAlert>
+        @if(_state.LinkPreparationRecoveryRoute is {} recovery){<MudButton Href="@recovery">Open original preparation order</MudButton>}
+        <MudButton OnClick="RecordLinkPreparation" Disabled="@(_busy || !PreparationAllowed || !_state.CanReconcileLinkPreparation)">Reconcile original preparation intent</MudButton>
+        <MudButton OnClick="ReviewPreparationResolution" Disabled="@(_busy || !InventoryAllowed || !_state.CanReconcileLinkPreparation)">Review recorded independent resolution</MudButton>
+    }
+    @if(_state?.Detail is not null && !_busy && PreparationAllowed)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4">Prepare inventory link for independent review</MudText>
+        <MudButton OnClick="LoadLinkTargets" Disabled="@(_state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent)">Load owned inventory targets</MudButton>
+        <MudSelect T="string" Value="_linkLine" ValueChanged="LinkLineChanged" Label="Active recorded purchase line" Disabled="@(_state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent)">
+            @foreach(var row in _state.Lines?.Where(row=>row.ActiveIndicator=="Y" && !row.HasPreparationEvidence) ?? []){<MudSelectItem T="string" Value="@row.Id">@row.Id · @row.Description · @row.QuantityUnit</MudSelectItem>}
+        </MudSelect>
+        @if(_state.LinkTargets is {} targets)
+        {
+            @if(targets.Count==0){<MudAlert Severity="Severity.Info">No active owned inventory targets were returned.</MudAlert>}
+            <MudSelect T="string" Value="_linkTarget" ValueChanged="LinkTargetChanged" Label="Owned inventory target" Disabled="@(_state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent)">
+                @foreach(var row in targets){<MudSelectItem T="string" Value="@row.Id">@row.Id · @row.Description · Warehouse: @(row.Warehouse ?? "Unavailable") · Location: @(row.Location ?? "Unavailable") · Unit: @(row.Unit ?? "Unavailable")</MudSelectItem>}
+            </MudSelect>
+        }
+        <MudButton OnClick="ReviewLinkPreparation" Disabled="@(_state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent || string.IsNullOrWhiteSpace(_linkLine) || string.IsNullOrWhiteSpace(_linkTarget))">Review original line and target</MudButton>
+        <InventoryLinkPreparationReviewPanel Review="_state.LinkPreparationReview" />
+        @if(_state.LinkPreparationReview is not null)
+        {
+            <MudTextField T="string" @bind-Value="_linkReason" Label="Inventory-link preparation reason" Required="true" MaxLength="512" Disabled="@(_state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))" />
+            <MudButton OnClick="RecordLinkPreparation" Disabled="@(_state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || string.IsNullOrWhiteSpace(_linkReason))">Save inventory-link preparation</MudButton>
+        }
+    }
+    @if(_state?.LinkPreparationBusy==true){<MudProgressLinear Indeterminate="true" />}
+    @if(_state?.LinkPreparationResult is {} prepared){<MudAlert Severity="Severity.Success">Inventory-link preparation confirmed for @prepared.PO_LINE_ITEM_ID. The current inventory reference is preserved. Independent approval and target assignment remain unconfirmed.</MudAlert>}
+    @if(_state?.LinkPreparationResolution is not null){<MudAlert Severity="Severity.Success">Original preparation independently resolved. The verified reviewer outcome is shown on its recorded line; no preparation was resubmitted.</MudAlert>}
+    @if(_state?.HasUnconfirmedLinkDecisionIntent==true)
+    {
+        <MudAlert Severity="Severity.Warning">Independent inventory-link decision outcome is unconfirmed. Reconcile the original intent from its original reviewer company, account and order before another decision.</MudAlert>
+        @if(_state.LinkDecisionRecoveryRoute is {} route){<MudButton Href="@route">Open original decision order</MudButton>}
+        <MudButton OnClick="RecordLinkDecision" Disabled="@(_busy || !DecisionAllowed || !_state.CanReconcileLinkDecision)">Reconcile original independent decision</MudButton>
+    }
+    @if(_state?.Detail is not null && !_busy && DecisionAllowed)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4">Independently decide inventory-link preparation</MudText>
+        <MudSelect T="string" Value="_decisionLine" ValueChanged="DecisionLineChanged" Label="Unresolved preparation by another account" Disabled="@((_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || _state.LinkPreparationBlocked || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent)">
+            @foreach(var row in _state.Lines?.Where(row=>row.ActiveIndicator=="Y" && row.Preparation is not null && !row.HasDecisionEvidence && row.Preparation.Actor!=Company.Selection?.UserId) ?? []){<MudSelectItem T="string" Value="@row.Id">@row.Id · Target: @row.Preparation!.Target · Preparer: @row.Preparation.Actor</MudSelectItem>}
+        </MudSelect>
+        <MudButton OnClick="ReviewLinkDecision" Disabled="@((_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || _state.LinkPreparationBlocked || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent || string.IsNullOrWhiteSpace(_decisionLine))">Review independent decision source</MudButton>
+        <InventoryLinkDecisionReviewPanel Review="_state.LinkDecisionReview" />
+        @if(_state.LinkDecisionReview is not null)
+        {
+            <MudSelect T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision" @bind-Value="_linkChoice" Label="Explicit independent decision" Required="true" Disabled="(_state.LinkDecisionBlocked || _state.LinkCycleBlocked)">
+                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision.Approve">Approve and apply reviewed reference</MudSelectItem>
+                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision.Reject">Reject and preserve current reference</MudSelectItem>
+            </MudSelect>
+            <MudTextField T="string" @bind-Value="_decisionReason" Label="Independent decision reason" Required="true" MaxLength="512" Disabled="(_state.LinkDecisionBlocked || _state.LinkCycleBlocked)" />
+            <MudButton OnClick="RecordLinkDecision" Disabled="@((_state.LinkDecisionBlocked || _state.LinkCycleBlocked) || !Enum.IsDefined(_linkChoice) || string.IsNullOrWhiteSpace(_decisionReason))">Save independent decision</MudButton>
+        }
+    }
+    @if(_state?.LinkDecisionBusy==true){<MudProgressLinear Indeterminate="true" />}
+    @if(_state?.LinkDecisionResult is not null){<MudAlert Severity="Severity.Success">Independent inventory-link decision confirmed. The recorded line shows its verified outcome and reference. Stock movement and financial posting remain unconfirmed.</MudAlert>}
+    @if(_state?.HasUnconfirmedLinkCycleIntent==true)
+    {
+        <MudAlert Severity="Severity.Warning">Cycle reopening outcome is unconfirmed. Retain its original action, reason and intent, and return to its original company/account/order before another cycle.</MudAlert>
+        @if(_state.LinkCycleRecoveryRoute is {} route){<MudButton Href="@route">Open original cycle order</MudButton>}
+        <MudButton OnClick="RecordLinkCycle" Disabled="@(_busy || !CycleAllowed || !_state.CanReconcileLinkCycle)">Reconcile original cycle intent</MudButton>
+    }
+    @if(_state?.Detail is not null && !_busy && InventoryAllowed)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4">Inventory-link history and subsequent cycles</MudText>
+        <MudSelect T="string" Value="_cycleLine" ValueChanged="CycleLineChanged" Label="Recorded line for cycle history" Disabled="CycleControlsBlocked">
+            @foreach(var row in _state.Lines ?? []){<MudSelectItem T="string" Value="@row.Id">@row.Id · @row.Description · Reference: @(row.InventoryItemId ?? "Unavailable")</MudSelectItem>}
+        </MudSelect>
+        <MudButton OnClick="LoadLinkCycleHistory" Disabled="@(CycleControlsBlocked || string.IsNullOrWhiteSpace(_cycleLine))">Review complete cycle history</MudButton>
+        @if(CycleAllowed)
+        {
+            <MudSelect T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction" Value="_cycleAction" ValueChanged="CycleActionChanged" Label="Explicit cycle action" Required="true" Disabled="CycleControlsBlocked">
+                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction.ReopenResolved">Reopen independently resolved cycle</MudSelectItem>
+                <MudSelectItem T="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction" Value="TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction.SupersedePending">Supersede pending preparation</MudSelectItem>
+            </MudSelect>
+            <MudButton OnClick="ReviewLinkCycle" Disabled="@(CycleControlsBlocked || string.IsNullOrWhiteSpace(_cycleLine) || !Enum.IsDefined(_cycleAction))">Review cycle reopening</MudButton>
+        }
+        <InventoryLinkCyclePanel History="_state.LinkCycleHistory" Review="_state.LinkCycleReview" />
+        @if(CycleAllowed && _state.LinkCycleReview is not null)
+        {
+            <MudTextField T="string" @bind-Value="_cycleReason" Label="Cycle reopening reason" Required="true" MaxLength="512" Disabled="CycleControlsBlocked" />
+            <MudButton OnClick="RecordLinkCycle" Disabled="@(CycleControlsBlocked || string.IsNullOrWhiteSpace(_cycleReason))">Archive and reopen reviewed cycle</MudButton>
+        }
+    }
+    @if(_state?.LinkCycleBusy==true){<MudProgressLinear Indeterminate="true" />}
+    @if(_state?.LinkCycleResult is not null){<MudAlert Severity="Severity.Success">Cycle reopening confirmed. Original preparer/reviewer evidence is retained in history and the current reference is preserved. Prepare a new target for independent review.</MudAlert>}
+</MudContainer>
+@code {
+    [Parameter] public string? Id {get;set;}
+    private PurchaseOrderWorkspaceState? _state;
+    private bool _busy,_disposed,_reloadRequested;
+    private string _vendor="",_receipt="",_reason="";
+    private string _linkLine="",_linkTarget="",_linkReason="";
+    private string _decisionLine="",_decisionReason="";
+    private string _cycleLine="",_cycleReason="";
+    private TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction _cycleAction;
+    private TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkDecision _linkChoice;
+    private decimal _accepted,_rejected;
+    private string? _error;
+    public override Task SetParametersAsync(ParameterView parameters){if(!parameters.TryGetValue<string?>(nameof(Id),out _))Id=null;return base.SetParametersAsync(parameters);}
+    protected override void OnInitialized(){_state=Workspace;Company.Changed+=ContextChanged;Workspace.WarehouseChanged+=ReceiverChanged;Workspace.ReceiverChanged+=ReceiverChanged;Workspace.InventoryLinkChanged+=ReceiverChanged;Workspace.LinkPreparationChanged+=ReceiverChanged;Workspace.LinkDecisionChanged+=ReceiverChanged;Workspace.LinkCycleChanged+=ReceiverChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    private bool DecisionAllowed=>InventoryAllowed && Company.Selection!.Permissions.Contains("Procurement.RecordInventoryLinkDecision",StringComparer.Ordinal);
+    private bool CycleAllowed=>InventoryAllowed && Company.Selection!.Permissions.Contains("Procurement.ReopenInventoryLink",StringComparer.Ordinal);
+    private bool CycleControlsBlocked=>Workspace.WarehouseWorkBlocked || _busy || _state is null || _state.LinkCycleBlocked || _state.LinkDecisionBlocked || _state.LinkPreparationBlocked || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent || _state.InventoryLinkBusy;
+    private void CycleLineChanged(string value){_state!.ClearLinkCycleReview();_cycleLine=value;_cycleReason="";_cycleAction=0;_error=null;}
+    private void CycleActionChanged(TheTechIdea.Data.OilGas.PurchaseOrderInventoryLinkCycleAction value){_state!.ClearLinkCycleReview();_cycleAction=value;_cycleReason="";_error=null;}
+    private async Task RequireCycleAuthority(bool mutation)
+    {
+        await RequireDecisionAuthority(false);if(mutation && !CycleAllowed)throw new InvalidOperationException("Current company cycle work requires Procurement.ReopenInventoryLink.");
+    }
+    private async Task LoadLinkCycleHistory()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequireCycleAuthority(false);await _state.LoadLinkCycleHistoryAsync(_cycleLine,Accounting.GetInventoryLinkHistoryAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"reading retained cycle history","Complete owned cycle history is unconfirmed. Reload the original order and source access");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private async Task ReviewLinkCycle()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequireCycleAuthority(true);await _state.LoadLinkCycleReviewAsync(_cycleLine,_cycleAction,Accounting.GetInventoryLinkCycleReviewAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing a subsequent inventory-link cycle","Choose the original prepared line and an explicit pending/resolved cycle action");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private async Task RecordLinkCycle()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequireCycleAuthority(true);await _state.RecordLinkCycleAsync(_cycleReason,Accounting.ReopenInventoryLinkAsync,Accounting.GetInventoryLinkHistoryAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"saving or reconciling inventory-link cycle",_state.HasUnconfirmedLinkCycleIntent?"Cycle outcome is unconfirmed. Reconcile the original retained action and intent":"Review the explicit action and enter a single-line reason of at most 512 characters");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private void DecisionLineChanged(string value){_state!.ClearLinkDecisionReview();_decisionLine=value;_decisionReason="";_linkChoice=0;_cycleLine="";_cycleReason="";_cycleAction=0;_error=null;}
+    private async Task RequireDecisionAuthority(bool recording=true)
+    {
+        var original=Company.Snapshot;var version=_state!.Version;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || _busy || original!=Company.Snapshot || version!=_state.Version || !InventoryAllowed || recording && !DecisionAllowed || original.Selection is null || user.Identity?.IsAuthenticated!=true ||
+            !original.Selection.Roles.Any(user.IsInRole) || (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=original.Selection.UserId)
+            throw new InvalidOperationException("Current company account, standard roles and inventory/procurement read grants are required; independent recording also requires its decision grant.");
+    }
+    private async Task ReviewLinkDecision()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequireDecisionAuthority();await _state.LoadLinkDecisionReviewAsync(_decisionLine,Accounting.GetInventoryLinkDecisionReviewAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing independent inventory-link evidence","Review another account's unresolved verified proposal and current company/source access");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private async Task RecordLinkDecision()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequireDecisionAuthority();await _state.RecordLinkDecisionAsync(_linkChoice,_decisionReason,Accounting.RecordInventoryLinkDecisionAsync,Accounting.GetPurchaseOrderAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"saving or reconciling independent inventory-link decision",_state.HasUnconfirmedLinkDecisionIntent?"Independent decision is unconfirmed. Reconcile the original retained intent":"Review original evidence, choose approve/reject and enter a single-line reason of at most 512 characters");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private async Task ReviewPreparationResolution()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequireDecisionAuthority(false);await _state.ReconcileLinkPreparationResolutionAsync(Accounting.GetInventoryLinkResolutionAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing original preparation resolution","The original preparation has no confirmed unchanged independent resolution. Retain its original intent");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private bool PreparationAllowed=>InventoryAllowed && Company.Selection!.Permissions.Contains("Procurement.PrepareInventoryLink",StringComparer.Ordinal);
+    private void LinkLineChanged(string value){_state!.ClearLinkPreparationReview();_linkLine=value;_linkReason="";_error=null;}
+    private void LinkTargetChanged(string value){_state!.ClearLinkPreparationReview();_linkTarget=value;_linkReason="";_error=null;}
+    private async Task RequirePreparationAuthority()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || _busy || original!=Company.Snapshot || version!=_state.Version || !PreparationAllowed || original.Selection is null || user.Identity?.IsAuthenticated!=true ||
+            !original.Selection.Roles.Any(user.IsInRole) || (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=original.Selection.UserId)
+            throw new InvalidOperationException("Current company account, standard roles, Procurement.View, Inventory.View and Procurement.PrepareInventoryLink are required.");
+    }
+    private async Task LoadLinkTargets()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequirePreparationAuthority();await _state.LoadLinkTargetsAsync(Accounting.GetCompanyInventoryItemsAsync);_linkTarget="";_linkReason="";}
+        catch(Exception ex){var message=Calls.Explain(ex,"reading inventory-link targets","Owned inventory targets could not be confirmed. Review current company access");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private async Task ReviewLinkPreparation()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequirePreparationAuthority();await _state.LoadLinkPreparationReviewAsync(_linkLine,_linkTarget,Accounting.GetInventoryLinkPreparationAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing inventory-link preparation","The original line and target could not be confirmed. Review active ownership, exact units, warehouse/location and current source");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private async Task RecordLinkPreparation()
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequirePreparationAuthority();await _state.RecordLinkPreparationAsync(_linkReason,Accounting.PrepareInventoryLinkAsync,Accounting.GetPurchaseOrderAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"saving or reconciling inventory-link preparation",_state.HasUnconfirmedLinkPreparationIntent?"Preparation outcome is unconfirmed. Reconcile the original retained intent":"Review the original source and enter a single-line reason of at most 512 characters");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    protected override Task OnParametersSetAsync()
+    {
+        try{if(!string.IsNullOrWhiteSpace(Id))Id=TheTechIdea.Data.OilGas.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"procurement/orders/");}
+        catch(FormatException){_state?.Clear();_error="The recorded source address is invalid. Open it again from the company queue.";return Task.CompletedTask;}
+        return Reload();
+    }
+    private void ReceiverChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ReceiptChanged(string receipt){_receipt=receipt;_accepted=0;_rejected=0;_reason="";_state?.ClearReceiverReview();_error=null;}
+    private async Task ReviewReceiptRow(string receipt)
+    {
+        if(_disposed || _busy || !ReceiverAllowed || _state is null || _state.ReceiverBusy || _state.HasUnconfirmedReceiverIntent || _state.LinkPreparationBlocked || (_state.LinkDecisionBlocked || _state.LinkCycleBlocked))return;
+        ReceiptChanged(receipt);await ReviewReceiver();
+    }
+    private bool ReceiverAllowed=>!Workspace.WarehouseWorkBlocked && Company.Selection is {} selected && selected.Permissions.Contains("Procurement.View",StringComparer.Ordinal) && selected.Permissions.Contains("Procurement.RecordReceiptDecision",StringComparer.Ordinal);
+    private bool InventoryAllowed=>!Workspace.WarehouseWorkBlocked && Company.Selection is {} selected && selected.Permissions.Contains("Procurement.View",StringComparer.Ordinal) && selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal);
+    private async Task ReviewInventoryRow(string receipt)
+    {
+        var original=Company.Snapshot;var version=_state!.Version;_error=null;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version || !InventoryAllowed || user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) || (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=original.Selection.UserId)
+                throw new InvalidOperationException("Current company account, standard roles, Procurement.View and Inventory.View are required.");
+            await _state.LoadInventoryLinkAsync(receipt,Accounting.GetPurchaseReceiptInventoryReviewAsync);
+        }
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing receipt inventory linkage","Receipt inventory evidence could not be confirmed. Review the recorded line linkage, receiver decision, owned item, location and units");if(!_disposed && original==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)
+    {
+        _state?.Clear();_linkLine="";_linkTarget="";_linkReason="";_decisionLine="";_decisionReason="";_linkChoice=0;_cycleLine="";_cycleReason="";_cycleAction=0;_error=null;
+        if(!_disposed)_=InvokeAsync(StateHasChanged);
+    }
+    private async Task RequireReceiverAuthority()
+    {
+        var scope=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || scope!=Company.Snapshot || scope.Selection is null || user.Identity?.IsAuthenticated!=true || !scope.Selection.Roles.Any(user.IsInRole) ||
+            (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=scope.Selection.UserId ||
+            !scope.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal) || !scope.Selection.Permissions.Contains("Procurement.RecordReceiptDecision",StringComparer.Ordinal))
+            throw new InvalidOperationException("Current company roles, Procurement.View and Procurement.RecordReceiptDecision are required.");
+    }
+    private async Task ReviewReceiver()
+    {
+        var scope=Company.Snapshot;var version=_state!.Version;_error=null;
+        try{await RequireReceiverAuthority();await _state.LoadReceiverReviewAsync(_receipt,Accounting.GetPurchaseReceiptDecisionReviewAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing receiver evidence","Receiver source could not be confirmed. Reload the original order and company access");if(!_disposed && scope==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private async Task RecordReceiver()
+    {
+        var scope=Company.Snapshot;var version=_state!.Version;_error=null;
+        try
+        {
+            await RequireReceiverAuthority();
+            if(!_state.HasUnconfirmedReceiverIntent && (string.IsNullOrWhiteSpace(_reason) || _reason.Length>512 || _reason.Any(char.IsControl)))throw new InvalidOperationException("Enter a single-line receiver reason of at most 512 characters.");
+            await _state.RecordReceiverAsync(_accepted,_rejected,_reason,Accounting.RecordPurchaseReceiptDecisionAsync,Accounting.GetPurchaseOrderAsync);
+        }
+        catch(Exception ex){var message=Calls.Explain(ex,"recording or reconciling receiving",_state.HasUnconfirmedReceiverIntent?"Receiver outcome is unconfirmed. Reconcile the original intent before another decision":"Receiver decision could not start. Review quantities, reason and company access");if(!_disposed && scope==Company.Snapshot && version==_state.Version)_error=message;}
+    }
+    private void VendorChanged(string value){_vendor=value;_state?.Clear();_error=null;}
+    private async Task Reload()
+    {
+        if(_disposed)return;
+        if(_busy){_state?.Clear();_reloadRequested=true;return;}_busy=true;
+        try{do{
+            _reloadRequested=false;_state!.Clear();_error=null;var scope=Company.Snapshot;var id=Id;var vendor=_vendor;
+            if(scope.Selection is null)continue;
+            var version=_state.Version;
+            try
+            {
+                var user=(await Authentication.GetAuthenticationStateAsync()).User;
+                if(_disposed || scope!=Company.Snapshot || version!=_state.Version)continue;
+                if(user.Identity?.IsAuthenticated!=true || (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=scope.Selection.UserId || !scope.Selection.Roles.Any(user.IsInRole) || !scope.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal))
+                    throw new InvalidOperationException("Current app-owned company roles and Procurement.View permission are required.");
+                version++;
+                if(string.IsNullOrWhiteSpace(id))await _state.LoadCompanyAsync(Accounting.GetCompanyPurchaseOrdersAsync,string.IsNullOrWhiteSpace(vendor)?null:vendor);
+                else await _state.LoadDetailAsync(id,Accounting.GetPurchaseOrderAsync);
+            }
+            catch(Exception ex){var message=Calls.Explain(ex,"reading company-owned purchase-order sources","Purchase-order sources could not be confirmed. Review company access, ownership, line/receipt relationships and the production migration");if(!_disposed && scope==Company.Snapshot && id==Id && vendor==_vendor && version==_state.Version)_error=message;}
+        }while(_reloadRequested && !_disposed);}finally{_busy=false;}
+    }
+    private void ContextChanged(){_state?.Clear();_vendor="";_receipt="";_reason="";_linkLine="";_linkTarget="";_linkReason="";_decisionLine="";_decisionReason="";_linkChoice=0;_cycleLine="";_cycleReason="";_cycleAction=0;_error=null;if(!_disposed)_=InvokeAsync(async()=>{if(_disposed)return;if(!string.IsNullOrWhiteSpace(Id)){Navigation.NavigateTo("/procurement");return;}await Reload();if(!_disposed)StateHasChanged();});}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;Workspace.WarehouseChanged-=ReceiverChanged;Workspace.ReceiverChanged-=ReceiverChanged;Workspace.InventoryLinkChanged-=ReceiverChanged;Workspace.LinkPreparationChanged-=ReceiverChanged;Workspace.LinkDecisionChanged-=ReceiverChanged;Workspace.LinkCycleChanged-=ReceiverChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;_state?.Clear();}
+}

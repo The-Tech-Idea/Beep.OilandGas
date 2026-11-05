@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Confirm and retain reporting' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:62732/
+### Snapshot
+- [Snapshot](output\playwright\351-assignment-conflict-browser\artifacts\page-2026-10-26T18-16-02-244Z.yml)

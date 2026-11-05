@@ -1,0 +1,12 @@
+@page "/analytics/dashboard"
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<PageTitle>Data analyst workspace</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-3">Data analyst workspace</MudText>
+    <MudText Class="mb-3">Review assigned data work and open the source tools for the current company.</MudText>
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/analytics/dashboard"})' />
+    <MudAlert Severity="Severity.Info" Class="mb-4">Company data quality and performance totals are unavailable here until their source, scope and reporting period are confirmed.</MudAlert>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2"><MudButton Href="/ppdm39/data-management" Variant="Variant.Outlined">Data management</MudButton><MudButton Href="/ppdm39/data-quality" Variant="Variant.Outlined">Review well data</MudButton><MudButton Href="/ppdm39/analytics" Variant="Variant.Outlined">Process analytics</MudButton><MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton></MudStack>
+</MudContainer>

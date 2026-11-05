@@ -26,11 +26,24 @@
     @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
     @if (_error is not null) { <MudAlert Severity="Severity.Error" Class="my-3">@_error</MudAlert> }
     <MudGrid>
+        <MudItem xs="12">
+            <MudSelect T="string" Label="Tenant" Value="_tenantId" ValueChanged="SelectTenant" Disabled="_busy" Variant="Variant.Outlined">
+                @foreach (var tenant in _tenants)
+                {
+                    <MudSelectItem T="string" Value="@tenant.TenantId">@tenant.Name (@tenant.TenantId)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        @if (!_busy && string.IsNullOrWhiteSpace(_tenantId))
+        {
+            <MudItem xs="12"><MudAlert Severity="Severity.Info">Select an active tenant before binding or migrating module databases.</MudAlert></MudItem>
+        }
         <MudItem xs="12"><MudText Typo="Typo.h6">1. Database Target</MudText></MudItem>
         @if (!_busy && _connections.Count == 0)
         {
             <MudItem xs="12"><MudAlert Severity="Severity.Warning">No BeepDM connections are available.</MudAlert></MudItem>
         }
+        <MudItem xs="12"><MudButton Href="/setup/drivers" StartIcon="@Icons.Material.Filled.Download">Install drivers and connectors</MudButton></MudItem>
         <MudItem xs="12"><MudButton Href="/ppdm39/database-management" StartIcon="@Icons.Material.Filled.Storage">Manage Connections</MudButton></MudItem>
         <MudItem xs="12" md="6">
             <MudSelect T="string" Label="Module" Value="@_moduleId" ValueChanged="SelectModule" Disabled="_busy" Variant="Variant.Outlined">
@@ -127,6 +140,8 @@
 </MudContainer>
 
 @code {
+    private List<AppTenant> _tenants = [];
+    private string _tenantId = "";
     private List<ModuleDatabaseSummary> _modules = [];
     private List<string> _connections = [];
     private string _moduleId = "", _connection = "", _environment = "Development", _evidence = "";
@@ -156,16 +171,28 @@
         ClearPlan();
         try
         {
-            _modules = await Client.ListAsync();
+            _tenants = await Client.TenantsAsync();
+            if (!_tenants.Any(x => x.TenantId == _tenantId)) _tenantId = "";
+            _modules = string.IsNullOrWhiteSpace(_tenantId) ? [] : await Client.ListAsync(_tenantId);
             _connections = await Client.ConnectionsAsync();
             SelectModule(_modules.Any(x => x.ModuleId == _moduleId) ? _moduleId :
                 _modules.FirstOrDefault(x => x.ModuleId == "PPDM_CORE")?.ModuleId ?? _modules.FirstOrDefault()?.ModuleId ?? "");
         }
-        catch { _modules = []; _connections = []; _error = "Could not load module databases."; }
+        catch { _tenants = []; _modules = []; _connections = []; _error = "Could not load tenant module databases."; }
         finally { _busy = false; }
     }
 
     private void ClearPlan() { _plan = null; _reviewed = null; _execution = null; _approved = false; _confirmed = false; _riskAcknowledged = false; _attempted = false; _seedConfirmed = false; _seedResult = null; }
+    private async Task SelectTenant(string id)
+    {
+        if (_busy || !_tenants.Any(x => x.TenantId == id)) return;
+        _tenantId = id;
+        _modules = [];
+        _moduleId = "";
+        _connection = "";
+        ClearPlan();
+        await Reload();
+    }
     private void SelectModule(string id) { _moduleId = id; _connection = Selected?.ConnectionName ?? ""; ClearPlan(); }
     private void SelectConnection(string connection) { _connection = connection; ClearPlan(); }
     private void ChangeEnvironment(string value) { _environment = value; ClearPlan(); }
@@ -181,7 +208,7 @@
         ClearPlan();
         try
         {
-            var saved = await Client.BindAsync(_moduleId, new(_connection, Selected.ConcurrencyStamp));
+            var saved = await Client.BindAsync(_tenantId, _moduleId, new(_connection, Selected.ConcurrencyStamp));
             var index = _modules.FindIndex(x => x.ModuleId == _moduleId);
             _modules[index] = _modules[index] with { ConnectionName = saved.ConnectionName, ConcurrencyStamp = saved.ConcurrencyStamp };
             _connection = saved.ConnectionName;
@@ -200,7 +227,7 @@
         try
         {
             _plannedOptions = CurrentOptions;
-            var result = await Client.PlanAsync(_moduleId, _plannedOptions);
+            var result = await Client.PlanAsync(_tenantId, _moduleId, _plannedOptions);
             _reviewed = result;
             _plan = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             if (!result.Success) _error = "Migration planning failed.";
@@ -211,7 +238,7 @@
 
     private async Task VerifyBinding()
     {
-        var current = (await Client.ListAsync()).SingleOrDefault(x => x.ModuleId == _moduleId);
+        var current = (await Client.ListAsync(_tenantId)).SingleOrDefault(x => x.ModuleId == _moduleId);
         if (current?.ConcurrencyStamp != Selected?.ConcurrencyStamp || current?.ConnectionName != _connection)
             throw new InvalidOperationException("The binding changed.");
     }
@@ -226,7 +253,7 @@
         try
         {
             await VerifyBinding();
-            _seedResult = await Client.SeedAsync(_moduleId, new(Selected.ConcurrencyStamp!));
+            _seedResult = await Client.SeedAsync(_tenantId, _moduleId, new(Selected.ConcurrencyStamp!));
             if (!_seedResult.Success) _error = "Module seeding reported errors. Check the database before retrying.";
         }
         catch { _error = "Seeding did not complete successfully. Check the binding, schema and server logs before retrying."; }
@@ -241,7 +268,7 @@
         try
         {
             await VerifyBinding();
-            var result = await Client.ApproveAsync(_reviewed.PlanId);
+            var result = await Client.ApproveAsync(_tenantId, _reviewed);
             _approved = result.Success && result.PlanHash == _reviewed.PlanHash && result.ManifestHash == _reviewed.ManifestHash;
             if (!_approved) _error = "Approval failed or the plan changed. Generate a new plan.";
         }
@@ -258,7 +285,7 @@
         try
         {
             await VerifyBinding();
-            _execution = await Client.ExecuteAsync(_reviewed, _riskAcknowledged);
+            _execution = await Client.ExecuteAsync(_tenantId, _reviewed, _riskAcknowledged);
         }
         catch { _error = "Execution outcome could not be verified. Check migration status before attempting another migration."; }
         finally { _busy = false; }

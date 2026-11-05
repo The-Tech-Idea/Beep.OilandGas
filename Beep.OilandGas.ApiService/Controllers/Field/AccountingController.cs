@@ -8,6 +8,10 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
+using Beep.OilandGas.Repository;
+using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
@@ -31,6 +35,32 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             _accountingService  = accountingService  ?? throw new ArgumentNullException(nameof(accountingService));
             _productionAccountingService = productionAccountingService ?? throw new ArgumentNullException(nameof(productionAccountingService));
             _logger             = logger;
+        }
+
+        [Authorize(Roles="Accountant,Administrator")]
+        [HttpGet("period-checks")]
+        public async Task<ActionResult<AccountingPeriodCheckReview>> GetPeriodChecksAsync([FromQuery] DateTime periodEnd,[FromQuery] string bookId,
+            [FromServices] Beep.OilandGas.Accounting.Services.PeriodClosingService periods,[FromServices] RepositoryTenantContext tenant,
+            [FromServices] IRepositoryAccessService access,[FromServices] IAccessControlService resources,[FromServices] IFailureReporter failures,
+            System.Threading.CancellationToken token)
+        {
+            if(periodEnd==default || periodEnd.TimeOfDay!=TimeSpan.Zero || string.IsNullOrWhiteSpace(bookId) || bookId.Length>255)return BadRequest();
+            var actor=User.ActingUserId();var field=_fieldOrchestrator.CurrentFieldId;
+            if(tenant.Company is not { } company || company.UserId!=actor || string.IsNullOrWhiteSpace(field))return Forbid();
+            async Task<bool> CanReadAsync()
+            {
+                var current=await access.GetCompanyAccessAsync(actor,company.Scope,token);
+                return AccountingPeriodRoleChecks.CanAct(User,company.Scope,current) &&
+                    (await resources.CheckAssetAccessAsync(actor,field,"FIELD","READ")).HasAccess;
+            }
+            try
+            {
+                if(!await CanReadAsync())return Forbid();
+                var checks=await periods.ValidatePeriodCloseAsync(periodEnd,bookId);
+                if(_fieldOrchestrator.CurrentFieldId!=field || !await CanReadAsync())return Forbid();
+                return Ok(AccountingPeriodCheckReviews.Create(company.Scope,actor,field,bookId,periodEnd,checks));
+            }
+            catch(InvalidOperationException changed){failures.ReportHandled(changed,"reading accounting period checks","period check evidence is unavailable",FailureSeverity.Degraded);return Conflict(new{error="Period checks could not be confirmed. Reload before continuing."});}
         }
 
         /// <summary>GET /api/field/current/accounting/recent-activities</summary>
@@ -109,16 +139,28 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         }
 
         /// <summary>POST /api/field/current/accounting/close-period</summary>
+        [Authorize(Roles="Accountant,Administrator")]
+        [RequireCurrentFieldAccess("WRITE")]
         [HttpPost("close-period")]
-        public async Task<IActionResult> ClosePeriodAsync([FromBody] CloseAccountingPeriodRequest request)
+        public async Task<IActionResult> ClosePeriodAsync([FromBody] CloseAccountingPeriodRequest request,
+            [FromServices] RepositoryTenantContext tenant,[FromServices] IRepositoryAccessService access,
+            [FromServices] IAccessControlService resources,[FromServices] ModuleConnectionResolver modules)
         {
             var userId = User.ActingUserId();
             var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            if (request == null || request.PeriodEnd == default)
+            if (request == null || request.PeriodEnd == default || request.PeriodEnd.TimeOfDay!=TimeSpan.Zero)
                 return BadRequest(new { error = "A valid period end date is required." });
 
-            var succeeded = await _productionAccountingService.ClosePeriodAsync(fieldId, request.PeriodEnd.Date, userId);
+            if(tenant.Company is not { } company || company.UserId!=userId)return Forbid();
+            var current=await access.GetCompanyAccessAsync(userId,company.Scope,HttpContext.RequestAborted);
+            if(!AccountingPeriodRoleChecks.CanAct(User,company.Scope,current) ||
+                !(await resources.CheckAssetAccessAsync(userId,fieldId,"FIELD","WRITE")).HasAccess)return Forbid();
+            var connection=await modules.ResolveAsync("PRODUCTION",HttpContext.RequestAborted);
+            current=await access.GetCompanyAccessAsync(userId,company.Scope,HttpContext.RequestAborted);
+            if(_fieldOrchestrator.CurrentFieldId!=fieldId || !AccountingPeriodRoleChecks.CanAct(User,company.Scope,current) ||
+                !(await resources.CheckAssetAccessAsync(userId,fieldId,"FIELD","WRITE")).HasAccess)return Forbid();
+            var succeeded = await _productionAccountingService.ClosePeriodAsync(fieldId, request.PeriodEnd.Date, userId, connection);
             if (!succeeded)
                 return StatusCode(500, new { error = "Period close failed." });
 

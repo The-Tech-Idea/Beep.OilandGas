@@ -1,0 +1,59 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudText Typo="Typo.h6">Controller: company period close, lock and reopen</MudText>
+    <MudText>Company @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable") · Book @Book · Currency @Currency · Calendar @Calendar</MudText>
+    <MudText>Review the recorded state and previous authority. A different authorized account must record each change with explicit control evidence. Reopening needs separate permission. Period state changes create no journal, payment or financial balance.</MudText>
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.HasPendingPeriodTransition)
+    {
+        <MudAlert Severity="Severity.Warning">The exact original period transition is retained. Reconcile it before another ledger request.</MudAlert>
+        @if(State.PendingPeriodTransition is {} pending){<MudText>Period @pending.Command.PeriodId · @pending.Command.FromState to @pending.Command.ToState · Request @pending.Command.IntentId · @pending.Command.Reason</MudText><MudButton OnClick="Retry" Disabled="State.Busy">Reconcile original period transition</MudButton><MudButton OnClick='@(()=>Recover(pending.Command.PeriodId,pending.Command.IntentId,pending.Command.BookId,pending.Command.CurrencyCode,pending.Command.CalendarId))' Disabled="State.Busy">Recover original period state outcome</MudButton>}
+    }
+    else
+    {
+        <MudButton OnClick="Review" Disabled="State.Busy" Variant="Variant.Outlined">Review period state authority</MudButton>
+        @if(State.PeriodTransitionReview is {} source && source.History.BookId==Book && source.History.CurrencyCode==Currency && source.History.CalendarId==Calendar)
+        {
+            <MudForm @ref="_form">
+                <MudSelect T="string" Label="Original recorded period" @bind-Value="_period" Required="true" Disabled="State.Busy">@foreach(var row in source.History.Periods){<MudSelectItem T="string" Value="@row.COMPANY_LEDGER_PERIOD_ID">@row.PERIOD_CODE · @row.STATUS · ID @row.COMPANY_LEDGER_PERIOD_ID · Previous authority @(row.ROW_CHANGED_BY ?? row.ROW_CREATED_BY)</MudSelectItem>}</MudSelect>
+                <MudSelect T="string" Label="Requested period state" @bind-Value="_target" Required="true" Disabled="State.Busy"><MudSelectItem T="string" Value='@("CLOSED")'>Close</MudSelectItem><MudSelectItem T="string" Value='@("LOCKED")'>Lock closed period</MudSelectItem><MudSelectItem T="string" Value='@("OPEN")'>Reopen</MudSelectItem></MudSelect>
+                <MudSelect T="string" Label="Period control disposition" @bind-Value="_disposition" Required="true" Disabled="State.Busy"><MudSelectItem T="string" Value='@("CONFIRMED")'>Reviewed controls confirmed</MudSelectItem></MudSelect>
+                <MudTextField T="string" Label="Period closing or reopening control evidence" @bind-Value="_evidence" Required="true" MaxLength="2000" Lines="3" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Period state change reason" @bind-Value="_reason" Required="true" MaxLength="128" Lines="2" Disabled="State.Busy" />
+                <MudButton OnClick="Record" Color="Color.Primary" Variant="Variant.Filled" Disabled="State.Busy">Record reviewed period state</MudButton>
+            </MudForm>
+        }
+        <MudForm @ref="_recoveryForm"><MudTextField T="string" Label="Original transition period ID" @bind-Value="_recoveryPeriod" Required="true" MaxLength="32" /><MudTextField T="string" Label="Original period transition request ID" @bind-Value="_recoveryIntent" Required="true" MaxLength="32" /><MudButton OnClick="RecoverSelected" Disabled="State.Busy">Recover my original period transition</MudButton></MudForm>
+    }
+    @if(State.PeriodTransitionResult is {} outcome){<MudAlert Severity="Severity.Success">The original @outcome.Command.ToState period state and durable history are confirmed.</MudAlert><MudText>Period @outcome.Period.PERIOD_CODE · Actor @outcome.Command.ActorUserId · UTC @outcome.Period.ROW_CHANGED_DATE?.ToString("O") · @outcome.Command.ClosingEvidence</MudText><MudText>This is the original transition outcome. Reload current period status before another change or posting.</MudText>}
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public CompanyLedgerAccountState State{get;set;}=default!;
+    [Parameter] public string Book{get;set;}="";
+    [Parameter] public string Currency{get;set;}="";
+    [Parameter] public string Calendar{get;set;}="";
+    private MudForm? _form,_recoveryForm;
+    private string _period="",_target="",_disposition="",_evidence="",_reason="",_recoveryPeriod="",_recoveryIntent="";
+    private string? _error;
+    private bool _disposed;
+    private long _epoch;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    private async Task Access(bool write){var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || (user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value)!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || write && !selected.Permissions.Contains("Accounting.ManagePeriods",StringComparer.Ordinal))throw new UnauthorizedAccessException();}
+    private async Task Execute(Func<Task> action,bool write=true){var epoch=_epoch;_error=null;try{await Access(write);await action();}catch{if(!_disposed && epoch==_epoch)_error="The original period transition is unconfirmed. Check current company/account/calendar, independent authority, reviewed state and control evidence. Recover the original request before another change.";}}
+    private Task Review()=>Execute(()=>State.LoadPeriodTransitionReviewAsync(Book,Currency,Calendar,Accounting));
+    private Task Record()=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}await State.ChangePeriodStateAsync(_period,_target,_disposition,_evidence,_reason,Accounting);});
+    private Task Retry()=>Execute(()=>State.SubmitPeriodTransitionAsync(Accounting));
+    private Task Recover(string id,string intent,string book,string currency,string calendar)=>Execute(()=>State.RecoverPeriodTransitionAsync(book,currency,calendar,id,intent,Accounting),false);
+    private Task RecoverSelected()=>Execute(async()=>{if(_recoveryForm is not null){await _recoveryForm.ValidateAsync();if(!_recoveryForm.IsValid)return;}await State.RecoverPeriodTransitionAsync(Book,Currency,Calendar,_recoveryPeriod,_recoveryIntent,Accounting);},false);
+    private void Reset(){++_epoch;_period=_target=_disposition=_evidence=_reason=_recoveryPeriod=_recoveryIntent="";_error=null;Changed();}
+    private void AuthChanged(Task<AuthenticationState> state){State.Invalidate();Reset();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

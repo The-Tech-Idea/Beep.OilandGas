@@ -5,40 +5,51 @@ namespace Beep.OilandGas.Web.Services;
 
 public sealed class ModuleDatabaseClient(ApiClient api)
 {
-    public async Task<List<ModuleDatabaseSummary>> ListAsync() =>
-        await api.GetAsync<List<ModuleDatabaseSummary>>("/api/setup/modules") ?? [];
+    private static string Scoped(string path, string tenantId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        return $"{path}?tenantId={Uri.EscapeDataString(tenantId)}";
+    }
+    public async Task<List<AppTenant>> TenantsAsync() =>
+        await api.GetAsync<List<AppTenant>>("/api/setup/modules/tenants") ?? [];
+    public async Task<List<ModuleDatabaseSummary>> ListAsync(string tenantId) =>
+        await api.GetAsync<List<ModuleDatabaseSummary>>(Scoped("/api/setup/modules", tenantId)) ?? [];
     public async Task<List<string>> ConnectionsAsync() =>
         await api.GetAsync<List<string>>("/api/setup/modules/connections") ?? [];
-    public async Task<ModuleSeedSummary> SeedAsync(string moduleId, ModuleSeedRequest request) =>
+    public async Task<ModuleSeedSummary> SeedAsync(string tenantId, string moduleId, ModuleSeedRequest request) =>
         await api.PostAsync<ModuleSeedRequest, ModuleSeedSummary>(
-            $"/api/setup/modules/{Uri.EscapeDataString(moduleId)}/seed", request)
+            Scoped($"/api/setup/modules/{Uri.EscapeDataString(moduleId)}/seed", tenantId), request)
         ?? throw new InvalidOperationException("The seeding response was empty.");
-    public async Task<ModuleDatabaseBinding> BindAsync(string moduleId, ModuleBindingRequest request) =>
+    public async Task<ModuleDatabaseBinding> BindAsync(string tenantId, string moduleId, ModuleBindingRequest request) =>
         await api.PutAsync<ModuleBindingRequest, ModuleDatabaseBinding>(
-            $"/api/setup/modules/{Uri.EscapeDataString(moduleId)}/connection", request)
+            Scoped($"/api/setup/modules/{Uri.EscapeDataString(moduleId)}/connection", tenantId), request)
         ?? throw new InvalidOperationException("The binding response was empty.");
-    public async Task<SchemaMigrationPlanResult> PlanAsync(string moduleId, ModulePlanRequest request) =>
+    public async Task<SchemaMigrationPlanResult> PlanAsync(string tenantId, string moduleId, ModulePlanRequest request) =>
         await api.PostAsync<ModulePlanRequest, SchemaMigrationPlanResult>(
-            $"/api/setup/modules/{Uri.EscapeDataString(moduleId)}/plan", request)
+            Scoped($"/api/setup/modules/{Uri.EscapeDataString(moduleId)}/plan", tenantId), request)
         ?? throw new InvalidOperationException("The migration plan response was empty.");
-    public async Task<SchemaMigrationApprovalResult> ApproveAsync(string planId)
+    public async Task<SchemaMigrationApprovalResult> ApproveAsync(string tenantId, SchemaMigrationPlanResult plan)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(planId);
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentException.ThrowIfNullOrWhiteSpace(plan.PlanId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(plan.PlanHash);
+        ArgumentException.ThrowIfNullOrWhiteSpace(plan.ManifestHash);
         var result = await api.PostAsync<SchemaMigrationApprovalRequest, SchemaMigrationApprovalResult>(
-            "/api/ppdm39/setup/schema/approve", new() { PlanId = planId })
+            Scoped("/api/ppdm39/setup/schema/approve", tenantId), new() { PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash, ExpectedManifestHash = plan.ManifestHash })
         ?? throw new InvalidOperationException("The approval response was empty.");
-        if (result.Success && !string.Equals(result.PlanId, planId, StringComparison.Ordinal))
-            throw new InvalidOperationException("The approval response does not identify the reviewed plan.");
+        if (result.Success && (!string.Equals(result.PlanId, plan.PlanId, StringComparison.Ordinal) ||
+            !string.Equals(result.PlanHash, plan.PlanHash, StringComparison.Ordinal) || !string.Equals(result.ManifestHash, plan.ManifestHash, StringComparison.Ordinal)))
+            throw new InvalidOperationException("The approval response does not identify the reviewed plan and manifest.");
         return result;
     }
-    public async Task<SchemaMigrationExecuteResult> ExecuteAsync(SchemaMigrationPlanResult plan, bool acknowledgeHighRisk)
+    public async Task<SchemaMigrationExecuteResult> ExecuteAsync(string tenantId, SchemaMigrationPlanResult plan, bool acknowledgeHighRisk)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentException.ThrowIfNullOrWhiteSpace(plan.PlanId);
         ArgumentException.ThrowIfNullOrWhiteSpace(plan.PlanHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(plan.ManifestHash);
         var result = await api.PostAsync<SchemaMigrationExecuteRequest, SchemaMigrationExecuteResult>(
-            "/api/ppdm39/setup/schema/execute", new()
+            Scoped("/api/ppdm39/setup/schema/execute", tenantId), new()
             {
                 PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash,
                 ExpectedManifestHash = plan.ManifestHash, AcknowledgeHighRisk = acknowledgeHighRisk

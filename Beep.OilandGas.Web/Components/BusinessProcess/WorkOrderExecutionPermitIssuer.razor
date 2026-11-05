@@ -1,0 +1,106 @@
+@using System.Globalization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Models.Enums.Shared
+@using Beep.OilandGas.Web.Services
+@inject WorkOrderExecutionPermitState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Issue a pending work-order execution permit</MudText>
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || State.Busy || State.VisibleReference is not null)" Color="Color.Primary">Review original source and issue authority</MudButton>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reviewing pending work permit" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_authorized && State.Review is { } review)
+        {
+            <MudText>Company @review.Context.Company.BusinessAssociateId · FIELD @review.Context.FieldId · Order @review.Source.Order.InstanceId</MudText>
+            <MudText Typo="Typo.caption">Inspection revision: @review.Source.SnapshotRevision</MudText>
+            <MudText Typo="Typo.subtitle2">Original inspection requirements</MudText>
+            @if(review.Source.Inspections.Count==0){<MudAlert Severity="Severity.Warning">No original inspection requirements are recorded.</MudAlert>}
+            @foreach(var requirement in review.Source.Inspections)
+            {
+                <MudText>@requirement.CondSeq · @requirement.RequiredText · jurisdiction @requirement.Jurisdiction · reference @(requirement.RegulatoryRef??"Unconfirmed")</MudText>
+                <MudText Typo="Typo.caption">Requirement @requirement.InspectionId · author @requirement.RequirementActor · result @requirement.Status</MudText>
+            }
+            <MudSelect T="string" Label="Explicit permit type" @bind-Value="_type" Required="true">
+                @foreach(var type in System.Enum.GetNames<PermitToWorkType>().Where(value=>value!="Unknown")){<MudSelectItem T="string" Value="@type">@type</MudSelectItem>}
+            </MudSelect>
+            <MudTextField @bind-Value="_jurisdiction" Label="Reported jurisdiction / authority" Required="true" />
+            <MudTextField @bind-Value="_scope" Label="Original work scope" Required="true" Lines="2" />
+            <MudTextField @bind-Value="_isolation" Label="Recorded isolation evidence reference" Required="true" />
+            <MudTextField @bind-Value="_risk" Label="Recorded risk review reference" Required="true" />
+            <MudTextField @bind-Value="_personnel" Label="Recorded personnel evidence reference" Required="true" />
+            <MudTextField @bind-Value="_materials" Label="Recorded material evidence reference" Required="true" />
+            <MudTextField @bind-Value="_from" Label="Valid from UTC" HelperText="Use yyyy-MM-ddTHH:mm:ssZ. No local time zone is assumed." Required="true" />
+            <MudTextField @bind-Value="_to" Label="Valid to UTC" HelperText="Use yyyy-MM-ddTHH:mm:ssZ; must be after the start." Required="true" />
+            <MudButton OnClick="IssueAsync" Disabled="@(!State.CanIssue || !_authorized)" Color="Color.Primary">Retain original proposal and issue pending permit</MudButton>
+        }
+        @if(_authorized && State.VisibleReference is { } original)
+        {
+            <MudText>Original pending issue reference: @original</MudText>
+            <MudAlert Severity="@(State.Receipt is null?Severity.Warning:Severity.Info)">@(State.Receipt is null?"The issue outcome is unconfirmed. Another proposal is blocked until original read-only reconciliation.":"The original pending permit is recorded. Independent approval and execution remain separate.")</MudAlert>
+        }
+        @if(_authorized && State.Receipt is { } receipt){<MudText>Recorded pending permit: @receipt.PermitId</MudText>}
+        @if(_authorized && State.VisibleIntent is { } proposal)
+        {
+            <MudText Typo="Typo.subtitle2">Retained original proposal</MudText>
+            <MudText>Type: @proposal.PermitType · Reported jurisdiction: @proposal.Jurisdiction</MudText>
+            <MudText>Scope: @proposal.ScopeDescription</MudText>
+            <MudText>Isolation: @proposal.IsolationReference · Risk: @proposal.RiskReference</MudText>
+            <MudText>Personnel: @proposal.PersonnelReference · Materials: @proposal.MaterialReference</MudText>
+            <MudText>Validity UTC: @proposal.ValidFromUtc.ToString("yyyy-MM-ddTHH:mm:ss'Z'",CultureInfo.InvariantCulture) to @proposal.ValidToUtc.ToString("yyyy-MM-ddTHH:mm:ss'Z'",CultureInfo.InvariantCulture)</MudText>
+            <MudText Typo="Typo.caption">Original inspection revision: @proposal.InspectionRevision</MudText>
+            @if(State.Receipt is not null)
+            {
+                <MudLink Href="@IndependentReviewLink(proposal.IntentId)">Independent review link for this recorded proposal</MudLink>
+                <MudText Typo="Typo.caption">The recipient must have current company/FIELD/task authority and HSE.ApprovePermit. The issuer cannot independently review their own proposal.</MudText>
+            }
+        }
+        <MudTextField @bind-Value="_reference" Label="Original issue reference for read-only reconciliation" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy)">Confirm original pending issue read-only</MudButton>
+        <MudAlert Severity="Severity.Info">Supplied references and pending issue do not establish prerequisite acceptance, permit approval or permission to execute work.</MudAlert>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public CompanyMaintenanceReceivingQuery? Task {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    [Parameter] public Guid? OriginalReference {get;set;}
+    private string _key="",_taskKey="",_type="",_jurisdiction="",_scope="",_isolation="",_risk="",_personnel="",_materials="",_from="",_to="",_reference="";
+    private string? _error;
+    private bool _authorized,_disposed;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async System.Threading.Tasks.Task OnParametersSetAsync()
+    {
+        var key=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision,OriginalReference});if(key==_key)return;_key=key;_error=null;_authorized=false;State.Attach(Task,SourceRevision);
+        var taskKey=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision});if(taskKey!=_taskKey){ClearInputs();_taskKey=taskKey;}
+        try{await Authority();_authorized=true;if(OriginalReference is {} id){_reference=id.ToString("D");if(!State.Busy && (State.VisibleReference!=id || State.Receipt is null && State.VisibleIntent is null))await State.RecoverAsync(Workflows,id);}}
+        catch(Exception error){if(AuthorityRefused(error))Invalidate();_error=Calls.Explain(error,"opening original work-permit issue","Current permit issue authority or the original reference could not be confirmed");}
+    }
+    private async System.Threading.Tasks.Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Task is null || snapshot.Selection is null || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=snapshot.Selection.UserId || !snapshot.Selection.Roles.Any(user.IsInRole) || !snapshot.Selection.Permissions.Contains("HSE.IssuePermit",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current resolved app account, standard company roles, HSE.IssuePermit and the original FIELD are required.");
+    }
+    private async System.Threading.Tasks.Task Run(Func<System.Threading.Tasks.Task> action)
+    {if(_disposed || State.Busy)return;_error=null;try{await Authority();_authorized=true;State.Attach(Task,SourceRevision);await action();await Authority();}catch(Exception error){if(AuthorityRefused(error))Invalidate();_error=Calls.Explain(error,"reviewing original pending work-permit issue","The original issue could not be confirmed. Retain its reference before reconciliation");}}
+    private static bool AuthorityRefused(Exception error)=>error is UnauthorizedAccessException || error is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized};
+    private System.Threading.Tasks.Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows));
+    private static DateTime Utc(string value){if(!DateTime.TryParseExact(value,"yyyy-MM-dd'T'HH:mm:ss'Z'",CultureInfo.InvariantCulture,DateTimeStyles.AssumeUniversal|DateTimeStyles.AdjustToUniversal,out var utc))throw new ArgumentException("Enter an explicit UTC timestamp ending in Z.");return utc;}
+    private System.Threading.Tasks.Task IssueAsync()=>Run(()=>{var review=State.Review??throw new InvalidOperationException("Review the original source before issue.");var intent=new CompanyWorkOrderExecutionPermitIntent(review.Context,Task!,Guid.Empty,review.Source.SnapshotRevision,_type,_jurisdiction,_scope,_isolation,_risk,_personnel,_materials,Utc(_from),Utc(_to)){RequirementEvidenceVersion=review.RequirementEvidenceVersion};return State.IssueAsync(Workflows,intent,Retain);});
+    private System.Threading.Tasks.Task Retain(Guid id){_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("permitIssueId",id),replace:true);return System.Threading.Tasks.Task.CompletedTask;}
+    private string IndependentReviewLink(Guid id)=>Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"permitIssueId",null},{"permitReviewId",id}});
+    private System.Threading.Tasks.Task RecoverAsync()=>Run(()=>{if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original issue reference.");return State.RecoverAsync(Workflows,id,Retain);});
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ClearInputs(){_reference="";_type="";_jurisdiction="";_scope="";_isolation="";_risk="";_personnel="";_materials="";_from="";_to="";}
+    private void Invalidate(){_authorized=false;ClearInputs();State.Attach(null,null);Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(System.Threading.Tasks.Task<AuthenticationState> _) => Invalidate();
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.Attach(null,null);}
+}

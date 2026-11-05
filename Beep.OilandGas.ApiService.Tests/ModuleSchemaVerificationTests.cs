@@ -20,7 +20,7 @@ public class ModuleSchemaVerificationTests
         var (editor, source) = Fixture("date-only");
         source.SetupGet(x => x.DatasourceType).Returns(provider);
         var error = Record.Exception(() => ModuleSchemaVerification.Verify(editor.Object, source.Object, [typeof(OIL_COMPOSITION)]));
-        if (rejects) Assert.Contains("date-only", Assert.IsType<InvalidOperationException>(error).Message);
+        if (rejects) Assert.Contains("date-only", Assert.IsType<ModuleSchemaMismatchException>(error).Message);
         else Assert.Null(error); // Oracle DATE includes time-of-day.
     }
 
@@ -33,8 +33,22 @@ public class ModuleSchemaVerificationTests
     public void IncompleteOrUnreadableSchemaCannotReportCompletion(string scenario)
     {
         var (editor, source) = Fixture(scenario);
-        Assert.Throws<InvalidOperationException>(() => ModuleSchemaVerification.Verify(
+        Assert.ThrowsAny<InvalidOperationException>(() => ModuleSchemaVerification.Verify(
             editor.Object, source.Object, [typeof(OIL_COMPOSITION)]));
+    }
+
+    [Theory]
+    [InlineData("missing-table", true)]
+    [InlineData("existence-failure", false)]
+    [InlineData("missing-metadata", false)]
+    [InlineData("read-failure", false)]
+    [InlineData("missing-column", true)]
+    public void OnlyConfirmedSchemaDifferencesAreReportedAsMismatch(string scenario, bool mismatch)
+    {
+        var (editor, source) = Fixture(scenario);
+        var error = Record.Exception(() => ModuleSchemaVerification.Verify(editor.Object, source.Object, [typeof(OIL_COMPOSITION)]));
+        Assert.NotNull(error);
+        Assert.Equal(mismatch, error is ModuleSchemaMismatchException);
     }
 
     [Fact]
@@ -60,6 +74,8 @@ public class ModuleSchemaVerificationTests
         var creator = new ClassCreator(editor.Object);
         editor.SetupGet(x => x.classCreator).Returns(creator);
         var source = new Mock<IDataSource>(MockBehavior.Strict);
+        source.Setup(x => x.CheckEntityExist(It.IsAny<string>())).Returns(scenario == "missing-metadata");
+        source.SetupGet(x => x.ErrorObject).Returns(new TheTechIdea.Beep.ConfigUtil.ErrorsInfo { Flag = scenario == "existence-failure" ? TheTechIdea.Beep.ConfigUtil.Errors.Failed : TheTechIdea.Beep.ConfigUtil.Errors.Ok });
         source.Setup(x => x.GetEntityStructure(It.IsAny<EntityStructure>(), true))
             .Returns((EntityStructure request, bool refresh) =>
             {
@@ -67,7 +83,7 @@ public class ModuleSchemaVerificationTests
                 Assert.True(request.Fields is null || request.Fields.Count == 0);
                 if (scenario == "read-failure") throw new InvalidOperationException("Metadata unavailable");
                 var actual = creator.ConvertToEntityStructure(typeof(OIL_COMPOSITION));
-                if (scenario == "missing-table") actual.Fields.Clear();
+                if (scenario is "missing-table" or "existence-failure" or "missing-metadata") actual.Fields.Clear();
                 if (scenario == "missing-column") actual.Fields.RemoveAt(actual.Fields.Count - 1);
                 if (scenario == "missing-key") actual.Fields.Single(x => x.IsKey).IsKey = false;
                 if (scenario == "nullable-key") actual.Fields.Single(x => x.IsKey).AllowDBNull = true;

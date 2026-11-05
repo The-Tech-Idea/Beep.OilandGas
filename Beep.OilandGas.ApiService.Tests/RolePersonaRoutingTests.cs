@@ -36,25 +36,40 @@ public class RolePersonaRoutingTests(ITestOutputHelper output)
         db.AddRange(new AppPersona { Code = "ENGINEER", Name = "Engineer" },
             new AppPersona { Code = "DISABLED_USER", Name = "Disabled user" },
             new AppPersona { Code = "INACTIVE", Name = "Inactive", IsActive = false });
+        db.Add(new AppTenant { TenantId="tenant", Name="Tenant" });
+        db.Add(new AppCompany { TenantId="tenant",BusinessAssociateId="company" });
         for (var i = 1; i <= 5; i++)
         {
             var id = $"u{i}";
             db.Users.Add(new OilGasUser { Id = id, UserName = id, IsActive = i != 3 });
-            db.Add(new AppUserPersona { UserId = id, ChangedBy = "u1", ChangedUtc = DateTime.UtcNow,
+            db.Add(new AppUserPersona { UserId = id, TenantId = "tenant", BusinessAssociateId = "company", ChangedBy = "u1", ChangedUtc = DateTime.UtcNow,
                 PersonaCode = i == 3 ? "DISABLED_USER" : i == 4 ? "INACTIVE" : "ENGINEER" });
             if (i != 5) db.UserRoles.Add(new IdentityUserRole<string> { RoleId = "r", UserId = id });
         }
         await db.SaveChangesAsync();
-        var reader = new RepositoryRolePersonaReader(db, new UpperInvariantLookupNormalizer());
-        Assert.Equal(new[] { "ENGINEER" }, await reader.GetActivePersonasAsync("reviewer"));
         var inboxRouter = new Mock<ICrossPersonaTaskRouter>(MockBehavior.Strict);
         inboxRouter.Setup(x => x.GetTasksForPersonaAsync("ENGINEER")).ReturnsAsync(new List<CROSS_PERSONA_TASK>
         {
-            new() { CROSS_TASK_ID = "allowed", TARGET_PERSONA_CODE = "ENGINEER", ASSIGNED_ROLE = "Reviewer", TASK_TYPE = "APPROVAL", PRIORITY = 1 },
+            new() { CROSS_TASK_ID = "allowed", PROCESS_INSTANCE_ID="process", PROCESS_STEP_INSTANCE_ID="step", ENTITY_ID="well", ENTITY_TYPE="WELL", TASK_STATUS="PENDING", TARGET_PERSONA_CODE = "ENGINEER", ASSIGNED_ROLE = "Reviewer", TASK_TYPE = "APPROVAL", PRIORITY = 1 },
             new() { CROSS_TASK_ID = "other-role", TARGET_PERSONA_CODE = "ENGINEER", ASSIGNED_ROLE = "Administrator", PRIORITY = 1 },
             new() { CROSS_TASK_ID = "other-persona", TARGET_PERSONA_CODE = "INACTIVE", ASSIGNED_ROLE = "Reviewer" }
         });
-        var controller = new WorkflowTasksController(db, inboxRouter.Object)
+        db.Add(new AppCompanyMembership { TenantId="tenant",BusinessAssociateId="company",UserId="u1",GrantedByUserId="u1",EffectiveFromUtc=DateTime.UtcNow.AddDays(-1) });
+        db.Add(new AppUserRoleExtension { TenantId="tenant",BusinessAssociateId="company",UserId="u1",RoleId="r",ApprovalStatus="Approved",EffectiveFromUtc=DateTime.UtcNow.AddDays(-1) });
+        db.RoleClaims.Add(new() { RoleId="r",ClaimType=RepositoryPersonaService.WorkspaceClaimType,ClaimValue="ENGINEER" });
+        await db.SaveChangesAsync();
+        var authority = new RepositoryAccessService(db);
+        var tenant = new RepositoryTenantContext();
+        tenant.SelectCompany((await new RepositoryCompanyContextResolver(authority).ResolveAsync("u1",new("tenant","company")))!);
+        var reader = new RepositoryRolePersonaReader(authority, tenant);
+        Assert.Equal(new[] { "ENGINEER" }, await reader.GetActivePersonasAsync("Reviewer"));
+        Assert.Empty(await reader.GetActivePersonasAsync("reviewer"));
+        var resource = new Mock<IAccessControlService>(MockBehavior.Strict);
+        resource.Setup(x => x.CheckAssetAccessAsync("u1","field","FIELD","READ",null)).ReturnsAsync(new Beep.OilandGas.Models.Data.AccessCheckResponse { HasAccess=true });
+        resource.Setup(x => x.CheckAssetAccessAsync("u1","well","WELL","READ",null)).ReturnsAsync(new Beep.OilandGas.Models.Data.AccessCheckResponse { HasAccess=true });
+        var process = new Mock<IProcessService>(MockBehavior.Strict);
+        process.Setup(x => x.GetProcessInstanceAsync("process")).ReturnsAsync(new Beep.OilandGas.Models.Processes.ProcessInstance { InstanceId="process",FieldId="field",EntityId="well",EntityType="WELL",StepInstances=[new() { StepInstanceId="step" }] });
+        var controller = new WorkflowTasksController(db, inboxRouter.Object, tenant, authority, new RepositoryPersonaService(db), resource.Object, process.Object, null!, new Mock<IDevelopmentAssignedReviewReader>(MockBehavior.Strict).Object, new Mock<IDevelopmentInvestmentAssignedReader>(MockBehavior.Strict).Object, new Mock<IDrillingProgramAssignedReviewReader>(MockBehavior.Strict).Object, new Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter>().Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
@@ -70,15 +85,14 @@ public class RolePersonaRoutingTests(ITestOutputHelper output)
         db.UserRoles.RemoveRange(await db.UserRoles.Where(x => x.UserId == "u1" || x.UserId == "u2").ToListAsync());
         await db.SaveChangesAsync();
         Assert.Empty(await reader.GetActivePersonasAsync("Reviewer"));
-        var revoked = Assert.IsType<UnifiedInbox>(Assert.IsType<OkObjectResult>(await controller.Inbox(null, default)).Value);
-        Assert.Equal(0, revoked.Counts.TotalPending);
+        Assert.IsType<ForbidResult>(await controller.Inbox(null, default));
         var user = await db.Users.SingleAsync(x => x.Id == "u1");
         user.IsActive = false;
         await db.SaveChangesAsync();
         Assert.IsType<ForbidResult>(await controller.Inbox(null, default));
         inboxRouter.Verify(x => x.GetTasksForPersonaAsync("ENGINEER"), Times.Exactly(2));
         inboxRouter.VerifyNoOtherCalls();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => reader.GetActivePersonasAsync("missing"));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reader.GetActivePersonasAsync("missing"));
     }
 
     [Fact]

@@ -1,0 +1,54 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CompanySalesReceivableWorkspaceState State
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+@if(_canRead)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-4">
+        <MudText Typo="Typo.h6">Confirmed sales ledger posting</MudText>
+        <MudText>Review native posted GL facts for this receivable in one explicit book and currency. Payment and settlement require their own recorded evidence.</MudText>
+        <MudForm @ref="_form">
+            <MudTextField T="string" Label="Recorded ledger book" Value="_book" ValueChanged='@(v=>Selection("book",v))' Required="true" MaxLength="128" />
+            <MudTextField T="string" Label="Recorded ledger currency" Value="_currency" ValueChanged='@(v=>Selection("currency",v))' Required="true" MaxLength="16" />
+            <MudButton OnClick="Load" Disabled="@State.Busy">Review confirmed native ledger</MudButton>
+        </MudForm>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Confirming native posted ledger facts" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(State.PostedLedger is {} ledger && ledger.ReceivableId==ReceivableId)
+        {
+            <MudText>Book @ledger.BookId · Currency @ledger.CurrencyCode · FIELD @ledger.FieldId</MudText>
+            @if(ledger.Journals.Count==0){<MudAlert Severity="Severity.Info">No confirmed posting is recorded for this receivable, book and currency.</MudAlert>}
+            @foreach(var journal in ledger.Journals)
+            {
+                <MudText>Posted journal @journal.Number · Debit @journal.Debit · Credit @journal.Credit · @ledger.CurrencyCode</MudText>
+                <CompanyFxEvidencePanel Conversion="journal.Conversion" />
+                <MudText>Company calendar date @journal.PostingDate.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · Posted UTC @journal.PostedAtUtc.ToString("O")</MudText>
+                <MudText>Maker @journal.Maker · Independent reviewer @journal.Reviewer · Posting producer @journal.PostedBy</MudText>
+                @foreach(var line in journal.Lines){<MudText>Account @line.AccountNumber · Native ID @line.AccountId · Debit @line.Debit · Credit @line.Credit</MudText>}
+                <MudText Typo="Typo.caption">Confirmed outcome @journal.OutcomeRevision</MudText>
+            }
+        }
+    </MudPaper>
+}
+@code {
+    [Parameter,EditorRequired] public string ReceivableId{get;set;}="";
+    private MudForm? _form;
+    private string _book="",_currency="";
+    private string? _error;
+    private bool _canRead,_disposed;
+    private long _epoch;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){Reset();try{await Access();}catch{_canRead=false;}}
+    private async Task Access(){var epoch=_epoch;var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);_canRead=State.CanReadPostedLedger;if(!_canRead)throw new UnauthorizedAccessException();}
+    private void Selection(string name,string value){if(name=="book")_book=value;else _currency=value;State.InvalidatePostedLedger();_error=null;}
+    private async Task Load(){var epoch=_epoch;_error=null;try{await Access();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}await State.LoadPostedLedgerAsync(ReceivableId,_book,_currency,Accounting);if(!_disposed && epoch==_epoch)await Access();}catch{State.InvalidatePostedLedger();if(!_disposed && epoch==_epoch)_error="The native posted ledger is unavailable or changed. Check the original company/account, ledger read permission, FIELD access and recorded book/currency. No posted totals are inferred.";}}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void Reset(){++_epoch;_canRead=false;_error=null;_book=_currency="";if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();Reset();}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

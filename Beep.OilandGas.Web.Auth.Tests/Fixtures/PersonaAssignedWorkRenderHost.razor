@@ -1,0 +1,7 @@
+@namespace Beep.OilandGas.Web.Auth.Tests.Fixtures
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Workflow
+<MudPopoverProvider />
+<PersonaAssignedWorkPanel Review="Review" WorkspaceName="Company buyer" />
+@code { [Microsoft.AspNetCore.Components.Parameter] public PersonaTaskInboxState? Review {get;set;} }

@@ -31,7 +31,7 @@ That makes the setup surface hard to evolve safely and obscures which flows shou
 
 Split the setup surface into focused application services such as:
 
-- `IPPDM39SetupConnectionService`
+- Connection management in `IPPDM39SetupService` and driver installation in `SetupDriverService`.
 - `IPPDM39SchemaMigrationService`
 - `IPPDM39SetupExecutionService`
 - `IPPDM39ReferenceDataSetupService`

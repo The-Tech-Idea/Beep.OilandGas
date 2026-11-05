@@ -1,0 +1,13 @@
+@page "/accounting/sales-invoices"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Components.Workflow
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3">Sales invoice preparation</MudText>
+    <MudButton Href="/accounting/revenue-workbench" Variant="Variant.Outlined">Return to revenue workspace</MudButton>
+    <SalesInvoiceQueue />
+    <SalesInvoiceWorkbench TicketId="@Ticket" />
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="ticket")] public string? Ticket{get;set;}
+}

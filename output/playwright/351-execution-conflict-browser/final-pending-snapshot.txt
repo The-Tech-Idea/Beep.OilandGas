@@ -1,0 +1,39 @@
+### Page
+- Page URL: http://127.0.0.1:65052/
+### Snapshot
+```yaml
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e49]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f2e50]
+    - paragraph [ref=f2e51]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f2e52]:
+      - button "Use read-only unmapped profile" [ref=f2e53] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f2e55] [cursor=pointer]
+      - button "Switch other company" [ref=f2e57] [cursor=pointer]
+      - button "Switch other account" [ref=f2e59] [cursor=pointer]
+      - button "Restore original company/account" [ref=f2e61] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f2e63] [cursor=pointer]
+      - button "Retain an unrecorded competing start" [ref=f2e65] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f2e67] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f2e69] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f2e71] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=f2e73]:
+    - heading "Approved program drilling execution" [level=1] [ref=f2e74]
+    - group [ref=f2e75]:
+      - link "Drilling workspace" [ref=f2e76] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Saved programs" [ref=f2e78] [cursor=pointer]:
+        - /url: /ppdm39/operations/drillingoperations
+      - button "Reload original execution outcome" [ref=f2e80] [cursor=pointer]
+    - generic [ref=f2e82]:
+      - heading "Retained original execution start" [level=2] [ref=f2e83]
+      - status [ref=f2e84]:
+        - generic [ref=f2e85]: The original is saved in this tab. A submission may have reached the server. Recover it before preparing another.
+      - paragraph [ref=f2e91]: Original drilling program · Actual spud 2026-10-26 16:37:17Z UTC · Original recorder execution-recorder
+      - paragraph [ref=f2e92]: Company company · FIELD original-field/واحد · Well recorded-well/one
+      - button "Recover original execution start" [ref=f2e93] [cursor=pointer]
+    - button "Inspect a different recorded execution" [ref=f2e95] [cursor=pointer]
+    - text: Use this when original recovery reports that another execution owns the program. Inspection preserves this tab's original and never retries a write.
+    - generic [ref=f2e97]: A recorded execution start is separate from WELL state, financial actuals, drilling completion, construction acceptance and production handover.
+```

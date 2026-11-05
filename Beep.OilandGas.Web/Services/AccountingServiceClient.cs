@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Web.Services;
 
-public sealed class AccountingServiceClient : IAccountingServiceClient
+public sealed partial class AccountingServiceClient : IAccountingServiceClient
 {
     private readonly ApiClient _apiClient;
     private readonly ILogger<AccountingServiceClient> _logger;
@@ -19,6 +19,188 @@ public sealed class AccountingServiceClient : IAccountingServiceClient
     {
         _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<TheTechIdea.Data.OilGas.PurchaseReceiptDecisionReview> GetPurchaseReceiptDecisionReviewAsync(string orderId,string receiptId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(orderId);ArgumentException.ThrowIfNullOrWhiteSpace(receiptId);
+        var scope=_apiClient.CompanySnapshot;if(scope.Selection is null)throw new InvalidOperationException("Select the original receiving company and account.");
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.PurchaseReceiptDecisionReview>("api/accounting/traditional/purchase-order/"+Uri.EscapeDataString(orderId)+"/receipts/"+Uri.EscapeDataString(receiptId)+"/decision-review")
+            ?? throw new InvalidOperationException("The bound receiver review was unavailable.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during receiver review.");
+        review.Require(scope.Selection.Scope,scope.Selection.UserId,orderId,receiptId);return review;
+    }
+    public async Task<TheTechIdea.Data.OilGas.PurchaseReceiptDecisionResult> RecordPurchaseReceiptDecisionAsync(TheTechIdea.Data.OilGas.PurchaseReceiptDecisionSubmission submission)
+    {
+        ArgumentNullException.ThrowIfNull(submission);ArgumentNullException.ThrowIfNull(submission.Command);ArgumentNullException.ThrowIfNull(submission.Review);
+        submission=TheTechIdea.Data.OilGas.PurchaseReceiptDecisionProof.Copy(submission);submission.Review.Require(submission.Command);
+        var command=submission.Command;var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null || scope.Selection.Scope!=command.Company || scope.Selection.UserId!=command.ActorUserId)
+            throw new InvalidOperationException("Return to the original receiver company and account to submit or reconcile.");
+        var route="api/accounting/traditional/purchase-order/"+Uri.EscapeDataString(command.OrderId)+"/receipts/"+Uri.EscapeDataString(command.ReceiptId)+"/decision";
+        var result=await _apiClient.PostAsync<TheTechIdea.Data.OilGas.PurchaseReceiptDecisionSubmission,TheTechIdea.Data.OilGas.PurchaseReceiptDecisionResult>(route,submission)
+            ?? throw new InvalidOperationException("Receiver outcome is unavailable. Reconcile the original intent.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during receiving. Reconcile the original intent.");
+        result.Require(submission);return result;
+    }
+    public async Task<TheTechIdea.Data.OilGas.APReceiptConsumptionReview> GetAPReceiptConsumptionAsync(string invoiceId,string lineId,string receiptId,string invoiceRevision,string orderRevision)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(invoiceId);ArgumentException.ThrowIfNullOrWhiteSpace(lineId);ArgumentException.ThrowIfNullOrWhiteSpace(receiptId);
+        if(!TheTechIdea.Data.OilGas.ProcessDefinitionRevision.IsValid(invoiceRevision) || !TheTechIdea.Data.OilGas.ProcessDefinitionRevision.IsValid(orderRevision))throw new InvalidOperationException("Review original invoice and purchase revisions first.");
+        var scope=_apiClient.CompanySnapshot;if(scope.Selection is null)throw new InvalidOperationException("Select the original company and account first.");
+        var route="api/accounting/traditional/ap/"+Uri.EscapeDataString(invoiceId)+"/lines/"+Uri.EscapeDataString(lineId)+"/receipt-consumption?receiptId="+Uri.EscapeDataString(receiptId)+"&expectedInvoiceRevision="+Uri.EscapeDataString(invoiceRevision)+"&expectedOrderRevision="+Uri.EscapeDataString(orderRevision);
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.APReceiptConsumptionReview>(route) ?? throw new InvalidOperationException("Receipt consumption evidence is unavailable.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during receipt consumption review.");
+        review.Source.RequireOrderId(scope.Selection.Scope,scope.Selection.UserId,invoiceId,lineId,invoiceRevision);
+        if(review.Source.Order.Revision!=orderRevision)throw new InvalidOperationException("The reviewed purchase source changed.");
+        review.Require(scope.Selection.Scope,scope.Selection.UserId,review.Source,receiptId);return review;
+    }
+    public async Task<TheTechIdea.Data.OilGas.APReceiptAllocationReceipt> RecordAPReceiptAllocationAsync(TheTechIdea.Data.OilGas.APReceiptAllocationSubmission submission)
+    {
+        ArgumentNullException.ThrowIfNull(submission);ArgumentNullException.ThrowIfNull(submission.Command);ArgumentNullException.ThrowIfNull(submission.Review);
+        submission=System.Text.Json.JsonSerializer.Deserialize<TheTechIdea.Data.OilGas.APReceiptAllocationSubmission>(System.Text.Json.JsonSerializer.Serialize(submission))!;
+        var command=submission.Command;command.Require(submission.Review);
+        var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null || scope.Selection.Scope!=command.Company || scope.Selection.UserId!=command.ActorUserId)
+            throw new InvalidOperationException("Select the original allocation company and account before submission or reconciliation.");
+        var route="api/accounting/traditional/ap/"+Uri.EscapeDataString(command.InvoiceId)+"/lines/"+Uri.EscapeDataString(command.LineId)+"/receipt-allocations";
+        var receipt=await _apiClient.PostAsync<TheTechIdea.Data.OilGas.APReceiptAllocationSubmission,TheTechIdea.Data.OilGas.APReceiptAllocationReceipt>(route,submission)
+            ?? throw new InvalidOperationException("The original allocation outcome was not returned; reconcile before another allocation.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company or account changed during allocation submission; its outcome is unconfirmed.");
+        receipt.Require(command,submission.Review);return receipt;
+    }
+    public async Task<TheTechIdea.Data.OilGas.CompanyMatchingPolicyReview> GetCompanyMatchingPoliciesAsync()
+    {
+        var original=_apiClient.CompanySnapshot;if(original.Selection is null)throw new InvalidOperationException("Select the original company and account first.");
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.CompanyMatchingPolicyReview>("api/accounting/traditional/ap/matching-policies")
+            ?? throw new InvalidOperationException("Company matching-policy evidence was unavailable.");
+        if(original!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company or account changed during matching-policy review.");
+        review.Require(original.Selection.Scope,original.Selection.UserId);return review;
+    }
+    public async Task<TheTechIdea.Data.OilGas.CompanyMatchingPolicyCommandReview> GetCompanyMatchingPolicyCommandReviewAsync(string action)
+    {
+        if(action is not ("DRAFT" or "APPROVE"))throw new InvalidOperationException("Choose an explicit policy action.");
+        var original=_apiClient.CompanySnapshot;if(original.Selection is null)throw new InvalidOperationException("Select the original policy company and account.");
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.CompanyMatchingPolicyCommandReview>("api/accounting/traditional/ap/matching-policies/command-review?action="+Uri.EscapeDataString(action))
+            ?? throw new InvalidOperationException("The original policy command review is unavailable.");
+        if(original!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company or account changed during policy command review.");
+        review.Require(original.Selection.Scope,original.Selection.UserId,action);return review;
+    }
+    public async Task<TheTechIdea.Data.OilGas.CompanyMatchingPolicyResult> RecordCompanyMatchingPolicyAsync(TheTechIdea.Data.OilGas.CompanyMatchingPolicySubmission submission)
+    {
+        ArgumentNullException.ThrowIfNull(submission);ArgumentNullException.ThrowIfNull(submission.Command);ArgumentNullException.ThrowIfNull(submission.Review);
+        submission=TheTechIdea.Data.OilGas.PurchaseReceiptDecisionProof.Copy(submission);submission.Review.Require(submission.Command);
+        var original=_apiClient.CompanySnapshot;var command=submission.Command;
+        if(original.Selection is null || original.Selection.Scope!=command.Company || original.Selection.UserId!=command.ActorUserId)
+            throw new InvalidOperationException("Return to the original policy company and account to submit or reconcile.");
+        var result=await _apiClient.PostAsync<TheTechIdea.Data.OilGas.CompanyMatchingPolicySubmission,TheTechIdea.Data.OilGas.CompanyMatchingPolicyResult>("api/accounting/traditional/ap/matching-policies/commands",submission)
+            ?? throw new InvalidOperationException("Policy outcome is unconfirmed. Reconcile the original intent.");
+        if(original!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company or account changed during policy submission. Retain the original intent.");
+        result.Require(submission);return result;
+    }
+    public async Task<TheTechIdea.Data.OilGas.APInvoiceFinancialReview> GetAPInvoiceFinancialReviewAsync(string invoiceId,string expectedInvoiceRevision)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(invoiceId);
+        if(!TheTechIdea.Data.OilGas.ProcessDefinitionRevision.IsValid(expectedInvoiceRevision))throw new InvalidOperationException("Reload the invoice before reviewing financial evidence.");
+        var scope=_apiClient.CompanySnapshot;if(scope.Selection is null)throw new InvalidOperationException("Select the original company first.");
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.APInvoiceFinancialReview>("api/accounting/traditional/ap/"+Uri.EscapeDataString(invoiceId)+"/financial-review?expectedInvoiceRevision="+Uri.EscapeDataString(expectedInvoiceRevision))
+            ?? throw new InvalidOperationException("The invoice financial review was unavailable.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during invoice financial review.");
+        review.Require(scope.Selection.Scope,scope.Selection.UserId,invoiceId,expectedInvoiceRevision);return review;
+    }
+    public async Task<TheTechIdea.Data.OilGas.APReceiptAllocationProposalReview> ReviewAPReceiptAllocationAsync(string invoiceId,string lineId,TheTechIdea.Data.OilGas.APReceiptAllocationProposal proposal)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(invoiceId);ArgumentException.ThrowIfNullOrWhiteSpace(lineId);ArgumentNullException.ThrowIfNull(proposal);
+        var scope=_apiClient.CompanySnapshot;if(scope.Selection is null)throw new InvalidOperationException("Select a company before reviewing a proposal.");
+        var route="/api/accounting/traditional/ap/"+Uri.EscapeDataString(invoiceId)+"/lines/"+Uri.EscapeDataString(lineId)+"/receipt-allocation-review";
+        var review=await _apiClient.PostAsync<TheTechIdea.Data.OilGas.APReceiptAllocationProposal,TheTechIdea.Data.OilGas.APReceiptAllocationProposalReview>(route,proposal)
+            ?? throw new InvalidOperationException("Allocation preparation review was not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during allocation preparation review.");
+        if(review.ReceiptConsumption is null)throw new InvalidOperationException("Receipt contributors were not reviewed.");
+        review.Require(scope.Selection.Scope,scope.Selection.UserId,invoiceId,lineId,proposal);return review;
+    }
+    public async Task<TheTechIdea.Data.OilGas.APReceiptAllocationReview> GetAPReceiptAllocationsAsync(string invoiceId,string lineId,string invoiceRevision,string orderRevision)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(invoiceId);ArgumentException.ThrowIfNullOrWhiteSpace(lineId);
+        if(!TheTechIdea.Data.OilGas.ProcessDefinitionRevision.IsValid(invoiceRevision) || !TheTechIdea.Data.OilGas.ProcessDefinitionRevision.IsValid(orderRevision))throw new InvalidOperationException("Review invoice and order before allocations.");
+        var scope=_apiClient.CompanySnapshot;if(scope.Selection is null)throw new InvalidOperationException("Select a company before reviewing allocations.");
+        var route="/api/accounting/traditional/ap/"+Uri.EscapeDataString(invoiceId)+"/lines/"+Uri.EscapeDataString(lineId)+"/receipt-allocations?expectedInvoiceRevision="+Uri.EscapeDataString(invoiceRevision)+"&expectedOrderRevision="+Uri.EscapeDataString(orderRevision);
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.APReceiptAllocationReview>(route) ?? throw new InvalidOperationException("Recorded allocations were not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during allocation review.");
+        review.Require(scope.Selection.Scope,scope.Selection.UserId,invoiceId,lineId,invoiceRevision);
+        if(review.Source.Order.Revision!=orderRevision)throw new InvalidOperationException("The reviewed order changed.");return review;
+    }
+    public async Task<TheTechIdea.Data.OilGas.APLinePurchaseSourceReview> GetAPLinePurchaseSourceAsync(string invoiceId,string lineId,string expectedInvoiceRevision)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(invoiceId);ArgumentException.ThrowIfNullOrWhiteSpace(lineId);
+        if(!TheTechIdea.Data.OilGas.ProcessDefinitionRevision.IsValid(expectedInvoiceRevision))throw new InvalidOperationException("Reload the AP source before reviewing its order.");
+        var scope=_apiClient.CompanySnapshot;if(scope.Selection is null)throw new InvalidOperationException("Select a company before reviewing AP purchase sources.");
+        var route="/api/accounting/traditional/ap/"+Uri.EscapeDataString(invoiceId)+"/lines/"+Uri.EscapeDataString(lineId)+"/purchase-source?expectedInvoiceRevision="+Uri.EscapeDataString(expectedInvoiceRevision);
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.APLinePurchaseSourceReview>(route) ?? throw new InvalidOperationException("The AP purchase source review was not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during AP purchase source review.");
+        review.RequireOrderId(scope.Selection.Scope,scope.Selection.UserId,invoiceId,lineId,expectedInvoiceRevision);return review;
+    }
+    public async Task<List<AP_INVOICE>> GetCompanyAPInvoicesAsync(string? vendorId=null)
+    {
+        if(vendorId is not null && string.IsNullOrWhiteSpace(vendorId))throw new ArgumentException("A supplied supplier restriction cannot be empty.",nameof(vendorId));
+        var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null)throw new InvalidOperationException("Select a company before reading AP sources.");
+        var route="/api/accounting/traditional/ap"+(vendorId is null?"":"?vendorId="+Uri.EscapeDataString(vendorId));
+        var rows=await _apiClient.GetAsync<List<AP_INVOICE>>(route) ?? throw new InvalidOperationException("The AP company source list was not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during AP read.");
+        TheTechIdea.Data.OilGas.APInvoiceOwnership.RequireRows(scope.Selection.Scope,rows);
+        if(vendorId is not null)TheTechIdea.Data.OilGas.APInvoiceOwnership.RequireVendorRows(scope.Selection.Scope,vendorId,rows);
+        return rows;
+    }
+    public async Task<List<AP_INVOICE>> GetVendorAPInvoicesAsync(string vendorId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(vendorId);var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null)throw new InvalidOperationException("Select a company before reading AP sources.");
+        var rows=await _apiClient.GetAsync<List<AP_INVOICE>>("/api/accounting/traditional/ap/vendor/"+Uri.EscapeDataString(vendorId)+"/invoices")
+            ?? throw new InvalidOperationException("The AP invoice source list was not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during AP read.");
+        TheTechIdea.Data.OilGas.APInvoiceOwnership.RequireVendorRows(scope.Selection.Scope,vendorId,rows);return rows;
+    }
+    public async Task<TheTechIdea.Data.OilGas.APInvoiceSourceReview?> GetAPInvoiceAsync(string invoiceId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(invoiceId);var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null)throw new InvalidOperationException("Select a company before reading AP sources.");
+        var review=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.APInvoiceSourceReview>("/api/accounting/traditional/ap/"+Uri.EscapeDataString(invoiceId))
+            ?? throw new InvalidOperationException("The AP invoice source review was not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during AP read.");
+        review.Require(scope.Selection.Scope,scope.Selection.UserId,invoiceId);return review;
+    }
+
+    public async Task<List<PURCHASE_ORDER>> GetCompanyPurchaseOrdersAsync(string? vendorId=null)
+    {
+        if(vendorId is not null && string.IsNullOrWhiteSpace(vendorId))throw new ArgumentException("A supplied supplier restriction cannot be empty.",nameof(vendorId));
+        var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null)throw new InvalidOperationException("Select a company before reading purchase orders.");
+        var route="/api/accounting/traditional/purchase-order"+(vendorId is null?"":"?vendorId="+Uri.EscapeDataString(vendorId));
+        var rows=await _apiClient.GetAsync<List<PURCHASE_ORDER>>(route) ?? throw new InvalidOperationException("The company purchase-order source list was not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during order read.");
+        TheTechIdea.Data.OilGas.PurchaseOrderOwnership.RequireRows(scope.Selection.Scope,rows);
+        if(vendorId is not null)TheTechIdea.Data.OilGas.PurchaseOrderOwnership.RequireVendorRows(scope.Selection.Scope,vendorId,rows);
+        return rows;
+    }
+    public async Task<List<PURCHASE_ORDER>> GetVendorPurchaseOrdersAsync(string vendorId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(vendorId);var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null)throw new InvalidOperationException("Select a company before reading purchase orders.");
+        var rows=await _apiClient.GetAsync<List<PURCHASE_ORDER>>("/api/accounting/traditional/purchase-order/vendor/"+Uri.EscapeDataString(vendorId)+"/orders")
+            ?? throw new InvalidOperationException("The purchase-order source list was not returned.");
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during purchase-order read.");
+        TheTechIdea.Data.OilGas.PurchaseOrderOwnership.RequireVendorRows(scope.Selection.Scope,vendorId,rows);
+        return rows;
+    }
+    public async Task<TheTechIdea.Data.OilGas.PurchaseOrderSourceReview?> GetPurchaseOrderAsync(string orderId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(orderId);var scope=_apiClient.CompanySnapshot;
+        if(scope.Selection is null)throw new InvalidOperationException("Select a company before reading purchase orders.");
+        var row=await _apiClient.GetAsync<TheTechIdea.Data.OilGas.PurchaseOrderSourceReview>("/api/accounting/traditional/purchase-order/"+Uri.EscapeDataString(orderId));
+        if(scope!=_apiClient.CompanySnapshot)throw new InvalidOperationException("Company changed during purchase-order read.");
+        if(row is null)throw new InvalidOperationException("The recorded purchase-order source review was empty.");
+        row.Require(scope.Selection.Scope,scope.Selection.UserId,orderId);return row;
     }
 
     public async Task<List<AccountingActivityDto>> GetRecentActivitiesAsync(CancellationToken cancellationToken = default)
@@ -173,6 +355,15 @@ public sealed class AccountingServiceClient : IAccountingServiceClient
             _logger.LogError(ex, "Error calculating royalties for field {FieldId}.", request.FieldId);
             throw;
         }
+    }
+
+    public async Task<TheTechIdea.Data.OilGas.AccountingPeriodCheckReview> GetPeriodChecksAsync(DateTime periodEnd,string bookId,CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(bookId);
+        if(periodEnd==default || periodEnd.TimeOfDay!=TimeSpan.Zero)throw new ArgumentException("Choose the period end date.");
+        return await _apiClient.GetAsync<TheTechIdea.Data.OilGas.AccountingPeriodCheckReview>(
+            $"/api/field/current/accounting/period-checks?periodEnd={periodEnd.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture)}&bookId={Uri.EscapeDataString(bookId)}",cancellationToken)
+            ?? throw new InvalidOperationException("Executed period checks were not returned.");
     }
 
     public async Task ClosePeriodAsync(CloseAccountingPeriodRequest request, CancellationToken cancellationToken = default)

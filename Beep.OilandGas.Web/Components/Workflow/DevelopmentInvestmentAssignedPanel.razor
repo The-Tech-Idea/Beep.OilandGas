@@ -1,0 +1,97 @@
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IAfeServiceClient AfeClient
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+<MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+    <MudButton Href="/ppdm39/tasks/inbox" Variant="Variant.Outlined">Assigned company work</MudButton>
+    <MudButton OnClick="Reload" Disabled="@(_state?.Loading==true || _state?.Busy==true)" Variant="Variant.Outlined">Reload assigned investment source</MudButton>
+    @if(_state?.CanRestoreOriginal==true){<MudButton OnClick="Restore" Variant="Variant.Outlined">Load my original stage decision</MudButton>}
+</MudStack>
+@if(_state?.DecisionError is {} decisionError){<MudAlert Severity="Severity.Error">@decisionError</MudAlert>}
+@if(_state?.DecisionConfirmation is {} confirmation){<MudAlert Severity="@(_state.Receipt?.Status=="RECORDED"?Severity.Success:Severity.Info)">@confirmation</MudAlert>}
+@if(_state?.RetainedInstanceId is {} retained)
+{
+    @if(_state.Pending is {} pending)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Retained original investment stage decision</MudText>
+            <MudText>@pending.Decision · @pending.Review.Source.Afe().Number · Stage @pending.Review.StageNumber of @pending.Review.StageCount</MudText>
+            <MudText Class="development-draft-description">@pending.Rationale</MudText>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton OnClick="Recover" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined">Recover original stage outcome</MudButton><MudButton OnClick="Continue" Disabled="@(!_state.CanContinue)" Variant="Variant.Outlined">Continue original decision</MudButton></MudStack>
+        </MudPaper>
+    }
+    else{<MudButton Href="@("/economics/afe?investmentHandoff="+Uri.EscapeDataString(retained))">Open retained investment assignment</MudButton>}
+}
+@if(_state?.Receipt is {Status:"RECORDED"} receipt)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Recorded investment stage</MudText><MudText>@receipt.WorkflowState · Approval @receipt.ApprovalId · History @receipt.HistoryId</MudText>
+        @if(receipt.Financial is {} financial){<MudText>Financial decision @financial.Decision · Reviewer @financial.Reviewer · @financial.AtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>}
+        @if(receipt.NextStepInstanceId is {} next){<MudText>Next configured task stage: @next</MudText>}
+    </MudPaper>
+}
+@if(_state?.CanView!=true){<MudAlert Severity="Severity.Info">Select a company with investment review and workflow approval access.</MudAlert>}
+else if(_state.Loading || _state.Busy){<MudProgressLinear Indeterminate="true" aria-label="Confirming assigned investment source" />}
+else if(_state.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+else if(_state.Current is {} assigned)
+{
+    var afe=assigned.Source.Afe();var baseline=assigned.Source.Current.Source.Baseline!;var scope=assigned.Source.Current.Source.Review.Scope;
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h5" HtmlTag="h2">@afe.Number · @afe.Name</MudText>
+        <MudText>Requested @afe.RequestedAmount.ToString("N"+afe.CurrencyDecimals,CultureInfo.InvariantCulture) @afe.CurrencyCode · Book @afe.BookId · @afe.Status</MudText>
+        <MudText>Effective calendar date @afe.EffectiveDate.ToString("yyyy-MM-dd") · FIELD @scope.FieldId</MudText>
+        <MudText Typo="Typo.subtitle1">Original funding rationale</MudText>
+        <MudText Class="development-draft-description">@assigned.FundingRationale</MudText>
+        <MudText>Request maker @afe.CreatedBy · @afe.CreatedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+        <MudText Typo="Typo.subtitle1">@assigned.WorkflowName · Version @assigned.WorkflowVersion</MudText>
+        <MudText>Stage @assigned.StageNumber of @assigned.StageCount</MudText>
+        <MudText>@assigned.StepName · Role @assigned.AssignedRole · Workspace @assigned.PersonaCode · Sender @assigned.Sender</MudText>
+        <MudText Typo="Typo.caption">Assignment @assigned.InstanceId · Task @assigned.TaskId</MudText>
+    </MudPaper>
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h3">Approved development basis</MudText>
+        <MudText>@baseline.FDP_NAME · Version @baseline.FDP_VERSION</MudText>
+        <MudText>Approved by @baseline.APPROVED_BY · @baseline.APPROVAL_DATE?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+        <MudText Typo="Typo.caption">Baseline @baseline.FDP_ID · Original draft @baseline.SOURCE_DRAFT_FDP_ID</MudText>
+        @if(baseline.TOTAL_CAPEX_MM is {} capex){<MudText>Planning estimate @capex.ToString("0.############################",CultureInfo.InvariantCulture) million @baseline.CAPEX_CURRENCY</MudText>}
+    </MudPaper>
+    @if(assigned.Source.Recorded is {} outcome){<MudAlert Severity="Severity.Info">Recorded investment decision: @outcome.Decision · Reviewer @outcome.Reviewer · @outcome.AtUtc.ToString("u",CultureInfo.InvariantCulture) UTC. Assignment completion is reviewed separately.</MudAlert>}
+    else{<MudAlert Severity="Severity.Info">No independent investment decision is recorded for this request.</MudAlert>}
+    @if(assigned.ReservedDecisionRevision is not null){<MudAlert Severity="Severity.Info">An original decision is pending for @assigned.ReservedBy. Its recorded outcome must be confirmed before another decision.</MudAlert>}
+    else if(_state.CanPrepare && _state.Prepared is null)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h3">Review this configured stage</MudText>
+            <MudSelect T="string" Label="Stage decision" @bind-Value="decision" Required="true" Class="my-3"><MudSelectItem T="string" Value='@("APPROVE")'>Approve this stage</MudSelectItem><MudSelectItem T="string" Value='@("REJECT")'>Reject request</MudSelectItem></MudSelect>
+            <MudTextField T="string" Label="Independent stage rationale" @bind-Value="rationale" Required="true" MaxLength="1600" Lines="3" Class="my-3" />
+            <MudButton OnClick="Prepare" Variant="Variant.Outlined">Review stage decision</MudButton>
+        </MudPaper>
+    }
+    @if(_state.Prepared is {} command)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h3">Confirm original investment stage decision</MudText>
+            <MudText>@command.Decision · Stage @command.Review.StageNumber of @command.Review.StageCount · @command.Review.Source.Afe().Number</MudText>
+            <MudText Class="development-draft-description">@command.Rationale</MudText>
+            <MudText>@(command.Terminal()?"This terminal decision requires the recorded financial outcome before native assignment completion.":"This approval advances configured review; it does not record final budget approval.")</MudText>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton OnClick="Submit" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Confirm stage decision</MudButton><MudButton OnClick="Cancel" Disabled="@_state.Busy" Variant="Variant.Outlined">Edit stage decision</MudButton></MudStack>
+        </MudPaper>
+    }
+    <MudText Typo="Typo.caption">Opening this assignment does not change your active FIELD, approve a budget or commit funds.</MudText>
+}
+else{<MudAlert Severity="Severity.Info">Reload the assigned source to confirm its current role, workspace and original FIELD access.</MudAlert>}
+@code{
+    [Parameter,EditorRequired]public string InstanceId{get;set;}=default!;
+    private DevelopmentInvestmentAssignedState? _state;private string? loaded,decision;private string rationale="";private bool disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override async Task OnParametersSetAsync(){if(loaded!=InstanceId){loaded=InstanceId;await Reload();}}
+    private void Prepare()=>_state!.PrepareDecision(decision,rationale);private void Cancel()=>_state!.CancelDecision();
+    private Task Submit()=>_state!.SubmitDecisionAsync();private Task Recover()=>_state!.RecoverDecisionAsync();private Task Continue()=>_state!.ContinueDecisionAsync();
+    private Task Restore()=>_state!.RestoreOriginalAsync();
+    private Task Reload()=>_state!.LoadAsync(InstanceId);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

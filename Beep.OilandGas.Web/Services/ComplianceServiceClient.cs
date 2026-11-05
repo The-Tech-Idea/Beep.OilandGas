@@ -6,11 +6,17 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Compliance;
 using Microsoft.Extensions.Logging;
 using TheTechIdeaWeb.Diagnostics;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 
 public sealed class ComplianceServiceClient : IComplianceServiceClient
 {
+    public async Task<FieldObligationSourceReview> GetRecordedFieldObligationsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _apiClient.GetAsync<FieldObligationSourceReview>("/api/field/current/compliance/recorded-obligations", cancellationToken)
+            ?? throw new InvalidOperationException("The recorded obligation evidence was unavailable.");
+    }
     private readonly ApiClient _apiClient;
     private readonly ILogger<ComplianceServiceClient> _logger;
     private readonly IFailureReporter _failures;
@@ -31,7 +37,7 @@ public sealed class ComplianceServiceClient : IComplianceServiceClient
                 endpoint += $"?year={year.Value}";
 
             var result = await _apiClient.GetAsync<List<ObligationSummary>>(endpoint, cancellationToken);
-            return result ?? new List<ObligationSummary>();
+            return result ?? throw new InvalidOperationException("The obligation population was unavailable.");
         }
         catch (Exception ex)
         {
@@ -48,7 +54,7 @@ public sealed class ComplianceServiceClient : IComplianceServiceClient
                 $"/api/field/current/compliance/obligations/upcoming?daysAhead={daysAhead}",
                 cancellationToken);
 
-            return result ?? new List<ObligationSummary>();
+            return result ?? throw new InvalidOperationException("The upcoming obligation population was unavailable.");
         }
         catch (Exception ex)
         {

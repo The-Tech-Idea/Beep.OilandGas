@@ -1,0 +1,180 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Reviewed attachment link/current content and protected sender/recovery/link/download",
+  "status": "focused gates passed; full feature qualification and whole goal open",
+  "timestamp": "2026-10-29T20:45:30.226354+00:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "dirty_worktree": true,
+  "gates": [
+    {
+      "log": "oilgas-354-link-01.log",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "26s",
+      "exit_code": 0,
+      "selection": "InstalledNativeDocumentStagingOwnsTwoTargetsAndSameOriginal: link-download/link-rollback/linked-change/reader (4), PermitDocumentWireProjectsSafeReceiptsAndExactContent (9)",
+      "scope": "Two actual setup-loaded SQLite targets and Beep Migration; native link/current proof/binary/rollback/independent reviewer. Transport overlaps later gate."
+    },
+    {
+      "log": "oilgas-354-sender-01.log",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "2.3123s",
+      "exit_code": 0,
+      "selection": "PermitDocumentSenderRetainsOriginalAndConvergesWithoutReplacement (8); ProtectedPermitDocumentStoreKeepsExactMetadataAndUnlinkedCandidate (7)",
+      "scope": "Retain before transport, lost ack/read-only recovery, exact same-file resend, metadata-only protected original/candidate keys, no replacement, context/cleanup/storage refusal."
+    },
+    {
+      "log": "oilgas-354-sender-screen-01.log",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "2.6127s",
+      "exit_code": 0,
+      "selection": "ActualPermitDocumentControlsUseReviewedUploadRecoveryLinkAndSafeDownload (9)",
+      "scope": "Actual Razor controls/handlers; controlled typed services and captured JS call, not a browser."
+    },
+    {
+      "log": "oilgas-354-sender-transport-01.log",
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "2.3328s",
+      "exit_code": 0,
+      "selection": "PermitDocumentApiRefusesChangedOriginalContextAndContent (15); PermitDocumentClientsRejectUnconfirmedOrChangedTransport (6); affected PermitDocumentWireProjectsSafeReceiptsAndExactContent (9)",
+      "scope": "Full native proof original validation before safe projection; foreign/late/missing/changed refusal; explicit recovery absence; safe successful API/Web/SDK routes."
+    },
+    {
+      "log": "oilgas-354-sender-screen-02.log",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "2.8229s",
+      "exit_code": 0,
+      "selection": "ActualPermitDocumentControlsUseReviewedUploadRecoveryLinkAndSafeDownload (9 actual)",
+      "scope": "Intended3 filter DisplayName download matched method SafeDownload and executed all9 of this same plan method. All pass; no unrelated method/class. Markup regrouped attachment values."
+    }
+  ],
+  "retained_logs": [
+    "oilgas-354-document-browser-build-02.log",
+    "oilgas-354-document-browser-build.log",
+    "oilgas-354-link-01.log",
+    "oilgas-354-link-data-build-02.log",
+    "oilgas-354-link-data-build-03.log",
+    "oilgas-354-link-data-build.log",
+    "oilgas-354-link-native-build-02.log",
+    "oilgas-354-link-native-build.log",
+    "oilgas-354-link-sdk-build.log",
+    "oilgas-354-link-tests-build-02.log",
+    "oilgas-354-link-tests-build-03.log",
+    "oilgas-354-link-tests-build-04.log",
+    "oilgas-354-link-tests-build.log",
+    "oilgas-354-sender-01.log",
+    "oilgas-354-sender-build-01.log",
+    "oilgas-354-sender-build-02.log",
+    "oilgas-354-sender-build-03.log",
+    "oilgas-354-sender-build-04.log",
+    "oilgas-354-sender-screen-01.log",
+    "oilgas-354-sender-screen-02.log",
+    "oilgas-354-sender-sdk-build.log",
+    "oilgas-354-sender-transport-01.log"
+  ],
+  "browser": {
+    "runtime": "Installed Microsoft Edge, locally cached Playwright CLI, loopback Blazor current actual Razor/ProtectedSessionStorage/global app.css/site.js",
+    "observations": [
+      {
+        "artifact": "browser/stage.log",
+        "name": "Real file input / explicit metadata and UTC / lost upload acknowledgement",
+        "result": "passed",
+        "detail": "One controlled upload attempt/effect; zero lifecycle effects; protected original retained."
+      },
+      {
+        "artifact": "browser/recover.log",
+        "name": "Full reload and read-only recovery; candidate survives a second reload",
+        "result": "passed",
+        "detail": "Same one upload effect/attempt; upload original cleared after candidate saved; no read-only link control."
+      },
+      {
+        "artifact": "browser/link-02.log",
+        "name": "Author reload/review/reason/confirmation links exact candidate",
+        "result": "passed",
+        "detail": "One link effect/attempt; protected candidate and command inputs cleared after confirmation."
+      },
+      {
+        "artifact": "browser/download.log",
+        "name": "Actual global site.js download",
+        "result": "passed",
+        "detail": "Exact five source bytes downloaded as report.pdf; SHA256 checked separately."
+      },
+      {
+        "artifact": "browser/field.log",
+        "name": "FIELD change withholds private digest and download",
+        "result": "passed",
+        "detail": "Same one upload and one link effect; no old evidence visible."
+      },
+      {
+        "artifact": "browser/final-table.log",
+        "name": "Final390px table and exact download",
+        "result": "passed",
+        "detail": "Fresh rebuilt host; page width/scroll390, table container/scroll324. Final table and page screenshots visually inspected."
+      },
+      {
+        "artifact": "browser/desktop.log",
+        "name": "Final1280px table",
+        "result": "passed",
+        "detail": "Page width/scroll1280, table container/scroll1214. Table screenshot visually inspected."
+      }
+    ],
+    "download_sha256": "5a44f143bd89e639ab6bd15d97c5989b3d5f58f4d7c0055f884bd781e0032468",
+    "source_file_sha256": "5a44f143bd89e639ab6bd15d97c5989b3d5f58f4d7c0055f884bd781e0032468",
+    "initial_observations": [
+      "Default CLI Chrome absent; installed Edge used without download.",
+      "First author-link script timed out: current role change correctly hides detail until explicit Reload recorded application; corrected navigation passes.",
+      "Initial390px screenshot squeezed competing content children. Grouping fixed text but internal table clipping remained; central mobile fixed table/stacked labels resolves it in final screenshots and dimensions."
+    ],
+    "limits": [
+      "Controlled authentication/roles and typed in-memory document/lifecycle effects; not production API/OIDC/native proof.",
+      "Initial recovery host and final rebuilt visual host have separate fresh ledgers; exact one upload/one link effect asserted for each.",
+      "No cross-process/power-loss/provider-I/O or native staging contention claim."
+    ]
+  },
+  "construction_failures": [
+    "Initial Data enum namespace resolved to sibling Beep namespace; corrected imports before green builds.",
+    "Initial Web method brace placement corrected before focused build; retained logs include failures."
+  ],
+  "limits": [
+    "Native read-before/after fences are not distributed atomicity across CORE/PERMITS.",
+    "Protected document-specific hosted HTTP/company isolation, production PPDM reference catalogs/FKs, other providers/public distribution, native staging process/concurrency remain open.",
+    "Existing schema conversion requires reviewed Beep Migration; no existing database conversion executed.",
+    "Jurisdiction/binding policy, full company/persona/finance/multinational/release and overall approved goal remain open.",
+    "No handwritten SQL/new EF migration/compatibility owner/commit/push."
+  ],
+  "source_sha256": {
+    "TheTechIdea.Data/OilGas/PermitAttachmentDocument.cs": "d43bd28648ce41a2209823f987661cea6e1208e6d5c547dc40495d2ed9f6b031",
+    "TheTechIdea.Data/OilGas/PermitDocumentStaging.cs": "63451c216159632353502d66d6072f0c8650a0a44fe237aa81dc711a3640f0f8",
+    "TheTechIdea.Data/OilGas/PermitApplicationSupportingSnapshot.cs": "289e22033a628b32312d66c711a61388c2527fec212c5cc4e665850ce46db8c9",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.AttachmentContent.cs": "88d830053f94316346f5e0e0659391671f15117886f342ed6c78d15d8baad452",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Documents.cs": "d6f31a8c2604c05b0dce66ce4391b28e812bba005856faa7f4b3c95fd5d5f53d",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "be7f44b8e4b259b626e5d2d70198010bd33456d4f776428ccd2b12b03e5e7e64",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "1197563e2483b993ff08a15864ca9098be52d780dd7251d5cfd7585ef0a8b82e",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "fffcadd22baee397b6561893aaee4e657842257a98bcba5a28c5e28a105519a4",
+    "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs": "4e0bd4b2791eff8bc3bc8297ba394634f0cd94ca012f8c72d91adf7f755bb1d9",
+    "Beep.OilandGas.Web/Services/PermitApplicationCommandState.Documents.cs": "42256b0fea81ee710ba921f2816b19bccceccf7a30aea2ed632ae855f6160f01",
+    "Beep.OilandGas.Web/Services/PermitApplicationIntentStore.cs": "93cccdf71278dc38ac1ac4cf9ca4d06be227822e26d32d2cf95379a4a9749e45",
+    "Beep.OilandGas.Web/Services/PermitServiceClient.cs": "d6f6c73e33ba35f31fb87677cea33ee4cd8120cc783b03211ac535ed5d410e34",
+    "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor": "abc9046e532ccab4f2b273fd49b804f28ac40b596adcc80c20f4b39dace952a3",
+    "Beep.OilandGas.Web/wwwroot/css/app.css": "ab70d0ee9d0a2b18b312ee4077f3a9eaade8a1018a9954b02e08d4288d77e4dd",
+    "Beep.OilandGas.Web/wwwroot/js/site.js": "7eb2324818c6ed7eaefcd14e6a550d0dfe30100fe9e00fc21db816e6266e335b",
+    "Beep.OilandGas.Client/App/Services/Permits/PermitsService.cs": "5c8e6dcf86fdffa8a764791240232a6f15907e48c2ce645b5c105658664719b6",
+    "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs": "ef979e9265643fb84d3f295a16abffd53a671d8ceb960f107fe21e272fe5772b",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "55002bca11150ec8539533dec3295cf5aca41e60ee9758c5d7e45c0dae9b6b91",
+    "Beep.OilandGas.Repository.Tests/PermitDocumentStagingTests.cs": "8a85e4951a400d1eec197b0677cd1f6040bdc617bc4c857a632af778cad211ae"
+  },
+  "runtime_sha256": {
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "67b88fd7076c0d852ccbf94a9848f3a6d3e7bbaa408dd7a6e7650765bb5fa8df",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "4d9fea92d75fe2e25fa6eba48918f5d47b05e92a223dc73503ca6e443fffd6b1",
+    "output/playwright/354-document-browser/fixture/bin/Debug/net10.0/PermitBrowser.dll": "6e09ea49ccf836ecfe02a5735ec3db440ce720f434b3f07c3c814ec63336c7b5"
+  }
+}

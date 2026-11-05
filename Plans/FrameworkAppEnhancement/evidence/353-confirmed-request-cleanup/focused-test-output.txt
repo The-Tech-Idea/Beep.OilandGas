@@ -1,0 +1,24 @@
+Test run for C:\Users\f_ald\AppData\Local\Temp\oilgas-353-reason-focused\bin\Debug\net10.0\HseReasons.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.10]   Discovering: HseReasons
+[xUnit.net 00:00:00.16]   Discovered:  HseReasons
+[xUnit.net 00:00:00.19]   Starting:    HseReasons
+  Passed Beep.OilandGas.Web.Auth.Tests.CompanyHseWorkflowIntentStoreTests.ProtectedClosureCleanupRecoversDeletedSlotsWithoutClearingReplacement(flow: "correction", afterDelete: False) [129 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.CompanyHseWorkflowIntentStoreTests.ProtectedClosureCleanupRecoversDeletedSlotsWithoutClearingReplacement(flow: "resolution", afterDelete: False) [20 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.CompanyHseWorkflowIntentStoreTests.ProtectedClosureCleanupRecoversDeletedSlotsWithoutClearingReplacement(flow: "correction", afterDelete: True) [1 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.CompanyHseWorkflowIntentStoreTests.ProtectedClosureCleanupRecoversDeletedSlotsWithoutClearingReplacement(flow: "resolution", afterDelete: True) [8 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.CompanyHseWorkflowIntentStoreTests.ProtectedClosureCleanupRecoversDeletedSlotsWithoutClearingReplacement(flow: "approval", afterDelete: True) [2 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.CompanyHseWorkflowIntentStoreTests.ProtectedClosureCleanupRecoversDeletedSlotsWithoutClearingReplacement(flow: "approval", afterDelete: False) [1 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseClosureReasonValidationTests.ConfirmedOutcomeSurvivesSavedRequestCleanupFailure(flow: "correction", afterDelete: False) [645 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseClosureReasonValidationTests.ConfirmedOutcomeSurvivesSavedRequestCleanupFailure(flow: "resolution", afterDelete: False) [44 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseClosureReasonValidationTests.ConfirmedOutcomeSurvivesSavedRequestCleanupFailure(flow: "correction", afterDelete: True) [17 ms]
+[xUnit.net 00:00:01.00]   Finished:    HseReasons
+  Passed Beep.OilandGas.Web.Auth.Tests.HseClosureReasonValidationTests.ConfirmedOutcomeSurvivesSavedRequestCleanupFailure(flow: "approval", afterDelete: False) [29 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseClosureReasonValidationTests.ConfirmedOutcomeSurvivesSavedRequestCleanupFailure(flow: "approval", afterDelete: True) [22 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseClosureReasonValidationTests.ConfirmedOutcomeSurvivesSavedRequestCleanupFailure(flow: "resolution", afterDelete: True) [17 ms]
+
+Test Run Successful.
+Total tests: 12
+     Passed: 12
+ Total time: 1.5297 Seconds

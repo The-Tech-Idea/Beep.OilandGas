@@ -1,5 +1,6 @@
 using Beep.OilandGas.ApiService.Data;
 using Beep.OilandGas.ApiService.Services;
+using Beep.Foundation.IdentityServer.Shared.Authentication;
 using TheTechIdea.Data.OilGas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,7 @@ public class RoleAssignmentController : ControllerBase
     [HttpGet("catalog")]
     public async Task<IActionResult> GetRoleCatalog()
     {
+        await _roleService.RequireRepositoryAdministratorAsync(User.ActingUserId(), HttpContext.RequestAborted);
         return Ok(await _roleService.GetRoleCatalogAsync()); 
     }
 
@@ -40,6 +42,7 @@ public class RoleAssignmentController : ControllerBase
     [HttpGet("permissions/catalog")]
     public async Task<IActionResult> GetPermissionCatalog()
     {
+        await _roleService.RequireRepositoryAdministratorAsync(User.ActingUserId(), HttpContext.RequestAborted);
         return Ok(await _roleService.GetPermissionCatalogAsync()); 
     }
 
@@ -49,6 +52,7 @@ public class RoleAssignmentController : ControllerBase
     [HttpGet("users/{targetUserId}/assignments")]
     public async Task<IActionResult> GetUserRoleAssignments(string targetUserId)
     {
+        await _roleService.RequireRepositoryAdministratorAsync(User.ActingUserId(), HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(targetUserId))
             return BadRequest(new { error = "User ID is required." });
         return Ok(await _roleService.GetUserRoleAssignmentsAsync(targetUserId)); 
@@ -90,10 +94,95 @@ public class RoleAssignmentController : ControllerBase
 
     // ── Role permissions ─────────────────────────────────────────────────────
 
+    // Repository administration is independently checked by the service. Scope in the URL is a selector, not authority.
+    [HttpGet("tenants/{tenantId}/companies/{businessAssociateId}/users/{targetUserId}/access")]
+    public async Task<IActionResult> ReviewCompanyMemberAccess(string tenantId, string businessAssociateId,
+        string targetUserId, CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        return Ok(await _roleService.ReviewCompanyMemberAccessAsync(new(tenantId, businessAssociateId), targetUserId,
+            User.ActingUserId(), cancellationToken));
+    }
+    [HttpPost("tenants/{tenantId}/companies/{businessAssociateId}/memberships")]
+    public async Task<IActionResult> CreateCompanyMembership(string tenantId, string businessAssociateId,
+        [FromBody] CompanyMembershipRequest request, CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        if (request is null) return BadRequest();
+        try
+        {
+            return Ok(await _roleService.CreateCompanyMembershipAsync(new(tenantId, businessAssociateId), request.UserId,
+                request.RoleId, request.Reason, request.IntentId, User.ActingUserId(), cancellationToken));
+        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "creating a company membership"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "creating a company membership"); }
+    }
+
+    [HttpGet("tenants/{tenantId}/companies/{businessAssociateId}/users/{targetUserId}/assignments")]
+    public async Task<IActionResult> GetCompanyAssignments(string tenantId, string businessAssociateId,
+        string targetUserId, CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        return Ok(await _roleService.GetCompanyRoleAssignmentsAsync(new(tenantId, businessAssociateId), targetUserId,
+            User.ActingUserId(), cancellationToken));
+    }
+
+    [HttpPost("tenants/{tenantId}/companies/{businessAssociateId}/users/{targetUserId}/membership-retirements")]
+    public async Task<IActionResult> RetireCompanyMembership(string tenantId, string businessAssociateId,
+        string targetUserId, [FromBody] CompanyMembershipRetirementRequest request, CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        try
+        {
+            return Ok(await _roleService.RetireCompanyMembershipAsync(new(tenantId, businessAssociateId), targetUserId,
+                request, User.ActingUserId(), cancellationToken));
+        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "retiring a company membership"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "retiring a company membership"); }
+    }
+
+    [HttpGet("tenants/{tenantId}/companies/{businessAssociateId}/users/{targetUserId}/membership-retirements")]
+    public async Task<IActionResult> ReviewMembershipRetirements(string tenantId, string businessAssociateId,
+        string targetUserId, [FromQuery] int offset = 0, [FromQuery] int limit = 50, CancellationToken cancellationToken = default)
+    {
+        if (User.IsMachine()) return Forbid();
+        return Ok(await _roleService.ReviewMembershipRetirementsAsync(new(tenantId, businessAssociateId), targetUserId,
+            User.ActingUserId(), offset, limit, cancellationToken));
+    }
+
+    [HttpPost("tenants/{tenantId}/companies/{businessAssociateId}/users/{targetUserId}/assignments")]
+    public async Task<IActionResult> AssignCompanyRole(string tenantId, string businessAssociateId,
+        string targetUserId, [FromBody] AssignCompanyRoleRequest request, CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        try
+        {
+            return Ok(await _roleService.AssignCompanyRoleAsync(new(tenantId, businessAssociateId), targetUserId,
+                request, User.ActingUserId(), cancellationToken));
+        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "assigning a company role"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "assigning a company role"); }
+    }
+
+    [HttpDelete("tenants/{tenantId}/companies/{businessAssociateId}/assignments/{userRoleId}")]
+    public async Task<IActionResult> RevokeCompanyRole(string tenantId, string businessAssociateId,
+        string userRoleId, CancellationToken cancellationToken)
+    {
+        if (User.IsMachine()) return Forbid();
+        try
+        {
+            return await _roleService.RevokeCompanyRoleAsync(new(tenantId, businessAssociateId), userRoleId,
+                User.ActingUserId(), cancellationToken) ? NoContent() : NotFound();
+        }
+        catch (DbUpdateConcurrencyException changed) { return GrantChanged(changed, "revoking a company role"); }
+        catch (DbUpdateException duplicate) when (UniqueKeyViolation.Is(duplicate)) { return GrantChanged(duplicate, "revoking a company role"); }
+    }
+
     /// <summary>Get all active permissions for a role.</summary>
     [HttpGet("{roleId}/permissions")]
     public async Task<IActionResult> GetRolePermissions(string roleId)
     {
+        await _roleService.RequireRepositoryAdministratorAsync(User.ActingUserId(), HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(roleId))
             return BadRequest(new { error = "Role ID is required." });
         return Ok(await _roleService.GetRolePermissionsAsync(roleId)); 

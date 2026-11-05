@@ -1,0 +1,142 @@
+@using TheTechIdea.Data.OilGas
+@using Microsoft.JSInterop
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject WorkOrderExecutionPermitDecisionState Decisions
+@inject NavigationManager Navigation
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6">Referenced isolation and risk documents</MudText>
+    <MudButton OnClick="ReadCatalogAsync" Color="Color.Primary" Disabled="@(_busy || Permit is null || !Allowed)">Read recorded work-order document links</MudButton>
+    @if(_catalog is {} catalog)
+    {
+        @if(catalog.Links.Count==0){<MudAlert Severity="Severity.Info">No active document links are recorded on this order and FIELD. A reference string alone does not establish document evidence.</MudAlert>}
+        else
+        {
+            <MudSelect T="string" Value="@_component" ValueChanged="ComponentChanged" Label="Exact recorded document component" Disabled="@_busy">
+                @foreach(var link in catalog.Links){<MudSelectItem T="string" Value="@link.ComponentId">@link.ComponentId · @link.InformationItemId / @link.InformationItemSubtype · @Date(link.EffectiveFrom) to @Date(link.EffectiveTo)</MudSelectItem>}
+            </MudSelect>
+            <MudSelect T="string" Value="@_kind" ValueChanged="KindChanged" Label="Original permit prerequisite" Disabled="@_busy"><MudSelectItem T="string" Value='@("ISOLATION")'>Isolation</MudSelectItem><MudSelectItem T="string" Value='@("RISK")'>Risk</MudSelectItem></MudSelect>
+            <MudButton OnClick="ReadSourceAsync" Disabled="@(_busy || !Allowed || string.IsNullOrWhiteSpace(_component) || string.IsNullOrWhiteSpace(_kind))">Compare exact referenced document and content proof</MudButton>
+        }
+        <MudText Typo="Typo.caption">Complete document membership revision @catalog.PopulationRevision · compared UTC @catalog.ComparedAtUtc.ToString("O")</MudText>
+    }
+    @if(_review is {} review)
+    {
+        <MudText>Original @review.Source.Query.Kind reference: @review.Source.ExpectedReference · jurisdiction @review.PermitReview.Proposal.Jurisdiction</MudText>
+        @if(review.Source.InformationItem is {} info){<MudText>Recorded information item: @info.Id / @info.Subtype · @(info.Title??"Title unconfirmed or withheld") · version @(info.Version??"Unconfirmed or withheld") · @Date(info.EffectiveFrom) to @Date(info.EffectiveTo)</MudText>}
+        @if(review.Source.Document is {} document){<MudText>Source document: @document.Id · @(document.Title??"Title unconfirmed") · type @(document.Type??"Type unconfirmed") · issue @(document.Issue??"Issue unconfirmed") · language @(document.Language??"Language unconfirmed")</MudText><MudText>Recorded by @document.RecordedBy · effective @Date(document.EffectiveFrom) to @Date(document.EffectiveTo)</MudText>}
+        @if(review.Source.File is {} file){<MudText>Recorded file @file.Id · format @(file.Format??"Unconfirmed") · actual content @file.ActualBytes bytes · reported @file.ReportedSize @(file.SizeUnit??"Unit unconfirmed")</MudText><MudText Typo="Typo.caption">Verified content digest: @(file.ContentRevision??"No confirmed content") · effective @Date(file.EffectiveFrom) to @Date(file.EffectiveTo)</MudText>}
+        <MudButton OnClick="ReadContributorsAsync" Disabled="@(_busy || !Allowed)">Compare recorded contributors and reviewer person identity</MudButton>
+        <MudButton OnClick="ReadContentAsync" Color="Color.Primary" Disabled="@(_busy || !Allowed || review.Blockers.Count!=1)">Download exact reviewed document content</MudButton>
+        @if(_delivered){<MudAlert Severity="Severity.Info">The exact digest-checked content was sent to your browser. Open and review it in an appropriate document viewer. Delivery does not confirm that it was read or accepted.</MudAlert>}
+        <MudSelect T="string" @bind-Value="_inspection" Label="Exact pending document requirement" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAcceptDocument)">
+            @foreach(var row in review.PermitReview.CurrentSource.Inspections.Where(row=>row.Status=="UNRECORDED" && row.PermitPrerequisiteKind==review.Source.Query.Kind && row.RegulatoryRef==review.Source.ExpectedReference)){<MudSelectItem T="string" Value="@row.InspectionId">@row.InspectionId · @row.RequiredText · @row.Jurisdiction</MudSelectItem>}
+        </MudSelect>
+        <MudCheckBox T="bool" @bind-Value="_contentReviewed" Label="I opened and reviewed the exact recorded document content" Disabled="@(!_delivered || _busy || Decisions.Busy || !Decisions.CanAcceptDocument)" />
+        <MudCheckBox T="bool" @bind-Value="_requirementVerified" Label="I independently verified the exact original isolation or risk requirement" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAcceptDocument)" />
+        <MudTextField T="string" @bind-Value="_reason" Label="Independent verification rationale and observed evidence" Required="true" Lines="3" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAcceptDocument)" />
+        <MudButton OnClick="AcceptAsync" Color="Color.Primary" Disabled="@(_busy || Decisions.Busy || !Allowed || !Decisions.CanAcceptDocument || _contributors is null || _contributors.Blockers.Count!=1 || !_delivered || !_contentReviewed || !_requirementVerified || review.Blockers.Count!=1 || string.IsNullOrWhiteSpace(_inspection) || string.IsNullOrWhiteSpace(_reason))">Retain and record independent document acceptance</MudButton>
+        @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+        <MudText Typo="Typo.caption">Complete source revision @review.Source.Revision · compared UTC @review.Source.ComparedAtUtc.ToString("O")</MudText>
+    }
+    @if(_contributors is {} contributors)
+    {
+        <MudText Typo="Typo.h6">Recorded contributors and current reviewer identity</MudText>
+        <MudText>Current reviewer person: @(contributors.ReviewerPerson?.PersonBaId??"Unconfirmed") · type @(contributors.ReviewerPerson?.Type??"Unconfirmed")</MudText>
+        @if(contributors.Contributors.Contributors.Count==0){<MudAlert Severity="Severity.Warning">No complete native contributor population is recorded.</MudAlert>}
+        @foreach(var person in contributors.Contributors.Contributors){<MudText>Contributor @person.CreatorId · person @(person.PersonBaId??"Unconfirmed") · reported @person.ReportedName · type @(person.CreatorType??"Unconfirmed") · native person type @(person.ActualBaType??"Unconfirmed") · UTC @Date(person.EffectiveFromUtc) to @Date(person.EffectiveToUtc)</MudText>}
+        @foreach(var blocker in contributors.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+        <MudText Typo="Typo.caption">Contributor/source proof @contributors.Contributors.Revision · compared UTC @contributors.ComparedAtUtc.ToString("O"). This comparison does not approve a permit.</MudText>
+    }
+    <MudTextField T="string" @bind-Value="_recoveryInspection" Label="Original document acceptance inspection reference" Disabled="@(_busy || Decisions.Busy)" />
+    <MudTextField T="string" @bind-Value="_intent" Label="Original document acceptance intent" Disabled="@(_busy || Decisions.Busy)" />
+    <MudButton OnClick="RecoverAsync" Disabled="@(_busy || Decisions.Busy || !Allowed || string.IsNullOrWhiteSpace(_recoveryInspection) || string.IsNullOrWhiteSpace(_intent))">Recover original document acceptance read-only</MudButton>
+    @if(Decisions.VisibleDocumentAcceptanceReference is {} retained){<MudText>Retained original requirement @retained.InspectionId · intent @retained.IntentId. Confirm this original outcome before replacing an intent.</MudText>}
+    @if(Decisions.DocumentAcceptanceReceipt is {} receipt){<MudButton OnClick="BeginNextAsync" Disabled="@(_busy || Decisions.Busy || !Allowed)">Begin another document requirement after confirmed acceptance</MudButton><MudAlert Severity="Severity.Success">Independent document acceptance recorded: @receipt.INSPECTION_ID · @receipt.INSPECTOR · @Date(receipt.INSPECTED_AT_UTC). Permit approval and physical work remain separate.</MudAlert>}
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Reading authorized permit document evidence" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    <MudAlert Severity="Severity.Info">Recorded document and content proof do not establish completed isolation, accept a risk assessment, approve the permit, or authorize work. Independent content review and acceptance remain required. Recording accounts are distinct from document contributor identity; authoritative contributor/reviewer mapping is required before permit approval.</MudAlert>
+</MudPaper>
+@code {
+    [Parameter] public CompanyWorkOrderExecutionPermitReference? Permit {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    private CompanyWorkOrderDocumentContributorReview? _contributors;private CompanyWorkOrderDocumentCatalog? _catalog;private CompanyWorkOrderPermitDocumentReview? _review;
+    private string _component="",_kind="",_key="";private string? _error;private bool _busy,_disposed,_delivered,_contentReviewed,_requirementVerified;private string _inspection="",_reason="",_recoveryInspection="",_intent="";private long _version;
+    private bool Allowed=>Company.Selection?.Permissions.Contains("HSE.ApprovePermit",StringComparer.Ordinal)==true;
+    private static string Date(DateTime? value)=>value is not {} date?"Unconfirmed":date.Kind==DateTimeKind.Utc?date.ToString("O"):date.ToString("O")+" (time zone unconfirmed)";
+    protected override void OnInitialized(){Company.Changed+=Clear;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;Decisions.Changed+=DecisionChanged;}
+    protected override void OnParametersSet(){var key=System.Text.Json.JsonSerializer.Serialize(new{Permit,SourceRevision});if(key!=_key){_key=key;Clear();}Decisions.Attach(Permit,SourceRevision);var query=Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);if(query.TryGetValue("documentAcceptanceInspection",out var inspection))_recoveryInspection=inspection.ToString();if(query.TryGetValue("documentAcceptanceIntent",out var intent))_intent=intent.ToString();}
+    private void ComponentChanged(string value){_version++;_component=value;_review=null;_contributors=null;_delivered=false;_contentReviewed=false;_requirementVerified=false;_inspection="";_reason="";_error=null;}
+    private void KindChanged(string value){_version++;_kind=value;_review=null;_contributors=null;_delivered=false;_contentReviewed=false;_requirementVerified=false;_inspection="";_reason="";_error=null;}
+    private async Task Guard(string? role=null)
+    {
+        var selected=Company.Selection;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(selected is null || !Allowed || Permit is null || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || role is not null && (!user.IsInRole(role) || !selected.Roles.Contains(role,StringComparer.Ordinal)) || await Fields.GetCurrentFieldIdAsync()!=Permit.Task.FieldId)throw new UnauthorizedAccessException("Current document reviewer company/account/configured role/FIELD is required.");
+    }
+    private async Task ReadCatalogAsync()
+    {
+        if(_busy || _disposed)return;var version=++_version;var snapshot=Company.Snapshot;_busy=true;_catalog=null;_review=null;_contributors=null;_component="";_kind="";_delivered=false;_contentReviewed=false;_requirementVerified=false;_inspection="";_reason="";_error=null;
+        try{await Guard();if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;var query=Permit!;var result=await Workflows.ReviewWorkOrderPermitDocumentCatalogAsync(query);result.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,query);await Guard();if(!_disposed && version==_version && snapshot==Company.Snapshot)_catalog=CompanyInventorySourceReview.Copy(result);}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"reading recorded document membership","Complete original document links could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private async Task ReadSourceAsync()
+    {
+        if(_busy || _disposed)return;var version=++_version;var snapshot=Company.Snapshot;_busy=true;_review=null;_contributors=null;_delivered=false;_contentReviewed=false;_requirementVerified=false;_inspection="";_reason="";_error=null;
+        try{await Guard();if(_catalog is null || !_catalog.Links.Any(row=>row.ComponentId==_component))throw new InvalidOperationException("Select a component from the complete original document catalog.");var query=new CompanyWorkOrderPermitDocumentQuery(Permit!,_kind,_component);query.Require();if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;var result=await Workflows.ReviewWorkOrderPermitDocumentSourceAsync(query);result.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,query);await Guard(result.PermitReview.CurrentSource.Stage.AssignedRole);if(!_disposed && version==_version && snapshot==Company.Snapshot)_review=CompanyInventorySourceReview.Copy(result);}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"comparing referenced permit document evidence","Complete original document and content proof could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private async Task ReadContributorsAsync()
+    {
+        if(_busy || _disposed || _review is null)return;var original=CompanyInventorySourceReview.Copy(_review);var version=++_version;var snapshot=Company.Snapshot;_busy=true;_contributors=null;_error=null;
+        try{await Guard(original.PermitReview.CurrentSource.Stage.AssignedRole);var result=await Workflows.ReviewWorkOrderDocumentContributorsAsync(original.Source.Query);result.Require();result.Document.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,original.Source.Query);await Guard(result.Document.PermitReview.CurrentSource.Stage.AssignedRole);if(CompanyWorkOrderPermitDocumentFacts.CurrentProof(result.Document.Source)!=CompanyWorkOrderPermitDocumentFacts.CurrentProof(original.Source))throw new InvalidOperationException("Original displayed document source changed during contributor review.");if(!_disposed && version==_version && snapshot==Company.Snapshot)_contributors=CompanyInventorySourceReview.Copy(result);}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"comparing document contributors and reviewer identity","Complete original contributor/reviewer identity proof could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private async Task ReadContentAsync()
+    {
+        if(_busy || _disposed || _review is null)return;var original=CompanyInventorySourceReview.Copy(_review);var version=++_version;var snapshot=Company.Snapshot;_busy=true;_delivered=false;_contentReviewed=false;_requirementVerified=false;_inspection="";_reason="";_error=null;byte[]? bytes=null;
+        try
+        {
+            await Guard(original.PermitReview.CurrentSource.Stage.AssignedRole);if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;
+            var content=await Workflows.ReadWorkOrderPermitDocumentContentAsync(original);bytes=content.Bytes;content.Require(original);await Guard(original.PermitReview.CurrentSource.Stage.AssignedRole);
+            if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;
+            await JS.InvokeVoidAsync("oilGasDocuments.download",Convert.ToBase64String(bytes),content.Review.Source.File!.ContentRevision,content.Review.Source.File.Id);
+            if(!_disposed && version==_version && snapshot==Company.Snapshot)_delivered=true;
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"delivering the exact referenced document","Current authorized document content could not be delivered");}
+        finally{if(bytes is not null)Array.Clear(bytes);_busy=false;}
+    }
+    private async Task BeginNextAsync()
+    {
+        var original=Decisions.VisibleDocumentAcceptanceCommand??throw new InvalidOperationException("Confirm original acceptance first.");await Guard(original.Review.PermitReview.CurrentSource.Stage.AssignedRole);Decisions.BeginNextDocumentAcceptance();Clear();Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"documentAcceptanceInspection",null},{"documentAcceptanceIntent",null}}),new NavigationOptions{ReplaceHistoryEntry=true});
+    }
+    private void DecisionChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private async Task RetainAsync(CompanyWorkOrderDocumentAcceptanceReference reference)
+    {
+        await Guard();_recoveryInspection=reference.InspectionId;_intent=reference.IntentId.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"permitReviewId",reference.Permit.IntentId.ToString("D")},{"documentAcceptanceInspection",_recoveryInspection},{"documentAcceptanceIntent",_intent}}),new NavigationOptions{ReplaceHistoryEntry=true});await Guard();
+    }
+    private async Task AcceptAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_busy=true;_error=null;
+        try{var review=_review??throw new InvalidOperationException("Compare the original document source first.");await Guard(review.PermitReview.CurrentSource.Stage.AssignedRole);if(_contributors is null || _contributors.Blockers.Count!=1)throw new InvalidOperationException("Compare current independent contributor/reviewer identity evidence first.");if(!_delivered)throw new InvalidOperationException("Deliver and open the exact recorded document content first.");await Decisions.AcceptDocumentAsync(Workflows,review,_inspection,_reason,_contentReviewed,_requirementVerified,command=>RetainAsync(new(command.Review.Source.Query.Permit,command.InspectionId,command.IntentId)),_contributors);await Guard(review.PermitReview.CurrentSource.Stage.AssignedRole);}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recording independent document acceptance","Document acceptance is unconfirmed; retain and recover its exact original intent");}
+        finally{_busy=false;}
+    }
+    private async Task RecoverAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_busy=true;_error=null;
+        try{await Guard();if(Permit is null || !Guid.TryParse(_intent,out var intent) || intent==Guid.Empty)throw new ArgumentException("Enter the original document acceptance intent.");await Decisions.RecoverDocumentAcceptanceReferenceAsync(Workflows,new(Permit,_recoveryInspection,intent),RetainAsync);var command=Decisions.VisibleDocumentAcceptanceCommand??throw new InvalidOperationException("Original accepted document command is unavailable.");await Guard(command.Review.PermitReview.CurrentSource.Stage.AssignedRole);}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recovering original document acceptance","Original document acceptance could not be confirmed; keep its retained references");}
+        finally{_busy=false;}
+    }
+    private void Clear(){_version++;_catalog=null;_review=null;_contributors=null;_component="";_kind="";_delivered=false;_contentReviewed=false;_requirementVerified=false;_inspection="";_reason="";_recoveryInspection="";_intent="";_error=null;if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string _){Decisions.Attach(null,null);Clear();}private void AuthenticationChanged(Task<AuthenticationState> _){Decisions.Attach(null,null);Clear();}
+    public void Dispose(){_disposed=true;Company.Changed-=Clear;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Decisions.Changed-=DecisionChanged;Clear();}
+}

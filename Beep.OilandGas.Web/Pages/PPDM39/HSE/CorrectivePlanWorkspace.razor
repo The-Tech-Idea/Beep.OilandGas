@@ -1,0 +1,54 @@
+@page "/hse/incidents/corrective-plan"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Services
+@inject CorrectivePlanWorkspaceState State
+@implements IDisposable
+
+<PageTitle>Corrective action plan</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Corrective action plan</MudText>
+    <MudText Class="my-3">Review the recorded choices for incident @IncidentId before preparing a plan.</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2"><MudButton Href="/ppdm39/hse/incidents" Variant="Variant.Outlined">Incident records</MudButton><MudButton OnClick="Reload" Disabled="@State.Busy" Variant="Variant.Outlined">Review current evidence</MudButton></MudStack>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing corrective action evidence" />}
+    @if(State.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(State.Message is {} message){<MudAlert Severity="Severity.Info" role="status">@message</MudAlert>}
+    @if(State.NeedsCompany){<MudAlert Severity="Severity.Info">Choose a company, then review the incident.</MudAlert>}
+    else if(State.NeedsField){<MudAlert Severity="Severity.Info">Choose an available FIELD, then review the incident.</MudAlert>}
+    else if(State.Pending is {} original)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original plan submission</MudText>
+            <MudText>FIELD @original.Submission.Context.FieldId · Incident @original.Review.IncidentId · Plan @original.Submission.Intent.PlanId</MudText>
+            <MudText>@original.Submission.Intent.PlanName · @original.Submission.Intent.PlanNumber · Responsible @original.Submission.Intent.ResponsibleBaId · Response @original.Submission.Intent.ResponseType</MudText>
+            <MudAlert Severity="Severity.Warning">The original remains in this tab until its submission is confirmed. A current plan link alone does not prove the original contents.</MudAlert>
+            <MudStack Row="true" Wrap="Wrap.Wrap"><MudButton OnClick="State.ReviewLinkAsync" Disabled="@State.Busy" Variant="Variant.Outlined">Review current plan link</MudButton><MudButton OnClick="State.RetryAsync" Disabled="@(!State.CanRetry)" Variant="Variant.Outlined">Retry the same original</MudButton></MudStack>
+        </MudPaper>
+    }
+    else if(State.Review is {} review)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-4">
+            <MudText>FIELD @review.Context.FieldId · Incident @review.IncidentId</MudText>
+            <MudText Class="my-2">Choose a recorded participant and response type; the plan does not establish completion or incident closure.</MudText>
+            @if(review.Participants.Count==0){<MudAlert Severity="Severity.Info">No recorded participant roles are available for this plan.</MudAlert>}
+            else{<MudTable Items="@review.Participants" Dense="true" aria-label="Recorded incident participant roles"><HeaderContent><MudTh>Business associate</MudTh><MudTh>Role</MudTh><MudTh>Party observation</MudTh><MudTh>Role observation</MudTh><MudTh>Choose</MudTh></HeaderContent><RowTemplate><MudTd DataLabel="Business associate">@context.BusinessAssociateId</MudTd><MudTd DataLabel="Role">@context.Role</MudTd><MudTd DataLabel="Party observation">@context.PartyObservation</MudTd><MudTd DataLabel="Role observation">@context.RoleObservation</MudTd><MudTd DataLabel="Choose"><MudButton OnClick="@(() => State.Select(context))" Variant="Variant.Outlined" aria-pressed="@(ReferenceEquals(State.Participant,context)?"true":"false")">Select participant</MudButton></MudTd></RowTemplate></MudTable>}
+            @if(State.Participant is {} selected){<MudText>Selected: @selected.BusinessAssociateId · @selected.Role · @selected.PartyObservation / @selected.RoleObservation</MudText>}
+            <MudTextField T="string" Label="Plan name" @bind-Value="name" Required="true" MaxLength="128" />
+            <MudTextField T="string" Label="Plan number" @bind-Value="number" Required="true" MaxLength="128" />
+            <MudSelect T="string" Label="Recorded response type" @bind-Value="responseType">@foreach(var option in review.ResponseTypes){<MudSelectItem T="string" Value="@option">@option</MudSelectItem>}</MudSelect>
+            <MudCheckBox T="bool" @bind-Value="confirmed" Label="I confirm the selected participant and plan details." />
+            <MudButton OnClick="Submit" Disabled="@(!State.CanPrepare || !confirmed)" Color="Color.Primary" Variant="Variant.Filled">Create corrective action plan</MudButton>
+        </MudPaper>
+    }
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="incidentId")] public string IncidentId {get;set;}="";
+    private string name="",number="",responseType="";private bool confirmed,disposed,interactive;private string? loadedIncident;
+    protected override void OnInitialized(){State.Start();State.Changed+=Changed;}
+    protected override async Task OnParametersSetAsync(){if(interactive && loadedIncident!=IncidentId){Reset();loadedIncident=IncidentId;await State.LoadAsync(IncidentId);}}
+    protected override async Task OnAfterRenderAsync(bool firstRender){if(firstRender){interactive=true;loadedIncident=IncidentId;await State.LoadAsync(IncidentId);}}
+    private Task Reload(){Reset();return State.LoadAsync(IncidentId);}
+    private Task Submit()=>State.SubmitAsync(name,number,responseType,confirmed);
+    private void Reset(){name="";number="";responseType="";confirmed=false;}
+    private void Changed(){if(State.Review is null && State.Pending is null)Reset();if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;State.Changed-=Changed;State.Dispose();}
+}

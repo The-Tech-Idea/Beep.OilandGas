@@ -1,0 +1,107 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase 4 physical native submission only",
+  "observed_at": "2026-10-29T19:01:56.630309+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "dependency_head": "6ee374ab109094fb3d7a5026e106fa524bdf6467",
+  "worktree": "dirty app and source dependencies; no commit/push; existing changes preserved",
+  "method": "InstalledPermitProviderRollsBackThenRecoversExactNativeSubmission",
+  "distinct_cases": 1,
+  "command": "OILGAS_TEST_PERMIT_DRIVER_FEED=<isolated local package feed>; dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~InstalledPermitProviderRollsBackThenRecoversExactNativeSubmission --logger console;verbosity=minimal",
+  "attempts": [
+    {
+      "log": "oilgas-354-provider-command-01.log",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "duration": 3,
+      "observation": "Fixture FormatIdForTable callback return type mismatch, before native workflow execution."
+    },
+    {
+      "log": "oilgas-354-provider-command-02.log",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "duration": 4,
+      "observation": "Real connector generated invalid C# namespace from permit-provider."
+    },
+    {
+      "log": "oilgas-354-provider-command-03.log",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "duration": 4,
+      "observation": "Native command-schema guard refused insufficient physical history widths."
+    },
+    {
+      "log": "oilgas-354-provider-command-04.log",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "duration": 4,
+      "observation": "Command failed before controlled interruption; failure-stage assertion refused to call it rollback proof."
+    },
+    {
+      "log": "oilgas-354-provider-command-05.log",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "duration": 5,
+      "observation": "Diagnostic confirmed old connector reports successful begin without held transaction."
+    },
+    {
+      "log": "oilgas-354-provider-command-06.log",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 5,
+      "observation": "Final same-original rollback/submission/read-only recovery/replay succeeds using actual setup-installed current connector package."
+    }
+  ],
+  "observed": [
+    "Setup installer loads the actual local-feed SQLite connector1.0.59/provider1.0.119 without manually scanning a connector assembly.",
+    "Actual Beep Migration creates the three native ledger tables; physical keys/columns and three UpToDate markers checked by shared fixture.",
+    "Hyphenated connection generates a row type distinct from corresponding underscore name after shared BeepDM owner fix.",
+    "Typed native source review and absent original recovery work on physical SQLite.",
+    "Receipt-preparation interruption is reached after actual header/history writes; native rollback restores the exact pre-command review and absent receipt.",
+    "Retry of same original produces a validated native submission outcome.",
+    "After controlled author permission removal, recovery and RecordCommand replay return exactly the saved outcome.",
+    "Exactly one native history and receipt remain; source is idle."
+  ],
+  "changes": [
+    "Canonical Data history parent/status/reason/actor width annotations.",
+    "Native schema guard retains strict checks and reports table/column/type/width without business values.",
+    "Shared BeepDM DMTypeBuilder encodes invalid C# namespace segments with reserved-prefix escaping to avoid name collisions.",
+    "App SQLite connector pin advanced from1.0.51 to1.0.59; physical fixture from1.0.58 to1.0.59."
+  ],
+  "package": {
+    "file": "TheTechIdea.Beep.SqliteDatasourceCore.1.0.59.nupkg",
+    "sha256": "07e121ae60ae7d11fcbe43effc99f68a0af280bf89d7e8561368c1c6281ac9ea",
+    "scope": "Local net10.0 qualification artifact only; pack -c Debug. Initial default Release pack failed before corrected Debug pack. net8/net9 asset/readme warnings retained; public release/public feed availability not verified."
+  },
+  "limits": [
+    "Company/RBAC/read policy/metadata/defaults are controlled fixture boundaries, not production authorization.",
+    "No actual HTTP/OIDC or two-company privacy qualification.",
+    "Read-only recovery/replay verified in the same process; process-restart/lost-ack/concurrent writers remain open.",
+    "Full PERMITS manifest/supporting entities, existing database schema evolution, jurisdiction policy and broader plan remain open.",
+    "Deployment requires the modified BeepDM source/runtime and verified connector distribution; public package release is not claimed.",
+    "No handwritten SQL, EF migration or unrelated test selected."
+  ],
+  "sha256": {
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "8077828390d8e7c2556cb8c07b41407d82eded60ade6f3dbda580a0d7eaaf759",
+    "TheTechIdea.Data/OilGas/PERMIT_STATUS_HISTORY.cs": "e79e6ff5844162aac950d59caeb616edee142b3c0335ffb19fdcd0176b93fcd4",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "b026f1a89e22cd87aa96b26bdcbe9f43da9a002c197a2df79e90c66020ea442e",
+    "Beep.OilandGas.ApiService/appsettings.json": "152c68a9e0f914bb223f8292efe4ab42a98dc3d3ee79b0756d050f7824d2918c",
+    "../BeepDM/DataManagementEngineStandard/ConfigUtil/DMTypeBuilder.cs": "8a41e65d4e9cb5ddae74c799148c59aeaae93c32576bd77d97f2e69425d58bf6",
+    "../BeepDataSources/DataSourcesPluginsCore/SqliteDatasourceCore/SQLiteDataSource.cs": "60cddfc6fe9b940e3ec6be586197157c2bddd33dbf2a68111465ca4d5e388133",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "df6ed94226122f2a038a53081cfbd40f3dc0fa6d84da2b59e4462506b36c3408",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "ac42115b9f829ed524ba3de62af516d941be43bbf1e0cc43d3e494d8b0c2ba57",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "30ca9f18fb374c9242b99537a4e5f99dc14b051838e09f75979f01facd02e788",
+    "../BeepDM/DataManagementEngineStandard/bin/Debug/net10.0/DataManagementEngine.dll": "55783166f492c83cc95c79fef4233e00b97da879ce0730d4959ae13ba0ba8f46"
+  }
+}

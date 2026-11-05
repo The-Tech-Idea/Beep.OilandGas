@@ -13,26 +13,41 @@ using Microsoft.AspNetCore.WebUtilities;
 namespace Beep.OilandGas.ApiService.Services;
 
 // Identity owns grants; APP_* records describe their application metadata and history.
-public sealed class RepositoryRoleAssignmentService(
+public sealed partial class RepositoryRoleAssignmentService(
     RepositoryDbContext db, UserManager<OilGasUser> users, RoleManager<IdentityRole> roles,
-    ILogger<RepositoryRoleAssignmentService> logger)
+    ILogger<RepositoryRoleAssignmentService> logger, TimeProvider? clock = null)
 {
+    private readonly TimeProvider time = clock ?? TimeProvider.System;
+    public async Task<RepositoryRoleSummary> CreateRoleAsync(RepositoryRoleRequest request, string actor,
+        CancellationToken cancellationToken = default)
+    {
+        await RequireRepositoryAdministratorAsync(actor, cancellationToken);
+        var created = await new RepositoryRoleCatalogService(db, roles).CreateAsync(request, cancellationToken);
+        logger.LogInformation("Role created: Actor={Actor} Role={Role}", actor, created.RoleId);
+        return created;
+    }
+
     public async Task<RepositoryUserRole> AssignRoleAsync(string userId, string roleId, string grantedByUserId, string? reason = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(grantedByUserId);
+        await RequireRepositoryAdministratorAsync(grantedByUserId);
         if (reason?.Length > 1000) throw RefusalException.Invalid("Assignment reason exceeds 1000 characters.");
         var user = await users.FindByIdAsync(userId) ?? throw RefusalException.NotFound("User not found.");
         if (!user.IsActive) throw RefusalException.Conflict("Cannot assign a role to a disabled user.");
         var role = await roles.FindByIdAsync(roleId) ?? throw RefusalException.NotFound("Role not found.");
         await using var transaction = await db.Database.BeginTransactionAsync();
         Require(await roles.UpdateAsync(role));
-        if (!await users.IsInRoleAsync(user, role.Name!)) Require(await users.AddToRoleAsync(user, role.Name!));
+        var now = time.GetUtcNow().UtcDateTime;
         var extension = await db.Set<AppUserRoleExtension>().SingleOrDefaultAsync(x =>
-            x.UserId == userId && x.RoleId == roleId && x.EffectiveToUtc == null);
+            x.UserId == userId && x.RoleId == roleId && (x.EffectiveToUtc == null || x.EffectiveToUtc > now) &&
+            x.TenantId == null && x.BusinessAssociateId == null);
+        if (extension is not null && (extension.ApprovalStatus != "Approved" || extension.EffectiveFromUtc > now))
+            throw RefusalException.Conflict("Review the existing pending or future repository grant before assigning this role.");
+        if (!await users.IsInRoleAsync(user, role.Name!)) Require(await users.AddToRoleAsync(user, role.Name!));
         if (extension is null)
         {
             extension = new AppUserRoleExtension { UserId = userId, RoleId = roleId,
-                GrantedByUserId = grantedByUserId, AssignmentReason = reason, EffectiveFromUtc = DateTime.UtcNow };
+                GrantedByUserId = grantedByUserId, AssignmentReason = reason, EffectiveFromUtc = time.GetUtcNow().UtcDateTime };
             db.Add(extension);
             await db.SaveChangesAsync();
         }
@@ -45,6 +60,8 @@ public sealed class RepositoryRoleAssignmentService(
     public async Task<bool> RevokeRoleAsync(string userRoleId, string revokedByUserId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(revokedByUserId);
+        await RequireRepositoryAdministratorAsync(revokedByUserId);
+        var now = time.GetUtcNow().UtcDateTime;
         AppUserRoleExtension? extension;
         string userId, roleId;
         if (userRoleId.StartsWith("identity:", StringComparison.Ordinal))
@@ -54,42 +71,49 @@ public sealed class RepositoryRoleAssignmentService(
             userId = keys[0];
             roleId = keys[1];
             extension = await db.Set<AppUserRoleExtension>().SingleOrDefaultAsync(x =>
-                x.UserId == userId && x.RoleId == roleId && x.EffectiveToUtc == null);
+                x.UserId == userId && x.RoleId == roleId && (x.EffectiveToUtc == null || x.EffectiveToUtc > now) &&
+                x.TenantId == null && x.BusinessAssociateId == null);
         }
         else
         {
             extension = await db.Set<AppUserRoleExtension>().SingleOrDefaultAsync(x => x.UserRoleId == userRoleId);
-            if (extension is null || extension.EffectiveToUtc is not null) return false;
+            if (extension is null || extension.ApprovalStatus == "Revoked" || extension.EffectiveToUtc <= now) return false;
+            if (extension.TenantId is not null || extension.BusinessAssociateId is not null)
+                throw RefusalException.Invalid("Company-scoped assignments must be managed in their company.");
             userId = extension.UserId;
             roleId = extension.RoleId;
         }
         var user = await users.FindByIdAsync(userId);
         var role = await roles.FindByIdAsync(roleId);
         if (user is null || role is null) return false;
+        if (extension is null && !await RepositoryRoleScope.Memberships(db, now)
+            .AnyAsync(x => x.UserId == userId && x.RoleId == roleId)) return false;
         await using var transaction = await db.Database.BeginTransactionAsync();
         // Updating the shared role row prevents two concurrent last-admin removals
         // from independently passing the count check, including on Oracle.
         Require(await roles.UpdateAsync(role));
         if (!await users.IsInRoleAsync(user, role.Name!)) return false;
-        if (roles.NormalizeKey(role.Name) == roles.NormalizeKey(RepositoryBootstrapService.AdministratorRole) && user.IsActive)
+        if (roles.NormalizeKey(role.Name) == roles.NormalizeKey(RepositoryBootstrapService.AdministratorRole) && user.IsActive &&
+            await RepositoryRoleScope.Memberships(db, now).AnyAsync(x => x.UserId == userId && x.RoleId == roleId))
         {
-            var activeAdmins = await (from membership in db.UserRoles
+            var activeAdmins = await (from membership in RepositoryRoleScope.Memberships(db, now)
                                       join account in db.Users on membership.UserId equals account.Id
                                       where membership.RoleId == role.Id && account.IsActive
                                       select account.Id).CountAsync();
             if (activeAdmins <= 1) throw RefusalException.Conflict("The last active administrator cannot be removed.");
         }
-        Require(await users.RemoveFromRoleAsync(user, role.Name!));
         if (extension is null)
         {
             extension = new AppUserRoleExtension { UserId = userId, RoleId = roleId,
-                EffectiveFromUtc = DateTime.UtcNow,
+                EffectiveFromUtc = time.GetUtcNow().UtcDateTime,
                 AssignmentReason = "Identity membership observed at revocation; original grant details are unknown." };
             db.Add(extension);
         }
-        extension.EffectiveToUtc = DateTime.UtcNow;
+        extension.EffectiveToUtc = time.GetUtcNow().UtcDateTime;
         extension.ApprovalStatus = "Revoked";
+        extension.RevokedByUserId = revokedByUserId;
         await db.SaveChangesAsync();
+        await RemoveUnusedIdentityMembershipAsync(user, role, now);
         await transaction.CommitAsync();
         logger.LogInformation("Role revoked: Actor={Actor} User={User} Role={Role}", revokedByUserId, user.Id, role.Id);
         return true;
@@ -97,9 +121,12 @@ public sealed class RepositoryRoleAssignmentService(
 
     public async Task<List<RepositoryUserRole>> GetUserRoleAssignmentsAsync(string userId)
     {
-        var memberships = await db.UserRoles.AsNoTracking().Where(x => x.UserId == userId).ToListAsync();
+        var now = time.GetUtcNow().UtcDateTime;
+        var memberships = await RepositoryRoleScope.Memberships(db, now).Where(x => x.UserId == userId).ToListAsync();
         var metadata = await db.Set<AppUserRoleExtension>().AsNoTracking()
-            .Where(x => x.UserId == userId && x.EffectiveToUtc == null).ToDictionaryAsync(x => x.RoleId);
+            .Where(x => x.UserId == userId && x.ApprovalStatus == "Approved" && x.EffectiveFromUtc <= now &&
+                (x.EffectiveToUtc == null || x.EffectiveToUtc > now) &&
+                x.TenantId == null && x.BusinessAssociateId == null).ToDictionaryAsync(x => x.RoleId);
         return memberships.Select(membership => metadata.TryGetValue(membership.RoleId, out var extension)
             ? Assignment(extension)
             : new RepositoryUserRole
@@ -113,6 +140,7 @@ public sealed class RepositoryRoleAssignmentService(
     public async Task<RepositoryRolePermission> GrantPermissionToRoleAsync(string roleId, string permissionId, string approvedByUserId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(approvedByUserId);
+        await RequireRepositoryAdministratorAsync(approvedByUserId);
         var metadata = await db.Set<AppPermissionExtension>().FindAsync(permissionId);
         metadata ??= await db.Set<AppPermissionExtension>().SingleOrDefaultAsync(x => x.PermissionKey == permissionId);
         if (metadata is null && !PermissionCodes().Contains(permissionId) &&
@@ -137,15 +165,15 @@ public sealed class RepositoryRoleAssignmentService(
         if (extension is not null && !await db.RoleClaims.AnyAsync(x => x.Id == extension.RoleClaimId &&
             x.RoleId == roleId && x.ClaimType == "permission" && x.ClaimValue == code))
         {
-            extension.EffectiveToUtc = DateTime.UtcNow;
+            extension.EffectiveToUtc = time.GetUtcNow().UtcDateTime;
             extension.RoleClaimId = null;
             extension = null;
         }
         if (extension is null)
         {
             extension = new AppRolePermissionExtension { RoleId = roleId, PermissionId = permissionId,
-                RoleClaimId = existing.Id, EffectiveFromUtc = DateTime.UtcNow, SourceSystem = "Manual",
-                ApprovedByUserId = approvedByUserId, ApprovedAtUtc = DateTime.UtcNow };
+                RoleClaimId = existing.Id, EffectiveFromUtc = time.GetUtcNow().UtcDateTime, SourceSystem = "Manual",
+                ApprovedByUserId = approvedByUserId, ApprovedAtUtc = time.GetUtcNow().UtcDateTime };
             db.Add(extension);
         }
         await db.SaveChangesAsync();
@@ -158,6 +186,7 @@ public sealed class RepositoryRoleAssignmentService(
     public async Task<bool> RevokePermissionFromRoleAsync(string rolePermissionId, string revokedByUserId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(revokedByUserId);
+        await RequireRepositoryAdministratorAsync(revokedByUserId);
         if (rolePermissionId.StartsWith("claim:", StringComparison.Ordinal))
         {
             if (!int.TryParse(rolePermissionId[6..], out var claimId)) return false;
@@ -171,7 +200,7 @@ public sealed class RepositoryRoleAssignmentService(
             foreach (var history in linked)
             {
                 history.RoleClaimId = null;
-                history.EffectiveToUtc ??= DateTime.UtcNow;
+                history.EffectiveToUtc ??= time.GetUtcNow().UtcDateTime;
             }
             await db.SaveChangesAsync();
             db.RoleClaims.Remove(claim);
@@ -197,7 +226,7 @@ public sealed class RepositoryRoleAssignmentService(
         foreach (var history in linkedHistory)
         {
             history.RoleClaimId = null;
-            history.EffectiveToUtc ??= DateTime.UtcNow;
+            history.EffectiveToUtc ??= time.GetUtcNow().UtcDateTime;
         }
         await db.SaveChangesAsync();
         db.RoleClaims.Remove(grant);
@@ -269,8 +298,10 @@ public sealed class RepositoryRoleAssignmentService(
     private static RepositoryUserRole Assignment(AppUserRoleExtension extension) => new()
     {
         UserRoleId = extension.UserRoleId, UserId = extension.UserId, RoleId = extension.RoleId,
+        TenantId = extension.TenantId, BusinessAssociateId = extension.BusinessAssociateId,
         ApprovalStatus = extension.ApprovalStatus, ApprovalReference = extension.ApprovalReference,
         GrantedByUserId = extension.GrantedByUserId, AssignmentReason = extension.AssignmentReason,
+        RevokedByUserId = extension.RevokedByUserId,
         EffectiveFromUtc = extension.EffectiveFromUtc, EffectiveToUtc = extension.EffectiveToUtc
     };
 

@@ -23,6 +23,10 @@ public class AssetAccessControllerAuthorizationTests
         Assert.IsType<ForbidResult>((await controller.AssignPermissionToRole("role", "permission")).Result);
         Assert.IsType<ForbidResult>((await controller.RemovePermissionFromRole("role", "permission")).Result);
         Assert.IsType<ForbidResult>((await controller.GetRolePermissions("role")).Result);
+        Assert.IsType<ForbidResult>((await controller.ReviewStoredGrants("member")).Result);
+        Assert.IsType<ForbidResult>((await controller.RetireStoredGrant("grant", new("revision", "Reviewed"))).Result);
+        Assert.IsType<ForbidResult>((await controller.GetGrantRetirements("grant")).Result);
+        Assert.IsType<ForbidResult>((await controller.GetFieldInterestReview("field")).Result);
         service.VerifyNoOtherCalls();
     }
 
@@ -55,7 +59,7 @@ public class AssetAccessControllerAuthorizationTests
     public async Task LocalAdministratorCanGrantAssetAccess()
     {
         var service = new Mock<IAccessControlService>(MockBehavior.Strict);
-        service.Setup(x => x.GrantAssetAccessAsync("member", "field", "FIELD", "READ", true, null)).ReturnsAsync(true);
+        service.Setup(x => x.GrantAssetAccessAsync("member", "field", "FIELD", "READ", true, null, null)).ReturnsAsync(true);
         var controller = Create(service.Object, true, "admin", true);
         var response = await controller.GrantAssetAccess(new()
         {
@@ -65,12 +69,27 @@ public class AssetAccessControllerAuthorizationTests
         service.VerifyAll();
     }
 
+    [Theory]
+    [InlineData("gas")] [InlineData("oil")]
+    public async Task CompleteFacilityKeysReachBothGrantAndRevokeServiceCalls(string facilityType)
+    {
+        var service = new Mock<IAccessControlService>(MockBehavior.Strict);
+        service.Setup(value => value.GrantAssetAccessAsync("member", "plant", "FACILITY", "WRITE", false, "company", facilityType)).ReturnsAsync(true);
+        service.Setup(value => value.RevokeAssetAccessAsync("member", "plant", "FACILITY", facilityType)).ReturnsAsync(true);
+        var controller = Create(service.Object, true, "admin", true);
+        Assert.Equal(true, Assert.IsType<OkObjectResult>((await controller.GrantAssetAccess(new()
+        { UserId = "member", AssetId = "plant", AssetType = "FACILITY", FacilityType = facilityType, AccessLevel = "WRITE", Inherit = false, OrganizationId = "company" })).Result).Value);
+        Assert.Equal(true, Assert.IsType<OkObjectResult>((await controller.RevokeAssetAccess(new()
+        { UserId = "member", AssetId = "plant", AssetType = "FACILITY", FacilityType = facilityType })).Result).Value);
+        service.VerifyAll();
+    }
+
     private static AccessControlController Create(IAccessControlService service, bool authenticated, string? userId, bool admin)
     {
         var claims = new List<Claim>();
         if (userId is not null) claims.Add(new("party_id", userId));
         if (admin) claims.Add(new(ClaimTypes.Role, "Administrator"));
-        return new(service) { ControllerContext = new() { HttpContext = new DefaultHttpContext
+        return new(service, principal => principal.FindFirst("party_id")?.Value) { ControllerContext = new() { HttpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(new ClaimsIdentity(claims, authenticated ? "test" : null))
         } } };

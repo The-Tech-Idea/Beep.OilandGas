@@ -201,6 +201,6 @@
     }
 
     private void NavigateToDetail(string instanceId) =>
-        NavigationManager.NavigateTo($"/ppdm39/workorder/{Uri.EscapeDataString(instanceId)}");
+        NavigationManager.NavigateTo(WorkOrderNavigation.Detail(instanceId));
 
 }

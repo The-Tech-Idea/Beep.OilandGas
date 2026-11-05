@@ -1,0 +1,84 @@
+@using System.Globalization
+@using MudBlazor
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDevelopmentServiceClient Development
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+
+<MudPaper Outlined="true" Class="pa-4 mb-4">
+    <MudText Typo="Typo.h6" HtmlTag="h2">FDP baseline approval</MudText>
+    <MudText>The reviewed draft is retained as version @Review.Plan.FDP_VERSION. An independent final-role approver can record the next approved FDP version.</MudText>
+    <MudButton OnClick="Inspect" Disabled="@(_state?.CanInspect!=true)" Variant="Variant.Outlined" Class="my-3">Inspect FDP baseline</MudButton>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming original FDP baseline evidence" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+    @if(_state?.Confirmation is {} confirmation){<MudAlert Severity="Severity.Success">@confirmation</MudAlert>}
+    @if(_state?.RetainedProcessId is {} originalProcess)
+    {
+        <MudText Typo="Typo.subtitle1">Recover original FDP baseline approval</MudText>
+        @if(_state.Pending is {} pending)
+        {
+            <MudText Class="development-draft-description">@pending.Rationale</MudText>
+            <MudButton OnClick="Recover" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined" Class="my-3">Recover original baseline</MudButton>
+        }
+        else{<MudButton Href="@("/development/fdp/history?processId="+Uri.EscapeDataString(originalProcess))" Variant="Variant.Outlined">Open original baseline review</MudButton>}
+    }
+    else if(_state?.Result is {} found)
+    {
+        @if(found.Baseline is {} baseline)
+        {
+            <MudText Typo="Typo.h6" HtmlTag="h3">Approved FDP baseline · Version @baseline.FDP_VERSION</MudText>
+            <MudText>@baseline.FDP_NAME</MudText>
+            <MudText Class="development-draft-identity">Baseline identity: @baseline.FDP_ID</MudText>
+            <MudText Class="development-draft-identity">Source draft: @baseline.SOURCE_DRAFT_FDP_ID</MudText>
+            <MudText>Approved by: @baseline.APPROVED_BY</MudText>
+            @if(Company.Selection?.Permissions.Contains("Accounting.View",StringComparer.Ordinal)==true)
+            {<MudButton Href="@("/economics/afe?processId="+Uri.EscapeDataString(Review.InstanceId))" Variant="Variant.Outlined" Class="my-3">Open company AFE and investment evidence</MudButton>}
+            <MudText>Approval (UTC): @baseline.APPROVAL_DATE?.ToString("u",CultureInfo.InvariantCulture)</MudText>
+            <MudText Class="development-draft-description">@DevelopmentPlanRelease.FromRecord(baseline).Rationale</MudText>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No approved FDP baseline is recorded for this draft. Its absence was checked.</MudAlert>
+            @if(_state.CanPrepare)
+            {
+                <MudTextField T="string" Label="FDP baseline approval rationale" @bind-Value="_rationale" Lines="3" MaxLength="1600" Disabled="@(_state.Prepared is not null)" Class="my-3" />
+                <MudButton OnClick="Prepare" Disabled="@(_state.Prepared is not null)" Variant="Variant.Outlined">Review FDP baseline approval</MudButton>
+            }
+        }
+        <MudText Typo="Typo.caption">Baseline checked: @found.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+    }
+    @if(_state?.Prepared is {} prepared)
+    {
+        <MudDivider Class="my-3" />
+        <MudText Typo="Typo.h6" HtmlTag="h3">Confirm FDP baseline approval</MudText>
+        <MudText>@prepared.Review.Plan.FDP_NAME · Next version @(prepared.Review.Plan.FDP_VERSION+1) · FIELD @prepared.Review.Scope.FieldId</MudText>
+        <MudText Class="development-draft-description">@prepared.Rationale</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton OnClick="Submit" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Confirm approved FDP baseline</MudButton>
+            <MudButton OnClick="Cancel" Disabled="@_state.Busy" Variant="Variant.Outlined">Edit baseline rationale</MudButton>
+        </MudStack>
+    }
+    <MudAlert Severity="Severity.Info" Class="mt-3">FDP baseline approval does not approve an AFE, release investment funds or accept operations handover.</MudAlert>
+</MudPaper>
+
+@code{
+    [Parameter,EditorRequired]public DevelopmentReviewProgress Review{get;set;}=default!;
+    private DevelopmentPlanReleaseState? _state;
+    private string? _revision;
+    private string _rationale="";
+    private bool disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,Development,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override async Task OnParametersSetAsync(){if(_revision!=Review.Revision){_revision=Review.Revision;_rationale="";await _state!.LoadAsync(Review);}}
+    private Task Inspect()=>_state!.InspectAsync();
+    private void Prepare()=>_state!.Prepare(_rationale);
+    private Task Submit()=>_state!.SubmitAsync();
+    private Task Recover()=>_state!.RecoverAsync();
+    private void Cancel()=>_state!.Cancel();
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

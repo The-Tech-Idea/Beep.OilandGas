@@ -1,0 +1,24 @@
+async (page) => {
+ const observations=[];
+ const take=async(stage)=>{const value=await page.evaluate(async()=>({url:location.href,origin:performance.timeOrigin,keys:Object.keys(sessionStorage),text:document.body.innerText,metadata:await(await fetch('/fixture/metadata')).json()}));observations.push({stage,...value});return value;};
+ const require=(value,message)=>{if(!value)throw new Error(message);};
+ const reconcile=()=>page.getByRole('button',{name:'Reconcile original closure stage',exact:true});
+ await page.getByRole('button',{name:'Review assigned closure stage',exact:true}).waitFor();
+ let v=await take('initial');require(v.metadata.approvals===0&&v.metadata.nativeWrites===0,'Initial effects must be absent');
+ await page.getByRole('button',{name:'Review assigned closure stage',exact:true}).click();
+ await page.getByRole('textbox',{name:'Stage approval evidence and reason',exact:true}).fill('Reviewed final independent evidence; preserve this exact original through both acknowledgements.');
+ await page.getByRole('button',{name:'Approve final closure and record CLOSED status',exact:true}).click();
+ await page.getByText('The stage outcome is unconfirmed. Reload and reconcile the retained original; the incident has not been confirmed closed.',{exact:true}).waitFor();
+ v=await take('approval-lost');require(v.metadata.approvals===1&&v.metadata.approvalAttempts===1&&v.metadata.nativeAttempts===0&&v.metadata.nativeWrites===0&&v.keys.length===1,'Lost approval must not admit native closure');
+ const intent=v.metadata.approvedIntent;const key=v.keys[0];
+ await page.reload();await reconcile().waitFor();v=await take('approval-reload');require(v.metadata.approvalAttempts===1&&v.metadata.approvedIntent===intent&&v.keys[0]===key,'Approval original must survive reload without an automatic request');
+ await reconcile().click();await page.getByText('The original outcome is still unconfirmed. Its evidence is retained; the incident has not been confirmed closed.',{exact:true}).waitFor();
+ v=await take('native-lost');require(v.metadata.approvals===1&&v.metadata.approvalAttempts===2&&v.metadata.nativeAttempts===1&&v.metadata.nativeWrites===1&&v.metadata.state==='CLOSED'&&v.metadata.approvedIntent===intent&&v.keys[0]===key,'Native loss must retain one effect and the original');
+ await page.reload();await reconcile().waitFor();v=await take('native-reload');require(v.metadata.nativeAttempts===1&&v.metadata.nativeWrites===1&&v.keys[0]===key&&v.text.includes('CLOSED'),'Terminal reload must retain the same original without another native request');
+ await reconcile().click();await page.getByText('Incident closure confirmed: lifecycle approval and native CLOSED status are recorded.',{exact:true}).waitFor();
+ v=await take('confirmed');require(v.metadata.approvals===1&&v.metadata.approvalAttempts===3&&v.metadata.nativeAttempts===2&&v.metadata.nativeWrites===1&&v.metadata.approvedIntent===intent&&v.keys.length===0,'Exact confirmation must clear protected original with no duplicate effect');
+ require(!v.text.includes('RECONCILE ORIGINAL CLOSURE STAGE')&&!v.text.includes('REVIEW ASSIGNED CLOSURE STAGE')&&v.text.includes('New lifecycle approvals and correction returns are unavailable'),'Terminal controls must be read-only');
+ require(observations.every(o=>o.url===observations[0].url&&o.metadata.genericActionReads===0),'Exact incident/workflow URL must remain unchanged; generic actions must not run');
+ require(observations[1].origin!==observations[2].origin&&observations[3].origin!==observations[4].origin,'Both reloads must create a new document');
+ return {status:'pass',observations};
+}

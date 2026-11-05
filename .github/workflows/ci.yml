@@ -2,11 +2,32 @@ name: CI — Build, Test & Module Ownership Guard
 
 on:
   push:
-    branches: [ "main", "develop", "release/**" ]
+    branches: [ "master", "main", "develop", "release/**" ]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ "master", "main", "develop" ]
+
+permissions:
+  contents: read
 
 jobs:
+  test-company-access:
+    name: Focused company access and migration checks
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test active company access sources
+        run: >
+          dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj
+          -p:FocusedCompanyTests=true -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false
+          --logger "trx;LogFileName=company.trx" --results-directory TestResults/company
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: company-access-results
+          path: TestResults/company/company.trx
   test-domain-contracts:
     name: ${{ matrix.project }} Tests
     runs-on: windows-latest
@@ -55,6 +76,17 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Check dependency source availability
+        shell: pwsh
+        run: Scripts/Test-ProjectDependencies.ps1 -ReportPath dependency-preflight.json
+
+      - name: Upload dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-preflight
+          path: dependency-preflight.json
 
       - name: Restore NuGet packages
         run: dotnet restore Beep.OilandGas.sln
@@ -117,19 +149,36 @@ jobs:
   module-ownership-guard:
     name: Module Ownership Guard
     runs-on: windows-latest
-    needs: build
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Export application coverage inventory
+        shell: pwsh
+        run: Scripts/Export-AppSurface.ps1 -OutputPath app-surface.csv
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-surface-inventory
+          path: app-surface.csv
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Verify dependency preflight behavior
+        shell: pwsh
+        run: Scripts/Test-ProjectDependencies.Tests.ps1
+
       - name: Run module ownership guard
+        id: module_guard
         shell: pwsh
         run: >
           Scripts/ci-guard-module-ownership.ps1
           -RootPath "${{ github.workspace }}"
 
       - name: Summarize result
-        if: failure()
+        if: failure() && steps.module_guard.outcome == 'failure'
         run: |
           echo "## Module Ownership Violation" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

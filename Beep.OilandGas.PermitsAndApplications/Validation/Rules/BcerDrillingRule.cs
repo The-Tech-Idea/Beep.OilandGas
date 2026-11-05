@@ -20,7 +20,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
                 return result;
             }
 
-            AddIfMissing(result, drilling.WELL_UWI, "WELL_UWI", "BCER drilling requires a well UWI.");
+            AddIfMissing(result, request.Application.WELL_ID, "WELL_UWI", "BCER drilling requires a well UWI.");
             AddIfMissing(result, drilling.LEGAL_DESCRIPTION, "LEGAL_DESCRIPTION", "BCER drilling requires a legal description.");
             AddIfMissing(result, drilling.TARGET_FORMATION, "TARGET_FORMATION", "BCER drilling requires a target formation.");
             AddIfMissing(result, drilling.DRILLING_METHOD, "DRILLING_METHOD", "BCER drilling requires a drilling method.");

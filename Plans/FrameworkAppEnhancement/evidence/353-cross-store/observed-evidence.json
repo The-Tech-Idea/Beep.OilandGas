@@ -1,0 +1,113 @@
+{
+  "status": "focused-local-gates-passed",
+  "recorded_at": "2026-10-29T11:41:35.055431+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "working_tree": "dirty; unrelated existing changes preserved; no staging/commit/push",
+  "checks": [
+    {
+      "name": "lifecycle",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-cross-store/lifecycle.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-cross-store-scope-final.log",
+      "original_sha256": "a87f73d96f53d36a225bfa582cc4031532e6b4c1c8ffa834a17caf3a2b9ab8e3",
+      "observed_at": "2026-10-29T11:16:50.065326+03:00"
+    },
+    {
+      "name": "sqlite",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-cross-store/sqlite.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-cross-store-sqlite.log",
+      "original_sha256": "18ec150ec9a60cc3cc59d37d0479c53ae1ecbd5737d29afc75a27963e32ac49a",
+      "observed_at": "2026-10-29T10:50:00.097996+03:00"
+    },
+    {
+      "name": "terminal-rca",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-cross-store/terminal-rca.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-closed-rca-final.log",
+      "original_sha256": "973f8956a85ca7dcc5bbb399374751095f34c22a70c4cb9e963202d696bfbcdc",
+      "observed_at": "2026-10-29T10:55:20.529917+03:00"
+    },
+    {
+      "name": "plan-owner",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-cross-store/plan-owner.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-plan-owner.log",
+      "original_sha256": "a8bae2077d15bae77b405d61feaca891fec51c95a8bf78e1d97044213edbb6bc",
+      "observed_at": "2026-10-29T11:21:53.399414+03:00"
+    },
+    {
+      "name": "http-and-corrective-authority",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 69,
+      "failed": 0,
+      "skipped": 0,
+      "total_minutes": 17.5347,
+      "http_journey_minutes": 14.333333333333334,
+      "scope": "68 corrective-action authority cases and one actual local HTTP controller/role/FIELD/native-owner journey across independent persisting Beep test sources. Late approval revocation, uncertain native commit and exact retry/replay are all exercised in that journey.",
+      "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter \"FullyQualifiedName~FinalClosureHttpAcrossStoresRefusesRevocationAndReconcilesLostCommit|FullyQualifiedName~CompanyCorrectiveActionAuthorityTests\" --logger \"console;verbosity=normal\"",
+      "output": "Plans/FrameworkAppEnhancement/evidence/353-cross-store/http-authority.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-canonical-plan-http.log",
+      "original_sha256": "bc4ee5a9c9fef28eaaf1d16b880a802349b4b24cd8936acef835b28d85de64bc",
+      "completed_at": "2026-10-29T11:40:42.129479+03:00"
+    }
+  ],
+  "failed_attempts": [
+    {
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-closure-http-diagnostic.log",
+      "result": "failed",
+      "reason": "Cross-source repository access attempted under the lifecycle command; fixed by pre/post source validation."
+    },
+    {
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-cross-store-http-final.log",
+      "result": "one existing RCA case passed, integrated HTTP case failed",
+      "reason": "Five-minute request timeout on closure reconciliation after the deliberately uncertain native commit. Aggregate gate failed; canonical native plan resolution added before the active rerun."
+    },
+    {
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-hse-closure-http-fixed.log",
+      "result": "explicitly stopped obsolete run",
+      "reason": "Stopped its verified owned testhost after the RCA source code changed; not counted as passed."
+    }
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.HseClosure.cs": "52b5220b5311bb2b22e34bf5ada0036e5f6386817f753b8fc950402e83eb2ab8",
+    "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.HseCorrection.cs": "dc9ee7b5cd0d311324cbfab97c8b07db3831da3056f4958e3983a728667ae681",
+    "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.HseCommands.cs": "1e5a43e2b29081959aa820ac601083cf8c35d39cc42f35174095f48340bf0680",
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyIncidentCommands.RcaWrite.cs": "b1a005ccb2bd66d05dc2e664789bfcb5816148c8036ef376ce32526e6d3ce1b7",
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Plan.cs": "7b3b3f4285726b1dd5596802ac10d65a18d22ceb76183ab342f2c0fd71991203",
+    "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/CorrectiveActionService.cs": "d33db63fcbc2bab6f498e062716c6314477bd39b169d70a50d79fc166f903c60",
+    "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.Closure.cs": "b9fddac35ccfc42d9b5cef3816714608ef409075826b009ea68b0e89df240717",
+    "TheTechIdea.Data/OilGas/ICompanyCorrectiveActionCommands.cs": "3be85cc5135de8f7789620e5348498a2302c91d5fef8069d87bd40b7320e0f88",
+    "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowHttpTests.cs": "aa3ca24c9d6f0c0c7ae53e1c1e911d71d5e8324a75dee7b0eb41afe3a3bf8a81",
+    "Beep.OilandGas.Repository.Tests/CompanyIncidentCommandTests.cs": "5067735fe288b57dbd630011e9a5c878771de23e8ca4568ae62cf0f0f3cf9544",
+    "Beep.OilandGas.ApiService.Tests/CompanyHseWorkflowStartTests.cs": "3c6f61745dc1cb6de509f504cd3be3849be217626204b552a807b4fff24fa4c3",
+    "Beep.OilandGas.Repository.Tests/CompanyCorrectiveActionCommandTests.cs": "9947365f34745ddfedd90bad515957b9c1a08277d8bdcc6dcfca6a8609d14d57",
+    "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowServiceTests.cs": "88e8696938d2a5384b762471a65949ccf6952867a3d60b55e2dcc0a403637b9c"
+  },
+  "limitations": [
+    "No full suite or solution build.",
+    "The local HTTP authentication scheme and prior completion author are explicit fixture seams; app-owned role claims, FIELD filter, coordinator, lifecycle and native incident owners run through actual implementations.",
+    "The two HTTP datasource instances are independent persisting transaction-capable Beep test sources, not independent live hosted databases.",
+    "Real SQLite tests cover MigrationManager and lifecycle graph with controlled incident/action inputs.",
+    "The successful local HTTP journey takes 14 minutes 20 seconds; the aggregate gate takes 17.5347 minutes. This is not production performance qualification.",
+    "Hosted browser/OIDC/RTL, live provider/concurrency matrices, source-read performance and correction of changed approved action/cause evidence outside the reviewed return cycle remain open."
+  ],
+  "overlap": "The 27-case plan/facade/coordinator gate repeats 12 inputs in the 68-case corrective-action authority class. Gate counts are reported separately; their sum is not a distinct total."
+}

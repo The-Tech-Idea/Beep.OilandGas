@@ -1,0 +1,25 @@
+{
+  "reason": "Verified local diagnostic hosts stopped after scoped browser checks; only owned temporary roots targeted. Browser sessions closed separately.",
+  "operations": [
+    {
+      "outcome": "stopped",
+      "process": 11892,
+      "root": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-workflow-transport-29a137c9fa594eb7919c7f22ab080f86"
+    },
+    {
+      "outcome": "stopped",
+      "process": 6704,
+      "root": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-workflow-transport-29a137c9fa594eb7919c7f22ab080f86"
+    },
+    {
+      "outcome": "stopped",
+      "process": 33596,
+      "root": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-protected-tab-b4955923e5294fb99ad78b9581109d1b"
+    },
+    {
+      "outcome": "stopped",
+      "process": 23124,
+      "root": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-protected-tab-b4955923e5294fb99ad78b9581109d1b"
+    }
+  ]
+}

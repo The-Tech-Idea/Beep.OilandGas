@@ -1,185 +1,120 @@
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-
 namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
-
-/// <remarks>
-/// OILGAS-CATCH-01: a failure reaches the caller. Seeding a checklist was caught and logged, so a work order went ahead
-/// without its safety checklist; and reading the checklist answered an empty list on a failure, which
-/// <see cref="AllConditionsPassedAsync"/> read as every condition passed.
-/// </remarks>
-public class InspectionService : IInspectionService
+public sealed partial class InspectionService : IInspectionService, ICompanyWorkOrderMaterialAcceptanceOwner, ICompanyWorkOrderPersonnelAcceptanceOwner, ICompanyWorkOrderRequirementSource
 {
-    private readonly IDMEEditor                _editor;
-    private readonly ICommonColumnHandler      _commonColumnHandler;
-    private readonly IPPDM39DefaultsRepository _defaults;
-    private readonly IPPDMMetadataRepository   _metadata;
-    private readonly string                    _connectionName;
-    private readonly ILogger<InspectionService> _logger;
-
-    // BSEE SEMS §250.1920–.1932 standard checklist for Turnaround WOs
-    private static readonly List<(int Seq, string Type, string Text, string Ref)> _turnaroundChecklist = new()
+    private readonly IDMEEditor editor;
+    private readonly ICommonColumnHandler columns;
+    private readonly IPPDM39DefaultsRepository defaults;
+    private readonly IPPDMMetadataRepository metadata;
+    private readonly WorkOrderDatabaseBinding database;
+    private readonly Func<string,string,string,string,Task> requireOrder;
+    private readonly Func<string,Task>? requirePermitPrerequisite;
+    public InspectionService(IDMEEditor editor,ICommonColumnHandler commonColumnHandler,IPPDM39DefaultsRepository defaults,IPPDMMetadataRepository metadata,
+        Func<Task<(CompanyScope Company,string Actor,AssetDatabaseScope Database)>> resolveDatabase,ILogger<InspectionService> logger,Func<string,string,string,string,Task> requireOrder,Func<string,Task>? requirePermitPrerequisite=null)
     {
-        (1,  ConditionType.PreStart,    "Process isolation verified (LOTO applied)",               "SEMS §250.1920(a)"),
-        (2,  ConditionType.PreStart,    "Permits to Work issued",                                  "SEMS §250.1921"),
-        (3,  ConditionType.PreStart,    "Hydrogen sulfide (H2S) monitor calibrated",               "SEMS §250.1922"),
-        (4,  ConditionType.PreStart,    "Emergency shutdown system (ESD) tested",                  "SEMS §250.1923"),
-        (5,  ConditionType.PreStart,    "Fire and gas detection armed",                            "SEMS §250.1924"),
-        (6,  ConditionType.PreStart,    "Evacuation routes confirmed clear",                       "SEMS §250.1925"),
-        (7,  ConditionType.SceVerify,   "BOP/PSV test results recorded",                          "SEMS §250.1926"),
-        (8,  ConditionType.SceVerify,   "All SCEs on safe failure inventory checked",              "SEMS §250.1927–.1928"),
-        (9,  ConditionType.CloseOut,    "Post-work pressure test documented",                      "SEMS §250.1930"),
-        (10, ConditionType.CloseOut,    "Piping restoration and leak check",                       "SEMS §250.1931"),
-        (11, ConditionType.CloseOut,    "All permits closed and HSE sign-off complete",            "SEMS §250.1932"),
-        (12, ConditionType.Regulatory,  "BSEE notification filed (OCS-G form)",                   "30 CFR §250.144"),
-    };
-
-    // Safety Critical Element checklist (SEMS §250.1917)
-    private static readonly List<(int Seq, string Type, string Text, string Ref)> _safetyChecklist = new()
-    {
-        (1, ConditionType.PreStart,    "Safety Critical Element (SCE) identified and tagged",     "SEMS §250.1917"),
-        (2, ConditionType.PreStart,    "Permits to Work issued",                                  "SEMS §250.1917(b)"),
-        (3, ConditionType.SceVerify,   "SCE function test completed",                             "API RP 14C"),
-        (4, ConditionType.CloseOut,    "SCE restoration verified by HSE officer",                 "SEMS §250.1917(d)"),
-    };
-
-    // Generic checklist for Preventive / Corrective / Environmental / Regulatory
-    private static readonly List<(int Seq, string Type, string Text, string Ref)> _genericChecklist = new()
-    {
-        (1, ConditionType.PreStart,    "Job safety analysis (JSA) completed and signed",          string.Empty),
-        (2, ConditionType.PreStart,    "Required permits obtained",                               string.Empty),
-        (3, ConditionType.CloseOut,    "Work site clean-up and reinstatement",                    string.Empty),
-        (4, ConditionType.CloseOut,    "As-found / as-left documentation completed",              string.Empty),
-    };
-
-    public InspectionService(
-        IDMEEditor editor,
-        ICommonColumnHandler commonColumnHandler,
-        IPPDM39DefaultsRepository defaults,
-        IPPDMMetadataRepository metadata,
-        string connectionName,
-        ILogger<InspectionService> logger)
-    {
-        _editor              = editor;
-        _commonColumnHandler = commonColumnHandler;
-        _defaults            = defaults;
-        _metadata            = metadata;
-        _connectionName      = connectionName;
-        _logger              = logger;
+        this.editor=editor;columns=commonColumnHandler;this.defaults=defaults;this.metadata=metadata;database=new(resolveDatabase);this.requireOrder=requireOrder ?? throw new ArgumentNullException(nameof(requireOrder));this.requirePermitPrerequisite=requirePermitPrerequisite;
     }
-
-    public async Task SeedChecklistAsync(
-        string instanceId, string woType, string jurisdiction, string userId)
+    private async Task RequirePrerequisiteAsync(WORK_ORDER_INSPECTION row,string actor)
     {
-        _logger.LogInformation("Seeding checklist for WO {InstanceId} type {Type}", instanceId, woType);
-        var items = woType switch
+        if(row.PERMIT_PREREQUISITE_KIND is null)return;
+        if(requirePermitPrerequisite is null)throw RefusalException.Forbidden("Current app authority for permit-prerequisite inspection is unavailable.");await requirePermitPrerequisite(actor);
+        var source=editor.GetDataSource(await database.RequireAsync(actor));var structure=source.GetEntityStructure(new TheTechIdea.Beep.DataBase.EntityStructure{EntityName="WORK_ORDER_INSPECTION",DatasourceEntityName="WORK_ORDER_INSPECTION"},true);
+        if(structure?.Fields is null || structure.Fields.Count(field=>field.FieldName=="PERMIT_PREREQUISITE_KIND")!=1)throw RefusalException.Conflict("The explicit prerequisite inspection column is unavailable; review its existing Beep migration.");await requirePermitPrerequisite(actor);
+    }
+    private async Task<PPDMGenericRepository> RepoAsync()
+    {
+        var connection=await database.RequireAsync();
+        var source=editor.GetDataSource(connection) ?? throw RefusalException.Conflict("The inspection datasource is unavailable.");
+        if(!source.CheckEntityExist("WORK_ORDER_INSPECTION"))throw RefusalException.Conflict("The recorded inspection schema is unavailable. Review its PPDM_CORE Beep migration before using inspection commands.");
+        return new(editor,columns,defaults,metadata,typeof(WORK_ORDER_INSPECTION),connection,"WORK_ORDER_INSPECTION");
+    }
+    private static void RequireApplicabilitySchema(TheTechIdea.Beep.IDataSource source,WORK_ORDER_INSPECTION row)
+    {
+        if(row.APPLICABLE_STAGE is null)return;
+        var shape=source.GetEntityStructure(new TheTechIdea.Beep.DataBase.EntityStructure{EntityName="WORK_ORDER_INSPECTION",DatasourceEntityName="WORK_ORDER_INSPECTION"},true);
+        var fields=shape?.Fields?.Where(value=>value.FieldName=="APPLICABLE_STAGE").ToArray();
+        if(fields is not {Length:1} || fields[0].Fieldtype!=typeof(string).FullName || !fields[0].AllowDBNull || fields[0].Size1<32)throw RefusalException.Conflict("Review the existing PPDM_CORE Beep Migration for the nullable explicit inspection applicability column before using it.");
+    }
+    private async Task<List<WORK_ORDER_INSPECTION>> ReadRowsAsync(string order,string field,string actor)
+    {
+        await database.RequireAsync(actor);await requireOrder(actor,field,order,"READ");
+        var repo=await RepoAsync();
+        var raw=(await database.ReadAsync(()=>repo.GetAsync([new(){FieldName="WORK_ORDER_ID",Operator="=",FilterValue=order},new(){FieldName="FIELD_ID",Operator="=",FilterValue=field},new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}]))).ToList();
+        if(raw.Any(r=>r is not WORK_ORDER_INSPECTION))throw RefusalException.Conflict("The inspection provider returned an incompatible record.");
+        var rows=raw.Cast<WORK_ORDER_INSPECTION>().ToList();WorkOrderInspectionRules.Require(field,order,rows);
+        await database.RequireAsync(actor);await requireOrder(actor,field,order,"READ");return rows;
+    }
+    // Only an explicit command or versioned reader's complete fresh guard may close this private native read.
+    // Public checklist reads retain their independent database/order authorization path.
+    private async Task<IReadOnlyList<WORK_ORDER_INSPECTION>> ReadCompleteGuardedRowsAsync(string order,string field,Func<Task> completeGuard)
+    {
+        await completeGuard();var repository=await RepoAsync();
+        var raw=(await repository.GetAsync([new(){FieldName="WORK_ORDER_ID",Operator="=",FilterValue=order},new(){FieldName="FIELD_ID",Operator="=",FilterValue=field},new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}])).ToArray();
+        if(raw.Length>256 || raw.Any(row=>row is not WORK_ORDER_INSPECTION))throw new InvalidOperationException("Complete original inspection population is unavailable or exceeds its review bound.");
+        var rows=raw.Cast<WORK_ORDER_INSPECTION>().Select(CompanyInventorySourceReview.Copy).ToArray();
+        await completeGuard();WorkOrderInspectionRules.Require(field,order,rows);
+        if(rows.Any(row=>row.APPLICABLE_STAGE is not null))RequireApplicabilitySchema(editor.GetDataSource(await database.RequireAsync())??throw new InvalidOperationException("Original applicability source is unavailable."),rows.First(row=>row.APPLICABLE_STAGE is not null));
+        return rows;
+    }
+    public Task<IReadOnlyList<InspectionCondition>> ReadRequirementProofAsync(FieldSelectionReview context,string workOrderId,Func<Task> requireAuthority)=>ReadRequirementProofCore(context,workOrderId,requireAuthority,false);
+    public Task<IReadOnlyList<InspectionCondition>> ReadRequirementProofCoreAsync(FieldSelectionReview context,string workOrderId,Func<Task> requireAuthority)=>ReadRequirementProofCore(context,workOrderId,requireAuthority,true);
+    private async Task<IReadOnlyList<InspectionCondition>> ReadRequirementProofCore(FieldSelectionReview context,string workOrderId,Func<Task> requireAuthority,bool owned)
+    {
+        ArgumentNullException.ThrowIfNull(requireAuthority);FieldSelectionReviewValidator.RequireReview(context,context.Company,context.ActorUserId);if(!LeaseSummaryValidator.Identifier(workOrderId) || !LeaseSummaryValidator.Identifier(context.FieldId))throw new ArgumentException("Exact original requirement FIELD/order is required.");
+        var source=editor.GetDataSource(context.Database.ConnectionName)??throw new InvalidOperationException("Original requirement native source is unavailable.");
+        async Task Guard(){if(owned)PPDMDataSourceTransaction.RequireOwned(source,System.Data.IsolationLevel.Serializable);else PPDMDataSourceTransaction.RequireIdle(source);await requireAuthority();await database.RequireContextAsync(context.Company,context.ActorUserId,context.Database);if(!owned)await requireOrder(context.ActorUserId,context.FieldId!,workOrderId,"WRITE");if(!ReferenceEquals(source,editor.GetDataSource(context.Database.ConnectionName)))throw new InvalidOperationException("Original requirement source changed.");if(owned)PPDMDataSourceTransaction.RequireOwned(source,System.Data.IsolationLevel.Serializable);else PPDMDataSourceTransaction.RequireIdle(source);}
+        async Task Parent(){await Guard();await requireOrder(context.ActorUserId,context.FieldId!,workOrderId,"WRITE");await Guard();}
+        async Task RequireRequirementSchema()
         {
-            WorkOrderSubType.Turnaround => _turnaroundChecklist,
-            WorkOrderSubType.Safety     => _safetyChecklist,
-            _                           => _genericChecklist
-        };
-
-        var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_CONDITION");
-        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT_STEP_CONDITION");
-
-        foreach (var (seq, type, text, regRef) in items)
-        {
-            dynamic item = Activator.CreateInstance(entityType!)!;
-            item.PROJECT_ID    = instanceId;
-            item.STEP_SEQ      = 1;              // All checklist items on step 1 for seed
-            item.COND_SEQ      = seq;
-            item.COND_TYPE     = type;
-            item.COND_TEXT     = text;
-            item.COND_STATUS   = "PENDING";
-            item.REG_REF       = regRef;
-            item.ACTIVE_IND    = "Y";
-            await repo.InsertAsync(item, userId);
+            await Guard();if(!source.CheckEntityExist("WORK_ORDER_INSPECTION"))throw new InvalidOperationException("Explicit versioned inspection schema is unavailable.");var shape=source.GetEntityStructure(new TheTechIdea.Beep.DataBase.EntityStructure{EntityName="WORK_ORDER_INSPECTION",DatasourceEntityName="WORK_ORDER_INSPECTION"},true);var keys=shape?.Fields?.Where(value=>value.IsKey).ToArray();if(keys is not {Length:1} || keys[0].FieldName!="INSPECTION_ID" || keys[0].AllowDBNull)throw new InvalidOperationException("Complete immutable requirement key metadata is unavailable.");
+            var definition=await metadata.GetTableMetadataAsync("WORK_ORDER_INSPECTION");var primary=(await metadata.GetPrimaryKeyColumnsAsync("WORK_ORDER_INSPECTION")).ToArray();if(definition is null || definition.EntityTypeName!=typeof(WORK_ORDER_INSPECTION).FullName && definition.EntityTypeName!=nameof(WORK_ORDER_INSPECTION) || definition.PrimaryKeyColumn!="INSPECTION_ID" || primary.Length!=1 || primary[0]!="INSPECTION_ID")throw new InvalidOperationException("Canonical native requirement key/type metadata is unavailable.");await Guard();
         }
-        _logger.LogInformation("Seeded {Count} checklist items for WO {InstanceId}", items.Count, instanceId);
+        async Task<IReadOnlyList<InspectionCondition>> Read(){if(owned)await Parent();await RequireRequirementSchema();var rows=await ReadCompleteGuardedRowsAsync(workOrderId,context.FieldId!,Guard);if(rows.Count>256)throw new InvalidOperationException("Complete native requirement population exceeds its bounded versioned review capacity.");var result=rows.OrderBy(row=>row.COND_SEQ).Select(WorkOrderInspectionRules.ProjectWithRequirementProof).ToArray();if(owned)await Parent();else await Guard();return result;}
+        var first=await Read();var closing=await Read();if(System.Text.Json.JsonSerializer.Serialize(first)!=System.Text.Json.JsonSerializer.Serialize(closing))throw new InvalidOperationException("Complete native requirement/result/creation audit population changed.");return closing;
     }
-
-    public async Task RecordResultAsync(
-        string instanceId, int condSeq,
-        string result, string? notes, string userId)
+    public async Task<List<InspectionCondition>> GetChecklistAsync(string instanceId,string fieldId)
     {
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_CONDITION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT_STEP_CONDITION");
-
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId      },
-                new() { FieldName = "COND_SEQ",   Operator = "=", FilterValue = condSeq.ToString()},
-                new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"             }
-            };
-            var rows = (await repo.GetAsync(filters)).ToList();
-            if (rows.Count == 0) return;
-
-            dynamic item = rows[0];
-            item.COND_STATUS  = result.ToUpperInvariant();
-            item.RESULT_TEXT  = notes ?? string.Empty;
-            item.INSPECT_DATE = DateTime.UtcNow;
-            await repo.UpdateAsync(item, userId);
-
-            _logger.LogInformation("Recorded {Result} for condition {Seq} on WO {InstanceId}", result, condSeq, instanceId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "RecordResult failed for WO {InstanceId} condSeq {Seq}", instanceId, condSeq);
-            throw;
-        }
+        var actor=await database.ActorAsync();return (await ReadRowsAsync(instanceId,fieldId,actor)).OrderBy(r=>r.COND_SEQ).Select(WorkOrderInspectionRules.Project).ToList();
     }
-
-    public async Task<bool> AllConditionsPassedAsync(
-        string instanceId, IEnumerable<string> condTypes)
+    public async Task<bool> AllConditionsPassedAsync(string instanceId,string fieldId,IEnumerable<string> condTypes)=>WorkOrderWorkflow.RecordedConditionsPassed(await GetChecklistAsync(instanceId,fieldId),condTypes);
+    public async Task<InspectionCondition> AddRequirementAsync(string instanceId,AddWorkOrderInspectionRequirementRequest request,string userId)
     {
-        var checklist = await GetChecklistAsync(instanceId);
-        var types     = condTypes.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return checklist
-            .Where(c => types.Contains(c.CondType))
-            .All(c => string.Equals(c.Status, "PASS", StringComparison.OrdinalIgnoreCase));
-    }
-
-    public async Task<List<InspectionCondition>> GetChecklistAsync(string instanceId)
-    {
-        var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_CONDITION");
-        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT_STEP_CONDITION");
-
-        var filters = new List<AppFilter>
+        var prepared=WorkOrderInspectionRules.PrepareRequirement(request,instanceId,userId,Guid.NewGuid().ToString("N"),DateTime.UtcNow);
+        await database.RequireAsync(userId);await requireOrder(userId,request.FieldId,instanceId,"WRITE");await RequirePrerequisiteAsync(prepared,userId);var repo=await RepoAsync();var source=editor.GetDataSource(await database.RequireAsync(userId));RequireApplicabilitySchema(source,prepared);
+        await PPDMDataSourceTransaction.ExecuteAsync(source,async()=>
         {
-            new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
-            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
-        };
-        return (await repo.GetAsync(filters))
-            .Select(r =>
-            {
-                dynamic d = r;
-                return new InspectionCondition(
-                    WorkOrderRowValues.Int(d, "COND_SEQ"),
-                    WorkOrderRowValues.Str(d, "COND_TYPE"),
-                    WorkOrderRowValues.Str(d, "COND_TEXT"),
-                    WorkOrderRowValues.Str(d, "COND_STATUS"),
-                    WorkOrderRowValues.Str(d, "RESULT_TEXT"),
-                    WorkOrderRowValues.Date(d, "INSPECT_DATE"),
-                    WorkOrderRowValues.Str(d, "REG_REF"));
-            })
-            .OrderBy(c => c.CondSeq)
-            .ToList();
+            PPDMDataSourceTransaction.RequireOwned(source,System.Data.IsolationLevel.Serializable);
+            RequireApplicabilitySchema(source,prepared);
+            var rows=await ReadRowsAsync(instanceId,request.FieldId,userId);if(rows.Any(r=>r.COND_SEQ==request.CondSeq))throw RefusalException.Conflict("That inspection sequence already exists on the recorded order.");
+            await requireOrder(userId,request.FieldId,instanceId,"WRITE");await database.RequireAsync(userId);await RequirePrerequisiteAsync(prepared,userId);RequireApplicabilitySchema(source,prepared);await repo.InsertAsync(prepared,userId);
+            var saved=(await ReadRowsAsync(instanceId,request.FieldId,userId)).SingleOrDefault(r=>r.INSPECTION_ID==prepared.INSPECTION_ID);
+            WorkOrderInspectionRules.RequireReadback(prepared,saved);await requireOrder(userId,request.FieldId,instanceId,"WRITE");await database.RequireAsync(userId);await RequirePrerequisiteAsync(prepared,userId);
+        });
+        var committed=(await ReadRowsAsync(instanceId,request.FieldId,userId)).SingleOrDefault(r=>r.INSPECTION_ID==prepared.INSPECTION_ID);WorkOrderInspectionRules.RequireReadback(prepared,committed);await requireOrder(userId,request.FieldId,instanceId,"WRITE");await database.RequireAsync(userId);await RequirePrerequisiteAsync(prepared,userId);return WorkOrderInspectionRules.Project(committed!);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private PPDMGenericRepository BuildRepo(Type? entityType, string tableName) =>
-        new(_editor, _commonColumnHandler, _defaults, _metadata,
-            entityType, _connectionName, tableName);
+    public async Task<InspectionCondition> RecordResultAsync(string instanceId,int condSeq,RecordInspectionResultRequest request,string userId)
+    {
+        if(request is null || condSeq<=0)throw RefusalException.Invalid("Original inspection intent is required.");
+        await database.RequireAsync(userId);await requireOrder(userId,request.FieldId,instanceId,"WRITE");var repo=await RepoAsync();var source=editor.GetDataSource(await database.RequireAsync(userId));
+        WORK_ORDER_INSPECTION? intended=null;
+        await PPDMDataSourceTransaction.ExecuteAsync(source,async()=>
+        {
+            PPDMDataSourceTransaction.RequireOwned(source,System.Data.IsolationLevel.Serializable);
+            var row=(await ReadRowsAsync(instanceId,request.FieldId,userId)).SingleOrDefault(r=>r.COND_SEQ==condSeq && r.INSPECTION_ID==request.InspectionId) ?? throw RefusalException.NotFound("The original inspection requirement was not found.");
+            if(row.PERMIT_PREREQUISITE_KIND=="PERSONNEL" && request.Result=="PASS")throw RefusalException.Conflict("PERSONNEL PASS requires the reviewed current assignment/policy/credential acceptance command; a generic result cannot establish acceptance.");
+            await RequirePrerequisiteAsync(row,userId);intended=WorkOrderInspectionRules.PrepareResult(row,request,userId,DateTime.UtcNow);
+            await requireOrder(userId,request.FieldId,instanceId,"WRITE");await database.RequireAsync(userId);await repo.UpdateAsync(intended,userId);
+            WorkOrderInspectionRules.RequireReadback(intended,(await ReadRowsAsync(instanceId,request.FieldId,userId)).SingleOrDefault(r=>r.INSPECTION_ID==intended.INSPECTION_ID));
+            await requireOrder(userId,request.FieldId,instanceId,"WRITE");await database.RequireAsync(userId);await RequirePrerequisiteAsync(intended,userId);
+        });
+        var committed=(await ReadRowsAsync(instanceId,request.FieldId,userId)).SingleOrDefault(r=>r.INSPECTION_ID==request.InspectionId);WorkOrderInspectionRules.RequireReadback(intended!,committed);await requireOrder(userId,request.FieldId,instanceId,"WRITE");await database.RequireAsync(userId);await RequirePrerequisiteAsync(intended!,userId);return WorkOrderInspectionRules.Project(committed!);
+    }
 }

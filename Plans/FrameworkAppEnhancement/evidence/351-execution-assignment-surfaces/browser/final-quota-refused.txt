@@ -1,0 +1,48 @@
+### Page
+- Page URL: http://127.0.0.1:49208/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e45]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e46]
+    - paragraph [ref=e47]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e48]:
+      - button "Use read-only unmapped profile" [ref=e49] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e51] [cursor=pointer]
+      - button "Switch other company" [ref=e53] [cursor=pointer]
+      - button "Switch other account" [ref=e55] [cursor=pointer]
+      - button "Restore original company/account" [ref=e57] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e59] [cursor=pointer]
+      - button "Show actual start recovery" [ref=e61] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e63] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e65] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e67]:
+    - heading "Execution reporting responsibility" [level=1] [ref=e68]
+    - group [ref=e69]:
+      - link "Drilling workspace" [ref=e70] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=e72] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload source and recipients" [ref=e74] [cursor=pointer]
+    - generic [ref=e76]: Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.
+    - alert [ref=e100]:
+      - generic [ref=e101]: This tab could not confirm saving the original. No submission was sent from this page. Keep this page open and recover the original before trying again.
+    - generic [ref=e107]:
+      - heading "Original reporting assignment kept on this page" [level=2] [ref=e108]
+      - status [ref=e109]:
+        - generic [ref=e110]: This tab could not confirm saving the original. No submission was sent from this page. Keep this page open and recover the original before trying again.
+      - paragraph [ref=e116]: Original drilling program · Operation drilling-execution-9737AF1F31A9E242AA0C9463B1C459E4A386DCFC74EFF0D8EA20924A5723E100 · FIELD original-field/واحد
+      - paragraph [ref=e117]: Original sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION
+      - paragraph [ref=e118]: Receiving role ConfiguredReportingRole · 1 configured persona destinations
+      - paragraph [ref=e119]: Quota original on corrected reporting screen 472
+      - button "Recover original reporting assignment" [ref=e120] [cursor=pointer]
+    - generic [ref=e83]:
+      - heading "Recorded execution source" [level=2] [ref=e84]
+      - paragraph [ref=e85]: Company tenant / company · Sender execution-recorder · Original FIELD original-field/واحد
+      - paragraph [ref=e86]: Original drilling program · Version 1 · Well recorded-well/one
+      - paragraph [ref=e87]: Operation drilling-execution-9737AF1F31A9E242AA0C9463B1C459E4A386DCFC74EFF0D8EA20924A5723E100 · Actual reported spud 2026-10-26 16:12:29Z UTC · Original recorder execution-recorder
+      - link "Open observed drilling progress" [ref=e88] [cursor=pointer]:
+        - /url: /drilling/program-execution/reports?reviewId=drilling-program-review-5B954D6B869AE09B194FA4F78A31626FA3274F6221C3C8490515FB61D6880440
+```

@@ -1,0 +1,27 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@if(Review is {} source)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6">Recorded source for this start</MudText>
+        <MudText>Source: @source.EntityType · @source.EntityId · FIELD: @source.FieldId</MudText>
+        <MudText>Recorded reference: @(string.IsNullOrWhiteSpace(source.RecordedReference) ? "Unavailable" : source.RecordedReference)</MudText>
+        <MudText>@source.Description</MudText>
+        <MudText>Status: @(string.IsNullOrWhiteSpace(source.RecordedStatus) ? "Unavailable" : source.RecordedStatus) · Recorded by: @(string.IsNullOrWhiteSpace(source.RecordedBy) ? "Unavailable" : source.RecordedBy)</MudText>
+        @if(source.EntityType=="JOURNAL_ENTRY")
+        {
+            <MudAlert Severity="Severity.Info">Journal data comes from the selected company's accounting store. A direct journal-to-FIELD relationship is unconfirmed. Starting a workflow does not post, approve or close accounting data.</MudAlert>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">The recorded work-order components establish the FIELD relationship. Starting a workflow does not accept inspections or complete maintenance.</MudAlert>
+        }
+        <MudText Typo="Typo.caption">Retrieved: @source.RetrievedAtUtc.ToString("O")</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">Enter a source ID and review its recorded data before starting.</MudAlert>
+}
+@code { [Microsoft.AspNetCore.Components.Parameter] public ProcessStartSourceReview? Review {get;set;} }

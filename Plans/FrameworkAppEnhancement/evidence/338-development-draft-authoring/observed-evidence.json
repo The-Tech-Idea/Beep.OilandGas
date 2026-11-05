@@ -1,0 +1,474 @@
+{
+  "date": "2026-10-25",
+  "status": "historical-draft-checkpoint-superseded-by-339",
+  "user_direction": "Replace legacy implementations without compatibility paths; focus on persona app workflows; commit and push after full plan completion.",
+  "tests": {
+    "passed": 354,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 20.5878,
+    "draft_cases": 121,
+    "retained_app_cases": 223,
+    "shared_schema_cases": 10,
+    "by_class": {
+      "Beep.OilandGas.ApiService.Tests.DevelopmentPlanDraftContractTests": 39,
+      "Beep.OilandGas.Web.Auth.Tests.PersonaTaskInboxStateTests": 81,
+      "Beep.OilandGas.Web.Auth.Tests.DevelopmentDraftIntentStoreTests": 2,
+      "Beep.OilandGas.ApiService.Tests.ModuleSchemaVerificationTests": 10,
+      "Beep.OilandGas.ApiService.Tests.DevelopmentPlanningControllerTests": 7,
+      "Beep.OilandGas.Web.Auth.Tests.ExecutivePortfolioLandingTests": 31,
+      "Beep.OilandGas.Web.Auth.Tests.DevelopmentDraftWorkspaceTests": 21,
+      "Beep.OilandGas.Web.Auth.Tests.DevelopmentWellEvidenceTests": 35,
+      "Beep.OilandGas.Web.Auth.Tests.EngineeringWorkspaceLandingTests": 18,
+      "Beep.OilandGas.ApiService.Tests.DevelopmentPlanNativeDraftTests": 26,
+      "Beep.OilandGas.Web.Auth.Tests.MaintenanceRecordedWorkLandingTests": 9,
+      "Beep.OilandGas.ApiService.Tests.DevelopmentDraftHttpTests": 11,
+      "Beep.OilandGas.ApiService.Tests.DevelopmentDraftAuthorityTests": 15,
+      "Beep.OilandGas.ApiService.Tests.WorkflowInboxHttpTests": 49
+    }
+  },
+  "build": {
+    "project": "TheTechIdea.Data/TheTechIdea.Data.csproj",
+    "errors": 0,
+    "warnings": 1,
+    "warning": "Existing missing IdentityServer analyzer project; no investigation or substitute.",
+    "command": "dotnet build TheTechIdea.Data/TheTechIdea.Data.csproj --no-restore -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false"
+  },
+  "compiled_sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/DevelopmentPlanning/CreateDevelopmentPlan.cs",
+      "sha256": "6bb16f912433d5539cae842ea0b1d1a5b621981cadbf1eac9e05634355ef8bff"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/DevelopmentPlanning/FIELD_DEVELOPMENT_PLAN.cs",
+      "sha256": "1a1faa5fed2cad57bfc48b849419d85ca5de94a98dacc15c0af79578341491cd"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentPlanDraftReview.cs",
+      "sha256": "de2796835383b8b89ff9ab6bfd0eb0e49e7a6f700518a6cd19bab30b52aba34e"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/DevelopmentPlanning/DevelopmentPlanDraftResponses.cs",
+      "sha256": "9f51a331c178a81b631f9dc6e654b8f62bb8be7d5f0cebb2c033fb15f4d0a206"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/DevelopmentPlanning/R_DEVELOPMENT_PLANNING_REFERENCE_CODE.cs",
+      "sha256": "75f60deba9cec270252e76dac2cb7553171f315a8d85e556ff3a775551bf8391"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/ModelEntityBase.cs",
+      "sha256": "e7878427dcf13550699715f676d3e7d8197f9f8f42f2e868f26fc7f2c081de3b"
+    },
+    {
+      "path": "Beep.OilandGas.DevelopmentPlanning/Services/DevelopmentPlanService.cs",
+      "sha256": "03bdeaf048eeac476ff3a314f7c5f46c7d5805d6bdfddc97ecf7a476cecf0777"
+    },
+    {
+      "path": "Beep.OilandGas.DevelopmentPlanning/Services/IDevelopmentPlanService.cs",
+      "sha256": "f533b8636d276c6e1e7c2f2cf1fd08cb5a95ba0d345db93a2313783ac6c20c7b"
+    },
+    {
+      "path": "Beep.OilandGas.DevelopmentPlanning/Modules/DevelopmentPlanningModule.cs",
+      "sha256": "a0af9d8a8bff18214be5d921cdcd5315d5f6ed5aa90d03b1703fbed2980ec36e"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentPlanningController.cs",
+      "sha256": "7f2f935dc99c3973f7625d204a3a611e91c4a7b91761e3b8887c0c632b8dd276"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/IDevelopmentPlanRequestAuthority.cs",
+      "sha256": "ab067cac5afa83bf5191aa198546a9c6b905c43333ac655d39d91dac67f5543e"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/DevelopmentPlanRequestAuthority.cs",
+      "sha256": "cde290cbc96820532c52c59f5dc4860c6b830bf3e909142980b7385e43c185ef"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/RepositoryRequestAccount.cs",
+      "sha256": "fc7f95b8d81b5c55c17861087dc7ab9203e8f84bde897b138fd0b70f07f8e94d"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyModuleConnection.cs",
+      "sha256": "5e5a359134b4b645b93555ba1ca007bcf7be4ee2441dbd9af80d61222e43ae48"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/ModuleConnectionResolver.cs",
+      "sha256": "08626cd25080df40745064b9634b1fbb9d65dff36302b8e0272c5d168dedbb18"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/ModuleDatabaseTarget.cs",
+      "sha256": "ad1869ee0a75ead90a01b360764ab61a24b1081c8d516888715faeeedfe93aa7"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs",
+      "sha256": "07335cfa3ecb3d0733a1fc1d180eaa93f0019a76d40ae5b16cd9f09d6ac18c7d"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs",
+      "sha256": "b861666f84f6a14095d224d867dab01fab09c32f437a4a35d425029450a3e535"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/DevelopmentDraftWorkspaceState.cs",
+      "sha256": "bf07577bac4b00d7919da89ac2c60f36167e296eebebc624f148dc54e46f59d4"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/DevelopmentDraftIntentStore.cs",
+      "sha256": "c2b0ab67f62d7cdd80a9d305e31597037c690302f67b1b9614e7ea934fb35879"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Pages/PPDM39/Development/FDPWizard.razor",
+      "sha256": "b2fd8269afdf1656d2b68d27f9ae8bd265f1928409b7dde418f5406424db42a5"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs",
+      "sha256": "5c7b6338bfbf8430a207928e74e74a5f324b65fcdf48c70a462463cde4964a6f"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39/Core/BeepOperationResult.cs",
+      "sha256": "83c1985b8dc33937b07e6130a19b5c5cbc74053358a089f8680ed9d7a7c79725"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39/Core/PPDMDataSourceTransaction.cs",
+      "sha256": "4a49557a0e4d0d80ca503f55e1259b0a0cfc72c0f636d3d2d8a541ecd4eeeb2d"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/MigrationConnectionTarget.cs",
+      "sha256": "ae5de7b2fee8fcf48d6f21d22d3d17572872fbce58ab9618d1bd59ffe34d26b9"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSchemaVerification.cs",
+      "sha256": "5936845828a13ae679ff8a24975de568d7dbd99c60095808b91df3ccefc7b5b0"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/DevelopmentPlanDraftContractTests.cs",
+      "sha256": "fb3daca9e2dde8cddd488f8d48ac69de335f16f42673b429aa04ac04a741cbee"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/DevelopmentPlanNativeDraftTests.cs",
+      "sha256": "896e5946d7b26fe7b30652156343ce002ca40ead06dea857b8c32fbcc1c4ce5f"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/DevelopmentPlanningControllerTests.cs",
+      "sha256": "95a3dd4d6bda19e3e3ec27964ba7ac21cf41307084b05a91cd660e4e4a9e6c98"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/DevelopmentDraftAuthorityTests.cs",
+      "sha256": "0feedc98de9d467054376e3479479abbdd5788de83f94f84be3087809d7807b5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/DevelopmentDraftHttpTests.cs",
+      "sha256": "3a303ba6e8c2fcfd0e169f592094603d1ff7fb53dbd64b03c70d295d9ce28f56"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/DevelopmentDraftWorkspaceTests.cs",
+      "sha256": "a56e1c852f53e4a1e55b2816c1e0739355b0041ff6098b132a11cb4a7d240a52"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/DevelopmentDraftIntentStoreTests.cs",
+      "sha256": "087b4621745f978027ef2418856435da198b83ae5047e380f008baef1b5bedd4"
+    },
+    {
+      "path": "Scripts/Test-PurchaseOrderOwnership.ps1",
+      "sha256": "badc126389db6b648768f7df396494da8b4e1b15eb0930be15d74e8c056727c1"
+    }
+  ],
+  "source_inspected_only": [
+    {
+      "path": "Beep.OilandGas.ApiService/Program.cs",
+      "sha256": "0fa73dd2605fe955ca223462990b6a190a179f4298c1ed0ffef500dbe6ca815f"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Program.cs",
+      "sha256": "dba5c04fc6862bdd5c67c48e7a151c214481036e48155ae61116371a0365bb1a"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs",
+      "sha256": "f4d3ccdf90d04bf44b7da6cfa5ce9422fab12c381901473ab05f1e6af7760d1a"
+    },
+    {
+      "path": "Beep.OilandGas.LifeCycle/Services/Development/Processes/DevelopmentProcessService.cs",
+      "sha256": "370624212eb4000419dc1d2eeade2f4ac722d0422c7f9b71ba623a1c4b512532"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs",
+      "sha256": "4edbfbd2ea2bb95cf15e6eb27561b1d7f7d0f09dbd43b47ab65a141a7aeada5e"
+    },
+    {
+      "path": "Beep.OilandGas.Web/wwwroot/css/app.css",
+      "sha256": "9a18c38214e98741d4e306c073e9819b6ddfb5cfa0e2e64c7097b33b8dab7b18"
+    }
+  ],
+  "runtime_artifacts": [
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/AngleSharp.Css.dll",
+      "sha256": "2beb1cf827ea92c4a92950f59b27e63ab598820fe2cc7979ca3e2c5d87ed73eb"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/AngleSharp.Diffing.dll",
+      "sha256": "27c5c92b307259895369f4510b5554d5acd6d04bdb5d60837cd0c5a136859263"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/AngleSharp.dll",
+      "sha256": "b8caaa92fcee58c472752a1a166c17d2ede09f1c782bfcb2e9a45a27d04d23a0"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Beep.OilandGas.Models.dll",
+      "sha256": "b5dfb489bee8e3ec78b19a8c81373eb550c0591bec253031fcbff15433e15f27"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Beep.OilandGas.PPDM.Models.dll",
+      "sha256": "36b714c3c34ae653fe6ef10da960840b90c2ccf8072e66d7872cdbf14256e527"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Bunit.Core.dll",
+      "sha256": "8b2612f00dedb4237ea89b0a3eb6f857435c9296276d72d4d93b2f679e468012"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Bunit.Web.dll",
+      "sha256": "c5ead33da92396b99aa776d3b3d513e1f2df3b939bf6b561865cd43ffb3b383e"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Castle.Core.dll",
+      "sha256": "9c5762ae27f2afe0913e8ffa494f705ffe9680699aa4fb79c2613344c918ee28"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/DataManagementEngine.dll",
+      "sha256": "81b7db78e736ad3d9235f7ce51c221726e6b8160d1776591c6331b6a8f048120"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/DataManagementModels.dll",
+      "sha256": "95ac43cf25ebe26178694a6b706b5cdc83695e75e4b979c612c7478c258b669e"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.AspNetCore.Components.WebAssembly.Authentication.dll",
+      "sha256": "5034a7c24360b325e2de4e8388aa4721f9102c950f6fefb1eb779596a61193f9"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.AspNetCore.Components.WebAssembly.dll",
+      "sha256": "20db504652c7b5b0d25b3827c824cf34a6b457272cfe11370469bb0d2f840df8"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll",
+      "sha256": "18f43988751f8b2aecb1e54ba8710defa43cf6bbe731c9e7142a6c3f03875a27"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.CodeAnalysis.CSharp.dll",
+      "sha256": "1af1de8a162d2312eb2f6b781f5edbe8cec7d5cd268c7e4de24396225e54260f"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.CodeAnalysis.dll",
+      "sha256": "42c9ce7891470f430267e2dc02d03571f9d046a7e7e121107754bee58d344613"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.Data.SqlClient.dll",
+      "sha256": "5a34e2fa3479b1508dbc20fbeb2c9172f18c3868bdb147a185213a446645b400"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.Data.Sqlite.dll",
+      "sha256": "7841927435be066c58a41d498fd067dcf98bf567985526472260ee092a18ab86"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.Abstractions.dll",
+      "sha256": "97615007521c269ecce1e49d47a3e2e13b477ff28962dce5deac77eedf6410e7"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.dll",
+      "sha256": "1c763d6ae0cbd473929cfbcd50e4e1fe77969ca524fb6e8602df865f24204a1d"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.Relational.dll",
+      "sha256": "330ad75d0c80e9dd37b582bad3666c7ea70e41c6d9fd43e7f6e9e1f3e75ba88e"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.EntityFrameworkCore.Sqlite.dll",
+      "sha256": "184db4379fbaf339a8b50844b2ded3d91c59746059824f025e7c5bc05d930636"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.Extensions.DependencyModel.dll",
+      "sha256": "d113abe99da62949cf9c08b04b4c2fdf3dc4b770f94c4f36375062126524ee03"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.Identity.Client.dll",
+      "sha256": "10d59df4170053ea9597e3c20adc9607ad17318ad5d8747eda3d930a5a4b463a"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.JSInterop.WebAssembly.dll",
+      "sha256": "9afa812b830553d003a39d78d5f732c78fb29cb4ca0c3686761b1b033017e368"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.TestPlatform.CommunicationUtilities.dll",
+      "sha256": "224ed9d7abdf0785a38f76dc8a76d724bbd47fda768590f1d0a06c0e12a05d67"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.TestPlatform.CoreUtilities.dll",
+      "sha256": "7f6d24d5e01310672c63946291842e7c9120f599064b4e1b2d683bd1ca642fdc"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.TestPlatform.CrossPlatEngine.dll",
+      "sha256": "a79b3e5d50b7e01f8a38221504ff8bde3b7a5d5b0650558e573e9ef3d6665809"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.TestPlatform.PlatformAbstractions.dll",
+      "sha256": "755b779b9b94b90e5afb7a6f8f10b63e3ba2b5164bf1192845826096e77cc1d2"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.TestPlatform.Utilities.dll",
+      "sha256": "c4b2e5a47916ccf91a9cde87f06b31ff1fdec5e84d124c4d030f3401137fbae7"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll",
+      "sha256": "e4f725b8d8de3eb669ff3276dafaa69a6fcd7dca3ba33cb64915e2a7bb554305"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.VisualStudio.TestPlatform.Common.dll",
+      "sha256": "c612f864219de7014e8fd7339416fd8a09b7d626c3116f5aaf7188db5601fadf"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Microsoft.VisualStudio.TestPlatform.ObjectModel.dll",
+      "sha256": "71ca2175ee1fd088cf33253d55e9f85800fa930b987b8f4616054a85a50e783c"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Moq.dll",
+      "sha256": "8d56b9cbec93f401f7e4a4031c1691c3c849411ff09cef6f777109c0701dc30b"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/MudBlazor.dll",
+      "sha256": "83e84ba3974a2c6a7f2f6b813d86f42cb778e6c385e8b367b39666afa66fb882"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Newtonsoft.Json.dll",
+      "sha256": "22c649f75fce5be7c7ccda8880473b634ef69ecf33f5d1ab8ad892caf47d5a07"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Npgsql.dll",
+      "sha256": "e2bcafe1660fe4543fe9dfcabed972ec8d32259e5ea8009462ce1de23c7034c2"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/NuGet.Common.dll",
+      "sha256": "2486b7d4b891d509c92c45913decf1c58bd0b762e85a116577f181aa632ea629"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/NuGet.Configuration.dll",
+      "sha256": "69f2f90c3298b068101986f8d0e468b9c7cd37acf26eafad3201710e608914ca"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/NuGet.Frameworks.dll",
+      "sha256": "80528b5f0c5482a33866669d460df7120c1b1a135e38d3337fa31207ba0398bb"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/NuGet.Packaging.dll",
+      "sha256": "05a065acafaf18c02c5abb44542eb838f0a6516a7fb17b79a077e4f42a5b0eda"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/NuGet.Protocol.dll",
+      "sha256": "66f70be58ef42aae6e16e8f16667aca73abca9b472ea10267d2cfc76553566e3"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/NuGet.Versioning.dll",
+      "sha256": "457f94606721f8534623b572cde896050750357da0172d139faa25defd5042c8"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/Oracle.ManagedDataAccess.dll",
+      "sha256": "a76f5f278e9db505d76ce21bc57163c0079ec03ef1dda7d9a524d9bec3a3bbbf"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/PurchaseOwnership.dll",
+      "sha256": "2083815f67a8c6acd9f62009e2b707f3cbba72e0ef7ac13c781b53b78607cf4f"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/SkiaSharp.dll",
+      "sha256": "948b5569f2bcd47d4511a465091dbd00bf941ee0f8f3c495d511f5a2ff0703ca"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/SkiaSharp.Extended.Svg.dll",
+      "sha256": "1c127686a50a46768fd1194319a8cc31bd3d7d9960203a2927ca84c9784288cb"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/SQLitePCLRaw.batteries_v2.dll",
+      "sha256": "94ac800c6b93ae50a025f247547781debe18391110667c5e242f51d8ac188ffb"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/SQLitePCLRaw.core.dll",
+      "sha256": "3d2ed8e186f124f988ebdb45d0354185b424357be2433bba0033ab9ec31bd25b"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/SQLitePCLRaw.provider.e_sqlite3.dll",
+      "sha256": "232990c8372aff30574eef9cc280b486ee6f39f8a66f83ea495dd0dbae98740c"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/System.DirectoryServices.Protocols.dll",
+      "sha256": "096102bad94746479987ffc4fc6c9faafb9e1ae6ed1c74c9a7dccae0e4f3ea9f"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/System.Security.Cryptography.ProtectedData.dll",
+      "sha256": "87111e304ec530dad1171c0af13a9d94097ddfc6e82bed5f01fc6a5d87994b9e"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/testhost.dll",
+      "sha256": "cf1ed32411b40d9afcc38ea753443541dd99f2801364d894c704cb0bfe9ca64c"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/TheTechIdea.Data.dll",
+      "sha256": "6e990d4c8f2076a603f0b60bd94ecce4af72ef237e70e21745200c3b12d89383"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/xunit.abstractions.dll",
+      "sha256": "3166dc70323fb30ccf1cedb0fe86f2ad122c46d254542342d90386efc4c9285c"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/xunit.assert.dll",
+      "sha256": "bcd9711b22d227ac8cd4c1568e72433a0f576d2ec8aae64ac508081892015b1d"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/xunit.core.dll",
+      "sha256": "2f7feeec8c6dec7df684c25fb80aadb292b963d09723460f03d53c5ad2088acc"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/xunit.execution.dotnet.dll",
+      "sha256": "e70febe547c15f8155db3e2d95c3ba4445a59cbc21a3e7541ab22ed49d3dcf7b"
+    },
+    {
+      "path": "C:/Users/f_ald/AppData/Local/Temp/oilgas-purchase-ownership-c1b2db65b5c34ac1badffafc6fe7ae8f/bin/Debug/net10.0/xunit.runner.visualstudio.testadapter.dll",
+      "sha256": "384aba4bad96399a7fd2205a5a3517b643a16f4d7e843bd0b92e1e42f81fce2a"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/338-development-draft-authoring/oilgas-development-draft-final.log",
+      "sha256": "427c4c31394f088120c2c5bff356abe6e42f28663159438aff9d25e39ee494ac"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/338-development-draft-authoring/oilgas-development-draft-data-final.log",
+      "sha256": "c2daf7bdc0c6ca65311236e09efc7bba353a428895cd16ca4686dffbef3b0775"
+    }
+  ],
+  "removed_implementations": [
+    "Beep.OilandGas.DevelopmentPlanning/Data/Contracts/CreateDevelopmentPlan.cs (canonical replacement is in Data)",
+    "Beep.OilandGas.DevelopmentPlanning/Data/Contracts/UpdateDevelopmentPlan.cs",
+    "Beep.OilandGas.DevelopmentPlanning/Data/Projections/DevelopmentPlan.cs",
+    "Beep.OilandGas.DevelopmentPlanning/Data/Tables/FIELD_DEVELOPMENT_PLAN.cs (canonical replacement is in Data)",
+    "Beep.OilandGas.DevelopmentPlanning/Data/Tables/R_DEVELOPMENT_PLANNING_REFERENCE_CODE.cs (canonical replacement is in Data)",
+    "Beep.OilandGas.Models/Data/Development/FdpDraftRequest.cs",
+    "Default-connection/system/USD native draft create and direct status/update/approve endpoints",
+    "Field-only FDP process start/status methods and GET/POST /api/field/current/development/fdp",
+    "FDP wizard local reservoir/economics/approval placeholders"
+  ],
+  "history": [
+    "271 contract/schema/retained app cases preceded actual draft writer, authority, HTTP and form implementation.",
+    "Current gate replaces that checkpoint: 354 pass, including 121 draft cases, 223 retained app cases and 10 shared schema cases.",
+    "Source/detail/catalog extensions supersede this checkpoint; current revalidation is retained under owner 339. Historical source hashes are not current-worktree hashes."
+  ],
+  "limits": [
+    "App membership/account/resource readers and Beep provider are controlled fixtures; actual authority orchestrator, registry, standard roles, controller, typed client, native service, transaction implementation and parent form are executed.",
+    "Repository registry tests use its existing app EF SQLite owner. Business drafts use Beep IDataSource and owned serializable transaction evidence; no business EF or handwritten SQL.",
+    "No deployed schema migration, production business write, real provider concurrency, full API/Web/solution build or hosted/OIDC validation.",
+    "Rendered page interactions and encrypted storage are local component/runtime evidence, not live browser, keyboard, accessibility, RTL or server-farm key-ring certification.",
+    "Submission/independent approval, AFE, drilling/construction progress, operations handoff and full persona/multinational acceptance remain open.",
+    "Full goal remains active. Git index unchanged; no commit or push."
+  ],
+  "superseded_by": "Plans/FrameworkAppEnhancement/evidence/339-development-review-source/observed-evidence.json"
+}

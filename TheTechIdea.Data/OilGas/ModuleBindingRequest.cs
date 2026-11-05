@@ -1,6 +1,7 @@
 namespace TheTechIdea.Data.OilGas;
 
 public sealed record ModuleBindingRequest(string ConnectionName, string? ConcurrencyStamp);
+public sealed record ModuleOwnershipRequest(string TenantId, string ConcurrencyStamp, string Evidence);
 public sealed record ModuleSeedRequest(string ConcurrencyStamp);
 public sealed record ModuleSeedSummary(string ModuleId, bool Success, int RecordsInserted, int TablesSeeded,
     IReadOnlyList<string> Errors, string? SkipReason);

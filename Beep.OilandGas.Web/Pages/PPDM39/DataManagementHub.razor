@@ -1,9 +1,16 @@
 @page "/ppdm39/data-management"
+@using Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Web.Components.Shared
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @using Beep.OilandGas.Web.Components.Data
 
 <PageTitle>PPDM39 Data Management</PageTitle>
+
+<PersonaTaskInbox WorkspaceRoutes='@(new[]{"/ppdm39/data-management"})' />
+
+
 
 @* ─── Top admin bar ───────────────────────────────────────────────────────── *@
 <MudPaper Elevation="1" Class="ma-2 mb-0 pa-2">

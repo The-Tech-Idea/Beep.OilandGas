@@ -1,3 +1,4 @@
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Models.Data.HSE;
 
 namespace Beep.OilandGas.Models.Core.Interfaces;
@@ -8,10 +9,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces;
 /// </summary>
 public interface IFieldHSEService
 {
+    Task<HseRestrictionReview> ReviewIncidentRestrictionsAsync(string incidentId);
     Task<List<HSEIncidentRecord>> GetIncidentsAsync(DateRangeFilter? range);
+    Task<HseIncidentPage> GetVisibleIncidentPageAsync(int pageNumber, CancellationToken cancellationToken = default);
     Task<HSEIncidentRecord?> GetIncidentAsync(string incidentId);
+    Task<InvestigatorAssignmentReview> ReviewInvestigatorAssignmentAsync(string incidentId);
     Task<HSEIncidentRecord> ReportIncidentAsync(ReportIncidentRequest request, string userId);
-    Task AssignInvestigatorAsync(string incidentId, string baId, string userId);
+    Task AssignInvestigatorAsync(string incidentId, AssignIncidentInvestigatorRequest request, string userId);
     Task UpdateTierAsync(string incidentId, int tier, string userId);
     Task<bool> TransitionAsync(string incidentId, string trigger, string? reason, string userId);
     Task<List<string>> GetAvailableTriggersAsync(string incidentId);
@@ -26,8 +30,11 @@ public interface IFieldHSEService
     Task<BarrierSummary> GetBarrierSummaryAsync(string incidentId);
 
     Task<List<CAStatus>> GetCorrectiveActionsAsync(string incidentId);
-    Task<string> CreateCaPlanAsync(string incidentId, string userId);
+    Task<CAPlanResolution> CreateCaPlanAsync(string incidentId, CreateCAPlanSubmission submission, string userId);
+    Task<CAPlanCreationReview> ReviewCaPlanCreationAsync(string incidentId);
+    Task<CAPlanResolution> GetCaPlanAsync(string incidentId);
     Task<string> AddCorrectiveActionAsync(string incidentId, AddCARequest request, string userId);
+    Task AssignCorrectiveActionResponsibleAsync(string incidentId, int stepSeq, string businessAssociateId, string userId);
     Task RecordCompletionAsync(string incidentId, int stepSeq, string notes, string userId);
 
     Task<List<HAZOPSummary>> GetStudiesAsync();

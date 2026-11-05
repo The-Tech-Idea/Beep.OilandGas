@@ -1,4 +1,4 @@
-﻿@page "/ppdm39/decommissioning/well-abandonment"
+@page "/ppdm39/decommissioning/well-abandonment"
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
 @inject IDecommissioningServiceClient DecommissioningClient
@@ -65,12 +65,12 @@
             <MudButton Variant="Variant.Outlined" Color="Color.Info"
                        StartIcon="@Icons.Material.Filled.Gavel"
                        OnClick="LaunchComplianceForSelectedAbandonment">
-                Launch Closure Compliance
+                Review FIELD obligations
             </MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.AccountBalance"
                        OnClick="LaunchCloseoutAfeForSelectedAbandonment">
-                Open Closeout AFE
+                Choose AFE source
             </MudButton>
         </MudStack>
     }
@@ -306,7 +306,7 @@
             return;
         }
 
-        NavigationManager.NavigateTo(BuildCloseoutAfeHref(_selectedAbandonment));
+        NavigationManager.NavigateTo("/economics/afe");
     }
 
     private string BuildAbandonmentReturnTo()
@@ -366,25 +366,6 @@
         return "/hse/compliance?" + string.Join("&", query);
     }
 
-    private string BuildCloseoutAfeHref(WellAbandonmentResponse abandonment)
-    {
-        var query = new List<string>
-        {
-            "openCreate=true",
-            $"wellId={Uri.EscapeDataString(abandonment.WellId ?? string.Empty)}",
-            $"description={Uri.EscapeDataString(BuildCloseoutAfeDescription(abandonment))}",
-            $"returnTo={Uri.EscapeDataString(BuildAbandonmentReturnTo())}"
-        };
-
-        var budget = abandonment.AbandonmentCost ?? abandonment.PluggingCost;
-        if (budget.HasValue && budget.Value > 0)
-        {
-            query.Add($"budgetUsd={Uri.EscapeDataString(budget.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))}");
-        }
-
-        return "/economics/afe?" + string.Join("&", query);
-    }
-
     private string BuildComplianceDescription(WellAbandonmentResponse abandonment)
     {
         var description = $"Plug and abandonment compliance closeout for well {abandonment.WellId}";
@@ -394,16 +375,6 @@
 
         if (!string.IsNullOrWhiteSpace(HandoffReason))
             description += $". Trigger: {HandoffReason}";
-
-        return description;
-    }
-
-    private static string BuildCloseoutAfeDescription(WellAbandonmentResponse abandonment)
-    {
-        var description = $"P&A closeout AFE for well {abandonment.WellId}";
-
-        if (!string.IsNullOrWhiteSpace(abandonment.AbandonmentId))
-            description += $" ({abandonment.AbandonmentId})";
 
         return description;
     }

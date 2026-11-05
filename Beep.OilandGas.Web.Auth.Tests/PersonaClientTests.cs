@@ -13,7 +13,7 @@ public class PersonaClientTests
     {
         using var handler = new Handler("{\"userId\":\"owner\"}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new PersonaClient(new ApiClient(http, new RecordingFailureReporter()));
+        var client = new PersonaClient(new ApiClient(http, new RecordingFailureReporter(), TestCompany.Selected()));
         await client.SaveAsync("owner", new("ENGINEER", ConcurrencyStamp: "version"));
         Assert.Equal("/api/personas/users/owner", handler.Path);
         using var document = JsonDocument.Parse(handler.Body!);
@@ -28,7 +28,7 @@ public class PersonaClientTests
     {
         using var handler = new Handler("{\"profile\":null}");
         using var http = new HttpClient(handler) { BaseAddress = new("https://api.example") };
-        var client = new PersonaClient(new ApiClient(http, new RecordingFailureReporter()));
+        var client = new PersonaClient(new ApiClient(http, new RecordingFailureReporter(), TestCompany.Selected()));
         Assert.Null(await client.GetAsync("owner"));
     }
 

@@ -17,6 +17,8 @@ public sealed class AppPersona
 public sealed class AppUserPersona
 {
     [MaxLength(128)] public string UserId { get; set; } = "";
+    [MaxLength(64)] public string TenantId { get; set; } = "";
+    [MaxLength(128)] public string BusinessAssociateId { get; set; } = "";
     [MaxLength(64)] public string? PersonaCode { get; set; }
     [MaxLength(32)] public string? Locale { get; set; }
     [MaxLength(128)] public string? TimeZone { get; set; }
@@ -30,6 +32,8 @@ public sealed class AppUserPersona
 public sealed class AppPersonaPreference
 {
     [MaxLength(128)] public string UserId { get; set; } = "";
+    [MaxLength(64)] public string TenantId { get; set; } = "";
+    [MaxLength(128)] public string BusinessAssociateId { get; set; } = "";
     [MaxLength(64)] public string PersonaCode { get; set; } = "";
     [MaxLength(128)] public string ViewKey { get; set; } = "";
     [MaxLength(4000)] public string? Value { get; set; }
@@ -66,3 +70,12 @@ public sealed record PersonaCatalogUpdate(
     [MaxLength(1000)] string? Description = null,
     [MaxLength(256)] string? DefaultRoute = null,
     bool IsActive = true, int DisplayOrder = 0);
+
+public sealed record CompanyPersonaWorkspaceReview(CompanyScope Company, string ActorUserId,
+    IReadOnlyList<string> Roles, IReadOnlyList<AppPersona> Personas, string Revision);
+
+public sealed record RoleWorkspaceMappingRequest([property: System.Text.Json.Serialization.JsonRequired] bool Enabled,
+ [property: System.Text.Json.Serialization.JsonRequired] string ExpectedRevision);
+
+public sealed record RoleWorkspaceChoice(AppPersona Persona, bool Enabled);
+public sealed record RoleWorkspaceReview(string RoleId, string RoleName, IReadOnlyList<RoleWorkspaceChoice> Choices, string Revision);

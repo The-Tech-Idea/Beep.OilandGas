@@ -1,0 +1,43 @@
+async (page) => {
+ const observations=[];const require=(ok,message)=>{if(!ok)throw new Error(message);};
+ const region=()=>page.getByRole('region',{name:'Lifecycle approval and incident closure',exact:true});
+ const reconcile=()=>page.getByRole('button',{name:'Reconcile original closure stage',exact:true});
+ const take=async(stage)=>{const v=await page.evaluate(async()=>({url:location.href,origin:performance.timeOrigin,keys:Object.keys(sessionStorage),faultHits:window.__cleanupFaultHits||0,regionBusy:document.querySelector('section[aria-label="Lifecycle approval and incident closure"]')?.getAttribute('aria-busy'),text:document.body.innerText,metadata:await(await fetch('/fixture/metadata')).json()}));observations.push({stage,...v});return v;};
+ try {
+ await page.goto('http://127.0.0.1:52543/fixture/closure?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original');
+ await page.setViewportSize({width:390,height:900});
+ await page.getByRole('button',{name:'Review assigned closure stage',exact:true}).waitFor();
+ let v=await take('ready');require(v.metadata.approvalAttempts===0&&v.metadata.nativeAttempts===0&&v.keys.length===0,'No initial effects or retained original');
+ await page.getByRole('button',{name:'Review assigned closure stage',exact:true}).click();
+ const reason='تمت مراجعة أدلة الصمام بشكل مستقل.\nIndependent final approval retains this exact original through browser cleanup.';
+ await page.getByRole('textbox',{name:'Stage approval evidence and reason',exact:true}).fill(reason);
+ await page.getByRole('button',{name:'Approve final closure and record CLOSED status',exact:true}).click();
+ await page.getByRole('progressbar',{name:'Confirming lifecycle approval and native incident closure.',exact:true}).waitFor();
+ require(await region().getAttribute('aria-busy')==='true','Pending confirmation must be busy');
+ v=await take('pending-approval');require(!v.text.includes('Incident closure confirmed:'),'Pending request cannot claim confirmation');
+ await page.screenshot({path:'C:/Users/f_ald/AppData/Local/Temp/oilgas-353-cleanup-browser-706aa6c85f294115b66a9858e5acd93a/busy-confirmation.png'});
+ await reconcile().waitFor();await page.locator('section[aria-busy="false"]').waitFor();
+ v=await take('approval-reply-lost');const intent=v.metadata.approvedIntent;require(v.metadata.approvalAttempts===1&&v.metadata.approvals===1&&v.metadata.nativeAttempts===0&&v.keys.some(k=>k.endsWith('.closure')),'Lost approval preserves original and no native request');
+ await reconcile().click();await page.locator('section[aria-busy="false"]').waitFor();
+ v=await take('native-reply-lost');require(v.metadata.approvalAttempts===2&&v.metadata.nativeAttempts===1&&v.metadata.nativeWrites===1&&v.keys.some(k=>k.endsWith('.closure')),'Lost native reply leaves one effect and retained original');
+ await page.evaluate(()=>{window.__cleanupFaultHits=0;const remove=Storage.prototype.removeItem;Storage.prototype.removeItem=function(key){const fail=this===sessionStorage&&String(key).endsWith('.closure')&&window.__cleanupFaultHits===0;const value=remove.call(this,key);if(fail){window.__cleanupFaultHits++;throw new Error('Controlled lost browser delete acknowledgement after actual removal');}return value;};});
+ await reconcile().click();await page.getByText(/Saved request cleanup could not be confirmed/).waitFor();await page.locator('section[aria-busy="false"]').waitFor();
+ v=await take('confirmed-delete-reply-lost');require(v.faultHits===1&&!v.keys.some(k=>k.endsWith('.closure')),'Actual browser delete must happen once before acknowledgement failure');
+ require(v.text.includes('Incident closure confirmed:')&&!v.text.toLowerCase().includes('unconfirmed'),'Confirmed outcome must remain confirmed despite cleanup error');
+ require(v.metadata.approvalAttempts===3&&v.metadata.approvals===1&&v.metadata.nativeAttempts===2&&v.metadata.nativeWrites===1&&v.metadata.approvedIntent===intent,'Receipt confirmation must not duplicate effects or switch intent');
+ require(await page.getByRole('button',{name:'Review assigned closure stage',exact:true}).count()===0,'New approval review must remain blocked while original is pending cleanup');
+ await reconcile().scrollIntoViewIfNeeded();await page.screenshot({path:'C:/Users/f_ald/AppData/Local/Temp/oilgas-353-cleanup-browser-706aa6c85f294115b66a9858e5acd93a/confirmed-cleanup-warning.png'});
+ await page.reload();await page.getByRole('button',{name:'Recover recorded closure approval',exact:true}).waitFor();await page.locator('section[aria-busy="false"]').waitFor();
+ v=await take('reload-with-deleted-original');require(!v.keys.some(k=>k.endsWith('.closure'))&&v.metadata.approvalAttempts===3&&v.metadata.nativeAttempts===2&&v.metadata.recoveryReads===0,'Reload cannot invent original or automatically resubmit/recover');
+ await page.getByRole('button',{name:'Recover recorded closure approval',exact:true}).click();await reconcile().waitFor();await page.locator('section[aria-busy="false"]').waitFor();
+ v=await take('explicit-recorded-recovery');require(v.metadata.recoveryReads===1&&v.metadata.approvalAttempts===3&&v.metadata.nativeAttempts===2&&v.keys.some(k=>k.endsWith('.closure')),'Explicit recorded read must restore original without a write');
+ require(await page.getByText(reason,{exact:true}).textContent()===reason,'Recovered original must preserve exact multilingual reason');
+ await reconcile().click();await page.getByText('Incident closure confirmed: lifecycle approval and native CLOSED status are recorded.',{exact:true}).waitFor();await page.locator('section[aria-busy="false"]').waitFor();
+ v=await take('confirmed-cleaned');require(v.metadata.approvalAttempts===4&&v.metadata.approvals===1&&v.metadata.nativeAttempts===3&&v.metadata.nativeWrites===1&&v.metadata.approvedIntent===intent&&!v.keys.some(k=>k.endsWith('.closure')),'Final reconciliation must use same original, one effect and cleared recovery data');
+ require(!v.text.includes('Saved request cleanup could not be confirmed')&&await reconcile().count()===0,'Cleanup warning/original must clear after confirmation');
+ require(observations.every(o=>o.url===observations[0].url&&o.metadata.genericActionReads===0),'Encoded fixture identity must remain unchanged and generic actions must not run');
+ require(observations[5].origin!==observations[4].origin,'Reload must create a new document');
+ await page.getByText('Incident closure confirmed: lifecycle approval and native CLOSED status are recorded.',{exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:'C:/Users/f_ald/AppData/Local/Temp/oilgas-353-cleanup-browser-706aa6c85f294115b66a9858e5acd93a/confirmed-cleaned.png'});
+ return {status:'pass',observations};
+ } catch(error) { return {status:'failed',error:String(error),observations}; }
+}

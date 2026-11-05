@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Compliance;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 
 public interface IComplianceServiceClient
 {
+    Task<FieldObligationSourceReview> GetRecordedFieldObligationsAsync(CancellationToken cancellationToken = default);
     Task<List<ObligationSummary>> GetAllObligationsAsync(int? year = null, CancellationToken cancellationToken = default);
     Task<List<ObligationSummary>> GetUpcomingObligationsAsync(int daysAhead = 30, CancellationToken cancellationToken = default);
     Task<List<ObligationSummary>> GetOverdueObligationsAsync(CancellationToken cancellationToken = default);

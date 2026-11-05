@@ -1,0 +1,20 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@if(Review is {} review)
+{
+    var line=review.Purchase.Lines.Single(row=>row.PO_LINE_ITEM_ID==review.LineId);var item=review.Target.Item;
+    <MudPaper Outlined="true" Class="pa-4 mt-3">
+        <MudText Typo="Typo.h6">Reviewed inventory-link preparation source</MudText>
+        <MudText>Order: @review.Purchase.Header.PURCHASE_ORDER_ID · Line: @review.LineId</MudText>
+        <MudText>Current inventory reference: @(line.INVENTORY_ITEM_ID ?? "Unavailable")</MudText>
+        <MudText>Proposed target: <MudLink Href='@("/warehouse/items/"+Uri.EscapeDataString(item.INVENTORY_ITEM_ID))'>@item.INVENTORY_ITEM_ID</MudLink> · @item.ITEM_NAME</MudText>
+        <MudText>Warehouse: @item.WAREHOUSE_ID · Location: @item.LOCATION_ID · Matching recorded unit: @line.QUANTITY_UOM</MudText>
+        <MudText>Recorded on-hand quantity: @(item.QUANTITY_ON_HAND?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable")</MudText>
+        <MudAlert Severity="Severity.Info">Preparation retains this proposal for independent review. Target assignment, available stock, stock movement and financial posting remain unconfirmed.</MudAlert>
+        <MudText Typo="Typo.caption">Purchase source: @review.Purchase.Revision · Inventory source: @review.Target.Revision · Preparation review: @review.Revision</MudText>
+        <MudText Typo="Typo.caption">Inventory retrieved UTC: @review.Target.RetrievedAtUtc.ToString("O")</MudText>
+    </MudPaper>
+}
+@code { [Parameter] public PurchaseOrderInventoryLinkProposalReview? Review {get;set;} }

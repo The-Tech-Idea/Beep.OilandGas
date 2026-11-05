@@ -1,177 +1,60 @@
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Field;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.DevelopmentPlanning.Services;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DevelopmentPlanning;
-using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using TheTechIdea.Data.OilGas;
 using Xunit;
-
 namespace Beep.OilandGas.ApiService.Tests;
 
-public class DevelopmentPlanningControllerTests
+public sealed class DevelopmentPlanningControllerTests
 {
-    [Fact]
-    public async Task GetPlansAsync_ReturnsPlanList()
+    private static CreateDevelopmentPlan Input()=>new(){SelectionContext=new(new("tenant","company"),new("core","binding"),"planner","revision","field"),
+        PlanningDatabase=new("planning","planning-binding"),IntentId=Guid.NewGuid(),PlanName="Reviewed draft",FieldId="field"};
+    [Theory][InlineData("list")][InlineData("options")][InlineData("save")][InlineData("recover")]
+    public async Task EveryEndpointUsesRequiredPermissionFieldModeAndClosingAuthority(string operation)
     {
-        var expected = new List<DevelopmentPlan>
-        {
-            new() { PlanId = "PLAN-A", FieldId = "FIELD-1", PlanName = "Alpha" }
-        };
-
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.GetDevelopmentPlansAsync("FIELD-1")).ReturnsAsync(expected);
-
-        var controller = CreateController(service.Object, "user-list");
-        var result = await controller.GetPlansAsync("FIELD-1");
-
-        var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsType<List<DevelopmentPlan>>(ok.Value);
-        Assert.Single(payload);
-        Assert.Equal("PLAN-A", payload[0].PlanId);
-        service.VerifyAll();
+        var input=Input();var calls=new List<string>();Func<Task> check=()=>{calls.Add("check");return Task.CompletedTask;};
+        var scope=new DevelopmentPlanRequestScope(input.SelectionContext,input.PlanningDatabase,check,()=>{calls.Add("confirm");return Task.CompletedTask;});
+        var service=new Mock<IDevelopmentPlanService>(MockBehavior.Strict);var authority=new Mock<IDevelopmentPlanRequestAuthority>(MockBehavior.Strict);
+        var controller=new DevelopmentPlanningController(service.Object,authority.Object){ControllerContext=new(){HttpContext=new DefaultHttpContext()}};
+        var permission=operation=="list"?PermissionConstants.DevelopmentPlanning.View:PermissionConstants.DevelopmentPlanning.Create;
+        authority.Setup(a=>a.CaptureAsync(controller.User,permission,(operation=="options" || operation=="save"),(operation=="save" || operation=="recover")?input.SelectionContext:null,operation=="save"))
+            .ReturnsAsync(scope);
+        service.Setup(s=>s.GetDevelopmentPlansAsync(scope.Context,scope.PlanningDatabase,check)).Returns(async()=>{await check();return new(scope.Context,scope.PlanningDatabase,[],DateTimeOffset.UtcNow);});
+        service.Setup(s=>s.GetDraftOptionsAsync(scope.Context,scope.PlanningDatabase,check)).Returns(async()=>{await check();return new(scope.Context,scope.PlanningDatabase,["KWD"]);});
+        service.Setup(s=>s.CreateDevelopmentPlanAsync(input,check)).Returns(async()=>{await check();return new FIELD_DEVELOPMENT_PLAN();});
+        service.Setup(s=>s.RecoverDevelopmentPlanAsync(input,scope.Context,scope.PlanningDatabase,check)).Returns(async()=>{await check();return new(scope.Context,scope.PlanningDatabase,input.IntentId,DevelopmentPlanDraftReview.RequestRevision(input),null,DateTimeOffset.UtcNow);});
+        object? result=operation switch{"list"=>(await controller.GetPlansAsync()).Result,"options"=>(await controller.GetDraftOptionsAsync()).Result,"save"=>(await controller.CreatePlanAsync(input)).Result,_=>(await controller.RecoverPlanAsync(input)).Result};
+        Assert.IsType<OkObjectResult>(result);Assert.Equal(new[]{"check","confirm"},calls);authority.VerifyAll();
     }
-
-    [Fact]
-    public async Task CreatePlanAsync_ReturnsCreatedPlan()
+    [Theory][InlineData(false)][InlineData(true)] public async Task ChangedPlanningBindingNeverReachesNativeOwner(bool recovery)
     {
-        var request = new CreateDevelopmentPlan
-        {
-            PlanName = "New Plan",
-            FieldId = "FIELD-2"
-        };
-        var created = new DevelopmentPlan { PlanId = "PLAN-NEW", FieldId = "FIELD-2", PlanName = "New Plan" };
-
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.CreateDevelopmentPlanAsync(request)).ReturnsAsync(created);
-
-        var controller = CreateController(service.Object, "creator");
-        var result = await controller.CreatePlanAsync(request);
-
-        var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsType<DevelopmentPlan>(ok.Value);
-        Assert.Equal("PLAN-NEW", payload.PlanId);
-        service.VerifyAll();
+        var input=Input();var service=new Mock<IDevelopmentPlanService>(MockBehavior.Strict);var authority=new Mock<IDevelopmentPlanRequestAuthority>();
+        authority.Setup(a=>a.CaptureAsync(It.IsAny<ClaimsPrincipal>(),It.IsAny<string>(),It.IsAny<bool>(),It.IsAny<FieldSelectionReview>(),It.IsAny<bool>()))
+            .ReturnsAsync(new DevelopmentPlanRequestScope(input.SelectionContext,new("planning","changed"),()=>Task.CompletedTask,()=>Task.CompletedTask));
+        var controller=new DevelopmentPlanningController(service.Object,authority.Object){ControllerContext=new(){HttpContext=new DefaultHttpContext()}};
+        await Assert.ThrowsAsync<Beep.OilandGas.Models.Core.Refusals.RefusalException>(async()=>{if(recovery)await controller.RecoverPlanAsync(input);else await controller.CreatePlanAsync(input);});
+        Assert.Empty(service.Invocations);
     }
-
-    [Fact]
-    public async Task UpdatePlanAsync_ReturnsUpdatedPlan()
+    [Fact] public void ControllerExposesOnlyQualifiedDraftOperations()
     {
-        var request = new UpdateDevelopmentPlan
-        {
-            Status = "APPROVED"
-        };
-        var updated = new DevelopmentPlan { PlanId = "PLAN-U", Status = "APPROVED" };
-
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.UpdateDevelopmentPlanAsync("PLAN-U", request)).ReturnsAsync(updated);
-
-        var controller = CreateController(service.Object, "updater");
-        var result = await controller.UpdatePlanAsync("PLAN-U", request);
-
-        var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsType<DevelopmentPlan>(ok.Value);
-        Assert.Equal("APPROVED", payload.Status);
-        service.VerifyAll();
+        var methods=typeof(DevelopmentPlanningController).GetMethods().Where(m=>m.DeclaringType==typeof(DevelopmentPlanningController)).Select(m=>m.Name).Order().ToArray();
+        Assert.Equal(new[]{"ApproveBaselineAsync","CreatePlanAsync","DecideReviewAsync","GetAssignedReviewAsync","GetBaselineAsync","GetDraftOptionsAsync","GetPlanAsync","GetPlanReviewStatusAsync","GetPlansAsync","GetReviewProgressAsync","GetReviewWorkflowsAsync","PrepareReviewAsync","RecoverBaselineAsync","RecoverPlanAsync","RecoverReviewAsync","RecoverReviewDecisionAsync","SubmitReviewAsync"},methods);
     }
-
-    [Fact]
-    public async Task GetPlanAsync_ReturnsNotFound_WhenPlanMissing()
+    [Theory][InlineData(false)][InlineData(true)] public async Task AssignedSourceRefusalsRetainPermissionAndConflictMeaning(bool changed)
     {
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.GetDevelopmentPlanAsync("PLAN-404")).ReturnsAsync((DevelopmentPlan?)null);
-
-        var controller = CreateController(service.Object, "user-1");
-        var result = await controller.GetPlanAsync("PLAN-404");
-
-        Assert.IsType<NotFoundObjectResult>(result.Result);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task ApprovePlanAsync_UsesCurrentUserId()
-    {
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.ApproveDevelopmentPlanAsync("PLAN-1", "approver-1"))
-            .ReturnsAsync(new DevelopmentPlan { PlanId = "PLAN-1", Status = "APPROVED" });
-
-        var controller = CreateController(service.Object, "approver-1");
-        var result = await controller.ApprovePlanAsync("PLAN-1");
-
-        var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsType<DevelopmentPlan>(ok.Value);
-        Assert.Equal("PLAN-1", payload.PlanId);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task GetWellActivitiesAsync_ReturnsActivitiesFromService()
-    {
-        var expected = new List<WELL_ACTIVITY> { new() { UWI = "UWI-1", ACTIVITY_TYPE_ID = "WORKOVER" } };
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.GetWellActivitiesAsync("PLAN-2", "UWI-1")).ReturnsAsync(expected);
-
-        var controller = CreateController(service.Object, "user-2");
-        var result = await controller.GetWellActivitiesAsync("PLAN-2", "UWI-1");
-
-        var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsType<List<WELL_ACTIVITY>>(ok.Value);
-        Assert.Single(payload);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task CreateMaintenanceAsync_ForwardsUserAndReturnsCreatedEntity()
-    {
-        var request = new CreateWellMaintenancePlan { PlanId = "PLAN-3", WellUwi = "UWI-3", MaintenanceType = "INSPECTION" };
-        var created = new WELL_MAINTENANCE_PLAN { MAINT_PLAN_ID = "MAINT-1", FDP_ID = "PLAN-3", UWI = "UWI-3" };
-
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.CreateWellMaintenancePlanAsync(request, "maint-user")).ReturnsAsync(created);
-
-        var controller = CreateController(service.Object, "maint-user");
-        var result = await controller.CreateMaintenanceAsync(request);
-
-        var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsType<WELL_MAINTENANCE_PLAN>(ok.Value);
-        Assert.Equal("MAINT-1", payload.MAINT_PLAN_ID);
-        service.VerifyAll();
-    }
-
-    [Fact]
-    public async Task CreateServiceJobAsync_ForwardsUserAndReturnsCreatedEntity()
-    {
-        var request = new CreateWellServiceJob { PlanId = "PLAN-4", WellUwi = "UWI-4", JobType = "WELL_TEST" };
-        var created = new WELL_SERVICE_JOB { JOB_ID = "JOB-1", FDP_ID = "PLAN-4", UWI = "UWI-4" };
-
-        var service = new Mock<IDevelopmentPlanService>(MockBehavior.Strict);
-        service.Setup(s => s.CreateWellServiceJobAsync(request, "svc-user")).ReturnsAsync(created);
-
-        var controller = CreateController(service.Object, "svc-user");
-        var result = await controller.CreateServiceJobAsync(request);
-
-        var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var payload = Assert.IsType<WELL_SERVICE_JOB>(ok.Value);
-        Assert.Equal("JOB-1", payload.JOB_ID);
-        service.VerifyAll();
-    }
-
-    private static DevelopmentPlanningController CreateController(IDevelopmentPlanService service, string userId)
-    {
-        var controller = new DevelopmentPlanningController(service, NullLogger<DevelopmentPlanningController>.Instance);
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext
-            {
-                User = new ClaimsPrincipal(new ClaimsIdentity(
-                [
-                    new Claim("party_id", userId)
-                ], "TestAuth"))
-            }
-        };
-        return controller;
+        var reader=new Mock<IDevelopmentAssignedReviewReader>();reader.Setup(service=>service.ReadAsync(It.IsAny<ClaimsPrincipal>(),"process"))
+            .ThrowsAsync(changed?new InvalidOperationException("private native evidence"):new UnauthorizedAccessException("private account evidence"));
+        var controller=new DevelopmentPlanningController(Mock.Of<IDevelopmentPlanService>(),Mock.Of<IDevelopmentPlanRequestAuthority>()){ControllerContext=new(){HttpContext=new DefaultHttpContext()}};
+        var failures=new Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter>();
+        var refusal=await Assert.ThrowsAsync<Beep.OilandGas.Models.Core.Refusals.RefusalException>(()=>controller.GetAssignedReviewAsync("process",reader.Object,failures.Object));
+        Assert.Equal(changed?Beep.OilandGas.Models.Core.Refusals.RefusalKind.Conflict:Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden,refusal.Kind);
+        Assert.DoesNotContain("private",refusal.Sentence);Assert.Equal(changed?1:0,failures.Invocations.Count);
     }
 }

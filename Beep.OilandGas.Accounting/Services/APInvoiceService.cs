@@ -8,8 +8,11 @@ using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
+using TheTechIdea.Beep.DataBase;
+using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -22,7 +25,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// GL Posting: Debit Expense (6001), Credit AP (2000) on bill receipt
     ///            Debit AP (2000), Credit Cash (1000) on payment
     /// </summary>
-    public class APInvoiceService 
+    public partial class APInvoiceService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -31,7 +34,6 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly AccountingBasisPostingService _basisPosting;
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<APInvoiceService> _logger;
-        private const string ConnectionName = "PPDM39";
         private readonly Func<Task<string>>? _resolveConnection;
 
         public APInvoiceService(
@@ -58,7 +60,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// Create a new vendor bill (DRAFT status)
         /// </summary>
         public async Task<AP_INVOICE> CreateBillAsync(
-            string vendorBaId,
+            CompanyScope company,string vendorBaId,
             decimal invoiceAmount,
             DateTime invoiceDate,
             string? invoiceNumber = null,
@@ -66,6 +68,7 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime? dueDate = null,
             string userId = "SYSTEM")
         {
+            APInvoiceOwnership.RequireScope(company);
             if (string.IsNullOrWhiteSpace(vendorBaId))
                 throw new ArgumentNullException(nameof(vendorBaId));
             if (invoiceAmount <= 0)
@@ -81,6 +84,7 @@ namespace Beep.OilandGas.Accounting.Services
                 var bill = new AP_INVOICE
                 {
                     AP_INVOICE_ID = Guid.NewGuid().ToString(),
+                    OWNER_TENANT_ID=company.TenantId,OWNER_COMPANY_BA_ID=company.BusinessAssociateId,
                     INVOICE_NUMBER = invoiceNumber ?? await GenerateInvoiceNumberAsync(),
                     VENDOR_BA_ID = vendorBaId,
                     INVOICE_DATE = invoiceDate,
@@ -113,8 +117,9 @@ namespace Beep.OilandGas.Accounting.Services
         /// Receive vendor bill (DRAFT -> RECEIVED)
         /// Posts GL entries: Debit Expense (6001), Credit AP (2000)
         /// </summary>
-        public async Task<AP_INVOICE> ReceiveBillAsync(string billId, string userId = "SYSTEM")
+        public async Task<AP_INVOICE> ReceiveBillAsync(CompanyScope company,string billId, string userId = "SYSTEM")
         {
+            APInvoiceOwnership.RequireScope(company);
             if (string.IsNullOrWhiteSpace(billId))
                 throw new ArgumentNullException(nameof(billId));
 
@@ -122,7 +127,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var bill = await GetBillByIdAsync(billId);
+                var bill = await GetBillByIdAsync(company,billId);
                 if (bill == null)
                     throw RefusalException.NotFound($"Bill {billId} was not found.");
 
@@ -179,11 +184,12 @@ namespace Beep.OilandGas.Accounting.Services
         /// Posts GL entry: Debit AP (2000), Credit Cash (1000)
         /// </summary>
         public async Task<AP_INVOICE> RecordPaymentAsync(
-            string billId,
+            CompanyScope company,string billId,
             decimal paymentAmount,
             DateTime paymentDate,
             string userId = "SYSTEM")
         {
+            APInvoiceOwnership.RequireScope(company);
             if (string.IsNullOrWhiteSpace(billId))
                 throw new ArgumentNullException(nameof(billId));
             if (paymentAmount <= 0)
@@ -193,7 +199,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var bill = await GetBillByIdAsync(billId);
+                var bill = await GetBillByIdAsync(company,billId);
                 if (bill == null)
                     throw RefusalException.NotFound($"Bill {billId} was not found.");
 
@@ -267,8 +273,9 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Get bill by ID
         /// </summary>
-        public async Task<AP_INVOICE?> GetBillByIdAsync(string billId)
+        public async Task<AP_INVOICE?> GetBillByIdAsync(CompanyScope company,string billId)
         {
+            APInvoiceOwnership.RequireScope(company);
             if (string.IsNullOrWhiteSpace(billId))
                 return null;
 
@@ -276,8 +283,14 @@ namespace Beep.OilandGas.Accounting.Services
             {
                 var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
-                var bill = await repo.GetByIdAsync(billId);
-                return bill as AP_INVOICE;
+                var results=await repo.GetAsync(new List<AppFilter>{
+                    new(){FieldName="AP_INVOICE_ID",Operator="=",FilterValue=billId},
+                    new(){FieldName="OWNER_TENANT_ID",Operator="=",FilterValue=company.TenantId},
+                    new(){FieldName="OWNER_COMPANY_BA_ID",Operator="=",FilterValue=company.BusinessAssociateId}})
+                    ?? throw new InvalidOperationException("The AP invoice read was unavailable.");
+                var rows=results.ToArray();if(rows.Length==0)return null;
+                if(rows.Length!=1 || rows[0] is not AP_INVOICE invoice)throw new InvalidOperationException("The AP invoice identity is ambiguous or incompatible.");
+                APInvoiceOwnership.Require(company,billId,invoice);return invoice;
             }
             catch (Exception ex)
             {
@@ -289,105 +302,108 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Get all bills for a vendor
         /// </summary>
-        public async Task<List<AP_INVOICE>> GetVendorBillsAsync(string vendorBaId)
+        public async Task<List<AP_INVOICE>> GetVendorBillsAsync(CompanyScope company,string vendorBaId)
         {
-            if (string.IsNullOrWhiteSpace(vendorBaId))
-                return new List<AP_INVOICE>();
+            APInvoiceOwnership.RequireScope(company);
+            if(string.IsNullOrWhiteSpace(vendorBaId))return new List<AP_INVOICE>();
+            return await GetCompanyBillsAsync(company,vendorBaId);
+        }
 
-            // A failed read propagates: answering it as "no bills" would tell the caller the vendor owes nothing.
-            var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
-
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "VENDOR_BA_ID", Operator = "=", FilterValue = vendorBaId },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
-
-            var bills = await repo.GetAsync(filters);
-            return bills?.Cast<AP_INVOICE>().ToList() ?? new List<AP_INVOICE>();
+        /// <summary>Recorded active invoices in the selected company; optional exact supplier restriction.</summary>
+        public async Task<List<AP_INVOICE>> GetCompanyBillsAsync(CompanyScope company,string? vendorBaId=null)
+        {
+            APInvoiceOwnership.RequireScope(company);
+            if(vendorBaId is not null && string.IsNullOrWhiteSpace(vendorBaId))
+                throw new InvalidOperationException("A supplied AP supplier restriction cannot be empty.");
+            var repo=await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
+            var filters=new List<AppFilter>{
+                new(){FieldName="OWNER_TENANT_ID",Operator="=",FilterValue=company.TenantId},
+                new(){FieldName="OWNER_COMPANY_BA_ID",Operator="=",FilterValue=company.BusinessAssociateId},
+                new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"}};
+            if(vendorBaId is not null)filters.Add(new(){FieldName="VENDOR_BA_ID",Operator="=",FilterValue=vendorBaId});
+            var bills=await repo.GetAsync(filters);
+            if(bills is null || bills.Any(row=>row is not AP_INVOICE))throw new InvalidOperationException("The recorded AP source list is unavailable.");
+            var rows=bills.Cast<AP_INVOICE>().ToList();
+            APInvoiceOwnership.RequireRows(company,rows);
+            if(vendorBaId is not null)APInvoiceOwnership.RequireVendorRows(company,vendorBaId,rows);
+            return rows;
         }
 
         /// <summary>
         /// Get AP Aging Report
         /// Groups unpaid/partially paid bills by age categories
         /// </summary>
-        public async Task<List<(string Category, decimal Total, List<AP_INVOICE> Bills)>> GetAPAgingAsync(DateTime? asOfDate = null)
+        public Task<List<(string Category, decimal Total, List<AP_INVOICE> Bills)>> GetAPAgingAsync(CompanyScope company,DateTime? asOfDate = null)
         {
-            asOfDate = asOfDate ?? DateTime.Today;
-            _logger?.LogInformation("Generating AP aging report as of {AsOfDate}", asOfDate);
-
-            try
-            {
-                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
-
-                var filters = new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-                };
-
-                var bills = await repo.GetAsync(filters);
-                var openBills = bills?
-                    .Cast<AP_INVOICE>()
-                    .Where(x => x.STATUS == "RECEIVED" || x.STATUS == InvoiceStatuses.PartiallyPaid)
-                    .ToList() ?? new List<AP_INVOICE>();
-
-                var current = new List<AP_INVOICE>();
-                var days31_60 = new List<AP_INVOICE>();
-                var days61_90 = new List<AP_INVOICE>();
-                var days90Plus = new List<AP_INVOICE>();
-
-                foreach (var bill in openBills)
-                {
-                    int daysOverdue = (int)(asOfDate.Value - (bill.DUE_DATE ?? bill.INVOICE_DATE ?? DateTime.Today)).TotalDays;
-
-                    if (daysOverdue <= 0)
-                        current.Add(bill);
-                    else if (daysOverdue <= 30)
-                        days31_60.Add(bill);
-                    else if (daysOverdue <= 60)
-                        days61_90.Add(bill);
-                    else
-                        days90Plus.Add(bill);
-                }
-
-                var result = new List<(string, decimal, List<AP_INVOICE>)>
-                {
-                    ("Current", current.Sum(x => x.BALANCE_DUE ?? 0m), current),
-                    ("31-60 Days", days31_60.Sum(x => x.BALANCE_DUE ?? 0m), days31_60),
-                    ("61-90 Days", days61_90.Sum(x => x.BALANCE_DUE ?? 0m), days61_90),
-                    ("90+ Days", days90Plus.Sum(x => x.BALANCE_DUE ?? 0m), days90Plus)
-                };
-
-                _logger?.LogInformation("AP aging report generated. Total outstanding: {Total:C}",
-                    result.Sum(x => x.Item2));
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error generating AP aging");
-                throw;
-            }
+            APInvoiceOwnership.RequireScope(company);
+            throw new InvalidOperationException("Reviewed currency-bound AP aging and exact contributing records are not implemented.");
         }
 
-        /// <summary>
-        /// Check if there are any unposted (DRAFT) invoices for a period
-        /// Used for period closing validation
-        /// </summary>
-        public async Task<bool> HasUnpostedInvoicesAsync(DateTime periodEndDate)
+        public async Task<APInvoiceSourceReview?> GetSourceReviewAsync(CompanyScope company,string invoiceId,string actor)
         {
-            // A failed check propagates, which stops the period close as surely as "yes" did — without telling the
-            // person there are unposted invoices when nobody looked.
-            var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
-            var filters = new List<AppFilter>
-            {
-                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = "DRAFT" },
-                new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = periodEndDate.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
-            };
+            var invoice=await GetBillByIdAsync(company,invoiceId);
+            if(invoice is null)return null;
+            var lines=await GetLinesForInvoiceAsync(company,invoiceId);
+            return APInvoiceSourceReview.Create(company,actor,invoice,lines);
+        }
+        public async Task<List<AP_INVOICE_LINE>> GetLinesForInvoiceAsync(CompanyScope company,string invoiceId)
+        {
+            _=await GetBillByIdAsync(company,invoiceId) ?? throw RefusalException.NotFound("The owning AP invoice is unavailable.");
+            var repo=await GetRepoAsync<AP_INVOICE_LINE>("AP_INVOICE_LINE");
+            var raw=await repo.GetAsync(new List<AppFilter>{new(){FieldName="AP_INVOICE_ID",Operator="=",FilterValue=invoiceId}})
+                ?? throw new InvalidOperationException("The recorded AP lines are unavailable.");
+            var rows=raw.ToArray();if(rows.Any(row=>row is not AP_INVOICE_LINE))throw new InvalidOperationException("The AP line source is incompatible.");
+            var lines=rows.Cast<AP_INVOICE_LINE>().ToList();APInvoiceOwnership.RequireLines(invoiceId,lines);return lines;
+        }
 
-            var results = await repo.GetAsync(filters);
-            return results != null && results.Any();
+        /// <summary>Recorded allocation history; owning AP header and exact invoice-line membership are mandatory.</summary>
+        public async Task<List<AP_RECEIPT_ALLOCATION>> GetReceiptAllocationsForLineAsync(CompanyScope company,string invoiceId,string lineId)
+        {
+            APInvoiceOwnership.RequireScope(company);
+            if(string.IsNullOrWhiteSpace(invoiceId) || string.IsNullOrWhiteSpace(lineId))throw new InvalidOperationException("Explicit invoice and line identities are required.");
+            var lines=await GetLinesForInvoiceAsync(company,invoiceId);
+            if(!lines.Any(line=>line.AP_INVOICE_LINE_ID==lineId))throw new InvalidOperationException("The invoice line is unavailable.");
+            var repo=await GetRepoAsync<AP_RECEIPT_ALLOCATION>("AP_RECEIPT_ALLOCATION");
+            var raw=await repo.GetAsync(new List<AppFilter>{
+                new(){FieldName="OWNER_TENANT_ID",Operator="=",FilterValue=company.TenantId},
+                new(){FieldName="OWNER_COMPANY_BA_ID",Operator="=",FilterValue=company.BusinessAssociateId},
+                new(){FieldName="AP_INVOICE_ID",Operator="=",FilterValue=invoiceId},
+                new(){FieldName="AP_INVOICE_LINE_ID",Operator="=",FilterValue=lineId}})
+                ?? throw new InvalidOperationException("The allocation source is unavailable.");
+            var records=raw.ToArray();if(records.Any(row=>row is not AP_RECEIPT_ALLOCATION))throw new InvalidOperationException("The allocation source is incompatible.");
+            var rows=records.Cast<AP_RECEIPT_ALLOCATION>().ToList();APReceiptAllocationReview.RequireOwnership(company,rows);APReceiptAllocationReview.RequireRows(invoiceId,lineId,rows);return rows;
+        }
+
+        /// <summary>All recorded contributors to an exact receipt. Foreign or missing invoice evidence refuses the whole read.</summary>
+        public async Task<APReceiptConsumptionReview> GetReceiptConsumptionAsync(CompanyScope company,string actor,
+            APLinePurchaseSourceReview selectedSource,string receiptId,Func<Task> requireAuthority)
+        {
+            // Validate receipt membership before opening the provider, including the confirmed-empty case.
+            _=APReceiptConsumptionReview.Create(company,actor,selectedSource,receiptId,[]);
+            await requireAuthority();
+            var repo=await GetRepoAsync<AP_RECEIPT_ALLOCATION>("AP_RECEIPT_ALLOCATION");
+            // Do not restrict to the selected invoice or active rows: all competing references and history must be checked.
+            var raw=await repo.GetAsync(new List<AppFilter>{
+                new(){FieldName="OWNER_TENANT_ID",Operator="=",FilterValue=company.TenantId},
+                new(){FieldName="OWNER_COMPANY_BA_ID",Operator="=",FilterValue=company.BusinessAssociateId},
+                new(){FieldName="PO_RECEIPT_ID",Operator="=",FilterValue=receiptId}})
+                ?? throw new InvalidOperationException("The recorded receipt contributors are unavailable.");
+            var records=raw.ToArray();if(records.Any(row=>row is not AP_RECEIPT_ALLOCATION))
+                throw new InvalidOperationException("The recorded receipt contributors are incompatible.");
+            var rows=records.Cast<AP_RECEIPT_ALLOCATION>().ToArray();
+            APReceiptAllocationReview.RequireOwnership(company,rows);
+            var contributions=new List<APReceiptAllocationReview>();
+            foreach(var group in rows.GroupBy(row=>(row.AP_INVOICE_ID,row.AP_INVOICE_LINE_ID)))
+            {
+                APReceiptAllocationReview.RequireRows(group.Key.AP_INVOICE_ID,group.Key.AP_INVOICE_LINE_ID,group.ToArray());
+                await requireAuthority();
+                var invoice=await GetSourceReviewAsync(company,group.Key.AP_INVOICE_ID,actor)
+                    ?? throw new InvalidOperationException("An owning invoice for a receipt contributor is unavailable.");
+                contributions.Add(APReceiptAllocationReview.Create(company,actor,group.Key.AP_INVOICE_ID,group.Key.AP_INVOICE_LINE_ID,
+                    invoice.Revision,new(invoice,group.Key.AP_INVOICE_LINE_ID,selectedSource.Order),group.ToArray()));
+            }
+            await requireAuthority();
+            return APReceiptConsumptionReview.Create(company,actor,selectedSource,receiptId,contributions);
         }
 
         private async Task<string> GenerateInvoiceNumberAsync()
@@ -405,8 +421,19 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
-            var connection = _resolveConnection is null ? ConnectionName : await _resolveConnection();
+            if(_resolveConnection is null)throw new InvalidOperationException("A reviewed request-bound PRODUCTION resolver is required.");
+            var connection = await _resolveConnection();
             if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PRODUCTION database binding is required.");
+            var source=_editor.GetDataSource(connection) ?? throw new InvalidOperationException("The AP datasource is unavailable.");
+            var schema=source.GetEntityStructure(new EntityStructure{EntityName=tableName,DatasourceEntityName=tableName},true);
+            var keys=schema?.Fields?.Where(field=>field.IsKey).ToArray();
+            if(keys is not {Length:1} || !string.Equals(keys[0].FieldName,tableName+"_ID",StringComparison.OrdinalIgnoreCase) || keys[0].AllowDBNull)
+                throw new InvalidOperationException("The AP invoice identity key is unconfirmed.");
+            var required=tableName=="AP_RECEIPT_ALLOCATION" ? new[]{"OWNER_TENANT_ID","OWNER_COMPANY_BA_ID","AP_INVOICE_ID","AP_INVOICE_LINE_ID","PURCHASE_ORDER_ID","PO_LINE_ITEM_ID","PO_RECEIPT_ID","ALLOCATED_QUANTITY","QUANTITY_UOM"} : tableName=="AP_INVOICE" ? new[]{"OWNER_TENANT_ID","OWNER_COMPANY_BA_ID","CURRENCY_CODE"} :
+                new[]{"AP_INVOICE_ID","LINE_NUMBER","ITEM_DESCRIPTION","QUANTITY","QUANTITY_UOM","UNIT_PRICE","LINE_TOTAL","CURRENCY_CODE","PURCHASE_ORDER_ID","PO_LINE_ITEM_ID"};
+            foreach(var column in required)
+                if(schema?.Fields is null || schema.Fields.Count(field=>string.Equals(field.FieldName,column,StringComparison.OrdinalIgnoreCase))!=1)
+                    throw new InvalidOperationException("The AP ownership or currency schema is unavailable. Review the PRODUCTION Beep migration.");
             // Use strongly typed class directly
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,

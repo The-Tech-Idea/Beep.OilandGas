@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "observations": 4,
+  "scope": [
+    "required explicit form and rejected empty preparation",
+    "frozen original claim/reason/role/evidence/stage confirmation",
+    "company switch hides private preparation",
+    "unchanged controlled fixture diagnostics"
+  ],
+  "browser_submission_or_recovery_tested": false,
+  "screenshot_visually_inspected": true,
+  "console": "Initial favicon404 retained; no application exception observed. No full keyboard or accessibility qualification."
+}

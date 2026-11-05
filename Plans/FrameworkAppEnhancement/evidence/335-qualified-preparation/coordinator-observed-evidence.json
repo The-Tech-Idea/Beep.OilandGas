@@ -1,0 +1,132 @@
+{
+  "observed_at_utc": "2026-10-20T08:40:14.681657+00:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "branch": "master",
+  "dirty_tree": true,
+  "scope": "Complete native return coordinator and participant in focused rollback-aware provider fixture. Report, physical and closure DTO sources are controlled seams; no API activation, native lifecycle closure, installation-at-original-work, provider or release claim.",
+  "source_changes_after_initial_run": {
+    "paths": [
+      "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs"
+    ],
+    "reason": "Only the policy-append test now starts its next policy at the retained previous effective end instead of overlapping. Other 12 case bodies/helper and all production inputs are unchanged."
+  },
+  "current_sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceQualifiedReturnParticipant.cs",
+      "sha256": "1925fd7566e2f204b429d6fe2a1f7559034f5a933a21d822e7ae756622a29125"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturnCommand.cs",
+      "sha256": "21eefd9d82889bee7de3e7ba6597472023273083344d1b4756bc15bc6041339f"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturnStatus.cs",
+      "sha256": "bd858c3f679648fce72012fb52b5b5bacbecebe8c7d53987c7485bc9c474e8c5"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.cs",
+      "sha256": "2ac57501fb9a6b9abf6e7091933ac25345c1e2d30df9730eea5e13ccdb9f79cc"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "34eea25aea651a3d724d24b5ff9f2dd7070a6c05ba33745f50eb13c33ae5c75a"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "89c103185edbf707d388fa5cffc22c2f5793de1b51e6a0161e82293938dde0d2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "f6676e306a57ae2373acfc6b28818db6a3da3c42c5325aa37baaaba23f1720b9"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "a2852b7290751df3d54b8f0df63cad5563b836e1d7138c7bf58ca526fe3621b7"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnTests.cs",
+      "sha256": "b3430915d12759ce2b580057529f24b3edaefea4c81430318ab4e56db7107039"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "260a7982f7aafc94b29dbdb7026306bffb14761b3e11ef9c796dd22fabdc6163"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+      "sha256": "b2f1529b5d46444551ef03826b0a293bf6c3a4bbc8b8a63df8c55c2fa2073ba2"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "oilgas-335-participant-data2.log",
+      "sha256": "e10a93e5b75130f16be2ec4229e3bc07d066b9c4b45e0b6b964fe92b4e317858",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:17:12.866383+00:00",
+      "result": "Canonical Data build succeeds: zero warnings/errors, 2.28 seconds."
+    },
+    {
+      "path": "oilgas-335-participant-fifth.log",
+      "sha256": "08b87931adf7d78cc86c390dfaa60ce266be0df2276de27d8190bd8a9e839985",
+      "observed_exit": 1,
+      "output_modified_utc": "2026-10-20T08:33:17.643904+00:00",
+      "result": "Initial complete coordinator run: 12 passed, one refused overlapping policy-append test setup; 6.5383 minutes. The 12 passed test bodies and production sources did not change in its correction."
+    },
+    {
+      "path": "oilgas-335-participant-policy-corrected.log",
+      "sha256": "54b2db8be1a4beb163a547a9432d3400a094b7b36b140cbe4f40dd1ff5f83671",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:39:34.030634+00:00",
+      "result": "Corrected non-overlapping later policy setup; remaining original recovery case passes alone, 31.9989 seconds. No production checks weakened."
+    },
+    {
+      "path": "oilgas-335-participant-native-regression.log",
+      "sha256": "d81b86724cb670fe156fae57ab11e3963aeade140945f0551595b1f3842b5ec2",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:37:56.528557+00:00",
+      "result": "379 native regression cases pass, 6.5977 minutes. CompleteQualifiedReturn/CompleteMixedReturn cases excluded to keep this scope disjoint."
+    },
+    {
+      "path": "oilgas-335-participant-well-compat.log",
+      "sha256": "d551c67ce33c06e7533a212ac6406e3bf6379c55bc355fda59f3eec7b0aa9852",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:28:18.008268+00:00",
+      "result": "15 existing actual well-return/audit and raw mutation-fence cases pass, 59.3647 seconds."
+    },
+    {
+      "path": "oilgas-335-participant-public-well.log",
+      "sha256": "9d3a98ddc3689d1fa9bdaa9d428807e6b3a6915de3da9b318664a960c6906670",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:30:19.494032+00:00",
+      "result": "Two existing public well-return/current-READ-account/proof cases pass, 39.1977 seconds."
+    },
+    {
+      "path": "oilgas-335-participant-ui-compat.log",
+      "sha256": "0ae033d7b42f5b35389ca90ba6f8b8e8d7544360353e50dedd728a20d5c48041",
+      "observed_exit": 0,
+      "output_modified_utc": "2026-10-20T08:30:36.513438+00:00",
+      "result": "46 existing return state/client/form/public status cases pass, 22.0795 seconds, including earlier exact well-only JSON body."
+    }
+  ],
+  "commands": {
+    "coordinator_initial_filter": "FullyQualifiedName~CompleteQualifiedReturn|FullyQualifiedName~CompleteMixedReturn",
+    "corrected_policy_filter": "FullyQualifiedName~CompleteQualifiedReturnRecoveryRetainsOriginalPolicyAfterALaterValidAppend",
+    "native_regression_filter": "(FullyQualifiedName~CompanyMaintenanceQualifiedLicensingTests|FullyQualifiedName~CompanyMaintenanceStatusMutationBoundaryTests|FullyQualifiedName~CompanyPPDMRowAccessTests|FullyQualifiedName~CompanyMaintenanceReturnPolicyTests|FullyQualifiedName~CompanyMaintenanceQualifiedAssetTests|FullyQualifiedName~CompanyMaintenanceQualifiedOperatingTests)&FullyQualifiedName!~CompleteQualifiedReturn&FullyQualifiedName!~CompleteMixedReturn",
+    "repository_test_properties": [
+      "FocusedCompanyTests=true",
+      "FocusedDataAssemblyPath=<isolated canonical Data DLL>",
+      "BuildProjectReferences=false",
+      "GeneratePackageOnBuild=false",
+      "UseBeepDMSource=false"
+    ],
+    "isolated_well_script": "Scripts/Test-MaintenanceProcessStart.ps1 -IncludeMaintenanceWellEvidence",
+    "isolated_ui_script": "Scripts/Test-MaintenanceReceivingPage.ps1 -Filter FullyQualifiedName~MaintenanceAssetReturnStateTests|FullyQualifiedName~MaintenanceAssetReturnStatusTests"
+  },
+  "limits": [
+    "Observed local execution and copied output, not a clean-commit CI attestation.",
+    "The main 13-case output retains its setup failure; remaining case passed separately after a test-only correction.",
+    "Report/physical/closure sources in the new coordinator tests are controlled canonical DTO seams.",
+    "API qualified activation, original installation/work binding, full native lifecycle closure HTTP, well dictionary projection presence, live providers, browser/OIDC and release remain open.",
+    "No active test sessions remain; no staging, commit or push."
+  ],
+  "source_checkpoint_observed_during_initial_coordinator_run": "coordinator-initial-source-checkpoint.json"
+}

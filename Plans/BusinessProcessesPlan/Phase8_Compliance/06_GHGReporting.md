@@ -1,135 +1,31 @@
-# Phase 8 — GHG Reporting
-## EPA 40 CFR 98 (Subparts W/C/NN), ECCC NIR Appendix A, Emission Factor Lookup
+# Phase 8 — Company GHG reporting
 
----
+Status: unavailable pending a reviewed implementation. The previous calculation assumed U.S. jurisdiction, used unverified built-in factors, interpreted missing fields as zero and suppressed datasource errors. It was removed because its results could appear complete when source data was missing. The API returns unavailable and the screen explains the prerequisite.
 
-## GHG Reporting Framework
+The system setup repository now accepts a Data-owned `GHG_FACTORS` catalog for an explicit uppercase jurisdiction. Each factor records a source category, units, value, effective period and source reference; overlapping periods and incomplete entries are rejected. The setup screen explains the required fields. This is configuration storage, not factor approval or a reporting calculation. Thirteen focused setup-store and screen cases passed with controlled boundaries; real-provider behavior remains unverified.
 
-| Jurisdiction | Framework | Key Subpart / Protocol | PPDM Volume Basis |
-|---|---|---|---|
-| USA | EPA 40 CFR 98 Subpart W | Petroleum and natural gas systems | `PDEN_VOL_DISPOSITION` |
-| USA | EPA 40 CFR 98 Subpart C | General stationary combustion | `EQUIPMENT.FUEL_CONSUMPTION` |
-| USA | EPA 40 CFR 98 Subpart NN | Suppliers of natural gas / LNG | `GAS_SALES` |
-| Canada | ECCC NIR Appendix A | Oil and gas industry protocol | `PDEN_VOL_DISPOSITION` |
-| International | IOGP GHG reporting | Voluntary; align with GHG Protocol | Same sources |
+The administrator can now load a jurisdiction catalog, add and remove factors using a typed form, and save through the same revision-checked repository command. An uncertain response can be reconciled against the original saved record. Ten focused form and store cases passed using controlled HTTP and datasource fixtures; live authorization, provider concurrency and browser behavior remain unverified.
 
----
+A company administrator can review an explicitly selected catalog against the current company environment. The API rechecks company administration, catalog identity and revision, and the effective environment; the screen rejects foreign or stale company results. This review does not persist company applicability or approve factors. Twelve focused reader/controller cases and thirteen setup-screen cases passed with controlled boundaries; live provider and browser checks remain open.
 
-## Emission Factor Lookup Table
+The system setup Beep manifest now includes a company-owned catalog selection. The administrator can record a reviewed catalog and rationale; the write checks company access, selected catalog and effective environment within the owned serializable transaction, and records their revisions and the actor. The screen retains the original request in protected tab-session storage before sending and can reconcile a lost response after reopening in that tab. Storage is scoped to company and actor and is recovery input, not evidence of a commit. Selection is not factor approval. Seventeen focused screen and protected-storage cases passed with controlled fixtures. Fifteen focused model/controller cases and twenty controlled store/screen cases passed; real-provider migration, concurrency, restart recovery and live authorization remain open.
 
-Stored as a configuration file `EmissionFactors.json` deployed with the API:
+Recovery no longer loses its pending input when another setup read completes while protected storage is still loading. Overlapping actions are refused while a request is active, so they cannot strand the screen busy. Nineteen focused setup-screen and protected-storage cases passed with controlled timing and HTTP fixtures; live browser timing remains unverified.
 
-```json
-{
-  "factors": [
-    { "sourceCategory": "FLARE_GAS", "jurisdiction": "USA", "regulation": "40CFR98_W",
-      "factor": 1.9959, "unit": "t_CO2e_per_MSCF" },
-    { "sourceCategory": "VENTED_GAS", "jurisdiction": "USA", "regulation": "40CFR98_W",
-      "factor": 0.05306, "unit": "t_CO2e_per_MSCF" },
-    { "sourceCategory": "DIESEL_COMBUSTION", "jurisdiction": "USA", "regulation": "40CFR98_C",
-      "factor": 0.002785, "unit": "t_CO2e_per_litre" },
-    { "sourceCategory": "FLARE_GAS", "jurisdiction": "CANADA", "regulation": "ECCC_NIR",
-      "factor": 2.18, "unit": "t_CO2e_per_1000m3" },
-    { "sourceCategory": "VENTED_GAS", "jurisdiction": "CANADA", "regulation": "ECCC_NIR",
-      "factor": 1.22, "unit": "t_CO2e_per_1000m3" }
-  ]
-}
-```
+Catalog review now requires the company environment review to match current shared and country layers. A change before or during review prevents new catalog evidence, and an existing selection reports review required. Seven focused resolver and selection-store cases passed with controlled fixtures; live provider concurrency remains unverified.
 
----
+The selection read now distinguishes a matching selection, changed catalog or environment, absent selection, and unavailable evidence. It rechecks the saved selection and authority before returning, and the screen asks for another review when the inputs change. Fourteen focused reader/controller and seventeen store/screen cases passed using controlled boundaries; this status does not establish approval or reporting readiness.
 
-## IGHGReportingService Interface
+The GHG screen can now review recorded `PDEN` production entities for the current company and FIELD. The API uses the existing company binding, FIELD compliance permission and metadata-checked `PDEN.FIELD_ID` relationship, and repeats the read to detect changes. Five focused native reader cases and five screen/projection cases passed with controlled fixtures. These are candidate source identities only: the disposition relationship, activity volumes, reporting coverage and emissions are not established. Live provider and browser evidence remain open.
 
-```csharp
-public interface IGHGReportingService
-{
-    Task<GHGEmissionReport> GenerateAnnualReportAsync(
-        string fieldId, int year, string jurisdiction, string userId);
+The same screen can select one reviewed production entity and inspect matching `PDEN_VOL_DISPOSITION` records, preserving the recorded activity and product codes, units, volume, dates and observation/amendment identity. The reader rechecks FIELD authority and the parent review, queries all three selected production identifiers, rejects foreign and duplicate records, and repeats the read. Nine focused native-reader cases and eight screen/projection cases passed with controlled fixtures. Metadata confirms the subtype link but does not establish the full semantic lineage, classification, period coverage or emissions calculation; live-provider and browser checks remain open.
 
-    Task<List<EmissionSourceLine>> GetEmissionSourcesAsync(
-        string fieldId, int year);
+The screen can run an explicitly selected, single-row arithmetic check against a current company catalog selection. It requires matching recorded activity code and input unit, recorded dates wholly within the factor period, and unchanged company, FIELD, selection, catalog and disposition evidence. The result shows the factor source and is labelled as an arithmetic check, not an approved emissions report. Six focused service cases, ten screen/projection cases and two arithmetic cases passed with controlled fixtures. The check does not establish that a factor is approved, that a code has the correct regulatory meaning, complete period coverage or a report total; real-provider and browser validation remain open.
 
-    Task<double> GetTotalEmissionsAsync(
-        string fieldId, int year, string? jurisdiction = null);
-}
+## Implementation
 
-public record GHGEmissionReport(
-    string FieldId, int Year, string Jurisdiction,
-    double TotalCO2e, string Units,
-    List<EmissionSourceLine> Sources,
-    DateTime GeneratedAt);
-
-public record EmissionSourceLine(
-    string SourceCategory, string Regulation,
-    double ActivityVolume, string VolumeUnit,
-    double EmissionFactor, string FactorUnit,
-    double EmissionsCO2e);
-```
-
----
-
-## GHG Calculation Flow
-
-```csharp
-// GHGReportingService.GenerateAnnualReportAsync
-var flareVolume = await GetFlareVolumeAsync(fieldId, year);   // MSCF/1000m³
-var ventVolume  = await GetVentVolumeAsync(fieldId, year);
-var dieselConsumption = await GetDieselVolumeAsync(fieldId, year);  // Litres
-
-var flareFactor = _factorLookup.Get("FLARE_GAS", jurisdiction);
-var ventFactor  = _factorLookup.Get("VENTED_GAS", jurisdiction);
-var dieselFactor = _factorLookup.Get("DIESEL_COMBUSTION", jurisdiction);
-
-var sources = new List<EmissionSourceLine>
-{
-    new("FLARE_GAS", flareFactor.Regulation, flareVolume, flareFactor.VolumeUnit,
-        flareFactor.Factor, flareFactor.Unit, flareVolume * flareFactor.Factor),
-    new("VENTED_GAS", ventFactor.Regulation, ventVolume, ventFactor.VolumeUnit,
-        ventFactor.Factor, ventFactor.Unit, ventVolume * ventFactor.Factor),
-    new("DIESEL_COMBUSTION", dieselFactor.Regulation, dieselConsumption, "litres",
-        dieselFactor.Factor, dieselFactor.Unit, dieselConsumption * dieselFactor.Factor)
-};
-
-double totalCO2e = sources.Sum(s => s.EmissionsCO2e);
-```
-
----
-
-## PPDM Storage for GHG Data
-
-| PPDM Column | Table | GHG Meaning |
-|---|---|---|
-| `DISP_VOL` | `PDEN_VOL_DISPOSITION` | Activity volume (flare/vent) |
-| `DISP_TYPE` | `PDEN_VOL_DISPOSITION` | `'FLARE'` or `'VENT'` |
-| `FUEL_CONSUMPTION` | `EQUIPMENT` | Diesel/fuel consumed (litres) |
-| `EQUIP_TYPE` | `EQUIPMENT` | `'COMBUSTION_ENGINE'` / `'FLARE'` / `'SEPARATOR'` |
-| `PPDM_GUID` of obligation | `OBLIGATION` | Where `OBLIG_TYPE='EPA_GHG_REPORT_FLARE'` |
-
----
-
-## GHG Report UI (Blazor)
-
-```razor
-<!-- GHGReportPage.razor -->
-@page "/ppdm39/compliance/ghg"
-
-<MudSelect @bind-Value="_year" Label="Reporting Year">
-    @for (int y = DateTime.Today.Year - 3; y <= DateTime.Today.Year; y++)
-    { <MudSelectItem Value="y">@y</MudSelectItem> }
-</MudSelect>
-<MudSelect @bind-Value="_jurisdiction" Label="Jurisdiction">
-    <MudSelectItem Value='"USA"'>USA (40 CFR 98)</MudSelectItem>
-    <MudSelectItem Value='"CANADA"'>Canada (ECCC NIR)</MudSelectItem>
-</MudSelect>
-
-<MudButton OnClick="GenerateReport" Variant="Variant.Filled">Generate Report</MudButton>
-
-@if (_report != null)
-{
-    <MudText Typo="Typo.h6">Total: @_report.TotalCO2e.ToString("N1") t CO2e</MudText>
-    <MudTable Items="_report.Sources" Dense="true">
-        <!-- Source Category | Volume | Factor | Emissions (t CO2e) -->
-    </MudTable>
-    <MudButton OnClick="ExportCsv" StartIcon="@Icons.Material.Filled.Download">Export CSV</MudButton>
-}
-```
+1. Define Data-owned company/FIELD-scoped activity, units, source provenance and reporting-period contracts. Establish the actual PPDM relationships and effective dates for each source; reject missing, ambiguous, unauthorized or incomplete source data.
+2. Add an explicit approval owner and validate catalog-selection recovery in a real browser, across server restarts and where cross-tab or cross-session recovery is required. Each factor needs its source, applicable period and units. No default country, stored factor or company selection is an approval.
+3. Build a company-authorized reader and calculator that validates source units, conversion, coverage and factor versions. Include provenance and explicit unresolved categories in the result; never substitute zero for unavailable data.
+4. Restore the role-appropriate screen with explicit company, FIELD, period and jurisdiction selection. Fence review and calculation against configuration, access and source changes; provide an honest unavailable or incomplete state.
+5. Run focused model, authorization, calculation, UI and provider tests for multiple companies and countries, including missing factors, failed reads, unit differences and concurrent changes. Record live-provider, browser and actual regulatory acceptance separately.

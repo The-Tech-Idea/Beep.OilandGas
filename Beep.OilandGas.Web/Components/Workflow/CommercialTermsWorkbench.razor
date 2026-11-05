@@ -1,0 +1,147 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using System.Globalization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject IBusinessProcessServiceClient Processes
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject CommercialTermsWorkspaceState State
+@inject AuthenticationStateProvider Authentication
+@inject IFieldSelectionContext Fields
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 mt-4">
+    <MudText Typo="Typo.h5">Commercial terms preparation and independent review</MudText>
+    <MudButton OnClick="Reload" Disabled="@State.Busy">Reload recorded terms and reconcile outcome</MudButton>
+    @if(State.HasPendingIntent){<MudAlert Severity="Severity.Warning">A commercial command remains unconfirmed. Return to its original company, account, FIELD, transaction and date window. Reload before retrying the original intent; creating another command is blocked.</MudAlert>}
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading or recording commercial terms" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(_authorized && State.Review is {} review)
+    {
+        <MudText>Company: @review.Source.Source.Company.BusinessAssociateId · FIELD: @review.Source.Source.FieldId · Revenue transaction: @review.Source.TransactionId · Sales contract: @review.Source.Contract.SALES_CONTRACT_ID</MudText>
+        <MudText>Recorded seller: @review.Source.Contract.SELLER_BA_ID · Buyer: @review.Source.Contract.BUYER_BA_ID · Source revision: @review.Source.Revision</MudText>
+        <MudText>Native recorded price: @(review.Source.Contract.BASE_PRICE?.ToString(CultureInfo.CurrentCulture) ?? "Unavailable") · Currency: @(string.IsNullOrWhiteSpace(review.Source.Contract.CURRENCY_CODE)?"Unavailable":review.Source.Contract.CURRENCY_CODE) · Method: @(string.IsNullOrWhiteSpace(review.Source.Contract.PRICING_METHOD)?"Unavailable":review.Source.Contract.PRICING_METHOD) · Pricing unit/basis unavailable in the native source</MudText>
+        <MudText>Native effective date: @(review.Source.Contract.EFFECTIVE_DATE?.ToString("O") ?? "Unavailable") · Expiry date: @(review.Source.Contract.EXPIRY_DATE?.ToString("O") ?? "Unavailable") · Contract maker: @(string.IsNullOrWhiteSpace(review.Source.Contract.ROW_CREATED_BY)?"Unavailable":review.Source.Contract.ROW_CREATED_BY)</MudText>
+        <MudText>Revenue source maker: @(review.Source.Source.Rows.Single(row=>row.REVENUE_TRANSACTION_ID==review.Source.TransactionId).ROW_CREATED_BY ?? "Unavailable")</MudText>
+        <MudAlert Severity="Severity.Info">Preparing or deciding these terms records reviewed evidence. Original native prices remain recorded. Invoice, recognition, amendment and assigned-task completion are separate workflows.</MudAlert>
+        var applicability=review.ReviewApplicability();
+        <MudPaper Outlined="true" Class="pa-3 my-3">
+            <MudText Typo="Typo.h6">Commercial terms applicability</MudText>
+            <MudText>Recorded transaction date: @applicability.StoredTransactionDate.ToString("O") · Currency: @(string.IsNullOrWhiteSpace(applicability.RecordedCurrency)?"Unavailable":applicability.RecordedCurrency)</MudText>
+            <MudAlert Severity="Severity.Info">@ApplicabilityMessage(applicability.Status)</MudAlert>
+            <MudText Typo="Typo.caption">Source revision: @applicability.SourceRevision · Terms revision: @(applicability.TermsRevision ?? "No recorded preparation")</MudText>
+            <MudText>Delivery approval, measured quantity and units, invoicing, recognition policy and ledger posting require separate reviewed evidence.</MudText>
+        </MudPaper>
+        @if(review.Recorded is {} recorded)
+        {
+            <MudText Typo="Typo.h6">Recorded proposal @recorded.Preparation.Terms.Version</MudText>
+            <MudText>Effective stored calendar dates: @recorded.Preparation.Terms.EffectiveFrom.ToString("yyyy-MM-dd") through @(recorded.Preparation.Terms.EffectiveThrough?.ToString("yyyy-MM-dd") ?? "Open end explicitly proposed")</MudText>
+            <MudText>Proposed price: @recorded.Preparation.Terms.Price.ToString(CultureInfo.CurrentCulture) @recorded.Preparation.Terms.CurrencyCode · Basis: @recorded.Preparation.Terms.PriceUnit · Method: @recorded.Preparation.Terms.PricingMethod</MudText>
+            <MudText>@recorded.Preparation.Terms.Notes</MudText>
+            <MudText>Prepared by: @recorded.Preparation.ActorUserId · Prepared UTC: @recorded.PreparedAtUtc.ToString("O") · Revision: @recorded.Revision</MudText>
+            @if(recorded.Decision is {} decision)
+            {<MudAlert Severity="Severity.Info">Recorded decision: @decision.Decision · Reviewer: @decision.ActorUserId · UTC: @recorded.DecidedAtUtc?.ToString("O") · Reason: @decision.Reason</MudAlert>}
+            else if(_canDecide && !State.HasPendingIntent)
+            {
+                <MudTextField T="string" Label="Independent decision reason" @bind-Value="_reason" Required="true" MaxLength="4096" Disabled="@State.Busy" />
+                <MudButton OnClick="@(()=>Decide(SalesContractTermsDecision.Approve))" Disabled="@State.Busy">Approve reviewed terms</MudButton>
+                <MudButton OnClick="@(()=>Decide(SalesContractTermsDecision.Reject))" Disabled="@State.Busy">Reject reviewed terms</MudButton>
+            }
+            else if(recorded.Decision is null){<MudAlert Severity="Severity.Info">Independent decision access or complete source maker evidence is unavailable for this account.</MudAlert>}
+            @if(AssignedProcessId is null && recorded.Decision is null && !State.HasPendingIntent && !State.Busy && Company.Selection?.Permissions.Contains("Workflow.Start",StringComparer.Ordinal)==true)
+            {
+                <Beep.OilandGas.Web.Components.BusinessProcess.CompanyAccountingHandoffPanel EntityType="SALES_CONTRACT" EntityId="@review.Source.Contract.SALES_CONTRACT_ID" SourceRevision="@CompanyAccountingSourceTypes.CommercialPreparationRevision(recorded)" />
+            }
+        }
+        else if(_canPrepare && !State.HasPendingIntent)
+        {
+            <MudForm @ref="_form">
+                <MudTextField T="string" Label="Proposed terms version" @bind-Value="_version" Required="true" MaxLength="128" Disabled="@State.Busy" />
+                <MudDatePicker Label="Effective from stored calendar date" @bind-Date="_effectiveFrom" Required="true" Disabled="@State.Busy" />
+                <MudDatePicker Label="Effective through stored calendar date (optional)" @bind-Date="_effectiveThrough" Disabled="@State.Busy" />
+                <MudTextField T="string" Label="Proposed currency code" @bind-Value="_currency" Required="true" MaxLength="16" Disabled="@State.Busy" />
+                <MudNumericField T="decimal?" Label="Proposed price" @bind-Value="_price" Required="true" Min="0" Disabled="@State.Busy" />
+                <MudTextField T="string" Label="Explicit price unit and basis" @bind-Value="_basis" Required="true" MaxLength="128" Disabled="@State.Busy" />
+                <MudTextField T="string" Label="Proposed pricing method" @bind-Value="_method" Required="true" MaxLength="128" Disabled="@State.Busy" />
+                <MudButton OnClick="@(()=>_method=SalesContractEffectiveTerms.FixedUnitPriceMethod)" Disabled="@State.Busy" Variant="Variant.Outlined">Use explicit fixed unit price</MudButton>
+                <MudText Typo="Typo.caption">Fixed unit price uses the exact quantity unit in the price unit/basis field and a separately recorded currency. Existing free-text methods remain reviewable; billing does not infer their formula or convert units.</MudText>
+                <MudTextField T="string" Label="Review notes" @bind-Value="_notes" Required="true" MaxLength="4096" Disabled="@State.Busy" />
+                <MudButton OnClick="Prepare" Disabled="@State.Busy">Record preparation for independent review</MudButton>
+            </MudForm>
+        }
+        else if(review.Recorded is null && !State.HasPendingIntent){<MudAlert Severity="Severity.Info">Preparation access is unavailable for this account. No terms preparation is recorded for this exact source.</MudAlert>}
+        @if(State.PendingPreparation is {} pending)
+        {
+            <MudText>Retained preparation intent: @pending.IntentId · Version: @pending.Terms.Version · Proposed price: @pending.Terms.Price.ToString(CultureInfo.CurrentCulture) @pending.Terms.CurrencyCode · Basis: @pending.Terms.PriceUnit</MudText>
+            <MudText>Retained effective dates: @pending.Terms.EffectiveFrom.ToString("yyyy-MM-dd") through @(pending.Terms.EffectiveThrough?.ToString("yyyy-MM-dd") ?? "Open end explicitly proposed") · Method: @pending.Terms.PricingMethod · Notes: @pending.Terms.Notes</MudText>
+        }
+        @if(State.PendingDecision is {} pendingDecision){<MudText>Retained decision intent: @pendingDecision.IntentId · Decision: @pendingDecision.Decision · Reason: @pendingDecision.Reason</MudText>}
+        @if(State.HasPendingIntent){<MudButton OnClick="Retry" Disabled="@(!State.CanRetryPending)">Retry original pending intent</MudButton>}
+    }
+</MudPaper>
+@code {
+    private static string ApplicabilityMessage(SalesContractTermApplicability status)=>status switch
+    {
+        SalesContractTermApplicability.PreparationRequired=>"Record explicit commercial terms before reviewing their applicability.",
+        SalesContractTermApplicability.IndependentApprovalRequired=>"An independent recorded approval is required before these terms can apply.",
+        SalesContractTermApplicability.Rejected=>"These terms were independently rejected. Complete rejection review and propose a separate version.",
+        SalesContractTermApplicability.DateInterpretationRequired=>"The recorded timestamp needs an explicit company calendar and timezone interpretation before matching stored effective dates.",
+        SalesContractTermApplicability.OutsideEffectiveDates=>"The recorded transaction date is outside the independently approved effective dates.",
+        SalesContractTermApplicability.CurrencyRequired=>"The recorded transaction currency is unavailable. No currency is substituted.",
+        SalesContractTermApplicability.CurrencyMismatch=>"The recorded transaction currency differs from the approved terms. Currency conversion requires separate reviewed evidence.",
+        SalesContractTermApplicability.ApprovedStoredDateAndCurrency=>"Independently approved terms cover this recorded calendar date and currency.",
+        _=>throw new InvalidOperationException("Commercial terms applicability is unconfirmed.")
+    };
+    [Parameter,EditorRequired] public string FieldId{get;set;}=string.Empty;
+    [Parameter] public DateTime From{get;set;}
+    [Parameter] public DateTime Through{get;set;}
+    [Parameter,EditorRequired] public string TransactionId{get;set;}=string.Empty;
+    [Parameter] public string? AssignedProcessId{get;set;}
+    [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
+    private MudForm? _form;
+    private string _version="",_currency="",_basis="",_method="",_notes="",_reason="";
+    private DateTime? _effectiveFrom,_effectiveThrough;
+    private decimal? _price;
+    private string? _error;
+    private bool _authorized,_canPrepare,_canDecide,_disposed;
+    private long _epoch;
+    private (string Field,DateTime From,DateTime Through,string Transaction,string? Process)? _parameters;
+    private async Task Access()
+    {
+        _authorized=false;_canPrepare=false;_canDecide=false;var snapshot=Company.Snapshot;var epoch=_epoch;
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ??user.FindFirstValue("sub");
+        var field=AssignedProcessId is null?await Fields.GetCurrentFieldIdAsync():FieldId;
+        if(AssignedProcessId is {} process)
+        {
+            var source=await Processes.GetCompanyCommercialSourceAsync(process);
+            if(source.IsHistorical || source.Terms.Source.Source.FieldId!=FieldId || source.Terms.Source.Source.From!=From || source.Terms.Source.Source.Through!=Through || source.Terms.Source.TransactionId!=TransactionId)
+                throw new InvalidOperationException("The assigned commercial source changed.");
+        }
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selection || actor!=selection.UserId || user.Identity?.IsAuthenticated!=true ||
+            !selection.Roles.Any(user.IsInRole) || !selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || field!=FieldId)throw new UnauthorizedAccessException();
+        _authorized=true;_canPrepare=selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal);
+        if(State.Review?.Recorded is {} record && record.Decision is null && selection.Permissions.Contains("ProductionAccounting.Approve",StringComparer.Ordinal))
+        {try{new SalesContractTermsDecisionCommand(Guid.NewGuid().ToString("N"),record.Preparation.Company,actor,record.Revision,SalesContractTermsDecision.Approve,"Access review").Require(record);_canDecide=true;}catch(InvalidOperationException){}}
+    }
+    protected override void OnInitialized(){State.Changed+=StateChanged;Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){var next=(FieldId,From,Through,TransactionId,AssignedProcessId);if(_parameters==next)return;++_epoch;_parameters=next;State.AttachOwner(this,FieldId,From,Through,TransactionId);ResetDraft();await Reload();}
+    private void ResetDraft(){_version="";_currency="";_basis="";_method="";_notes="";_reason="";_effectiveFrom=null;_effectiveThrough=null;_price=null;}
+    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();await State.LoadAsync(Accounting);if(epoch==_epoch && !_disposed)await Access();}catch{if(epoch==_epoch && !_disposed)_error="Commercial evidence could not be confirmed. Check the original context, access and provisioning, then reload.";}}
+    private async Task Prepare()
+    {
+        var epoch=_epoch;_error=null;try{await Access();if(!_canPrepare)throw new UnauthorizedAccessException();if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
+            if(_effectiveFrom is null || _price is null)throw new ArgumentException();
+            var terms=new SalesContractEffectiveTerms(_version,DateTime.SpecifyKind(_effectiveFrom.Value.Date,DateTimeKind.Unspecified),_effectiveThrough is null?null:DateTime.SpecifyKind(_effectiveThrough.Value.Date,DateTimeKind.Unspecified),_currency,_price.Value,_basis,_method,_notes);
+            terms.Require();await State.PrepareAsync(Accounting,terms);if(epoch==_epoch && !_disposed){ResetDraft();await Access();}}
+        catch{if(epoch==_epoch && !_disposed)_error="Preparation was not confirmed. Check explicit version, dates, currency, price, basis and notes. Retain any pending intent and reload its original context.";}
+    }
+    private async Task Decide(SalesContractTermsDecision decision){var epoch=_epoch;_error=null;try{await Access();if(!_canDecide)throw new UnauthorizedAccessException();await State.DecideAsync(Accounting,decision,_reason);if(epoch==_epoch && !_disposed){_reason="";await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="Decision was not confirmed. Check independent reviewer access and reason; retain any pending intent and reload its original context.";}}
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();await State.SubmitPendingAsync(Accounting);if(epoch==_epoch && !_disposed){await Access();if(!State.HasPendingIntent)await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="The original commercial intent remains unconfirmed. Reload its original context and reconcile before another command.";}}
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_canDecide=false;_error=null;ResetDraft();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string value){State.Invalidate();ContextChanged();}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}
+    public void Dispose(){_disposed=true;State.Changed-=StateChanged;Company.Changed-=ContextChanged;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.DetachOwner(this);}
+}

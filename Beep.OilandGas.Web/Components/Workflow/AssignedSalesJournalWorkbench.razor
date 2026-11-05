@@ -1,0 +1,21 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject CompanySalesReceivableWorkspaceState State
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@implements IDisposable
+
+@if(AssignedSource is {} source && Company.Selection is {} selection && source.Company==selection.Scope && source.ActorUserId==selection.UserId)
+{
+    var journal=source.Journal.Journal.Header;
+    @if(journal.STATUS=="DRAFT" || selection.Permissions.Contains("Accounting.ReviewSalesJournal",StringComparer.Ordinal))
+    {<SalesJournalReviewWorkbench ReceivableId="@(journal.SOURCE_AR_INVOICE_ID!)" AssignedSource="source" RecordedOutcomeChanged="RecordedOutcomeChanged" />}
+    @if(journal.STATUS is "APPROVED" or "POSTED")
+    {<SalesJournalPostingWorkbench ReceivableId="@(journal.SOURCE_AR_INVOICE_ID!)" AssignedSource="source" RecordedOutcomeChanged="RecordedOutcomeChanged" />}
+}
+@code {
+    [Parameter,EditorRequired] public CompanySalesJournalProcessSourceReview? AssignedSource{get;set;}
+    [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
+    protected override void OnInitialized()=>State.AttachOwner(this);
+    public void Dispose()=>State.DetachOwner(this);
+}

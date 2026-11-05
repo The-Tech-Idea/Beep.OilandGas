@@ -1,0 +1,149 @@
+@page "/drilling/program-execution/reporting"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+<PageTitle>Reporting responsibility</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4 development-draft-identity">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Reporting responsibility and closure</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        <MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload reporting status</MudButton>
+    </MudStack>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming reporting responsibility" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(_state?.Confirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
+    @if(_state?.Pending is {} pending)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">@_state.PendingTitle</MudText>
+            <MudAlert Severity="Severity.Info" role="status">@_state.PendingExplanation</MudAlert>
+            <MudText>@pending.Review.Responsibility.Root.Source.Basis.Source.Program.PROGRAM_NAME · Well @pending.Review.Responsibility.Root.Source.Recorded!.WELL_UWI · FIELD @pending.Scope().FieldId</MudText>
+            <MudText>Original sender @pending.Scope().ActorUserId · @pending.Review.ManagerRole / @pending.Review.ManagerPersona</MudText>
+            <MudText>Actual closure UTC @pending.ClosedAtUtc.ToString("u",CultureInfo.InvariantCulture) · @pending.Review.Responsibility.TaskIds().Count owned reporting tasks</MudText>
+            <MudText Class="development-draft-description">@pending.Reason</MudText>
+            <MudButton OnClick="_state.RecoverAsync" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined">Recover original reporting closure</MudButton>
+        </MudPaper>
+    }
+    else if(_state?.Retained is {} retained)
+    {
+        <MudAlert Severity="Severity.Warning">Recover your retained reporting closure before preparing another.</MudAlert>
+        <MudButton Href="@ReportingUrl(retained.Review.Responsibility.Root.InstanceId())">Open retained reporting responsibility</MudButton>
+    }
+    @if(_state?.Receipt is {} receipt)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original reporting closure outcome</MudText>
+            @if(receipt.Recorded){<MudText>Reporting responsibility closed · @receipt.TaskIds.Count owned tasks closed · Actual UTC @receipt.ClosedAtUtc?.ToString("u",CultureInfo.InvariantCulture)</MudText>}
+            else{<MudText>This original closure was confirmed absent. Check current evidence again before preparing a new closure.</MudText>}
+            <MudText>Outcome checked @receipt.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+        </MudPaper>
+    }
+    @if(_state?.Status is {} status)
+    {
+        var responsibility=status.Responsibility;var original=responsibility.Root;var scope=status.Scope();var operation=status.Execution.Recorded!;var start=DrillingExecutionStart.FromRecord(operation);
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">@(status.Closure is null?"Current reporting responsibility":"Closed reporting responsibility")</MudText>
+            <MudText>Company @scope.Company.TenantId / @scope.Company.BusinessAssociateId · Reader @scope.ActorUserId</MudText>
+            <MudText>@original.Source.Basis.Source.Program.PROGRAM_NAME · Well @operation.WELL_UWI · Original FIELD @scope.FieldId</MudText>
+            <MudText>Recorded operation @operation.DRILLING_OPERATION_ID · Actual reported spud @start.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC · Recorder @operation.ROW_CREATED_BY</MudText>
+            <MudText>Generation @responsibility.Number · @(status.Closure is null?"Accountable manager":"Last accountable manager") @responsibility.ManagerUserId · @responsibility.ManagerRole / @responsibility.ManagerPersona</MudText>
+            <MudText>Initial sender @original.Scope().ActorUserId · @original.SenderRole / @original.SenderPersonaCode</MudText>
+            <MudText>Reporting role @responsibility.Workflow.Step.AssignedRole · Workspaces @string.Join(", ",responsibility.Workflow.Step.PersonaCodes)</MudText>
+            <MudText>Pending reporting tasks @(status.Closure is null?responsibility.TaskIds().Count:0) · Checked @status.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            <MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(status.Execution.Basis.ReviewInstanceId))" Variant="Variant.Outlined">Open observed report history</MudButton>
+        </MudPaper>
+        @if(status.Transfers.Count>0)
+        {
+            <MudPaper Outlined="true" Class="pa-4 my-3">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Recorded reporting transfers</MudText>
+                <MudAlert Severity="Severity.Info">These transfers changed accountability or receiving responsibility. They do not record physical completion.</MudAlert>
+                @foreach(var transfer in status.Transfers)
+                {
+                    <MudText>Generation @transfer.Review.Responsibility.Number to @(transfer.Review.Responsibility.Number+1) · Actual UTC @transfer.ReassignedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+                    <MudText>From manager @transfer.Review.Responsibility.ManagerUserId / @transfer.Review.Responsibility.ManagerRole · Receiving role @transfer.Review.Responsibility.Workflow.Step.AssignedRole / @string.Join(", ",transfer.Review.Responsibility.Workflow.Step.PersonaCodes)</MudText>
+                    <MudText>To manager @transfer.Scope().ActorUserId / @transfer.Review.ManagerRole · Receiving role @transfer.Review.Destination.Step.AssignedRole / @string.Join(", ",transfer.Review.Destination.Step.PersonaCodes)</MudText>
+                    <MudText Class="development-draft-description">@transfer.Reason</MudText>
+                }
+            </MudPaper>
+        }
+        @if(status.Closure is {} closed)
+        {
+            <MudPaper Outlined="true" Class="pa-4 my-3">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Recorded reporting closure</MudText>
+                <MudAlert Severity="Severity.Success">This original reporting responsibility is closed. Its original recipients and acceptance signoff remain recorded.</MudAlert>
+                <MudText>Closed by @closed.Scope().ActorUserId · @closed.Review.ManagerRole / @closed.Review.ManagerPersona · Actual UTC @closed.ClosedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+                <MudText Class="development-draft-description">@closed.Reason</MudText>
+                <MudAlert Severity="Severity.Info">The acceptance and test evidence below is the historical snapshot checked for this closure. Reloading this history does not requalify current physical tests or authorize construction acceptance, WELL changes, financial actuals or production release.</MudAlert>
+                <DrillingCompletionAcceptanceEvidenceView Decision="closed.Review.Evidence.Acceptance.Stages.Last().AcceptedDecision!" />
+                @if(closed.Review.Evidence.Acceptance.IsParticipant(scope.ActorUserId))
+                {
+                    <MudButton Href="@("/drilling/completion-review/history?processId="+Uri.EscapeDataString(closed.Review.Evidence.Acceptance.InstanceId))" Variant="Variant.Outlined">Open independent completion history</MudButton>
+                }
+            </MudPaper>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">Reporting remains ongoing until its current accountable manager checks accepted completion and closes this generation. Independent physical acceptance alone leaves reporting tasks pending.</MudAlert>
+            @if(_state.CanReviewTransfer){<MudButton Href="@("/drilling/program-execution/reporting/transfer?assignmentId="+Uri.EscapeDataString(status.Responsibility.Root.InstanceId()))" Variant="Variant.Outlined">Review reporting transfer</MudButton>}
+            @if(_state.CanInspect){<MudButton OnClick="Inspect" Disabled="@(!_state.CanInspect)" Variant="Variant.Outlined">Check accepted completion for closure</MudButton>}
+        }
+    }
+    @if(_state?.Review is {} review && _state.Pending is null && _state.Prepared is null)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Current accepted completion checked</MudText>
+            <MudText>Management role @review.ManagerRole · Workspace @review.ManagerPersona · @review.Responsibility.TaskIds().Count current reporting tasks</MudText>
+            <MudText>Current accepted native tests @review.Evidence.Tests.Count · Readiness checked @review.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            <DrillingCompletionAcceptanceEvidenceView Decision="review.Evidence.Acceptance.Stages.Last().AcceptedDecision!" />
+            <MudTextField T="string" Label="Actual reporting closure UTC" HelperText="Use an explicit UTC value ending in Z or +00:00, after the readiness check." @bind-Value="actualUtc" Required="true" Disabled="@_state.Busy" />
+            <MudTextField T="string" Label="Closure rationale" @bind-Value="reason" Lines="3" MaxLength="1600" Required="true" Disabled="@_state.Busy" />
+            <MudCheckBox T="bool" @bind-Value="confirmed" Label="I confirm the accepted work is complete and the current reporting tasks may be closed." Disabled="@_state.Busy" />
+            <MudButton OnClick="Prepare" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Review reporting closure</MudButton>
+        </MudPaper>
+    }
+    @if(_state?.Prepared is {} prepared)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Confirm original reporting closure</MudText>
+            <MudText>@prepared.Review.Responsibility.Root.Source.Basis.Source.Program.PROGRAM_NAME · Well @prepared.Review.Responsibility.Root.Source.Recorded!.WELL_UWI · FIELD @prepared.Scope().FieldId</MudText>
+            <MudText>@prepared.Review.ManagerRole / @prepared.Review.ManagerPersona · Actual UTC @prepared.ClosedAtUtc.ToString("u",CultureInfo.InvariantCulture) · @prepared.Review.Responsibility.TaskIds().Count current reporting tasks</MudText>
+            <MudText Class="development-draft-description">@prepared.Reason</MudText>
+            <MudAlert Severity="Severity.Info">Confirmation saves this exact original in this tab before sending it. A missing response requires recovery of this original.</MudAlert>
+            <MudButton OnClick="_state.SubmitAsync" Disabled="@(!_state.CanPrepare)" Variant="Variant.Filled" Color="Color.Primary">Confirm and retain reporting closure</MudButton>
+            <MudButton OnClick="_state.Cancel" Disabled="@_state.Busy" Variant="Variant.Outlined">Back to closure</MudButton>
+        </MudPaper>
+    }
+    @if(_state?.BlockedTransferId is {} transferId)
+    {
+        <MudAlert Severity="Severity.Warning">Recover the retained reporting transfer before checking closure.</MudAlert>
+        <MudButton Href="@("/drilling/program-execution/reporting/transfer?assignmentId="+Uri.EscapeDataString(transferId))">Open retained reporting transfer</MudButton>
+    }
+    @if(Company.Selection is null){<MudAlert Severity="Severity.Info">Choose your company before opening its original reporting responsibility.</MudAlert>}
+    else if(_state?.CanView==false){<MudAlert Severity="Severity.Warning">Current company drilling, report and workflow read access is required.</MudAlert>}
+    else if(_state?.NeedsReload==true){<MudAlert Severity="Severity.Info" role="status">Reporting evidence has not been loaded for this company/account. Reload status or reopen the original company.</MudAlert>}
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="assignmentId")]public string? AssignmentId{get;set;}
+    [Parameter,SupplyParameterFromQuery(Name="completionId")]public string? CompletionId{get;set;}
+    private DrillingReportingClosureState? _state;
+    private bool disposed,interactive,confirmed;
+    private string actualUtc="",reason="";
+    private static string ReportingUrl(string id)=>"/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(id);
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
+    private Task Reload(){actualUtc="";reason="";confirmed=false;return _state!.LoadAsync(AssignmentId,CompletionId);}
+    private Task Inspect(){actualUtc="";reason="";confirmed=false;return _state!.InspectAsync();}
+    private void Prepare()=>_state!.Prepare(actualUtc,reason,confirmed);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

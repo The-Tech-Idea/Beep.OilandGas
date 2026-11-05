@@ -33,3 +33,25 @@
 }
 .og-footer .mud-stack { flex-wrap: wrap; }
 .og-footer-logo { height: 24px; width: 24px; object-fit: contain; }
+
+.asset-hierarchy-list { list-style: none; margin: 0; padding-inline-start: 1.5rem; }
+.asset-hierarchy-root { padding-inline-start: 0; }
+.asset-hierarchy-node .mud-button-label { white-space: normal; text-align: start; overflow-wrap: anywhere; }
+
+.development-draft-identity { overflow-wrap: anywhere; }
+
+.development-draft-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.permit-workflow { min-width: 0; }
+.permit-workflow .mud-typography { overflow-wrap: anywhere; }
+
+.permit-attachment-value { min-width: 0; flex: 1; text-align: start; }
+
+@media (max-width: 599.98px) {
+    .permit-workflow .mud-table-root { table-layout: fixed; }
+    .permit-workflow .mud-table-cell { flex-wrap: wrap; justify-content: flex-start; gap: .5rem; text-align: start; }
+    .permit-workflow .mud-table-cell::before { flex: 0 0 100%; text-align: start; }
+    .permit-workflow .permit-attachment-value { flex-basis: 100%; }
+}
+
+.workflow-evidence-text { white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; text-align: start; }

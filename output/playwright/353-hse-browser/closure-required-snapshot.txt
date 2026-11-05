@@ -1,0 +1,29 @@
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 2 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e113]:
+    - heading "Isolated HSE browser fixture" [level=1] [ref=e114]
+    - paragraph [ref=e115]: Actual HSE components and protected tab storage. Controlled clients and authentication; production API/provider qualification is separate.
+    - group [ref=e116]:
+      - button "Show HSE landing" [ref=e117] [cursor=pointer]
+      - button "Show closure workflow" [ref=e119] [cursor=pointer]
+      - button "Switch other company" [ref=e121] [cursor=pointer]
+      - button "Restore original company" [ref=e123] [cursor=pointer]
+  - generic [ref=e246]:
+    - heading "Controlled incident field / case · PENDING_CLOSE_OUT" [level=2] [ref=e247]
+    - heading "Lifecycle approval and incident closure" [level=6] [ref=e248]
+    - paragraph [ref=e249]: Review and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.
+    - button "Review assigned closure stage" [ref=e250] [cursor=pointer]
+    - button "Review rejected verification for correction" [ref=e252] [cursor=pointer]
+    - paragraph [ref=e256]: final incident closure approval · assigned role Safety · 1 completed actions
+    - paragraph [ref=e257]: A verified independent decision matches the current action evidence.
+    - generic [ref=e259]:
+      - textbox "Stage approval evidence and reason" [ref=e261]
+      - generic: Stage approval evidence and reason
+    - button "Approve final closure and record CLOSED status" [active] [ref=e262] [cursor=pointer]
+    - button "Recover recorded closure approval" [ref=e254] [cursor=pointer]
+    - status [ref=e264]: Enter an approval reason between 20 and 2000 characters.
+```

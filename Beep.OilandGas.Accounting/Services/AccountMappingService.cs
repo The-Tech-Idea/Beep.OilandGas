@@ -9,8 +9,6 @@ using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Accounting.Models;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 
@@ -22,7 +20,7 @@ namespace Beep.OilandGas.Accounting.Services
         Task InitializeAsync(string userId);
     }
 
-    public class AccountMappingService : IAccountMappingService
+    public partial class AccountMappingService : IAccountMappingService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -31,6 +29,8 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly ILogger<AccountMappingService> _logger;
         private const string ConnectionName = "PPDM39";
         private const string TableName = "GL_ACCOUNT_MAPPING";
+        private readonly Func<Task<string>>? _resolveConnection;
+        private readonly GLAccountService? _accounts;
 
         // In-memory cache for fast lookups
         private readonly ConcurrentDictionary<string, string> _cache = new ConcurrentDictionary<string, string>();
@@ -42,16 +42,24 @@ namespace Beep.OilandGas.Accounting.Services
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             ILogger<AccountMappingService> logger)
+            : this(editor, commonColumnHandler, defaults, metadata, logger, null, null) { }
+
+        public AccountMappingService(IDMEEditor editor, ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults, IPPDMMetadataRepository metadata, ILogger<AccountMappingService> logger,
+            Func<Task<string>>? resolveConnection, GLAccountService? accounts)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _resolveConnection = resolveConnection;
+            _accounts = accounts;
         }
 
         public string GetAccountId(string key)
         {
+            RequireLegacyMappingOwner();
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentNullException(nameof(key));
 
@@ -70,6 +78,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task InitializeAsync(string userId)
         {
+            RequireLegacyMappingOwner();
             if (_isInitialized) return;
 
             // A failure propagates and leaves the service uninitialized, so the next call tries again. Swallowing it let
@@ -91,15 +100,23 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task LoadMappingsFromDbAsync()
         {
             var repo = await GetRepoAsync<GLAccountMapping>(TableName);
+            var active = _defaults.GetActiveIndicatorYes();
+            if (string.IsNullOrWhiteSpace(active)) throw new InvalidOperationException("The legacy active mapping indicator is unconfirmed; mappings cannot be seeded from an assumed empty set.");
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = active }
             };
 
             var results = await repo.GetAsync(filters);
-            if (results != null)
+            var rows = results?.ToArray() ?? throw new InvalidOperationException("The complete legacy mapping source is unavailable.");
+            if (rows.Any(row => row is not GLAccountMapping || TheTechIdea.Data.OilGas.CompanyGLMappingReview.HasCompanyMarkers((GLAccountMapping)row)))
+                throw new InvalidOperationException("Company/book/currency mappings cannot be loaded or seeded through a legacy global cache.");
+            if (rows.Cast<GLAccountMapping>().GroupBy(row => row.MAPPING_KEY, StringComparer.Ordinal).Any(group => group.Count() > 1))
+                throw new InvalidOperationException("The complete legacy mapping set is ambiguous.");
+            _cache.Clear();
+            if (rows.Length > 0)
             {
-                foreach (var item in results.Cast<GLAccountMapping>())
+                foreach (var item in rows.Cast<GLAccountMapping>())
                 {
                     if (!string.IsNullOrWhiteSpace(item.MAPPING_KEY) && !string.IsNullOrWhiteSpace(item.GL_ACCOUNT_NUMBER))
                     {
@@ -142,6 +159,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
+            RequireLegacyMappingOwner();
             // Asked, not caught: a table missing from the metadata is the deployment's error and says so; a failure of
             // the lookup itself propagates as itself.
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
@@ -151,6 +169,11 @@ namespace Beep.OilandGas.Accounting.Services
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 typeof(T), ConnectionName, tableName);
+        }
+        private void RequireLegacyMappingOwner()
+        {
+            if (_resolveConnection is not null)
+                throw new InvalidOperationException("Selected-company mappings require an explicit company/book/currency/date review; global caches, defaults and seeding are unavailable.");
         }
 
         private static readonly Dictionary<string, string> DefaultMappings = new Dictionary<string, string>

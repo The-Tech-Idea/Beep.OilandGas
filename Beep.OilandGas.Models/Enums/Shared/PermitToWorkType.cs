@@ -1,17 +1,5 @@
-using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Beep.OilandGas.Models.Enums.Shared;
 
-namespace Beep.OilandGas.Models.Enums.Shared
-{
-    public enum PermitToWorkType
-    {
-        [Description("Hot Work")] HotWork,
-        [Description("Cold Work")] ColdWork,
-        [Description("Confined Space")] ConfinedSpace,
-        [Description("Working at Height")] WorkingAtHeight,
-        [Description("Pressure Testing")] PressureTesting,
-        [Description("Electrical Isolation")] ElectricalIsolation,
-        [Description("Lifting Operations")] LiftingOperations,
-        [Description("General")] General,
-        [Description("Unknown")] Unknown
-    }
-}
+// The canonical enum is Data-owned; existing Models consumers keep their type identity.
+[assembly: TypeForwardedTo(typeof(PermitToWorkType))]

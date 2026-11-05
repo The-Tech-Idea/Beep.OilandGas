@@ -18,15 +18,31 @@ public partial class ProcessDefinitionInitializer
         await InitBankReconciliationAsync(userId);
         await InitExpenseManagementAsync(userId);
         await InitJournalEntryApprovalAsync(userId);
+        await CreateProcessDefinitionIfNotExistsAsync(BuildCompanySalesJournalDefinition(),userId);
         await InitVendorManagementAsync(userId);
         await InitCustomerManagementAsync(userId);
         await InitCashManagementAsync(userId);
     }
 
-    private async Task InitProcureToPayAsync(string userId) => await CreateProcessDefinitionIfNotExistsAsync(new ProcessDefinition
+    private async Task InitProcureToPayAsync(string userId) => await CreateProcessDefinitionIfNotExistsAsync(BuildProcureToPayDefinition(),userId);
+
+    /// <summary>Additive native sales-journal handoff; persisted definitions and financial data are never amended by this factory.</summary>
+    public static ProcessDefinition BuildCompanySalesJournalDefinition() => new()
     {
-        ProcessId = "ACCT_PROCURE_TO_PAY", ProcessName = "Procure-to-Pay (P2P)", ProcessType = "FINANCIAL", EntityType = "PURCHASE_ORDER",
-        Description = "Complete P2P: requisition → PO → goods receipt → 3-way match → invoice approval → payment. SoD enforced.",
+        ProcessId="ACCT_SALES_JOURNAL_REVIEW_POST",Version="1.0.0",ProcessName="Company sales journal review and posting",ProcessType="FINANCIAL",EntityType="JOURNAL_ENTRY",IsActive=true,
+        Description="Observe the original independent journal decision, then the separately authorized native posting. Rejection skips posting and returns to the original maker. Workflow completion performs no financial mutation or payment.",
+        Steps=[
+            new(){StepId="JOURNAL_REVIEW",StepName="Independent journal decision",SequenceNumber=1,StepType="APPROVAL",RequiresApproval=true,IsRequired=true,RequiredRoles=["Accountant"],NextStepId="JOURNAL_POSTING",StepConfiguration=new(){[TheTechIdea.Data.OilGas.CompanyAccountingStepEvidence.ConfigurationKey]=TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.Approval("JOURNAL_ENTRY")}},
+            new(){StepId="JOURNAL_POSTING",StepName="Confirm separate native posting",SequenceNumber=2,StepType="ACTION",RequiresApproval=false,IsRequired=true,RequiredRoles=["Accountant"],StepConfiguration=new(){[TheTechIdea.Data.OilGas.CompanyAccountingStepEvidence.ConfigurationKey]=TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.JournalPosting}},
+            new(){StepId="JOURNAL_REJECTION_REVIEW",StepName="Original maker rejection review",SequenceNumber=3,StepType="ACTION",RequiresApproval=false,IsRequired=true,RequiredRoles=["Accountant"],StepConfiguration=new(){[TheTechIdea.Data.OilGas.CompanyAccountingStepEvidence.ConfigurationKey]=TheTechIdea.Data.OilGas.CompanyAccountingSourceTypes.RejectionReview("JOURNAL_ENTRY")}}
+        ]
+    };
+
+    /// <summary>Canonical P2P definition. Matching requires an explicit independent review, never assumed tolerance acceptance.</summary>
+    public static ProcessDefinition BuildProcureToPayDefinition() => new ProcessDefinition
+    {
+        ProcessId = "ACCT_PROCURE_TO_PAY", Version = "1.1.0", ProcessName = "Procure-to-Pay (P2P)", ProcessType = "FINANCIAL", EntityType = "PURCHASE_ORDER",
+        Description = "P2P: requisition → PO → goods receipt → independent invoice/receipt/PO review → invoice approval → payment. Recorded source comparison is not matching approval. Receipt acceptance, reviewed company policy and controlled financial commands are required.",
         IsActive = true, Steps = new List<ProcessStepDefinition>
         {
             new() { StepId = "REQUISITION", StepName = "Purchase Requisition", SequenceNumber = 1, StepType = "DATA_ENTRY", IsRequired = true, RequiredRoles = new(){"FieldEngineer","Manager"}, SlaHours = 48, NextStepId = "REQ_APPROVE" },
@@ -35,14 +51,14 @@ public partial class ProcessDefinitionInitializer
             new() { StepId = "PO_APPROVE", StepName = "PO Approval", SequenceNumber = 4, StepType = "APPROVAL", IsRequired = true, RequiresApproval = true, RequiredRoles = new(){"Manager"}, SlaHours = 48, NextStepId = "GOODS_RECEIPT" },
             new() { StepId = "GOODS_RECEIPT", StepName = "Goods Receipt", SequenceNumber = 5, StepType = "DATA_ENTRY", IsRequired = true, RequiredRoles = new(){"FieldEngineer"}, SlaHours = 24, NextStepId = "INVOICE_RECEIVE" },
             new() { StepId = "INVOICE_RECEIVE", StepName = "Receive Invoice", SequenceNumber = 6, StepType = "DATA_ENTRY", IsRequired = true, RequiredRoles = new(){"Accountant"}, SlaHours = 48, NextStepId = "THREE_WAY_MATCH" },
-            new() { StepId = "THREE_WAY_MATCH", StepName = "Three-Way Match", SequenceNumber = 7, StepType = "SYSTEM", IsRequired = true, NextStepId = "INVOICE_APPROVE", Description = "System: PO vs Receipt vs Invoice. Tolerances: qty ±5%, price ±2%." },
+            new() { StepId = "THREE_WAY_MATCH", StepName = "Independent Invoice / Receipt / PO Review", SequenceNumber = 7, StepType = "REVIEW", IsRequired = true, RequiresApproval = true, RequiredRoles = new(){"Accountant"}, NextStepId = "INVOICE_APPROVE", Description = "Independent review of the owned invoice, PO, accepted receipt quantities and allocations under a reviewed company matching policy. No quantity/price tolerance or unit/currency conversion is assumed. Reviewer must differ from the invoice preparer; source comparisons alone do not approve a match." },
             new() { StepId = "INVOICE_APPROVE", StepName = "Invoice Approval", SequenceNumber = 8, StepType = "APPROVAL", IsRequired = true, RequiresApproval = true, RequiredRoles = new(){"Manager"}, SlaHours = 72, NextStepId = "PAYMENT_RUN" },
             new() { StepId = "PAYMENT_RUN", StepName = "Payment Run", SequenceNumber = 9, StepType = "ACTION", IsRequired = true, RequiredRoles = new(){"Accountant"}, SlaHours = 48, NextStepId = "PAYMENT_APPROVE" },
             new() { StepId = "PAYMENT_APPROVE", StepName = "Payment Approval", SequenceNumber = 10, StepType = "APPROVAL", IsRequired = true, RequiresApproval = true, RequiredRoles = new(){"Manager"}, SlaHours = 24, NextStepId = "PAYMENT_EXECUTE" },
             new() { StepId = "PAYMENT_EXECUTE", StepName = "Execute Payment", SequenceNumber = 11, StepType = "SYSTEM", IsRequired = true },
         },
         Configuration = new() { ["category"] = "FINANCIAL", ["doaEnabled"] = true, ["threeWayMatch"] = true }
-    }, userId);
+    };
 
     private async Task InitOrderToCashAsync(string userId) => await CreateProcessDefinitionIfNotExistsAsync(new ProcessDefinition
     {

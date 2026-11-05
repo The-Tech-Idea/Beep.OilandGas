@@ -1,0 +1,106 @@
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 2 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e113]:
+    - heading "Isolated HSE browser fixture" [level=1] [ref=e114]
+    - paragraph [ref=e115]: Actual HSE components and protected tab storage. Controlled clients and authentication; production API/provider qualification is separate.
+    - group [ref=e116]:
+      - button "Show HSE landing" [ref=e117] [cursor=pointer]
+      - button "Show closure workflow" [ref=e119] [cursor=pointer]
+      - button "Switch other company" [ref=e121] [cursor=pointer]
+      - button "Restore original company" [ref=e123] [cursor=pointer]
+  - generic [ref=e125]:
+    - heading "HSE workspace" [level=1] [ref=e126]
+    - paragraph [ref=e127]: Review your company assignments and open the recorded incident, compliance or permit sources to carry out your work.
+    - generic [ref=e128]:
+      - heading "Assigned work" [level=5] [ref=e129]
+      - paragraph [ref=e130]: Open the recorded process to review its source, evidence and permitted next action.
+      - button "Reload assigned work" [ref=e131] [cursor=pointer]
+      - generic [ref=e137]: Choose an eligible workspace on the company landing page.
+      - link "Choose workspace" [ref=e144] [cursor=pointer]:
+        - /url: /landing
+    - generic [ref=e146]:
+      - group [ref=e147]:
+        - heading "Current FIELD incidents" [level=2] [ref=e148]
+        - button "Refresh" [ref=e149] [cursor=pointer]
+      - paragraph [ref=e151]: North FIELD · Incidents returned for the selected FIELD. Counts describe these returned records; completeness is not established.
+      - generic [ref=e152]: Current state in the selected FIELD incident response; no reporting-date filter. Checked 2026-10-29 09:31:31Z. Select a count to review its returned records.
+      - group [ref=e153]:
+        - 'button "Returned: 21" [pressed] [ref=e154] [cursor=pointer]'
+        - 'button "Open: 17" [ref=e156] [cursor=pointer]'
+        - 'button "Closed: 1" [ref=e158] [cursor=pointer]'
+        - 'button "Cancelled: 1" [ref=e160] [cursor=pointer]'
+        - 'button "Other or unrecorded state: 2" [ref=e162] [cursor=pointer]'
+      - status [ref=e164]: All returned incidents · 21 returned records · page 1 of 3 (10 per page, ordered by ID)
+      - paragraph [ref=e165]:
+        - link "cancelled" [ref=e166] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=cancelled
+        - text: · CANCELLED
+      - paragraph [ref=e167]:
+        - link "closed/one?شركة" [ref=e168] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=closed%2Fone%3F%D8%B4%D8%B1%D9%83%D8%A9
+        - text: · CLOSED
+      - paragraph [ref=e169]:
+        - link "open-01" [ref=e170] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-01
+        - text: · REPORTED
+      - paragraph [ref=e171]:
+        - link "open-02" [ref=e172] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-02
+        - text: · REPORTED
+      - paragraph [ref=e173]:
+        - link "open-03" [ref=e174] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-03
+        - text: · REPORTED
+      - paragraph [ref=e175]:
+        - link "open-04" [ref=e176] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-04
+        - text: · REPORTED
+      - paragraph [ref=e177]:
+        - link "open-05" [ref=e178] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-05
+        - text: · REPORTED
+      - paragraph [ref=e179]:
+        - link "open-06" [ref=e180] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-06
+        - text: · REPORTED
+      - paragraph [ref=e181]:
+        - link "open-07" [ref=e182] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-07
+        - text: · REPORTED
+      - paragraph [ref=e183]:
+        - link "open-08" [ref=e184] [cursor=pointer]:
+          - /url: /ppdm39/hse/incident-detail?incidentId=open-08
+        - text: · REPORTED
+      - group [ref=e185]:
+        - button "Previous incidents" [disabled]
+        - button "Next incidents" [ref=e186] [cursor=pointer]
+    - generic [ref=e188]: Corrective action and permit totals are not available on this page. Open the source records for their current details.
+    - generic [ref=e195]:
+      - generic [ref=e198]:
+        - heading "Incidents and investigations" [level=2] [ref=e199]
+        - paragraph [ref=e200]: Review reported incidents and their recorded investigations and actions.
+        - link "Open incident records" [ref=e201] [cursor=pointer]:
+          - /url: /ppdm39/hse/incidents
+      - generic [ref=e205]:
+        - heading "Compliance and studies" [level=2] [ref=e206]
+        - paragraph [ref=e207]: Inspect recorded obligations and safety studies in their source screens.
+        - group [ref=e208]:
+          - link "Compliance obligations" [ref=e209] [cursor=pointer]:
+            - /url: /ppdm39/compliance/obligations
+          - generic [ref=e212]:
+            - textbox "Recorded HAZOP study ID" [ref=e214]
+            - generic: Recorded HAZOP study ID
+          - button "Open recorded HAZOP study" [disabled]
+      - generic [ref=e217]:
+        - heading "Permits and assigned work" [level=2] [ref=e218]
+        - paragraph [ref=e219]: Review permit records and open the original process for assigned work.
+        - group [ref=e220]:
+          - link "Permit records" [ref=e221] [cursor=pointer]:
+            - /url: /ppdm39/permits
+          - link "Company inbox" [ref=e223] [cursor=pointer]:
+            - /url: /tasks/inbox
+```

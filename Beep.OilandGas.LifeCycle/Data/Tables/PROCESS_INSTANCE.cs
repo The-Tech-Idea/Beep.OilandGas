@@ -93,6 +93,7 @@ public class PROCESS_INSTANCE : ModelEntityBase
     }
 
     private string? INSTANCE_DATA_JSONValue;
+    [System.ComponentModel.DataAnnotations.MaxLength(262144)]
     public string? INSTANCE_DATA_JSON
     {
         get => INSTANCE_DATA_JSONValue;

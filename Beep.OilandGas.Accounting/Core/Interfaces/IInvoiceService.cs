@@ -12,6 +12,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IInvoiceService
     {
+        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_INTENT?> GetCompanyInvoiceDraftIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string intentId,Func<Task> requireAuthority);
+        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_INTENT?> GetCompanyInvoiceDraftIntentForDeliveryAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string field,string ticket,Func<Task> requireAuthority);
+        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_INTENT> SaveCompanyInvoiceDraftIntentAsync(TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftReview>> readCurrent);
+        Task<IReadOnlyList<INVOICE>> GetCompanySalesInvoicesForDeliveryAsync(TheTechIdea.Data.OilGas.CompanyScope company,string field,string ticket,Func<Task> requireAuthority);
+        Task<IReadOnlyList<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome>> GetCompanySalesInvoiceQueueAsync(TheTechIdea.Data.OilGas.CompanyScope company,string field,Func<Task> requireAuthority);
+        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome?> GetCompanyInvoiceDraftOutcomeAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string intentId,Func<Task> requireAuthority);
+        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome> GetCompanyInvoiceDraftForReviewAsync(TheTechIdea.Data.OilGas.CompanyScope company,string invoiceId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<TheTechIdea.Data.OilGas.SALES_INVOICE_REVIEW_INTENT?> GetCompanyInvoiceReviewIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome> RecordCompanyInvoiceDecisionAsync(TheTechIdea.Data.OilGas.CompanySalesInvoiceDecisionCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceReviewSource>> readCurrent);
+        Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftOutcome> ExecuteCompanyInvoiceDraftAsync(TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesInvoiceDraftReview>> readCurrent);
         /// <summary>
         /// Creates a new invoice.
         /// </summary>

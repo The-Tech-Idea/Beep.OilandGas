@@ -1,0 +1,50 @@
+### Page
+- Page URL: http://127.0.0.1:64072/
+### Snapshot
+```yaml
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f2e44]
+    - paragraph [ref=f2e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f2e46]:
+      - button "Use read-only unmapped profile" [ref=f2e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f2e49] [cursor=pointer]
+      - button "Switch other company" [ref=f2e51] [cursor=pointer]
+      - button "Switch other account" [ref=f2e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=f2e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f2e57] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f2e59] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f2e61] [cursor=pointer]
+  - generic [ref=f2e63]:
+    - heading "Observed drilling progress" [level=1] [ref=f2e64]
+    - group [ref=f2e65]:
+      - link "Original execution" [ref=f2e66] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-13B398B3582A2414B3E8B805EB53FE60F1E8A7E619E6838610C054FE56A80221
+      - button "Reload original report history" [ref=f2e68] [cursor=pointer]
+    - generic [ref=f2e336]:
+      - heading "Recorded execution and report history" [level=2] [ref=f2e337]
+      - paragraph [ref=f2e338]: Original drilling program · Version 1 · Operation drilling-execution-C02016915B547892699C6578BF30CA2000B5194F77B05E8F510196C06DF4B414
+      - paragraph [ref=f2e339]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=f2e340]: 1 recorded observed reports · History checked 2026-10-26 14:23:24Z UTC
+      - table [ref=f2e343]:
+        - caption [ref=f2e344]: Observed drilling report history — UTC periods, source provenance and accountable recorders
+        - rowgroup [ref=f2e345]:
+          - row [ref=f2e346]:
+            - columnheader "Report / UTC period" [ref=f2e347]
+            - columnheader "Observed hole MD" [ref=f2e348]
+            - columnheader "Rotating / NPT hours" [ref=f2e349]
+            - columnheader "Recorder / audit UTC" [ref=f2e350]
+        - rowgroup [ref=f2e351]:
+          - row [ref=f2e352]:
+            - rowheader "1 · RECORDED 2026-10-26 14:06:05Z to 2026-10-26 14:13:34Z" [ref=f2e353]: 1 · RECORDED2026-10-26 14:06:05Z to 2026-10-26 14:13:34Z
+            - cell "100 to 125 m" [ref=f2e354]
+            - cell "Unknown / Unknown" [ref=f2e355]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 14:14:50Z" [ref=f2e356]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 14:14:50Z
+          - row [ref=f2e357]:
+            - cell [ref=f2e358]:
+              - paragraph [ref=f2e359]: Report drilling-report-C18731462CE11793AD6405E832AC349B27743D7F453DD3AC13827EC5F43E97A6
+              - paragraph [ref=f2e360]: "Source: Feedback source 471"
+              - paragraph [ref=f2e361]: "Observed operations: Observed retained-original feedback"
+      - button "Inspect current report basis" [ref=f2e362] [cursor=pointer]
+    - generic [ref=f2e84]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

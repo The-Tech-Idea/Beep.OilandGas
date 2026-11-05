@@ -1,5 +1,5 @@
 using Beep.OilandGas.Models.Core.Refusals;
-using TheTechIdeaWeb.Diagnostics;
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.Core;
 ﻿using System;
 using System.Collections;
@@ -14,7 +14,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.PPDM39.Repositories;
+
 using Beep.OilandGas.ChokeAnalysis;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Constants;
@@ -37,15 +37,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
     /// Compatibility boundary: ProductionOperations module owns canonical production-operations
     /// API contracts, while this service keeps lifecycle orchestration and PPDM process flows.
     /// </summary>
-    public class PPDMProductionService : IPPDMProductionService, IFieldProductionService
+    public partial class PPDMProductionService : IPPDMProductionService, IFieldProductionService
     {
+        private static readonly System.Diagnostics.ActivitySource ProductionActivities=new("Beep.OilandGas.ProductionIntervention");
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly PPDMMappingService _mappingService;
-        private readonly string _connectionName;
-        private readonly IFailureReporter _failures;
+        private readonly ICompanyFieldSelectionService _selections;
+        private readonly IPPDMRowAccessPolicy _rowAccess;
+        private FieldSelectionReview? _review;
         private readonly ILogger<PPDMProductionService>? _logger;
 
         public PPDMProductionService(
@@ -54,8 +56,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             PPDMMappingService mappingService,
-            IFailureReporter failures,
-            string connectionName = "PPDM39",
+            ICompanyFieldSelectionService selections,
+            IPPDMRowAccessPolicy rowAccess,
             ILogger<PPDMProductionService>? logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -63,59 +65,82 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _mappingService = mappingService ?? throw new ArgumentNullException(nameof(mappingService));
-            _connectionName = connectionName;
-            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
+            _selections = selections ?? throw new ArgumentNullException(nameof(selections));
+            _rowAccess = rowAccess ?? throw new ArgumentNullException(nameof(rowAccess));
             _logger = logger;
         }
 
+        // The existing profile owns authority; this is only a fence for one phase request.
+        private async Task<string> RequireCurrentBindingAsync(string? fieldId = null, string? actor = null, bool requireField = false)
+        {
+            using var activity=ProductionActivities.StartActivity("production.current_field_authority");
+            var current = await _selections.GetCurrentFieldSelectionAsync();
+            if (current.SelectionContext is not { } review) throw RefusalException.Conflict("The company FIELD review is unavailable.");
+            FieldSelectionReviewValidator.RequireCurrent(current, review.Company, review.ActorUserId);
+            if (requireField && !current.SelectionAvailable || fieldId is not null && fieldId != current.FieldId ||
+                actor is not null && actor != review.ActorUserId || _review is not null && _review != review)
+                throw RefusalException.Conflict("The production account, company, database or FIELD differs from its reviewed request.");
+            _review = review;
+            return review.Database.ConnectionName;
+        }
+        private async Task<T> ConfirmAsync<T>(T result)
+        {
+            await RequireCurrentBindingAsync();
+            return result;
+        }
         public async Task<List<FIELD>> GetFieldsAsync(List<AppFilter>? filters = null)
         {
+            await RequireCurrentBindingAsync(null, null, false);
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(FIELD), _connectionName, "FIELD");
+                typeof(FIELD), await RequireCurrentBindingAsync(), "FIELD", rowAccess: _rowAccess);
 
             var results = await repo.GetAsync(filters ?? new List<AppFilter>());
-            return results.Cast<FIELD>().ToList();
+            return await ConfirmAsync(results.Cast<FIELD>().ToList());
         }
 
         public async Task<List<POOL>> GetPoolsAsync(List<AppFilter>? filters = null)
         {
+            await RequireCurrentBindingAsync(null, null, false);
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(POOL), _connectionName, "POOL");
+                typeof(POOL), await RequireCurrentBindingAsync(), "POOL", rowAccess: _rowAccess);
 
             var results = await repo.GetAsync(filters ?? new List<AppFilter>());
-            return results.Cast<POOL>().ToList();
+            return await ConfirmAsync(results.Cast<POOL>().ToList());
         }
 
         public async Task<List<PDEN_VOL_SUMMARY>> GetProductionAsync(List<AppFilter>? filters = null)
         {
+            await RequireCurrentBindingAsync(null, null, false);
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY");
+                typeof(PDEN_VOL_SUMMARY), await RequireCurrentBindingAsync(), "PDEN_VOL_SUMMARY", rowAccess: _rowAccess);
 
             var results = await repo.GetAsync(filters ?? new List<AppFilter>());
-            return results.Cast<PDEN_VOL_SUMMARY>().ToList();
+            return await ConfirmAsync(results.Cast<PDEN_VOL_SUMMARY>().ToList());
         }
 
         public async Task<List<RESERVE_ENTITY>> GetReservesAsync(List<AppFilter>? filters = null)
         {
+            await RequireCurrentBindingAsync(null, null, false);
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(RESERVE_ENTITY), _connectionName, "RESERVE_ENTITY");
+                typeof(RESERVE_ENTITY), await RequireCurrentBindingAsync(), "RESERVE_ENTITY", rowAccess: _rowAccess);
 
             var results = await repo.GetAsync(filters ?? new List<AppFilter>());
-            return results.Cast<RESERVE_ENTITY>().ToList();
+            return await ConfirmAsync(results.Cast<RESERVE_ENTITY>().ToList());
         }
 
         public async Task<List<PDEN_VOL_SUMMARY>> GetProductionReportingAsync(List<AppFilter>? filters = null)
         {
+            await RequireCurrentBindingAsync(null, null, false);
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY");
+                typeof(PDEN_VOL_SUMMARY), await RequireCurrentBindingAsync(), "PDEN_VOL_SUMMARY", rowAccess: _rowAccess);
 
             var results = await repo.GetAsync(filters ?? new List<AppFilter>());
-            return results.Cast<PDEN_VOL_SUMMARY>().ToList();
+            return await ConfirmAsync(results.Cast<PDEN_VOL_SUMMARY>().ToList());
         }
 
         // ============================================
@@ -124,12 +149,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<List<ProductionResponse>> GetProductionForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 // Production is linked through PDEN (Production Entity) which has a direct FIELD_ID column.
                 // Query PDEN by FIELD_ID, then query PDEN_VOL_SUMMARY by PDEN_ID.
                 var pdenRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PDEN), _connectionName, "PDEN");
+                    typeof(PDEN), await RequireCurrentBindingAsync(), "PDEN", rowAccess: _rowAccess);
 
                 var pdenRecords = await pdenRepo.GetAsync(new List<AppFilter>
                 {
@@ -138,7 +165,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 });
 
                 if (!pdenRecords.Any())
-                    return new List<ProductionResponse>();
+                    return await ConfirmAsync(new List<ProductionResponse>());
 
                 var pdenIds = pdenRecords.OfType<PDEN>()
                     .Select(p => p.PDEN_ID)
@@ -146,10 +173,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     .ToList();
 
                 if (!pdenIds.Any())
-                    return new List<ProductionResponse>();
+                    return await ConfirmAsync(new List<ProductionResponse>());
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY");
+                    typeof(PDEN_VOL_SUMMARY), await RequireCurrentBindingAsync(), "PDEN_VOL_SUMMARY", rowAccess: _rowAccess);
 
                 // Filter by PDEN_IDs (OR condition)
                 var filters = new List<AppFilter>();
@@ -170,7 +197,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(ProductionResponse), typeof(PDEN_VOL_SUMMARY));
-                return dtoList.Cast<ProductionResponse>().ToList();
+                return await ConfirmAsync(dtoList.Cast<ProductionResponse>().ToList());
             }
             catch (Exception ex)
             {
@@ -180,31 +207,36 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<ProductionResponse> CreateProductionForFieldAsync(string fieldId, ProductionRequest productionData, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
             // Convert DTO to PPDM model (PDEN_VOL_SUMMARY; FIELD_ID is carried on PDEN, not here)
             var productionEntity = _mappingService.ConvertDTOToPPDMModel<PDEN_VOL_SUMMARY, ProductionRequest>(productionData);
 
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY");
+                typeof(PDEN_VOL_SUMMARY), await RequireCurrentBindingAsync(), "PDEN_VOL_SUMMARY", rowAccess: _rowAccess);
 
             var result = await repo.InsertAsync(productionEntity, userId);
 
             // Convert PPDM model back to DTO
-            return _mappingService.ConvertPPDMModelToDTO<ProductionResponse, PDEN_VOL_SUMMARY>((PDEN_VOL_SUMMARY)result);
+            return await ConfirmAsync(_mappingService.ConvertPPDMModelToDTO<ProductionResponse, PDEN_VOL_SUMMARY>((PDEN_VOL_SUMMARY)result));
         }
 
         public async Task<List<ProductionResponse>> GetProductionByPoolForFieldAsync(string fieldId, string? poolId = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 // Get production for field, then filter by pool if specified
                 var production = await GetProductionForFieldAsync(fieldId);
 
                 if (string.IsNullOrEmpty(poolId))
-                    return production;
+                    return await ConfirmAsync(production);
 
                 // Filter by pool ID (assuming PDEN_VOL_SUMMARY has POOL_ID field)
                 var formattedPoolId = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", poolId);
-                return production.Where(p => p.PoolId == formattedPoolId).ToList();
+                return await ConfirmAsync(production.Where(p => p.PoolId == formattedPoolId).ToList());
             }
             catch (Exception ex)
             {
@@ -214,14 +246,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<List<ReservesResponse>> GetReservesForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("RESERVE_ENTITY");
                 if (metadata == null)
-                    return new List<ReservesResponse>();
+                    return await ConfirmAsync(new List<ReservesResponse>());
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(RESERVE_ENTITY), _connectionName, "RESERVE_ENTITY");
+                    typeof(RESERVE_ENTITY), await RequireCurrentBindingAsync(), "RESERVE_ENTITY", rowAccess: _rowAccess);
 
                 // Filter by field ID (assuming RESERVE_ENTITY has FIELD_ID or is linked through pool/well)
                 var filters = new List<AppFilter>
@@ -238,10 +272,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     filters.AddRange(additionalFilters);
 
                 var results = await repo.GetAsync(filters);
-                
+
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(ReservesResponse), typeof(RESERVE_ENTITY));
-                return dtoList.Cast<ReservesResponse>().ToList();
+                return await ConfirmAsync(dtoList.Cast<ReservesResponse>().ToList());
             }
             catch (Exception ex)
             {
@@ -254,22 +288,30 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// Used to populate intervention candidate lists.
         /// </summary>
         public async Task<List<WELL_ACTIVITY>> GetWellActivitiesForFieldAsync(string fieldId)
+            =>await ReadWellActivitiesForScopeAsync(fieldId,null);
+        private async Task<List<WELL_ACTIVITY>> ReadWellActivitiesForScopeAsync(string fieldId,string? wellId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            if(wellId is not null && !LeaseSummaryValidator.Identifier(wellId))throw RefusalException.Invalid("An exact original WELL identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL), _connectionName, "WELL");
+                    typeof(WELL), await RequireCurrentBindingAsync(), "WELL", rowAccess: _rowAccess);
                 var wellFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "ACTIVE_IND",     Operator = "=", FilterValue = "Y" }
                 };
+                if(wellId is not null)wellFilters.Add(new AppFilter{FieldName="UWI",Operator="=",FilterValue=wellId});
                 var wellResults = await wellRepo.GetAsync(wellFilters);
                 var wells = wellResults.OfType<WELL>().ToList();
+                if(wellId is not null && (wells.Count!=1 || wells[0].UWI!=wellId || wells[0].ASSIGNED_FIELD!=fieldId || wells[0].ACTIVE_IND!="Y"))throw RefusalException.Conflict("The original active FIELD/WELL activity parent is unavailable.");
+                var originalWells=System.Text.Json.JsonSerializer.Serialize(wells.OrderBy(value=>value.UWI,StringComparer.Ordinal));
 
                 var activities = new List<WELL_ACTIVITY>();
                 var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                    typeof(WELL_ACTIVITY), await RequireCurrentBindingAsync(), "WELL_ACTIVITY", rowAccess: _rowAccess);
 
                 foreach (var well in wells)
                 {
@@ -279,11 +321,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                         new AppFilter { FieldName = "UWI",        Operator = "=", FilterValue = well.UWI },
                         new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                     };
-                    var actResults = await actRepo.GetAsync(actFilters);
+                    var actResults = (await actRepo.GetAsync(actFilters)).ToArray();
+                    if(wellId is not null && (actResults.Length>512 || actResults.Any(value=>value is not WELL_ACTIVITY row || row.UWI!=wellId || row.ACTIVE_IND!="Y")))throw RefusalException.Conflict("The complete original active WELL activity population is unavailable or mismatching.");
                     activities.AddRange(actResults.OfType<WELL_ACTIVITY>());
                 }
-                return activities;
+                var closingWells=(await wellRepo.GetAsync(wellFilters)).Cast<WELL>().OrderBy(value=>value.UWI,StringComparer.Ordinal).ToArray();
+                if(originalWells!=System.Text.Json.JsonSerializer.Serialize(closingWells))throw RefusalException.Conflict("The original FIELD intervention WELL population changed during activity reads.");
+                return await ConfirmAsync(activities);
             }
+            catch (RefusalException) { throw; }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Error getting well activities for field {fieldId}", ex);
@@ -292,6 +338,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<WellPerformanceAnalysisResponse> GetWellPerformanceAnalysisAsync(string fieldId, string wellId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(wellId))
@@ -313,7 +362,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             var recommendation = BuildPerformanceRecommendation(findings, oilRate, potentialRate);
             var history = await BuildPerformanceHistoryAsync(fieldId, wellId, orderedTests);
 
-            return new WellPerformanceAnalysisResponse
+            return await ConfirmAsync(new WellPerformanceAnalysisResponse
             {
                 WellId = wellId,
                 Status = latest != null ? "ACTIVE" : "UNKNOWN",
@@ -326,11 +375,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 Findings = findings,
                 Recommendation = recommendation,
                 History = history
-            };
+            });
         }
 
         public async Task<PerformanceDeviationResult> LogWellPerformanceDeviationAsync(string fieldId, string wellId, PerformanceDeviationRequest request, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             if (string.IsNullOrWhiteSpace(fieldId))
                 throw RefusalException.Invalid("The field ID is required.");
             if (string.IsNullOrWhiteSpace(wellId))
@@ -346,14 +399,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             const string activityType = "PERFORMANCE_DEVIATION";
             await RecordInterventionDecisionAsync(wellId, activityType, message, userId);
 
-            return new PerformanceDeviationResult
+            return await ConfirmAsync(new PerformanceDeviationResult
             {
                 Success = true,
                 WellId = wellId,
                 ActivityType = activityType,
                 LoggedAtUtc = DateTime.UtcNow,
                 Message = $"Performance deviation logged for {wellId}."
-            };
+            });
         }
 
         /// <summary>
@@ -363,10 +416,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         public async Task RecordInterventionDecisionAsync(string uwi, string decisionActivityTypeId,
             string remark, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            await RequireCurrentBindingAsync(null, userId, true);
+            await EnsureWellBelongsToFieldAsync(_review!.FieldId!, uwi);
             try
             {
                 var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                    typeof(WELL_ACTIVITY), await RequireCurrentBindingAsync(), "WELL_ACTIVITY", rowAccess: _rowAccess);
 
                 var activity = new WELL_ACTIVITY
                 {
@@ -379,16 +435,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 };
                 await actRepo.InsertAsync(activity, userId);
             }
+            catch (RefusalException) { throw; }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Error recording intervention decision for well {uwi}", ex);
             }
+            await RequireCurrentBindingAsync();
         }
 
         private async Task EnsureWellBelongsToFieldAsync(string fieldId, string wellId)
         {
             var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL), _connectionName, "WELL");
+                typeof(WELL), await RequireCurrentBindingAsync(), "WELL", rowAccess: _rowAccess);
 
             var wellResults = await wellRepo.GetAsync(new List<AppFilter>
             {
@@ -406,7 +464,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             await EnsureWellBelongsToFieldAsync(fieldId, wellId);
 
             var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                typeof(WELL_ACTIVITY), await RequireCurrentBindingAsync(), "WELL_ACTIVITY", rowAccess: _rowAccess);
 
             var actResults = await actRepo.GetAsync(new List<AppFilter>
             {
@@ -644,10 +702,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// </summary>
         public async Task<ProductionDashboardSummary> GetProductionDashboardSummaryAsync(string fieldId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL), _connectionName, "WELL");
+                    typeof(WELL), await RequireCurrentBindingAsync(), "WELL", rowAccess: _rowAccess);
                 var wellFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = fieldId },
@@ -657,7 +717,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 var wells = wellResults.OfType<WELL>().ToList();
 
                 var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                    typeof(WELL_ACTIVITY), await RequireCurrentBindingAsync(), "WELL_ACTIVITY", rowAccess: _rowAccess);
 
                 int openActivities = 0;
                 foreach (var well in wells)
@@ -672,12 +732,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     openActivities += acts.Count();
                 }
 
-                return new ProductionDashboardSummary
+                return await ConfirmAsync(new ProductionDashboardSummary
                 {
                     TotalWells      = wells.Count,
                     OpenWorkOrders  = openActivities,
                     FieldId         = fieldId,
-                };
+                });
             }
             catch (Exception ex)
             {
@@ -691,10 +751,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// </summary>
         public async Task<List<ProductionWellStatusDto>> GetProductionWellStatusAsync(string fieldId)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL), _connectionName, "WELL");
+                    typeof(WELL), await RequireCurrentBindingAsync(), "WELL", rowAccess: _rowAccess);
                 var wellFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = fieldId },
@@ -704,7 +766,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 var wells = wellResults.OfType<WELL>().ToList();
 
                 var testRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_TEST), _connectionName, "WELL_TEST");
+                    typeof(WELL_TEST), await RequireCurrentBindingAsync(), "WELL_TEST", rowAccess: _rowAccess);
 
                 var dtoList = new List<ProductionWellStatusDto>();
                 foreach (var well in wells)
@@ -730,7 +792,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                         LastTestDate = latestTest?.TEST_DATE,
                     });
                 }
-                return dtoList;
+                return await ConfirmAsync(dtoList);
             }
             catch (Exception ex)
             {
@@ -740,11 +802,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<List<WellTestResponse>> GetWellTestsForWellAsync(string fieldId, string wellId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             try
             {
                 // Validate well belongs to field first by checking WELL table
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL), _connectionName, "WELL");
+                    typeof(WELL), await RequireCurrentBindingAsync(), "WELL", rowAccess: _rowAccess);
 
                 var formattedWellId = _defaults.FormatIdForTable("WELL", wellId);
                 var well = await wellRepo.GetByIdAsync(formattedWellId);
@@ -763,7 +828,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_TEST), _connectionName, "WELL_TEST");
+                    typeof(WELL_TEST), await RequireCurrentBindingAsync(), "WELL_TEST", rowAccess: _rowAccess);
 
                 var filters = new List<AppFilter>
                 {
@@ -782,7 +847,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(WellTestResponse), typeof(WELL_TEST));
-                return dtoList.Cast<WellTestResponse>().ToList();
+                return await ConfirmAsync(dtoList.Cast<WellTestResponse>().ToList());
             }
             catch (Exception ex) when (ex is not RefusalException)
             {
@@ -792,10 +857,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<List<ProductionForecastResponse>> GetProductionForecastsForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PRODUCTION_FORECAST), _connectionName, "PRODUCTION_FORECAST");
+                    typeof(PRODUCTION_FORECAST), await RequireCurrentBindingAsync(), "PRODUCTION_FORECAST", rowAccess: _rowAccess);
 
                 var filters = new List<AppFilter>
                 {
@@ -814,7 +881,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 // Convert PPDM models to DTOs
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(ProductionForecastResponse), typeof(PRODUCTION_FORECAST));
-                return dtoList.Cast<ProductionForecastResponse>().ToList();
+                return await ConfirmAsync(dtoList.Cast<ProductionForecastResponse>().ToList());
             }
             catch (Exception ex)
             {
@@ -824,6 +891,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<ProductionForecastResponse> CreateProductionForecastForFieldAsync(string fieldId, ProductionForecastRequest forecastData, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
             try
             {
                 // Convert DTO to PPDM model
@@ -831,12 +901,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 forecastEntity.FIELD_ID = _defaults.FormatIdForTable("PRODUCTION_FORECAST", fieldId);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PRODUCTION_FORECAST), _connectionName, "PRODUCTION_FORECAST");
+                    typeof(PRODUCTION_FORECAST), await RequireCurrentBindingAsync(), "PRODUCTION_FORECAST", rowAccess: _rowAccess);
 
                 var result = await repo.InsertAsync(forecastEntity, userId);
 
                 // Convert PPDM model back to DTO
-                return _mappingService.ConvertPPDMModelToDTO<ProductionForecastResponse, PRODUCTION_FORECAST>((PRODUCTION_FORECAST)result);
+                return await ConfirmAsync(_mappingService.ConvertPPDMModelToDTO<ProductionForecastResponse, PRODUCTION_FORECAST>((PRODUCTION_FORECAST)result));
             }
             catch (Exception ex)
             {
@@ -846,22 +916,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
         public async Task<List<ProductionResponse>> GetFacilityProductionForFieldAsync(string fieldId, List<AppFilter>? additionalFilters = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, null, true);
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("PRODUCTION_FACILITY");
                 if (metadata == null)
-                    return new List<ProductionResponse>();
+                    return await ConfirmAsync(new List<ProductionResponse>());
 
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
                 if (entityType == null)
-                    return new List<ProductionResponse>();
+                    return await ConfirmAsync(new List<ProductionResponse>());
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "PRODUCTION_FACILITY");
+                    entityType, await RequireCurrentBindingAsync(), "PRODUCTION_FACILITY", rowAccess: _rowAccess);
 
                 // Get facilities for field first, then get production for those facilities
                 var facilityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(FACILITY), _connectionName, "FACILITY");
+                    typeof(FACILITY), await RequireCurrentBindingAsync(), "FACILITY", rowAccess: _rowAccess);
 
                 var facilities = await facilityRepo.GetAsync(new List<AppFilter>
                 {
@@ -880,7 +952,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     .ToList();
 
                 if (!facilityIds.Any())
-                    return new List<ProductionResponse>();
+                    return await ConfirmAsync(new List<ProductionResponse>());
 
                 var filters = new List<AppFilter>();
                 foreach (var facilityId in facilityIds)
@@ -897,10 +969,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     filters.AddRange(additionalFilters);
 
                 var results = await repo.GetAsync(filters);
-                
+
                 // Convert PPDM models to DTOs (using ProductionResponse since facility production is still production data)
                 var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(ProductionResponse), entityType);
-                return dtoList.Cast<ProductionResponse>().ToList();
+                return await ConfirmAsync(dtoList.Cast<ProductionResponse>().ToList());
             }
             catch (Exception ex)
             {
@@ -924,6 +996,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             decimal? gasSpecificGravity = null,
             string? userId = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             try
             {
                 _logger?.LogInformation("Analyzing choke flow for well {WellId} in field {FieldId}, location: {Location}",
@@ -946,12 +1021,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 }
 
                 // Store results in WELL_EQUIPMENT table
-                await StoreChokeFlowResultsAsync(wellId, result, chokeLocation, userId ?? "SYSTEM");
+                await StoreChokeFlowResultsAsync(wellId, result, chokeLocation, _review!.ActorUserId);
 
                 _logger?.LogInformation("Choke flow analysis completed for well {WellId}. Flow rate: {FlowRate} Mscf/day, Flow regime: {Regime}",
                     wellId, result.FLOW_RATE, result.FLOW_REGIME);
 
-                return result;
+                return await ConfirmAsync(result);
             }
             catch (Exception ex)
             {
@@ -973,6 +1048,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             decimal? gasSpecificGravity = null,
             string? userId = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             try
             {
                 _logger?.LogInformation("Calculating choke sizing for well {WellId} in field {FieldId}, target flow rate: {FlowRate} Mscf/day",
@@ -1033,12 +1111,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 };
 
                 // Store sizing results
-                await StoreChokeSizingResultsAsync(wellId, finalChoke, targetFlowRate, chokeLocation, userId ?? "SYSTEM");
+                await StoreChokeSizingResultsAsync(wellId, finalChoke, targetFlowRate, chokeLocation, _review!.ActorUserId);
 
                 _logger?.LogInformation("Choke sizing completed for well {WellId}. Optimal diameter: {Diameter} inches",
                     wellId, optimalDiameter);
 
-                return finalChoke;
+                return await ConfirmAsync(finalChoke);
             }
             catch (Exception ex)
             {
@@ -1063,7 +1141,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 if (equipMeta != null)
                 {
                     var equipRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(WELL_EQUIPMENT), _connectionName, "WELL_EQUIPMENT", null);
+                        typeof(WELL_EQUIPMENT), await RequireCurrentBindingAsync(), "WELL_EQUIPMENT", null, rowAccess: _rowAccess);
 
                     var filters = new List<AppFilter>
                     {
@@ -1100,15 +1178,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                                 };
                             }
                         }
-                        // System.Text.Json has no question to ask before parsing: an unreadable stored choke is reported
-                        // and passed over, and the analysis goes on to the next record or the request's diameter.
-                        catch (Exception ex) when (ex is System.Text.Json.JsonException or FormatException or InvalidOperationException)
+
+
+                        catch (Exception ex)when (ex is System.Text.Json.JsonException or FormatException or InvalidOperationException)
                         {
-                            _failures.ReportHandled(ex, $"reading a stored choke diameter from a WELL_EQUIPMENT remark of well {wellId}",
-                                "that record is passed over; the choke analysis uses another stored choke or the request's diameter",
-                                FailureSeverity.Degraded);
+                            _logger?.LogError(ex, "Production evidence or storage failed.");
+                            throw;
                         }
-                    }
+}
                 }
 
                 // Fallback: use caller-supplied diameter or engineering default
@@ -1148,7 +1225,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 if (pdenMeta != null)
                 {
                     var pdenRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
+                        typeof(PDEN_VOL_SUMMARY), await RequireCurrentBindingAsync(), "PDEN_VOL_SUMMARY", null, rowAccess: _rowAccess);
 
                     var pdenFilters = new List<AppFilter>
                     {
@@ -1206,14 +1283,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             try
             {
                 var equipmentMetadata = await _metadata.GetTableMetadataAsync("WELL_EQUIPMENT");
-                if (equipmentMetadata == null)
-                {
-                    _logger?.LogWarning("WELL_EQUIPMENT table metadata not found, skipping storage");
-                    return;
-                }
+                if (equipmentMetadata == null) throw RefusalException.Conflict("WELL_EQUIPMENT metadata is unavailable; the production analysis was not saved.");
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+                    typeof(Dictionary<string, object>), await RequireCurrentBindingAsync(), "WELL_EQUIPMENT", null, rowAccess: _rowAccess);
 
                 var equipmentRecord = new Dictionary<string, object>
                 {
@@ -1238,14 +1311,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored choke flow results for well {WellId}", wellId);
             }
-            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
-            // record is seen. Cancellation is the caller's.
-            catch (Exception ex) when (ex is not OperationCanceledException)
+
+
+            catch (Exception ex)when (ex is not OperationCanceledException)
             {
-                _failures.ReportHandled(ex, $"saving the choke flow analysis for well {wellId} in WELL_EQUIPMENT",
-                    "the choke flow analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
+                _logger?.LogError(ex, "Production evidence or storage failed.");
+                throw;
             }
-        }
+}
 
         /// <summary>
         /// Stores choke sizing results in WELL_EQUIPMENT table
@@ -1260,14 +1333,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             try
             {
                 var equipmentMetadata = await _metadata.GetTableMetadataAsync("WELL_EQUIPMENT");
-                if (equipmentMetadata == null)
-                {
-                    _logger?.LogWarning("WELL_EQUIPMENT table metadata not found, skipping storage");
-                    return;
-                }
+                if (equipmentMetadata == null) throw RefusalException.Conflict("WELL_EQUIPMENT metadata is unavailable; the production analysis was not saved.");
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+                    typeof(Dictionary<string, object>), await RequireCurrentBindingAsync(), "WELL_EQUIPMENT", null, rowAccess: _rowAccess);
 
                 var equipmentRecord = new Dictionary<string, object>
                 {
@@ -1291,14 +1360,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored choke sizing results for well {WellId}", wellId);
             }
-            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
-            // record is seen. Cancellation is the caller's.
-            catch (Exception ex) when (ex is not OperationCanceledException)
+
+
+            catch (Exception ex)when (ex is not OperationCanceledException)
             {
-                _failures.ReportHandled(ex, $"saving the choke sizing for well {wellId} in WELL_EQUIPMENT",
-                    "the choke sizing is returned to the caller but is not saved", FailureSeverity.Degraded);
+                _logger?.LogError(ex, "Production evidence or storage failed.");
+                throw;
             }
-        }
+}
 
         #endregion
 
@@ -1316,6 +1385,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             decimal? pumpDiameter = null,
             string? userId = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             try
             {
                 _logger?.LogInformation("Analyzing sucker rod load for well {WellId} in field {FieldId}",
@@ -1330,12 +1402,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 var result = SuckerRodLoadCalculator.CalculateLoads(systemProperties, rodString);
 
                 // Store results in WELL_EQUIPMENT table
-                await StoreSuckerRodLoadResultsAsync(wellId, result, userId ?? "SYSTEM");
+                await StoreSuckerRodLoadResultsAsync(wellId, result, _review!.ActorUserId);
 
                 _logger?.LogInformation("Sucker rod load analysis completed for well {WellId}. Peak load: {PeakLoad} lbs, Stress range: {StressRange} psi",
                     wellId, result.PEAK_LOAD, result.STRESS_RANGE);
 
-                return result;
+                return await ConfirmAsync(result);
             }
             catch (Exception ex)
             {
@@ -1356,6 +1428,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             decimal? pumpDiameter = null,
             string? userId = null)
         {
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             try
             {
                 _logger?.LogInformation("Analyzing sucker rod power for well {WellId} in field {FieldId}",
@@ -1374,12 +1449,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     systemProperties, loadResult);
 
                 // Store results in WELL_EQUIPMENT table
-                await StoreSuckerRodPowerResultsAsync(wellId, result, userId ?? "SYSTEM");
+                await StoreSuckerRodPowerResultsAsync(wellId, result, _review!.ActorUserId);
 
                 _logger?.LogInformation("Sucker rod power analysis completed for well {WellId}. Production rate: {Rate} bbl/day, Motor HP: {MotorHP}",
                     wellId, result.PRODUCTION_RATE, result.MOTOR_HORSEPOWER);
 
-                return result;
+                return await ConfirmAsync(result);
             }
             catch (Exception ex)
             {
@@ -1414,7 +1489,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 if (wellMeta != null)
                 {
                     var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(WELL), _connectionName, "WELL", null);
+                        typeof(WELL), await RequireCurrentBindingAsync(), "WELL", null, rowAccess: _rowAccess);
 
                     var wellFilters = new List<AppFilter>
                     {
@@ -1446,7 +1521,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 if (equipMeta != null)
                 {
                     var equipRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(WELL_EQUIPMENT), _connectionName, "WELL_EQUIPMENT", null);
+                        typeof(WELL_EQUIPMENT), await RequireCurrentBindingAsync(), "WELL_EQUIPMENT", null, rowAccess: _rowAccess);
 
                     var equipFilters = new List<AppFilter>
                     {
@@ -1475,7 +1550,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 // --- Query WELL_TUBULAR for tubing OD ---
                 var tubularRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_TUBULAR), _connectionName, "WELL_TUBULAR", null);
+                    typeof(WELL_TUBULAR), await RequireCurrentBindingAsync(), "WELL_TUBULAR", null, rowAccess: _rowAccess);
                 var tubularRecords = await tubularRepo.GetAsync(new List<AppFilter>
                 {
                     new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL_TUBULAR", wellId) },
@@ -1491,7 +1566,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 // --- Query WELL_TEST for fluid and pressure properties ---
                 var testRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(WELL_TEST), _connectionName, "WELL_TEST", null);
+                    typeof(WELL_TEST), await RequireCurrentBindingAsync(), "WELL_TEST", null, rowAccess: _rowAccess);
                 var testRecords = await testRepo.GetAsync(new List<AppFilter>
                 {
                     new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL_TEST", wellId) },
@@ -1541,7 +1616,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 if (equipMeta != null)
                 {
                     var equipRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(WELL_EQUIPMENT), _connectionName, "WELL_EQUIPMENT", null);
+                        typeof(WELL_EQUIPMENT), await RequireCurrentBindingAsync(), "WELL_EQUIPMENT", null, rowAccess: _rowAccess);
 
                     var filters = new List<AppFilter>
                     {
@@ -1593,28 +1668,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     }
                 };
             }
-            // The analysis goes on with a single uniform rod section over the well depth — the same string it uses when no
-            // sections are recorded — and the failure to read the recorded string is reported. Cancellation is the caller's.
-            catch (Exception ex) when (ex is not OperationCanceledException)
+
+
+            catch (Exception ex)when (ex is not OperationCanceledException)
             {
-                _failures.ReportHandled(ex, $"reading the sucker rod string of well {wellId} from WELL_EQUIPMENT",
-                    "the sucker rod analysis uses a single uniform rod section over the well depth instead of the recorded string",
-                    FailureSeverity.Degraded);
-                return new SUCKER_ROD_STRING
-                {
-                    TOTAL_LENGTH = systemProperties.WELL_DEPTH,
-                    SECTIONS = new List<ROD_SECTION>
-                    {
-                        new ROD_SECTION
-                        {
-                            DIAMETER = systemProperties.ROD_DIAMETER,
-                            LENGTH = systemProperties.WELL_DEPTH,
-                            DENSITY = systemProperties.ROD_DENSITY
-                        }
-                    }
-                };
+                _logger?.LogError(ex, "Production evidence or storage failed.");
+                throw;
             }
-        }
+}
 
         /// <summary>
         /// Stores sucker rod load analysis results in WELL_EQUIPMENT table
@@ -1627,14 +1688,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             try
             {
                 var equipmentMetadata = await _metadata.GetTableMetadataAsync("WELL_EQUIPMENT");
-                if (equipmentMetadata == null)
-                {
-                    _logger?.LogWarning("WELL_EQUIPMENT table metadata not found, skipping storage");
-                    return;
-                }
+                if (equipmentMetadata == null) throw RefusalException.Conflict("WELL_EQUIPMENT metadata is unavailable; the production analysis was not saved.");
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+                    typeof(Dictionary<string, object>), await RequireCurrentBindingAsync(), "WELL_EQUIPMENT", null, rowAccess: _rowAccess);
 
                 var equipmentRecord = new Dictionary<string, object>
                 {
@@ -1662,14 +1719,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored sucker rod load results for well {WellId}", wellId);
             }
-            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
-            // record is seen. Cancellation is the caller's.
-            catch (Exception ex) when (ex is not OperationCanceledException)
+
+
+            catch (Exception ex)when (ex is not OperationCanceledException)
             {
-                _failures.ReportHandled(ex, $"saving the sucker rod load analysis for well {wellId} in WELL_EQUIPMENT",
-                    "the sucker rod load analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
+                _logger?.LogError(ex, "Production evidence or storage failed.");
+                throw;
             }
-        }
+}
 
         /// <summary>
         /// Stores sucker rod power analysis results in WELL_EQUIPMENT table
@@ -1682,14 +1739,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             try
             {
                 var equipmentMetadata = await _metadata.GetTableMetadataAsync("WELL_EQUIPMENT");
-                if (equipmentMetadata == null)
-                {
-                    _logger?.LogWarning("WELL_EQUIPMENT table metadata not found, skipping storage");
-                    return;
-                }
+                if (equipmentMetadata == null) throw RefusalException.Conflict("WELL_EQUIPMENT metadata is unavailable; the production analysis was not saved.");
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+                    typeof(Dictionary<string, object>), await RequireCurrentBindingAsync(), "WELL_EQUIPMENT", null, rowAccess: _rowAccess);
 
                 var equipmentRecord = new Dictionary<string, object>
                 {
@@ -1717,14 +1770,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
                 _logger?.LogInformation("Stored sucker rod power results for well {WellId}", wellId);
             }
-            // The analysis is still the caller's answer when it cannot be saved: the failure is reported so the missing
-            // record is seen. Cancellation is the caller's.
-            catch (Exception ex) when (ex is not OperationCanceledException)
+
+
+            catch (Exception ex)when (ex is not OperationCanceledException)
             {
-                _failures.ReportHandled(ex, $"saving the sucker rod power analysis for well {wellId} in WELL_EQUIPMENT",
-                    "the sucker rod power analysis is returned to the caller but is not saved", FailureSeverity.Degraded);
+                _logger?.LogError(ex, "Production evidence or storage failed.");
+                throw;
             }
-        }
+}
 
         #endregion
 
@@ -1735,12 +1788,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// </summary>
         public async Task<ProductionResponse> ManageProductionOperationsAsync(string fieldId, string wellId, ProductionRequest productionData, string userId)
         {
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            await EnsureWellBelongsToFieldAsync(fieldId, wellId);
             try
             {
                 _logger?.LogInformation("Managing production operations for well: {WellId} in field: {FieldId}", wellId, fieldId);
 
                 // Use existing CreateProductionForFieldAsync method
-                return await CreateProductionForFieldAsync(fieldId, productionData, userId);
+                return await ConfirmAsync(await CreateProductionForFieldAsync(fieldId, productionData, userId));
             }
             catch (Exception ex)
             {
@@ -1750,60 +1807,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         }
 
         /// <summary>
-        /// Optimizes production using ProductionOperations service
+        /// Refuses the legacy optimization event path that stored events as facility operating status.
         /// </summary>
         public async Task<ProductionResponse> OptimizeProductionAsync(string fieldId, string wellId, Dictionary<string, object> optimizationParameters, string userId)
         {
-            try
-            {
-                _logger?.LogInformation("Optimizing production for well: {WellId} in field: {FieldId}", wellId, fieldId);
-
-                // Get current production
-                var production = await GetProductionForFieldAsync(fieldId, new List<AppFilter>
-                {
-                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId }
-                });
-
-                var currentProd = production.FirstOrDefault();
-                if (currentProd == null)
-                {
-                    throw RefusalException.Conflict($"No production is recorded for well {wellId}, so there is nothing to optimize.");
-                }
-
-                // Record the optimization event in FACILITY_STATUS so it is traceable
-                var facilityMeta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
-                if (facilityMeta != null)
-                {
-                    var fsRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
-
-                    var paramRemark = optimizationParameters != null && optimizationParameters.Any()
-                        ? string.Join("; ", optimizationParameters.Select(kv => $"{kv.Key}={kv.Value}"))
-                        : "standard";
-
-                    var fs = new FACILITY_STATUS
-                    {
-                        FACILITY_ID = _defaults.FormatIdForTable("FACILITY_STATUS", wellId),
-                        FACILITY_TYPE = "WELL",
-                        STATUS_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
-                        STATUS_TYPE = "PROD_OPTIMIZE",
-                        STATUS = "OPTIMIZED",
-                        START_TIME = DateTime.UtcNow,
-                        REMARK = $"FieldId:{fieldId}; Params:{paramRemark}",
-                        ACTIVE_IND = "Y",
-                        PPDM_GUID = Guid.NewGuid().ToString()
-                    };
-                    if (fs is Beep.OilandGas.PPDM.Models.IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
-                    await fsRepo.InsertAsync(fs, userId);
-                }
-
-                return currentProd;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error optimizing production for well: {WellId}", wellId);
-                throw;
-            }
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            throw RefusalException.Forbidden("Production and enhanced-recovery events require their canonical reviewed workflow; native facility operating statuses cannot be used as event records.");
         }
 
         #endregion
@@ -1811,98 +1822,25 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         #region Enhanced Recovery Integration
 
         /// <summary>
-        /// Plans enhanced recovery operation using EnhancedRecovery service
+        /// Refuses the legacy recovery-plan path that stored events as facility operating status.
         /// </summary>
         public async Task<EnhancedRecoveryOperation> PlanEnhancedRecoveryAsync(string fieldId, CreateEnhancedRecoveryOperation eorData, string userId)
         {
-            try
-            {
-                _logger?.LogInformation("Planning enhanced recovery for field: {FieldId}", fieldId);
-
-                var operationId = Guid.NewGuid().ToString();
-                var eorMethod = eorData.EorMethod ?? eorData.EORType ?? "WATER_FLOODING";
-                var startDate = eorData.StartDate ?? eorData.PlannedStartDate ?? DateTime.UtcNow;
-
-                var facilityMeta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
-                if (facilityMeta != null)
-                {
-                    var fsRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
-                    var fs = new FACILITY_STATUS
-                    {
-                        FACILITY_ID = _defaults.FormatIdForTable("FACILITY_STATUS", fieldId),
-                        FACILITY_TYPE = "FIELD",
-                        STATUS_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
-                        STATUS_TYPE = "EOR_PLAN",
-                        STATUS = eorMethod,
-                        START_TIME = startDate,
-                        REMARK = $"OperationId:{operationId}; EorMethod:{eorMethod}",
-                        ACTIVE_IND = "Y",
-                        PPDM_GUID = Guid.NewGuid().ToString()
-                    };
-                    if (fs is IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
-                    await fsRepo.InsertAsync(fs, userId);
-                }
-
-                return new EnhancedRecoveryOperation
-                {
-                    OperationId = operationId,
-                    FieldId = fieldId,
-                    EorMethod = eorMethod,
-                    Status = "PLANNED",
-                    StartDate = startDate
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error planning enhanced recovery for field: {FieldId}", fieldId);
-                throw;
-            }
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            throw RefusalException.Forbidden("Production and enhanced-recovery events require their canonical reviewed workflow; native facility operating statuses cannot be used as event records.");
         }
 
         /// <summary>
-        /// Executes enhanced recovery operation using EnhancedRecovery service
+        /// Refuses the legacy recovery-execution path that stored events as facility operating status.
         /// </summary>
         public async Task<EnhancedRecoveryOperation> ExecuteEnhancedRecoveryAsync(string fieldId, string operationId, Dictionary<string, object> executionParameters, string userId)
         {
-            try
-            {
-                _logger?.LogInformation("Executing enhanced recovery operation: {OperationId} for field: {FieldId}", operationId, fieldId);
-
-                var facilityMeta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
-                if (facilityMeta != null)
-                {
-                    var fsRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
-                    var fs = new FACILITY_STATUS
-                    {
-                        FACILITY_ID = _defaults.FormatIdForTable("FACILITY_STATUS", fieldId),
-                        FACILITY_TYPE = "FIELD",
-                        STATUS_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
-                        STATUS_TYPE = "EOR_EXEC",
-                        STATUS = "EXECUTING",
-                        START_TIME = DateTime.UtcNow,
-                        REMARK = $"OperationId:{operationId}",
-                        ACTIVE_IND = "Y",
-                        PPDM_GUID = Guid.NewGuid().ToString()
-                    };
-                    if (fs is IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
-                    await fsRepo.InsertAsync(fs, userId);
-                }
-
-                return new EnhancedRecoveryOperation
-                {
-                    OperationId = operationId,
-                    FieldId = fieldId,
-                    Status = "EXECUTING",
-                    StartDate = DateTime.UtcNow
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error executing enhanced recovery operation: {OperationId}", operationId);
-                throw;
-            }
+            if (!LeaseSummaryValidator.Identifier(userId)) throw RefusalException.Invalid("An exact application actor is required.");
+            if (!LeaseSummaryValidator.Identifier(fieldId)) throw RefusalException.Invalid("An exact FIELD identity is required.");
+            await RequireCurrentBindingAsync(fieldId, userId, true);
+            throw RefusalException.Forbidden("Production and enhanced-recovery events require their canonical reviewed workflow; native facility operating statuses cannot be used as event records.");
         }
 
         #endregion

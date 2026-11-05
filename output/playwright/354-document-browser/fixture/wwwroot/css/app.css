@@ -1,0 +1,55 @@
+.persona-selector {
+    width: 180px;
+    max-width: 35vw;
+}
+
+.app-logo-link {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 64px;
+    color: var(--mud-palette-primary-text);
+}
+
+.app-logo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.og-nav-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.og-main-content { min-height: calc(100vh - 144px); }
+.og-footer {
+    border-top: 1px solid var(--mud-palette-divider);
+    border-radius: 0;
+    background: var(--mud-palette-surface);
+}
+.og-footer .mud-stack { flex-wrap: wrap; }
+.og-footer-logo { height: 24px; width: 24px; object-fit: contain; }
+
+.asset-hierarchy-list { list-style: none; margin: 0; padding-inline-start: 1.5rem; }
+.asset-hierarchy-root { padding-inline-start: 0; }
+.asset-hierarchy-node .mud-button-label { white-space: normal; text-align: start; overflow-wrap: anywhere; }
+
+.development-draft-identity { overflow-wrap: anywhere; }
+
+.development-draft-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.permit-workflow { min-width: 0; }
+.permit-workflow .mud-typography { overflow-wrap: anywhere; }
+
+.permit-attachment-value { min-width: 0; flex: 1; text-align: start; }
+
+@media (max-width: 599.98px) {
+    .permit-workflow .mud-table-root { table-layout: fixed; }
+    .permit-workflow .mud-table-cell { flex-wrap: wrap; justify-content: flex-start; gap: .5rem; text-align: start; }
+    .permit-workflow .mud-table-cell::before { flex: 0 0 100%; text-align: start; }
+    .permit-workflow .permit-attachment-value { flex-basis: 100%; }
+}

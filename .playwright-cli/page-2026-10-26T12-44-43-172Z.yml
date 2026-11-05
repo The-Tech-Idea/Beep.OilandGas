@@ -1,0 +1,5 @@
+- generic [active] [ref=f2e1]:
+  - heading "OilGas protected workflow transport diagnostic" [level=1] [ref=f2e2]
+  - button "Retain large original" [ref=f2e3]
+  - button "Read retained original" [ref=f2e4]
+  - paragraph [ref=f2e5]: Ready

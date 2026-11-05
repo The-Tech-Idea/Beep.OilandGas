@@ -40,6 +40,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly ILoggerFactory _loggerFactory;
         private readonly IProgressTrackingService? _progressTracking;
         private readonly IFailureReporter _failures;
+        private readonly CompanyModuleConnection _company;
+        private readonly TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy _rows;
 
         public PPDM39ImportExportController(
             IDMEEditor editor,
@@ -50,7 +52,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             ILoggerFactory loggerFactory,
             IProgressTrackingService progressTracking,
             IBackgroundOperationQueue queue,
-            IFailureReporter failures)
+            IFailureReporter failures,
+            CompanyModuleConnection company, TheTechIdea.Data.OilGas.IPPDMRowAccessPolicy rows)
         {
             _failures = failures ?? throw new ArgumentNullException(nameof(failures));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -61,6 +64,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _progressTracking = progressTracking;
             _queue = queue;
+            _company = company ?? throw new ArgumentNullException(nameof(company));
+            _rows = rows ?? throw new ArgumentNullException(nameof(rows));
         }
 
         /// <summary>
@@ -73,12 +78,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             string tableName,
             IFormFile file,
             [FromQuery] string? operationId = null,
-            [FromQuery] string connectionName = "PPDM39",
+            [FromQuery] string? connectionName = null,
             [FromQuery] bool validateForeignKeys = true)
         {
-            var actor = User.ActingUserId();
-            if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(connectionName))
-                return BadRequest(new { error = "Table and connection names are required." });
+            var actor = _company.Company.UserId;
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required." });
             if (!string.IsNullOrEmpty(operationId))
                 return BadRequest(new { error = "Import operation IDs are assigned by the server." });
             if (file == null || file.Length == 0)
@@ -89,6 +94,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 typeof(IPPDMEntity).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract &&
                 t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase));
             if (entityType == null) return BadRequest(new { error = "Unknown PPDM table." });
+            var database = await _company.ResolveAsync(connectionName, token: HttpContext.RequestAborted);
+            RequirePermission(Beep.OilandGas.Models.Data.Security.PermissionConstants.DataManagement.ImportData);
+            await _rows.GetReadConjunctionsAsync(entityType, entityType.Name);
             using var input = file.OpenReadStream();
             using var content = new MemoryStream();
             var buffer = new byte[81920];
@@ -103,7 +111,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             operationId = _progressTracking!.StartOperation("ImportCsv", $"Importing {entityType.Name} from CSV");
             try
             {
-                var job = new CsvImportJob(operationId, entityType.Name, connectionName, actor, validateForeignKeys, content.ToArray());
+                var job = new CsvImportJob(operationId, entityType.Name, _company.Company.Scope, database, actor, validateForeignKeys, content.ToArray());
                 if (!_queue.TryEnqueue<CsvImportJobRunner, CsvImportJob>(CsvImportJob.QueueKey(operationId), job,
                     static (runner, request, token) => runner.RunAsync(request, token)))
                 {
@@ -129,12 +137,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<IActionResult> ExportCsv(
             string tableName,
             [FromBody] ExportRequest? request = null,
-            [FromQuery] string connectionName = "PPDM39",
+            [FromQuery] string? connectionName = null,
             [FromQuery] string? operationId = null)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 return BadRequest(new { error = "Table name is required." });
-            connectionName ??= request?.ConnectionName ?? _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName ?? "PPDM39";
+            if (!string.IsNullOrEmpty(operationId))
+                return BadRequest(new { error = "Export operation IDs are assigned by the server." });
 
             // Get entity type — asked before an operation is started, so an unknown table leaves none open.
             var assembly = typeof(IPPDMEntity).Assembly;
@@ -148,14 +157,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return BadRequest(new { error = $"Entity type not found for table: {tableName}" });
             }
 
-            operationId ??= _progressTracking?.StartOperation("ExportCsv", $"Exporting {tableName} to CSV");
+            var database = await _company.ResolveAsync(connectionName, request?.ConnectionName, HttpContext.RequestAborted);
+            RequirePermission(Beep.OilandGas.Models.Data.Security.PermissionConstants.DataManagement.ExportData);
+            connectionName = database.ConnectionName;
+            operationId = _progressTracking!.StartOperation("ExportCsv", $"Exporting {tableName} to CSV");
 
             _logger.LogInformation("Starting CSV export for table {TableName} on connection {ConnectionName} (OperationId: {OperationId})",
                 tableName, connectionName, operationId);
 
             var repository = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName, tableName, _loggerFactory.CreateLogger<PPDMGenericRepository>());
+                entityType, connectionName, tableName, _loggerFactory.CreateLogger<PPDMGenericRepository>(), _rows);
 
             var filters = request?.Filters ?? new System.Collections.Generic.List<AppFilter>();
             // The file name is the entity type's own, never the route's text.
@@ -202,6 +214,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 DeleteTemporaryFile(tempFilePath);
             }
+        }
+
+        private void RequirePermission(string permission)
+        {
+            if (!_company.Company.Permissions.Contains(permission, StringComparer.Ordinal))
+                throw Beep.OilandGas.Models.Core.Refusals.RefusalException.Forbidden($"{permission} is required.");
         }
 
         // The export has already answered; a temporary copy left behind costs disk, not the result.

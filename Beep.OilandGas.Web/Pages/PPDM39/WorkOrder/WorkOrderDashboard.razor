@@ -1,8 +1,11 @@
-﻿@page "/ppdm39/workorder"
+@page "/ppdm39/workorder"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
-@inject ILifeCycleService LifeCycleService
+@inject TheTechIdea.Data.OilGas.IFieldSelectionContext DataManagement
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject OilGasCallFailures Calls
+@implements IDisposable
 @inject IWorkOrderServiceClient WorkOrderService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -16,7 +19,7 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Manage Work Orders</MudText>
             <MudText Typo="Typo.caption" Color="Color.Secondary">
-                @(_fieldName ?? "No active field") — ISO 55001 / BSEE SEMS
+                @(_state?.FieldId ?? "No confirmed FIELD")
             </MudText>
         </MudStack>
         <MudStack Row="true" Spacing="2">
@@ -39,10 +42,14 @@
         </MudStack>
     </MudStack>
 
+    <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/ppdm39/workorder"})' />
+
+    <FieldSelector />
+
     @* ── Filter row ───────────────────────────────────────────────────────── *@
     <MudStack Class="pa-3">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
-            <MudSelect T="string?" Label="Sub-type" @bind-Value="_filterSubType"
+            <MudSelect T="string?" Label="Sub-type" Value="@_filterSubType" ValueChanged="FilterChanged"
                        Clearable="true" Dense="true" Margin="Margin.Dense">
                 <MudSelectItem Value="@((string?)null)">All types</MudSelectItem>
                 <MudSelectItem Value="@WorkOrderSubType.Preventive">Preventive</MudSelectItem>
@@ -58,63 +65,26 @@
         </MudStack>
     </MudStack>
 
-    @* ── Kanban board ─────────────────────────────────────────────────────── *@
+    <MudAlert Severity="Severity.Info">Recorded WORK_ORDER headers identify work and dates; they do not establish workflow state, approval, costs or inspection acceptance.</MudAlert>
+
     @if (_loading)
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
     }
-    else
+    else if (_state?.Confirmed == true)
     {
-        <MudGrid Spacing="2">
-            @foreach (var col in _columns)
-            {
-                <MudItem xs="12" sm="6" md="4" lg="2">
-                    <MudPaper Elevation="1" Class="pa-2">
-                        <MudStack Spacing="1">
-                            <MudStack Row="true" AlignItems="AlignItems.Center"
-                                      Justify="Justify.SpaceBetween" Class="mb-1">
-                                <MudText Typo="Typo.subtitle2">@col.Label</MudText>
-                                <MudChip T="int" Size="Size.Small" Color="Color.Default"
-                                         Value="@CardsFor(col.State).Count">
-                                    @CardsFor(col.State).Count
-                                </MudChip>
-                            </MudStack>
-                            @foreach (var wo in CardsFor(col.State))
-                            {
-                                <MudCard Elevation="2" Class="mb-1 cursor-pointer"
-                                         @onclick="() => OpenDetail(wo.InstanceId)">
-                                    <MudCardHeader Class="pa-2">
-                                        <CardHeaderContent>
-                                            <MudText Typo="Typo.caption" Color="Color.Primary">
-                                                @wo.InstanceId
-                                            </MudText>
-                                            <MudText Typo="Typo.body2">@wo.InstanceName</MudText>
-                                        </CardHeaderContent>
-                                    </MudCardHeader>
-                                    <MudCardContent Class="pa-2 pt-0">
-                                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                                            <MudChip T="string" Size="Size.Small"
-                                                     Color="@SubTypeColor(wo.WoSubType)"
-                                                     Value="@wo.WoSubType">
-                                                @SubTypeLabel(wo.WoSubType)
-                                            </MudChip>
-                                            @if (wo.PlannedStart.HasValue)
-                                            {
-                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                                    @wo.PlannedStart.Value.ToString("dd-MMM")
-                                                </MudText>
-                                            }
-                                        </MudStack>
-                                    </MudCardContent>
-                                </MudCard>
-                            }
-                        </MudStack>
-                    </MudPaper>
-                </MudItem>
-            }
-        </MudGrid>
+        <MudText>Company: @Company.Selection?.Scope.TenantId / @Company.Selection?.Scope.BusinessAssociateId</MudText>
+        <WorkOrderQueuePanel Review="@_state" />
     }
 
+    @if (!_loading && _state?.Confirmed!=true && _error is null)
+    {
+        <MudAlert Severity="Severity.Info">Select a company and FIELD, then reload. No work-order list is confirmed yet.</MudAlert>
+    }
+    @if (_creation?.IsBlocked(_state?.FieldId)==true)
+    {
+        <MudAlert Severity="Severity.Warning">A create attempt in this company and FIELD has an unconfirmed outcome. Review recorded orders. Repeating creation here is blocked for this page session; leaving the page does not resolve the outcome.</MudAlert>
+    }
     @* ── Error snackbar ───────────────────────────────────────────────────── *@
     @if (!string.IsNullOrEmpty(_error))
     {
@@ -130,8 +100,10 @@
         <MudText Typo="Typo.h6">Create Work Order</MudText>
     </TitleContent>
     <DialogContent>
-        <MudForm @ref="_createForm" @bind-IsValid="_createValid">
+        <MudAlert Severity="Severity.Info">Company @Company.Selection?.Scope.BusinessAssociateId · FIELD @_create.FieldId. A missing response leaves the creation outcome unconfirmed.</MudAlert>
+        <MudForm @ref="_createForm" @bind-IsValid="_createValid" Disabled="_creating">
             <MudStack Spacing="2">
+                <MudTextField @bind-Value="_create.WorkOrderNumber" Label="Recorded work-order number" Required="true" RequiredError="Recorded number is required" />
                 <MudTextField @bind-Value="_create.InstanceName" Label="Title"
                               Required="true" RequiredError="Title is required" />
                 <MudTextField @bind-Value="_create.Description" Label="Description"
@@ -144,15 +116,18 @@
                     <MudSelectItem Value="@WorkOrderSubType.RegulatoryInspect">Regulatory Inspect</MudSelectItem>
                     <MudSelectItem Value="@WorkOrderSubType.Turnaround">Turnaround</MudSelectItem>
                 </MudSelect>
-                <MudTextField @bind-Value="_create.EquipmentId" Label="Equipment / Facility ID" />
-                <MudDatePicker @bind-Date="_create.ProposedStart" Label="Planned start" />
+                <MudTextField @bind-Value="_create.Jurisdiction" Label="Reported jurisdiction (stored with instructions)"
+                              Required="true" RequiredError="Jurisdiction is required" HelperText="Enter the applicable authority; no country is assumed." />
+                <MudTextField @bind-Value="_create.WellId" Label="Recorded well UWI (optional)" />
+                <MudTextField @bind-Value="_create.EquipmentId" Label="Recorded equipment ID (optional)" />
+                <MudAlert Severity="Severity.Info">This saves a header and FIELD relationship. Scheduling, inspection templates and workflow approval are separate recorded actions.</MudAlert>
             </MudStack>
         </MudForm>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(() => _showCreate = false)">Cancel</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled"
-                   Disabled="!_createValid" OnClick="SubmitCreateAsync">Create</MudButton>
+                   Disabled="@(!_createValid || _creating || _creation?.IsBlocked(_state?.FieldId)==true)" OnClick="SubmitCreateAsync">Create</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -178,8 +153,10 @@
     [SupplyParameterFromQuery(Name = "returnTo")]
     public string? ReturnTo { get; set; }
 
-    private List<WorkOrderSummary> _workOrders = new();
-    private string?                _fieldName;
+    private WorkOrderCreateState? _creation;
+    private bool _creating;
+    private WorkOrderListState? _state;
+    private bool _disposed,_reloadRequested;
     private string?                _filterSubType;
     private bool                   _loading;
     private string?                _error;
@@ -191,66 +168,51 @@
     private CreateWorkOrderRequest _create = new();
     private DialogOptions          _dialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
 
-    private record KanbanColumn(string State, string Label);
-    private readonly List<KanbanColumn> _columns = new()
-    {
-        new(WorkOrderState.Draft,       "Draft"),
-        new(WorkOrderState.Scoped,      "Scoped"),
-        new(WorkOrderState.Planned,     "Planned"),
-        new(WorkOrderState.InProgress,  "In Progress"),
-        new(WorkOrderState.UnderReview, "Under Review"),
-        new(WorkOrderState.Completed,   "Completed"),
-    };
-
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            _fieldName = summary?.FieldName;
-        }
-        catch { }
-
+        _creation=new(Company);_state=new(Company);Company.Changed+=ContextChanged;DataManagement.CurrentFieldChanged+=FieldChanged;
         if (!string.IsNullOrWhiteSpace(SuggestedSubType))
             _filterSubType = SuggestedSubType;
 
         await LoadWorkOrders();
 
-        if (OpenCreate)
+        if (OpenCreate && _state?.Confirmed==true)
             OpenCreateDialogFromRecommendation();
     }
 
     private async Task LoadWorkOrders()
     {
-        _loading = true;
-        _error   = null;
-        try
-        {
-            _workOrders = await WorkOrderService.GetWorkOrdersAsync(woSubType: _filterSubType);
-        }
-        catch (Exception) { _error = "Failed to load work orders."; Snackbar.Add(_error, Severity.Error); }
-        finally { _loading = false; }
+        if(_disposed)return;if(_loading){_state?.Clear();_reloadRequested=true;return;}_loading=true;
+        try{do{
+            _reloadRequested=false;_error=null;var scope=Company.Snapshot;var version=_state!.Version+1;
+            try{await _state.LoadAsync(_filterSubType,()=>DataManagement.GetCurrentFieldIdAsync(),subtype=>WorkOrderService.GetWorkOrdersAsync(woSubType:subtype));}
+            catch(Exception ex){var sentence=Calls.Explain(ex,"loading recorded work orders","Work orders could not be confirmed. Reload before continuing");if(!_disposed && scope==Company.Snapshot && version==_state.Version)_error=sentence;}
+        }while(_reloadRequested && !_disposed);}finally{_loading=false;}
     }
-
-    private List<WorkOrderSummary> CardsFor(string state) =>
-        _workOrders.Where(w => string.Equals(w.State, state, StringComparison.OrdinalIgnoreCase)).ToList();
+    private void FilterChanged(string? value){_filterSubType=value;_state?.Clear();_error=null;}
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged(){_state?.Clear();_error=null;_showCreate=false;if(!_disposed)_=InvokeAsync(async()=>{await LoadWorkOrders();if(!_disposed)StateHasChanged();});}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;DataManagement.CurrentFieldChanged-=FieldChanged;_state?.Dispose();}
 
     private void OpenDetail(string instanceId) =>
-        NavigationManager.NavigateTo($"/ppdm39/workorder/{Uri.EscapeDataString(instanceId)}");
+        NavigationManager.NavigateTo(WorkOrderNavigation.Detail(instanceId));
 
     private void OpenCreateDialog()
     {
-        _create     = new CreateWorkOrderRequest { WoSubType = WorkOrderSubType.Preventive };
+        if(_state?.Confirmed!=true)return;
+        _create     = new CreateWorkOrderRequest { FieldId=_state.FieldId!, WoSubType = WorkOrderSubType.Preventive };
         _showCreate = true;
     }
 
     private void OpenCreateDialogFromRecommendation()
     {
+        if(_state?.Confirmed!=true)return;
         _create = new CreateWorkOrderRequest
         {
+            FieldId=_state.FieldId!,
             WoSubType = !string.IsNullOrWhiteSpace(SuggestedSubType) ? SuggestedSubType : WorkOrderSubType.Corrective,
             InstanceName = SuggestedTitle ?? string.Empty,
-            EquipmentId = WellId ?? string.Empty,
+            WellId = WellId ?? string.Empty,
             Description = SuggestedDescription ?? string.Empty
         };
         _showCreate = true;
@@ -258,56 +220,29 @@
 
     private async Task SubmitCreateAsync()
     {
-        if (_createForm is not null) await _createForm.ValidateAsync();
-        if (!_createValid) return;
+        if (_creating || _state?.Confirmed!=true || !_showCreate) return;
+        var scope=Company.Snapshot;var field=_state.FieldId;var draft=_create;
+        _creating=true;
+        WorkOrderCreateState.Attempt? attempt=null;
         try
         {
-            var created = await WorkOrderService.CreateWorkOrderAsync(_create);
-
-            AFEResponse? linkedAfe = null;
-            if (created is not null && LinkAfeOnCreate)
-            {
-                linkedAfe = await WorkOrderService.CreateOrLinkAfeAsync(created.InstanceId);
-                if (!string.IsNullOrWhiteSpace(linkedAfe.AfeNumber))
-                    Snackbar.Add($"Work order {created.InstanceId} created and linked to AFE {linkedAfe.AfeNumber}.", Severity.Success);
-                else
-                    Snackbar.Add($"Work order {created.InstanceId} created. AFE linking is available from the work-order detail page.", Severity.Warning);
-            }
-
-            _showCreate = false;
-
-            if (created is not null && (OpenCreate || LinkAfeOnCreate))
-            {
-                var detailHref = string.IsNullOrWhiteSpace(ReturnTo)
-                    ? $"/ppdm39/workorder/{Uri.EscapeDataString(created.InstanceId)}"
-                    : $"/ppdm39/workorder/{Uri.EscapeDataString(created.InstanceId)}?returnTo={Uri.EscapeDataString(ReturnTo)}";
-                NavigationManager.NavigateTo(detailHref);
-                return;
-            }
-
-            await LoadWorkOrders();
+            if (_createForm is not null) await _createForm.ValidateAsync();
+            if (!_createValid || scope!=Company.Snapshot || field!=_state.FieldId || !ReferenceEquals(draft,_create) || !_showCreate) return;
+            attempt=_creation!.Begin(draft,field!);
+            var created=await WorkOrderService.CreateWorkOrderAsync(attempt.Request);
+            _creation.Confirm(attempt,created);
+            if (_disposed || !_creation.IsCurrent(attempt,_state.FieldId)) return;
+            _showCreate=false;
+            Snackbar.Add($"Recorded header {created!.InstanceId} returned. Review its detail before planning or financial actions.",Severity.Success);
+            if(LinkAfeOnCreate) Snackbar.Add("Review and link the AFE from the recorded order detail.",Severity.Info);
+            NavigationManager.NavigateTo(WorkOrderNavigation.Detail(created.InstanceId));
         }
-        catch (Exception) { _error = "Failed to create work order."; Snackbar.Add(_error, Severity.Error); }
+        catch(Exception ex)
+        {
+            var message=Calls.Explain(ex,"creating a recorded work order","Creation could not be confirmed. Review recorded orders before retrying");
+            if(!_disposed && scope==Company.Snapshot && field==_state?.FieldId) _error=message;
+        }
+        finally { _creating=false; }
     }
-
-    private static Color SubTypeColor(string subType) => subType switch
-    {
-        WorkOrderSubType.Safety            => Color.Error,
-        WorkOrderSubType.Environmental     => Color.Success,
-        WorkOrderSubType.RegulatoryInspect => Color.Warning,
-        WorkOrderSubType.Turnaround        => Color.Info,
-        _                                  => Color.Default
-    };
-
-    private static string SubTypeLabel(string subType) => subType switch
-    {
-        WorkOrderSubType.Preventive        => "PM",
-        WorkOrderSubType.Corrective        => "CM",
-        WorkOrderSubType.Safety            => "SCE",
-        WorkOrderSubType.Environmental     => "ENV",
-        WorkOrderSubType.RegulatoryInspect => "REG",
-        WorkOrderSubType.Turnaround        => "TAR",
-        _                                  => subType
-    };
 
 }

@@ -1,0 +1,10 @@
+Test run for C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\bin\company-focused\Debug\net10.0\Beep.OilandGas.Repository.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:04.15]     Beep.OilandGas.Repository.Tests.CompanyPermitApplicationDataAccessTests.PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess(mode: "late-permission") [FAIL]
+  Failed Beep.OilandGas.Repository.Tests.CompanyPermitApplicationDataAccessTests.PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess(mode: "late-permission") [2 s]
+   Beep.OilandGas.Models.Core.Refusals.RefusalException : Company access changed. Refresh your selection before accessing business data.
+     at Beep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(CancellationToken token) in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Services\CompanyModuleConnection.cs:line 47
+   at Beep.OilandGas.ApiService.Services.CompanyPermitApplicationDataAccess.RequireReadScopeAsync() in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Services\CompanyPermitApplicationDataAccess.cs:line 25
+   at Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationLifecycleService.GetApplicationsAsync() in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PermitsAndApplications\Services\PermitApplicationLifecycleService.cs:line 69
+   at Beep.OilandGas.Repository.Tests.CompanyPermitApplicationDataAccessTests.PermitInboxCapabilitiesUseCurrentAppPermissionsAndNativeFieldWriteAccess(String mode) in C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Repository.Tests\CompanyPermitApplicationDataAccessTests.cs:line 409
+Failed!  - Failed:     1, Passed:     8, Skipped:     0, Total:     9, Duration: 2 m 24 s - Beep.OilandGas.Repository.Tests.dll (net10.0)

@@ -1,0 +1,60 @@
+{
+  "status": "verified-scoped-http",
+  "recorded_at": "2026-10-29T12:50:15.787251+03:00",
+  "session_id": 73049,
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty",
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md - Bounded FIELD preference checks / Cross-store evidence and closed-case cause recovery",
+  "filter": "FullyQualifiedName~CurrentFieldLifecycleGateTests.FinalClosureHttpAcrossStoresRefusesRevocationAndReconcilesLostCommit",
+  "source_sha256": {
+    "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.HseCommands.cs": "375c4bb907af63c29347b4ed7b050422295b6f3354362c0d6300e99f4c9eb972",
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.cs": "74f190d7bdc4e924873f20e9b035775974145872d8e764c51426daa3501db7bf",
+    "Beep.OilandGas.Repository.Tests/CompanyHseWorkflowHttpTests.cs": "aa3ca24c9d6f0c0c7ae53e1c1e911d71d5e8324a75dee7b0eb41afe3a3bf8a81",
+    "TheTechIdea.Data/OilGas/CompanyHseWorkflowStart.cs": "6157dbb7fd03398aaf0150792f22848734ca2d5774b82e852aaf559cc10d0535"
+  },
+  "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-current-closure-http.log",
+  "limitations": [
+    "One exact HTTP fact; stopped whole-class sweep remains unaccepted.",
+    "Current source/runtime fingerprints and terminal exit 0 captured.",
+    "Controlled independent Beep sources and local authentication, not hosted provider or production performance acceptance.",
+    "Earlier same-fact observation was 14m20s; current 8m49s is a local timing observation, not a controlled benchmark or production speed guarantee.",
+    "Overall company roadmap and commit/push remain pending."
+  ],
+  "self_review": {
+    "recorded_at": "2026-10-29T12:42:10.564978+03:00",
+    "scope": "Read-only source review while the exact HTTP fact runs; not independent review or a replacement for runtime acceptance.",
+    "observations": [
+      "PPDMCompanyCorrectiveActionCommands.RequireAuthorityAsync checks mandatory stored preference before and after, current HSE.ManageIncidents, and a repeated exact active FIELD fingerprint/WRITE entitlement before returning.",
+      "CompanyPPDMRowAccessPolicy.CaptureHseFieldWriteAuthorityAsync uses the mandatory stored preference owner, fresh permission/grant checks and repeated native FIELD evidence.",
+      "No source mutation or authority cache was introduced during this run."
+    ],
+    "source_locators": [
+      "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.cs:518",
+      "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.HseCommands.cs:20"
+    ]
+  },
+  "last_observed_at": "2026-10-29T12:44:47.977604+03:00",
+  "live_handle": {
+    "exec_session_id": 73049,
+    "testhost_pid": 8672,
+    "state": "terminal success; exec handle closed"
+  },
+  "exit_code": 0,
+  "passed": 1,
+  "failed": 0,
+  "skipped": 0,
+  "test_duration": "8 minutes 49 seconds",
+  "gate_duration_minutes": 8.849,
+  "original_log_sha256": "1274a5d763693368589c280d41c899db207cb87338f76b0ca204fdc5af5c4a06",
+  "output": "Plans\\FrameworkAppEnhancement\\evidence\\353-current-closure-http\\http.stdout.txt",
+  "runtime_sha256": [
+    {
+      "Path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "Hash": "93DAD0F84A67BD026695CE2B0F27FD77AEDA1BD61D0958D2AE6BDB944C98328F"
+    },
+    {
+      "Path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\TheTechIdea.Data.dll",
+      "Hash": "213FB563B1C7E5AC0BD93427FD7F7DD3A8B96B862A7655BEF94F2E4DC1CE6E8F"
+    }
+  ]
+}

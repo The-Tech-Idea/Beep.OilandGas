@@ -1,0 +1,190 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject WorkOrderExecutionPermitDecisionState State
+@inject NavigationManager Navigation
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Independent pending-permit review</MudText>
+        <MudTextField @bind-Value="_reference" Label="Original pending issue reference" Disabled="@State.Busy" />
+        <MudButton OnClick="ReviewAsync" Disabled="@(!State.CanReview || Task is null || !CanReview)" Color="Color.Primary">Review original and current prerequisite facts</MudButton>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reviewing independent work permit" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_authorized && State.Review is { } review)
+        {
+            <MudText>Company @review.Context.Company.BusinessAssociateId · FIELD @review.Context.FieldId · Order @review.Proposal.Task.WorkOrderId</MudText>
+            <MudText>Pending permit: @review.Proposal.PermitId() · Issued by: @review.Proposal.Context.ActorUserId</MudText>
+            <MudText>Independent reviewer: @review.Context.ActorUserId · Assigned role: @review.CurrentSource.Stage.AssignedRole</MudText>
+            <MudText>Type: @review.Proposal.PermitType · Reported jurisdiction: @review.Proposal.Jurisdiction</MudText>
+            <MudText>Scope: @review.Proposal.ScopeDescription</MudText>
+            <MudText>Isolation: @review.Proposal.IsolationReference · Risk: @review.Proposal.RiskReference</MudText>
+            <MudText>Personnel: @review.Proposal.PersonnelReference · Materials: @review.Proposal.MaterialReference</MudText>
+            <MudText>Validity UTC: @review.Proposal.ValidFromUtc.ToString("O") to @review.Proposal.ValidToUtc.ToString("O")</MudText>
+            <MudText Typo="Typo.caption">Comparison UTC: @review.ComparedAtUtc.ToString("O") · Pending record revision: @review.RecordedRevision</MudText>
+            @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            @if(review.PrerequisiteEvidenceVersion!=7 && review.CurrentSource.Inspections.Any(row=>(row.CondType is "OPERATIONAL" or "CLOSE_OUT") && row.Status!="PASS"))
+            {
+                <MudAlert Severity="Severity.Warning">Future operational or close-out conditions remain unaccepted. This retained permit policy requires all recorded conditions to pass; phase-specific applicability must be configured explicitly before a new issue. Do not record a future inspection as passed before its work is performed.</MudAlert>
+            }
+            @if(review.Proposal.RequirementEvidenceVersion is 1 or 2)
+            {
+                <MudText Typo="Typo.subtitle2">Original requirement comparison</MudText>
+                @if(review.CurrentSource.Inspections.Count==0 || review.CurrentSource.Inspections.Any(row=>!ProcessDefinitionRevision.IsValid(row.RequirementRevision)))
+                {
+                    <MudAlert Severity="Severity.Warning">Current immutable requirement evidence is unavailable. Approval requires a fresh complete source review.</MudAlert>
+                }
+                else
+                {
+                    var requirementsMatch=review.OriginalSource.RequirementFactsRevision()==review.CurrentSource.RequirementFactsRevision();
+                    <MudAlert Severity="@(requirementsMatch?Severity.Info:Severity.Warning)">@(requirementsMatch?"Original requirements, creation audit, order and assigned stage remain unchanged. Recorded results are reviewed separately.":"Original requirements, creation audit, order or assigned stage changed. A new review is required.")</MudAlert>
+                }
+            }
+            <MudText Typo="Typo.subtitle2">Recorded prerequisite inspection acceptance</MudText>
+            <MudSimpleTable Dense="true">
+                <thead><tr><th scope="col">Prerequisite / reported reference</th><th scope="col">Recorded inspection</th><th scope="col">Inspector / state</th></tr></thead>
+                <tbody>@foreach(var evidence in CompanyWorkOrderPermitPrerequisiteEvidence.Read(review.Proposal,review.CurrentSource,review.ComparedAtUtc)){<tr><th scope="row">@evidence.Kind / @evidence.ReportedReference</th><td>@(evidence.Inspection?.InspectionId ?? "No exact inspection")</td><td>@evidence.Inspection?.Inspector / @evidence.State</td></tr>}</tbody>
+            </MudSimpleTable>
+            @foreach(var source in new[]{review.OriginalSource,review.CurrentSource})
+            {
+                <MudText Typo="Typo.subtitle2">@(ReferenceEquals(source,review.OriginalSource)?"Original issue-source facts":"Current reviewer-source facts")</MudText>
+                <MudText Typo="Typo.caption">Facts revision: @source.FactsRevision() · Recorded review UTC: @source.ReviewedAtUtc.ToString("O")</MudText>
+                @if(source.Inspections.Count==0){<MudText>No recorded inspection requirements.</MudText>}
+                else
+                {
+                    <MudSimpleTable Dense="true">
+                        <thead><tr><th scope="col">Sequence / type</th><th scope="col">Requirement / jurisdiction</th><th scope="col">Responsible stage</th><th scope="col">Recorded result</th><th scope="col">Inspector / evidence UTC</th></tr></thead>
+                        <tbody>@foreach(var row in source.Inspections){<tr><td>@row.CondSeq / @row.CondType</td><td>@row.RequiredText / @row.Jurisdiction</td><td>@(row.ApplicableStage ?? "Not explicitly classified")</td><td>@row.Status / @row.ResultText</td><td>@row.Inspector / @row.InspectDate?.ToString("O")</td></tr>}</tbody>
+                    </MudSimpleTable>
+                }
+            }
+            @if(review.CurrentMaterialAcceptance is {} material)
+            {
+                <MudText Typo="Typo.h6">Recorded material acceptance and current evidence</MudText>
+                <MudText>Accepted by: @material.Acceptance.Reviewer · UTC: @material.Acceptance.AcceptedAtUtc.ToString("O") · Original acceptance: @material.Acceptance.IntentId</MudText>
+                <MudText>Reservation: @material.Reservation.AllocationId · Item: @material.Reservation.ItemId · Required: @material.Reservation.Quantity @material.Reservation.Unit</MudText>
+                <MudText>Warehouse: @material.Reservation.Warehouse · Location: @material.Reservation.Location · Recorded on hand: @material.Material.Source.Inventory.Item.QUANTITY_ON_HAND · Outstanding reserved: @material.Material.ReservedQuantity</MudText>
+                <MudText Typo="Typo.caption">Current comparison UTC: @material.ComparedAtUtc.ToString("O") · Inventory revision: @material.Material.Source.Inventory.Revision · Original accepted revision: @material.Acceptance.InventoryRevision</MudText>
+                @if(material.Blockers.Count==0){<MudAlert Severity="Severity.Info">The recorded material acceptance matches this current inventory/reservation comparison. Remaining permit prerequisites still require their own evidence.</MudAlert>}
+                @foreach(var blocker in material.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            }
+            @if(review.CurrentPersonnelAcceptance is {} personnel)
+            {
+                <MudText Typo="Typo.h6">Recorded personnel acceptance and current evidence</MudText>
+                <MudText>Accepted by @personnel.Acceptance.Reviewer at @personnel.Acceptance.AcceptedAtUtc.ToString("O") · assignment @personnel.Acceptance.AssignmentId</MudText>
+                <MudText>Employee @personnel.Evidence.Assignment.Assignment.EmployeeBaId · duty @personnel.Evidence.Assignment.Assignment.DutyCode · policy @personnel.Acceptance.PolicyRecordId</MudText>
+                <MudText Typo="Typo.caption">Current comparison UTC @personnel.ComparedAtUtc.ToString("O") · original personnel proof @personnel.Acceptance.Revision</MudText>
+                @if(personnel.Blockers.Count==0){<MudAlert Severity="Severity.Info">Recorded personnel acceptance matches this current duty, policy and credential comparison. Remaining permit prerequisites require separate evidence.</MudAlert>}
+                @foreach(var blocker in personnel.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            }
+            @if(review.CurrentDocumentAcceptance is {} documents)
+            {
+                <MudText Typo="Typo.h6">Recorded isolation and risk acceptance and current documents</MudText>
+                @if(documents.Count==0){<MudAlert Severity="Severity.Warning">No independently accepted document has current source/content evidence.</MudAlert>}
+                @foreach(var document in documents)
+                {
+                    <MudText>@document.Acceptance.Kind · recorded document @document.Acceptance.DocumentId · accepted version @document.Acceptance.Version · reviewer @document.Acceptance.Reviewer · accepted UTC @document.Acceptance.AcceptedAtUtc.ToString("O")</MudText>
+                    <MudText>Current version @(document.Evidence.Source.InformationItem?.Version??"Unconfirmed or withheld") · current content @(document.Evidence.Source.File?.ContentRevision??"Unconfirmed or withheld")</MudText>
+                    <MudText Typo="Typo.caption">Original content @document.Acceptance.ContentRevision · current comparison UTC @document.ComparedAtUtc.ToString("O")</MudText>
+                    @if(document.ContributorComparisonVersion==1)
+                    {
+                        <MudText>Recorded reviewer native person @(document.RecordedReviewerPerson?.PersonBaId??"Unconfirmed") · recorded contributor proof @(document.Acceptance.ContributorProof??"Historical evidence unavailable")</MudText>
+                        @if(document.CurrentContributors is {} contributors){@foreach(var contributor in contributors.Contributors){<MudText Typo="Typo.caption">Contributor @contributor.CreatorId · native person @(contributor.PersonBaId??"Unconfirmed") · reported type @(contributor.CreatorType??"Unconfirmed")</MudText>}}
+                    }
+                    @if(document.Blockers.Count==0){<MudAlert Severity="Severity.Info">Recorded independent document acceptance matches this current membership/version/content comparison. Permit approval and physical work require their separate decisions.</MudAlert>}
+                    @foreach(var blocker in document.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+                }
+            }
+            @if(review.PrerequisiteEvidenceVersion==7){<MudAlert Severity="Severity.Info">Phase-aware approval checks the explicitly classified pre-start conditions. Future submission, verification and return conditions stay recorded and require their own work and decisions.</MudAlert>}
+            <MudTextField @bind-Value="_rationale" Label="Independent decision rationale" Required="true" Disabled="@State.Busy" />
+            @if(State.CanApprove && _authorized)
+            {
+                <MudButton OnClick="ApproveAsync" Disabled="@State.Busy" Color="Color.Primary">Retain original decision and approve permit</MudButton>
+            }
+            <MudButton OnClick="RejectAsync" Disabled="@(!State.CanReject || !_authorized)" Color="Color.Error">Retain original decision and reject proposal</MudButton>
+        }
+        @if(_authorized && State.VisibleReference is {} retained)
+        {
+            <MudText>Original independent decision reference: @retained</MudText>
+            <MudAlert Severity="@(State.Receipt is null?Severity.Warning:Severity.Info)">@(State.Receipt is null?"The independent decision outcome is unconfirmed. Another submission is blocked until original read-only reconciliation.":"The original independent decision is recorded. Physical execution requires its separate current authorization.")</MudAlert>
+        }
+        @if(_authorized && State.VisibleDecision is {} original){<MudText>Original decision: @original.Outcome · Rationale: @original.Rationale</MudText>}
+        @if(_authorized && State.Receipt is {} receipt){<MudText>Recorded decision: @receipt.Outcome · @receipt.PermitId · Revision: @receipt.RecordedRevision</MudText>}
+        <MudTextField @bind-Value="_decisionReference" Label="Original independent decision reference for recovery" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!CanReview || State.Busy)">Confirm original independent decision read-only</MudButton>
+        <MudAlert Severity="Severity.Info">The comparison shows recorded acceptance and current evidence. An independent decision records the permit outcome. Starting physical work requires separate current execution authorization.</MudAlert>
+        @if(Task is not null && OriginalReference is {} personnelPermit){<WorkOrderPermitPersonnelSourcePanel Permit="@(new CompanyWorkOrderExecutionPermitReference(Task,personnelPermit))" SourceRevision="@SourceRevision" />}
+        @if(Task is not null && OriginalReference is {} documentPermit){<WorkOrderPermitDocumentSourcePanel Permit="@(new CompanyWorkOrderExecutionPermitReference(Task,documentPermit))" SourceRevision="@SourceRevision" />}
+        @if(Company.Selection?.Permissions.Contains("Inventory.View",StringComparer.Ordinal)==true && Task is not null && OriginalReference is {} materialPermit)
+        {
+            <WorkOrderPermitMaterialReadinessPanel Permit="@(new CompanyWorkOrderExecutionPermitReference(Task,materialPermit))" SourceRevision="@SourceRevision" AcceptanceReference="MaterialAcceptanceReference" AcceptanceInspection="@MaterialAcceptanceInspection" />
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public CompanyMaintenanceReceivingQuery? Task {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    [Parameter] public Guid? OriginalReference {get;set;}
+    [Parameter] public Guid? DecisionReference {get;set;}
+    [Parameter] public Guid? MaterialAcceptanceReference {get;set;}
+    [Parameter] public string? MaterialAcceptanceInspection {get;set;}
+    private string _key="",_taskKey="",_reference="",_decisionReference="",_rationale="";
+    private string? _error;
+    private bool _authorized,_disposed;
+    private bool CanReview=>Company.Selection?.Permissions.Contains("HSE.ApprovePermit",StringComparer.Ordinal)==true;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Clear;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async System.Threading.Tasks.Task OnParametersSetAsync()
+    {
+        var key=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision,OriginalReference,DecisionReference});if(key==_key)return;_key=key;
+        var taskKey=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision,OriginalReference});if(taskKey!=_taskKey){ClearInputs();_taskKey=taskKey;}
+        if(OriginalReference is {} issue && CanReview)
+        {
+            _reference=issue.ToString("D");State.Attach(new(Task!,issue),SourceRevision);
+            if(DecisionReference is {} decision){_decisionReference=decision.ToString("D");if(!State.Busy && (State.VisibleReference!=decision || State.Receipt is null && State.VisibleDecision is null))await RecoverAsync();}
+            else if(State.CanReview)await ReviewAsync();
+        }
+        else State.Attach(null,null);
+    }
+    private async System.Threading.Tasks.Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Task is null || string.IsNullOrWhiteSpace(SourceRevision) || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("HSE.ApprovePermit",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("The current resolved company reviewer, standard roles, HSE.ApprovePermit and original FIELD are required.");
+        var role=State.Review?.CurrentSource.Stage.AssignedRole ?? State.VisibleDecision?.Review.CurrentSource.Stage.AssignedRole;
+        if(role is not null && (!user.IsInRole(role) || !selected.Roles.Contains(role,StringComparer.Ordinal)))throw new UnauthorizedAccessException("The current configured maintenance role is required.");
+    }
+    private async System.Threading.Tasks.Task Run(Func<System.Threading.Tasks.Task> action)
+    {
+        if(_disposed || State.Busy)return;_error=null;var snapshot=Company.Snapshot;
+        try
+        {
+            await Authority();_authorized=true;if(!Guid.TryParse(_reference,out var issue) || issue==Guid.Empty)throw new ArgumentException("Enter the original pending issue reference.");State.Attach(new(Task!,issue),SourceRevision);await action();await Authority();
+        }
+        catch(Exception error)
+        {
+            if(snapshot!=Company.Snapshot || _disposed)return;
+            if(error is UnauthorizedAccessException || error is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized})Clear();
+            _error=Calls.Explain(error,"reviewing or recording the independent permit decision","The original independent permit decision could not be confirmed. Retain its reference for read-only reconciliation");
+        }
+    }
+    private System.Threading.Tasks.Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows));
+    private System.Threading.Tasks.Task ApproveAsync()=>Run(()=>State.ApproveAsync(Workflows,_rationale,Retain));
+    private System.Threading.Tasks.Task RejectAsync()=>Run(()=>State.RejectAsync(Workflows,_rationale,Retain));
+    private System.Threading.Tasks.Task RecoverAsync()=>Run(()=>{if(!Guid.TryParse(_decisionReference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original independent decision reference.");return State.RecoverAsync(Workflows,id,Retain);});
+    private System.Threading.Tasks.Task Retain(Guid id)
+    {
+        _decisionReference=id.ToString("D");if(!Guid.TryParse(_reference,out var issue) || issue==Guid.Empty)throw new InvalidOperationException("The original proposal reference is unavailable.");
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"permitReviewId",issue},{"permitDecisionId",id},{"permitIssueId",null}}),replace:true);return System.Threading.Tasks.Task.CompletedTask;
+    }
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ClearInputs(){_reference="";_decisionReference="";_rationale="";_error=null;_authorized=false;}
+    private void Clear(){ClearInputs();State.Attach(null,null);Changed();}
+    private void FieldChanged(string _) => Clear();
+    private void AuthenticationChanged(System.Threading.Tasks.Task<AuthenticationState> _) => Clear();
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Clear;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.Attach(null,null);}
+}

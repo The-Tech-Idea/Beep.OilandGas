@@ -1,3 +1,4 @@
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
@@ -28,9 +29,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitComplianceCheckService>? logger = null,
-            string connectionName = "PPDM39")
-            : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
+            ICompanyPermitApplicationDataAccess dataAccess,
+            ILogger<PermitComplianceCheckService>? logger = null)
+            : base(editor, commonColumnHandler, defaults, metadata, dataAccess, logger)
         {
             _logger = logger;
         }
@@ -50,6 +51,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var environmental = await GetEnvironmentalApplicationAsync(application.PERMIT_APPLICATION_ID);
             var injection = await GetInjectionApplicationAsync(application.PERMIT_APPLICATION_ID);
             var mitResults = await GetMitResultsAsync(injection?.PERMIT_APPLICATION_ID ?? string.Empty);
+            TheTechIdea.Data.OilGas.PermitApplicationSupportingRecords.RequireParent(application, drilling, environmental, injection);
 
             ValidateCoreFields(application, result);
             ValidateTypeSpecific(application, drilling, environmental, injection, mitResults, result);
@@ -85,8 +87,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 Array.Empty<APPLICATION_ATTACHMENT>(),
                 Array.Empty<REQUIRED_FORM>(),
                 null,
-                application.REGULATORY_AUTHORITY,
-               application.APPLICATION_TYPE,
+
                 drilling,
                 environmental,
                 injection);
@@ -133,7 +134,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(drilling.WELL_UWI) && string.IsNullOrWhiteSpace(drilling.LEGAL_DESCRIPTION))
+                if (string.IsNullOrWhiteSpace(application.WELL_ID) && string.IsNullOrWhiteSpace(drilling.LEGAL_DESCRIPTION))
                     result.Violations.Add("Well UWI or legal description is required.");
                 if (string.IsNullOrWhiteSpace(drilling.TARGET_FORMATION))
                     result.Violations.Add("Target formation is required.");
@@ -223,7 +224,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 if (string.IsNullOrWhiteSpace(drilling.SURFACE_OWNER_NOTIFIED_IND))
                     result.Violations.Add("RRC drilling requires surface owner notification.");
-                if (string.IsNullOrWhiteSpace(drilling.LEGAL_DESCRIPTION) && string.IsNullOrWhiteSpace(drilling.WELL_UWI))
+                if (string.IsNullOrWhiteSpace(drilling.LEGAL_DESCRIPTION) && string.IsNullOrWhiteSpace(application.WELL_ID))
                     result.Violations.Add("RRC drilling requires legal description or well UWI.");
             }
 
@@ -295,7 +296,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
         private async Task ValidateAttachmentsAsync(string applicationId, PermitComplianceResult result)
         {
-            var repo = await CreateRepositoryAsync<APPLICATION_ATTACHMENT>("APPLICATION_ATTACHMENT");
+            var repo = await CreateRepositoryAsync<APPLICATION_ATTACHMENT>("APPLICATION_ATTACHMENT", applicationId);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
@@ -348,7 +349,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
         private async Task<DRILLING_PERMIT_APPLICATION?> GetDrillingApplicationAsync(string applicationId)
         {
-            var repo = await CreateRepositoryAsync<DRILLING_PERMIT_APPLICATION>("DRILLING_PERMIT_APPLICATION");
+            var repo = await CreateRepositoryAsync<DRILLING_PERMIT_APPLICATION>("DRILLING_PERMIT_APPLICATION", applicationId);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
@@ -361,7 +362,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
         private async Task<ENVIRONMENTAL_PERMIT_APPLICATION?> GetEnvironmentalApplicationAsync(string applicationId)
         {
-            var repo = await CreateRepositoryAsync<ENVIRONMENTAL_PERMIT_APPLICATION>("ENVIRONMENTAL_PERMIT_APPLICATION");
+            var repo = await CreateRepositoryAsync<ENVIRONMENTAL_PERMIT_APPLICATION>("ENVIRONMENTAL_PERMIT_APPLICATION", applicationId);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
@@ -374,7 +375,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
         private async Task<INJECTION_PERMIT_APPLICATION?> GetInjectionApplicationAsync(string applicationId)
         {
-            var repo = await CreateRepositoryAsync<INJECTION_PERMIT_APPLICATION>("INJECTION_PERMIT_APPLICATION");
+            var repo = await CreateRepositoryAsync<INJECTION_PERMIT_APPLICATION>("INJECTION_PERMIT_APPLICATION", applicationId);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
@@ -390,7 +391,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (string.IsNullOrWhiteSpace(injectionApplicationId))
                 return Array.Empty<MIT_RESULT>();
 
-            var repo = await CreateRepositoryAsync<MIT_RESULT>("MIT_RESULT");
+            var repo = await CreateRepositoryAsync<MIT_RESULT>("MIT_RESULT", injectionApplicationId);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "INJECTION_PERMIT_APPLICATION_ID", Operator = "=", FilterValue = injectionApplicationId },

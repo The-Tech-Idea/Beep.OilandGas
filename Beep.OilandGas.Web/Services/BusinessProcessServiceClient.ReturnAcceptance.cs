@@ -1,0 +1,30 @@
+using System.Text.Json;
+using TheTechIdea.Data.OilGas;
+namespace Beep.OilandGas.Web.Services;
+public sealed partial class BusinessProcessServiceClient
+{
+    public async Task<CompanyWorkOrderCompletionQuery> DiscoverReturnAcceptanceReportAsync(CompanyMaintenanceReceivingQuery task,CancellationToken cancellationToken=default)
+    {
+        task.Require();var snapshot=_apiClient.CompanySnapshot;ReturnAcceptanceActor(false);var result=await _apiClient.PostAsync<CompanyMaintenanceReceivingQuery,CompanyWorkOrderCompletionQuery>("/api/field/current/maintenance-handoffs/execution-permit/return-acceptance/report",task,cancellationToken)??throw new InvalidOperationException("Original recorded return work report is unavailable.");if(snapshot!=_apiClient.CompanySnapshot)throw new OperationCanceledException("Original company/account changed during return report discovery.");result.Require();if(result.Task!=task)throw new InvalidOperationException("Discovered report differs from the original return assignment.");return result;
+    }
+    private Beep.OilandGas.Client.App.CompanyClientSelection ReturnAcceptanceActor(bool approve)
+    {var selected=_apiClient.CompanySnapshot.Selection;if(selected is null || selected.Roles.Count==0 || !selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) || approve && !selected.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal))throw new UnauthorizedAccessException("Current standard return role and return/approval capability are required.");return selected;}
+    public async Task<CompanyWorkOrderReturnReview> ReviewReturnAcceptanceAsync(CompanyWorkOrderCompletionQuery query,CancellationToken cancellationToken=default)
+    {
+        query.Require();var snapshot=_apiClient.CompanySnapshot;var selected=ReturnAcceptanceActor(true);var result=await _apiClient.PostAsync<CompanyWorkOrderCompletionQuery,CompanyWorkOrderReturnReview>("/api/field/current/maintenance-handoffs/execution-permit/return-acceptance/review",query,cancellationToken)??throw new InvalidOperationException("Current independent return evidence is unavailable.");if(snapshot!=_apiClient.CompanySnapshot)throw new OperationCanceledException("Original return company/account changed.");result.Require();var stage=result.Assignment.Stage;
+        if(stage.Context.Company!=selected.Scope || stage.Context.ActorUserId!=selected.UserId || result.Completion.Report.Query!=query || !selected.Roles.Contains(stage.AssignedRole,StringComparer.Ordinal))throw new UnauthorizedAccessException("Original configured return role/company/account/report differs.");return CompanyInventorySourceReview.Copy(result);
+    }
+    public async Task<CompanyWorkOrderReturnRecovery> RecordReturnAcceptanceAsync(CompanyWorkOrderReturnCommand original,CancellationToken cancellationToken=default)
+    {
+        var command=CompanyInventorySourceReview.Copy(original);command.Require();var snapshot=_apiClient.CompanySnapshot;var selected=ReturnAcceptanceActor(true);var stage=command.Review.Assignment.Stage;if(stage.Context.Company!=selected.Scope || stage.Context.ActorUserId!=selected.UserId || !selected.Roles.Contains(stage.AssignedRole,StringComparer.Ordinal))throw new UnauthorizedAccessException("Original configured return approver is required.");
+        var result=await _apiClient.PostAsync<CompanyWorkOrderReturnCommand,CompanyWorkOrderReturnRecovery>("/api/field/current/maintenance-handoffs/execution-permit/return-acceptance",command,cancellationToken)??throw new InvalidOperationException("Physical return acceptance is unconfirmed; retain the original reference.");if(snapshot!=_apiClient.CompanySnapshot)throw new OperationCanceledException("Original return company/account changed.");result.Require(selected.Scope,selected.UserId,command.Reference());if(JsonSerializer.Serialize(result.Command)!=JsonSerializer.Serialize(command))throw new InvalidOperationException("Recorded return acceptance differs from the retained original body.");return CompanyInventorySourceReview.Copy(result);
+    }
+    public async Task<CompanyWorkOrderReturnRecovery> RecoverReturnAcceptanceAsync(CompanyWorkOrderReturnReference reference,CancellationToken cancellationToken=default)
+    {
+        reference.Require();var snapshot=_apiClient.CompanySnapshot;var selected=ReturnAcceptanceActor(true);var result=await _apiClient.PostAsync<CompanyWorkOrderReturnReference,CompanyWorkOrderReturnRecovery>("/api/field/current/maintenance-handoffs/execution-permit/return-acceptance/recovery/reference",reference,cancellationToken)??throw new InvalidOperationException("Original physical return acceptance remains unconfirmed.");if(snapshot!=_apiClient.CompanySnapshot)throw new OperationCanceledException("Original return company/account changed.");result.Require(selected.Scope,selected.UserId,reference);if(!selected.Roles.Contains(result.Command.Review.Assignment.Stage.AssignedRole,StringComparer.Ordinal))throw new UnauthorizedAccessException("Original configured return approver role is required.");return CompanyInventorySourceReview.Copy(result);
+    }
+    public async Task<CompanyWorkOrderReturnStatus> ReadReturnAcceptanceStatusAsync(CompanyWorkOrderCompletionQuery query,CancellationToken cancellationToken=default)
+    {
+        query.Require();var snapshot=_apiClient.CompanySnapshot;var selected=ReturnAcceptanceActor(false);var result=await _apiClient.PostAsync<CompanyWorkOrderCompletionQuery,CompanyWorkOrderReturnStatus>("/api/field/current/maintenance-handoffs/execution-permit/return-acceptance/status",query,cancellationToken)??throw new InvalidOperationException("Recorded return status is unavailable; a failed read cannot establish absence.");if(snapshot!=_apiClient.CompanySnapshot)throw new OperationCanceledException("Original return company/account changed.");result.Require();if(result.Context.Company!=selected.Scope || result.Context.ActorUserId!=selected.UserId || result.Query!=query)throw new UnauthorizedAccessException("Original public return status company/account/report differs.");return CompanyInventorySourceReview.Copy(result);
+    }
+}

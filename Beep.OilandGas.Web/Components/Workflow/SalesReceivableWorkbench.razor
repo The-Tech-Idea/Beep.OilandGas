@@ -1,0 +1,113 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IAccountingServiceClient Accounting
+@inject CompanySalesReceivableWorkspaceState State
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-4">
+    <MudText Typo="Typo.h5">Invoice receivable preparation</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable") · Invoice: @InvoiceId</MudText>
+    <MudText>Recorded proposals require independent financial review and separate posting. Draft amounts do not establish recognized revenue or outstanding posted balances.</MudText>
+    <MudButton OnClick="Reload" Disabled="@State.Busy">Reload recorded status</MudButton>
+    <MudButton OnClick="Recover" Disabled="@State.Busy">Recover my original receivable request</MudButton>
+    @if(_authorized && _canPrepare){<MudButton OnClick="Source" Disabled="@State.Busy">Review current preparation source</MudButton>}
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading or reconciling invoice receivable" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(!_authorized){<MudAlert Severity="Severity.Info">Select the original company and account with an assigned accounting role to review this invoice.</MudAlert>}
+    else
+    {
+        @if(State.ReviewPending is {} retainedReview && State.Status?.Receivables.Any(row=>row.Id==retainedReview.ReceivableId)!=true)
+        {
+            <MudAlert Severity="Severity.Warning">An original reviewer decision remains retained. Recover it before reviewing another receivable.</MudAlert>
+            <MudButton Href='@("/accounting/sales-receivables?invoice="+Uri.EscapeDataString(retainedReview.Review.InvoiceId))'>Open original receivable reviewer request</MudButton>
+            <SalesReceivableReviewWorkbench ReceivableId="@retainedReview.ReceivableId" @key="retainedReview.ReceivableId" />
+        }
+        else if(State.HasPendingReview && State.ReviewPending is null){<MudAlert Severity="Severity.Warning">Return to the original company and reviewer account to reconcile the retained decision.</MudAlert>}
+        @if(State.Status is {} status)
+        {
+            <MudText Typo="Typo.h6">Recorded invoice @status.Invoice.Number · @status.Invoice.Status</MudText>
+            <MudText>Buyer @status.Invoice.BuyerId · FIELD @status.FieldId · Proposed invoice @Amount(status.Invoice.ProposedTotal) @status.Invoice.Currency</MudText>
+            <MudText>Company calendar: Invoice @Calendar(status.Invoice.InvoiceDate) · Due @Calendar(status.Invoice.DueDate)</MudText>
+            <MudButton Href='@("/accounting/sales-invoices?ticket="+Uri.EscapeDataString(status.Invoice.TicketId))'>Billing and receiving evidence</MudButton>
+            @if(status.Receivables.Count==0){<MudAlert Severity="Severity.Info">No owned receivable draft is recorded for this invoice.</MudAlert>}
+            @foreach(var row in status.Receivables)
+            {
+                <MudText>Receivable @row.Number · @row.Id · @row.Status · Proposed @Amount(row.ProposedTotal) @row.Currency</MudText>
+                <MudText>Prepared by @row.Maker · UTC @row.PreparedAtUtc.ToString("O")</MudText>
+                <MudText>Independent reviewer @(row.ReviewerId ?? "Not recorded") · UTC @(row.ReviewedUtc?.ToString("O") ?? "Not recorded")</MudText>
+                <MudText Typo="Typo.caption">Native revision @row.NativeRevision · Original receipt @row.ReceiptRevision</MudText>
+                <SalesReceivableReviewWorkbench ReceivableId="@row.Id" AssignedSource="@(AssignedSource?.ReceivableId==row.Id?AssignedSource:null)" RecordedOutcomeChanged="RecordedOutcomeChanged" @key="row.Id" />
+                @if(row.Maker==Company.Selection?.UserId && Company.Selection.Permissions.Contains("Workflow.Start",StringComparer.Ordinal))
+                {<Beep.OilandGas.Web.Components.BusinessProcess.CompanyAccountingHandoffPanel EntityType="AR_INVOICE" EntityId="@row.Id" SourceRevision="@row.ReceiptRevision" />}
+            }
+            <MudText Typo="Typo.caption">Recorded invoice preparation @status.Invoice.PreparationRevision · Status revision @status.Revision</MudText>
+        }
+        @if(State.Recovery?.Outcome is {} outcome)
+        {
+            <MudAlert Severity="Severity.Success">The original receivable draft and durable receipt are confirmed.</MudAlert>
+            <MudText>@outcome.Receivable.INVOICE_NUMBER · @outcome.Receivable.AR_INVOICE_ID · @outcome.Receivable.STATUS · Proposed @Amount(outcome.Receivable.TOTAL_AMOUNT!.Value) @outcome.Receivable.CURRENCY_CODE</MudText>
+            <MudText Typo="Typo.caption">Original receipt @outcome.Receipt.RECORDED_REVISION · Intent @outcome.Intent.SALES_RECEIVABLE_INTENT_ID</MudText>
+        }
+        @if(State.Pending is {} pending)
+        {
+            <MudAlert Severity="Severity.Warning">Retain this original request until its native outcome is confirmed.</MudAlert>
+            <MudText>Original invoice @pending.Source.InvoiceId · Request @pending.IntentId · Document @pending.Number · Reason @pending.Reason</MudText>
+            <MudButton OnClick="Retry" Disabled="@(!State.CanRetryPending || pending.Source.InvoiceId!=InvoiceId)">Reconcile exact original request</MudButton>
+        }
+        else if(State.HasPendingIntent){<MudAlert Severity="Severity.Warning">A request is retained for another original context. Return to its company, account and invoice to reconcile.</MudAlert>}
+        @if(!_canPrepare){<MudAlert Severity="Severity.Info">Current receivable preparation permission is required to prepare a draft. Recorded status and original outcome recovery remain available.</MudAlert>}
+        @if(State.Workspace is {} workspace)
+        {
+            <MudText Typo="Typo.h6">Approved invoice preparation source</MudText>
+            <MudText>Buyer @workspace.Source.Invoice.CUSTOMER_BA_ID · Proposed @Amount(workspace.Source.Invoice.TOTAL_AMOUNT) @workspace.Source.Invoice.CURRENCY_CODE</MudText>
+            <MudText Typo="Typo.caption">Original invoice receipt @workspace.Source.InvoicePreparationRevision · Current receiving and policy review @workspace.Source.CurrentInvoiceReviewRevision</MudText>
+            @if(State.CanPrepare)
+            {
+                <MudForm @ref="_form">
+                    <MudTextField T="string" Label="Receivable document number" @bind-Value="_number" Required="true" MaxLength="128" />
+                    <MudTextField T="string" Label="Preparation reason" @bind-Value="_reason" Required="true" MaxLength="1000" Lines="3" />
+                    <MudButton OnClick="Prepare" Disabled="@State.Busy" Color="Color.Primary" Variant="Variant.Filled">Prepare receivable draft</MudButton>
+                </MudForm>
+            }
+        }
+    }
+</MudPaper>
+@code {
+    [Parameter] public string? InvoiceId{get;set;}
+    [Parameter] public CompanySalesReceivableProcessSourceReview? AssignedSource{get;set;}
+    [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
+    private string? _loadedInvoice,_error;
+    private string? _loadedAssigned;
+    private string _number="",_reason="";
+    private bool _authorized,_canPrepare,_disposed;
+    private long _epoch;
+    private MudForm? _form;
+    private static string Amount(decimal value)=>value.ToString(System.Globalization.CultureInfo.CurrentCulture);
+    private static string Calendar(DateTime value)=>value.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture);
+    protected override void OnInitialized(){State.AttachOwner(this);State.Changed+=StateChanged;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){var assigned=AssignedSource?.Receivable.Revision;if(_loadedInvoice==InvoiceId && _loadedAssigned==assigned)return;State.Invalidate();ContextChanged();_loadedInvoice=InvoiceId;_loadedAssigned=assigned;await Reload();}
+    private async Task Access()
+    {
+        _authorized=false;_canPrepare=false;var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);_authorized=true;_canPrepare=Company.Selection!.Permissions.Contains("Accounting.PrepareSalesReceivable",StringComparer.Ordinal);
+    }
+    private async Task Execute(Func<Task> action)
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();if(InvoiceId is null)throw new InvalidOperationException();await action();if(!_disposed && epoch==_epoch)await Access();}
+        catch{if(!_disposed && epoch==_epoch)_error="Receivable evidence or the original outcome could not be confirmed. Check current company/account and FIELD access. Recover any original request before preparing again.";}
+    }
+    private Task Reload(){_number="";_reason="";return Execute(async()=>{await State.LoadStatusAsync(InvoiceId!,Accounting);if(AssignedSource is {} assigned){assigned.Require(Company.Selection!.Scope,Company.Selection.UserId,assigned.InstanceId);var row=State.Status?.Receivables.SingleOrDefault(value=>value.Id==assigned.ReceivableId);if(assigned.Receivable.InvoiceId!=InvoiceId || row is null || row.NativeRevision!=CompanySalesReceivableContributor.Create(assigned.Company,assigned.Receivable.Original.Receivable).Revision){State.Invalidate();throw new InvalidOperationException("The displayed assigned receivable changed. Reload its process.");}}});}
+    private Task Source()=>Execute(()=>State.LoadSourceAsync(InvoiceId!,Accounting));
+    private Task Recover()=>Execute(()=>State.RecoverAsync(InvoiceId!,Accounting));
+    private Task Retry()=>Execute(()=>State.SubmitPendingAsync(Accounting));
+    private Task Prepare()=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}var epoch=_epoch;await State.PrepareAsync(_number,_reason,Accounting);if(!_disposed && epoch==_epoch){_number="";_reason="";}});
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_error=null;_number="";_reason="";if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}
+    public void Dispose(){_disposed=true;State.Changed-=StateChanged;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.DetachOwner(this);}
+}

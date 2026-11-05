@@ -1,0 +1,37 @@
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IAfeServiceClient AfeClient
+@inject OilGasCallFailures Calls
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6" HtmlTag="h3">Investment financial evidence</MudText>
+    <MudButton OnClick="Inspect" Disabled="@(_state?.CanInspect!=true)" Variant="Variant.Outlined" Class="my-3">Inspect investment decision</MudButton>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming original AFE investment evidence" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+    @if(_state?.Review is {} review)
+    {
+        <MudText>@review.Afe().Number · @review.Afe().RequestedAmount.ToString("N"+review.Afe().CurrencyDecimals,CultureInfo.InvariantCulture) @review.Afe().CurrencyCode · Book @review.Afe().BookId</MudText>
+        <MudText>Request maker: @review.Afe().CreatedBy · @review.Afe().CreatedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+        @if(review.Recorded is {} outcome){<MudText>Recorded decision: @outcome.Decision · Reviewer @outcome.Reviewer · @outcome.AtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>}
+        else
+        {
+            <MudAlert Severity="Severity.Info">No independent investment decision is recorded. Its absence was checked.</MudAlert>
+            @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Info" Class="my-2">@blocker</MudAlert>}
+        }
+    }
+    <MudAlert Severity="Severity.Info">Use the assigned company inbox to approve or reject the configured investment stage.</MudAlert>
+    <MudText Typo="Typo.caption" Class="mt-3">A recorded budget approval does not create a financial commitment, payment or actual expenditure.</MudText>
+    <DevelopmentInvestmentRoutingPanel ProcessId="@ProcessId" AfeId="@AfeId" />
+</MudPaper>
+@code{
+    [Parameter,EditorRequired]public string ProcessId{get;set;}=default!;[Parameter,EditorRequired]public string AfeId{get;set;}=default!;
+    private DevelopmentInvestmentState? _state;private string? _process,_afe;private bool disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls.Explain);_state.Changed+=Changed;}
+    protected override async Task OnParametersSetAsync(){if(_process!=ProcessId || _afe!=AfeId){_process=ProcessId;_afe=AfeId;await _state!.LoadAsync(ProcessId,AfeId);}}
+    private Task Inspect()=>_state!.InspectAsync();
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

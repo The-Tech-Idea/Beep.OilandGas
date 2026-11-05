@@ -1,0 +1,315 @@
+using System;
+using System.Collections.Generic;
+
+namespace Beep.OilandGas.Models.Data
+{
+    public class WellTestResponse : ModelEntityBase
+    {
+        public string? Source { get; set; }
+        public string? TestNumber { get; set; }
+        public string? RunNumber { get; set; }
+        public string? OilFlowAmountUom { get; set; }
+        public string? GasFlowAmountUom { get; set; }
+        public string? WaterFlowAmountUom { get; set; }
+        public string? OilFlowAmountOuom { get; set; }
+        public string? GasFlowAmountOuom { get; set; }
+        public string? WaterFlowAmountOuom { get; set; }
+        private string TestIdValue = string.Empty;
+
+        public string TestId
+
+        {
+
+            get { return this.TestIdValue; }
+
+            set { SetProperty(ref TestIdValue, value); }
+
+        }
+        private string? WellIdValue;
+
+        public string? WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? UwiValue;
+
+        public string? Uwi
+
+        {
+
+            get { return this.UwiValue; }
+
+            set { SetProperty(ref UwiValue, value); }
+
+        }
+        private string? WellboreIdValue;
+
+        public string? WellboreId
+
+        {
+
+            get { return this.WellboreIdValue; }
+
+            set { SetProperty(ref WellboreIdValue, value); }
+
+        }
+        
+        // Test classification
+        private string? TestTypeValue;
+
+        public string? TestType
+
+        {
+
+            get { return this.TestTypeValue; }
+
+            set { SetProperty(ref TestTypeValue, value); }
+
+        }
+        private string? TestPurposeValue;
+
+        public string? TestPurpose
+
+        {
+
+            get { return this.TestPurposeValue; }
+
+            set { SetProperty(ref TestPurposeValue, value); }
+
+        }
+        private string? TestNameValue;
+
+        public string? TestName
+
+        {
+
+            get { return this.TestNameValue; }
+
+            set { SetProperty(ref TestNameValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        
+        // Test dates
+        private DateTime? TestStartDateValue;
+
+        public DateTime? TestStartDate
+
+        {
+
+            get { return this.TestStartDateValue; }
+
+            set { SetProperty(ref TestStartDateValue, value); }
+
+        }
+        private DateTime? TestEndDateValue;
+
+        public DateTime? TestEndDate
+
+        {
+
+            get { return this.TestEndDateValue; }
+
+            set { SetProperty(ref TestEndDateValue, value); }
+
+        }
+        private DateTime? TestDateValue;
+
+        public DateTime? TestDate
+
+        {
+
+            get { return this.TestDateValue; }
+
+            set { SetProperty(ref TestDateValue, value); }
+
+        }
+        
+        // Test conditions
+        private decimal? TestDurationValue;
+
+        public decimal? TestDuration
+
+        {
+
+            get { return this.TestDurationValue; }
+
+            set { SetProperty(ref TestDurationValue, value); }
+
+        }
+        private string? TestStatusValue;
+
+        public string? TestStatus
+
+        {
+
+            get { return this.TestStatusValue; }
+
+            set { SetProperty(ref TestStatusValue, value); }
+
+        }
+        private decimal? RunNumValue;
+
+        public decimal? RunNum
+
+        {
+
+            get { return this.RunNumValue; }
+
+            set { SetProperty(ref RunNumValue, value); }
+
+        }
+        private decimal? OilFlowAmountValue;
+
+        public decimal? OilFlowAmount
+
+        {
+
+            get { return this.OilFlowAmountValue; }
+
+            set { SetProperty(ref OilFlowAmountValue, value); }
+
+        }
+        private decimal? GasFlowAmountValue;
+
+        public decimal? GasFlowAmount
+
+        {
+
+            get { return this.GasFlowAmountValue; }
+
+            set { SetProperty(ref GasFlowAmountValue, value); }
+
+        }
+        private decimal? WaterFlowAmountValue;
+
+        public decimal? WaterFlowAmount
+
+        {
+
+            get { return this.WaterFlowAmountValue; }
+
+            set { SetProperty(ref WaterFlowAmountValue, value); }
+
+        }
+        private decimal? BswPercentValue;
+
+        public decimal? BswPercent
+
+        {
+
+            get { return this.BswPercentValue; }
+
+            set { SetProperty(ref BswPercentValue, value); }
+
+        }
+        private decimal? WaterCutPercentValue;
+
+        public decimal? WaterCutPercent
+
+        {
+
+            get { return this.WaterCutPercentValue; }
+
+            set { SetProperty(ref WaterCutPercentValue, value); }
+
+        }
+        
+        // Common PPDM fields
+        private string? ActiveIndValue;
+
+        public string? ActiveInd
+
+        {
+
+            get { return this.ActiveIndValue; }
+
+            set { SetProperty(ref ActiveIndValue, value); }
+
+        }
+
+        private string? RowQualityValue;
+
+        public string? RowQuality
+
+        {
+
+            get { return this.RowQualityValue; }
+
+            set { SetProperty(ref RowQualityValue, value); }
+
+        }
+        private string? PreferredIndValue;
+
+        public string? PreferredInd
+
+        {
+
+            get { return this.PreferredIndValue; }
+
+            set { SetProperty(ref PreferredIndValue, value); }
+
+        }
+        
+        // Audit fields
+        private DateTime? CreateDateValue;
+
+        public DateTime? CreateDate
+
+        {
+
+            get { return this.CreateDateValue; }
+
+            set { SetProperty(ref CreateDateValue, value); }
+
+        }
+        private string? CreateUserValue;
+
+        public string? CreateUser
+
+        {
+
+            get { return this.CreateUserValue; }
+
+            set { SetProperty(ref CreateUserValue, value); }
+
+        }
+        private DateTime? UpdateDateValue;
+
+        public DateTime? UpdateDate
+
+        {
+
+            get { return this.UpdateDateValue; }
+
+            set { SetProperty(ref UpdateDateValue, value); }
+
+        }
+        private string? UpdateUserValue;
+
+        public string? UpdateUser
+
+        {
+
+            get { return this.UpdateUserValue; }
+
+            set { SetProperty(ref UpdateUserValue, value); }
+
+        }
+    }
+}

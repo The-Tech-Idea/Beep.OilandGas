@@ -1,0 +1,66 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md; Persona09 authorized incident workload and context clearing",
+  "status": "Selected current-authentication incident landing requirement passed; full roadmap remains active.",
+  "recorded_at": "2026-10-30T03:18:01.603382+00:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "Existing dirty implementation preserved. Actual HSE dashboard changed; focused tests added and pre-existing positive dashboard fixtures supplied with authenticated HSE.View access.",
+  "change": [
+    "Before FIELD/incident reads and before publishing returned records, require authenticated principal party_id matching selected account, a current standard ASP.NET role from selected company roles and HSE.View. Same pattern as existing incident detail; API independently remains authoritative.",
+    "Subscribe/unsubscribe AuthenticationStateChanged. On notification invalidate pending generation, clear counts, links, checked timestamp and entered study ID immediately. Company/FIELD changes retain existing messages and also clear entered study ID.",
+    "A fresh authentication read before publication rejects silent principal changes without a notification. No schema, SQL, EF migration, new authorization owner or legacy path."
+  ],
+  "test": {
+    "method": "Beep.OilandGas.Web.Auth.Tests.HseLandingAuthorityTests.LandingIncidentDataRequiresCurrentAccountAndRejectsLateResponses",
+    "inputs": [
+      "anonymous",
+      "foreign",
+      "role",
+      "permission",
+      "silent"
+    ],
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 1.5402,
+    "mapping": "Each input denies initial unauthorized read with zero FIELD/incident calls, restores valid access and confirms recorded count/encoded source link, changes authentication to clear published counts/links/timestamp/study ID, then blocks a late response after another authority change. Silent case directly changes principal without notification during pending response and is refused by final fresh authentication check.",
+    "selection": "Master and Plan353 read immediately before exact method execution. No old fixture methods/class/provider/permit/full suite ran."
+  },
+  "build": {
+    "seconds": 1.54,
+    "errors": 0,
+    "warnings": "Existing Microsoft.Extensions.DependencyModel support-reference version unification.",
+    "scope": "Minimal isolated source-linked Razor/bUnit project, no project-reference builds. Current actual HSEDashboard/test/PermissionConstants source, current Data assembly, prior support interfaces/context."
+  },
+  "construction": [
+    "Actual current HSEDashboard Razor source compiled locally; local type wins over prior support assembly type. New five-case source file runs through bUnit with controlled authentication/FIELD/client responses.",
+    "PersonaTaskInbox is stubbed. PermitApplicationInbox type is an explicitly empty temporary harness seam because prior support assembly lacks it; ViewPermits is absent in all selected scopes and no permit child renders or runs.",
+    "Existing HsePersonaLandingTests positive dashboard fixtures now declare authenticated Safety role/HSE.View. Those historical methods were not rerun or promoted by this gate.",
+    "Component render/permission/change behavior only. No full production Web/OIDC/API/provider or wider RTL/keyboard/screen-reader acceptance claim."
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.Web/Pages/PPDM39/HSE/HSEDashboard.razor": "80D6E0A6D11290C721D9B38A533CBBFEFA97960C3D3A8073B509DFB26B1429A1",
+    "Beep.OilandGas.Web.Auth.Tests/HseLandingAuthorityTests.cs": "06602B4A456F60B099DAD278EB0D15F636505D9DE4FD6EB81DBFC35B0702F6B3",
+    "Beep.OilandGas.Web.Auth.Tests/HsePersonaLandingTests.cs": "DF17A0FE8E24AFDDF5FD5519DAD64B1748DDF5E8679A554F23FC0A485D35639D",
+    "Beep.OilandGas.Models/Data/Security/PermissionConstants.cs": "0750B42A4005FCB779C1804D37AA88DD92850F37B6F7D72CE627B98591C40064"
+  },
+  "runtime_sha256": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-landing-focused\\bin\\Debug\\net10.0\\HseLanding.dll": "01A208D7A5BFD1CC058EB5CF90EA7D2DB9973DD36BDD31316BDE83A938C7DFDF",
+    "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll": "E3D394C50B556E982380A1A8A0C4BA06420A7FCCF9372B61379E9AB05BF9D40C",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\bin\\Debug\\net10.0\\PurchaseOwnership.dll": "C850F9EA4A9DD99CF57AB7E5EE93A1226C650A3D998567985667011235300AB7"
+  },
+  "harness_files": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-landing-focused\\HseLanding.csproj": "1A5AD9816A9409FD5479BFC263F9974097FFCB58D5225ECB34E8D3A9938AA480",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-landing-focused\\_Imports.razor": "8DEED7A05E35239ED5AEF5AA55EF0888AF1EEEC9EF3257E9DBCC2C05E8FC4BA9",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-landing-focused\\Components\\Workflow\\PermitApplicationInbox.razor": "C324877F70861F95BBBA2E983AADD6959C91C3D9BA713F3B920954FF652125DF"
+  },
+  "logs": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-landing-build.log": "9955489A0468782694CB2570693BACB71811044B68F1057797A41F8A239EE3B4",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-landing-tests.log": "A89C007215FB1A6C0E5F9FD4C9DBD202C6843FFE7E09A2662A1CFD0D53F4D061"
+  },
+  "limits": [
+    "Current company-selection roles/permissions are checked alongside standard principal roles; API independently resolves authority. This is not a hosted identity integration test.",
+    "Only incident projection and entered study ID are qualified here; child assigned-work/permit inboxes are stubs.",
+    "Production startup, competing-account concurrent originals, other providers, regional/RTL and production latency remain open. Full goal not complete; no commit/push."
+  ]
+}

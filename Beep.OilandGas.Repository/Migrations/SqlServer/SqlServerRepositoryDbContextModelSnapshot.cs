@@ -22,6 +22,100 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Beep.OilandGas.Models.Data.Security.ORGANIZATION_HIERARCHY_CONFIG", b =>
+                {
+                    b.Property<string>("CONFIG_ID")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("CHANGED_BY")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CHANGED_UTC")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CREATED_BY")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CREATED_UTC")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LEVELS_JSON")
+                        .IsRequired()
+                        .HasMaxLength(16000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ORGANIZATION_ID")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("REVISION")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<string>("TENANT_ID")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("CONFIG_ID");
+
+                    b.HasIndex("CHANGED_BY");
+
+                    b.HasIndex("CREATED_BY")
+                        .HasDatabaseName("IX_ORGANIZATION_HIERARCHY_CO~1");
+
+                    b.HasIndex("TENANT_ID", "ORGANIZATION_ID")
+                        .IsUnique()
+                        .HasDatabaseName("IX_HIERARCHY_COMPANY");
+
+                    b.ToTable("ORGANIZATION_HIERARCHY_CONFIG", (string)null);
+                });
+
+            modelBuilder.Entity("Beep.OilandGas.Models.Data.Security.OrganizationHierarchyConfigRevision", b =>
+                {
+                    b.Property<string>("Revision")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<string>("ActorUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("ChangedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ConfigId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("LevelsJson")
+                        .IsRequired()
+                        .HasMaxLength(16000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreviousRevision")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.HasKey("Revision");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("ConfigId");
+
+                    b.ToTable("APP_HIERARCHY_REVISION", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -160,6 +254,113 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppCompany", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("BusinessAssociateId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("TenantId", "BusinessAssociateId");
+
+                    b.ToTable("APP_COMPANY", (string)null);
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppCompanyMembership", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("BusinessAssociateId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("ChangedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<DateTime>("EffectiveFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EffectiveToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GrantedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("TenantId", "BusinessAssociateId", "UserId");
+
+                    b.HasIndex("GrantedByUserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("APP_COMPANY_MEMBERSHIP", (string)null);
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppModuleConnection", b =>
+                {
+                    b.Property<string>("ConnectionKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("AssignedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("AssignedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhysicalTargetKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("TargetVerifiedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime?>("TargetVerifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("ConnectionKey");
+
+                    b.HasIndex("PhysicalTargetKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_APP_MOD_CONN_TARGET")
+                        .HasFilter("[PhysicalTargetKey] IS NOT NULL");
+
+                    b.ToTable("APP_MODULE_CONNECTION", (string)null);
+                });
+
             modelBuilder.Entity("TheTechIdea.Data.OilGas.AppPermissionExtension", b =>
                 {
                     b.Property<string>("PermissionId")
@@ -290,6 +491,14 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("BusinessAssociateId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<string>("PersonaCode")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
@@ -316,9 +525,13 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.HasKey("UserId", "PersonaCode", "ViewKey");
+                    b.HasKey("UserId", "TenantId", "BusinessAssociateId", "PersonaCode", "ViewKey");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("UserId", "TenantId", "BusinessAssociateId", "PersonaCode", "ViewKey"), false);
 
                     b.HasIndex("PersonaCode");
+
+                    b.HasIndex("TenantId", "BusinessAssociateId");
 
                     b.ToTable("APP_PERSONA_PREFERENCE", (string)null);
                 });
@@ -437,6 +650,31 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                     b.ToTable("APP_ROLE_PERMISSION", (string)null);
                 });
 
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppTenant", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("APP_TENANT", (string)null);
+                });
+
             modelBuilder.Entity("TheTechIdea.Data.OilGas.AppUserAssetAccess", b =>
                 {
                     b.Property<string>("Id")
@@ -484,6 +722,10 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("FacilityType")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<bool>("Inherit")
                         .HasColumnType("bit");
@@ -574,6 +816,14 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("BusinessAssociateId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<string>("ChangedBy")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -608,9 +858,11 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
-                    b.HasKey("UserId");
+                    b.HasKey("UserId", "TenantId", "BusinessAssociateId");
 
                     b.HasIndex("PersonaCode");
+
+                    b.HasIndex("TenantId", "BusinessAssociateId");
 
                     b.ToTable("APP_USER_PERSONA", (string)null);
                 });
@@ -638,6 +890,11 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasColumnType("nvarchar(1000)")
                         .HasColumnName("ASSIGNMENT_REASON");
 
+                    b.Property<string>("BusinessAssociateId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("BUSINESS_ASSOCIATE_ID");
+
                     b.Property<DateTime>("EffectiveFromUtc")
                         .HasColumnType("datetime2")
                         .HasColumnName("EFFECTIVE_FROM_UTC");
@@ -651,11 +908,21 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasColumnType("nvarchar(1000)")
                         .HasColumnName("GRANTED_BY_USER_ID");
 
+                    b.Property<string>("RevokedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("REVOKED_BY_USER_ID");
+
                     b.Property<string>("RoleId")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)")
                         .HasColumnName("ROLE_ID");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("TENANT_ID");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -669,7 +936,134 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
 
                     b.HasIndex("UserId", "RoleId");
 
+                    b.HasIndex("TenantId", "BusinessAssociateId", "UserId");
+
                     b.ToTable("APP_USER_ROLE", (string)null);
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AssetGrantRetirement", b =>
+                {
+                    b.Property<string>("Revision")
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<string>("ActorUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("ChangedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DatabaseScope")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("GrantId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("OrganizationId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("PreviousRevision")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasMaxLength(16000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Revision");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("GrantId", "ChangedUtc")
+                        .HasDatabaseName("IX_APP_ASSET_GRANT_RETIREMEN~1");
+
+                    b.HasIndex("TenantId", "OrganizationId")
+                        .HasDatabaseName("IX_APP_ASSET_GRANT_RETIREMEN~2");
+
+                    b.ToTable("APP_ASSET_GRANT_RETIREMENT", (string)null);
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.CompanyMembershipRetirement", b =>
+                {
+                    b.Property<string>("IntentId")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("ActorUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("BusinessAssociateId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("EffectiveFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EffectiveToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PreviousEffectiveToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PreviousRevision")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ResultRevision")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<DateTime>("RetiredUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("IntentId");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("TenantId", "BusinessAssociateId", "UserId")
+                        .HasDatabaseName("IX_APP_COMPANY_MEMBER_RETIRE~1");
+
+                    b.ToTable("APP_COMPANY_MEMBER_RETIREMENT", (string)null);
                 });
 
             modelBuilder.Entity("TheTechIdea.Data.OilGas.FinancialOperationClaim", b =>
@@ -705,9 +1099,11 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
 
             modelBuilder.Entity("TheTechIdea.Data.OilGas.ModuleDatabaseBinding", b =>
                 {
-                    b.Property<string>("ModuleId")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                    b.Property<long>("BindingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("BindingId"));
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -715,12 +1111,43 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasMaxLength(36)
                         .HasColumnType("nvarchar(36)");
 
+                    b.Property<string>("ConnectionKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<string>("ConnectionName")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.HasKey("ModuleId");
+                    b.Property<string>("ModuleId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("OwnershipAssignedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime?>("OwnershipAssignedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OwnershipEvidence")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("BindingId");
+
+                    b.HasIndex("TenantId", "ConnectionKey");
+
+                    b.HasIndex("TenantId", "ModuleId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ModuleDatabaseBindings_Te~1")
+                        .HasFilter("[TenantId] IS NOT NULL");
 
                     b.ToTable("ModuleDatabaseBindings", (string)null);
                 });
@@ -814,6 +1241,44 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                     b.ToTable("RepositoryBootstrap", (string)null);
                 });
 
+            modelBuilder.Entity("Beep.OilandGas.Models.Data.Security.ORGANIZATION_HIERARCHY_CONFIG", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("CHANGED_BY")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("CREATED_BY")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ORGANIZATION_HIERARCHY_CO~1");
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppCompany", null)
+                        .WithMany()
+                        .HasForeignKey("TENANT_ID", "ORGANIZATION_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ORGANIZATION_HIERARCHY_CO~2");
+                });
+
+            modelBuilder.Entity("Beep.OilandGas.Models.Data.Security.OrganizationHierarchyConfigRevision", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Beep.OilandGas.Models.Data.Security.ORGANIZATION_HIERARCHY_CONFIG", null)
+                        .WithMany()
+                        .HasForeignKey("ConfigId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -865,6 +1330,46 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppCompany", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.AppTenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppCompanyMembership", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("GrantedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_APP_COMPANY_MEMBERSHIP_As~1");
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppCompany", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BusinessAssociateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AppModuleConnection", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.AppTenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TheTechIdea.Data.OilGas.AppPersonaAudit", b =>
                 {
                     b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
@@ -887,6 +1392,13 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppCompany", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BusinessAssociateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_APP_PERSONA_PREFERENCE_AP~1");
                 });
 
             modelBuilder.Entity("TheTechIdea.Data.OilGas.AppRoleExtension", b =>
@@ -950,8 +1462,14 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
-                        .WithOne()
-                        .HasForeignKey("TheTechIdea.Data.OilGas.AppUserPersona", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppCompany", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BusinessAssociateId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -969,6 +1487,65 @@ namespace Beep.OilandGas.Repository.Migrations.SqlServer
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppCompanyMembership", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BusinessAssociateId", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.AssetGrantRetirement", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppUserAssetAccess", null)
+                        .WithMany()
+                        .HasForeignKey("GrantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_APP_ASSET_GRANT_RETIREMEN~1");
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppCompany", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_APP_ASSET_GRANT_RETIREMEN~2");
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.CompanyMembershipRetirement", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.OilGasUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppCompanyMembership", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "BusinessAssociateId", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_APP_COMPANY_MEMBER_RETIRE~1");
+                });
+
+            modelBuilder.Entity("TheTechIdea.Data.OilGas.ModuleDatabaseBinding", b =>
+                {
+                    b.HasOne("TheTechIdea.Data.OilGas.AppTenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TheTechIdea.Data.OilGas.AppModuleConnection", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "ConnectionKey")
+                        .HasPrincipalKey("TenantId", "ConnectionKey")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_ModuleDatabaseBindings_AP~1");
                 });
 
             modelBuilder.Entity("TheTechIdea.Data.OilGas.RepositoryBootstrap", b =>

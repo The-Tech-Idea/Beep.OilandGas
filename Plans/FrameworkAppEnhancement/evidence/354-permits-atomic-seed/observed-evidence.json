@@ -1,0 +1,52 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md selected atomic reference seeding",
+  "observed_at": "2026-10-29T20:18:23.450175+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; previous changes preserved; no commit/push",
+  "method": "InstalledPermitSetupSeedsAtomicallyAndVerifiesExistingCatalog",
+  "catalog_definition_count": 23,
+  "result": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "25s",
+    "exit_code": 0,
+    "attempts": 1
+  },
+  "inputs": {
+    "valid": "23 managed rows inserted/audited/read back, unrelated custom row retained; retry succeeds with0 insert/table counts and unchanged values/audit.",
+    "insert-failure": "Controlled third preparation failure after two real provider writes; orchestrator reports failure/zero inserts, physical snapshot restored; corrected retry seeds all23 and verified repeat preserves it.",
+    "cancel": "Cancellation at third preparation propagates; prior two native writes roll back and source becomes idle; new-token retry/repeat succeeds.",
+    "label-drift": "Changed managed label refuses before any insertion and preserves prior row unchanged.",
+    "inactive": "Inactive managed code refuses before any insertion and preserves prior row unchanged.",
+    "target-drift": "Connection identity changes at third preparation; current-target guard refuses before third provider write, prior writes roll back; restored/reviewed target retry succeeds."
+  },
+  "command": "OILGAS_TEST_PERMIT_DRIVER_FEED=<isolated local feed>; dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~InstalledPermitSetupSeedsAtomicallyAndVerifiesExistingCatalog --logger console;verbosity=minimal",
+  "changes": [
+    "Replaced key-only skips and row-by-row partial-success seeding in the active PERMITS module; no second seeding owner.",
+    "One PPDMDataSourceTransaction owned Serializable operation on the current source/target, guarded using existing MigrationConnectionTarget and cancellation checks.",
+    "Physical composite-key/column/type/width preflight, projection completeness, exact managed payload and UTC audit checks before writes.",
+    "Beep SDK writes after canonical common-column preparation and current target validation; all managed rows/audits read back before and after commit.",
+    "Publish counts/success only after confirmation; refuse drift without overwrite/adoption; preserve unrelated custom reference sets."
+  ],
+  "limits": [
+    "Actual local SQLite connector1.0.59/provider1.0.119, complete11-table Beep Migration fixture and actual module/orchestrator, but controlled defaults/metadata/context/fault hooks.",
+    "Fault/cancellation/target drift are injected at third common-column preparation after two real writes; not actual provider I/O failure or lost commit acknowledgement.",
+    "Full setup HTTP/admin approval/UI, role authorization, other modules/providers, production deployment and source dependency distribution remain separate gates.",
+    "Existing arbitrary schema/key conversion is not implemented; incompatible schemas refuse with Beep Migration guidance.",
+    "Managed reference labels are application catalog values, not company jurisdiction policy, deadlines or legal approval.",
+    "No handwritten SQL/EF migration, unrelated/class/full-suite, commit or push."
+  ],
+  "sha256": {
+    "Beep.OilandGas.PermitsAndApplications/Modules/PermitsModule.cs": "e94c17f1b74e1e7b7d9faa365e238110b06d42d8c9997640ac92999c84a327aa",
+    "Beep.OilandGas.PermitsAndApplications/Constants/PermitsReferenceCodeSeed.cs": "0f03ee0bd2c6611c3d1bae4fe5f11ebad8cac5953fab0e427d3ea7f8710510b1",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "afae959bf03a5294e65bd8cdc0dc817580d5f71af93798e0514fb4ae8c0eae6a",
+    "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/MigrationConnectionTarget.cs": "ae5de7b2fee8fcf48d6f21d22d3d17572872fbce58ab9618d1bd59ffe34d26b9",
+    "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleSetupOrchestrator.cs": "37f4fc6d0b3a766426e25793a4d5bd662730a558afe9a1040127e731be1c6833",
+    "Beep.OilandGas.PPDM39/Core/PPDMDataSourceTransaction.cs": "8b35b1584cf11933428b820121756262ea73ab9dbbca8e5eac3aff884e86b279",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "89f45e09905b92b6e9958485b9bf7b143988450c9839e27067e84c13b4c3e50c",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "778fca06495d71cc19c9c053305d0167bc8ef5670a956bcdcb803f642f2e7e6f",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "af5902c1cc409827ea68879493573e53ac9d63d75506078981e400432baabd70",
+    "../BeepDM/DataManagementEngineStandard/bin/Debug/net10.0/DataManagementEngine.dll": "55783166f492c83cc95c79fef4233e00b97da879ce0730d4959ae13ba0ba8f46"
+  }
+}

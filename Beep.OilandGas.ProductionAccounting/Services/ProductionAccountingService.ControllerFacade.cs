@@ -196,7 +196,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             public TraditionalAccountingCompatibility(ProductionAccountingService service)
             {
-                PurchaseOrder = new PurchaseOrderCompatibility(service);
                 Invoice = new InvoiceCompatibility(service);
                 GeneralLedger = new GeneralLedgerCompatibility(service);
                 JournalEntry = new JournalEntryCompatibility(service);
@@ -204,8 +203,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 AccountsReceivable = new AccountsReceivableCompatibility(service);
                 AccountsPayable = new AccountsPayableCompatibility(service);
             }
-
-            public PurchaseOrderCompatibility PurchaseOrder { get; }
 
             public InvoiceCompatibility Invoice { get; }
 
@@ -221,53 +218,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         /// <summary>
-        /// Compatibility behavior class: <c>active</c>.
-        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
-        /// </summary>
-        public sealed class PurchaseOrderCompatibility
-        {
-            private readonly ProductionAccountingService _service;
-
-            public PurchaseOrderCompatibility(ProductionAccountingService service)
-            {
-                _service = service;
-            }
-
-            public PURCHASE_ORDER? GetPurchaseOrder(string id)
-            {
-                if (_service._accountingServices?.PurchaseOrders != null)
-                    return _service.RunSyncCompatibility(
-                        () => _service._accountingServices.PurchaseOrders.GetPOByIdAsync(id),
-                        "PurchaseOrders.GetPOByIdAsync",
-                        id);
-
-                return _service.GetEntityById<PURCHASE_ORDER>("PURCHASE_ORDER", id);
-            }
-
-            public PURCHASE_ORDER CreatePurchaseOrder(CreatePurchaseOrderRequest request, string userId)
-            {
-                var purchaseOrder = new PURCHASE_ORDER
-                {
-                    PURCHASE_ORDER_ID = Guid.NewGuid().ToString(),
-                    PO_NUMBER = ReadValue<string>(request, nameof(CreatePurchaseOrderRequest.PoNumber)) ?? $"PO-{DateTime.UtcNow:yyyyMMddHHmmss}",
-                    VENDOR_BA_ID = ReadValue<string>(request, nameof(CreatePurchaseOrderRequest.VendorBaId)) ?? string.Empty,
-                    PO_DATE = ReadValue<DateTime?>(request, nameof(CreatePurchaseOrderRequest.PoDate)) ?? DateTime.UtcNow,
-                    EXPECTED_DELIVERY_DATE = ReadValue<DateTime?>(request, nameof(CreatePurchaseOrderRequest.ExpectedDeliveryDate)),
-                    DESCRIPTION = ReadValue<string>(request, nameof(CreatePurchaseOrderRequest.Description)),
-                    STATUS = DocumentWorkflowStatusCodes.Draft,
-                    ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                _service.InsertEntity(purchaseOrder, "PURCHASE_ORDER", userId);
-                return purchaseOrder;
-            }
-        }
-
-        /// <summary>
-        /// Compatibility behavior class: <c>active</c>.
-        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
+        /// Delegates to the canonical invoice service only, without a repository fallback.
+        /// Selected-company billing uses the service's asynchronous source-bound reviewed commands.
         /// </summary>
         public sealed class InvoiceCompatibility
         {
@@ -286,7 +238,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         "Invoices.GetInvoiceAsync",
                         id);
 
-                return _service.GetEntityById<INVOICE>("INVOICE", id);
+                throw new InvalidOperationException("The canonical invoice service is required; companyless repository fallback is unavailable.");
             }
 
             public INVOICE CreateInvoice(CreateInvoiceRequest request, string userId)
@@ -299,186 +251,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                             userId)
                         ?? throw new InvalidOperationException("The invoice service created no invoice.");
 
-                var invoice = new INVOICE
-                {
-                    INVOICE_ID = Guid.NewGuid().ToString(),
-                    INVOICE_NUMBER = ReadValue<string>(request, nameof(CreateInvoiceRequest.InvoiceNumber)) ?? $"INV-{DateTime.UtcNow:yyyyMMddHHmmss}",
-                    CUSTOMER_BA_ID = ReadValue<string>(request, nameof(CreateInvoiceRequest.CustomerBaId)) ?? string.Empty,
-                    INVOICE_DATE = ReadValue<DateTime?>(request, nameof(CreateInvoiceRequest.InvoiceDate)) ?? DateTime.UtcNow,
-                    DUE_DATE = ReadValue<DateTime?>(request, nameof(CreateInvoiceRequest.DueDate)) ?? DateTime.UtcNow,
-                    SUBTOTAL = ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.Subtotal)) ?? 0m,
-                    TAX_AMOUNT = ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.TaxAmount)) ?? 0m,
-                    TOTAL_AMOUNT = (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.Subtotal)) ?? 0m) + (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.TaxAmount)) ?? 0m),
-                    BALANCE_DUE = (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.Subtotal)) ?? 0m) + (ReadValue<decimal?>(request, nameof(CreateInvoiceRequest.TaxAmount)) ?? 0m),
-                    STATUS = DocumentWorkflowStatusCodes.Draft,
-                    ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                _service.InsertEntity(invoice, "INVOICE", userId);
-                return invoice;
-            }
-        }
-
-        /// <summary>
-        /// Compatibility behavior class: <c>active</c>.
-        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
-        /// </summary>
-        public sealed class GeneralLedgerCompatibility
-        {
-            private readonly ProductionAccountingService _service;
-
-            public GeneralLedgerCompatibility(ProductionAccountingService service)
-            {
-                _service = service;
-            }
-
-            public List<GL_ACCOUNT> GetAllAccounts()
-            {
-                if (_service._accountingServices?.GlAccounts != null)
-                    return _service.RunSyncCompatibility(
-                            () => _service._accountingServices.GlAccounts.GetAllAccountsAsync(),
-                            "GlAccounts.GetAllAccountsAsync")
-                        ?? new List<GL_ACCOUNT>();
-
-                return _service.GetEntities<GL_ACCOUNT>("GL_ACCOUNT");
-            }
-
-            public GL_ACCOUNT? GetAccount(string id)
-            {
-                return _service.GetEntityById<GL_ACCOUNT>("GL_ACCOUNT", id)
-                    ?? GetAllAccounts().FirstOrDefault(account => account.ACCOUNT_NUMBER == id);
-            }
-
-            public GL_ACCOUNT CreateAccount(CreateGLAccountRequest request, string userId)
-            {
-                if (_service._accountingServices?.GlAccounts != null)
-                {
-                    return _service.RunSyncCompatibility(
-                            () => _service._accountingServices.GlAccounts.CreateAccountAsync(
-                                request.AccountNumber,
-                                request.AccountName,
-                                request.AccountType,
-                                request.NormalBalance,
-                                request.Description,
-                                userId),
-                            "GlAccounts.CreateAccountAsync",
-                            request?.AccountNumber,
-                            userId)
-                        ?? throw new InvalidOperationException("The GL account service created no account.");
-                }
-
-                var account = new GL_ACCOUNT
-                {
-                    GL_ACCOUNT_ID = Guid.NewGuid().ToString(),
-                    ACCOUNT_NUMBER = request.AccountNumber,
-                    ACCOUNT_NAME = request.AccountName,
-                    ACCOUNT_TYPE = request.AccountType,
-                    PARENT_ACCOUNT_ID = request.ParentAccountId,
-                    NORMAL_BALANCE = request.NormalBalance,
-                    OPENING_BALANCE = request.OpeningBalance,
-                    CURRENT_BALANCE = request.OpeningBalance,
-                    DESCRIPTION = request.Description,
-                    ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                _service.InsertEntity(account, "GL_ACCOUNT", userId);
-                return account;
-            }
-        }
-
-        /// <summary>
-        /// Compatibility behavior class: <c>active</c>.
-        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
-        /// </summary>
-        public sealed class JournalEntryCompatibility
-        {
-            private readonly ProductionAccountingService _service;
-
-            public JournalEntryCompatibility(ProductionAccountingService service)
-            {
-                _service = service;
-            }
-
-            public JOURNAL_ENTRY CreateJournalEntry(string entryNumber, DateTime entryDate, string entryType, string description, List<JournalEntryLineData> lines, string userId)
-            {
-                if (_service._accountingServices?.JournalEntries != null)
-                {
-                    var journalLines = lines.Select((line, index) => new JOURNAL_ENTRY_LINE
-                    {
-                        JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString(),
-                        GL_ACCOUNT_ID = line.GlAccountId,
-                        LINE_NUMBER = index + 1,
-                        DEBIT_AMOUNT = line.DebitAmount,
-                        CREDIT_AMOUNT = line.CreditAmount,
-                        DESCRIPTION = line.Description
-                    }).ToList();
-
-                    var entryTask = _service._accountingServices.JournalEntries.CreateEntryAsync(
-                        entryDate,
-                        description,
-                        journalLines,
-                        userId,
-                        entryNumber,
-                        entryType);
-                    var bridgedEntry = _service.RunSyncCompatibility(
-                        () => entryTask,
-                        "JournalEntries.CreateEntryAsync",
-                        entryNumber,
-                        userId);
-                    if (bridgedEntry == null)
-                        throw new InvalidOperationException("The journal entry service created no journal entry.");
-                    bridgedEntry.ENTRY_TYPE = entryType;
-                    return bridgedEntry;
-                }
-
-                var manualEntry = new JOURNAL_ENTRY
-                {
-                    JOURNAL_ENTRY_ID = Guid.NewGuid().ToString(),
-                    ENTRY_NUMBER = entryNumber,
-                    ENTRY_DATE = entryDate,
-                    ENTRY_TYPE = entryType,
-                    DESCRIPTION = description,
-                    TOTAL_DEBIT = lines.Sum(line => line.DebitAmount ?? 0m),
-                    TOTAL_CREDIT = lines.Sum(line => line.CreditAmount ?? 0m),
-                    STATUS = DocumentWorkflowStatusCodes.Draft,
-                    ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                _service.InsertEntity(manualEntry, "JOURNAL_ENTRY", userId);
-                return manualEntry;
-            }
-
-            public void PostJournalEntry(string id, string userId)
-            {
-                // Without the journal service nothing posts, and the caller must not read the call as posted.
-                if (_service._accountingServices?.JournalEntries == null)
-                    throw new InvalidOperationException("Journal posting needs the accounting journal entry service, and none is registered.");
-
-                var posted = _service.RunSyncCompatibility(
-                    () => _service._accountingServices.JournalEntries.PostEntryAsync(id, userId),
-                    "JournalEntries.PostEntryAsync",
-                    id,
-                    userId);
-                if (!posted)
-                    throw new InvalidOperationException($"Journal entry {id} was not posted.");
-            }
-
-            public JOURNAL_ENTRY? GetJournalEntry(string id)
-            {
-                return _service.GetEntityById<JOURNAL_ENTRY>("JOURNAL_ENTRY", id);
-            }
-
-            public IEnumerable<JOURNAL_ENTRY_LINE> GetJournalEntryLines(string id)
-            {
-                return _service.GetEntities<JOURNAL_ENTRY_LINE>(
-                    "JOURNAL_ENTRY_LINE",
-                    new[] { new AppFilter { FieldName = "JOURNAL_ENTRY_ID", Operator = "=", FilterValue = id } });
+                throw new InvalidOperationException("The canonical invoice service and reviewed company command are required; fallback invoice creation is unavailable.");
             }
         }
 
@@ -526,60 +299,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Compatibility behavior class: <c>active</c>.
         /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
         /// </summary>
+        /// <summary>Retired companyless AR facade; use the source-bound company receivable API.</summary>
         public sealed class AccountsReceivableCompatibility
         {
-            private readonly ProductionAccountingService _service;
-
             public AccountsReceivableCompatibility(ProductionAccountingService service)
-            {
-                _service = service;
-            }
-
-            public AR_INVOICE? GetARInvoice(string id)
-            {
-                if (_service._accountingServices?.AccountsReceivable != null)
-                    return _service.RunSyncCompatibility(
-                        () => _service._accountingServices.AccountsReceivable.GetInvoiceAsync(id),
-                        "AccountsReceivable.GetInvoiceAsync",
-                        id);
-
-                return _service.GetEntityById<AR_INVOICE>("AR_INVOICE", id);
-            }
-
-            public AR_INVOICE CreateARInvoice(CreateARInvoiceRequest request, string userId)
-            {
-                if (_service._accountingServices?.AccountsReceivable != null)
-                    return _service.RunSyncCompatibility(
-                            () => _service._accountingServices.AccountsReceivable.CreateInvoiceAsync(request, userId),
-                            "AccountsReceivable.CreateInvoiceAsync",
-                            request?.InvoiceNumber,
-                            userId)
-                        ?? throw new InvalidOperationException("The receivables service created no invoice.");
-
-                var invoice = new AR_INVOICE
-                {
-                    AR_INVOICE_ID = Guid.NewGuid().ToString(),
-                    INVOICE_NUMBER = request.InvoiceNumber,
-                    CUSTOMER_BA_ID = request.CustomerBaId,
-                    INVOICE_DATE = request.InvoiceDate,
-                    DUE_DATE = request.DueDate,
-                    TOTAL_AMOUNT = request.TotalAmount,
-                    BALANCE_DUE = request.TotalAmount,
-                    STATUS = DocumentWorkflowStatusCodes.Draft,
-                    ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                _service.InsertEntity(invoice, "AR_INVOICE", userId);
-                return invoice;
-            }
+            { ArgumentNullException.ThrowIfNull(service); }
+            public AR_INVOICE? GetARInvoice(string id)=>throw new InvalidOperationException("Use the company-owned receivable source workflow.");
+            public AR_INVOICE CreateARInvoice(CreateARInvoiceRequest request,string userId)=>throw new InvalidOperationException("Use the original reviewed company receivable preparation command.");
         }
 
-        /// <summary>
-        /// Compatibility behavior class: <c>active</c>.
-        /// Uses accounting services when available, otherwise canonical repository-backed compatibility helpers.
-        /// </summary>
+        /// <summary>Retired company-less AP facade. Client-facing AP reads use the canonical company-owned API.</summary>
         public sealed class AccountsPayableCompatibility
         {
             private readonly ProductionAccountingService _service;
@@ -589,48 +318,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _service = service;
             }
 
-            public AP_INVOICE? GetAPInvoice(string id)
-            {
-                return _service.GetEntityById<AP_INVOICE>("AP_INVOICE", id);
-            }
+            public AP_INVOICE? GetAPInvoice(string id) => throw new InvalidOperationException("Use the canonical company-owned AP invoice API.");
+            public AP_INVOICE CreateAPInvoice(CreateAPInvoiceRequest request,string userId) => throw new InvalidOperationException("Reviewed company-owned AP creation and posting are not implemented. No invoice was created.");
 
-            public AP_INVOICE CreateAPInvoice(CreateAPInvoiceRequest request, string userId)
-            {
-                if (_service._accountingServices?.AccountsPayableInvoices != null)
-                {
-                    return _service.RunSyncCompatibility(
-                            () => _service._accountingServices.AccountsPayableInvoices.CreateBillAsync(
-                                request.VendorBaId,
-                                request.TotalAmount,
-                                request.InvoiceDate,
-                                request.InvoiceNumber,
-                                null,
-                                request.DueDate,
-                                userId),
-                            "AccountsPayableInvoices.CreateBillAsync",
-                            request?.InvoiceNumber,
-                            userId)
-                        ?? throw new InvalidOperationException("The payables service created no bill.");
-                }
-
-                var bill = new AP_INVOICE
-                {
-                    AP_INVOICE_ID = Guid.NewGuid().ToString(),
-                    INVOICE_NUMBER = request.InvoiceNumber,
-                    VENDOR_BA_ID = request.VendorBaId,
-                    INVOICE_DATE = request.InvoiceDate,
-                    DUE_DATE = request.DueDate,
-                    TOTAL_AMOUNT = request.TotalAmount,
-                    BALANCE_DUE = request.TotalAmount,
-                    STATUS = DocumentWorkflowStatusCodes.Draft,
-                    ACTIVE_IND = _service._defaults.GetActiveIndicatorYes(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
-
-                _service.InsertEntity(bill, "AP_INVOICE", userId);
-                return bill;
-            }
         }
 
 

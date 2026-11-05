@@ -1,0 +1,97 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderFinancialWorkspaceState State
+@inject IWorkOrderServiceClient Orders
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-4" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h5">Work-order finance sources</MudText>
+        <MudText>Selected company @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable") · FIELD @(State.FieldId ?? "Unconfirmed")</MudText>
+        <MudButton OnClick="LoadOrdersAsync" Disabled="@State.Busy">Reload authorized native work orders</MudButton>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Reading work-order financial sources" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        @if(State.Confirmed && State.Orders.Count==0){<MudAlert Severity="Severity.Info">The confirmed current FIELD population contains no authorized native work orders.</MudAlert>}
+        @if(State.Orders.Count>0)
+        {
+            <MudSelect T="string" Value="_order" ValueChanged="SelectOrder" Label="Recorded native work order" Disabled="@State.Busy">
+                @foreach(var order in State.Orders){<MudSelectItem T="string" Value="@order.InstanceId">@order.InstanceId · @order.InstanceName</MudSelectItem>}
+            </MudSelect>
+            <MudButton OnClick="ReadAsync" Disabled="@(State.Busy || string.IsNullOrEmpty(_order))">Read original budgets, decisions and costs</MudButton>
+        }
+        @if(State.Current is {} source)
+        {
+            <MudText>Recorded work order @source.Order.InstanceId · @source.Order.WoSubType</MudText>
+            <MudText>@source.Order.Instructions</MudText>
+            <MudButton Href="@Detail(source.Query.WorkOrderId)" Variant="Variant.Outlined">Open recorded work-order detail</MudButton>
+            @if(source.Budgets.Count==0)
+            {
+                <MudAlert Severity="Severity.Info">The complete owned budget population contains no recorded AFE for this order. Actual costs and commitments are not inferred from header defaults.</MudAlert>
+                @if(Has("Accounting.PrepareWorkOrderBudget"))
+                {
+                    @foreach(var book in source.Books.Books){<MudButton Href="@Detail(source.Query.WorkOrderId,book.BookId)" Variant="Variant.Outlined">Prepare budget in @book.Name · @book.FunctionalCurrency</MudButton>}
+                    @if(source.Books.Books.Count==0){<MudAlert Severity="Severity.Warning">No configured company book is available for budget preparation.</MudAlert>}
+                }
+            }
+            @foreach(var costs in source.Budgets)
+            {
+                var status=costs.Budget;var original=status.Original();
+                <MudPaper Class="pa-3" Outlined="true">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.h6">@original.Number · @original.Name</MudText>
+                        <MudText>AFE @original.AfeId · book @original.BookId · @original.CurrencyCode · original maker @original.CreatedBy</MudText>
+                        <MudText>Original budget @original.BudgetAmount.ToString("N"+original.CurrencyDecimals) · recorded actual costs @costs.RecordedTotal().ToString("N"+original.CurrencyDecimals) · remaining @costs.RemainingOriginalBudget().ToString("N"+original.CurrencyDecimals)</MudText>
+                        @if(status.Recorded is {} decision){<MudText>Recorded independent @decision.Decision · reviewer @decision.Reviewer · UTC @decision.DecidedAtUtc.ToString("O")</MudText>}
+                        @foreach(var blocker in status.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+                        @if(status.IsApprovedForCurrentScope){<MudAlert Severity="Severity.Success">Recorded approval matches the current work scope and company book.</MudAlert>}
+                        <MudButton Href="@Detail(source.Query.WorkOrderId,original.BookId,original.AfeId)" Variant="Variant.Outlined">Open this financial source and cost details</MudButton>
+                        @if(Has("Accounting.ReviewWorkOrderBudget") && original.CreatedBy!=Company.Selection?.UserId && status.Recorded is null)
+                        {<MudButton Href="@Detail(source.Query.WorkOrderId,original.BookId,original.AfeId)" Color="Color.Primary">Open independent budget review</MudButton>}
+                        @if(Has("Accounting.RecordWorkOrderActualCost") && status.IsApprovedForCurrentScope)
+                        {<MudButton Href="@Detail(source.Query.WorkOrderId,original.BookId,original.AfeId)" Color="Color.Primary">Open recorded labor and material valuation</MudButton>}
+                        <MudText>Recorded cost sources: @costs.Costs.Count · observed UTC @costs.ComparedAtUtc.ToString("O")</MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+            <MudText>Financial sources compared UTC @source.ComparedAtUtc.ToString("O")</MudText>
+        }
+        <MudText>Each amount retains its recorded book and currency. Recorded costs, commitments and journal posting are separate financial facts.</MudText>
+    </MudStack>
+</MudPaper>
+@code {
+    private string _order="";
+    private string? _error;
+    private bool _disposed;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    private bool Has(string permission)=>Company.Selection?.Permissions.Contains(permission,StringComparer.Ordinal)==true;
+    private static string Detail(string order,string? book=null,string? afe=null)=>QueryHelpers.AddQueryString("/ppdm39/workorder/"+Uri.EscapeDataString(order),new Dictionary<string,string?>
+    {
+        ["budgetBook"]=book,["budgetDecisionBook"]=book,["budgetDecisionAfe"]=afe,["financialBook"]=book,["financialAfe"]=afe,
+        ["costBook"]=book,["costAfe"]=afe,["materialCostBook"]=book,["materialCostAfe"]=afe
+    });
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId ||
+            !selected.Roles.Any(user.IsInRole) || !Has("Accounting.View") || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current standard financial roles and original company/account visibility are required.");
+    }
+    private Task LoadOrdersAsync()=>Run(async()=>{await Authority();_order="";await State.LoadOrdersAsync(Orders,Fields.GetCurrentFieldIdAsync);},"discovering authorized native financial work orders");
+    private Task SelectOrder(string id){_order=id;_error=null;State.RetireCurrent();return Task.CompletedTask;}
+    private Task ReadAsync()=>Run(async()=>{await Authority();if(await Fields.GetCurrentFieldIdAsync()!=State.FieldId)throw new InvalidOperationException("Reload the current FIELD before reading financial sources.");await State.ReadAsync(Orders,_order);},"reading original work-order financial sources");
+    private async Task Run(Func<Task> action,string operation)
+    {
+        if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;
+        try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot){State.RetireCurrent();_error=Calls.Explain(error,operation,"Original financial source population is unavailable");}}
+        finally{if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    private void Invalidate(){State.Clear();_order="";_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

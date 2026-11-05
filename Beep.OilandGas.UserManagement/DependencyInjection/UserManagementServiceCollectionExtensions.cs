@@ -77,19 +77,6 @@ namespace Beep.OilandGas.UserManagement.DependencyInjection
                 return new DefaultSecuritySeedService(editor, commonColumnHandler, defaults, metadata, connectionName, logger);
             });
 
-            // Register RowLevelSecurityService
-            services.AddScoped<IRowLevelSecurityService>(sp =>
-            {
-                var editor = sp.GetRequiredService<IDMEEditor>();
-                var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-                var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-                var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RowLevelSecurityService>>();
-                var userService = sp.GetRequiredService<IUserService>();
-
-                return new RowLevelSecurityService(editor, commonColumnHandler, defaults, metadata, connectionName, logger, userService);
-            });
-
             // ── Phase 1 RBAC Hardening ─────────────────────────────────────
 
             // Register RoleHierarchyService (singleton — hierarchy changes rarely)
@@ -113,20 +100,6 @@ namespace Beep.OilandGas.UserManagement.DependencyInjection
                 var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TempRoleElevationService>>();
                 return new TempRoleElevationService(editor, commonColumnHandler, defaults, metadata, connectionName, logger);
             });
-
-            // Register FieldAccessService
-            services.AddScoped<IFieldAccessService>(sp =>
-            {
-                var editor = sp.GetRequiredService<IDMEEditor>();
-                var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-                var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-                var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FieldAccessService>>();
-                return new FieldAccessService(editor, commonColumnHandler, defaults, metadata, connectionName, logger);
-            });
-
-            // Register FieldScopeAuthorizationHandler
-            services.AddScoped<IAuthorizationHandler, FieldScopeAuthorizationHandler>();
 
             // Phase 4: SoD conflict detector
             services.AddScoped<ISodConflictDetector>(sp =>

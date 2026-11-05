@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-29",
+  "plan": "Implementation-354-Permit-Application-Workflow.md, phase 2 source/original foundation",
+  "methods": {
+    "PermitSourceReviewFreezesExactEvidenceAndRefusesMixedReads": {
+      "inputs": 3,
+      "criterion": "Actual native lifecycle review preserves immutable application/history and refuses changed header or history between reads."
+    },
+    "PermitSourceOriginalBindsCompletePayloadHistoryAndContext": {
+      "inputs": 8,
+      "criterion": "JSON round-trip, deterministic source identity, altered payload/history/account/database/company/FIELD and duplicate history."
+    },
+    "PermitOriginalRequiresRecordedSubmitterIndependentDecisionAndValidStage": {
+      "inputs": 10,
+      "criterion": "Original intent/reason/action/stage/country validation and recorded independent submitter; no writer permission inferred."
+    },
+    "PermitChildrenRequireExactVisibleApplicationAndInjectionParent": {
+      "inputs": 4,
+      "criterion": "Affected native history/type-parent admission after moving history to Data."
+    },
+    "PermitOriginalScopeRefusesMissingCompanyTenantOrActor": {
+      "inputs": 3,
+      "criterion": "Missing wire company/tenant/account must fail validation explicitly."
+    }
+  },
+  "runs": [
+    {
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "1m34s",
+      "exact_methods": [
+        "PermitSourceReviewFreezesExactEvidenceAndRefusesMixedReads",
+        "PermitSourceOriginalBindsCompletePayloadHistoryAndContext",
+        "PermitOriginalRequiresRecordedSubmitterIndependentDecisionAndValidStage",
+        "PermitChildrenRequireExactVisibleApplicationAndInjectionParent"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:    25, Skipped:     0, Total:    25, Duration: 1 m 34 s - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-source-review.log",
+      "log_sha256": "beea8f046f48b611f7c432d037e55565ff97903e8e2669d865c5baa4a1000bd3"
+    },
+    {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "168ms",
+      "exact_methods": [
+        "PermitOriginalScopeRefusesMissingCompanyTenantOrActor",
+        "PermitSourceOriginalBindsCompletePayloadHistoryAndContext"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:    11, Skipped:     0, Total:    11, Duration: 168 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-source-scope-final.log",
+      "log_sha256": "af34c6f94f1c34c9533dad6bd399c52d3c5c890a2e8da37617845812a4046532"
+    }
+  ],
+  "distinct_inputs_observed": 28,
+  "overlap": 8,
+  "scope": "Actual native lifecycle review, app registry/current authority/module/row-policy owners with mock Beep datasource; canonical Data contract validation. No UI/HTTP/actual-provider or mutation proof.",
+  "builds": {
+    "Data": "Initial source build passed 3.33s; final scope validation build passed 2.96s, zero errors, existing missing sibling analyzer warning.",
+    "native module": "Passed 2.42s, zero errors; existing missing analyzer and duplicate using warnings."
+  },
+  "command_template": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute current Data.dll> -p:BuildProjectReferences=false --filter <OR of FullyQualifiedName~ and exact_methods listed per run> --logger console;verbosity=minimal",
+  "sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs": "32606fc436c7274ac24e714ed3b9fdac1c1a604d978244f289ae37590a92a86d",
+    "TheTechIdea.Data/OilGas/PermitApplicationDataAccess.cs": "407ad4800b3c447597af91ffd98b896a780f2bd4569768179eb2f67f7329bcf1",
+    "TheTechIdea.Data/OilGas/PERMIT_APPLICATION.cs": "ef89cd869ec92211418aadaccca47f8917697aa063e1667676e84c56e25fdd5d",
+    "TheTechIdea.Data/OilGas/PERMIT_STATUS_HISTORY.cs": "0405d8c6c2f575172db7defa97d9b67ecd5e249fc8562956ad287c065f79d221",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "91fd2cbedab23afc72aeab01db151d40509de29cc48a59dde92418ff6442131c",
+    "Beep.OilandGas.PermitsAndApplications/Core/Interfaces/IPermitApplicationLifecycleService.cs": "05f055be46598c94a21f257671f383f38fe66b70c291604097cac9fc1ef3e51f",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "f84f9a9b1966a02c86a4e59fc1d9d768398e11f3a5b6e76691555b8a4f6309f8",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "a9f1d9aa36d94253af9d83f74abc437ff21cd4b0e9ab49716ce5713dbcde974a",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "90ffbc39b1a0ec4d214a2a1d2f56c5fbbf18801730e6b88f00295d209b08036f",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "de6073e6efc9a9cf0a6ba0591ffa2a18e7c7a1934fefeba495c5815f744b7d8c"
+  },
+  "runtime_scope_note": "The 25-input run preceded the final added missing company/tenant/actor scope checks; the final 11-input run covers those new checks and affected original round trips. Counts overlap and are not summed.",
+  "migration": "Existing PERMITS entity-driven Beep Migration manifest resolves the single canonical Data history/root entities; SUBMITTED_BY_USER_ID added to root metadata. No provider migration executed, SQL, EF migration, legacy adoption or compatibility forwarding.",
+  "open": [
+    "Reviewed native write commands under existing owned serializable transaction, fresh permission and exact source checks",
+    "Immutable persisted original/audit/outcome, rollback/readback/lost-ack/replay recovery",
+    "Replace direct mutation API/client lanes and connect retained sender/reviewer forms, inbox and correction",
+    "Actual provider schema migration and protected HTTP/browser/regional qualification"
+  ],
+  "goal": "active; phase 2/full feature incomplete; no commit/push"
+}

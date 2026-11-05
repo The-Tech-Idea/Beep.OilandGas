@@ -23,7 +23,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
             AddIfMissing(result, injection.INJECTION_TYPE, "INJECTION_TYPE", "RRC injection permits require an injection type.");
             AddIfMissing(result, injection.INJECTION_ZONE, "INJECTION_ZONE", "RRC injection permits require an injection zone.");
             AddIfMissing(result, injection.INJECTION_FLUID, "INJECTION_FLUID", "RRC injection permits require an injection fluid.");
-            AddIfMissing(result, injection.INJECTION_WELL_UWI, "INJECTION_WELL_UWI", "RRC injection permits require an injection well UWI.");
+            AddIfMissing(result, request.Application.WELL_ID, "INJECTION_WELL_UWI", "RRC injection permits require an injection well UWI.");
             AddIfMissing(result, injection.MAXIMUM_INJECTION_PRESSURE, "MAXIMUM_INJECTION_PRESSURE", "RRC injection permits require a maximum injection pressure.");
             AddIfMissing(result, injection.MAXIMUM_INJECTION_RATE, "MAXIMUM_INJECTION_RATE", "RRC injection permits require a maximum injection rate.");
 

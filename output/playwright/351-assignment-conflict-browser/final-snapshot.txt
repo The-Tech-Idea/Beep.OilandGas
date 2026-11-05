@@ -1,0 +1,43 @@
+### Page
+- Page URL: http://127.0.0.1:62732/
+### Snapshot
+```yaml
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e46]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f2e47]
+    - paragraph [ref=f2e48]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f2e49]:
+      - button "Use read-only unmapped profile" [ref=f2e50] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f2e52] [cursor=pointer]
+      - button "Switch other company" [ref=f2e54] [cursor=pointer]
+      - button "Switch other account" [ref=f2e56] [cursor=pointer]
+      - button "Restore original company/account" [ref=f2e58] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f2e60] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [ref=f2e62] [cursor=pointer]
+      - button "Retain an unrecorded competing start" [ref=f2e64] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f2e66] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f2e68] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f2e70] [cursor=pointer]
+      - button "Show actual receiving responsibility" [ref=f2e72] [cursor=pointer]
+  - generic [ref=f2e74]:
+    - heading "Execution reporting responsibility" [level=1] [ref=f2e75]
+    - group [ref=f2e76]:
+      - link "Drilling workspace" [ref=f2e77] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=f2e79] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload source and recipients" [ref=f2e81] [cursor=pointer]
+    - generic [ref=f2e83]: Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.
+    - status [ref=f2e125]:
+      - generic [ref=f2e126]: You kept the exact different recorded responsibility and cleared this confirmed-unrecorded original from this tab. No responsibility, task, execution or report was changed or completed. Reload its recorded source.
+    - generic [ref=f2e131]:
+      - heading "Different recorded reporting responsibility" [level=2] [ref=f2e132]
+      - paragraph [ref=f2e133]: Original drilling-execution-assignment-63F99450D0899ED05023241DFAF6EB7763F5837C597DEF901254B33123468C78 was confirmed unrecorded. Recorded responsibility drilling-execution-assignment-38FAC87EB18E2FA1D2F2EC932C692427C0CFFBD48DE607F86267152439AC5E15 owns this execution.
+      - paragraph [ref=f2e134]: Company company · FIELD original-field/واحد · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5
+      - paragraph [ref=f2e135]: Recorded sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION
+      - paragraph [ref=f2e136]: Workflow Configured ongoing execution reporting version 1.1.0 · Receiving role ConfiguredReportingRole · 1 persona tasks
+      - paragraph [ref=f2e137]: Recorded recipient site-recorder-1 · Workspace SITE-1
+      - paragraph [ref=f2e138]: Frozen actual reporting destination 473
+      - paragraph [ref=f2e139]: Conflict checked 2026-10-26 18:17:58Z UTC
+      - text: Eligible recipients can open the recorded responsibility from their company inbox.
+```

@@ -1,0 +1,106 @@
+{
+  "recorded": "2026-10-30",
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "status": "completed bounded mutation-admission checkpoint; further permit work deferred after user scope correction",
+  "focused_results": [
+    {
+      "scope": "15 manifest/alias admission inputs, one read-policy-only case, two protected helper inputs",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 2.0258
+    },
+    {
+      "scope": "six owned setup cases, three successful subtype amendments, four document link/content/recovery modes",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "minutes": 1.008
+    }
+  ],
+  "logs": {
+    "oilgas-354-admission-core-build.log": {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-admission-core-build.log",
+      "sha256": "c5f840fc9ffdfa8f73097d87e3017b263d877f028ddb93c1fafd314876a69e69",
+      "terminal_tail": [
+        "C:\\Program Files\\dotnet\\sdk\\10.0.401\\Microsoft.Common.CurrentVersion.targets(2205,5): warning MSB9008: The referenced project C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\..\\Beep.IdentityServer\\Beep.IdentityServer.Analyzers\\Beep.IdentityServer.Analyzers.csproj does not exist. [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.PPDM39\\Beep.OilandGas.PPDM39.csproj::TargetFramework=net10.0]",
+        "",
+        "Build succeeded.",
+        "",
+        "C:\\Program Files\\dotnet\\sdk\\10.0.401\\Microsoft.Common.CurrentVersion.targets(2205,5): warning MSB9008: The referenced project C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\..\\Beep.IdentityServer\\Beep.IdentityServer.Analyzers\\Beep.IdentityServer.Analyzers.csproj does not exist. [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.PPDM39\\Beep.OilandGas.PPDM39.csproj::TargetFramework=net10.0]",
+        "    1 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:00:06.67"
+      ]
+    },
+    "oilgas-354-admission-tests-build.log": {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-admission-tests-build.log",
+      "sha256": "510e98747463b86c8b8d66f809aa02b41582f1d90eb393882bd82944ca00dce4",
+      "terminal_tail": [
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\PermitProviderQualificationTests.cs(809,24): warning xUnit1013: Public method 'RunRaceStageAsync' on test class 'PermitProviderQualificationTests' should be marked as a Theory. Reduce the visibility of the method, or add a Theory attribute to the method. (https://xunit.net/xunit.analyzers/rules/xUnit1013) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\EquipmentAssetAccessTests.cs(110,237): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\CompanyMaintenanceQualifiedOperatingTests.cs(52,250): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\CompanyMaintenanceQualifiedOperatingTests.cs(52,346): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\PermitProviderQualificationTests.cs(315,23): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\CompanyDevelopmentBoundaryTests.cs(191,85): warning xUnit1026: Theory method 'Missing_plan_storage_cannot_return_an_unpersisted_plan' on test class 'CompanyDevelopmentBoundaryTests' does not use parameter 'method'. Use the parameter, or remove the parameter and associated data. (https://xunit.net/xunit.analyzers/rules/xUnit1026) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\CompanyCorrectiveActionCommandTests.cs(184,63): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\CompanyHseWorkflowHttpTests.cs(228,61): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\Beep.OilandGas.Repository.Tests.csproj]",
+        "    642 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:00:38.24"
+      ]
+    },
+    "oilgas-354-admission-01.log": {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-admission-01.log",
+      "sha256": "18f00f84711fe21394e344148bc159892ebf1a0a54d1353caca342187bee9075",
+      "terminal_tail": [
+        "  Passed Beep.OilandGas.Repository.Tests.PermitRepositoryMutationAdmissionTests.UnprotectedRepositoryCannotCreatePermitUnitOfWorkThroughProtectedHelper(mode: \"type\") [< 1 ms]",
+        "",
+        "Test Run Successful.",
+        "Total tests: 18",
+        "     Passed: 18",
+        " Total time: 2.0258 Seconds",
+        "",
+        "Build succeeded.",
+        "    0 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:00:05.50"
+      ]
+    },
+    "oilgas-354-admission-owned-01.log": {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-admission-owned-01.log",
+      "sha256": "8f923953c44c07d6177c16bfdfdc76911a547220ff7f3de85de25de2340a79a1",
+      "terminal_tail": [
+        "  Passed Beep.OilandGas.Repository.Tests.PermitProviderQualificationTests.InstalledPermitDrillingAmendmentUsesReviewedOwnedLedger(mode: \"create-update-recovery\") [2 s]",
+        "",
+        "Test Run Successful.",
+        "Total tests: 13",
+        "     Passed: 13",
+        " Total time: 1.0080 Minutes",
+        "",
+        "Build succeeded.",
+        "    0 Warning(s)",
+        "    0 Error(s)",
+        "",
+        "Time Elapsed 00:01:03.71"
+      ]
+    }
+  },
+  "sha256": {
+    "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs": "c107b956d4e3009162fb2b08ac1876d15e46a599f04498d12e95dc5bf7523baa",
+    "TheTechIdea.Data/OilGas/PermitApplicationSchema.cs": "70c2b9bf974165b0ee92f671d87822d0592f2e514f496ce389fb230eed3db2e5",
+    "Beep.OilandGas.Repository.Tests/PermitRepositoryMutationAdmissionTests.cs": "88556eecbe8ef8df71222445cdddb5906459f668a6420280b61f28020ca3fdd3",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "b98372f02ccf6027c55a84e1ead0e1463b8c76e9f161970866b5ac3599c9d922",
+    "Beep.OilandGas.PPDM39/bin/Debug/net10.0/Beep.OilandGas.PPDM39.dll": "a7cc0807ef379814a710211ce8a9d61546383e6d013b37875238764da9d48127",
+    "Beep.OilandGas.Repository.Tests/bin/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "961304b62541999e6bedbcf78649c08689c9e5e48a4a9e10c71583b897268695"
+  },
+  "limits": [
+    "No further tests executed during scope correction.",
+    "Only repository mutation admission and selected legitimate native owners qualified. Trusted direct IDataSource consumers are not a global sandbox.",
+    "No hosted OIDC, other-provider, production performance, full suite or full-plan acceptance.",
+    "No schema change, handwritten SQL, EF migration or compatibility owner."
+  ]
+}

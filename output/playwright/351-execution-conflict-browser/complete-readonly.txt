@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Use read-only unmapped profile' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:53014/
+### Snapshot
+- [Snapshot](output\playwright\351-execution-conflict-browser\artifacts\page-2026-10-26T16-59-26-590Z.yml)

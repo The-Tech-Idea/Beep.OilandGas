@@ -1,11 +1,16 @@
 ﻿@page "/ppdm39/hse/hazop/{StudyId}"
-@page "/ppdm39/hse/hazop/new"
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
 @inject IHSEServiceClient HSEClient
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject ILogger<HAZOPStudy> Logger
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject OilGasApiFailures Answers
 
 <PageTitle>HAZOP Study @StudyId</PageTitle>
 
@@ -24,7 +29,7 @@
         <MudButton StartIcon="@Icons.Material.Outlined.Add"
                    Variant="Variant.Outlined"
                    OnClick="OpenAddNodeDialog"
-                   Disabled="@(_summary is null)">
+                   Disabled="@(_summary is null || _changing)">
             Add Node
         </MudButton>
     </MudStack>
@@ -66,14 +71,14 @@
     }
 
     @* ── Nodes + Deviations ───────────────────────────────────────────────── *@
-    @if (_nodes.Count == 0 && !_loading)
+    @if (_summary is not null && _nodes.Count == 0 && !_loading)
     {
         <MudPaper Elevation="1" Class="pa-6 text-center">
             <MudIcon Icon="@Icons.Material.Outlined.AccountTree" Color="Color.Default" Size="Size.Large" />
             <MudText Color="Color.Secondary" Class="mt-2">No nodes yet. Add your first HAZOP node.</MudText>
         </MudPaper>
     }
-    else
+    else if (_summary is not null)
     {
         <MudExpansionPanels MultiExpansion="true" Elevation="1">
             @foreach (var node in _nodes)
@@ -93,6 +98,7 @@
                                 </MudChip>
                                 <MudIconButton Icon="@Icons.Material.Outlined.Add" Size="Size.Small"
                                                Title="Add Deviation"
+                                               Disabled="@_changing"
                                                OnClick="@(async () => await OpenAddDeviationDialog(node.NodeSeq))" />
                             </MudStack>
                         </MudStack>
@@ -136,6 +142,7 @@
                                             <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle"
                                                            Size="Size.Small" Color="Color.Success"
                                                            Title="Close Deviation"
+                                                           Disabled="@_changing"
                                                            OnClick="@(async () => await CloseDeviationAsync(node.NodeSeq, context.CondSeq))" />
                                         }
                                     </MudTd>
@@ -152,6 +159,7 @@
     {
         <MudAlert Severity="Severity.Error" ShowCloseIcon="true"
                   CloseIconClicked="@(() => _error = null)">@_error</MudAlert>
+        <MudButton OnClick="LoadAsync" Disabled="@(_loading || _changing)" Variant="Variant.Outlined">Review recorded study</MudButton>
     }
 
 </MudStack>
@@ -169,8 +177,8 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => _showAddNode = false)">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitNodeAsync">Add Node</MudButton>
+        <MudButton OnClick="@(() => _showAddNode = false)" Disabled="@_changing">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitNodeAsync" Disabled="@_changing">Add Node</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -206,8 +214,8 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => _showAddDeviation = false)">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitDeviationAsync">Add</MudButton>
+        <MudButton OnClick="@(() => _showAddDeviation = false)" Disabled="@_changing">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitDeviationAsync" Disabled="@_changing">Add</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -219,6 +227,11 @@
     private bool             _loading;
     private string?          _error;
     private string           _loadedId = string.Empty;
+    private bool _disposed;
+    private long _generation;
+    private FieldSelectionReview? _review;
+    private bool _changing;
+    protected override void OnInitialized() { Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; }
 
     // Add Node
     private bool   _showAddNode;
@@ -241,16 +254,67 @@
 
     private async Task LoadAsync()
     {
-        if (string.IsNullOrWhiteSpace(StudyId) || StudyId == "new") return;
+        _summary = null; _review = null; _nodes = new(); _showAddNode = false; _showAddDeviation = false;
         _loading = true;
         _error   = null;
+        var generation = ++_generation; var selected = Company.Snapshot; var studyId = StudyId;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot && StudyId == studyId;
         try
         {
-            _summary = await HSEClient.GetHazopStudyAsync(StudyId);
-            _nodes   = await HSEClient.GetHazopNodesAsync(StudyId);
+            if (selected.Selection is null || !LeaseSummaryValidator.Identifier(studyId) || studyId == "new") throw new InvalidOperationException("Select a company, FIELD and recorded study.");
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, selected.Selection.Scope, selected.Selection.UserId);
+            if (!before.SelectionAvailable) throw new InvalidOperationException("Choose an available FIELD.");
+            var summary = await HSEClient.GetHazopStudyAsync(studyId) ?? throw new InvalidOperationException("The study is unavailable.");
+            var nodes = await HSEClient.GetHazopNodesAsync(studyId) ?? throw new InvalidOperationException("The study nodes are unavailable.");
+            if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, selected.Selection.Scope, selected.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext || summary.StudyId != studyId || nodes.Any(node => node is null || node.Deviations is null) || nodes.Select(node => node.NodeSeq).Distinct().Count() != nodes.Count)
+                throw new InvalidOperationException("The study or FIELD could not be confirmed.");
+            _summary = summary; _nodes = nodes; _review = before.SelectionContext;
         }
-        catch (Exception) { _error = "Failed to load HAZOP study."; Snackbar.Add(_error, Severity.Error); }
-        finally { _loading = false; }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Could not confirm recorded HAZOP study"); _error = "The recorded HAZOP study could not be confirmed for the current company and FIELD."; } }
+        finally { if (Current()) _loading = false; }
+    }
+
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged()
+    {
+        ++_generation; _summary = null; _review = null; _nodes = new(); _loading = false; _showAddNode = false; _showAddDeviation = false;
+        _error = "Company or FIELD changed. Reopen the study for the current selection.";
+        if (!_disposed) _ = InvokeAsync(StateHasChanged);
+    }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }
+
+    private async Task ChangeAsync(Func<string, Task> action)
+    {
+        if (_changing || _summary is null || _review is null) return;
+        var review = _review; var generation = _generation; var selected = Company.Snapshot; var studyId = StudyId;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot && StudyId == studyId && _review == review;
+        _changing = true; var attempted = false;
+        try
+        {
+            var field = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(field, review.Company, review.ActorUserId);
+            if (!field.SelectionAvailable || field.SelectionContext != review) { ContextChanged(); return; }
+            attempted = true; await action(studyId); if (!Current()) return;
+            field = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(field, review.Company, review.ActorUserId);
+            if (!field.SelectionAvailable || field.SelectionContext != review) { ContextChanged(); return; }
+            await LoadAsync();
+            if (_summary is not null) Snackbar.Add("Request accepted. Review the recorded study.", Severity.Info);
+        }
+        catch (Exception error)
+        {
+            if (Current())
+            {
+                Logger.LogWarning(error, "HAZOP study change could not be confirmed");
+                _error = attempted ? "The request outcome is unconfirmed. Review the recorded study before another change." : "The current FIELD could not be confirmed. Reopen the study.";
+                _summary = null; _review = null; _nodes = new(); _showAddNode = false; _showAddDeviation = false;
+            }
+        }
+        finally { _changing = false; }
     }
 
     private void OpenAddNodeDialog()
@@ -263,15 +327,8 @@
     private async Task SubmitNodeAsync()
     {
         if (string.IsNullOrWhiteSpace(_newNodeName)) return;
-        try
-        {
-            await HSEClient.AddHazopNodeAsync(
-                StudyId,
-                new AddNodeRequest(_newNodeName, _newNodeSafeguard));
-            _showAddNode = false;
-            await LoadAsync();
-        }
-        catch (Exception) { _error = "Failed to add node."; Snackbar.Add(_error, Severity.Error); }
+        var request = new AddNodeRequest(_newNodeName, _newNodeSafeguard);
+        await ChangeAsync(async study => { if (string.IsNullOrWhiteSpace(await HSEClient.AddHazopNodeAsync(study, request))) throw new InvalidOperationException("The node response was unavailable."); });
     }
 
     private Task OpenAddDeviationDialog(int nodeSeq)
@@ -287,30 +344,15 @@
     private async Task SubmitDeviationAsync()
     {
         if (string.IsNullOrWhiteSpace(_newDeviation) || string.IsNullOrWhiteSpace(_newConsequence)) return;
-        try
-        {
-            await HSEClient.AddHazopDeviationAsync(
-                StudyId,
-                _targetNodeSeq,
-                new AddDeviationRequest(_newGuideWord, _newDeviation, _newConsequence));
-            _showAddDeviation = false;
-            await LoadAsync();
-        }
-        catch (Exception) { _error = "Failed to add deviation."; Snackbar.Add(_error, Severity.Error); }
+        var node = _targetNodeSeq; var request = new AddDeviationRequest(_newGuideWord, _newDeviation, _newConsequence);
+        if (!_nodes.Any(item => item.NodeSeq == node)) return;
+        await ChangeAsync(async study => { if (string.IsNullOrWhiteSpace(await HSEClient.AddHazopDeviationAsync(study, node, request))) throw new InvalidOperationException("The deviation response was unavailable."); });
     }
 
     private async Task CloseDeviationAsync(int nodeSeq, int condSeq)
     {
-        try
-        {
-            await HSEClient.UpdateHazopDeviationStatusAsync(StudyId, nodeSeq, condSeq, "CLOSED");
-            await LoadAsync();
-        }
-        catch (OilGasApiException answer)
-        {
-            _error = Answers.Explain(answer, "closing a HAZOP deviation", "The deviation was not closed");
-            Snackbar.Add(_error, Severity.Error);
-        }
-        catch (Exception) { _error = "Failed to close deviation."; Snackbar.Add(_error, Severity.Error); }
+        if (!_nodes.Any(node => node.NodeSeq == nodeSeq && node.Deviations.Any(deviation => deviation.CondSeq == condSeq && deviation.Status != "CLOSED"))) return;
+        await ChangeAsync(study => HSEClient.UpdateHazopDeviationStatusAsync(study, nodeSeq, condSeq, "CLOSED"));
     }
 }
+

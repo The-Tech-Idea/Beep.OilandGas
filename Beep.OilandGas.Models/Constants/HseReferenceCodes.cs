@@ -5,6 +5,40 @@ namespace Beep.OilandGas.Models.Constants;
 /// </summary>
 public static class HseReferenceCodes
 {
+    public static class FieldContext
+    {
+        public const string PrimaryRole = "PRIMARY_FIELD_CONTEXT";
+        public const string ComponentType = "INCIDENT_LOCATION";
+    }
+
+    public static class Hazop
+    {
+        public const string ProjectType = "HAZOP";
+        public const string NodeType = "HAZOP_NODE";
+        public const string StudyStatusType = "HAZOP_STUDY";
+        public const string DeviationStatusType = "HAZOP_DEVIATION";
+        public const string FieldContextSource = "Beep.OilandGas.HSE.Field";
+        public const string Draft = "DRAFT";
+        public const string Open = "OPEN";
+        public const string ActionRequired = "ACTION_REQUIRED";
+        public const string Closed = "CLOSED";
+    }
+
+    public static class CorrectiveAction
+    {
+        public const string ProjectType = "CORRECTIVE_ACTION";
+        public const string StatusType = "CA_STEP";
+        public const string ResponsibleRole = "RESPONSIBLE";
+        public const string Open = "OPEN";
+        public const string Completed = "COMPLETED";
+    }
+
+    public static class Investigator
+    {
+        public const string Role = "INVESTIGATOR";
+        public const string Assigned = "ASSIGNED";
+    }
+
     public static class IncidentType
     {
         public const string LostTime = "LOST_TIME";

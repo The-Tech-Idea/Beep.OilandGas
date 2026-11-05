@@ -1,0 +1,144 @@
+@page "/warehouse"
+@namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
+@page "/warehouse/items/{Id}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Services
+@using System.Security.Claims
+@inject IAccountingServiceClient Accounting
+@inject InventoryWorkspaceState Workspace
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<PageTitle>Company warehouse evidence</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4">Company warehouse evidence</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable")</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        @if(!string.IsNullOrWhiteSpace(Id)){<MudButton Href="/warehouse">Warehouse evidence landing</MudButton>}
+        <MudButton OnClick="Reload" Disabled="_busy">Reload recorded inventory evidence</MudButton>
+        <MudButton Href="/procurement">Purchase-order and receiving evidence</MudButton>
+        <MudButton Href="/tasks/inbox">Assigned workflow tasks</MudButton>
+    </MudStack>
+    @if(_busy){<MudProgressLinear Indeterminate="true" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(Workspace.StockBlocked)
+    {
+        <MudAlert Severity="Severity.Warning">A physical stock operation is busy or unconfirmed. Reconcile the original receipt intent before recording another movement.</MudAlert>
+        @if(Workspace.StockRecoveryRoute is {} recovery){<MudButton Href="@recovery">Return to original stock intent</MudButton>}
+        @if(Workspace.SavedStockRecoveryRoute is {} saved){<MudButton Href="@saved">Open saved stock intent</MudButton>}
+    }
+    @if(!_busy && _error is null){<InventorySourcePanel Review="Workspace" />}
+    @if(string.IsNullOrWhiteSpace(Id)){<Beep.OilandGas.Web.Components.Workflow.CompanyMaterialReservationQueuePanel />}
+    @if(string.IsNullOrWhiteSpace(Id) && Company.Selection?.Permissions.Contains("Procurement.View",StringComparer.Ordinal)==true)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6">My recorded stock intents</MudText>
+            <MudText>Find original receipt and return evidence for this company and account.</MudText>
+            <MudButton OnClick="Discover" Disabled="@(_busy || _discovering || Workspace.StockBusy || Workspace.ProcurementWorkBlocked)">Find saved stock intents</MudButton>
+            @if(_discovering){<MudProgressLinear Indeterminate="true" />}
+            @if(_discoveryError is not null){<MudAlert Severity="Severity.Error">@_discoveryError</MudAlert>}
+            @if(!_discovering && _discoveryError is null && Workspace.StockIndex is {} index)
+            {
+                @if(Workspace.StockPage is {} savedPage)
+                {
+                    <MudText>Page @savedPage.PageNumber · Total recorded intents: @savedPage.TotalRecords</MudText>
+                    <MudButton OnClick="PreviousPage" Disabled="@(!savedPage.HasPreviousPage)">Previous intents</MudButton>
+                    <MudButton OnClick="NextPage" Disabled="@(!savedPage.HasNextPage)">Next intents</MudButton>
+                    <MudText Typo="Typo.caption">Each page reflects a fresh source review; the history can change between page reads.</MudText>
+                }
+                @if(index.Entries.Count==0){<MudText>No recorded stock intents for this company and account.</MudText>}
+                @foreach(var entry in index.Entries.OrderByDescending(row=>row.RecordedAtUtc).ThenBy(row=>row.Command.IntentId,StringComparer.Ordinal))
+                {
+                    <MudPaper Outlined="true" Class="pa-3 my-2">
+                        <MudText>Order: @entry.Command.OrderId · Receipt: @entry.Command.ReceiptId · Item: @entry.ItemId</MudText>
+                        <MudText>@entry.Command.Kind · @entry.Command.Quantity @entry.Command.QuantityUnit · Recorded UTC: @entry.RecordedAtUtc.ToString("O")</MudText>
+                        <MudText>@(entry.CurrentMatchesOriginalEffect?"Current source matches this movement":"Current source has changed since this movement")</MudText>
+                        @if(!entry.CurrentPurchaseAvailable || !entry.CurrentInventoryAvailable){<MudAlert Severity="Severity.Warning">Current owned source is unavailable. Open the original recorded evidence; no current quantity or repaired stock is confirmed.</MudAlert>}
+                        <MudButton Href="@InventoryWorkspaceState.SavedStockRoute(entry.Command.IntentId)">Open recorded stock evidence</MudButton>
+                    </MudPaper>
+                }
+            }
+        </MudPaper>
+    }
+</MudContainer>
+@code {
+    [Parameter] public string? Id {get;set;}
+    private bool _busy,_disposed,_reloadRequested;
+    private int _authenticationVersion;
+    private string? _error;
+    private bool _discovering;
+    private string? _discoveryError;
+    private Task Discover()=>DiscoverPage(1);
+    private Task PreviousPage()=>DiscoverPage((Workspace.StockPage?.PageNumber ?? 1)-1);
+    private Task NextPage()=>DiscoverPage((Workspace.StockPage?.PageNumber ?? 1)+1);
+    private async Task DiscoverPage(int pageNumber)
+    {
+        if(_disposed || _busy || _discovering || !string.IsNullOrWhiteSpace(Id))return;
+        var original=Company.Snapshot;var authenticationVersion=_authenticationVersion;_discovering=true;_discoveryError=null;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || authenticationVersion!=_authenticationVersion || original.Selection is not {} selected ||
+                user.Identity?.IsAuthenticated!=true || (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=selected.UserId ||
+                !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) || !selected.Permissions.Contains("Procurement.View",StringComparer.Ordinal))
+                throw new InvalidOperationException("Current original account, standard app roles and both source grants are required.");
+            await Workspace.LoadStockPageAsync(pageNumber,25,Accounting.GetCompanyStockRecoveryPageAsync);
+        }
+        catch(Exception error){if(!_disposed && original==Company.Snapshot && authenticationVersion==_authenticationVersion)_discoveryError=Calls.Explain(error,"finding saved stock intents","Complete stock discovery could not be confirmed");}
+        finally{_discovering=false;}
+    }
+    public override Task SetParametersAsync(ParameterView parameters){if(!parameters.TryGetValue<string?>(nameof(Id),out _))Id=null;return base.SetParametersAsync(parameters);}
+    protected override void OnInitialized(){Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;Workspace.StockChanged+=StockChanged;}
+    protected override Task OnParametersSetAsync()
+    {
+        try{if(!string.IsNullOrWhiteSpace(Id))Id=TheTechIdea.Data.OilGas.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"warehouse/items/");}
+        catch(FormatException){Workspace.Clear();_error="The inventory address is invalid. Open the original item from the company queue.";return Task.CompletedTask;}
+        return Reload();
+    }
+    private async Task Reload()
+    {
+        if(_disposed)return;
+        if(_busy){Workspace.Clear();_reloadRequested=true;return;}
+        _busy=true;
+        try
+        {
+            do
+            {
+                _reloadRequested=false;Workspace.Clear();_error=null;
+                var original=Company.Snapshot;var id=Id;var authVersion=_authenticationVersion;var version=Workspace.Version;
+                if(original.Selection is null)continue;
+                try
+                {
+                    var user=(await Authentication.GetAuthenticationStateAsync()).User;
+                    if(_disposed || original!=Company.Snapshot || authVersion!=_authenticationVersion || version!=Workspace.Version)continue;
+                    var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+                    if(user.Identity?.IsAuthenticated!=true || actor!=original.Selection.UserId || !original.Selection.Roles.Any(user.IsInRole) || !original.Selection.Permissions.Contains("Inventory.View",StringComparer.Ordinal))
+                        throw new InvalidOperationException("Current company account, standard app roles and Inventory.View are required.");
+                    version++;
+                    if(string.IsNullOrWhiteSpace(id))await Workspace.LoadQueueAsync(Accounting.GetCompanyInventoryItemsAsync);
+                    else await Workspace.LoadDetailAsync(id,Accounting.GetCompanyInventorySourceAsync);
+                }
+                catch(Exception ex)
+                {
+                    var message=Calls.Explain(ex,"reading company inventory evidence","Inventory source could not be confirmed. Review company access, item ownership and the PRODUCTION migration");
+                    if(!_disposed && original==Company.Snapshot && id==Id && authVersion==_authenticationVersion && version==Workspace.Version)_error=message;
+                }
+            }while(_reloadRequested && !_disposed);
+        }
+        finally{_busy=false;}
+    }
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)
+    {
+        ++_authenticationVersion;Workspace.Clear();_error=null;_discoveryError=null;
+        if(!_disposed)_=InvokeAsync(async()=>{if(_disposed)return;await Reload();if(!_disposed)StateHasChanged();});
+    }
+    private void ContextChanged()
+    {
+        Workspace.Clear();_error=null;_discoveryError=null;
+        if(!_disposed)_=InvokeAsync(async()=>{if(_disposed)return;if(!string.IsNullOrWhiteSpace(Id)){Navigation.NavigateTo("/warehouse");return;}await Reload();if(!_disposed)StateHasChanged();});
+    }
+    private void StockChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Workspace.StockChanged-=StockChanged;Workspace.Clear();}
+}

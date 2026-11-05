@@ -6,9 +6,11 @@ namespace Beep.OilandGas.Web.Services
 {
     public interface ILeaseServiceClient
     {
-        Task<LeaseSummary> EvaluateLeaseAsync(string leaseId);
-        Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null);
+        Task<TheTechIdea.Data.OilGas.LeaseCreationContext> GetCreationContextAsync(string fieldId);
+        Task<TheTechIdea.Data.OilGas.LeaseCreationReceipt> ReconcileLeaseCreationAsync(CreateLeaseAcquisition request);
+        Task<LeaseSummary> EvaluateLeaseAsync(string leaseId, string fieldId, System.Threading.CancellationToken cancellationToken = default);
+        Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null, System.Threading.CancellationToken cancellationToken = default);
         Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest);
-        Task UpdateLeaseStatusAsync(string leaseId, string status);
+        Task UpdateLeaseStatusAsync(string leaseId, string status, string fieldId);
     }
 }

@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('link', { name: 'Open created application' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:55005/ppdm39/permits/detail?applicationId=PA-08d6e6b2acc043f98705ff9df2028556
+### Snapshot
+- [Snapshot](output\playwright\354-permit-browser\artifacts\page-2026-10-29T15-13-55-639Z.yml)

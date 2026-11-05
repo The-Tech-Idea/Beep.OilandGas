@@ -1,0 +1,117 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject WorkOrderExecutionPermitDecisionState State
+@inject NavigationManager Navigation
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Current material readiness comparison</MudText>
+        <MudTextField @bind-Value="_allocation" Label="Original material reservation intent reference" HelperText="Use the original reservation intent. The permit material reference must match its recorded allocation ID." Disabled="@_busy" Required="true" />
+        <MudButton OnClick="ReviewAsync" Disabled="@(_busy || Permit is null || !CanRead)" Color="Color.Primary">Compare current stock and reservation with this pending permit</MudButton>
+        @if(_busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Comparing current permit material readiness" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_authorized && State.VisibleMaterialReference is {} retained)
+        {
+            <MudText>Original material acceptance reference: @retained.IntentId · Inspection: @retained.InspectionId</MudText>
+            <MudAlert Severity="@(State.MaterialReceipt is null?Severity.Warning:Severity.Info)">@(State.MaterialReceipt is null?"The original acceptance outcome is unconfirmed. Another material acceptance is blocked until original read-only recovery.":"The original material inspection acceptance is recorded. Fresh readiness and permit approval remain separate.")</MudAlert>
+            <MudButton OnClick="RecoverAcceptanceAsync" Color="Color.Primary" Disabled="@(_busy || State.Busy)">Recover original material acceptance without another write</MudButton>
+            @if(State.VisibleMaterialCommand is {} original){<MudText>Original rationale: @original.Reason</MudText><MudText>Original reservation: @original.Review.Reservation.AllocationId · Quantity: @original.Review.Reservation.Quantity @original.Review.Reservation.Unit</MudText>}
+            @if(State.MaterialReceipt is {} accepted){<MudText>Recorded acceptance UTC: @accepted.INSPECTED_AT_UTC?.ToString("O") · Inspector: @accepted.INSPECTOR · Proof revision: @accepted.MATERIAL_ACCEPTANCE_REVISION</MudText>}
+        }
+        @if(_review is {} review)
+        {
+            <MudText>Independent reviewer @review.PermitReview.Context.ActorUserId · Company @review.Reservation.Company.BusinessAssociateId · FIELD @review.Reservation.Task.FieldId · Order @review.Reservation.Task.WorkOrderId</MudText>
+            <MudText>Recorded reservation @review.Reservation.AllocationId · Reserved by @review.Reservation.ReservedBy</MudText>
+            <MudText>Item @review.Reservation.ItemId / @review.CurrentMaterial.Source.Inventory.Item.ITEM_NAME · Required @review.Reservation.Quantity @review.Reservation.Unit</MudText>
+            <MudText>Warehouse @review.Reservation.Warehouse · Location @review.Reservation.Location</MudText>
+            <MudText>Recorded on hand @review.CurrentMaterial.Source.Inventory.Item.QUANTITY_ON_HAND · Complete outstanding reserved @review.CurrentMaterial.ReservedQuantity · Available to reserve @review.CurrentMaterial.AvailableQuantity @review.Reservation.Unit</MudText>
+            <MudText>Reservation validity UTC @review.Reservation.ValidFromUtc.ToString("O") to @review.Reservation.ValidToUtc.ToString("O")</MudText>
+            <MudText Typo="Typo.caption">Compared UTC @review.ComparedAtUtc.ToString("O") · Reservation revision @review.Reservation.Revision · Inventory revision @review.CurrentMaterial.Source.Inventory.Revision · PRODUCTION binding @review.CurrentMaterial.Source.Context.Database.Fingerprint</MudText>
+            @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            @if(review.Blockers.Count==0)
+            {
+                <MudAlert Severity="Severity.Info">Current material comparison has no listed blockers. Independent prerequisite acceptance and a durable permit approval remain separate.</MudAlert>
+                @if(State.CanAcceptMaterial)
+                {
+                    <MudSelect T="string" Value="@_inspection" ValueChanged="SelectInspection" Label="Exact unrecorded MATERIAL inspection" Required="true" Disabled="@(_busy || State.Busy)">
+                        @foreach(var row in review.PermitReview.CurrentSource.Inspections.Where(row=>row.PermitPrerequisiteKind=="MATERIAL" && row.RegulatoryRef==review.Reservation.AllocationId && row.Jurisdiction==review.PermitReview.Proposal.Jurisdiction && row.Status=="UNRECORDED"))
+                        {<MudSelectItem T="string" Value="@row.InspectionId">@row.CondSeq · @row.RequiredText · @row.Jurisdiction</MudSelectItem>}
+                    </MudSelect>
+                    <MudTextField T="string" @bind-Value="_rationale" Label="Independent material acceptance rationale" Required="true" Lines="3" Disabled="@(_busy || State.Busy)" />
+                    <MudButton OnClick="AcceptAsync" Color="Color.Primary" Disabled="@(_busy || State.Busy || string.IsNullOrWhiteSpace(_inspection) || string.IsNullOrWhiteSpace(_rationale))">Retain original intent and accept material inspection</MudButton>
+                }
+            }
+            <MudSimpleTable Dense="true"><thead><tr><th scope="col">Recorded reservation</th><th scope="col">Quantity / unit</th><th scope="col">Release evidence</th></tr></thead><tbody>@foreach(var row in review.CurrentMaterial.Allocations){<tr><th scope="row">@row.Id</th><td>@row.Quantity @row.Unit</td><td>@(review.CurrentMaterial.Releases?.Any(r=>r.AllocationId==row.Id)==true?"Recorded full release":"No recorded release")</td></tr>}</tbody></MudSimpleTable>
+        }
+        <MudAlert Severity="Severity.Info">Material inspection acceptance does not record permit approval, issue or consume stock, or authorize work execution. Personnel, source documents and remaining prerequisite acceptance require their own evidence.</MudAlert>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public CompanyWorkOrderExecutionPermitReference? Permit {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    [Parameter] public Guid? AcceptanceReference {get;set;}
+    [Parameter] public string? AcceptanceInspection {get;set;}
+    private string _allocation="",_key="",_recoveryKey="",_inspection="",_rationale="";
+    private string? _error;
+    private CompanyWorkOrderMaterialReadinessReview? _review;
+    private bool _busy,_disposed,_authorized;
+    private long _version;
+    private bool CanRead=>Company.Selection is {} selected && selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) && selected.Permissions.Contains("HSE.ApprovePermit",StringComparer.Ordinal);
+    protected override void OnInitialized(){Company.Changed+=Clear;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;State.Changed+=Changed;}
+    protected override async System.Threading.Tasks.Task OnParametersSetAsync()
+    {
+        var key=System.Text.Json.JsonSerializer.Serialize(new{Permit,SourceRevision});if(key!=_key){_key=key;Clear();}var recoveryKey=System.Text.Json.JsonSerializer.Serialize(new{Permit,SourceRevision,AcceptanceReference,AcceptanceInspection});var recoverOnce=recoveryKey!=_recoveryKey;_recoveryKey=recoveryKey;State.Attach(Permit,SourceRevision);
+        if(recoverOnce && AcceptanceReference is {} id && !string.IsNullOrWhiteSpace(AcceptanceInspection) && Permit is not null && !State.Busy && (State.VisibleMaterialReference?.IntentId!=id || State.VisibleMaterialCommand is null)){_inspection=AcceptanceInspection;await RecoverAcceptanceAsync();}
+    }
+    private async System.Threading.Tasks.Task Authority()
+    {
+        var snapshot=Company.Snapshot;var generation=_version;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Permit is null || string.IsNullOrWhiteSpace(SourceRevision) || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !CanRead || await Fields.GetCurrentFieldIdAsync()!=Permit.Task.FieldId || generation!=_version || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current original resolved reviewer/standard roles/material permissions/FIELD are required.");
+        var role=_review?.PermitReview.CurrentSource.Stage.AssignedRole ?? State.VisibleMaterialCommand?.Review.PermitReview.CurrentSource.Stage.AssignedRole;if(role is not null && (!user.IsInRole(role) || !selected.Roles.Contains(role,StringComparer.Ordinal)))throw new UnauthorizedAccessException("Current original assigned company role is required.");
+        _authorized=true;
+    }
+    private void SelectInspection(string id){_inspection=id;_rationale="";}
+    private async System.Threading.Tasks.Task AcceptAsync()
+    {
+        if(_busy || State.Busy || _disposed)return;_error=null;var generation=_version;var snapshot=Company.Snapshot;
+        try{await Authority();if(_review is null)throw new InvalidOperationException("Compare the original current material evidence first.");await State.AcceptMaterialAsync(Workflows,_review,_inspection,_rationale,original=>Retain(new(original.Review.Query.Permit,original.InspectionId,original.IntentId)));await Authority();}
+        catch(Exception error){if(!_disposed && generation==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recording original material acceptance","The original outcome is unconfirmed; recover its retained reference before another acceptance");}
+    }
+    private System.Threading.Tasks.Task Retain(CompanyWorkOrderMaterialAcceptanceReference reference)
+    {
+        _inspection=reference.InspectionId;Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"permitReviewId",reference.Permit.IntentId},{"materialAcceptanceId",reference.IntentId},{"materialInspectionId",reference.InspectionId}}),replace:true);return System.Threading.Tasks.Task.CompletedTask;
+    }
+    private async System.Threading.Tasks.Task RecoverAcceptanceAsync()
+    {
+        if(_busy || State.Busy || _disposed)return;_error=null;var generation=_version;var snapshot=Company.Snapshot;
+        try{await Authority();if(State.VisibleMaterialReference is {} original && State.VisibleMaterialCommand is not null)await State.RecoverMaterialAsync(Workflows);else{var query=new CompanyWorkOrderMaterialAcceptanceReference(Permit!,AcceptanceInspection??_inspection,AcceptanceReference??State.VisibleMaterialReference?.IntentId??throw new ArgumentException("Use the original material acceptance reference."));await State.RecoverMaterialReferenceAsync(Workflows,query,Retain);}await Authority();}
+        catch(Exception error){if(!_disposed && generation==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recovering original material acceptance","The same original material inspection/intent/reviewer reference could not be confirmed");}
+    }
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private async System.Threading.Tasks.Task ReviewAsync()
+    {
+        if(_disposed || _busy || State.Busy)return;var version=++_version;var scope=Company.Snapshot;var queryPermit=Permit;_review=null;_error=null;_busy=true;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;var selected=scope.Selection;
+            if(queryPermit is null || string.IsNullOrWhiteSpace(SourceRevision) || selected is null || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !CanRead || await Fields.GetCurrentFieldIdAsync()!=queryPermit.Task.FieldId || scope!=Company.Snapshot || version!=_version)throw new UnauthorizedAccessException("Current resolved independent company account, standard roles, permit/inventory view permissions and original FIELD are required.");
+            if(!Guid.TryParse(_allocation,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original reservation intent reference.");var query=new CompanyWorkOrderMaterialReadinessQuery(queryPermit,id);var result=await Workflows.ReviewWorkOrderPermitMaterialReadinessAsync(query);result.Require(selected.Scope,selected.UserId,query);
+            user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || version!=_version || scope!=Company.Snapshot)return;
+            if(user.FindFirst("party_id")?.Value!=selected.UserId || !user.IsInRole(result.PermitReview.CurrentSource.Stage.AssignedRole) || !selected.Roles.Contains(result.PermitReview.CurrentSource.Stage.AssignedRole,StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=queryPermit.Task.FieldId)throw new UnauthorizedAccessException("Original independent reviewer/assigned role/FIELD changed during material comparison.");
+            if(!_disposed && version==_version && scope==Company.Snapshot){_review=CompanyInventorySourceReview.Copy(result);_authorized=true;}
+        }
+        catch(Exception error){if(!_disposed && version==_version && scope==Company.Snapshot)_error=Calls.Explain(error,"comparing original permit material readiness","The complete original reservation/current source could not be confirmed; review the original reference and rights");}
+        finally{_busy=false;}
+    }
+    private void Clear(){_version++;_authorized=false;_review=null;_error=null;_allocation="";_inspection="";_rationale="";if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string _) {Clear();State.Attach(null,null);}
+    private void AuthenticationChanged(System.Threading.Tasks.Task<AuthenticationState> _) {Clear();State.Attach(null,null);}
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Clear;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.Changed-=Changed;Clear();}
+}

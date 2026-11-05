@@ -1,0 +1,310 @@
+@using TheTechIdea.Data.OilGas
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@inject WorkOrderExecutionPermitDecisionState Decisions
+@inject NavigationManager Navigation
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6">Company personnel and licence evidence</MudText>
+    <MudButton OnClick="ReadRosterAsync" Color="Color.Primary" Disabled="@(_busy || Permit is null || !CanRead)">Read recorded personnel assignments</MudButton>
+    @if(_roster is {} roster)
+    {
+        @if(roster.Roster.Assignments.Count==0){<MudAlert Severity="Severity.Info">No native personnel assignments are recorded for this original permit/task. An empty roster does not establish qualification.</MudAlert>}
+        else
+        {
+            <MudSelect T="string" Value="@_assignment" ValueChanged="AssignmentChanged" Label="Recorded personnel assignment" Disabled="@_busy">
+                @foreach(var row in roster.Roster.Assignments){<MudSelectItem T="string" Value="@row.AssignmentId">@row.EmployeeBaId · @row.DutyCode · @row.ValidFromUtc.ToString("O") to @row.ValidToUtc.ToString("O") · assigned by @row.AssignedBy</MudSelectItem>}
+            </MudSelect>
+            <MudButton OnClick="CompareAssignedAsync" Disabled="@(_busy || string.IsNullOrWhiteSpace(_assignment) || !CanRead)">Compare recorded assignment with current personnel evidence</MudButton>
+        }
+        <MudText Typo="Typo.caption">Complete roster revision: @roster.Roster.Revision · compared UTC @roster.Roster.ComparedAtUtc.ToString("O")</MudText>
+    }
+    @if(_assigned is {} assigned)
+    {
+        var original=assigned.Assignment;
+        <MudText Typo="Typo.subtitle1">Recorded assignment and current evidence</MudText>
+        <MudText>Assignment: @original.AssignmentId · employee @original.EmployeeBaId · duty @original.DutyCode · recorded licence @original.LicenseId</MudText>
+        <MudText>Assigned by @original.AssignedBy at @original.AssignedAtUtc.ToString("O") · original window @original.ValidFromUtc.ToString("O") to @original.ValidToUtc.ToString("O")</MudText>
+        @if(assigned.Roster.Releases?.SingleOrDefault(row=>row.AssignmentId==original.AssignmentId) is {} cancellation){<MudAlert Severity="Severity.Warning">Personnel assignment cancelled by @cancellation.ReleasedBy at @cancellation.ReleasedAtUtc.ToString("O"). Original assignment history is retained.</MudAlert>}
+        @if(assigned.CurrentPersonnel.Personnel.Employment is {} currentEmployee){<MudText>Current company membership: @currentEmployee.EmployeeBaId · @(currentEmployee.Position ?? "Position unconfirmed") · @(currentEmployee.Status ?? "Status unconfirmed") · @Date(currentEmployee.EffectiveDate) to @Date(currentEmployee.ExpiryDate)</MudText>}
+        @if(assigned.CurrentPersonnel.Personnel.License is {} currentLicense){<MudText>Current licence: @currentLicense.LicenseId · @(currentLicense.Type ?? "Type unconfirmed") · @(currentLicense.GrantingAuthority ?? "Authority unconfirmed") · @Date(currentLicense.EffectiveDate) to @Date(currentLicense.ExpiryDate)</MudText>}
+        @foreach(var blocker in assigned.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+        <MudText Typo="Typo.caption">Current personnel revision: @assigned.CurrentPersonnel.Personnel.Revision · compared UTC @assigned.CurrentPersonnel.Personnel.ComparedAtUtc.ToString("O")</MudText>
+        <MudButton OnClick="ReviewPolicyEvidenceAsync" Color="Color.Primary" Disabled="@(_busy || !CanRead)">Compare explicit company policy and recorded credentials</MudButton>
+    }
+    @if(_policyEvidence is {} evidence)
+    {
+        <MudText Typo="Typo.subtitle1">Current company personnel policy and source evidence</MudText>
+        @if(evidence.ApplicablePolicy is {} policy)
+        {
+            <MudText>Policy @policy.RecordId · version @policy.Version · duty @policy.Policy.DutyCode · actual work-order type @policy.Policy.WorkOrderType · jurisdiction @policy.Policy.Jurisdiction</MudText>
+            <MudText>Effective UTC @policy.Policy.EffectiveFromUtc.ToString("O") to @policy.Policy.EffectiveToUtc.ToString("O") · required licence @policy.Policy.LicenseType · authority @policy.Policy.GrantingAuthority · status type @policy.Policy.StatusType · accepted @string.Join(", ",policy.Policy.AcceptedStatuses)</MudText>
+            <MudText>Accepted employment statuses: @(policy.Policy.AcceptedEmploymentStatuses is {} statuses?string.Join(", ",statuses):"Not configured") · eligible positions: @(policy.Policy.AcceptedEmploymentPositions is not {} positions?"Not configured":positions.Count==0?"Any recorded position explicitly permitted":string.Join(", ",positions))</MudText>
+            @if(evidence.Credentials.Personnel.Employment is {} employment){<MudText>Current recorded employment status: @(employment.Status??"Unconfirmed") · position: @(employment.Position??"Unconfirmed")</MudText>}
+            @foreach(var requirement in policy.Policy.Conditions){<MudText>Required @requirement.Code / @requirement.Type · @requirement.Comparison @requirement.Value @requirement.Unit · source @requirement.SourceReference</MudText>}
+        }
+        else{<MudAlert Severity="Severity.Warning">No single explicit company policy covers this duty, native work-order type, jurisdiction and complete permit window.</MudAlert>}
+        @foreach(var status in evidence.Credentials.Statuses){<MudText>Recorded licence status @status.StatusId · @(status.Status ?? "Unconfirmed") / @(status.StatusType ?? "Type unconfirmed") · @Date(status.EffectiveFrom) to @Date(status.EffectiveTo)</MudText>}
+        @foreach(var condition in evidence.Credentials.Conditions){<MudText>Recorded condition @condition.ConditionId · @(condition.Code ?? "Code unconfirmed") / @(condition.Type ?? "Type unconfirmed") · @(condition.Value?.ToString() ?? "Value unconfirmed") @(condition.Unit ?? "Unit unconfirmed") · exemption @(condition.ExemptIndicator ?? "Unconfirmed") · reference @(condition.EvidenceReference ?? "Unconfirmed") · @Date(condition.EffectiveFrom) to @Date(condition.EffectiveTo)</MudText>}
+        @foreach(var blocker in evidence.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+        <MudText Typo="Typo.caption">Current policy catalog revision @evidence.Policies.Revision · credential revision @evidence.Credentials.Revision</MudText>
+        <MudText>Original personnel reference @evidence.Assignment.CurrentPersonnel.PermitReview.Proposal.PersonnelReference · reviewed duty assignment @evidence.Assignment.Assignment.AssignmentId</MudText>
+        <MudSelect T="string" @bind-Value="_acceptInspection" Label="Exact pending personnel requirement" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAcceptPersonnel)">
+            @foreach(var row in evidence.Assignment.CurrentPersonnel.PermitReview.CurrentSource.Inspections.Where(row=>row.Status=="UNRECORDED" && row.PermitPrerequisiteKind=="PERSONNEL" && row.RegulatoryRef==CompanyWorkOrderPersonnelAcceptanceCommand.RequirementReference(evidence,evidence.Assignment.CurrentPersonnel.PermitReview.Proposal.RequirementEvidenceVersion is 1 or 2?1:0)))
+            {<MudSelectItem T="string" Value="@row.InspectionId">@row.RequiredText · @row.Jurisdiction · authored by @row.RequirementActor</MudSelectItem>}
+        </MudSelect>
+        <MudTextField T="string" @bind-Value="_acceptReason" Label="Independent personnel acceptance rationale" Required="true" Lines="3" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAcceptPersonnel)" />
+        <MudButton OnClick="AcceptPersonnelAsync" Color="Color.Primary" Disabled="@(_busy || Decisions.Busy || !CanRead || !Decisions.CanAcceptPersonnel || evidence.Blockers.Count!=1 || evidence.Blockers[0]!=CompanyPersonnelPolicyEvidenceReview.PendingAcceptanceBlocker || string.IsNullOrWhiteSpace(_acceptInspection) || string.IsNullOrWhiteSpace(_acceptReason))">Retain and record independent personnel acceptance</MudButton>
+    }
+    @if(CanRead)
+    {
+        <MudTextField T="string" @bind-Value="_acceptInspection" Label="Original personnel inspection ID" Disabled="@(_busy || Decisions.Busy || Decisions.VisiblePersonnelAcceptanceReference is not null)" />
+        <MudTextField T="string" @bind-Value="_acceptIntent" Label="Original personnel acceptance intent" Disabled="@(_busy || Decisions.Busy || Decisions.VisiblePersonnelAcceptanceReference is not null)" />
+        <MudButton OnClick="RecoverAcceptanceAsync" Disabled="@(_busy || Decisions.Busy || Permit is null)">Recover original personnel acceptance</MudButton>
+    }
+    @if(Decisions.VisiblePersonnelAcceptanceReference is {} acceptanceReference){<MudAlert Severity="Severity.Info">Retained personnel inspection @acceptanceReference.InspectionId · acceptance intent @acceptanceReference.IntentId. Recover these exact references if confirmation is unavailable.</MudAlert>}
+    @if(Decisions.PersonnelAcceptanceReceipt is {} accepted){<MudAlert Severity="Severity.Success">Independent personnel acceptance recorded by @accepted.INSPECTOR at @Date(accepted.INSPECTED_AT_UTC). Permit approval and authorization to work remain separate.</MudAlert>}
+    <MudTextField T="string" @bind-Value="_employee" Label="Exact company employee BA" Required="true" Disabled="@_busy" />
+    <MudTextField T="string" @bind-Value="_license" Label="Exact recorded licence reference" Required="true" Disabled="@_busy" />
+    <MudButton OnClick="ReviewAsync" Color="Color.Primary" Disabled="@(_busy || Permit is null || !CanRead)">Review original permit and company personnel source</MudButton>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Reading company personnel source" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(_review is {} review)
+    {
+        <MudText>Company: @review.Personnel.Context.Company.BusinessAssociateId · FIELD: @review.Personnel.Context.FieldId · Reviewed UTC: @review.Personnel.ComparedAtUtc.ToString("O")</MudText>
+        @if(review.Personnel.Employment is {} employee){<MudText>Employee: @employee.EmployeeBaId · Employment record: @employee.Observation · Position: @(employee.Position ?? "Not recorded") · Status: @(employee.Status ?? "Not recorded")</MudText><MudText>Recorded employment dates: @Date(employee.EffectiveDate) to @Date(employee.ExpiryDate)</MudText>}
+        @if(review.Personnel.License is {} license){<MudText>Licence: @license.LicenseId · Type: @(license.Type ?? "Not recorded") · Number: @(license.Number ?? "Not recorded") · Granting authority: @(license.GrantingAuthority ?? "Not recorded")</MudText><MudText>Recorded grant date: @Date(license.GrantedDate) · Recorded licence dates: @Date(license.EffectiveDate) to @Date(license.ExpiryDate)</MudText>}
+        @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+        <MudText Typo="Typo.caption">Source revision: @review.Personnel.Revision</MudText>
+        @if(CanAssign)
+        {
+            <MudTextField T="string" @bind-Value="_duty" Label="Explicit personnel duty" Required="true" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAssignPersonnel)" />
+            <MudTextField T="string" @bind-Value="_from" Label="Assignment start UTC (ISO 8601 ending Z)" Required="true" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAssignPersonnel)" />
+            <MudTextField T="string" @bind-Value="_to" Label="Assignment end UTC (ISO 8601 ending Z)" Required="true" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAssignPersonnel)" />
+            <MudTextField T="string" @bind-Value="_reason" Label="Personnel assignment rationale" Required="true" Lines="3" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAssignPersonnel)" />
+            <MudButton OnClick="AssignAsync" Color="Color.Primary" Disabled="@(_busy || Decisions.Busy || !Decisions.CanAssignPersonnel)">Retain and record personnel assignment</MudButton>
+        }
+    }
+    @if(CanAssign || CanRelease)
+    {
+        <MudTextField T="string" @bind-Value="_reference" Label="Original personnel assignment intent" Disabled="@(_busy || Decisions.Busy || Decisions.VisiblePersonnelReference is not null)" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(_busy || Decisions.Busy || Permit is null)">Recover original personnel assignment</MudButton>
+    }
+    @if(Decisions.VisiblePersonnelReference is {} retained){<MudAlert Severity="Severity.Info">Original personnel assignment intent: @retained.IntentId. Retain this reference and recover the same original command if confirmation is unavailable.</MudAlert>}
+    @if(Decisions.PersonnelReceipt is {} recorded){<MudAlert Severity="Severity.Success">Personnel assignment recorded: @recorded.ASSIGNMENT_ID · employee @recorded.EMPLOYEE_BA_ID · duty @recorded.DUTY_CODE · @recorded.VALID_FROM_UTC.ToString("O") to @recorded.VALID_TO_UTC.ToString("O") · maker @recorded.ROW_CREATED_BY · recorded UTC @Date(recorded.ROW_CREATED_DATE)</MudAlert>}
+    @if(CanRelease)
+    {
+        @if(Decisions.PersonnelReceipt is not null)
+        {
+            <MudTextField T="string" @bind-Value="_releaseReason" Label="Explicit personnel cancellation rationale" Required="true" Lines="3" Disabled="@(_busy || Decisions.Busy || !Decisions.CanReleasePersonnel)" />
+            <MudButton OnClick="ReleaseAsync" Color="Color.Warning" Disabled="@(_busy || Decisions.Busy || !Decisions.CanReleasePersonnel)">Retain and cancel original personnel assignment</MudButton>
+        }
+        <MudTextField T="string" @bind-Value="_releaseReference" Label="Original personnel cancellation intent" Disabled="@(_busy || Decisions.Busy || Decisions.VisiblePersonnelReleaseReference is not null)" />
+        <MudButton OnClick="RecoverReleaseAsync" Disabled="@(_busy || Decisions.Busy || Permit is null)">Recover original personnel cancellation</MudButton>
+    }
+    @if(Decisions.VisiblePersonnelReleaseReference is {} releaseReference){<MudAlert Severity="Severity.Info">Original personnel cancellation intent: @releaseReference.IntentId. Retain and recover this exact original reference if confirmation is unavailable.</MudAlert>}
+    @if(Decisions.PersonnelReleaseReceipt is {} released)
+    {
+        <MudAlert Severity="Severity.Success">Personnel cancellation recorded: @released.RELEASE_ID · original assignment @released.ASSIGNMENT_ID · cancelled by @released.ROW_CREATED_BY at @released.RELEASED_AT_UTC.ToString("O"). Original duty/window and audit are preserved.</MudAlert>
+        @if(CanRelease){<MudButton OnClick="BeginNewDutyAsync" Disabled="@(_busy || Decisions.Busy)">Begin a new personnel duty review</MudButton>}
+    }
+    <MudAlert Severity="Severity.Info">Recorded membership and licence facts do not establish task assignment or competency, approve a permit, or authorize work.</MudAlert>
+</MudPaper>
+@code {
+    [Parameter] public CompanyWorkOrderExecutionPermitReference? Permit {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    private string _employee="",_license="",_key="";
+    private string _duty="",_from="",_to="",_reason="",_reference="";
+    private string _assignment="";
+    private string _releaseReason="",_releaseReference="";
+    private string _acceptInspection="",_acceptReason="",_acceptIntent="";
+    private string? _error;
+    private CompanyWorkOrderPersonnelSourceReview? _review;
+    private CompanyWorkOrderPersonnelAssignmentRosterReview? _roster;
+    private CompanyWorkOrderAssignedPersonnelReview? _assigned;
+    private CompanyPersonnelPolicyEvidenceReview? _policyEvidence;
+    private bool _busy,_disposed;
+    private long _version;
+    private bool CanRead=>Company.Selection?.Permissions.Contains("HSE.ApprovePermit",StringComparer.Ordinal)==true;
+    private bool CanAssign=>CanRead && Company.Selection?.Permissions.Contains("Maintenance.AssignPersonnel",StringComparer.Ordinal)==true;
+    private bool CanRelease=>CanRead && Company.Selection?.Permissions.Contains("Maintenance.ReleasePersonnel",StringComparer.Ordinal)==true;
+    private void AssignmentChanged(string value){_version++;_assignment=value;_assigned=null;_policyEvidence=null;_acceptReason="";if(Decisions.VisiblePersonnelAcceptanceReference is null)_acceptInspection="";}
+    private async Task ReviewPolicyEvidenceAsync()
+    {
+        if(_busy || _disposed)return;var version=++_version;var snapshot=Company.Snapshot;_busy=true;_policyEvidence=null;_error=null;
+        try
+        {
+            await GuardRead();var original=_assigned??throw new InvalidOperationException("Compare the exact recorded assignment before reading policy/credential evidence.");var query=original.Query;
+            if(_disposed || version!=_version || snapshot!=Company.Snapshot || query.AssignmentId!=_assignment)throw new OperationCanceledException("Original personnel policy evidence context changed before transport.");
+            var result=await Workflows.ReviewWorkOrderPersonnelPolicyEvidenceAsync(query);result.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,query);
+            if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;await GuardRead(result.Assignment.CurrentPersonnel.PermitReview.CurrentSource.Stage.AssignedRole);
+            if(!_disposed && version==_version && snapshot==Company.Snapshot)_policyEvidence=CompanyInventorySourceReview.Copy(result);
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"comparing explicit personnel policy and source credentials","Complete original/current company policy and credential evidence could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private async Task GuardRead(string? assignedRole=null)
+    {
+        var selected=Company.Selection;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(Permit is null || string.IsNullOrWhiteSpace(SourceRevision) || selected is null || !CanRead || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || assignedRole is not null && (!user.IsInRole(assignedRole) || !selected.Roles.Contains(assignedRole,StringComparer.Ordinal)) || await Fields.GetCurrentFieldIdAsync()!=Permit.Task.FieldId)
+        {Clear();throw new UnauthorizedAccessException("Current original personnel reviewer, company/account, standard assigned role, HSE authority and FIELD are required.");}
+    }
+    private async Task ReadRosterAsync()
+    {
+        if(_busy || _disposed)return;var version=++_version;var snapshot=Company.Snapshot;_busy=true;_roster=null;_assigned=null;_policyEvidence=null;_assignment="";_error=null;
+        try
+        {
+            await GuardRead();if(_disposed || version!=_version || snapshot!=Company.Snapshot)throw new OperationCanceledException("Original personnel roster context changed before transport.");var permit=Permit!;var selected=snapshot.Selection!;var result=await Workflows.ReviewWorkOrderPersonnelAssignmentsAsync(permit);result.Require(selected.Scope,selected.UserId,permit);
+            if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;await GuardRead(result.PermitReview.CurrentSource.Stage.AssignedRole);
+            if(!_disposed && version==_version && snapshot==Company.Snapshot)_roster=CompanyInventorySourceReview.Copy(result);
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"reading original personnel assignment roster","Complete original recorded roster could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private async Task CompareAssignedAsync()
+    {
+        if(_busy || _disposed)return;var version=++_version;var snapshot=Company.Snapshot;_busy=true;_assigned=null;_policyEvidence=null;_error=null;
+        try
+        {
+            await GuardRead();if(_disposed || version!=_version || snapshot!=Company.Snapshot)throw new OperationCanceledException("Original selected assignment context changed before transport.");var selected=snapshot.Selection!;var roster=_roster??throw new InvalidOperationException("Read the complete original personnel roster before selecting an assignment.");
+            roster.Require(selected.Scope,selected.UserId,Permit!);if(!roster.Roster.Assignments.Any(row=>row.AssignmentId==_assignment))throw new InvalidOperationException("Select an assignment from this exact original roster.");
+            var query=new CompanyWorkOrderAssignedPersonnelQuery(Permit!,_assignment);var result=await Workflows.ReviewWorkOrderAssignedPersonnelAsync(query);result.Require(selected.Scope,selected.UserId,query);
+            if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;await GuardRead(result.CurrentPersonnel.PermitReview.CurrentSource.Stage.AssignedRole);
+            if(!_disposed && version==_version && snapshot==Company.Snapshot){_assigned=CompanyInventorySourceReview.Copy(result);_roster=new(result.CurrentPersonnel.PermitReview,result.Roster);}
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"comparing original personnel assignment","Complete original/current personnel evidence could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private static string Date(DateTime? value)=>value is {} date?date.ToString("O")+(date.Kind==DateTimeKind.Utc?" UTC":" (source time-zone unconfirmed)"):"Not recorded";
+    protected override void OnInitialized(){Company.Changed+=Clear;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;Decisions.Changed+=DecisionChanged;}
+    protected override void OnParametersSet()
+    {
+        var key=System.Text.Json.JsonSerializer.Serialize(new{Permit,SourceRevision});if(key!=_key){_key=key;Clear();}
+        Decisions.Attach(Permit,SourceRevision);
+        var query=Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);
+        if(query.TryGetValue("personnelAssignmentId",out var id))_reference=id.ToString();
+        if(query.TryGetValue("personnelReleaseId",out var release))_releaseReference=release.ToString();
+        if(query.TryGetValue("personnelAcceptanceInspection",out var inspection))_acceptInspection=inspection.ToString();
+        if(query.TryGetValue("personnelAcceptanceIntent",out var acceptance))_acceptIntent=acceptance.ToString();
+    }
+    private void DecisionChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private async Task RetainAcceptanceAsync(CompanyWorkOrderPersonnelAcceptanceReference reference)
+    {
+        await GuardRead();_acceptInspection=reference.InspectionId;_acceptIntent=reference.IntentId.ToString("D");
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"permitReviewId",reference.Permit.IntentId.ToString("D")},{"personnelAcceptanceInspection",_acceptInspection},{"personnelAcceptanceIntent",_acceptIntent}}),new NavigationOptions{ReplaceHistoryEntry=true});await GuardRead();
+    }
+    private async Task AcceptPersonnelAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_busy=true;_error=null;
+        try{var evidence=_policyEvidence??throw new InvalidOperationException("Compare current company policy and credential evidence first.");await GuardRead(evidence.Assignment.CurrentPersonnel.PermitReview.CurrentSource.Stage.AssignedRole);await Decisions.AcceptPersonnelAsync(Workflows,evidence,_acceptInspection,_acceptReason,command=>RetainAcceptanceAsync(new(command.Review.Assignment.Query.Permit,command.InspectionId,command.IntentId)));await GuardRead();}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"accepting current personnel evidence","Personnel acceptance is unconfirmed; retain and recover its exact original reference");}
+        finally{_busy=false;}
+    }
+    private async Task RecoverAcceptanceAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_busy=true;_error=null;
+        try{await GuardRead();if(Permit is null || !Guid.TryParse(_acceptIntent,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original inspection and personnel acceptance intent.");await Decisions.RecoverPersonnelAcceptanceReferenceAsync(Workflows,new(Permit,_acceptInspection,id),RetainAcceptanceAsync);await GuardRead(Decisions.VisiblePersonnelAcceptanceCommand!.Review.Assignment.CurrentPersonnel.PermitReview.CurrentSource.Stage.AssignedRole);}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recovering original personnel acceptance","Original personnel acceptance could not be confirmed; keep its retained reference");}
+        finally{_busy=false;}
+    }
+    private static DateTime Utc(string value)
+    {
+        if(!value.Contains('T') || !value.EndsWith("Z",StringComparison.Ordinal) || !DateTime.TryParse(value,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out var utc) || utc.Kind!=DateTimeKind.Utc)throw new ArgumentException("Enter explicit start and end UTC with ISO 8601 timestamps ending Z.");return utc;
+    }
+    private async Task GuardAssignment()
+    {
+        var selected=Company.Selection;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(Permit is null || selected is null || !CanAssign || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || await Fields.GetCurrentFieldIdAsync()!=Permit.Task.FieldId){Decisions.Attach(null,null);Clear();throw new UnauthorizedAccessException("Current original company maker, standard role, HSE source, assignment permission and FIELD are required.");}
+        var command=Decisions.VisiblePersonnelCommand;
+        if(command is not null && !user.IsInRole(command.Review.PermitReview.CurrentSource.Stage.AssignedRole)){Decisions.Attach(null,null);Clear();throw new UnauthorizedAccessException("Current original configured assignment role is required.");}
+    }
+    private async Task RetainAsync(CompanyWorkOrderPersonnelAssignmentReference reference)
+    {
+        await GuardReference();_reference=reference.IntentId.ToString("D");
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"permitReviewId",reference.Permit.IntentId.ToString("D")},{"personnelAssignmentId",_reference}}),new NavigationOptions{ReplaceHistoryEntry=true});
+        await GuardReference();
+    }
+    private async Task AssignAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_error=null;_busy=true;
+        try
+        {
+            await GuardAssignment();var review=_review??throw new InvalidOperationException("Review exact original company personnel source before assigning.");
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;if(!user.IsInRole(review.PermitReview.CurrentSource.Stage.AssignedRole) || review.Personnel.Query.EmployeeBaId!=_employee || review.Personnel.Query.LicenseId!=_license)throw new InvalidOperationException("Re-review the exact employee/licence and current configured role before assignment.");
+            await Decisions.AssignPersonnelAsync(Workflows,review,_duty,Utc(_from),Utc(_to),_reason,RetainAsync);await GuardAssignment();
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recording original personnel assignment","Personnel assignment is unconfirmed; retain and recover its original intent");}
+        finally{_busy=false;}
+    }
+    private async Task RecoverAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_error=null;_busy=true;
+        try
+        {
+            await GuardReference();if(Permit is null || !Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the exact original personnel assignment intent.");
+            await Decisions.RecoverPersonnelReferenceAsync(Workflows,new(Permit,id),RetainAsync);await GuardReference();
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recovering original personnel assignment","Original assignment could not be confirmed; keep its retained reference");}
+        finally{_busy=false;}
+    }
+    private async Task GuardReference()
+    {
+        await GuardRead();if(!CanAssign && !CanRelease)throw new UnauthorizedAccessException("Current original personnel assignment or cancellation reference permission is required.");
+        var command=Decisions.VisiblePersonnelCommand;
+        if(command is not null)await GuardRead(command.Review.PermitReview.CurrentSource.Stage.AssignedRole);
+    }
+    private async Task GuardRelease()
+    {
+        await GuardRead();if(!CanRelease)throw new UnauthorizedAccessException("Current original personnel cancellation authority is required.");
+        var original=Decisions.VisiblePersonnelReleaseCommand?.Original.Command??Decisions.VisiblePersonnelCommand;
+        if(original is not null)await GuardRead(original.Review.PermitReview.CurrentSource.Stage.AssignedRole);
+    }
+    private async Task RetainReleaseAsync(CompanyWorkOrderPersonnelReleaseReference reference)
+    {
+        await GuardRelease();_reference=reference.Assignment.IntentId.ToString("D");_releaseReference=reference.IntentId.ToString("D");
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"permitReviewId",reference.Assignment.Permit.IntentId.ToString("D")},{"personnelAssignmentId",_reference},{"personnelReleaseId",_releaseReference}}),new NavigationOptions{ReplaceHistoryEntry=true});await GuardRelease();
+    }
+    private async Task ReleaseAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_busy=true;_error=null;
+        try{await GuardRelease();await Decisions.ReleasePersonnelAsync(Workflows,_releaseReason,RetainReleaseAsync);await GuardRelease();}
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"cancelling original personnel assignment","Personnel cancellation is unconfirmed; retain and recover its exact original intent");}
+        finally{_busy=false;}
+    }
+    private async Task RecoverReleaseAsync()
+    {
+        if(_busy || Decisions.Busy || _disposed)return;var version=_version;var snapshot=Company.Snapshot;_busy=true;_error=null;
+        try
+        {
+            await GuardRelease();if(Permit is null || !Guid.TryParse(_reference,out var assignment) || assignment==Guid.Empty || !Guid.TryParse(_releaseReference,out var release) || release==Guid.Empty)throw new ArgumentException("Enter the exact original assignment and cancellation intents.");
+            await Decisions.RecoverPersonnelReleaseReferenceAsync(Workflows,new(new(Permit,assignment),release),RetainReleaseAsync);await GuardRelease();
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"recovering original personnel cancellation","Original cancellation could not be confirmed; retain its original references");}
+        finally{_busy=false;}
+    }
+    private async Task BeginNewDutyAsync()
+    {
+        await GuardRelease();Decisions.BeginNewPersonnelDuty();Clear();Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"personnelAssignmentId",null},{"personnelReleaseId",null}}),new NavigationOptions{ReplaceHistoryEntry=true});
+    }
+    private async Task ReviewAsync()
+    {
+        if(_busy || _disposed)return;var version=++_version;var snapshot=Company.Snapshot;var permit=Permit;_busy=true;_review=null;_error=null;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(permit is null || string.IsNullOrWhiteSpace(SourceRevision) || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !CanRead || await Fields.GetCurrentFieldIdAsync()!=permit.Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current resolved company reviewer, standard roles, HSE.ApprovePermit and original FIELD are required.");
+            var query=new CompanyWorkOrderPersonnelSourceQuery(permit,_employee,_license);query.Require();var result=await Workflows.ReviewWorkOrderPersonnelSourceAsync(query);result.Require(selected.Scope,selected.UserId,query);user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || version!=_version || snapshot!=Company.Snapshot)return;if(user.FindFirst("party_id")?.Value!=selected.UserId || !user.IsInRole(result.PermitReview.CurrentSource.Stage.AssignedRole) || !selected.Roles.Contains(result.PermitReview.CurrentSource.Stage.AssignedRole,StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=permit.Task.FieldId)throw new UnauthorizedAccessException("Original personnel reviewer/assigned role/FIELD changed.");
+            if(!_disposed && version==_version && snapshot==Company.Snapshot)_review=CompanyInventorySourceReview.Copy(result);
+        }
+        catch(Exception error){if(!_disposed && version==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"reading original company personnel source","Complete recorded membership/licence evidence could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private void Clear(){_version++;_review=null;_roster=null;_assigned=null;_policyEvidence=null;_assignment="";_error=null;_employee="";_license="";_duty="";_from="";_to="";_reason="";_reference="";_releaseReason="";_releaseReference="";_acceptInspection="";_acceptReason="";_acceptIntent="";if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string _) {Decisions.Attach(null,null);Clear();}
+    private void AuthenticationChanged(Task<AuthenticationState> _) {Decisions.Attach(null,null);Clear();}
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Clear;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Decisions.Changed-=DecisionChanged;Clear();}
+}

@@ -1,0 +1,70 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md full canonical PERMITS initial schema gate",
+  "observed_at": "2026-10-29T19:58:36.376477+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; preserved; no commit/push",
+  "result": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "1m4s",
+    "exit_code": 0,
+    "attempts": 1
+  },
+  "methods": {
+    "SetupInstalledSqliteMigratesEntirePermitsManifest": {
+      "inputs": 1,
+      "criteria": "All11 actual declared types belong to canonical Data assembly; fresh11-table Beep Migration executes, exact physical keys/complete columns, all11 UpToDate repeat operations, composite reference key accepts different sets/refuses exact duplicate and retains two rows."
+    },
+    "SetupInstalledSqliteMigratesPermitApplicationLedger": {
+      "inputs": 1,
+      "criteria": "Affected provider/ledger fixture separation preserves the earlier three-table ledger gate."
+    },
+    "PermitChildrenRequireExactVisibleApplicationAndInjectionParent": {
+      "inputs": 4,
+      "criteria": "Affected history/MIT/foreign-history/missing-injection read gates preserve exact parent policy after subtype model relocation."
+    }
+  },
+  "command": "OILGAS_TEST_PERMIT_DRIVER_FEED=<isolated local feed>; dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~SetupInstalledSqliteMigratesEntirePermitsManifest|FullyQualifiedName~SetupInstalledSqliteMigratesPermitApplicationLedger|FullyQualifiedName~PermitChildrenRequireExactVisibleApplicationAndInjectionParent --logger console;verbosity=minimal",
+  "changes": [
+    "Eight supporting entity definitions moved into TheTechIdea.Data; old definitions removed without type forwarding, aliases or compatibility models.",
+    "Explicit128-character subtype parent keys, independent attachment/requirements/form/MIT row keys and composite reference-set/code key.",
+    "Three subtype classes now use inherited effective/expiry date properties instead of separate hidden backing state.",
+    "Shared real-provider fixture separated from ledger-schema preparation so the full manifest gate starts with an empty database."
+  ],
+  "retired_definitions": [
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/APPLICATION_ATTACHMENT.cs",
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/DRILLING_PERMIT_APPLICATION.cs",
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/ENVIRONMENTAL_PERMIT_APPLICATION.cs",
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/INJECTION_PERMIT_APPLICATION.cs",
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/JURISDICTION_REQUIREMENTS.cs",
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/MIT_RESULT.cs",
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/R_PERMITS_REFERENCE_CODE.cs",
+    "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/REQUIRED_FORM.cs"
+  ],
+  "limits": [
+    "Initial full PERMITS table/column/key creation on actual SQLite, not existing-database key conversion or arbitrary schema evolution.",
+    "Direct Beep Migration manager build/approve/execute is qualified; full app setup policy/UI/manifest approval, seeding and deployment completion are separate gates.",
+    "Only composite reference rows are physically roundtripped here; all other supporting workflow writes/amendments still need their app-owned commands/forms.",
+    "No new FK/index rollout or production/legal/jurisdiction policy claim.",
+    "Local connector1.0.59/provider1.0.119 and modified BeepDM runtime remain dependencies; public distribution and other providers remain unverified.",
+    "Only six named inputs selected; no unrelated/class/full-suite or handwritten SQL/EF migration.",
+    "Source ownership changed assemblies; affected source/native modules were rebuilt with no compatibility forwarding. Broader integrated consumers/deployment are not qualified by this focused gate."
+  ],
+  "sha256": {
+    "TheTechIdea.Data/OilGas/APPLICATION_ATTACHMENT.cs": "b80609af0a26d0534e251013a0ee15b4e65f7a850c3fc2a77a15af03ad1cb415",
+    "TheTechIdea.Data/OilGas/DRILLING_PERMIT_APPLICATION.cs": "690947a04dc5fab5e706304bb202843e238e71c06e7034dd589de371f2fc6612",
+    "TheTechIdea.Data/OilGas/ENVIRONMENTAL_PERMIT_APPLICATION.cs": "9ecdd59d15d649cc24d16927d9fd9af003048fd2400cc8f70643da3c90469502",
+    "TheTechIdea.Data/OilGas/INJECTION_PERMIT_APPLICATION.cs": "7b24f44394741af7347809fbdc4bbfb1ced226fd4f0cd7e41ec80c3ade14a980",
+    "TheTechIdea.Data/OilGas/JURISDICTION_REQUIREMENTS.cs": "baf7ebe572f9be0fe642557fe331f02a3e6c09111a4183cb512a2fa3a6902dc0",
+    "TheTechIdea.Data/OilGas/MIT_RESULT.cs": "e643917e994d8442ec92766465dce6f7a50774755b349fdf9c0a3a641bc9f273",
+    "TheTechIdea.Data/OilGas/R_PERMITS_REFERENCE_CODE.cs": "b063e7848072b6979586e450a40ca0fd01c1efb9bf26b535fd2861d5cf91ac54",
+    "TheTechIdea.Data/OilGas/REQUIRED_FORM.cs": "c5dc2c2da212e3ba893d3fee708a1b52d17b14a413bde960eddeab7ef83a913e",
+    "Beep.OilandGas.PermitsAndApplications/Modules/PermitsModule.cs": "122f3e0cc55c3cd43938379eeff103ab702ccea10d826f486896d99fd95a27f1",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "0a895b80cdc36ef6ab79d96156102b07488639df52abed0724945d52e673208d",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "778fca06495d71cc19c9c053305d0167bc8ef5670a956bcdcb803f642f2e7e6f",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "f88a892bcdaf718b4960b2c39d5ce2d3f6e82a3fd547194756c179bc023fd0bc",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "b693e6aba7346575bb5dd9d81031f4497540271886e466f7da4430e2b57e4fff",
+    "../BeepDM/DataManagementEngineStandard/bin/Debug/net10.0/DataManagementEngine.dll": "55783166f492c83cc95c79fef4233e00b97da879ce0730d4959ae13ba0ba8f46"
+  }
+}

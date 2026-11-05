@@ -1,0 +1,82 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderSubmissionState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Report actual work for independent verification</MudText>
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || State.Busy || !State.CanReview)" Color="Color.Primary">Review my original start and submission evidence</MudButton>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Checking original work submission" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_authorized && State.Review is {} review)
+        {
+            <MudText>Original start @review.Inspections.Start.StartId · employee @review.Inspections.Start.EmployeeBaId · configured role @review.Stage.AssignedRole</MudText>
+            <MudText>Evidence compared UTC @review.Inspections.ComparedAtUtc.ToString("O")</MudText>
+            @foreach(var blocker in review.Inspections.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            <MudTextField @bind-Value="_completed" Label="Actual completed UTC (YYYY-MM-DDTHH:mm:ssZ)" HelperText="Enter the actual completion time after the original start, within the permit window and no later than this evidence comparison." Required="true" Disabled="@State.Busy" />
+            <MudTextField @bind-Value="_work" Label="Actual work performed" Required="true" MaxLength="16384" Lines="4" Disabled="@State.Busy" />
+            <MudTextField @bind-Value="_defects" Label="Outstanding defects (one per line)" MaxLength="131072" Lines="3" Disabled="@(State.Busy || _noDefects)" />
+            <MudCheckBox @bind-Value="_noDefects" Label="I explicitly report no outstanding defects" Disabled="@State.Busy" />
+            <MudTextField @bind-Value="_reason" Label="Work-submission rationale" Required="true" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+            <MudCheckBox @bind-Value="_confirm" Label="I confirm this report describes actual work and my recorded observations" Disabled="@State.Busy" />
+            <MudButton OnClick="SubmitAsync" Disabled="@(!State.CanSubmit || State.Busy || !_confirm)" Color="Color.Primary">Retain original report and submit work</MudButton>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original work-submission intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy)">Read original work report without replay</MudButton>
+        @if(_authorized && State.VisibleReference is {} retained){<MudText>Retained original submission reference @retained</MudText>}
+        @if(_authorized && State.Receipt is {} receipt){<MudAlert Severity="Severity.Success">Recorded work submission @receipt.SubmissionId · actual completed UTC @receipt.CompletedAtUtc.ToString("O"). Independent verification, material use, costs and return acceptance remain separate outcomes.</MudAlert>}
+        @if(_authorized && Start is not null && State.Receipt is {} report && Company.Selection?.Permissions.Contains("Workflow.Execute",StringComparer.Ordinal)==true)
+        {<WorkOrderExecutionHandoffPanel Query="@(new CompanyWorkOrderCompletionQuery(Start.Permit.Task,report.SubmissionId))" />}
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public CompanyWorkOrderExecutionStartReference? Start {get;set;}
+    private string _completed="",_work="",_defects="",_reason="",_reference="";
+    private string? _error;
+    private bool _noDefects,_confirm,_authorized,_disposed;
+    private CompanyWorkOrderExecutionStartReference? _attached;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=CompanyChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        if(_attached!=Start){_attached=Start;CompanyChanged();_reference="";}
+        State.Attach(Start);var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
+        if(values.TryGetValue("workSubmission",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var saved))_reference=saved.ToString("D");
+        try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+    }
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Start is null || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Maintenance.ExecuteWork",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=Start.Permit.Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current standard execution role, company/account and original FIELD/start are required.");
+        if(State.Review is {} review && (!selected.Roles.Contains(review.Stage.AssignedRole,StringComparer.Ordinal) || !user.IsInRole(review.Stage.AssignedRole)))throw new UnauthorizedAccessException("The original configured execution role is required.");
+    }
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void CompanyChanged(){_authorized=false;_completed="";_work="";_defects="";_reason="";_noDefects=false;_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _){State.Attach(null);CompanyChanged();}
+    private void AuthenticationChanged(Task<AuthenticationState> _){State.Attach(null);CompanyChanged();}
+    private Task Retain(Guid id){_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("workSubmission",_reference),replace:true);return Task.CompletedTask;}
+    private Task ReviewAsync()=>RunAsync(async()=>{await Authority();await State.ReviewAsync(Workflows);},"reviewing original work-submission evidence");
+    private Task SubmitAsync()=>RunAsync(async()=>
+    {
+        await Authority();if(!_confirm)throw new InvalidOperationException("Confirm actual work and observations before submitting.");
+        if(!DateTime.TryParseExact(_completed,new[]{"yyyy-MM-dd'T'HH:mm:ss'Z'","yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'"},System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.AssumeUniversal|System.Globalization.DateTimeStyles.AdjustToUniversal,out var utc))throw new ArgumentException("Enter an explicit ISO UTC completion time ending in Z.");
+        var defects=_defects.Split(new[]{'\r','\n'},StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);
+        if(_noDefects && defects.Length!=0 || !_noDefects && defects.Length==0)throw new ArgumentException("List actual outstanding defects or explicitly report none.");
+        await State.SubmitAsync(Workflows,utc,_work,_noDefects?[]:defects,_reason,Retain);
+    },"recording the original actual work report");
+    private Task RecoverAsync()=>RunAsync(async()=>{await Authority();if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original submission intent reference.");await State.RecoverAsync(Workflows,id,Retain);},"reading original work-submission history");
+    private async Task RunAsync(Func<Task> action,string operation)
+    {
+        if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;
+        try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original work submission is unconfirmed");}
+        finally{if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=CompanyChanged;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

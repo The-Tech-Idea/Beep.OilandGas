@@ -1,0 +1,169 @@
+{
+  "date": "2026-10-29",
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase 2 reviewed API/Web/SDK wiring",
+  "runs": [
+    {
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "356ms",
+      "exact_methods": [
+        "PermitReviewedSourceApiRefusesUnboundOrLateReview",
+        "PermitReviewedCommandApiPreservesExactOriginalAndReadOnlyRecovery",
+        "PermitReviewedTypedClientBindsSelectionOriginalAndExplicitRecovery",
+        "PermitRoutesExposeReviewedCommandsAndRetireDirectSubmissionDecision"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:    35, Skipped:     0, Total:    35, Duration: 356 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-api-corrected.log",
+      "log_sha256": "e9fc8bfc1dada45b731b6edf0a512d9d19ab76be654f1c90e2aa7e93cecbf9e0"
+    },
+    {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "220ms",
+      "exact_methods": [
+        "ReviewedSubmissionUsesRetainedOriginalAndCurrentClaimActor",
+        "Foreign_application_cannot_reach_compliance_operations",
+        "PermitRoutesExposeReviewedCommandsAndRetireDirectSubmissionDecision"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 220 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-api-migrated-tests.log",
+      "log_sha256": "f57e0822424e06abac1c4bc99402c3b1179b19f3772cf6d73e41982acf9793da"
+    },
+    {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "169ms",
+      "exact_methods": [
+        "PermitSourceClientRequiresSelectedCompanyAccountAndFieldBeforeTransport"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     5, Skipped:     0, Total:     5, Duration: 169 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-api-selection-final.log",
+      "log_sha256": "95f7ae83fc28bc97047465a5479a2b0e9cfcdd937801486d45aa34ebdc8c9425"
+    },
+    {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "2s",
+      "exact_methods": [
+        "PermitReviewedRequestContextUsesCanonicalForbiddenRefusal",
+        "PermitMissingCommandSchemaUsesCanonicalMigrationRefusalBeforeWrites",
+        "PermitInvalidOriginalUsesCanonicalBadRequestBeforeNativeCall"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     8, Skipped:     0, Total:     8, Duration: 2 s - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-api-refusals-final.log",
+      "log_sha256": "ca5fceb93ddc674ed2f714cde013b60fa62b1819c2599a2d68c2b723b45f41d5"
+    },
+    {
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "279ms",
+      "exact_methods": [
+        "PermitUnifiedSdkUsesReviewedApiAndRetiresObsoleteRoutes",
+        "PermitSourceClientRequiresSelectedCompanyAccountAndFieldBeforeTransport",
+        "PermitReviewedTypedClientBindsSelectionOriginalAndExplicitRecovery"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:    23, Skipped:     0, Total:    23, Duration: 279 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-sdk-wire-actual.log",
+      "log_sha256": "0122f1d21d44c56d7e1d80c64a649c888b679ba18c1f193ac491ba560681f601"
+    },
+    {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "291ms",
+      "exact_methods": [
+        "PermitUnifiedSdkUsesReviewedApiAndRetiresObsoleteRoutes"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     6, Skipped:     0, Total:     6, Duration: 291 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-sdk-wire-final.log",
+      "log_sha256": "51be2e02d0738224aa7a4ff5a608b6eb4250fb664df0b9db8c531cbd78e1743c"
+    },
+    {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "218ms",
+      "exact_methods": [
+        "PermitReviewedSourceApiRefusesUnboundOrLateReview"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     8, Skipped:     0, Total:     8, Duration: 218 ms - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-api-source-final.log",
+      "log_sha256": "3e2295c6c099f9d1cc50aba667efadc3356f19024e71c0fea6f3dddcb5a16121"
+    }
+  ],
+  "distinct_inputs_observed": 57,
+  "total_passing_observations": 88,
+  "overlapping_observations": 31,
+  "criteria": {
+    "API source": "Exact application/current actor/company/FIELD/core selection/PERMITS context before and after native source; reject mismatched or late response; known missing source is canonical404.",
+    "API command/recovery": "Retained original context validated before dispatch; outcome/original binding after. New native effects retain independent write authority. Recovery uses current read authority and explicit original-bound result/absence envelope.",
+    "Web client": "Encoded query identities, shared Data target/source validation; missing selected company/account/FIELD refuses before transport; exact original body/outcome/recovery validation; missing HTTP content is not absence.",
+    "SDK": "Actual rebuilt App.Permits uses current reviewed routes/shared Data types and real SDK HTTP transport. Exact original request bodies, explicit absent result and missing response handling. Local mode refuses before datasource access. Unsupported obsolete facade methods removed.",
+    "refusals": "Canonical400 invalid retained original,403 wrong context/access,409 incompatible migration schema and changed source,404 missing source. Existing global handler reused; unexpected response/internal failures remain reported.",
+    "removal": "Old direct submit/decision API routes, lifecycle/client methods, unused request/result DTOs and transition helper removed. SDK old /api/permits facade/placeholder local paths replaced without compatibility aliases."
+  },
+  "command_template": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute actual Data.dll> -p:BuildProjectReferences=false --filter <OR of FullyQualifiedName~ and exact_methods listed per run> --logger \"console;verbosity=minimal\"",
+  "builds": {
+    "Data": "Final pass3.11s, zero errors, existing missing sibling analyzer warning.",
+    "native permits": "Pass2.80s, zero errors, existing missing sibling analyzer/duplicate using warnings.",
+    "SDK": "Initial six CS7069 stale compressor/development binary references. Rebuilt those existing projects without source changes (5.90s/5.37s) and full SDK build then passed3.37s with existing missing sibling analyzer warning."
+  },
+  "initial_gate_failures": [
+    {
+      "gate": "initial API wire",
+      "executed_inputs": 0,
+      "cause": "Missing CompanyClientContext namespace in new test import; corrected."
+    },
+    {
+      "gate": "initial SDK wire",
+      "executed_inputs": 0,
+      "cause": "Attempted source-linked adapter lacked real App/ServiceBase reference. Replaced with explicit alias to actual rebuilt SDK and tested App.Permits directly."
+    }
+  ],
+  "sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs": "488fdef4d36f88941abbbb499139effae2fc3ab60c17945e04360a5c183b2c1c",
+    "TheTechIdea.Data/OilGas/PermitApplicationCommandRecovery.cs": "6a261fbd4696582bbb163dfd39297c4af79a7ac590a36990937fcf1b6a6ed85f",
+    "TheTechIdea.Data/OilGas/PermitApplicationWorkflow.cs": "743fec42c4729a158a4d80e2c6afccab4b165e771d9a827940af3260c6a6d5cc",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "fefb3889211456475cae8698df99c0e784371a5b91ca928147227cc4675321a3",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "f4d92e82cc21782ba065ce5e0e027cc5b9ea4cab494e91791075c313dee41282",
+    "Beep.OilandGas.Web/Services/IPermitServiceClient.cs": "53a3538a73e00465fc91a6544c9f7da0acdee48e440e94ffa01633c353c1f80a",
+    "Beep.OilandGas.Web/Services/PermitServiceClient.cs": "4ab7cb90aae1c8ff2cd898c8924375d8e6a7be438e33221c4534a3a06daf9c55",
+    "Beep.OilandGas.Client/App/Services/Permits/IPermitsService.cs": "a234a8e91599dfa96e4557d07b294337c5bdd217b02beb7ea1cb8e6662d3468f",
+    "Beep.OilandGas.Client/App/Services/Permits/PermitsService.cs": "b9181e24ede3fa1cdf445360a7ff349ff01b7e92c733bffb2cb49ffabebec7c6",
+    "Beep.OilandGas.PermitsAndApplications/Core/Interfaces/IPermitApplicationLifecycleService.cs": "09d5d938cbd0e5e036393b377e877539ebdd1eefad015306dc716b7d1e8b55b8",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "a1260e673a4126be67cf64dc68f5067cc9e0b2194337406009ef53926290a9cd",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "65a171b8ef1eee63096df0df7306dee000dd4b2b955445e76d208859b798f069",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "f049968faa7456992f8d892df7399cde21d417ad6549345e5a3588821ee86384",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "1a2b2d7a4051a2790550ac62ff796a59a857867593babc632464d757d814722e",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "fbbe7abbaa14a1531ccaa31b94cc170ac4535cbce1487e67d4ed6fd7464deb24",
+    "Beep.OilandGas.ApiService.Tests/PermitsControllerTests.cs": "466afff0a5f66821a5dea83418437bf9f774e1af5d469197e561c4af9f517ab0",
+    "Beep.OilandGas.Web.Auth.Tests/PermitApplicationReadWorkflowTests.cs": "5f972cfb2e888659c02cb1fd2279cb9083e759e87aff194a94a7eda0da9d4c46",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "bb0c23593db21f7d365ff0ffe13467979a668057160ecce58561413867e571f9",
+    "Beep.OilandGas.Client/bin/Debug/net10.0/Beep.OilandGas.Client.dll": "8425f4f62b3b8c9c5000e40851879d65f701a72d2e5264ef5e6113b6cac85980",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "ff72831f3a875ef975e3d26fd096b6965272ec757194a86ceca59b3708d0afd1",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "f1fe880955498af7921412987e5ba0f192d8bfce0faf8c498734e3c75951f9ea"
+  },
+  "scope": "Actual source-linked API controller/Web client and actual rebuilt SDK/SDK transport, with controlled HTTP/native response/context dependencies; one actual native owner schema-refusal fact uses explicit mock storage and app registry. Source route reflection and direct action tests, not a hosted authenticated middleware journey. Previous native effect/transaction evidence is separate.",
+  "runtime_scope_note": "Incremental scoped gates overlap and precede later additions: source missing404 and SDK local guard were added in final exact-method gates; shared Data source validator is covered by the23 wire gate. 57 distinct observed cases is not one current-generation full regression or production acceptance claim.",
+  "open": [
+    "Reviewed company-owned creation/update authoring and replacement of remaining direct create/update paths",
+    "Retained author/reviewer detail forms, protected originals, reload/recovery and current outcome display",
+    "Persona inbox/landing next-role handoffs and correction/rejection cycle",
+    "Protected hosted HTTP/OIDC/multi-account/native owner journey, actual provider Beep Migration/transaction/concurrency qualification",
+    "Regional jurisdiction policy evidence, browser/RTL/accessibility/performance qualification"
+  ],
+  "migration": "No schema change, SQL or EF migration in wire slice; existing PERMITS Beep Migration remains sole schema owner. No compatibility aliases or local business database fallback.",
+  "goal": "active; phase2/full plan incomplete; no commit/push"
+}

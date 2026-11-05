@@ -1,0 +1,110 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject CompanyMaintenanceHandoffState State
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 mt-3" aria-busy="@State.Busy.ToString().ToLowerInvariant()">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Maintenance receiving assignment</MudText>
+        <MudText>Review the configured workflow and receiving role for this original recorded order.</MudText>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudButton OnClick="LoadChoicesAsync" Disabled="@(!_authorized || State.Busy || State.Reference is not null)">Load recorded workflows</MudButton>
+        @if(State.Catalog is {} catalog)
+        {
+            @if(catalog.Choices.Count==0){<MudAlert Severity="Severity.Info">No configured WORK_ORDER receiving workflow is available for this source. Ask the workflow administrator to review its configuration.</MudAlert>}
+            else
+            {
+                <MudSelect T="string" Label="Recorded receiving workflow" Value="@_processId" ValueChanged="SelectProcess" Disabled="@(!_authorized || State.Busy || State.Reference is not null)">
+                    @foreach(var choice in catalog.Choices){<MudSelectItem T="string" Value="@choice.ProcessId">@choice.ProcessName · Receiving role @choice.ReceivingRole</MudSelectItem>}
+                </MudSelect>
+                <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || State.Busy || string.IsNullOrEmpty(_processId) || State.Reference is not null)">Review receiving assignment</MudButton>
+            }
+        }
+        @if(State.Review is {} review)
+        {
+            <MudText>Workflow @review.ProcessName · Initial receiving role @review.ReceivingRole</MudText>
+            <MudText>Original FIELD @review.Context.FieldId · Order @review.Source.WorkOrderId · Decision @review.Source.DecisionId</MudText>
+            <MudButton Color="Color.Primary" OnClick="SubmitAsync" Disabled="@(!_authorized || State.Busy || State.Reference is not null)">Create receiving assignment</MudButton>
+        }
+        @if(State.Reference is not null && State.VisibleReference is null){<MudAlert Severity="Severity.Warning">Return to the original company, account and recorded source to reconcile the retained assignment.</MudAlert>}
+        @if(State.VisibleReference is {} retained)
+        {
+            <MudText>Original assignment reference: @retained.ToString("D")</MudText>
+            @if(State.Receipt is null){<MudAlert Severity="Severity.Warning">Assignment outcome is unconfirmed. Keep this original reference and use read-only recovery before continuing.</MudAlert>}
+        }
+        <MudTextField T="string" Label="Original assignment reference" @bind-Value="_referenceText" MaxLength="36" HelperText="Use the saved reference to check an existing assignment without submitting it again." Disabled="@(!_authorized || State.Busy)" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy || string.IsNullOrWhiteSpace(_referenceText))">Read original assignment</MudButton>
+        @if(State.Receipt is {} receipt)
+        {
+            <MudAlert Severity="Severity.Success">Original receiving assignment confirmed.</MudAlert>
+            <MudText>Recorded process @receipt.InstanceId · Initial step @receipt.StepInstanceId</MudText>
+            <MudText>Recorded persona task references: @string.Join(", ",receipt.TaskIds)</MudText>
+            <MudButton Href="@WorkflowTaskRoute.For("FIELD",receipt.InstanceId,"WORK_ORDER")">Open assigned workflow</MudButton>
+        }
+        <MudAlert Severity="Severity.Info">Assignment confirmation records the receiving tasks. Independent acceptance, permits, execution and accepted return to service still require their own recorded evidence.</MudAlert>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public ProductionInterventionMaintenanceLink? Source {get;set;}
+    [Parameter] public Guid? OriginalReference {get;set;}
+    private string? _processId,_error;
+    private string _referenceText=string.Empty,_key=string.Empty;
+    private bool _authorized,_disposed;
+    protected override void OnInitialized(){State.Changed+=StateChanged;Company.Changed+=AuthorityChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        var key=System.Text.Json.JsonSerializer.Serialize(new{Source,OriginalReference});if(key==_key)return;_key=key;_processId=null;_error=null;_authorized=false;State.AttachSource(Source);
+        try
+        {
+            await Authority();_authorized=true;
+            if(OriginalReference is {} id)
+            {
+                if(id==Guid.Empty)throw new InvalidOperationException("A valid original assignment reference is required.");
+                _referenceText=id.ToString("D");
+                if(State.Reference!=id)await State.RecoverReferenceAsync(Workflows,id);
+            }
+        }
+        catch(Exception error){if(error is UnauthorizedAccessException)_authorized=false;_error=Calls.Explain(error,"reviewing the original maintenance assignment","The original receiving assignment could not be confirmed");}
+    }
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot!=Company.Snapshot || snapshot.Selection is null || user.Identity?.IsAuthenticated!=true || !snapshot.Selection.Roles.Any(user.IsInRole) || Source is null)
+            throw new UnauthorizedAccessException("Current standard company roles and the original recorded source are required.");
+        Source.Require(snapshot.Selection.Scope,snapshot.Selection.UserId,Source.FieldId,Source.WorkOrderId,Source.WellId,Source.DecisionId);
+    }
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthenticationChanged(Task<AuthenticationState> _)=>AuthorityChanged();
+    private void AuthorityChanged(){_authorized=false;_processId=null;_error=null;_referenceText=string.Empty;State.AttachSource(null);StateChanged();}
+    private void SelectProcess(string value){_processId=value;_error=null;}
+    private async Task Run(Func<Task> operation)
+    {
+        if(_disposed || State.Busy)return;_error=null;
+        try{await Authority();_authorized=true;State.AttachSource(Source);await operation();await Authority();}
+        catch(Exception error){if(error is UnauthorizedAccessException){_authorized=false;State.AttachSource(null);}_error=Calls.Explain(error,"reviewing the original maintenance assignment","The original receiving assignment could not be confirmed");}
+    }
+    private Task LoadChoicesAsync()=>Run(()=>State.LoadChoicesAsync(Workflows));
+    private Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows,_processId??string.Empty));
+    private Task SubmitAsync()=>Run(()=>State.SubmitAsync(Workflows,RetainReference));
+    private Task RetainReference(Guid id)
+    {
+        _referenceText=id.ToString("D");
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("maintenanceIntent",id),replace:true);
+        return Task.CompletedTask;
+    }
+    private Task RecoverAsync()=>Run(()=>
+    {
+        if(!Guid.TryParse(_referenceText,out var id) || id==Guid.Empty)throw new InvalidOperationException("Enter the original assignment Guid reference.");
+        return State.RecoverReferenceAsync(Workflows,id,RetainReference);
+    });
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=StateChanged;Company.Changed-=AuthorityChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.AttachSource(null);}
+}

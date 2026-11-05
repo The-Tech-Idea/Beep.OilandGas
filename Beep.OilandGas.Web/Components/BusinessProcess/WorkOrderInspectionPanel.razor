@@ -1,0 +1,136 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Web.Services
+@using Microsoft.Extensions.Logging
+@inject IWorkOrderServiceClient Client
+@inject Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService Access
+@inject ILogger<WorkOrderInspectionPanel> Logger
+@implements IDisposable
+<MudPaper Class="pa-3" Elevation="1">
+    <MudText Typo="Typo.h6">Recorded inspection requirements and results</MudText>
+    <MudText Typo="Typo.caption">FIELD @Source.FieldId · Order @Source.InstanceId</MudText>
+    <MudButton OnClick="LoadAsync" Disabled="_loading || _busy">Reload inspection evidence</MudButton>
+    @if(_loading){<MudProgressLinear Indeterminate="true" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(Review.WriteAccessError is not null){<MudAlert Severity="Severity.Info">@Review.WriteAccessError</MudAlert>}
+    @if(Review.Blocked){<MudAlert Severity="Severity.Warning">An earlier inspection outcome is unconfirmed. Review recorded evidence before another submission. Automatic retry is disabled.</MudAlert>}
+    @if(Review.Confirmed)
+    {
+        @if(Review.Rows.Count==0){<MudAlert Severity="Severity.Info">No recorded inspection requirements were returned. This does not confirm that inspection passed.</MudAlert>}
+        @if(Review.Rows.Count>0)
+        {
+            <MudText Typo="Typo.subtitle1">Inspection progress by recorded category</MudText>
+            <MudSimpleTable Dense="true">
+                <thead><tr><th scope="col">Category</th><th scope="col">Requirements</th><th scope="col">Unrecorded</th><th scope="col">Passed</th><th scope="col">Failed</th><th scope="col">Not applicable</th></tr></thead>
+                <tbody>
+                    @foreach(var progress in Review.Progress)
+                    {
+                        <tr><th scope="row">@progress.Category</th><td>@progress.Requirements</td><td>@progress.Unrecorded</td><td>@progress.Passed</td><td>@progress.Failed</td><td>@progress.NotApplicable</td></tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+            <MudAlert Severity="Severity.Info">Counts cover the recorded requirements returned for this FIELD and order. Not applicable results retain their recorded rationale and do not count as passes. Required category coverage, permits, independent supervisor acceptance and return-to-service authorization still need review; these counts do not establish work-order completion.</MudAlert>
+        }
+        @foreach(var row in Review.Rows)
+        {
+            <MudDivider Class="my-2" />
+            <MudText>@row.CondSeq · @row.CondType · @row.RequiredText</MudText>
+            <MudText Typo="Typo.caption">Responsible stage: @(row.ApplicableStage ?? "Not explicitly classified; retained policy applies")</MudText>
+            <MudText>Reported jurisdiction: @row.Jurisdiction · Reference: @(string.IsNullOrWhiteSpace(row.RegulatoryRef)?"Not recorded":row.RegulatoryRef)</MudText>
+            <MudText>Requirement owner: @row.RequirementActor · Result: @row.Status</MudText>
+            @if(row.PermitPrerequisiteKind is {} purpose){<MudText>Explicit permit prerequisite: @purpose</MudText>}
+            @if(row.Status=="UNRECORDED")
+            {@if(!ReadOnly && Review.CanEdit && (row.PermitPrerequisiteKind is null || Review.CanEditPermitPrerequisites)){<MudButton OnClick="@(()=>SelectResult(row))" Disabled="_busy || Review.Blocked">Record result</MudButton>}}
+            else
+            {<MudText>Inspector: @row.Inspector · Recorded UTC: @row.InspectDate?.ToString("yyyy-MM-dd HH:mm:ss") · @row.ResultText</MudText>}
+        }
+        @if(!ReadOnly && Review.CanEdit)
+        {
+        <MudDivider Class="my-2" />
+        <MudText Typo="Typo.subtitle1">Add an explicit inspection requirement</MudText>
+        <MudNumericField T="int" @bind-Value="_requirement.CondSeq" Label="Positive condition sequence" Min="1" />
+        <MudSelect T="string" @bind-Value="_requirement.CondType" Label="Condition category">
+            @foreach(var type in _types){<MudSelectItem Value="@type">@type</MudSelectItem>}
+        </MudSelect>
+        <MudTextField @bind-Value="_requirement.RequiredText" Label="Recorded requirement" Required="true" Lines="2" />
+        <MudSelect T="string" @bind-Value="_requirement.ApplicableStage" Label="Explicit responsible stage (phase-aware policy)">
+            @foreach(var stage in WorkOrderInspectionApplicability.Stages){<MudSelectItem T="string" Value="@stage">@stage</MudSelectItem>}
+        </MudSelect>
+        <MudText Typo="Typo.caption">Explicit applicability is captured before issue. A phase-aware permit policy is required to use it; retained permits keep their original policy.</MudText>
+        <MudTextField @bind-Value="_requirement.Jurisdiction" Label="Reported jurisdiction" Required="true" />
+        <MudTextField @bind-Value="_requirement.RegulatoryRef" Label="Reviewed source/reference" Required="@(_requirement.PermitPrerequisiteKind is not null)" />
+        @if(Review.CanEditPermitPrerequisites)
+        {
+            <MudSelect T="string" @bind-Value="_requirement.PermitPrerequisiteKind" Label="Explicit permit prerequisite (optional)" Clearable="true">
+                @foreach(var purpose in global::Beep.OilandGas.Models.Data.WorkOrder.WorkOrderPermitPrerequisiteKinds.All){<MudSelectItem T="string" Value="@purpose">@purpose</MudSelectItem>}
+            </MudSelect>
+            <MudText Typo="Typo.caption">An explicit prerequisite requires PRE_START or SCE_VERIFY and a recorded reference. Material inspection does not establish inventory quantity or allocation.</MudText>
+        }
+        <MudButton OnClick="AddAsync" Disabled="_busy || Review.Blocked">Save requirement</MudButton>
+        @if(_selected is not null)
+        {
+            <MudText Typo="Typo.subtitle1">Result for condition @_selected.CondSeq · @_selected.RequiredText</MudText>
+            <MudSelect T="string" @bind-Value="_result" Label="Explicit result">
+                <MudSelectItem Value='@("PASS")'>PASS</MudSelectItem><MudSelectItem Value='@("FAIL")'>FAIL</MudSelectItem><MudSelectItem Value='@("NA")'>NA</MudSelectItem>
+            </MudSelect>
+            <MudTextField @bind-Value="_notes" Label="Evidence / rationale" Required="true" Lines="3" />
+            <MudButton OnClick="RecordAsync" Disabled="_busy || Review.Blocked">Save reviewed result</MudButton>
+        }
+        }
+        <MudText Typo="Typo.caption">Recorded results cannot be overwritten here. Supervisor acceptance and return to service remain separate decisions.</MudText>
+    }
+</MudPaper>
+@code {
+    [Parameter] public WorkOrderDetailModel Source {get;set;}=null!;
+    [Parameter,EditorRequired] public WorkOrderInspectionState Review {get;set;}=null!;
+    [Parameter] public bool ReadOnly {get;set;}
+    [Parameter] public TheTechIdea.Data.OilGas.CompanyMaintenanceInspectionReview? AssignedReview {get;set;}
+    private WorkOrderDetailModel? _loaded;
+    private bool _loading,_busy,_disposed;
+    private string? _error;
+    private AddWorkOrderInspectionRequirementRequest _requirement=new();
+    private InspectionCondition? _selected;
+    private string _result=string.Empty,_notes=string.Empty;
+    private readonly string[] _types=[ConditionType.PreStart,ConditionType.Operational,ConditionType.CloseOut,ConditionType.Regulatory,ConditionType.SceVerify];
+    protected override async Task OnParametersSetAsync()
+    {
+        if(ReadOnly && AssignedReview is { } assigned){assigned.Require(assigned.Stage.Context.Company,assigned.Stage.Context.ActorUserId,assigned.Stage.Task);Source=assigned.Order;}
+        if(Source is null)throw new InvalidOperationException("The recorded inspection source is required.");
+        if(_loaded!=Source){_loaded=Source;_requirement=new(){FieldId=Source.FieldId};_selected=null;_result="";_notes="";await LoadAsync();}
+    }
+    private async Task LoadAsync()
+    {
+        var source=Source;_loading=true;_error=null;_selected=null;
+        try{await Review.LoadAsync(source.FieldId,source.InstanceId,()=>ReadOnly && AssignedReview is not null?Task.FromResult(AssignedReview.Inspections.ToList()):Client.GetChecklistAsync(source.InstanceId));if(!ReadOnly && !_disposed && Source==source)await Review.ReviewWriteAccessAsync(CheckWriteAsync);}
+        catch(Exception ex){Logger.LogError(ex,"Inspection evidence/access review failed for {Order}",source.InstanceId);if(!_disposed && Source==source && Review.WriteAccessError is null)_error="Inspection evidence is unavailable. Reload to review current evidence.";}
+        finally{if(!_disposed && Source==source)_loading=false;}
+    }
+    private void SelectResult(InspectionCondition row){_selected=row;_result="";_notes="";}
+    private Task AddAsync()=>SubmitAsync(true);
+    private Task RecordAsync()=>SubmitAsync(false);
+    private Task<bool> CheckWriteAsync(string actor,string id,string type)=>Access.CheckAssetAccessAsync(actor,id,type,requiredPermission:"WRITE");
+    private async Task SubmitAsync(bool add)
+    {
+        if(ReadOnly || _busy || !Review.CanEdit)return;_busy=true;_error=null;WorkOrderInspectionState.Attempt? attempt=null;
+        try
+        {
+            var version=Review.Version;var source=Source;
+            await Review.ReviewWriteAccessAsync(CheckWriteAsync);
+            if(ReadOnly || _disposed || version!=Review.Version || source!=Source || !Review.CanEdit || Source.FieldId!=Review.Field || Source.InstanceId!=Review.Order)return;
+            attempt=add?Review.BeginRequirement(_requirement):Review.BeginResult(_selected ?? throw new InvalidOperationException("Select a recorded requirement."),_result,_notes);
+            var response=add?await Client.AddInspectionRequirementAsync(attempt.Order,attempt.Requirement!):await Client.RecordConditionAsync(attempt.Order,attempt.Seq,attempt.Result!);
+            if(_disposed || !Review.IsCurrent(attempt))return;
+            var rows=await Client.GetChecklistAsync(attempt.Order);
+            if(_disposed || !Review.IsCurrent(attempt))return;
+            WorkOrderInspectionState.RequireRows(attempt.Field,attempt.Order,rows);
+            var saved=rows.SingleOrDefault(r=>r.InspectionId==response.InspectionId) ?? throw new InvalidOperationException("Recorded outcome was not returned by inspection reload.");
+            Review.Confirm(attempt,response,saved);if(_disposed || !Review.IsCurrent(attempt))return;
+            _requirement=new(){FieldId=attempt.Field};_selected=null;_result="";_notes="";await LoadAsync();
+        }
+        catch(Exception ex){Logger.LogError(ex,"Inspection submission or access review failed for {Order}",Source.InstanceId);if(!_disposed && (attempt is null || Review.IsCurrent(attempt)))_error="Inspection submission is unconfirmed. Review recorded evidence before another action.";}
+        finally{_busy=false;}
+    }
+    public void Dispose(){_disposed=true;}
+}

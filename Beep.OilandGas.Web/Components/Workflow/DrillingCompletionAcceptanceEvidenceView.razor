@@ -1,0 +1,20 @@
+@using TheTechIdea.Data.OilGas
+@using System.Globalization
+@if(Decision.Acceptance is {} acceptance)
+{
+    <MudPaper Outlined="true" Class="pa-3 my-3 development-draft-identity">
+        <MudText Typo="Typo.h6" HtmlTag="h3">Original physical completion acceptance evidence</MudText>
+        <MudText>Claim @Decision.Review.Original.ClaimId; independent reviewer @Decision.Scope().ActorUserId / @Decision.Review.AssignedRole / @Decision.Review.PersonaCode; actual acceptance @acceptance.AcceptedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+        @foreach(var test in acceptance.Tests.OrderBy(test=>test.ReportedTestIndex))
+        {
+            var reported=Decision.Review.Original.Source.ReportedCompletion!.Report.Tests[test.ReportedTestIndex];
+            <MudText Typo="Typo.subtitle1">Test @(test.ReportedTestIndex+1): @reported.Reference</MudText>
+            <MudText>Native well @test.Native.Uwi / source @test.Native.Source / type @test.Native.TestType / run @test.Native.RunNumber / test @test.Native.TestNumber; recorded result code @test.Native.ResultCode</MudText>
+            <MudText>Criteria @test.CriteriaReference; reviewer-verified certificate UTC evidence @test.UtcCertificateReference; reported test UTC @reported.TestedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+            <MudText>Native recorded date @test.Native.TestDate.ToString("yyyy-MM-dd HH:mm:ss",CultureInfo.InvariantCulture); created by @test.Native.CreatedBy; last changed by @test.Native.ChangedBy; checked native revision @test.Native.NativeRevision</MudText>
+            <MudText Class="development-draft-description">@test.DateDiscrepancyResolution</MudText><MudText Class="development-draft-description">@test.Reason</MudText>
+        }
+        <MudAlert Severity="Severity.Info">These are the independent reviewer's explicit certificate and criteria signoffs. The app does not execute physical tests, infer native timezones or compute passing thresholds.</MudAlert>
+    </MudPaper>
+}
+@code {[Parameter,EditorRequired]public DrillingCompletionReviewDecision Decision{get;set;}=default!;}

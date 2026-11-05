@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Processes;
-using Beep.OilandGas.LifeCycle.Services.Processes;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.LifeCycle.Services.Decommissioning;
 using Beep.OilandGas.Models.Data.Process;
 using Microsoft.Extensions.Logging;

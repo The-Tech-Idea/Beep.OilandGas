@@ -1,0 +1,92 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=e6]:
+      - link "Open assigned HSE process" [ref=e7] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=e9] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=e11] [cursor=pointer]
+      - button "Restore original company" [ref=e13] [cursor=pointer]
+  - generic [ref=e15]:
+    - group [ref=e16]:
+      - button [ref=e17] [cursor=pointer]
+      - group [ref=e22]:
+        - heading "INJURY — Recorded assigned incident" [level=5] [ref=e23]
+        - group [ref=e24]:
+          - generic [ref=e25]: Tier 4
+          - generic [ref=e31]: PENDING_CLOSE_OUT
+          - generic [ref=e37]: 29-Oct-2026 03:22 · North FIELD · originator
+    - separator [ref=e38]
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - paragraph [ref=e44]: Incident Details
+          - table [ref=e48]:
+            - rowgroup [ref=e49]:
+              - row [ref=e50]:
+                - cell "Date/Time" [ref=e51]
+                - cell [ref=e52]:
+                  - paragraph [ref=e53]: 29-Oct-2026 03:22
+              - row [ref=e54]:
+                - cell "Type" [ref=e55]
+                - cell [ref=e56]:
+                  - paragraph [ref=e57]: INJURY
+              - row [ref=e58]:
+                - cell "Tier" [ref=e59]
+                - cell "Tier 4" [ref=e60]
+              - row [ref=e67]:
+                - cell "Location" [ref=e68]
+                - cell [ref=e69]:
+                  - paragraph [ref=e70]: North FIELD
+              - row [ref=e71]:
+                - cell "Reported jurisdiction" [ref=e72]
+                - cell [ref=e73]:
+                  - paragraph [ref=e74]: KUWAIT
+              - row [ref=e75]:
+                - cell "Reported By" [ref=e76]
+                - cell [ref=e77]:
+                  - paragraph [ref=e78]: originator
+        - generic [ref=e79]:
+          - paragraph [ref=e86]: Root Cause Analysis
+          - paragraph [ref=e88]: No root cause is displayed in the incident detail.
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - paragraph [ref=e93]: Corrective Actions
+          - generic [ref=e94]:
+            - heading "Lifecycle approval and incident closure" [level=6] [ref=e95]
+            - table [ref=e99]:
+              - rowgroup [ref=e100]:
+                - row [ref=e101]:
+                  - columnheader "Action Sort Column options" [ref=e102]:
+                    - generic [ref=e103]:
+                      - generic [ref=e104] [cursor=pointer]: Action
+                      - generic [ref=e105] [cursor=pointer]:
+                        - button "Sort" [ref=e106]
+                        - button "Column options" [ref=e112]
+                  - columnheader "Assigned To Sort Column options" [ref=e117]:
+                    - generic [ref=e118]:
+                      - generic [ref=e119] [cursor=pointer]: Assigned To
+                      - generic [ref=e120] [cursor=pointer]:
+                        - button "Sort" [ref=e121]
+                        - button "Column options" [ref=e127]
+                  - columnheader "Due Sort Column options" [ref=e132]:
+                    - generic [ref=e133]:
+                      - generic [ref=e134] [cursor=pointer]: Due
+                      - generic [ref=e135] [cursor=pointer]:
+                        - button "Sort" [ref=e136]
+                        - button "Column options" [ref=e142]
+                  - columnheader "Status" [ref=e147]
+              - rowgroup [ref=e149]:
+                - row [ref=e150]:
+                  - cell "Inspect valve" [ref=e151]
+                  - cell "worker" [ref=e152]
+                  - cell "31-Oct-26" [ref=e153]
+                  - cell "COMPLETED" [ref=e154]
+              - rowgroup:
+                - row
+        - generic [ref=e162]:
+          - paragraph [ref=e163]: Incident close-out
+          - paragraph [ref=e164]: "Recorded corrective actions: 1; not completed: 0."
+          - paragraph [ref=e165]: Independent verification and reviewed closure are required before this incident can be closed.

@@ -1,0 +1,41 @@
+@using System.Globalization
+@using TheTechIdea.Data.OilGas
+@using MudBlazor
+
+<MudPaper Outlined="true" Class="pa-4 mb-4">
+    <MudText Typo="Typo.h6" HtmlTag="h2">Recorded review outcome</MudText>
+    <MudText>@Review.WorkflowName · Version @Review.WorkflowVersion</MudText>
+    <MudText Typo="Typo.subtitle1">@Outcome(Review.WorkflowState)</MudText>
+    <MudText>Requested by: @Review.RequesterUserId</MudText>
+    <MudText Class="development-draft-identity">Recorded review: @Review.InstanceId</MudText>
+    @foreach(var stage in Review.Stages)
+    {
+        <MudDivider Class="my-3" />
+        <MudText Typo="Typo.subtitle1">@stage.Name · @StageState(stage.Status)</MudText>
+        <MudText>Assigned role: @stage.AssignedRole</MudText>
+        @if(stage.Decision is not null)
+        {
+            <MudText>@(stage.Decision=="APPROVE"?"Stage approved":"Stage rejected") by @stage.ActorUserId</MudText>
+            <MudText Class="development-draft-description">@stage.Rationale</MudText>
+            <MudText Class="development-draft-identity">Approval audit: @stage.ApprovalId</MudText>
+            <MudText Class="development-draft-identity">Decision history: @stage.HistoryId</MudText>
+            <MudText Typo="Typo.caption">Recorded: @stage.DecidedAtUtc?.ToString("u",CultureInfo.InvariantCulture)</MudText>
+        }
+    }
+    <MudDivider Class="my-3" />
+    <MudText Typo="Typo.h6" HtmlTag="h3">Recorded review history</MudText>
+    @foreach(var entry in Review.History)
+    {
+        <MudText Class="mt-2">@HistoryAction(entry.Action) · @entry.ActorUserId · @entry.AtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+        <MudText Class="development-draft-description">@entry.Notes</MudText>
+    }
+    <MudText Typo="Typo.caption" Class="mt-3">Source and audit checked: @Review.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+    <MudAlert Severity="Severity.Info" Class="mt-3">Review-stage decisions leave the plan as a draft. Final plan approval, AFE and investment release, and operations acceptance are separate.</MudAlert>
+</MudPaper>
+
+@code{
+    [Parameter,EditorRequired] public DevelopmentReviewProgress Review{get;set;}=default!;
+    private static string Outcome(string state)=>state switch{"REVIEW_APPROVED"=>"All configured review stages approved","REVIEW_REJECTED"=>"Review rejected",_=>"Review in progress"};
+    private static string StageState(string state)=>state switch{"COMPLETED"=>"Approved","FAILED"=>"Rejected","PENDING"=>"Awaiting independent review",_=>"Waiting for an earlier stage"};
+    private static string HistoryAction(string action)=>action switch{"PROCESS_STARTED"=>"Review submitted","DEVELOPMENT_REVIEW_APPROVED"=>"Stage approved","DEVELOPMENT_REVIEW_REJECTED"=>"Stage rejected",_=>"Recorded event"};
+}

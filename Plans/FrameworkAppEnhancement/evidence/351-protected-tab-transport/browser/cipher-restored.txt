@@ -1,0 +1,8 @@
+### Result
+{
+  "restoredCharacters": 101766
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {const saved=window.__oilgasProof;if(!saved)throw new Error("Owned proof backup unavailable");sessionStorage.setItem(saved.key,saved.value);delete window.__oilgasProof;return {restoredCharacters:saved.value.length};}');
+```

@@ -1,0 +1,152 @@
+@using System.Globalization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject WorkOrderMaterialAllocationState State
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Reserve work-order material</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Checking original material reservation" />}
+        @if(_authorized && State.VisibleReference is {} reference)
+        {
+            <MudText>Original reservation reference: @reference</MudText>
+            <MudAlert Severity="@(State.Receipt is null?Severity.Warning:Severity.Info)">@(State.Receipt is null?"The original outcome is unconfirmed. Recover this reference before another reservation.":"The original reservation is recorded. Physical issue and work authorization require separate evidence.")</MudAlert>
+            <MudButton OnClick="RecoverAsync" Color="Color.Primary" Disabled="@State.Busy">Recover original reservation without another write</MudButton>
+        }
+        else if(_authorized)
+        {
+            <MudButton OnClick="LoadItemsAsync" Color="Color.Primary" Disabled="@(State.Busy || _catalogBusy)">Find recorded company inventory items</MudButton>
+            @if(_catalogBusy){<MudProgressLinear Indeterminate="true" aria-label="Reading assigned company inventory choices" />}
+            @if(_catalog is {} catalog)
+            {
+                <MudText>Recorded choices: @catalog.Items.Count · Reviewed UTC: @catalog.ComparedAtUtc.ToString("O")</MudText>
+                @if(catalog.Items.Count==0){<MudAlert Severity="Severity.Info">No active recorded company inventory choices were returned for this assigned task.</MudAlert>}
+                <MudSelect T="string" Value="@_item" ValueChanged="SelectItem" Label="Recorded company inventory item" Required="true" Disabled="@(State.Busy || _catalogBusy)">
+                    @foreach(var item in catalog.Items)
+                    {<MudSelectItem T="string" Value="@item.INVENTORY_ITEM_ID">@item.ITEM_NAME / @item.INVENTORY_ITEM_ID · @(item.WAREHOUSE_ID ?? "Warehouse not recorded") / @(item.LOCATION_ID ?? "Location not recorded") · @(item.QUANTITY_ON_HAND?.ToString() ?? "Quantity not recorded") @(item.UNIT_OF_MEASURE ?? "Unit not recorded")</MudSelectItem>}
+                </MudSelect>
+                @if(!string.IsNullOrEmpty(_item)){<MudLink Href="@("/warehouse/items/"+Uri.EscapeDataString(_item))">Open selected recorded inventory evidence</MudLink>}
+                <MudText Typo="Typo.caption">Catalog content revision: @catalog.Revision</MudText>
+            }
+            <MudNumericField T="decimal?" Value="@_quantity" ValueChanged="SetQuantity" Label="Explicit required quantity" Required="true" Disabled="@(State.Busy || _catalogBusy)" />
+            <MudTextField T="string" Value="@_unit" ValueChanged="SetUnit" Label="Explicit required unit" Required="true" Disabled="@(State.Busy || _catalogBusy)" />
+            <MudButton OnClick="ReviewAsync" Color="Color.Primary" Disabled="@(State.Busy || _catalogBusy || string.IsNullOrWhiteSpace(_item))">Review original source and competing reservations</MudButton>
+        }
+        @if(_authorized && State.Review is {} review)
+        {
+            <MudText>Company @review.Source.Context.Company.BusinessAssociateId · FIELD @review.Source.Query.Task.FieldId · Order @review.Source.Query.Task.WorkOrderId</MudText>
+            <MudText>Item @review.Source.Query.ItemId · Required @review.Source.Query.RequiredQuantity @review.Source.Query.QuantityUnit</MudText>
+            <MudText>Recorded on hand @review.Source.Inventory.Item.QUANTITY_ON_HAND · Outstanding reserved @review.ReservedQuantity · Available to reserve @review.AvailableQuantity @review.Source.Query.QuantityUnit</MudText>
+            <MudText>Warehouse @review.Source.Inventory.Item.WAREHOUSE_ID · Location @review.Source.Inventory.Item.LOCATION_ID</MudText>
+            <MudText Typo="Typo.caption">Compared UTC @review.ComparedAtUtc.ToString("O") · Complete allocation revision @review.Revision</MudText>
+            @if(review.Allocations.Count==0){<MudText>No recorded competing reservations for this owned item.</MudText>}
+            else{<MudSimpleTable Dense="true"><thead><tr><th scope="col">Reservation</th><th scope="col">Quantity / unit</th><th scope="col">Validity UTC</th></tr></thead><tbody>@foreach(var row in review.Allocations){<tr><th scope="row">@row.Id</th><td>@row.Quantity @row.Unit</td><td>@row.ValidFromUtc.ToString("O") to @row.ValidToUtc.ToString("O")</td></tr>}</tbody></MudSimpleTable>}
+            <MudTextField @bind-Value="_from" Label="Valid from UTC" HelperText="Use yyyy-MM-ddTHH:mm:ssZ; no local time zone is assumed." Required="true" Disabled="@State.Busy" />
+            <MudTextField @bind-Value="_to" Label="Valid to UTC" HelperText="Use yyyy-MM-ddTHH:mm:ssZ after the start." Required="true" Disabled="@State.Busy" />
+            <MudTextField @bind-Value="_reason" Label="Reservation rationale" Required="true" Lines="3" Disabled="@State.Busy" />
+            <MudButton OnClick="ReserveAsync" Color="Color.Primary" Disabled="@(!State.CanReserve)">Record one original material reservation</MudButton>
+        }
+        @if(_authorized && State.VisibleCommand is {} original)
+        {
+            <MudText Typo="Typo.subtitle2">Retained original requirement</MudText>
+            <MudText>Item @original.Review.Source.Query.ItemId · @original.Review.Source.Query.RequiredQuantity @original.Review.Source.Query.QuantityUnit · Warehouse @original.Review.Source.Inventory.Item.WAREHOUSE_ID / @original.Review.Source.Inventory.Item.LOCATION_ID</MudText>
+            <MudText>@original.ValidFromUtc.ToString("O") to @original.ValidToUtc.ToString("O") · @original.Reason</MudText>
+        }
+        @if(_authorized && State.Receipt is {} receipt){<MudText>Recorded reservation @receipt.ALLOCATION_ID · Revision @receipt.RECORDED_REVISION</MudText>}
+        @if(_authorized && Company.Selection?.Permissions.Contains("Inventory.ReleaseWorkOrderMaterial",StringComparer.Ordinal)==true && State.VisibleCommand is not null)
+        {
+            @if(State.VisibleReleaseReference is {} releaseId)
+            {
+                <MudText>Original release reference: @releaseId</MudText>
+                <MudAlert Severity="@(State.ReleaseReceipt is null?Severity.Warning:Severity.Info)">@(State.ReleaseReceipt is null?"The original release outcome is unconfirmed. Recover this reference before another release.":"The full original reservation is released. Reload current capacity before making another reservation or readiness decision.")</MudAlert>
+            }
+            else
+            {
+                <MudTextField @bind-Value="_releaseReason" Label="Full reservation release rationale" Required="true" Disabled="@State.Busy" />
+                <MudButton OnClick="ReleaseAsync" Color="Color.Warning" Disabled="@(!State.CanRelease)">Release the full original reservation</MudButton>
+            }
+            @if(State.ReleaseReceipt is {} released){<MudText>Recorded full release @released.RELEASE_ID · Quantity @released.RELEASED_QUANTITY · UTC @released.RELEASED_AT_UTC.ToString("O")</MudText><MudButton OnClick="BeginNewAsync" Disabled="@State.Busy" Color="Color.Primary">Review a new requirement after confirmed release</MudButton>}
+            <MudTextField @bind-Value="_releaseReference" Label="Original release reference" HelperText="Use the retained release intent; recovery adds no release." Disabled="@State.Busy" />
+            <MudButton OnClick="RecoverReleaseAsync" Color="Color.Primary" Disabled="@State.Busy">Recover original release without another write</MudButton>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original reservation reference" HelperText="Use the original intent reference from this page; recovery is read-only." Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy)" Color="Color.Primary">Open original recorded reservation</MudButton>
+        <MudAlert Severity="Severity.Info">Reservation does not issue or consume physical stock, post finances, approve a permit or authorize work. Released and expired reservations need current evidence before readiness decisions.</MudAlert>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public CompanyMaintenanceReceivingQuery? Task {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    [Parameter] public Guid? OriginalReference {get;set;}
+    [Parameter] public Guid? ReleaseReference {get;set;}
+    private string _releaseReason="",_releaseReference="",_item="",_unit="",_from="",_to="",_reason="",_reference="",_key="";
+    private CompanyWorkOrderMaterialCatalog? _catalog;
+    private bool _catalogBusy;
+    private decimal? _quantity;
+    private string? _error;
+    private bool _authorized,_disposed;
+    private long _version;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async System.Threading.Tasks.Task OnParametersSetAsync()
+    {
+        var key=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision});if(key!=_key){Invalidate();_key=key;}State.Attach(Task);
+        try{await Authority();_authorized=true;if(OriginalReference is {} id){_reference=id.ToString("D");if(!State.Busy && (State.VisibleReference!=id || State.VisibleCommand is null))await State.RecoverReferenceAsync(Workflows,id);await Authority();}if(ReleaseReference is {} releaseId){_releaseReference=releaseId.ToString("D");if(!State.Busy && (State.VisibleReleaseReference!=releaseId || State.ReleaseReceipt is null))await State.RecoverReleaseReferenceAsync(Workflows,releaseId);await Authority();}}
+        catch(Exception error){if(Refused(error))Invalidate();_error=Calls.Explain(error,"opening original material reservation","Confirm the original account/FIELD/reference and retry read-only recovery");}
+    }
+    private async System.Threading.Tasks.Task Authority()
+    {
+        var version=_version;var scope=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Task is null || scope.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) || !selected.Permissions.Contains("Inventory.ReserveWorkOrderMaterial",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=Task.FieldId || version!=_version || scope!=Company.Snapshot)throw new UnauthorizedAccessException("Current resolved company account, standard roles, inventory permissions and original FIELD are required.");
+        var role=State.Review?.Source.WorkOrder.Stage.AssignedRole??State.VisibleCommand?.Review.Source.WorkOrder.Stage.AssignedRole;
+        if(role is not null && (!user.IsInRole(role) || !selected.Roles.Contains(role,StringComparer.Ordinal)))throw new UnauthorizedAccessException("The original assigned company role is required.");
+    }
+    private async System.Threading.Tasks.Task Run(Func<System.Threading.Tasks.Task> action)
+    {
+        if(_disposed || State.Busy || _catalogBusy)return;_error=null;try{await Authority();_authorized=true;State.Attach(Task);await action();await Authority();}catch(Exception error){if(Refused(error))Invalidate();_error=Calls.Explain(error,"reviewing original material reservation","Correct the explicit source/quantity/unit/UTC requirement, or recover the same original reference");}
+    }
+    private static bool Refused(Exception error)=>error is UnauthorizedAccessException || error is OilGasApiException{StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized};
+    private System.Threading.Tasks.Task LoadItemsAsync()=>Run(async()=>
+    {
+        var version=_version;var snapshot=Company.Snapshot;var task=Task!;_catalogBusy=true;_catalog=null;_item="";ResetRequirement();
+        try
+        {
+            var result=await Workflows.ReviewWorkOrderMaterialCatalogAsync(task);result.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,task);await Authority();
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(!user.IsInRole(result.Stage.AssignedRole) || !snapshot.Selection.Roles.Contains(result.Stage.AssignedRole,StringComparer.Ordinal))throw new UnauthorizedAccessException("The original configured assigned role is required for inventory choices.");
+            if(!_disposed && version==_version && snapshot==Company.Snapshot && Task==task)_catalog=CompanyInventorySourceReview.Copy(result);
+        }
+        finally{_catalogBusy=false;}
+    });
+    private void ResetRequirement(){State.DiscardSourceReview();_quantity=null;_unit="";_from="";_to="";_reason="";}
+    private void SelectItem(string id)
+    {
+        if(_disposed || State.Busy || _catalogBusy || State.VisibleReference is not null || Company.Selection is not {} selected || Task is null || _catalog is null)throw new InvalidOperationException("Load the current original assigned inventory choices before selecting an item.");
+        _catalog.Require(selected.Scope,selected.UserId,Task);if(_catalog.Items.Count(row=>row.INVENTORY_ITEM_ID==id)!=1)throw new InvalidOperationException("Choose one exact item from the current recorded catalog.");
+        if(_item==id)return;ResetRequirement();_item=id;
+    }
+    private void SetQuantity(decimal? value){if(value==_quantity)return;State.DiscardSourceReview();_quantity=value;_from="";_to="";_reason="";}
+    private void SetUnit(string value){if(value==_unit)return;State.DiscardSourceReview();_unit=value;_from="";_to="";_reason="";}
+    private System.Threading.Tasks.Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows,new(Task!,_item,_quantity??throw new ArgumentException("Enter the explicit required quantity."),_unit)));
+    private static DateTime Utc(string value){if(!DateTime.TryParseExact(value,"yyyy-MM-dd'T'HH:mm:ss'Z'",CultureInfo.InvariantCulture,DateTimeStyles.AssumeUniversal|DateTimeStyles.AdjustToUniversal,out var utc))throw new ArgumentException("Enter an explicit UTC timestamp ending in Z.");return utc;}
+    private System.Threading.Tasks.Task ReserveAsync()=>Run(()=>State.ReserveAsync(Workflows,Utc(_from),Utc(_to),_reason,original=>Retain(original.IntentId)));
+    private System.Threading.Tasks.Task Retain(Guid id){_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("materialAllocationId",id),replace:true);return System.Threading.Tasks.Task.CompletedTask;}
+    private System.Threading.Tasks.Task RecoverAsync()=>Run(()=>{if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original reservation reference.");return State.RecoverReferenceAsync(Workflows,id,Retain);});
+    private System.Threading.Tasks.Task ReleaseAsync()=>Run(()=>State.ReleaseAsync(Workflows,_releaseReason,RetainRelease));
+    private System.Threading.Tasks.Task RetainRelease(Guid id){_releaseReference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("materialReleaseId",id),replace:true);return System.Threading.Tasks.Task.CompletedTask;}
+    private System.Threading.Tasks.Task RecoverReleaseAsync()=>Run(()=>{if(!Guid.TryParse(_releaseReference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the same original release intent reference.");return State.RecoverReleaseReferenceAsync(Workflows,id,RetainRelease);});
+    private System.Threading.Tasks.Task BeginNewAsync()=>Run(()=>{State.BeginNewRequirement();_catalog=null;_item="";_quantity=null;_unit="";_from="";_to="";_reason="";_reference="";_releaseReason="";_releaseReference="";Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"materialAllocationId",null},{"materialReleaseId",null}}),replace:true);return System.Threading.Tasks.Task.CompletedTask;});
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void Invalidate(){_version++;_catalog=null;_authorized=false;_item="";_unit="";_quantity=null;_from="";_to="";_reason="";_reference="";_releaseReason="";_releaseReference="";State.Attach(null);Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(System.Threading.Tasks.Task<AuthenticationState> _) => Invalidate();
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;State.Attach(null);}
+}

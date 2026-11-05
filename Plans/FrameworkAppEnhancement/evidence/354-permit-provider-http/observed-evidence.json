@@ -1,0 +1,66 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase4 selected current-company HTTP and physical submission gate",
+  "observed_at": "2026-10-29T19:43:57.347138+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; preserved; no commit/push",
+  "method": "PermitProviderHttpUsesFreshCompanyAuthorityAndPrivateSameOriginalRecovery",
+  "distinct_cases": 1,
+  "command": "OILGAS_TEST_PERMIT_DRIVER_FEED=<isolated local feed>; dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~PermitProviderHttpUsesFreshCompanyAuthorityAndPrivateSameOriginalRecovery --logger console;verbosity=minimal",
+  "attempts": [
+    {
+      "log": "oilgas-354-provider-http-01.log",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "1m22s",
+      "scope": "Initial protected current-company/provider journey."
+    },
+    {
+      "log": "oilgas-354-provider-http-02.log",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "1m27s",
+      "scope": "Final same journey additionally requires explicit absent receipt for the permission-denied new intent."
+    }
+  ],
+  "criteria": [
+    "One loopback MVC app hosts the actual PermitsController, CompanyRequestMiddleware and per-request company/module/profile/permit authority services.",
+    "One existing app-RBAC fixture database supplies two active company memberships, app-owned roles/permissions, inherited FIELD WRITE grants and independent stored preferences.",
+    "Actual UserAssetAccessService and native FIELD policy enforce the protected current FIELD filter, backed by controlled core FIELD/entitlement evidence.",
+    "Missing company selectors refuse400. Each company reads its own header; cross-company reads for records in the same FIELD refuse404 without the private applicant values.",
+    "Arabic/slash/question-mark application identity survives actual encoded HTTP query binding.",
+    "A valid original sent under the other company is refused403 before and after commitment.",
+    "Actual native lifecycle uses the setup-installed physical SQLite permit module to record and validate the exact submission outcome.",
+    "Deleting the current app author permission causes a new intent to refuse403. HTTP recovery explicitly confirms that denied intent has no receipt.",
+    "Confirmed same-original recovery and command replay remain200 after permission revocation and return the identical original/outcome.",
+    "Current native application is Submitted with exactly one recorded history; core FIELD evidence has no writes."
+  ],
+  "limits": [
+    "Sign-in is the standard controlled authentication handler; real OIDC/JWT issuance and production hosting are not qualified.",
+    "Core FIELD/entitlement driver results, FIELD orchestrator restoration, target-verifier and auxiliary unused workflow/compliance/history dependencies are fixtures. Full PPDM core provider and other controller paths are not qualified.",
+    "Existing app-RBAC fixture uses its existing EF-backed SQLite model; no EF migration was introduced. Only the three native permit ledger tables are created through Beep Migration.",
+    "One selected SUBMIT path, not every action/provider, privilege permutation, membership lifecycle or frontend browser-to-server journey.",
+    "Current local connector1.0.59/provider1.0.119 and modified BeepDM runtime remain distribution dependencies; no public release claim.",
+    "Full PERMITS supporting schema, existing evolution, amendments, changed-binding reconciliation, jurisdiction policy and full approved goal remain open.",
+    "Existing host behavior defaults remain unchanged; no unrelated test/class/full suite selected."
+  ],
+  "sha256": {
+    "Beep.OilandGas.Repository.Tests/PermitProviderHttpTests.cs": "de7f37407207b830359cc9878736502f88cf73eb6b8a6c20a27680be8819f281",
+    "Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.cs": "22545bf214cf33b9e4d74fd9037cfc206c8a6b2f8f81555fa0dc6c229782a2f8",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "5a3bd29d5cffe57e0bfd0d3144a4d5abc8de058b06e3c2b7618d20d3e2619e25",
+    "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj": "2bc0c6fa4b304705a12cdbba318c6bd88a3f317b4258385ae847319340431dfc",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "89c6b0bb3d3611c10dd4bf33d8ee483d6ea80c903815da9d5883eb67c9c5e3ab",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "be16f7f57f751ada73f70a4fbdabf590ad56b743fd73bca0296191fb320d3a57",
+    "Beep.OilandGas.ApiService/Middleware/CompanyRequestMiddleware.cs": "08f72c3cb5b39109bd86110b672fe7228eee239cd3b86e5d89ff0260c14f0447",
+    "Beep.OilandGas.ApiService/Services/RepositoryUserProfileService.cs": "e8c5bf84911e6fefaa3e01479c3d96a68ada06b9ca21159ced909a6b5db774b1",
+    "Beep.OilandGas.Repository/RepositoryAccessService.cs": "3b4ab529d15e809a411fc677bd851a679f07d6ddde11c587b32d196512a628d9",
+    "Beep.OilandGas.LifeCycle/Services/AccessControl/UserAssetAccessService.cs": "72277e2929b593f302ad1224cb70876f46a44bbc1b519904db7aa4133bf56951",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "9c90d0b751dac124f1d97c3ab807a81f62f7bb29cc2e8920e3c4d52cd6d95666",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "ac42115b9f829ed524ba3de62af516d941be43bbf1e0cc43d3e494d8b0c2ba57",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "df6ed94226122f2a038a53081cfbd40f3dc0fa6d84da2b59e4462506b36c3408",
+    "../BeepDM/DataManagementEngineStandard/bin/Debug/net10.0/DataManagementEngine.dll": "55783166f492c83cc95c79fef4233e00b97da879ce0730d4959ae13ba0ba8f46"
+  }
+}

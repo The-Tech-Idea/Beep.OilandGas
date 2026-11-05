@@ -1,0 +1,31 @@
+# Implementation 266 — Original delivery process screens and queue
+
+## Canonical process source through the API
+
+CompanyDeliveryProcessSourceReview lives in TheTechIdea.Data. It requires the original company/account/process/ticket identity, bounded IDs, valid process/preparation revisions and the complete validated native delivery source. The original preparation revision remains stable across a native approval or rejection. The existing company process reader resolves the recorded start payload and exact ticket source, then closes current process, delivery, binding, role/grant and datasource authority checks before returning a copied response.
+
+The additive GET accounting process delivery-source endpoint handles current authorization and sanitized missing/changed evidence. The existing typed business-process client freezes the selected company/account and original process ID, validates the returned contract and rejects a changed client context. The frontend does not open a database or introduce a duplicate domain model.
+
+## Process-bound independent review
+
+The existing company process page loads the new source and requires its ticket/process revision to match the displayed process. It opens the existing DeliveryAcceptanceWorkbench with the recorded FIELD, stored window, transaction and prepared source. In assigned-process mode the workbench validates current standard app roles, company/account and the original preparation, and reads fresh acceptance through the existing accounting API. It does not read or change the selected global FIELD. Global FIELD events do not invalidate an explicitly bound assignment; company/auth changes still clear displayed evidence and access.
+
+Assigned work cannot prepare replacement acceptance. The independent reviewer sees frozen receiving evidence, actual acceptance UTC, buyer, measurement/unit, original preparation identity and native audit before approving or rejecting with an explicit reason. A confirmed decision/retry refreshes the parent source and clears the previous task review. The reviewer must then obtain fresh step authority to complete approval or route recorded rejection. Current business/workflow permissions, maker constraints and native source checks remain independently enforced by the API.
+
+The page shows delivery-specific eligibility messages and rejection-routing controls. Original-preparer rejection review has its own completion message and leaves acceptance rejected. Native workflow completion and its reloaded receipt remain separate from acceptance correction, billing, recognition policy and ledger posting. Unavailable/denied source reads hide receiving evidence and decision controls; failures stay sanitized. Current rendered controls use existing MudBlazor components and theme defaults; no custom CSS, JavaScript or page theme is added.
+
+## Persona queue and landing reuse
+
+PersonaTaskInboxState admits explicit RUN_TICKET source filtering and the canonical delivery eligibility vocabulary. The shared PersonaAssignedWorkPanel adds delivery source counts, decision-needed/rejection-routing/original-preparer/recorded-reviewer filters, and delivery-specific explanatory status. Its links retain the admitted original process route. This same owner serves persona landing and task inbox; counts describe loaded assigned tasks, not financial completion or production volumes.
+
+## Focused verification
+
+Canonical Data builds cleanly, zero warnings/errors. Fourteen current-source HTTP/native handoff cases pass, zero failures/skips, in one minute seventeen seconds, terminal exit 0. The three new rendered cases execute actual page/workbench handlers through typed clients, local API and the existing mock Beep native owners: independent approval and completion; rejection routing followed by a fresh original-preparer screen and terminal review; and denied FIELD read with receiving facts/actions hidden. They verify that the process-bound workbench neither reads nor changes the global FIELD and that successful journeys record only the original preparation and decision writes.
+
+Rendered queue checks load actual persona inbox evidence, select delivery source/status filters, compare current counts and verify original process links/messages. The delivery-source API/client also refuses changed source and revoked FIELD access. An initial rendered assertion observed the page before its replacement workbench finished loading; the test now waits for actual component work. The queue test fixture's missing navigation service was also corrected. Product source/authority and native write/receipt assertions remain intact.
+
+Logs in the task temporary directory: oilgas-266-data.log, oilgas-266-process-screen.log and oilgas-266-queue-screen.log (diagnostics), oilgas-266-corrected-screen.log (fourteen-case checkpoint), oilgas-266-final-source.log (617 passed, three old heading assertions failed), and oilgas-266-corrected-final-source.log (final affected suite). The shared assigned-work heading now names delivery; the three existing variance test expectations were updated to that heading without changing their ownership/status assertions. The corrected final affected suite passes all 620 tests, zero failures/skips, in three minutes two seconds. The completed test log confirms the result; the process handle had expired when its terminal status was retrieved. These are rendered handlers/form state, local HTTP and mock native datasource checks. Real browser inputs, keyboard/screen-reader/responsive behavior, OIDC/circuit reconnect and physical provider isolation remain open.
+
+## Next delivery
+
+Add rendered delivery catalog/handoff controls to the preparation screen using the existing company handoff owner, discover already-created handoffs for the exact original preparation and preserve/reconcile uncertain original start intent. Continue durable unsent recovery, correction/history/partial delivery, measured-unit and approved-price compatibility and source-bound invoice/receivable/recognition policy/ledger read-back. Continue royalty/partner/project cost, all thirteen personas and multinational/native/provider/browser acceptance. No phase or full goal closes; commit/push follows complete goal/plan verification. No handwritten SQL, EF business migration, live provisioning or production business mutation is introduced.

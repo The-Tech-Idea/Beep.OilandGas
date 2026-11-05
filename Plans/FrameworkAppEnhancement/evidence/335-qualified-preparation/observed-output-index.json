@@ -1,0 +1,51 @@
+{
+  "scope": "Observed earlier focused execution outputs; this index does not authenticate or rerun them. Combined 364 attempt had two HTTP request deadline failures; final isolated gates passed. No full goal completion claim.",
+  "observed_at_utc": "2026-10-20T07:46:19.256634+00:00",
+  "outputs": [
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-command-data4.log",
+      "sha256": "eb77c7802ee332ca55e32a3cfa947d3298b0e1f33a28a2fb373fb065286c402d",
+      "output_modified_utc": "2026-10-15T18:51:11.840340+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-capability-models.log",
+      "sha256": "05480870ae64fd4cdfc09e3b74dd30b2d5d90a3af8c70acd7650c94e7e4f0156",
+      "output_modified_utc": "2026-10-15T18:20:12.450080+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-projection-core2.log",
+      "sha256": "9eea484e916d30f4e72be17d9f80c87a7fd04b7fba41430d739a634bed3667ed",
+      "output_modified_utc": "2026-10-15T18:30:56.557251+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-scope-native-final.log",
+      "sha256": "7460da4bf89bb8e7a1d910d9548a966f3a51e7242447dfce12a298fd23a51eca",
+      "output_modified_utc": "2026-10-15T18:56:06.623961+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-scope-ui-final.log",
+      "sha256": "c09e56e18d6d6fef67eeaa49c07ca3f78723de2879c894eb884922c7490f822a",
+      "output_modified_utc": "2026-10-15T18:53:05.826839+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-prepare-well-compat.log",
+      "sha256": "0467dc525d60666f85df73f17f4cd1eeb5c03b3e11469b881174834b3b9932f7",
+      "output_modified_utc": "2026-10-15T18:35:18.172876+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-scope-http-final.log",
+      "sha256": "feb02202c7cfb92d948bb3ab66ca79236b84ce9b3382ae19ac81cc932e07afe4",
+      "output_modified_utc": "2026-10-15T19:06:44.540040+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-prepare-final.log",
+      "sha256": "ee1289ee16054f4212d9fc561cecf76f21748fa205087328b2efb8a349820d0b",
+      "output_modified_utc": "2026-10-15T18:42:07.250434+00:00"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/335-qualified-preparation/oilgas-335-qualified-prepare-http-isolated.log",
+      "sha256": "556382e02b3fa8d4790a0aab05a0d9d11a2b212721d87dfcfcc345e8368f3056",
+      "output_modified_utc": "2026-10-15T18:46:32.513586+00:00"
+    }
+  ]
+}

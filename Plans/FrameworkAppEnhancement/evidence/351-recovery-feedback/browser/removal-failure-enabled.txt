@@ -1,0 +1,10 @@
+### Result
+{
+  "removalFailureEnabled": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {window.__oilgasBlockRemoval=true;return {removalFailureEnabled:true};}');
+```
+### Events
+- New console entries: output\playwright\351-recovery-feedback\artifacts\console-2026-10-26T14-07-58-781Z.log#L7

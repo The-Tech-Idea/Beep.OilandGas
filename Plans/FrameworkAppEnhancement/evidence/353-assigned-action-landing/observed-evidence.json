@@ -1,0 +1,202 @@
+{
+  "plan": "Plan353 / Persona09 assigned overdue-action landing",
+  "date": "2026-10-30",
+  "status": "scoped-implementation-verified",
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/CompanyHseAssignedActions.cs",
+      "sha256": "e4fd04aa73a5cbd1fbf2b985fc577f6512661a30d78395a091be98a42bb34d85"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyHseAssignedActionReader.cs",
+      "sha256": "c3bceb3a79e8677cace8389d260e03eb20da6108efccd2ad367518d0adc4288d"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Controllers/HSE/HseAssignedActionsController.cs",
+      "sha256": "5b66a8872c6b11fac683ea8ef573e43cb73ec4c798225d4574424ec359b54f47"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Program.cs",
+      "sha256": "0fd3b6a5cd3aa7f273b4a3b5d6818f692eaba3b6168da981b78173abb49a58bd"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/IHSEServiceClient.cs",
+      "sha256": "ad6d15d597f0016f251409721f72535ddf3b5cc146c3f4bbbba42fdd6bb7c4e0"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/HSEServiceClient.AssignedActions.cs",
+      "sha256": "3bab01ee242a346054a60020ea387c94489f9e09a054935318280035e0d96c3d"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/Workflow/HseAssignedActions.razor",
+      "sha256": "3ad81e64ec073956c14af8fcff0e9914908d7546b23bf6431ff4cfedb8387d10"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Pages/PPDM39/HSE/HSEDashboard.razor",
+      "sha256": "c621a5f291a8650ffbf528402b88e90a6f06cb36a239746c9602ba7eaa5d0326"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidentDetail.razor",
+      "sha256": "80b3d9b9b32050dd8ac1c3100fbe578a332363497a9bb32009198c22553b37a7"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/HseAssignedActionReaderTests.cs",
+      "sha256": "91078f51389c66d23d490caef55481550b12c0c29a9ccf70c8e4d9d5aae2974d"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/HseAssignedActionsTests.cs",
+      "sha256": "7445c3e31269d0501f21c81cf9d40b43d0e5f66f35a56a266ceb19f4a99eb812"
+    }
+  ],
+  "runtime": {
+    "harness": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-assigned-focused",
+    "assemblySha256": "fbeda775515d8309bfeed30e6ad0af3bed26a0eccf6d835fd2b1e44ac4b1fd27",
+    "dataSha256": "9384f1d4952f7fe41453232717f2054f4f6911671cb1093d82ebec9c847578bb"
+  },
+  "verification": {
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "557 ms",
+    "cases": [
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"missing-link\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0020848"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"unknown-state\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0018667"
+      },
+      {
+        "name": "Beep.OilandGas.Web.Auth.Tests.HseAssignedActionsTests.AssignedActionLandingRefusesUnauthorizedReads",
+        "outcome": "Passed",
+        "duration": "00:00:00.4537828"
+      },
+      {
+        "name": "Beep.OilandGas.Web.Auth.Tests.HseAssignedActionsTests.AssignedActionLandingRejectsLateOrForeignResults(mode: \"field\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0119392"
+      },
+      {
+        "name": "Beep.OilandGas.Web.Auth.Tests.HseAssignedActionsTests.AssignedActionLandingRejectsLateOrForeignResults(mode: \"foreign-result\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0070502"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"changed-link\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0058753"
+      },
+      {
+        "name": "Beep.OilandGas.Web.Auth.Tests.HseAssignedActionsTests.AssignedActionLandingRejectsLateOrForeignResults(mode: \"account\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0065442"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"revoked\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0026224"
+      },
+      {
+        "name": "Beep.OilandGas.Web.Auth.Tests.HseAssignedActionsTests.AssignedActionLandingRejectsLateOrForeignResults(mode: \"silent-account\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0266333"
+      },
+      {
+        "name": "Beep.OilandGas.Web.Auth.Tests.HseAssignedActionsTests.AssignedActionLandingRejectsLateOrForeignResults(mode: \"company\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0066605"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"valid\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.1591189"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"unknown-date\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0018310"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"excess-population\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0039980"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"foreign-catalog\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0022741"
+      },
+      {
+        "name": "Beep.OilandGas.Web.Auth.Tests.HseAssignedActionsTests.AssignedActionLandingPagesExactSourceLinksAndClearsOnCompanyChange",
+        "outcome": "Passed",
+        "duration": "00:00:00.0338747"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"foreign-field\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0019425"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"expired-link\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0018757"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"reassigned\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0024713"
+      },
+      {
+        "name": "Beep.OilandGas.ApiService.Tests.HseAssignedActionReaderTests.AssignedActionsUseCurrentRecordedPersonAndRefuseUnconfirmedPopulations(mode: \"empty\")",
+        "outcome": "Passed",
+        "duration": "00:00:00.0032857"
+      }
+    ],
+    "sourceLinked": [
+      "current API population reader and controller",
+      "current IHSEServiceClient, HSEServiceClient and ApiClient",
+      "current Data assembly",
+      "current queue component, landing and incident-detail markup"
+    ],
+    "executed": [
+      "12 explicit native-population reader inputs against controlled identity/HSE owners and authority guard",
+      "7 current rendered queue component inputs with controlled HTTP client/authentication/FIELD"
+    ],
+    "compiledOnly": [
+      "API authorization/controller boundary (support-assembly dependencies)",
+      "typed HTTP client new method",
+      "landing placement and individual action-cell anchor"
+    ],
+    "builds": {
+      "Data": "8.92 seconds, 1 missing analyzer warning, 0 errors, no project references rebuilt",
+      "focused": "1.75 seconds, 6 support/reference warnings, 0 errors"
+    },
+    "noOtherTests": true
+  },
+  "ownersReused": [
+    "ICompanyPersonnelIdentityOwner / existing independently recorded company account/person link and current employment facts",
+    "current company RBAC/FIELD/module authority",
+    "existing field HSE and corrective-action readers",
+    "typed API client; TheTechIdea.Data owns wire model"
+  ],
+  "scope": [
+    "Current OPEN overdue actions in incidents whose native state is PENDING_CORRECTIVE_ACTION or PENDING_CLOSE_OUT",
+    "Only exact recorded responsible BA for the current authenticated selected account/person",
+    "64 returned incident and4096 selected-action bounds; unavailable or changed evidence refuses instead of truncating or displaying zero",
+    "Two complete incident/action reads, closing identity/person reads and fresh authority guards",
+    "On-demand landing review, ten-record paging, exact encoded incident/action fragment, cleared values and rejected late results on company/account/FIELD change"
+  ],
+  "notProven": [
+    "Earlier incident-state action source coverage",
+    "Server-side paging and large FIELD performance",
+    "Live/native provider, actual API authorization/HTTP/OIDC and full host integration",
+    "Browser keyboard/RTL/assistive technology acceptance of new panel and fragment navigation",
+    "Atomic snapshot across separate native reads; this is read-only comparison, not a transaction claim"
+  ],
+  "schema": "No schema changes, handwritten SQL, business EF migration, legacy/compatibility or parallel assignment owner introduced. Existing Beep Migration remains sole business schema lane.",
+  "failedBuild": "Initial temporary harness mixed two source-link support assemblies; removed redundant test-assembly reference, supplied fixture imports and source-linked existing refusal types. No test executed before successful build.",
+  "goal": "Whole approved plan remains active; commit/push pending completion condition."
+}

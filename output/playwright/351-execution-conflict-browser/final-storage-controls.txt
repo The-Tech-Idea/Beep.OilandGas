@@ -1,0 +1,32 @@
+### Result
+{"storageFailureControlsInstalled":true,"scope":"isolated diagnostic browser only"}
+### Ran Playwright code
+```js
+await (async (page) => {
+  await page.addInitScript(() => {
+    const get = Storage.prototype.getItem;
+    const remove = Storage.prototype.removeItem;
+    const owned = key => String(key).endsWith('.drilling-execution');
+    window.__oilgasBlockReadback = false;
+    window.__oilgasBlockRemoval = false;
+    Storage.prototype.getItem = function(key) {
+      const value = get.call(this, key);
+      if (window.__oilgasBlockReadback && owned(key) && value !== null)
+        throw new DOMException('Controlled retained-original readback failure', 'SecurityError');
+      return value;
+    };
+    Storage.prototype.removeItem = function(key) {
+      if (window.__oilgasBlockRemoval && owned(key))
+        throw new DOMException('Controlled retained-original removal failure', 'SecurityError');
+      return remove.call(this, key);
+    };
+  });
+  await page.reload();
+  return {storageFailureControlsInstalled: true, scope: 'isolated diagnostic browser only'};
+}
+)(page);
+```
+### Page
+- Page URL: http://127.0.0.1:65052/
+### Events
+- New console entries: output\playwright\351-execution-conflict-browser\artifacts\console-2026-10-26T16-37-51-731Z.log#L3-L5

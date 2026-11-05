@@ -1,0 +1,39 @@
+{
+  "status": "verified-scoped-component",
+  "recorded_at": "2026-10-29T12:19:15.884076+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; unrelated ongoing plan changes preserved",
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md - Terminal incident screen state; Feature-09 implementation step 2",
+  "checks": [
+    {
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "1 second",
+      "filter": "FullyQualifiedName~TerminalClosureScreenWithholdsNewWorkAndPreservesRecovery|FullyQualifiedName~ClosureScreenDiscardsOpenReviewAfterIncidentBecomesTerminal|FullyQualifiedName~ClosureScreenRequiresNativeStatusBeforeReportingClosed|FullyQualifiedName~CorrectionReturnScreenProtectsOriginalAndReconcilesLostResponse",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~TerminalClosureScreenWithholdsNewWorkAndPreservesRecovery|FullyQualifiedName~ClosureScreenDiscardsOpenReviewAfterIncidentBecomesTerminal|FullyQualifiedName~ClosureScreenRequiresNativeStatusBeforeReportingClosed|FullyQualifiedName~CorrectionReturnScreenProtectsOriginalAndReconcilesLostResponse\" --logger \"console;verbosity=minimal\"",
+      "criterion_to_method": {
+        "TerminalClosureScreenWithholdsNewWorkAndPreservesRecovery": "CLOSED/CANCELLED/missing/unknown: no new reviews or writes, current-authority recorded recovery remains callable (4 inputs).",
+        "ClosureScreenDiscardsOpenReviewAfterIncidentBecomesTerminal": "A delayed open-state review cannot restore an approval form after native state refresh (1 input).",
+        "ClosureScreenRequiresNativeStatusBeforeReportingClosed": "Positive confirmation and uncertain result; retained original remains available after CLOSED refresh and explicit native-history resolution (2 inputs).",
+        "CorrectionReturnScreenProtectsOriginalAndReconcilesLostResponse": "Open-state correction return protects original and reconciles lost response (2 inputs)."
+      },
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\353-terminal-screen\\screen.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-terminal-screen.log",
+      "original_sha256": "dfd08096dccbcd89ea2258fa2d27acae1ad1f1011f23c21f4f0a283c0fa7b8e5"
+    }
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.Web/Components/Workflow/HseClosureWorkflow.razor": "1215457ff89a2b9d89a7b0894617bece68b67dbfced19e3a2ebfdf40b4549b92",
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidentDetail.razor": "bbafcea66d10db2c0d9df0c3c22563a398d5606461e0263f4d28081c62cb43d0",
+    "Beep.OilandGas.Web.Auth.Tests/HseIncidentScreenTests.cs": "6d8873ca170efa6942a480a98074eeaea77db9f5b1fb536cac464d33b89f636f"
+  },
+  "limitations": [
+    "Source-linked bUnit component harness uses controlled HTTP client/authentication/selection/storage dependencies.",
+    "No full test class, full suite, browser/OIDC/RTL/accessibility or provider qualification ran.",
+    "Existing source-link/dependency/analyzer warnings remain; no data/schema or migration changes.",
+    "Overall company roadmap and goal remain partial; no commit/push."
+  ]
+}

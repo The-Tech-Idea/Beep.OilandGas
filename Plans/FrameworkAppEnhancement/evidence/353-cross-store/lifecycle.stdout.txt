@@ -1,0 +1,8 @@
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web.Auth.Tests\DrillingCompletionReportStateTests.cs(100,42): warning MUD0012: External access of 'Value' parameter state property is not allowed. Use GetState(x => x.Value) instead. (https://mudblazor.com/features/analyzers) [C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\PurchaseOwnership.csproj]
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web.Auth.Tests\DrillingCompletionReportStateTests.cs(113,37): warning xUnit2031: Do not use a Where clause to filter before calling Assert.Single. Use the overload of Assert.Single that accepts a filtering function. (https://xunit.net/xunit.analyzers/rules/xUnit2031) [C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\PurchaseOwnership.csproj]
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web.Auth.Tests\ReceiptStockScreenTests.cs(96,17): warning BL0005: Component parameter 'IntentId' should not be set outside of its component. [C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\PurchaseOwnership.csproj]
+  PurchaseOwnership -> C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\PurchaseOwnership.dll
+Test run for C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\PurchaseOwnership.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    20, Skipped:     0, Total:    20, Duration: 16 s - PurchaseOwnership.dll (net10.0)

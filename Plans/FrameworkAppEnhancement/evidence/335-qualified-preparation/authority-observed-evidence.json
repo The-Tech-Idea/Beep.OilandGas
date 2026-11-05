@@ -1,0 +1,172 @@
+{
+  "observed_at_utc": "2026-10-20T10:41:22.9377194Z",
+  "scope": "Paired current app authority and protected read-only qualified evidence requests; dirty local source checkpoint, not CI or full qualified return acceptance.",
+  "git": {
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "commit_or_push_performed": false
+  },
+  "sources": [
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "sha256": "6b7598f289f5a49ba6f60721058abb51226b016921d22dafc68ba3e71074f6a9"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.ReturnAcceptance.cs",
+      "sha256": "aa3ade9bfe17f55325c4362cc37cd016b724f0d921f3f6ae6dfeee0ba143ef2e"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.Closure.cs",
+      "sha256": "3f55ab430ef7050e7e55cb54639baf5d903b3297dcf603820b89aef19b343d07"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetEvidence.cs",
+      "sha256": "2c7901c71b56154d9f35bd6e5ee3a2bb28244836e4ded0bc9a0c7d70e7ad04ff"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceQualifiedAssetEvidenceReader.cs",
+      "sha256": "d18c54780ad3aea1526d3535fb4ca0d4102d52ab3c9304833de0dc4c043a0da9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "eb559a930d11912f54af4856242d0c55a783981ac1b58078247913720df5588d"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceHandoffHttpTests.cs",
+      "sha256": "00c5de0cec0140aabf1f0c54004a9a3ac7ee8014d5e63ac3c6580677c5fa2e83"
+    }
+  ],
+  "source_mapping": "Final hashes apply to paired guard, protected HTTP and handoff compatibility checks. Earlier instrumented/fusion failures are intermediate source versions whose exact source checkpoints were not archived; their logs remain historical diagnostics.",
+  "data_assembly": {
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "sha256": "ded3cd480b20b72ebbc3a992358526cc9a7af8a9f7b17a1ab48d978b7ce2e7b0",
+    "source": "Existing focused Data5 build; no Data source changed in this authority slice."
+  },
+  "focused_properties": [
+    "FocusedCompanyTests=true",
+    "FocusedDataAssemblyPath=<existing Data5 DLL>",
+    "BuildProjectReferences=false",
+    "GeneratePackageOnBuild=false",
+    "UseBeepDMSource=false"
+  ],
+  "project": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+  "checks": [
+    {
+      "name": "instrumented-isolated-baseline",
+      "filter": "FullyQualifiedName~QualifiedMaintenanceEvidenceHttpUsesCurrentAppGrantsNativeParentsAndOriginalReportWithoutWrites&DisplayName~False",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "2.3215 minutes",
+      "log": "oilgas-335-work-scope-http-profile.log",
+      "note": "Unchanged 100-second timeout; first diagnostic aggregation was overwritten by the subsequent test, so only observed top-stage totals are recorded here.",
+      "observed_authority_calls": 1358,
+      "observed_cumulative_authority_ms": 91421.01120000008,
+      "first_qualified_ms": 84605.3558
+    },
+    {
+      "name": "intermediate-fusion",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "1.9612 minutes",
+      "log": "oilgas-335-authority-fusion-http.log",
+      "profile": "oilgas-335-http-profile-fusion-false.json",
+      "note": "Same isolated filter and unchanged timeout; incomplete request, not a passing source gate."
+    },
+    {
+      "name": "paired-current-authority",
+      "filter": "FullyQualifiedName~ReturnEvidenceGuardRechecksBothBindingsAndCurrentAuthorityAfterNativeRead",
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "duration": "38.8079 seconds",
+      "log": "oilgas-335-authority-paired-guards.log",
+      "seam": "Actual app repository/company/profile/grant and native report owners; lifecycle facts owner is explicit."
+    },
+    {
+      "name": "protected-qualified-evidence",
+      "filter": "FullyQualifiedName~QualifiedMaintenanceEvidenceHttpUsesCurrentAppGrantsNativeParentsAndOriginalReportWithoutWrites",
+      "no_build": true,
+      "exit_code": 0,
+      "passed": 2,
+      "failed": 0,
+      "duration": "2.9898 minutes",
+      "log": "oilgas-335-authority-paired-http.log",
+      "profiles": [
+        "oilgas-335-http-profile-false.json",
+        "oilgas-335-http-profile-true.json"
+      ],
+      "complete_evidence_ms": [
+        77668.2216,
+        70940.8851
+      ],
+      "timeout_seconds": 100,
+      "seam": "Actual protected native read owners with prepared original report, seeded already-closed lifecycle facts, and prepared policy seed."
+    },
+    {
+      "name": "original-handoff-compatibility",
+      "filter": "FullyQualifiedName~ActualOriginalMaintenanceRecoveryHttp|FullyQualifiedName~ActualMaintenanceHandoffReviewAndStartUseOriginalNativeReceiptAndScopedAppAuthority",
+      "no_build": true,
+      "status": "failed",
+      "exit_code": 1,
+      "log": "oilgas-335-authority-handoff-compat.log",
+      "passed": 2,
+      "failed": 1,
+      "duration": "15.7030 minutes",
+      "failure_boundary": "ActualOriginalMaintenanceRecoveryHttp fails the initial POST /api/field/current/maintenance-handoffs/review at CompanyMaintenanceHandoffHttpTests.cs line 77, before choices/start/retry/recovery assertions. Same 100-second timeout.",
+      "passing_cases": [
+        "order-read-only",
+        "revoke-during-start"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "path": "oilgas-335-work-scope-http-profile.log",
+      "sha256": "0986926841e21df0233a66f9d5101e662a3f0641f251fa7ef193718a5cfecbdf"
+    },
+    {
+      "path": "oilgas-335-authority-fusion-http.log",
+      "sha256": "12849d219c4df985d11c9289f28a94cb32202c9294b38b4d22e2ee31777201a5"
+    },
+    {
+      "path": "oilgas-335-http-profile-fusion-false.json",
+      "sha256": "0168665f3c51f6785fbe01a9aef5a068d135360411f42bebe327c7514add83dc"
+    },
+    {
+      "path": "oilgas-335-authority-paired-guards.log",
+      "sha256": "a6cfc81bcfa51ca89f1339543f07ae41ab33ffca326cf11935cc1b141fe068ac"
+    },
+    {
+      "path": "oilgas-335-authority-paired-http.log",
+      "sha256": "86b742615cd75c890807035a3de7240fbf732f96987e31e1e07fbd5370f49701"
+    },
+    {
+      "path": "oilgas-335-http-profile-false.json",
+      "sha256": "f177a161e4b10370089b0df620a933d3e4ff441480dacbcb50afc1ba6a291783"
+    },
+    {
+      "path": "oilgas-335-http-profile-true.json",
+      "sha256": "334a311a3c393eea3d63f133804883bf81a8c78936a347dfd30cae27233f3d36"
+    },
+    {
+      "path": "oilgas-335-authority-handoff-compat.log",
+      "sha256": "71415fa2bc3e78be5ffa87af4e37342272e4da22590d7ce5a9fac6f47bb6909f"
+    }
+  ],
+  "limitations": [
+    "Stage durations overlap; this is not a production benchmark.",
+    "Interactive latency, concurrent load, browser/OIDC and actual provider acceptance remain open.",
+    "Actual native start/report/physical acceptance/closure/qualified-return HTTP remains open.",
+    "Original missing qualified work capture still blocks qualified return.",
+    "Existing 37/27 native and 82/6 UI checkpoints retain their documented source versions and explicit seams.",
+    "No native guard removed, cross-read authority cache, timeout increase, domain EF or handwritten SQL introduced.",
+    "No staging, commit or push; full goal/plan is active.",
+    "Separate original handoff/recovery compatibility is not passing: the positive scenario times out during initial review; subsequent recovery assertions were not reached."
+  ],
+  "all_processes_terminal": true,
+  "copied_runtime_data_assembly_matches": true,
+  "self_review": "Reviewed paired authority/selection boundaries, independent app-role checks, unchanged revision/body construction and diagnostics redaction. No independent review or full compatibility acceptance claimed.",
+  "next_investigation": "Isolate and measure actual initial handoff review, including native production intervention link/source and fresh app-authority work. Do not raise timeout, weaken assertions or infer a cause from this single failed scenario. No further run is active."
+}

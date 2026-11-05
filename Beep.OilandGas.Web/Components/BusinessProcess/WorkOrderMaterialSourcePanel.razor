@@ -1,0 +1,72 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Recorded work-order material source</MudText>
+        <MudTextField @bind-Value="_item" Label="Exact company inventory item" Required="true" Disabled="@_busy" />
+        <MudNumericField T="decimal?" @bind-Value="_quantity" Label="Explicit required quantity" Required="true" Disabled="@_busy" />
+        <MudTextField @bind-Value="_unit" Label="Explicit required unit" Required="true" Disabled="@_busy" />
+        <MudButton OnClick="ReviewAsync" Color="Color.Primary" Disabled="@(_busy || Task is null || !CanReview)">Review original order and inventory evidence</MudButton>
+        @if(_busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reviewing work-order material source" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_review is {} review)
+        {
+            <MudText>Company @review.Context.Company.BusinessAssociateId · FIELD @review.Query.Task.FieldId · Order @review.Query.Task.WorkOrderId</MudText>
+            <MudText>Assigned role: @review.WorkOrder.Stage.AssignedRole · Item: @review.Inventory.Item.INVENTORY_ITEM_ID / @review.Inventory.Item.ITEM_NAME</MudText>
+            <MudText>Required: @review.Query.RequiredQuantity @review.Query.QuantityUnit · Recorded on hand: @(review.Inventory.Item.QUANTITY_ON_HAND?.ToString() ?? "Not recorded") @(review.Inventory.Item.UNIT_OF_MEASURE ?? "Unit not recorded")</MudText>
+            <MudText>Warehouse: @(review.Inventory.Item.WAREHOUSE_ID ?? "Not recorded") · Location: @(review.Inventory.Item.LOCATION_ID ?? "Not recorded")</MudText>
+            <MudText Typo="Typo.caption">Inventory source UTC: @review.Inventory.RetrievedAtUtc.ToString("O") · Revision: @review.Inventory.Revision</MudText>
+            <MudText Typo="Typo.caption">Order/inspection revision: @review.WorkOrder.SnapshotRevision · PRODUCTION binding: @review.Context.Database.Fingerprint</MudText>
+            @foreach(var blocker in review.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            @if(review.Inventory.Transactions.Count==0){<MudText>No recorded inventory movement history.</MudText>}
+            else
+            {
+                <MudSimpleTable Dense="true">
+                    <thead><tr><th scope="col">Movement / type</th><th scope="col">Recorded quantity / UTC</th><th scope="col">Reference</th></tr></thead>
+                    <tbody>@foreach(var row in review.Inventory.Transactions){<tr><th scope="row">@row.INVENTORY_TRANSACTION_ID / @row.TRANSACTION_TYPE</th><td>@(row.QUANTITY?.ToString() ?? "Not recorded") / @row.TRANSACTION_DATE?.ToString("O")</td><td>@row.REFERENCE_NUMBER</td></tr>}</tbody>
+                </MudSimpleTable>
+            }
+        }
+        <MudAlert Severity="Severity.Info">Recorded on-hand stock does not establish material availability or allocation to this order. This read does not reserve, issue or consume stock and does not authorize permit approval or work execution.</MudAlert>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public CompanyMaintenanceReceivingQuery? Task {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    private string _key="",_item="",_unit="";
+    private decimal? _quantity;
+    private CompanyWorkOrderMaterialSourceReview? _review;
+    private string? _error;
+    private long _version;
+    private bool _busy,_disposed;
+    private bool CanReview=>Company.Selection?.Permissions.Contains("Inventory.View",StringComparer.Ordinal)==true;
+    protected override void OnInitialized(){Company.Changed+=Clear;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet(){var key=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision});if(key==_key)return;_key=key;Clear();}
+    private async System.Threading.Tasks.Task ReviewAsync()
+    {
+        if(_busy || _disposed)return;_review=null;_error=null;var generation=++_version;var snapshot=Company.Snapshot;var task=Task;_busy=true;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(task is null || string.IsNullOrWhiteSpace(SourceRevision) || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("The current resolved company account, standard roles, Inventory.View and original FIELD are required.");
+            var query=new CompanyWorkOrderMaterialSourceQuery(task,_item,_quantity??throw new ArgumentException("Enter an explicit required quantity."),_unit);query.Require();var result=await Workflows.ReviewWorkOrderMaterialSourceAsync(query);result.Require(selected.Scope,selected.UserId,query);
+            user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || generation!=_version || snapshot!=Company.Snapshot)return;
+            if(user.FindFirst("party_id")?.Value!=selected.UserId || !user.IsInRole(result.WorkOrder.Stage.AssignedRole) || !selected.Roles.Contains(result.WorkOrder.Stage.AssignedRole,StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=task.FieldId)throw new UnauthorizedAccessException("The original assigned account/role/FIELD changed during material review.");
+            if(!_disposed && generation==_version && snapshot==Company.Snapshot)_review=CompanyInventorySourceReview.Copy(result);
+        }
+        catch(Exception error){if(!_disposed && generation==_version && snapshot==Company.Snapshot)_error=Calls.Explain(error,"reviewing recorded work-order material source","The complete original material source could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private void Clear(){_version++;_review=null;_error=null;_item="";_unit="";_quantity=null;if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string _) => Clear();
+    private void AuthenticationChanged(System.Threading.Tasks.Task<AuthenticationState> _) => Clear();
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Clear;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Clear();}
+}

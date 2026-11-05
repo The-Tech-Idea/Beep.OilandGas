@@ -1,0 +1,28 @@
+{
+  "recorded_at": "2026-10-30T04:00:48.083186+00:00",
+  "before_sha256": "9a9a731245ced2769246cca5a817a77e1de0dff5043d98f39c34a2d8c5d3acac",
+  "after_sha256": "d169b3bf1b4bd163ced0847bf7ba68a6824f1d08e5ceb78a4ec2080d3451b07f",
+  "prior_bytes_preserved": true,
+  "change": "Inserted current Plan353 scope/evidence map immediately after original header; all prior bytes retained.",
+  "tests": "No runtime tests rerun for documentation-only tracker reconciliation.",
+  "checked_links": [
+    "Plans/FrameworkAppEnhancement/Implementation-353-HSE-Verification-and-Closure.md",
+    "Plans/FrameworkAppEnhancement/Company-Plan-Index.md",
+    "Plans/FrameworkAppEnhancement/Persona-09-HSE-and-Compliance.md",
+    "Plans/FrameworkAppEnhancement/evidence/353-correction-return/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-closure-phased-transport/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-live-authority/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-original-isolation/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-competing-final-approval/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-different-account-concurrency/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-landing-authority/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-reason-validation/observed-evidence.json",
+    "Plans/FrameworkAppEnhancement/evidence/353-rtl-reason-browser/observed-evidence.json"
+  ],
+  "scope": "Only newly inserted current Plan353 block and its explicit count-bearing evidence references; no historical tracker sweep or runtime test rerun.",
+  "current_files_sha256": {
+    "MASTER-TODO-TRACKER.md": "D169B3BF1B4BD163CED0847BF7BA68A6824F1D08E5CEB78A4EC2080D3451B07F",
+    "Plans\\FrameworkAppEnhancement\\Company-Plan-Index.md": "00A76169411EA03E954F6859A95CB5DEFDF809BB0928F118D2FC16E4AF26D4B5",
+    "Plans\\FrameworkAppEnhancement\\Implementation-353-HSE-Verification-and-Closure.md": "8CD4B022E3EC87BB870C5C29CFEF4EB2C111EE8F464FE9F3493D2B00BBBEEBFF"
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "plan": "Plan353 exact-case authority cost prerequisite to large-FIELD queue paging",
+  "date": "2026-10-30",
+  "status": "13 selected inputs passed",
+  "duration": "11 seconds",
+  "build": "24.63 seconds;664 existing/support/nullable warnings;0errors; project-reference builds disabled",
+  "sources": [
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs",
+      "sha256": "73ad9e64b43be6042c25217dd980672752f744407f38c230fd07e1f894ceba44"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyHseRowAccessTests.cs",
+      "sha256": "1d9ee10e57d7f0970ca22b6e4a74b29b0753088af0f40b8eac25b7ad11870de4"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyCorrectiveActionCommandTests.cs",
+      "sha256": "46f0a1aa6e170da104320473476ab7a3f1ef7f8c1d8e0538f86db2d4a3e5d2af"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyPPDMEvidenceReader.cs",
+      "sha256": "2ce6a549da8cca0f98114473934c73ca5cd5c32508ddc980d32185c48bcb2794"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj",
+      "sha256": "58c058598d41b39afe3ce0b0770e9f81de3f5aac9c1f9bf1fd02656e9ef187d6"
+    }
+  ],
+  "runtimeSha256": "e795ea92319abd809586cd0d9c6d6479fac8020233fb18fb8e1cfafb1bcebf72",
+  "cases": [
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionCommandTests.HseAuthorityUsesStoredPreferenceAndFreshBoundedNativeEvidence(scenario: \"stale-selection\")",
+      "outcome": "Passed",
+      "duration": "00:00:01.4168784"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionCommandTests.HseAuthorityUsesStoredPreferenceAndFreshBoundedNativeEvidence(scenario: \"incident\")",
+      "outcome": "Passed",
+      "duration": "00:00:02.1795633"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ExactIncidentAuthorityReadsOnlyItsOwnCaseAndRechecksCurrentField(scenario: \"unrelated-malformed\")",
+      "outcome": "Passed",
+      "duration": "00:00:03.5244467"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ExactIncidentAuthorityReadsOnlyItsOwnCaseAndRechecksCurrentField(scenario: \"unreviewed-restriction\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.5602324"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionCommandTests.HseAuthorityUsesStoredPreferenceAndFreshBoundedNativeEvidence(scenario: \"corrective\")",
+      "outcome": "Passed",
+      "duration": "00:00:03.6036416"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionCommandTests.HseAuthorityUsesStoredPreferenceAndFreshBoundedNativeEvidence(scenario: \"field-retired\")",
+      "outcome": "Passed",
+      "duration": "00:00:04.0765017"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ExactIncidentAuthorityReadsOnlyItsOwnCaseAndRechecksCurrentField(scenario: \"duplicate-primary\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.8106178"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyCorrectiveActionCommandTests.HseAuthorityUsesStoredPreferenceAndFreshBoundedNativeEvidence(scenario: \"permission-revoked\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.6481992"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ExactIncidentAuthorityReadsOnlyItsOwnCaseAndRechecksCurrentField(scenario: \"late-retirement\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.6024049"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ExactIncidentAuthorityReadsOnlyItsOwnCaseAndRechecksCurrentField(scenario: \"large-field\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.7090811"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ExactIncidentAuthorityReadsOnlyItsOwnCaseAndRechecksCurrentField(scenario: \"retired-field\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.5200948"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ExactIncidentAuthorityReadsOnlyItsOwnCaseAndRechecksCurrentField(scenario: \"foreign-primary\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.6191917"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.Complete_population_refuses_a_restriction_added_to_an_existing_case_during_final_inventory",
+      "outcome": "Passed",
+      "duration": "00:00:00.4295393"
+    }
+  ],
+  "change": [
+    "An explicit incident/FIELD review uses the exact incident as its candidate and reads every active primary association for that incident, including a conflicting foreign FIELD.",
+    "Only currently qualified FIELDs can admit that exact candidate; native FIELD source is snapshotted and checked again before release.",
+    "Current role/grant, database binding, header, restriction and participant proof checks stay in the existing owner. No cached authority or removed source-switch fence.",
+    "Unrelated FIELD cases are not queried for exact-case authority.300 unrelated components and a malformed unrelated ID do not affect the valid exact case.",
+    "The complete-population branch still enumerates/rechecks candidate inventory and restrictions. It cannot be called as a mixed exact-case/full-total shortcut."
+  ],
+  "verificationBoundary": [
+    "Actual policy/profile/company registry/native reader and existing command authority inputs; explicit recording/mock Beep datasource.",
+    "New7 cases require every HSE component provider query to contain exact INCIDENT_ID=local, with zero native writes.",
+    "Existing5 authority inputs preserve stored selection, current native evidence and denied stale/retired/revoked cases.",
+    "Existing complete-population restriction-change case still refuses.",
+    "No installed/live provider, full API/OIDC, browser, all-provider, concurrency or production latency proof.",
+    "No queue, permit, class/full suite or earlier closure journey ran."
+  ],
+  "pagingDiscovery": {
+    "contracts": [
+      "../BeepDM/DataManagementModelsStandard/DataBase/IBoundedPagedDataSource.cs",
+      "../BeepDM/DataManagementModelsStandard/DataBase/IBoundedSnapshotPagedDataSource.cs",
+      "../BeepDM/DataManagementModelsStandard/DataBase/PageRelatedFilter.cs"
+    ],
+    "providerSource": "../BeepDataSources/DataSourcesPlugins/RDBMSDataSource/PartialClasses/RDBSource/RDBSource.BoundedPage.cs",
+    "scope": "Source API discovery only; no claim that the currently installed connector exposes these optional interfaces.",
+    "nextRequirement": "Design producer predicates preserving full case restriction visibility before count/page; keep queue population/count bounds until that path is implemented and qualified."
+  },
+  "remaining": [
+    "Actual provider-backed queue paging;64 returned incident and4096 selected-action bounds remain.",
+    "Visibility before provider count/page must preserve restricted-case rules; raw FIELD paging is not an authorization substitute.",
+    "Configured provider/HTTP/OIDC/full production landing integration and large-FIELD performance acceptance.",
+    "Full approved roadmap/goal remains active; commit/push pending completion condition."
+  ],
+  "schema": "No schema, handwritten SQL, EF migration, compatibility fallback or second authorization/assignment owner."
+}

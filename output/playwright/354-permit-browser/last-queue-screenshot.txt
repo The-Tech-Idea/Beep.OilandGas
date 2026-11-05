@@ -1,0 +1,11 @@
+### Result
+- [Screenshot of element](output\playwright\354-permit-browser\final-queue-390.png)
+### Ran Playwright code
+```js
+// Screenshot element and save it as output\playwright\354-permit-browser\final-queue-390.png
+await page.getByText('Permit work queues Refresh').screenshot({
+  path: 'output\\playwright\\354-permit-browser\\final-queue-390.png',
+  scale: 'css',
+  type: 'png'
+});
+```

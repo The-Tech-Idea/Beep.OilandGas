@@ -14,7 +14,6 @@ using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdeaWeb.Diagnostics;
 
@@ -23,7 +22,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// Accounts receivable service for invoices, payments, and credit memos.
     /// </summary>
-    public class ARService : IARService
+    public partial class ARService : IARService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -100,6 +99,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", cn);
             var invoice = await repo.GetByIdAsync(invoiceId);
+            if(invoice is AR_INVOICE original)RequireUnownedReceivable(original);
             return invoice as AR_INVOICE;
         }
 
@@ -121,7 +121,9 @@ namespace Beep.OilandGas.Accounting.Services
                 filters.Add(new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = endDate.Value.ToString("yyyy-MM-dd") });
 
             var results = await repo.GetAsync(filters);
-            return results?.Cast<AR_INVOICE>().ToList() ?? new List<AR_INVOICE>();
+            var invoices=results?.Cast<AR_INVOICE>().ToList() ?? new List<AR_INVOICE>();
+            foreach(var invoice in invoices)RequireUnownedReceivable(invoice);
+            return invoices;
         }
 
         public async Task<AR_INVOICE> UpdateInvoiceAsync(UpdateARInvoiceRequest request, string userId, string cn = "PPDM39")
@@ -213,6 +215,7 @@ namespace Beep.OilandGas.Accounting.Services
             var payment = await paymentRepo.GetByIdAsync(paymentId) as AR_PAYMENT;
             if (payment == null)
                 throw RefusalException.NotFound($"Payment {paymentId} was not found.");
+            RequireUnownedPayment(payment);
 
             var invoice = await GetInvoiceAsync(invoiceId, cn);
             if (invoice == null)
@@ -250,6 +253,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(invoiceId))
                 throw new ArgumentNullException(nameof(invoiceId));
 
+            var original=await GetInvoiceAsync(invoiceId,cn);
+            if(original is null)throw new InvalidOperationException("The original legacy receivable parent is unavailable.");
+            RequireUnownedReceivable(original);
             var repo = await GetRepoAsync<AR_PAYMENT>("AR_PAYMENT", cn);
             var filters = new List<AppFilter>
             {
@@ -258,6 +264,7 @@ namespace Beep.OilandGas.Accounting.Services
             };
 
             var results = await repo.GetAsync(filters);
+            if(results is not null)foreach(var row in results.Cast<AR_PAYMENT>())RequireUnownedPayment(row);
             return results?.Cast<AR_PAYMENT>().ToList() ?? new List<AR_PAYMENT>();
         }
 
@@ -370,6 +377,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             var results = await repo.GetAsync(filters);
             var invoices = results?.Cast<AR_INVOICE>().ToList() ?? new List<AR_INVOICE>();
+            foreach(var invoice in invoices)RequireUnownedReceivable(invoice);
             var today = DateTime.UtcNow.Date;
 
             return invoices.Select(invoice =>
@@ -425,6 +433,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         public async Task<PaymentApplicationResult> ApplyPaymentToInvoicesAsync(PaymentApplicationRequest request, string userId, string cn = "PPDM39")
         {
+            RequireLegacyReceivableAccess();
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.PaymentId))
@@ -454,7 +463,7 @@ namespace Beep.OilandGas.Accounting.Services
                     _failures.ReportHandled(failure,
                         $"applying payment {request.PaymentId} to AR invoice {application.InvoiceId}",
                         "the application is listed in FailedInvoiceIds and the payment is not applied to that invoice; the other applications go on",
-                        failure is RefusalException ? FailureSeverity.Degraded : FailureSeverity.Error);
+                        FailureSeverity.Degraded);
                     result.FailedApplications++;
                     result.FailedInvoiceIds.Add(application.InvoiceId);
                 }
@@ -471,6 +480,7 @@ namespace Beep.OilandGas.Accounting.Services
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             });
 
+            if(existing is not null)foreach(var row in existing.Cast<AR_INVOICE>())RequireUnownedReceivable(row);
             var count = existing?.Cast<AR_INVOICE>().Count() ?? 0;
             return $"AR-{DateTime.UtcNow:yyyyMMdd}-{(count + 1):D4}";
         }
@@ -504,6 +514,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? cn)
         {
+            RequireLegacyReceivableAccess();
             var connection = _resolveConnection == null ? cn ?? ConnectionName : await _resolveConnection();
             if (string.IsNullOrWhiteSpace(connection))
                 throw new InvalidOperationException("A PRODUCTION database binding is required.");
@@ -525,7 +536,22 @@ namespace Beep.OilandGas.Accounting.Services
             };
 
             var results = await repo.GetAsync(filters);
+            if(results is not null)foreach(var row in results.Cast<AR_INVOICE>())RequireUnownedReceivable(row);
             return results != null && results.Any();
+        }
+
+        private static void RequireUnownedReceivable(AR_INVOICE row)
+        {
+            if(row.OWNER_TENANT_ID is not null || row.OWNER_COMPANY_BA_ID is not null || row.FIELD_ID is not null || row.SOURCE_INVOICE_ID is not null || row.CURRENCY_CODE is not null || row.PREPARATION_WORKFLOW_JSON is not null || row.REVIEW_WORKFLOW_JSON is not null)
+                throw new InvalidOperationException("Company-owned receivable evidence cannot be read or mutated through a companyless legacy path.");
+        }
+        private void RequireLegacyReceivableAccess()
+        {if(_resolveConnection is not null)throw new InvalidOperationException("The selected-company receivable owner requires the original reviewed source workflow.");}
+
+        private static void RequireUnownedPayment(AR_PAYMENT row)
+        {
+            if(row.OWNER_TENANT_ID is not null || row.OWNER_COMPANY_BA_ID is not null || row.BOOK_ID is not null || row.FIELD_ID is not null || row.CURRENCY_CODE is not null || row.PAYER_BA_ID is not null || row.EXTERNAL_REFERENCE is not null || row.EVIDENCE_REFERENCE is not null || row.STATUS is not null || row.SOURCE_REVISION is not null || row.PREPARATION_WORKFLOW_JSON is not null || row.REVIEW_WORKFLOW_JSON is not null || row.SOURCE==TheTechIdea.Data.OilGas.CompanySalesPaymentProof.NativeSource)
+                throw new InvalidOperationException("Company-owned payment evidence cannot be read or allocated through a companyless legacy path.");
         }
 
         private string GetAccountId(string key, string fallback)

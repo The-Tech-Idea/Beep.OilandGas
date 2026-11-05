@@ -1,0 +1,135 @@
+{
+  "plan": "Plan353 filtered native-read prerequisite to provider queue paging",
+  "date": "2026-10-30",
+  "status": "10 selected cases pass with current compiled shared core",
+  "duration": "12 seconds",
+  "sources": [
+    {
+      "path": "TheTechIdea.Data/OilGas/IPPDMRowAccessPolicy.cs",
+      "sha256": "92c910d10360968322b3d08615c5286639ab5fd2ffa4f4a5fbf712473d38f461"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs",
+      "sha256": "3e14b4d042510fbcf500ecad3bfd02cd4fd7f9ff8d5f78bf7ef942b78237b21d"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyPPDMRowAccessPolicy.cs",
+      "sha256": "46a688f28a73d59dd4df749f871afddf68981b724b70f7e174a4dce8a5b92929"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyHseRowAccessTests.cs",
+      "sha256": "dc79ec417c3f84f367b122a8773097e011ed16d6b3600f0e9dd690311df81ac7"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HSEIncidentService.cs",
+      "sha256": "7a0f3bc4cddc4be9ebdce90f8f902cc182bee99a82f798ccaddd2cb1be0093c4"
+    }
+  ],
+  "runtime": [
+    {
+      "file": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.PPDM39\\bin\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "8a1e830c728079ce338975574bc78549406f506f9e82a861ca8d73d26a7217b6"
+    },
+    {
+      "file": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "8a1e830c728079ce338975574bc78549406f506f9e82a861ca8d73d26a7217b6"
+    },
+    {
+      "file": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "2fef282712dffc7b06a099a1345209da4b367f42fc294ea679a6e1196c393340"
+    },
+    {
+      "file": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+      "sha256": "1c03d072bbfd27fca58f1646eddeec7faf504cfa25a47cde359381fbcc090fa0"
+    }
+  ],
+  "cases": [
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"foreign\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.5463124"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"foreign-provider-row\")",
+      "outcome": "Passed",
+      "duration": "00:00:01.2252412"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.Complete_population_refuses_a_restriction_added_to_an_existing_case_during_final_inventory",
+      "outcome": "Passed",
+      "duration": "00:00:00.2498798"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"contradictory-filter\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.3542445"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"late-retirement\")",
+      "outcome": "Passed",
+      "duration": "00:00:01.1802857"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyPPDMRowAccessTests.A_direct_pool_grant_uses_the_metadata_proven_single_pool_key",
+      "outcome": "Passed",
+      "duration": "00:00:02.2602887"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"duplicate-primary\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.4161660"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"large-field\")",
+      "outcome": "Passed",
+      "duration": "00:00:04.9202362"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"restricted\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.6999765"
+    },
+    {
+      "name": "Beep.OilandGas.Repository.Tests.CompanyHseRowAccessTests.ActualIncidentDetailReadCarriesExactFilterThroughEveryPolicyCheck(scenario: \"unrelated-malformed\")",
+      "outcome": "Passed",
+      "duration": "00:00:02.6680164"
+    }
+  ],
+  "builds": {
+    "Data": "3.39 seconds,1 missing analyzer warning,0errors",
+    "sharedCore": "1.97 seconds,1 warning,0errors, GeneratePackageOnBuild=false",
+    "focused": "17.62 seconds,664 existing/support/nullable warnings,0errors",
+    "projectReferences": "disabled on each target; no unrelated dependency build"
+  },
+  "change": [
+    "TheTechIdea.Data owns the filter-aware read policy capability; no additional company policy or state owner.",
+    "Shared Beep repository supplies independent copies of admitted caller filters for initial/current grant review and both provider/output validation passes.",
+    "Current company policy bounds exact INCIDENT_ID queries and validation to that incident, with existing FIELD/source/restriction/current grants retained.",
+    "Contradictory exact identities refuse before native record reads; foreign provider rows refuse before scoped payload validation.",
+    "No exact incident filter means the existing unfiltered authority path; non-HSE entities retain their existing predicates and row checks.",
+    "No source-switch fence, equality check, complete-population inventory guard, transaction or authorization owner removed."
+  ],
+  "proof": [
+    "Actual HSEIncidentService.GetByIdAsync, current compiled PPDMGenericRepository, actual API policy and existing company/profile/identity fixture execute with a controlled recording Beep datasource.",
+    "Valid native incident record reads work with300 unrelated FIELD components, even a malformed unrelated component. No HSE component query may enumerate FIELD-only records.",
+    "Foreign incident returns no record; duplicate primary, unreviewed restriction, FIELD retirement during detail retrieval, foreign provider payload and conflicting IDs refuse. Zero native writes.",
+    "Existing complete-population restriction-change refusal remains green.",
+    "One exact POOL case covers the affected shared repository non-HSE branch; it is mapped to the core contract change, not a new feature sweep."
+  ],
+  "failedGate": {
+    "artifacts": [
+      "initial-stale-core-oilgas-353-filtered-read-test.log",
+      "initial-stale-core-filtered-native-read.trx"
+    ],
+    "result": "8 failed,2 passed against old shared core DLL; no accepted completion claim.",
+    "correction": "Build the changed shared core target without dependency builds/package generation, rebuild the focused target, require matching core hashes, then rerun exactly the same10 cases. No assertion or production guard was weakened."
+  },
+  "remaining": [
+    "Restriction-safe provider count/page integration is not implemented by this change.",
+    "Project/corrective-action lookups still require their own bounded query path; this is native incident-record read proof, not the complete routed detail/queue journey for a large FIELD.",
+    "Assigned queue64-incident/4096-action bounds retained; server paging/large FIELD latency remains open.",
+    "Actual provider/HTTP/OIDC/production layout and broader persona acceptance.",
+    "Full approved roadmap/goal remains active; no completion, commit or push."
+  ],
+  "schema": "No schema, handwritten SQL, new business EF migration, compatibility state or parallel authorization owner."
+}

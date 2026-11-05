@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Reload assigned responsibility' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:49208/
+### Snapshot
+- [Snapshot](output\playwright\351-assignment-browser\artifacts\page-2026-10-26T16-17-53-143Z.yml)

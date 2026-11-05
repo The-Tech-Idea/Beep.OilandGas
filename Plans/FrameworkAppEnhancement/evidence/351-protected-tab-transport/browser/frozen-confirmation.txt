@@ -1,0 +1,106 @@
+### Page
+- Page URL: http://127.0.0.1:65142/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e44]
+    - paragraph [ref=e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e46]:
+      - button "Use read-only unmapped profile" [ref=e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e49] [cursor=pointer]
+      - button "Switch other company" [ref=e51] [cursor=pointer]
+      - button "Switch other account" [ref=e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e57] [cursor=pointer]
+      - button "Show actual start recovery" [ref=e59] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e61] [cursor=pointer]
+  - generic [ref=e63]:
+    - heading "Observed drilling progress" [level=1] [ref=e64]
+    - group [ref=e65]:
+      - link "Original execution" [ref=e66] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-26B6303D53DBA89774319391018BC23D1E63011141808431AE02F467F4CE923F
+      - button "Reload original report history" [ref=e68] [cursor=pointer]
+    - generic [ref=e70]:
+      - heading "Recorded execution and report history" [level=2] [ref=e71]
+      - paragraph [ref=e72]: Original drilling program · Version 1 · Operation drilling-execution-C9872A5B77C6CD9AD52BF5E1C99F2A989FBAC392C12ABABB015FF2A5C732AE75
+      - paragraph [ref=e73]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=e74]: 0 recorded observed reports · History checked 2026-10-26 13:01:35Z UTC
+      - paragraph [ref=e75]: No observed reports are recorded for this exact execution.
+      - button "Inspect current report basis" [ref=e76] [cursor=pointer]
+    - generic [ref=e85]:
+      - heading "Report observed drilling period" [level=2] [ref=e86]
+      - paragraph [ref=e87]: Next report 1 · Previous report None · Workspace DRILLING_RECORDER
+      - generic [ref=e90]:
+        - combobox "Current report recorder role" [ref=e211] [cursor=pointer]: ConfiguredExecutionRecorder
+        - generic: Current report recorder role*
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - textbox "Observed period start UTC*" [ref=e100]: 2026-10-26T13:01:00.3676704Z
+          - generic: Observed period start UTC*
+        - generic [ref=e101]: Enter Z or +00:00. The period must begin at or after actual spud and the prior report end.
+      - generic [ref=e104]:
+        - generic [ref=e105]:
+          - textbox "Observed period end UTC*" [ref=e107]: 2026-10-26T13:01:01.3765709Z
+          - generic: Observed period end UTC*
+        - generic [ref=e108]: Completed observed period, up to 24 hours. No midnight or local-time default.
+      - generic [ref=e112]:
+        - generic [ref=e113]:
+          - spinbutton "Observed hole MD at start*" [ref=e114]: "100"
+          - generic [ref=e115]:
+            - button "Increment" [ref=e116] [cursor=pointer]
+            - button "Decrement" [ref=e121] [cursor=pointer]
+        - generic: Observed hole MD at start*
+      - generic [ref=e127]:
+        - generic [ref=e128]:
+          - spinbutton "Observed hole MD at end*" [ref=e129]: "125"
+          - generic [ref=e130]:
+            - button "Increment" [ref=e131] [cursor=pointer]
+            - button "Decrement" [ref=e136] [cursor=pointer]
+        - generic: Observed hole MD at end*
+      - generic [ref=e143]:
+        - combobox "Observed MD unit" [ref=e221] [cursor=pointer]: m
+        - generic: Observed MD unit*
+      - generic [ref=e150]:
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - spinbutton "Observed rotating hours (optional)" [ref=e153]
+            - generic [ref=e154]:
+              - button "Increment" [ref=e155] [cursor=pointer]
+              - button "Decrement" [ref=e160] [cursor=pointer]
+          - generic: Observed rotating hours (optional)
+        - generic [ref=e165]: Leave unknown values empty. Zero means observed zero.
+      - generic [ref=e169]:
+        - generic [ref=e170]:
+          - spinbutton "Observed NPT hours (optional)" [ref=e171]
+          - generic [ref=e172]:
+            - button "Increment" [ref=e173] [cursor=pointer]
+            - button "Decrement" [ref=e178] [cursor=pointer]
+        - generic: Observed NPT hours (optional)
+      - generic [ref=e184]:
+        - textbox "NPT reason (required when NPT is positive)" [ref=e186]
+        - generic: NPT reason (required when NPT is positive)
+      - generic [ref=e187]:
+        - generic [ref=e188]:
+          - textbox "Report source provenance*" [ref=e190]: Browser source log 471
+          - generic: Report source provenance*
+        - generic [ref=e191]: Identify the observed site log, report or measurement reference.
+      - generic [ref=e195]:
+        - textbox "Observed operations summary*" [ref=e197]: Observed browser recovery report
+        - generic: Observed operations summary*
+      - generic [ref=e199]:
+        - textbox "Next period plan (optional)" [ref=e201]
+        - generic: Next period plan (optional)
+      - button "Review observed drilling report" [active] [ref=e202] [cursor=pointer]
+    - generic [ref=e224]:
+      - heading "Confirm original observed report" [level=2] [ref=e225]
+      - paragraph [ref=e226]: Company company · Well recorded-well/one · Report 1
+      - paragraph [ref=e227]: 2026-10-26 13:01:00Z to 2026-10-26 13:01:01Z UTC · Observed MD 100 to 125 m
+      - paragraph [ref=e228]: Recorder execution-recorder · Role ConfiguredExecutionRecorder · Workspace DRILLING_RECORDER · Rotating Unknown / NPT Unknown hours
+      - paragraph [ref=e229]: "Source: Browser source log 471"
+      - paragraph [ref=e230]: Observed browser recovery report
+      - button "Confirm and retain observed report" [ref=e231] [cursor=pointer]
+      - button "Cancel report confirmation" [ref=e233] [cursor=pointer]
+    - generic [ref=e78]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

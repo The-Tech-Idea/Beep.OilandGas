@@ -1,0 +1,85 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IAccountingServiceClient Accounting
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-4">
+    <MudText Typo="Typo.h5">Recorded sales invoices</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable") · FIELD: @(_state?.Review?.FieldId ?? "Unavailable")</MudText>
+    <MudText>Amounts are recorded invoice proposals grouped by currency and native status. Receivable posting, disputed balances, payments and settlement are unavailable in this queue.</MudText>
+    <MudButton OnClick="Reload" Disabled="@_busy">Reload selected FIELD invoices</MudButton>
+    <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Assigned accounting work</MudButton>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Loading recorded sales invoices" />}
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Select a company to review recorded sales invoices.</MudAlert>}
+    else if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    else if(_state?.NeedsField==true){<MudAlert Severity="Severity.Info">Choose a FIELD using the existing field selector.</MudAlert>}
+    else if(_state?.Review is {} queue)
+    {
+        <MudText Typo="Typo.caption">Source: owned native invoices, original command journals and preparation receipts · Revision: @queue.Revision</MudText>
+        @if(queue.Rows.Count==0){<MudAlert Severity="Severity.Info">No owned sales invoices were recorded for this selected FIELD.</MudAlert>}
+        else
+        {
+            <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+                <MudButton OnClick='@(()=>Select(null,null))' Variant="Variant.Outlined">All recorded invoices (@queue.Rows.Count)</MudButton>
+                @foreach(var total in queue.Totals)
+                {<MudButton OnClick='@(()=>Select(total.Currency,total.Status))' Variant="Variant.Outlined">@total.Currency · @total.Status · @total.Count · Proposed total @Amount(total.ProposedTotal)</MudButton>}
+            </MudStack>
+            <MudText>Currency: @(_currency ?? "All recorded currencies") · Native status: @(_status ?? "All recorded statuses")</MudText>
+            <MudTable T="CompanySalesInvoiceQueueRow" Items="Visible(queue)" Dense="true" Hover="true" aria-label="Recorded company FIELD sales invoices">
+                <HeaderContent><MudTh>Invoice / buyer</MudTh><MudTh>Native status</MudTh><MudTh>Company calendar dates</MudTh><MudTh>Proposed amount</MudTh><MudTh>Recorded review</MudTh><MudTh>Source evidence</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Invoice / buyer">@context.Number · @context.InvoiceId · @context.BuyerId</MudTd>
+                    <MudTd DataLabel="Native status">@context.Status</MudTd>
+                    <MudTd DataLabel="Company calendar dates">Invoice @context.InvoiceDate.ToString("yyyy-MM-dd") · Due @context.DueDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd DataLabel="Proposed amount">@Amount(context.ProposedTotal) @context.Currency</MudTd>
+                    <MudTd DataLabel="Recorded review">Maker @context.MakerId · Reviewer @(context.ReviewerId ?? "Not recorded") · UTC @(context.ReviewedUtc?.ToString("O") ?? "Not recorded")</MudTd>
+                    <MudTd DataLabel="Source evidence">
+                        <MudButton Href='@("/accounting/sales-invoices?ticket="+Uri.EscapeDataString(context.TicketId))'>Billing and receiving evidence</MudButton>
+                        <MudButton Href='@("/accounting/sales-receivables?invoice="+Uri.EscapeDataString(context.InvoiceId))'>Receivable status and preparation</MudButton>
+                        @if(Company.Selection?.Permissions.Contains("Accounting.ReviewSalesInvoice",StringComparer.Ordinal)==true)
+                        {<MudButton Href='@("/accounting/sales-invoice-review?invoice="+Uri.EscapeDataString(context.InvoiceId))'>Independent review evidence</MudButton>}
+                        <MudText Typo="Typo.caption">Original preparation: @context.PreparationRevision · Native revision: @context.NativeRevision</MudText>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+</MudPaper>
+@code {
+    private CompanySalesInvoiceQueueState? _state;
+    private bool _busy,_disposed,_reloadRequested;
+    private int _contextVersion;
+    private string? _error,_currency,_status;
+    private static string Amount(decimal value)=>value.ToString(System.Globalization.CultureInfo.CurrentCulture);
+    private IEnumerable<CompanySalesInvoiceQueueRow> Visible(CompanySalesInvoiceQueueReview queue)=>queue.Rows.Where(row=>(_currency is null || row.Currency==_currency) && (_status is null || row.Status==_status));
+    private void Select(string? currency,string? status){if(_state?.Review is not {} queue || currency is not null && !queue.Totals.Any(total=>total.Currency==currency && total.Status==status))return;_currency=currency;_status=status;}
+    protected override async Task OnInitializedAsync()
+    {_state=new(Company);Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;await Reload();}
+    private async Task RequireAuthority()
+    {
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;var selected=Company.Selection;var subject=user.FindFirstValue("sub");var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ?? subject;
+        if(selected is null || user.Identity?.IsAuthenticated!=true || actor!=selected.UserId || subject is not null && subject!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal))throw new UnauthorizedAccessException("Current company account, app roles and Accounting.View are required.");
+    }
+    private async Task Reload()
+    {
+        if(_disposed)return;if(_busy){_reloadRequested=true;return;}_busy=true;
+        try{do{
+            _reloadRequested=false;_error=null;_currency=null;_status=null;_state!.Clear();var snapshot=Company.Snapshot;var version=_contextVersion;
+            if(snapshot.Selection is null)continue;
+            try{await RequireAuthority();if(_disposed || snapshot!=Company.Snapshot || version!=_contextVersion)continue;
+                await _state.LoadAsync(Fields.GetCurrentFieldIdAsync,Accounting.GetCompanySalesInvoiceQueueAsync);
+                if(!_disposed && snapshot==Company.Snapshot && version==_contextVersion)await RequireAuthority();}
+            catch{if(!_disposed && snapshot==Company.Snapshot && version==_contextVersion){_state.Clear();_error="The complete owned invoice queue could not be confirmed. Review current company/account, FIELD access and native invoice evidence, then reload.";}}
+        }while(_reloadRequested && !_disposed);}finally{_busy=false;}
+    }
+    private void ContextChanged(){++_contextVersion;_state?.Clear();_error=null;_currency=null;_status=null;if(!_disposed)_=InvokeAsync(async()=>{await Reload();if(!_disposed)StateHasChanged();});}
+    private void FieldChanged(string field)=>ContextChanged();
+    private void AuthenticationChanged(Task<AuthenticationState> state)=>ContextChanged();
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;_state?.Dispose();}
+}

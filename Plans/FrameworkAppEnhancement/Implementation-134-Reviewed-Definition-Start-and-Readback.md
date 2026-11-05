@@ -1,0 +1,29 @@
+# Implementation 134: Reviewed definition start and readback
+
+## Persona screen and source workflow
+
+The accountant landing's configured definition link now leads to an updated existing `/ppdm39/process/definitions/{Id}` screen. It shows the selected company, original FIELD, actual definition/source type/version/description, recorded creation date and ordered configured steps with their recorded responsibilities and approval requirements. Missing dates/versions remain unavailable. Guessed PPDM table links were removed. Configured responsibilities describe the definition; they do not grant app roles, certify approvals or establish financial outcomes.
+
+The definition state captures company/FIELD/version, rejects malformed or ambiguous steps, freezes the displayed definition and clears old content on context changes or failed reload. Late responses cannot populate a new context. Inactive or empty definitions remain read-only. The existing page uses standard ASP.NET authorization, typed API clients and MudBlazor; it adds no direct database access, custom theme, CSS or JavaScript.
+
+Starting requires an explicit recorded source ID with its type fixed from the reviewed definition. Before retaining a start attempt, the page checks current original FIELD and source WRITE access through the existing access SDK and verifies that context, dialog and input have not changed. The request carries original FIELD and a SHA256 revision of the serialized configured definition. The request class was moved from its existing Models source to TheTechIdea.Data under its existing namespace; no second business request owner was introduced.
+
+The API's existing start endpoint independently checks original FIELD, active definition identity/type/step structure and content revision, then current FIELD/source WRITE access. It rereads the definition, repeats the access checks and checks FIELD again before calling the existing process service. The actual ProcessDefinitionStartReview helper is covered by focused checks. These checks do not provide atomic provider concurrency or new role assignment. Existing app-owned standard roles and independent endpoint/resource checks remain authoritative; planner/accountant execution duty mapping still requires completion.
+
+The page refuses null or mismatched response/readback identities, source, FIELD, definition or original actor. It retrieves the returned instance through the existing read endpoint and navigates to its encoded route only after confirmation in the original context. A retained unresolved attempt prevents automatic repeat for the same actor/company/FIELD/definition/source during the page session, including switching company away and back. This is not durable idempotency, a command receipt or proof of exclusive command causality. Refreshing or leaving the page loses this protection; durable recovery remains required.
+
+The existing PPDM definition mapper no longer fabricates a creation timestamp with DateTime.UtcNow when ROW_CREATED_DATE is absent. The complete mapper/controller/client/parent page and native host remain source-only in this slice; their full compilation and execution are not claimed. The revision checks compare serialized content, not an atomic native row version. No migration, handwritten SQL, new business EF lane, live provider write or deployment occurred.
+
+## Focused verification
+
+Actual current TheTechIdea.Data sources build with zero warnings/errors (1.65 seconds). Existing isolated actual-source gates use current Data sources and actual cached process-model dependencies; they do not manufacture production projects for missing dependencies.
+
+- `Scripts/Test-ProcessInstanceDetailState.ps1`: **94 passed**, zero failed/skipped, terminal exit 0, 0.9156 seconds. Eighteen new definition cases cover frozen original context, malformed definitions, exact response/readback identities, unresolved-repeat refusal, company away/back, late invalidation, failed reload and inactive/empty read-only definitions. Log: `%TEMP%/oilgas-definition-state-134.log`.
+- `Scripts/Test-ProcessTransitionReviews.ps1`: **60 passed**, zero failed/skipped, terminal exit 0, 1.0212 seconds. Fourteen new actual API helper cases cover exact review and original FIELD, missing/wrong/inactive/changed definitions, entity type/identity, malformed or duplicate steps, missing roles/name and invalid revision. Rehashing malformed content cannot bypass structural checks. Prior transition/catalog cases remain green. Log: `%TEMP%/oilgas-definition-api-134.log`.
+- `Scripts/Test-JournalSourceRendering.ps1`: **16 passed**, zero failed/skipped, terminal exit 0, 1.0814 seconds. Three new actual definition-review component cases cover recorded responsibilities/approval display, encoded source text, unavailable provenance, empty read-only and unconfirmed source. Prior finance/journal/maintenance component cases remain green. Actual MudBlazor uses a test-only popover/JS boundary. Log: `%TEMP%/oilgas-definition-render-134.log`.
+
+Whitespace validation passes. These are helper/state/static Razor checks, not complete parent-page event wiring, DI, actual typed-client HTTP, full controller/mapper compilation, OIDC, browser, real provider, transactional concurrency or durable outcome verification.
+
+## Remaining persona handoffs
+
+Verify accountant landing -> configured definition -> source selection -> recorded instance -> independent approval/post -> readback -> matching dashboard drill-down through the actual host/client/API/browser/provider. Complete execution duty assignments, source-specific initiation constraints, durable command identity/reconciliation, invoice/payment/matching, currency/book/period rules and close/lock/reopen. Extend verified original-context handoffs across the other company personas and multinational requirements. No persona, phase or overall goal closes.

@@ -1,0 +1,73 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject IUnifiedTaskInboxService Inbox
+@inject IPersonaContextService Personas
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 mb-4" Elevation="1">
+    <MudText Typo="Typo.h5">Assigned work</MudText>
+    <MudText Class="mb-3">Open the recorded process to review its source, evidence and permitted next action.</MudText>
+    <MudButton OnClick="Reload" Disabled="@_busy" StartIcon="@Icons.Material.Filled.Refresh">Reload assigned work</MudButton>
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading assigned work" /> }
+    else if (_error is not null) { <MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert> }
+    else if (Company.Selection is null) { <MudAlert Severity="Severity.Info">Select a company to open its assigned work.</MudAlert> }
+    else if (Personas.CurrentPersona is null) { <MudAlert Severity="Severity.Info">Choose an eligible workspace on the company landing page.</MudAlert><MudButton Href="/landing">Choose workspace</MudButton> }
+    else if (_state is not null && !_state.MatchesWorkspace(WorkspaceRoutes))
+    {
+        <MudAlert Severity="Severity.Info">The selected workspace is mapped to another landing page. Choose an eligible workspace for this screen on the company landing page.</MudAlert>
+        <MudButton Href="/landing">Choose company workspace</MudButton>
+    }
+    else
+    {
+        <PersonaAssignedWorkPanel Review="_state" WorkspaceName="@Personas.CurrentPersona?.Name" />
+    }
+
+</MudPaper>
+@if(ShowDeliveryRecovery){<DeliverySavedWorkQueue />}
+@if(ShowRecordedMaintenance){<MaintenanceRecordedWorkQueue @key="Personas.CurrentPersona?.Code" />}
+@code {
+    [Parameter] public IReadOnlyCollection<string>? WorkspaceRoutes { get; set; }
+    private PersonaTaskInboxState? _state;
+    private bool _busy, _disposed, _reloadRequested;
+    private string? _error;
+    private bool ShowDeliveryRecovery=>Company.Selection is {} selected && selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) && Personas.CurrentProfile?.UserId==selected.UserId &&
+        Personas.CurrentPersona is {} persona && Personas.CurrentProfile.PersonaCode==persona.Code && _state?.MatchesWorkspace(WorkspaceRoutes)==true &&
+        PersonaNavigation.HomeRoute(persona.DefaultRoute) is "/accounting/revenue-workbench" or "/accounting/dashboard" or "/ppdm39/accounting";
+    private bool ShowRecordedMaintenance=>Company.Selection is {} selected && selected.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal) && Personas.CurrentProfile?.UserId==selected.UserId && Personas.CurrentPersona is {} persona && Personas.CurrentProfile.PersonaCode==persona.Code && _state?.MatchesWorkspace(WorkspaceRoutes)==true && PersonaNavigation.HomeRoute(persona.DefaultRoute) is "/ppdm39/workorder" or "/field/dashboard" or "/production/operations" or "/production/dashboard" or "/production/engineer-workspace" or "/lifecycle/production/dashboard";
+    protected override async Task OnInitializedAsync()
+    {
+        _state=new(Inbox,Company,Personas); _state.Start(); _state.Changed+=Render;
+        Company.Changed+=ContextChanged; Personas.Changed+=ContextChanged;
+        await Reload();
+    }
+    private async Task Reload()
+    {
+        if (_disposed) return;
+        if (_busy) { _reloadRequested=true; return; }
+        _busy=true;
+        try
+        {
+            do
+            {
+                _reloadRequested=false; _error=null; var snapshot=Company.Snapshot;
+                try { await _state!.LoadAsync(WorkspaceRoutes); }
+                catch (Exception ex)
+                {
+                    var sentence=Calls.Explain(ex,"loading company assigned work","Assigned work could not be confirmed. Reload before continuing");
+                    if (!_disposed && snapshot==Company.Snapshot) _error=sentence;
+                }
+            } while (_reloadRequested && !_disposed);
+        }
+        finally { _busy=false; }
+    }
+    private void ContextChanged() { if (!_disposed) _=InvokeAsync(async () => { await Reload(); if (!_disposed) StateHasChanged(); }); }
+    private void Render() { if (!_disposed) _=InvokeAsync(StateHasChanged); }
+    public void Dispose()
+    {
+        _disposed=true; Company.Changed-=ContextChanged; Personas.Changed-=ContextChanged;
+        if (_state is not null) { _state.Changed-=Render; _state.Dispose(); }
+    }
+}

@@ -1,0 +1,6 @@
+### Result
+[]
+### Ran Playwright code
+```js
+await page.evaluate('() => Object.keys(sessionStorage).filter(key=>key.endsWith(".drilling-report")||key.endsWith(".drilling-execution"))');
+```

@@ -1,79 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data.Lease;
-using Microsoft.Extensions.Logging;
+using TheTechIdea.Data.OilGas;
 
-namespace Beep.OilandGas.Web.Services
+namespace Beep.OilandGas.Web.Services;
+
+// Web presentation adapter; the SDK owns the HTTP contract and response validation.
+public sealed class LeaseServiceClient(IBeepOilandGasApp app) : ILeaseServiceClient
 {
-    public class LeaseServiceClient : ILeaseServiceClient
-    {
-        private readonly ApiClient _apiClient;
-        private readonly ILogger<LeaseServiceClient> _logger;
-
-        public LeaseServiceClient(ApiClient apiClient, ILogger<LeaseServiceClient> logger)
-        {
-            _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
-        public async Task<LeaseSummary> EvaluateLeaseAsync(string leaseId)
-        {
-            try
-            {
-                var result = await _apiClient.GetAsync<LeaseSummary>(
-                    $"/api/leaseacquisition/evaluate/{Uri.EscapeDataString(leaseId)}");
-                return result ?? throw new InvalidOperationException($"Failed to evaluate lease {leaseId}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error evaluating lease {LeaseId}", leaseId);
-                throw;
-            }
-        }
-
-        public async Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null)
-        {
-            var endpoint = BuildEndpoint("/api/leaseacquisition/available", filters);
-            var result = await _apiClient.GetAsync<List<LeaseSummary>>(endpoint);
-            return result ?? new List<LeaseSummary>();
-        }
-
-        public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest)
-        {
-            try
-            {
-                var endpoint = "/api/leaseacquisition";
-                var response = await _apiClient.PostAsync<CreateLeaseAcquisition, dynamic>(endpoint, leaseRequest);
-                return response?.leaseId?.ToString() ?? throw new InvalidOperationException("Failed to create lease acquisition");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating lease acquisition");
-                throw;
-            }
-        }
-
-        public async Task UpdateLeaseStatusAsync(string leaseId, string status)
-        {
-            var endpoint = $"/api/leaseacquisition/{Uri.EscapeDataString(leaseId)}/status";
-            await _apiClient.PutAsync(endpoint, new { Status = status });
-        }
-
-        private static string BuildEndpoint(string endpoint, Dictionary<string, string>? filters)
-        {
-            if (filters == null || filters.Count == 0)
-            {
-                return endpoint;
-            }
-
-            var queryParams = new List<string>();
-            foreach (var filter in filters)
-            {
-                queryParams.Add($"{Uri.EscapeDataString(filter.Key)}={Uri.EscapeDataString(filter.Value)}");
-            }
-
-            return endpoint + "?" + string.Join("&", queryParams);
-        }
-    }
+    public Task<LeaseSummary> EvaluateLeaseAsync(string leaseId, string fieldId, CancellationToken cancellationToken = default) => app.Lease.EvaluateLeaseAsync(leaseId, fieldId, cancellationToken);
+    public Task<List<LeaseSummary>> GetAvailableLeasesAsync(Dictionary<string, string>? filters = null, CancellationToken cancellationToken = default) => app.Lease.GetAvailableLeasesAsync(filters, cancellationToken);
+    public Task<LeaseCreationContext> GetCreationContextAsync(string fieldId) => app.Lease.GetCreationContextAsync(fieldId);
+    public Task<LeaseCreationReceipt> ReconcileLeaseCreationAsync(CreateLeaseAcquisition request) => app.Lease.ReconcileLeaseCreationAsync(request);
+    public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition request) => (await app.Lease.CreateLeaseAcquisitionAsync(request)).LeaseId!;
+    public Task UpdateLeaseStatusAsync(string leaseId, string status, string fieldId) => app.Lease.UpdateLeaseStatusAsync(leaseId, status, fieldId);
 }

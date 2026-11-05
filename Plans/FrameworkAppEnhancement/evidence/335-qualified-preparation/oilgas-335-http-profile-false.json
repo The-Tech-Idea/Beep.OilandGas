@@ -1,0 +1,96 @@
+{
+  "RecordedPolicy": false,
+  "Stages": [
+    {
+      "Stage": "maintenance.asset_return.authority",
+      "Count": 2237,
+      "Milliseconds": 68760.22879999984
+    },
+    {
+      "Stage": "maintenance.asset_return.closure",
+      "Count": 2,
+      "Milliseconds": 62.4608
+    },
+    {
+      "Stage": "maintenance.asset_return.evidence",
+      "Count": 1,
+      "Milliseconds": 77668.2216
+    },
+    {
+      "Stage": "maintenance.asset_return.qualified",
+      "Count": 2,
+      "Milliseconds": 75864.6843
+    },
+    {
+      "Stage": "maintenance.asset_return.report",
+      "Count": 2,
+      "Milliseconds": 380.28099999999995
+    },
+    {
+      "Stage": "maintenance.qualified.evidence",
+      "Count": 2,
+      "Milliseconds": 75862.0192
+    },
+    {
+      "Stage": "maintenance.qualified.identity",
+      "Count": 2,
+      "Milliseconds": 3595.5483
+    },
+    {
+      "Stage": "maintenance.qualified.licensing",
+      "Count": 2,
+      "Milliseconds": 33404.1437
+    },
+    {
+      "Stage": "maintenance.qualified.operating",
+      "Count": 2,
+      "Milliseconds": 25451.7438
+    }
+  ],
+  "Reads": {
+    "R_ENT_TYPE": 60,
+    "R_ENT_COMPONENT_TYPE": 60,
+    "R_ACCESS_CONDITION": 60,
+    "ENT_COMPONENT": 60,
+    "ENTITLEMENT": 60,
+    "R_ENT_ACCESS_TYPE": 60,
+    "FIELD": 10,
+    "WORK_ORDER_COMPONENT": 3,
+    "WORK_ORDER": 3,
+    "WORK_ORDER_EXECUTION_SUBMISSION": 4,
+    "EQUIPMENT": 192,
+    "FACILITY_EQUIPMENT": 60,
+    "FACILITY": 68,
+    "FACILITY_STATUS": 4,
+    "EQUIPMENT_STATUS": 4,
+    "R_TIMEZONE": 4,
+    "R_FAC_STATUS_TYPE": 4,
+    "R_FACILITY_STATUS": 4,
+    "R_EQUIP_STATUS_TYPE": 4,
+    "R_EQUIP_STATUS": 4,
+    "FACILITY_LICENSE": 4,
+    "BUSINESS_ASSOCIATE": 8,
+    "FACILITY_LIC_TYPE": 4,
+    "FACILITY_LIC_AREA": 4,
+    "AREA": 4,
+    "R_AREA_TYPE": 4,
+    "FACILITY_LIC_STATUS": 4,
+    "R_LIC_STATUS_TYPE": 4,
+    "R_LICENSE_STATUS": 4,
+    "FACILITY_LIC_COND": 4,
+    "PPDM_UNIT_OF_MEASURE": 4,
+    "PPDM_QUANTITY": 4,
+    "PPDM_MEASUREMENT_SYSTEM": 4,
+    "R_PPDM_UOM_USAGE": 4,
+    "RESTRICTION": 4,
+    "REST_CLASS": 4,
+    "R_REST_TYPE": 4,
+    "R_REST_DURATION": 4,
+    "R_FAC_LIC_COND": 4,
+    "R_FAC_LIC_COND_CODE": 4,
+    "R_FAC_LIC_DUE_CONDITION": 4,
+    "FACILITY_LIC_VIOLATION": 4,
+    "WORK_ORDER_MAINTENANCE_RETURN_POLICY": 4,
+    "R_SOURCE": 40
+  }
+}

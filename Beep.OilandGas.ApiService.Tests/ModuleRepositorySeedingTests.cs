@@ -1,11 +1,13 @@
 using System.Data;
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers;
+using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.PPDM39.DataManagement.Core.ModuleSetup;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +19,7 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
+using BeepDataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 using TheTechIdea.Data.OilGas;
 using Xunit;
 
@@ -147,9 +150,14 @@ public class ModuleRepositorySeedingTests
             case "file": connection.FileName = "new-database.db"; break;
             case "driver": connection.DriverName = "new-driver"; break;
         }
-        var after = await fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db");
-        Assert.NotEqual(before, after);
-        Assert.Matches("^[A-F0-9]{64}$", after);
+        if (setting is "host" or "database" or "connection-string")
+            await Refusals.RefusedAsync(RefusalKind.Conflict, () => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
+        else
+        {
+            var after = await fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db");
+            Assert.NotEqual(before, after);
+            Assert.Matches("^[A-F0-9]{64}$", after);
+        }
         fixture.Editor.Verify(x => x.OpenDataSource(It.IsAny<string>()), Times.Never);
     }
 
@@ -159,12 +167,13 @@ public class ModuleRepositorySeedingTests
         using var fixture = new Fixture();
         var connection = fixture.Connections[0];
         connection.ParameterList = new() { ["a"] = "one", ["b"] = "two" };
-        var before = await fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db");
+        var before = MigrationConnectionTarget.Fingerprint(connection);
         connection.Favourite = !connection.Favourite;
         connection.ParameterList = new() { ["b"] = "two", ["a"] = "one" };
-        Assert.Equal(before, await fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
+        Assert.Equal(before, MigrationConnectionTarget.Fingerprint(connection));
         connection.ParameterList["a"] = "changed";
-        Assert.NotEqual(before, await fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
+        Assert.NotEqual(before, MigrationConnectionTarget.Fingerprint(connection));
+        await Refusals.RefusedAsync(RefusalKind.Invalid, () => fixture.Resolver.GetMigrationBindingFingerprintAsync(["PRODUCTION"], "module-db"));
     }
 
     [Fact]
@@ -295,29 +304,31 @@ public class ModuleRepositorySeedingTests
         private readonly TestContext db;
         public Mock<IDMEEditor> Editor { get; } = new(MockBehavior.Strict);
         public Mock<IDataSource> Source { get; } = new(MockBehavior.Strict);
-        public ConnectionProperties ActiveConnection { get; } = new() { ConnectionName = "module-db" };
+        public ConnectionProperties ActiveConnection { get; } = new() { ConnectionName = "module-db", DatabaseType = BeepDataSourceType.SqlServer, Host = "server", Database = "production" };
         public Mock<IModuleSetup> Module { get; } = new(MockBehavior.Strict);
         public Mock<IModuleSetup> Other { get; } = new(MockBehavior.Strict);
         public Mock<IPPDM39SchemaMigrationService> Migration { get; } = new(MockBehavior.Strict);
         public RecordingFailureReporter Failures { get; } = new();
-        public List<ConnectionProperties> Connections { get; } = [new() { ConnectionName = "module-db" }];
+        public List<ConnectionProperties> Connections { get; } = [new() { ConnectionName = "module-db", DatabaseType = BeepDataSourceType.SqlServer, Host = "server", Database = "production" }];
         public ModuleRepositoryController Controller { get; }
         public Beep.OilandGas.ApiService.Services.ModuleConnectionResolver Resolver { get; }
 
         public Fixture()
         {
             ActiveConnection.GuidID = Connections[0].GuidID;
+            var config = new Mock<IConfigEditor>();
+            config.SetupGet(x => x.DataConnections).Returns(Connections);
+            Editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
             connection.Open();
             db = new TestContext(new DbContextOptionsBuilder<TestContext>().UseSqlite(connection).Options);
             db.Database.EnsureCreated();
-            db.ModuleDatabases.Add(new() { ModuleId = "PRODUCTION", ConnectionName = "module-db", ConcurrencyStamp = "version" });
+            db.Add(new AppTenant { TenantId = "A", Name = "A" });
+            db.Add(new AppModuleConnection { TenantId = "A", ConnectionKey = "MODULE-DB", AssignedByUserId = "local-user", PhysicalTargetKey = ModuleDatabaseTarget.Key(Editor.Object, Connections[0]) });
+            db.ModuleDatabases.Add(new() { TenantId = "A", ModuleId = "PRODUCTION", ConnectionName = "module-db", ConnectionKey = "MODULE-DB", ConcurrencyStamp = "version" });
             db.SaveChanges();
             Module.SetupGet(x => x.ModuleId).Returns("PRODUCTION");
             Module.SetupGet(x => x.EntityTypes).Returns([typeof(Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION)]);
             Other.SetupGet(x => x.ModuleId).Returns("EXPLORATION");
-            var config = new Mock<IConfigEditor>();
-            config.SetupGet(x => x.DataConnections).Returns(Connections);
-            Editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
             Editor.Setup(x => x.OpenDataSource("module-db")).Returns(ConnectionState.Open);
             var creator = new ClassCreator(Editor.Object);
             Editor.SetupGet(x => x.classCreator).Returns(creator);
@@ -329,8 +340,10 @@ public class ModuleRepositorySeedingTests
             Source.Setup(x => x.Openconnection()).Returns(ConnectionState.Open);
             Source.Setup(x => x.GetEntityStructure(It.IsAny<EntityStructure>(), true))
                 .Returns(() => creator.ConvertToEntityStructure(typeof(Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION)));
-            Controller = new(db, Editor.Object, [Module.Object, Other.Object], Migration.Object, Failures);
-            Resolver = new(db, Editor.Object);
+            var tenant = new RepositoryTenantContext();
+            tenant.SelectTenant("A");
+            Controller = new(db, Editor.Object, [Module.Object, Other.Object], Migration.Object, Failures, new(db, Editor.Object), tenant);
+            Resolver = new(db, Editor.Object, tenant);
             Controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "local-user")], "repository"))

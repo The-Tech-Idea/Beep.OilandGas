@@ -1,0 +1,40 @@
+### Result
+{"status":"pass","observations":[{"stage":"initial","marker":"faa0dbf6f5b24e4fa08a08881ea8cfd9","origin":1793312696780.9,"metadata":{"state":"PENDING_CLOSE_OUT","attempts":0,"writes":0,"sourceReads":0,"incidentReads":6,"genericActionReads":0,"recorded":false}},{"stage":"mismatch","url":"http://127.0.0.1:52261/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-other","snapshot":"Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nExact workflow query Mismatched workflow query Invalid workflow query\nCould not confirm incident detail for the current company and FIELD.\nRELOAD INCIDENT"},{"stage":"restored","url":"http://127.0.0.1:52261/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original","metadata":{"state":"PENDING_CLOSE_OUT","attempts":0,"writes":0,"sourceReads":0,"incidentReads":8,"genericActionReads":0,"recorded":false}},{"stage":"invalid","url":"http://127.0.0.1:52261/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=%20invalid%20workflow","marker":"faa0dbf6f5b24e4fa08a08881ea8cfd9","origin":1793312696780.9,"metadata":{"state":"PENDING_CLOSE_OUT","attempts":0,"writes":0,"sourceReads":0,"incidentReads":8,"genericActionReads":0,"recorded":false}}]}
+### Ran Playwright code
+```js
+await (async (page) => {
+ await page.goto('http://127.0.0.1:52261/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original');
+ await page.locator('[data-query-ready=true]').waitFor();
+ const observations=[];
+ const marker=await page.locator('[data-query-circuit]').getAttribute('data-query-circuit');
+ const origin=await page.evaluate(()=>performance.timeOrigin);
+ const header=page.getByRole('heading',{name:'INJURY — Recorded assigned incident',exact:true});
+ await header.waitFor();
+ const initial=await (await page.request.get(new URL('/fixture/metadata',page.url()).href)).json();
+ observations.push({stage:'initial',marker,origin,metadata:initial});
+ await page.getByRole('button',{name:'Mismatched workflow query',exact:true}).click();
+ await page.getByText('Could not confirm incident detail for the current company and FIELD.',{exact:true}).waitFor();
+ if(await header.count()) throw Error('Mismatched workflow retained incident content');
+ if(await page.getByRole('heading',{name:'Lifecycle approval and incident closure',exact:true}).count()) throw Error('Mismatched workflow retained closure component');
+ observations.push({stage:'mismatch',url:page.url(),snapshot:await page.locator('body').innerText()});
+ await page.getByRole('button',{name:'Exact workflow query',exact:true}).click();
+ await header.waitFor();
+ const beforeInvalid=await (await page.request.get(new URL('/fixture/metadata',page.url()).href)).json();
+ observations.push({stage:'restored',url:page.url(),metadata:beforeInvalid});
+ await page.getByRole('button',{name:'Invalid workflow query',exact:true}).click();
+ await page.getByText('Could not confirm incident detail for the current company and FIELD.',{exact:true}).waitFor();
+ if(await header.count()) throw Error('Invalid workflow retained incident');
+ const afterInvalid=await (await page.request.get(new URL('/fixture/metadata',page.url()).href)).json();
+ if(afterInvalid.incidentReads!==beforeInvalid.incidentReads) throw Error('Invalid identity performed incident reads');
+ if(afterInvalid.writes!==0||afterInvalid.attempts!==0||afterInvalid.genericActionReads!==0) throw Error('Query navigation caused command effect');
+ const finalMarker=await page.locator('[data-query-circuit]').getAttribute('data-query-circuit');
+ const finalOrigin=await page.evaluate(()=>performance.timeOrigin);
+ if(marker!==finalMarker||origin!==finalOrigin) throw Error('Query changes reloaded the page or wrapper');
+ observations.push({stage:'invalid',url:page.url(),marker:finalMarker,origin:finalOrigin,metadata:afterInvalid});
+ return {status:'pass',observations};
+})(page);
+```
+### Page
+- Page URL: http://127.0.0.1:52261/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=%20invalid%20workflow
+### Events
+- New console entries: output\playwright\353-assigned-incident-browser\artifacts\console-2026-10-29T22-21-20-757Z.log#L180-L181

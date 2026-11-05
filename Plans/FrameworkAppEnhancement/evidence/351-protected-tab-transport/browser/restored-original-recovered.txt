@@ -1,0 +1,34 @@
+### Page
+- Page URL: http://127.0.0.1:65142/
+### Snapshot
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e44]
+    - paragraph [ref=f1e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e46]:
+      - button "Use read-only unmapped profile" [ref=f1e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e49] [cursor=pointer]
+      - button "Switch other company" [ref=f1e51] [cursor=pointer]
+      - button "Switch other account" [ref=f1e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e57] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f1e59] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e61] [cursor=pointer]
+    - status [ref=f1e84]: Exact original start retained in its own protected tab key.
+  - generic [ref=f1e119]:
+    - heading "Observed drilling progress" [level=1] [ref=f1e120]
+    - group [ref=f1e121]:
+      - link "Original execution" [ref=f1e122] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-26B6303D53DBA89774319391018BC23D1E63011141808431AE02F467F4CE923F
+      - button "Reload original report history" [ref=f1e124] [cursor=pointer]
+    - status [ref=f1e641]:
+      - generic [ref=f1e642]: The exact original observed report was confirmed recorded. Reload its history to inspect progress.
+    - generic [ref=f1e647]:
+      - heading "Original report outcome" [level=2] [ref=f1e648]
+      - paragraph [ref=f1e649]: Recorded report drilling-report-A50DEEF50BCC83A5EAA2DA9C605243391672FB5BE051441E0FA75E2DA51BAAEA · Number 2 · RECORDED
+      - paragraph [ref=f1e650]: Observed MD 125 to 150 m · Recorder execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER
+      - paragraph [ref=f1e651]: Restored encrypted log 473
+      - paragraph [ref=f1e652]: Corruption must preserve unavailable evidence
+    - generic [ref=f1e133]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

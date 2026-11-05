@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.PPDM39.Repositories;
+
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.ProductionAccounting.Constants;
@@ -17,7 +17,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// Authorization workflow service for accounting transactions (AFE approvals).
     /// <c>AFE.STATUS</c> uses <see cref="AfeStatusCodes"/> (seeded <c>AFE_STATUS</c>).
     /// </summary>
-    public class AuthorizationWorkflowService : IAuthorizationWorkflowService
+    public partial class AuthorizationWorkflowService : IAuthorizationWorkflowService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -68,6 +68,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (afe == null)
                 throw new ProductionAccountingException($"AFE not found: {afeId}");
 
+            if ((afe.WORK_ORDER_BUDGET_JSON is not null || afe.DEVELOPMENT_BUDGET_JSON is not null || afe.FDP_BASELINE_ID is not null))
+                throw new InvalidOperationException("Owned company AFE budget decisions require independent review of the original scope, book and amount.");
             afe.STATUS = AfeStatusCodes.Approved;
             afe.APPROVAL_DATE = approvalDate;
             afe.ROW_CHANGED_BY = userId;

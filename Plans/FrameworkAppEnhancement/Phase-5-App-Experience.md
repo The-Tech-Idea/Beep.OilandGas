@@ -1,5 +1,7 @@
 # Phase 5: coherent oil and gas application experience
 
+Persona-first delivery: [company persona data workflows](Company-Persona-Data-Workflows.md) and 13 detailed persona plans now define the execution view: company/role landing -> daily queue -> source/detail -> permitted action -> next-role handoff -> recorded outcome -> KPI drill-down. Existing CA/FG owners remain; prioritize missing backend behavior needed by these visible journeys.
+
 Dependencies: FG-10 through FG-13 and the corresponding data/calculation/workflow APIs. Responsible areas: Web, Client, external ThemeBranding and BeepDiA integration. Findings: R06, R08.
 
 | Task | Deliverable | Acceptance |

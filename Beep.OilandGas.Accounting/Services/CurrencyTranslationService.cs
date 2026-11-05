@@ -7,10 +7,11 @@ using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
+
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Accounting.Services
 {
@@ -166,7 +167,9 @@ namespace Beep.OilandGas.Accounting.Services
             };
 
             var results = await repo.GetAsync(filters);
-            return results?.Cast<FX_RATE>()
+            var rows=results?.ToArray() ??throw RefusalException.Conflict("The complete recorded FX query is unavailable.");
+            if(rows.Any(row=>row is not FX_RATE || CompanyFxRateProof.IsCompanyMarked((FX_RATE)row)))throw RefusalException.Conflict("Company rates require the recorded book, precision and original company source; the global translation path cannot lend them.");
+            return rows.Cast<FX_RATE>()
                 .OrderByDescending(r => r.RATE_DATE)
                 .FirstOrDefault();
         }

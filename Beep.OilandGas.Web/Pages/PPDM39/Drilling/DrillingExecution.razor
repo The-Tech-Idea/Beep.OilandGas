@@ -1,0 +1,78 @@
+@page "/drilling/program-execution"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+<PageTitle>Approved program drilling execution</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Approved program drilling execution</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton><MudButton Href="/ppdm39/operations/drillingoperations" Variant="Variant.Outlined">Saved programs</MudButton><MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload original execution outcome</MudButton></MudStack>
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming original drilling execution" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(_state?.Confirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
+    @if(_state?.Pending is {} pending)
+    {<MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">@_state.PendingTitle</MudText><MudAlert Severity="@(_state.Busy || _state.PendingTabCopyConfirmed ? Severity.Info : Severity.Warning)" role="status">@_state.PendingExplanation</MudAlert><MudText>@pending.Basis.Source.Program.PROGRAM_NAME · Actual spud @pending.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC · Original recorder @pending.Basis.Scope().ActorUserId</MudText><MudText>Company @pending.Basis.Scope().Company.BusinessAssociateId · FIELD @pending.Basis.Scope().FieldId · Well @pending.Basis.Source.Basis.Well.Uwi</MudText><MudButton OnClick="_state.RecoverAsync" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined">Recover original execution start</MudButton></MudPaper>}
+    else if(_state?.RetainedReviewId is {} other){<MudAlert Severity="Severity.Warning">Recover the retained execution start before preparing another.</MudAlert><MudButton Href="@("/drilling/program-execution?reviewId="+Uri.EscapeDataString(other))">Open retained execution start</MudButton>}
+    @if(_state?.Pending is not null && _state.Receipt?.Recorded is null)
+    {
+        <MudButton OnClick="_state.InspectConflictAsync" Disabled="@(!_state.CanInspectConflict)" Variant="Variant.Outlined">Inspect a different recorded execution</MudButton>
+        <MudText Typo="Typo.caption">Use this when original recovery reports that another execution owns the program. Inspection preserves this tab's original and never retries a write.</MudText>
+    }
+    @if(_state?.Conflict is {} conflict)
+    {
+        var competing=DrillingExecutionStart.FromRecord(conflict.Competing);
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Different recorded execution requires your review</MudText>
+            <MudText>This original @conflict.OriginalOperationId was confirmed unrecorded. Another exact start owns this approved program.</MudText>
+            <MudText>Company @competing.Basis.Scope().Company.BusinessAssociateId · FIELD @competing.Basis.Scope().FieldId · Well @competing.Basis.Source.Basis.Well.Uwi</MudText>
+            <MudText>Recorded operation @conflict.Competing.DRILLING_OPERATION_ID · Recorder @conflict.Competing.ROW_CREATED_BY · Role @conflict.Competing.RECORDER_ROLE · Actual spud @competing.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            <MudText Class="development-draft-description">@competing.Rationale</MudText>
+            <MudText>Conflict checked @conflict.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            @if(_state.Pending is not null)
+            {
+                <MudAlert Severity="Severity.Warning">Review this exact recorded start before clearing your original. Confirmation rechecks both records. It changes only the retained input in this tab.</MudAlert>
+                <MudButton OnClick="_state.AcknowledgeConflictAsync" Disabled="@(!_state.CanAcknowledgeConflict)" Variant="Variant.Outlined">Keep recorded execution and clear my unrecorded original</MudButton>
+            }
+        </MudPaper>
+    }
+    @if(_state?.Receipt is {} receipt)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Original execution start outcome</MudText><MudText>Outcome checked @receipt.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            @if(receipt.Recorded is {} recorded){var input=DrillingExecutionStart.FromRecord(recorded);<MudText>Recorded operation @recorded.DRILLING_OPERATION_ID · @recorded.STATUS</MudText><MudText>Company @input.Basis.Scope().Company.BusinessAssociateId · FIELD @input.Basis.Scope().FieldId · Well @input.Basis.Source.Basis.Well.Uwi · Program @input.Basis.Source.Program.PROGRAM_NAME version @input.Basis.Source.Program.PROGRAM_VERSION</MudText><MudText>Actual reported spud @input.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC · Recorder @recorded.ROW_CREATED_BY · Role @recorded.RECORDER_ROLE · Workspace @recorded.RECORDER_PERSONA_CODE</MudText><MudText Class="development-draft-description">@input.Rationale</MudText>}
+            else{<MudText>The original execution start was confirmed absent.</MudText>}
+        </MudPaper>
+    }
+    @if(_state?.Status is {} status)
+    {
+        var source=status.Basis;var program=source.Source.Program;var scope=source.Scope();
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Exact independently approved program</MudText><MudText>@program.PROGRAM_NAME · Version @program.PROGRAM_VERSION · Source status @program.PROGRAM_STATUS</MudText><MudText>Company @scope.Company.TenantId / @scope.Company.BusinessAssociateId · Reader @scope.ActorUserId · Original FIELD @scope.FieldId · Well @source.Source.Basis.Well.Uwi</MudText><MudText>Planned MD @program.PLANNED_MEASURED_DEPTH @program.DEPTH_OUOM · TVD @program.PLANNED_TRUE_VERTICAL_DEPTH @program.DEPTH_OUOM</MudText><MudText>Approved AFE @program.AFE_NUMBER · @program.AFE_COST?.ToString(CultureInfo.InvariantCulture) @program.AFE_CURRENCY · FDP @program.FDP_BASELINE_ID</MudText><MudText>Program review @source.ReviewInstanceId · @source.Approvals.Count recorded independent approvals · Final approval @source.Approvals[^1].AtUtc?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText></MudPaper>
+        @if(status.Recorded is {} recorded)
+        {var input=DrillingExecutionStart.FromRecord(recorded);<MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Recorded drilling execution</MudText><MudText>Operation @recorded.DRILLING_OPERATION_ID · @recorded.STATUS</MudText><MudText>Actual reported spud @input.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText><MudText>Recorded by @recorded.ROW_CREATED_BY · Role @recorded.RECORDER_ROLE · Workspace @recorded.RECORDER_PERSONA_CODE · @recorded.ROW_CREATED_DATE?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText><MudText Class="development-draft-description">@input.Rationale</MudText>@if(Company.Selection?.Permissions.Contains("Drilling.ViewDailyReports",StringComparer.Ordinal)==true){<MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(source.ReviewInstanceId))" Variant="Variant.Outlined" Class="my-3">Open observed drilling progress</MudButton><MudButton Href="@("/drilling/program-execution/assignment?reviewId="+Uri.EscapeDataString(source.ReviewInstanceId))" Variant="Variant.Outlined" Class="my-3">Review reporting responsibility</MudButton>}</MudPaper>}
+        else{<MudText>No execution start is recorded for this exact company and approved program.</MudText>@if(_state.CanInspect){<MudButton OnClick="_state.InspectAsync" Variant="Variant.Outlined">Inspect actual execution start basis</MudButton>}else{<MudAlert Severity="Severity.Info">Current execution create/manage permissions, configured role, mapped workspace and original FIELD write access are required to record a start.</MudAlert>}}
+    }
+    @if(_state?.Basis is {} basis)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Report actual execution start</MudText><MudSelect T="string" Label="Current execution recorder role" @bind-Value="role" Disabled="@(!_state.CanPrepare)" Required="true">@foreach(var item in basis.RecorderRoles){<MudSelectItem T="string" Value="@item">@item</MudSelectItem>}</MudSelect><MudText>Workspace @basis.PersonaCode</MudText><MudTextField T="string" Label="Actual spud UTC" @bind-Value="spud" Required="true" Disabled="@(!_state.CanPrepare)" HelperText="Enter the observed timestamp with Z or +00:00. Planned dates are not actual events." /><MudTextField T="string" Label="Execution start rationale" @bind-Value="rationale" Lines="3" MaxLength="1600" Required="true" Disabled="@(!_state.CanPrepare)" /><MudButton OnClick="Prepare" Disabled="@(!_state.CanPrepare)" Variant="Variant.Outlined" Class="my-3">Review actual execution start</MudButton></MudPaper>
+    }
+    @if(_state?.Prepared is {} prepared)
+    {<MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Confirm original execution start</MudText><MudText>@prepared.Basis.Source.Program.PROGRAM_NAME · Version @prepared.Basis.Source.Program.PROGRAM_VERSION · Actual spud @prepared.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText><MudText>Company @prepared.Basis.Scope().Company.BusinessAssociateId · Recorder @prepared.Basis.Scope().ActorUserId · Role @prepared.RecorderRole · Workspace @prepared.Basis.PersonaCode</MudText><MudText Class="development-draft-description">@prepared.Rationale</MudText><MudButton OnClick="_state.SubmitAsync" Disabled="@_state.Busy" Variant="Variant.Filled" Color="Color.Primary">Confirm and retain execution start</MudButton><MudButton OnClick="_state.Cancel" Disabled="@_state.Busy">Cancel start confirmation</MudButton></MudPaper>}
+    @if(_state?.Busy!=true && _state?.Error is null && _state?.Status is null && _state?.Receipt is null && _state?.Conflict is null && _state?.RetainedReviewId is null){<MudAlert Severity="Severity.Info">Choose a company with drilling, workflow, planning and financial view access, then open the exact recorded program execution link.</MudAlert>}
+    <MudAlert Severity="Severity.Info" Class="my-3">A recorded execution start is separate from WELL state, financial actuals, drilling completion, construction acceptance and production handover.</MudAlert>
+</MudContainer>
+@code{
+    [Parameter,SupplyParameterFromQuery(Name="reviewId")]public string? ReviewId{get;set;}
+    private DrillingExecutionState? _state;private bool disposed,interactive;private string role="",spud="",rationale="";
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
+    private Task Reload(){role="";spud="";rationale="";return _state!.LoadAsync(ReviewId);}
+    private void Prepare()=>_state!.Prepare(role,spud,rationale);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

@@ -1,0 +1,61 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "status": "Selected app reason-validation requirement passed; overall goal remains active.",
+  "recorded_at": "2026-10-30T03:11:28.851815+00:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "Pre-existing dirty implementation; this slice changes the active closure component and adds focused component tests, no domain/schema change.",
+  "change": "All three reason forms validate the trimmed20..2000 bound and disallowed control characters before retention/transport. MudBlazor Error/ErrorText and instance-unique ErrorId expose field-specific aria-invalid/aria-describedby; editing clears error. Valid multiline Unicode reasons preserve existing protected-original/uncertain-response behavior.",
+  "test": {
+    "method": "Beep.OilandGas.Web.Auth.Tests.HseClosureReasonValidationTests.ClosureReasonsValidateBeforeRetentionAndTransport",
+    "inputs": [
+      "approval",
+      "correction",
+      "resolution"
+    ],
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 1.5164,
+    "distinct_inputs": 3,
+    "not_additive": "Earlier same3 cases passed before explicit error association was added. Only final3 inputs count here.",
+    "mapping": "Each flow submits19 chars,2001 chars and embedded tab: visible inline error, correct aria-invalid and aria-describedby target, zero mutation calls, no new retained command, no unconfirmed claim. Edit clears error. Valid Arabic/English multiline reason sends exactly once after retaining exact reason; controlled lost reply leaves original retained and reports uncertainty. Native resolution also preserves original closure approval."
+  },
+  "build": {
+    "seconds": 1.52,
+    "errors": 0,
+    "warnings": "Existing Microsoft.Extensions.DependencyModel assembly version unification in support references.",
+    "scope": "Minimal isolated Razor/bUnit project source-links only active component, new3-case file and current PermissionConstants. Existing support interfaces/context and current Data binaries; no project-reference builds."
+  },
+  "construction": [
+    "The old all-purpose source-linked harness build failed on unrelated permit page types; no test method ran. No missing permit/other projects repaired.",
+    "Minimal harness references prior support assembly for existing interfaces/context; current component source is compiled locally and wins over old support type. Current canonical Data and PermissionConstants source are explicitly referenced.",
+    "Authentication, FIELD responses, intent persistence and transport outcomes are controlled mocks. Actual MudBlazor textareas, change events, submit buttons and error association render through bUnit.",
+    "Only the exact new method selected after reading master and Plan353 immediately before each test command. No provider, permit, full-class or full-suite test executions."
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.Web/Components/Workflow/HseClosureWorkflow.razor": "B511DA64FF162A8BCEC5B195F04A0C4DC14E8100AAA31DAA0E9ADE96D7E63AA4",
+    "Beep.OilandGas.Web.Auth.Tests/HseClosureReasonValidationTests.cs": "68C6F7AE0533410BEFCA6F0D0658A25669C05ED4FB0C09E8EC0034E2BC456507",
+    "Beep.OilandGas.Models/Data/Security/PermissionConstants.cs": "0750B42A4005FCB779C1804D37AA88DD92850F37B6F7D72CE627B98591C40064"
+  },
+  "runtime_sha256": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-focused\\bin\\Debug\\net10.0\\HseReasons.dll": "35F08FCB42B8F4E5D95A8AFE1E068B851AEC6C10D2B69727B4B1C2001975C1C8",
+    "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll": "E3D394C50B556E982380A1A8A0C4BA06420A7FCCF9372B61379E9AB05BF9D40C",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\bin\\Debug\\net10.0\\PurchaseOwnership.dll": "C850F9EA4A9DD99CF57AB7E5EE93A1226C650A3D998567985667011235300AB7"
+  },
+  "harness_files": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-focused\\HseReasons.csproj": "233D15398FFC1DFEA13E959DBF10DE983AB6609310DED2B8D6E618979CAF0B03",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-focused\\_Imports.razor": "8DEED7A05E35239ED5AEF5AA55EF0888AF1EEEC9EF3257E9DBCC2C05E8FC4BA9"
+  },
+  "logs": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-focused-build.log": "EB22C1643FF1E442412C7C9DFA2262C0E0453ACBAF0552026C298956B0841E5A",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-tests.log": "C40F50D3E96D6CC426C8B8C66E66CBEF3658F8AF2ADD21ADA8C22DE20C1AA0C4",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-reason-build.log": "36F7392655B63BEBA4FEABEA9E4FEEAFA9ACF1088F0CF7872B64651B65A2A9A4"
+  },
+  "limits": [
+    "Component rendering and controlled uncertain transport only, not production hosted OIDC/API/provider acceptance.",
+    "Arabic/English reason preservation is demonstrated, not broad translation/RTL/keyboard/screen-reader or regional acceptance.",
+    "Earlier browser evidence predates this new field-validation change and is not promoted as a new browser run.",
+    "Full roadmap acceptance and commit/push remain pending."
+  ]
+}

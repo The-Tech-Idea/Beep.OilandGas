@@ -1,274 +1,107 @@
-@page "/ppdm39/permits/{applicationId}"
-@using Beep.OilandGas.Web.Services
+@page "/ppdm39/permits/detail"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.Security
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject IPermitApplicationIntentStore Originals
 @inject IPermitServiceClient PermitClient
-@inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<PermitDetail> Logger
 
-<PageTitle>Permit Application Detail</PageTitle>
-
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
-               OnClick="NavigateBack">
-        Back to Permits
-    </MudButton>
-    <MudText Typo="Typo.h5" Class="ml-2">Permit Application: @applicationId</MudText>
-</MudStack>
-
-@if (_loading)
-{
-    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
-}
-else if (_detail != null)
-{
-    <MudGrid Spacing="4">
-        <!-- Application Details -->
-        <MudItem xs="12" md="8">
-            <MudPaper Elevation="2" Class="pa-4 mb-4">
-                <MudText Typo="Typo.h6" Class="mb-3">Application Details</MudText>
-                <MudGrid>
-                    <MudItem xs="12" sm="6">
-                        <MudText Typo="Typo.subtitle2">Type</MudText>
-                        <MudText>@_detail.Application.ApplicationType</MudText>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudText Typo="Typo.subtitle2">Regulatory Authority</MudText>
-                        <MudText>@_detail.Application.RegulatoryAuthority</MudText>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudText Typo="Typo.subtitle2">Applicant</MudText>
-                        <MudText>@_detail.Application.ApplicantName</MudText>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudText Typo="Typo.subtitle2">Status</MudText>
-                        <MudChip T="string" Color="@StatusColor(_detail.Application.Status)" Size="Size.Small">
-                            @_detail.Application.Status
-                        </MudChip>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudText Typo="Typo.subtitle2">Created</MudText>
-                        <MudText>@(_detail.Application.CreatedDate?.ToString("yyyy-MM-dd") ?? "N/A")</MudText>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudText Typo="Typo.subtitle2">Submitted</MudText>
-                        <MudText>@(_detail.Application.SubmittedDate?.ToString("yyyy-MM-dd") ?? "Not submitted")</MudText>
-                    </MudItem>
-                </MudGrid>
-            </MudPaper>
-
-            <!-- Compliance Result -->
-            @if (_detail.ComplianceResult != null)
-            {
-                <MudPaper Elevation="2" Class="pa-4 mb-4">
-                    <MudText Typo="Typo.h6" Class="mb-3">Compliance Check</MudText>
-                    <MudGrid>
-                        <MudItem xs="12" sm="4">
-                            <MudText Typo="Typo.subtitle2">Score</MudText>
-                            <MudText Typo="Typo.h4" Color="@(_detail.ComplianceResult.IsCompliant ? Color.Success : Color.Warning)">
-                                @_detail.ComplianceResult.ComplianceScore.ToString("F1")%
-                            </MudText>
-                        </MudItem>
-                        <MudItem xs="12" sm="4">
-                            <MudText Typo="Typo.subtitle2">Status</MudText>
-                            <MudChip T="string" Color="@(_detail.ComplianceResult.IsCompliant ? Color.Success : Color.Error)" Size="Size.Small">
-                                @(_detail.ComplianceResult.IsCompliant ? "Compliant" : "Non-Compliant")
-                            </MudChip>
-                        </MudItem>
-                        <MudItem xs="12" sm="4">
-                            <MudText Typo="Typo.subtitle2">Violations</MudText>
-                            <MudText>@_detail.ComplianceResult.Violations.Count</MudText>
-                        </MudItem>
-                    </MudGrid>
-                    @if (_detail.ComplianceResult.Violations.Any())
-                    {
-                        <MudAlert Severity="Severity.Error" Class="mt-3">
-                            @foreach (var v in _detail.ComplianceResult.Violations)
-                            {
-                                <MudText>@v</MudText>
-                            }
-                        </MudAlert>
-                    }
-                    @if (_detail.ComplianceResult.Warnings.Any())
-                    {
-                        <MudAlert Severity="Severity.Warning" Class="mt-2">
-                            @foreach (var w in _detail.ComplianceResult.Warnings)
-                            {
-                                <MudText>@w</MudText>
-                            }
-                        </MudAlert>
-                    }
-                </MudPaper>
-            }
-        </MudItem>
-
-        <!-- Status History -->
-        <MudItem xs="12" md="4">
-            <MudPaper Elevation="2" Class="pa-4 mb-4">
-                <MudText Typo="Typo.h6" Class="mb-3">Status History</MudText>
-                @if (_detail.StatusHistory.Any())
-                {
-                    @foreach (var entry in _detail.StatusHistory.OrderByDescending(e => e.StatusDate))
-                    {
-                        <MudStack Spacing="1" Class="mb-3">
-                            <MudStack Row="true" AlignItems="AlignItems.Center">
-                                <MudChip T="string" Color="Color.Info" Size="Size.Small">@entry.Status</MudChip>
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@entry.StatusDate.ToString("yyyy-MM-dd HH:mm")</MudText>
-                            </MudStack>
-                            @if (!string.IsNullOrEmpty(entry.Remarks))
-                            {
-                                <MudText Typo="Typo.body2">@entry.Remarks</MudText>
-                            }
-                            <MudDivider />
-                        </MudStack>
-                    }
-                }
-                else
-                {
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary">No status history available.</MudText>
-                }
-            </MudPaper>
-
-            <!-- Actions -->
-            <MudPaper Elevation="2" Class="pa-4">
-                <MudText Typo="Typo.h6" Class="mb-3">Actions</MudText>
-                <MudStack Spacing="2">
-                    @if (_detail.Application.Status == "Draft")
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
-                                   OnClick="SubmitApplication" Disabled="@_submitting">
-                            @(_submitting ? "Submitting..." : "Submit for Review")
-                        </MudButton>
-                    }
-                    @if (_detail.Application.Status == "Submitted" || _detail.Application.Status == "Under Review")
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
-                                   OnClick="@(() => ProcessDecision("Approved"))" Disabled="@_processing">
-                            Approve
-                        </MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true"
-                                   OnClick="@(() => ProcessDecision("Rejected"))" Disabled="@_processing">
-                            Reject
-                        </MudButton>
-                    }
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true"
-                               OnClick="CheckCompliance" Disabled="@_checking">
-                        @(_checking ? "Checking..." : "Run Compliance Check")
-                    </MudButton>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-}
-
-@code {
-    [Parameter] public string applicationId { get; set; } = string.Empty;
-
-    private bool _loading;
-    private bool _submitting;
-    private bool _processing;
-    private bool _checking;
-    private PermitApplicationDetail? _detail;
-
-    protected override async Task OnInitializedAsync()
+<PageTitle>Recorded permit application</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h5" HtmlTag="h1">Recorded permit application</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        <MudButton Href="/ppdm39/permits" Variant="Variant.Text">Permit applications</MudButton>
+        <MudButton OnClick="LoadAsync" Disabled="@(_loading || _workflow?.Busy==true)" Variant="Variant.Outlined">Reload recorded application</MudButton>
+    </MudStack>
+    @if (_loading) { <MudProgressLinear Indeterminate="true" aria-label="Loading recorded permit application" /> }
+    else if (_detail is null) { <MudAlert Severity="Severity.Warning">@_message</MudAlert> }
+    else
     {
-        await LoadAsync();
+        var application = _detail.Application;
+        <MudText Typo="Typo.body2">Company @Company.Selection?.Scope.BusinessAssociateId · FIELD @_fieldName · application @application.PermitApplicationId</MudText>
+        <MudText Typo="Typo.caption">Read checked @_checkedAt?.ToString("u"). Source dates below are displayed as recorded; their time zones are not established here.</MudText>
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Application details</MudText>
+            <MudText>Type: @Recorded(application.ApplicationType)</MudText>
+            <MudText>Authority: @Recorded(application.RegulatoryAuthority)</MudText>
+            <MudText>Applicant: @Recorded(application.ApplicantName)</MudText>
+            <MudText>Status: @Recorded(application.Status)</MudText>
+            <MudText>Decision: @Recorded(application.Decision)</MudText>
+            <MudText>Created: @Date(application.CreatedDate) · Submitted: @Date(application.SubmittedDate) · Decision date: @Date(application.DecisionDate)</MudText>
+        </MudPaper>
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Recorded status history</MudText>
+            @if (_detail.StatusHistory.Count == 0) { <MudText>No status history was returned for this application.</MudText> }
+            @foreach (var entry in _detail.StatusHistory.OrderByDescending(row => row.StatusDate).ThenBy(row => row.HistoryId, StringComparer.Ordinal))
+            {
+                <MudText>@entry.HistoryId · @Recorded(entry.Status) · @Date(entry.StatusDate) · account @Recorded(entry.UpdatedBy)</MudText>
+                <MudText Typo="Typo.body2">@Recorded(entry.Remarks)</MudText>
+            }
+        </MudPaper>
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Automated checker result</MudText>
+            @if (_detail.ComplianceResult is { } check)
+            {
+                <MudText>Checked @check.CheckedAtUtc.ToString("u") · application @check.ApplicationId · FIELD @check.FieldId</MudText>
+                <MudText>Checker signal: @(check.IsCompliant ? "Passed" : "Not passed") · score @check.ComplianceScore.ToString("0.##")%</MudText>
+                @foreach (var finding in check.Violations) { <MudText>Finding: @finding</MudText> }
+                @foreach (var warning in check.Warnings) { <MudText>Warning: @warning</MudText> }
+                <MudText Typo="Typo.caption">This checker output does not record regulator approval or permission to operate.</MudText>
+            }
+            else { <MudText>No automated checker result was returned.</MudText> }
+        </MudPaper>
+        @if(_workflow is not null)
+        {<Beep.OilandGas.Web.Components.Workflow.PermitApplicationWorkflow State="_workflow" ApplicationId="@application.PermitApplicationId" OnConfirmed="LoadAsync" />}
     }
-
+</MudContainer>
+@code {
+    [SupplyParameterFromQuery(Name = "applicationId")] public string? ApplicationId { get; set; }
+    private string? _loadedId, _message;
+    private string _fieldName = "";
+    private PermitApplicationDetail? _detail;
+    private DateTime? _checkedAt;
+    private bool _loading, _disposed;
+    private PermitApplicationCommandState? _workflow;
+    private long _generation;
+    private static string Recorded(string? value) => string.IsNullOrWhiteSpace(value) ? "Not recorded" : value;
+    private static string Date(DateTime? value) => value is null || value == default(DateTime) ? "Not recorded" : value.Value.ToString("yyyy-MM-dd HH:mm");
+    protected override void OnInitialized() { _workflow=new(Company,Fields,Authentication,PermitClient,Originals);Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; Authentication.AuthenticationStateChanged += AuthenticationChanged; }
+    protected override async Task OnParametersSetAsync() { if (_loadedId == ApplicationId && _generation != 0) return; _loadedId = ApplicationId; _workflow?.SetApplication(ApplicationId); await LoadAsync(); }
     private async Task LoadAsync()
     {
-        _loading = true;
+        _detail = null; _fieldName = ""; _checkedAt = null; _message = null; _loading = true;
+        var generation = ++_generation; var selected = Company.Snapshot; var id = ApplicationId;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot && id == ApplicationId;
+        async Task RequireAuthority()
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            if (!Current() || selected.Selection is not { } company || user.Identity?.IsAuthenticated != true ||
+                user.FindFirst("party_id")?.Value != company.UserId || !company.Roles.Any(user.IsInRole) || !company.Permissions.Contains(PermissionConstants.HSE.ViewPermits))
+                throw new UnauthorizedAccessException("Current company permit view authority is required.");
+        }
         try
         {
-            _detail = await PermitClient.GetByIdAsync(applicationId);
+            if (!LeaseSummaryValidator.Identifier(id)) throw new InvalidOperationException("Choose an exact recorded application.");
+            await RequireAuthority(); var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, selected.Selection!.Scope, selected.Selection.UserId);
+            if (!before.SelectionAvailable) throw new InvalidOperationException("Choose an available FIELD.");
+            var detail = await PermitClient.GetByIdAsync(id!); if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, selected.Selection.Scope, selected.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext) throw new InvalidOperationException("The selected FIELD changed.");
+            await RequireAuthority(); PermitApplicationReadValidator.Require(detail, id!, before.FieldId);
+            _detail = detail; _fieldName = string.IsNullOrWhiteSpace(before.FieldName) ? before.FieldId : before.FieldName; _checkedAt = DateTime.UtcNow;
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to load permit: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _loading = false;
-        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Recorded permit application could not be confirmed"); _message = "The permit application could not be confirmed for the current company, account and FIELD."; } }
+        finally { if (Current()) _loading = false; }
     }
-
-    private async Task SubmitApplication()
-    {
-        _submitting = true;
-        try
-        {
-            await PermitClient.SubmitAsync(applicationId);
-            Snackbar.Add("Application submitted for review.", Severity.Success);
-            await LoadAsync();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to submit: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _submitting = false;
-        }
-    }
-
-    private async Task ProcessDecision(string decision)
-    {
-        _processing = true;
-        try
-        {
-            var result = await PermitClient.ProcessDecisionAsync(applicationId, new PermitDecisionRequest
-            {
-                Decision = decision,
-                Remarks = $"Decision: {decision} by {Environment.UserName}"
-            });
-            Snackbar.Add($"Application {decision.ToLower()}.", Severity.Success);
-            await LoadAsync();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to process decision: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _processing = false;
-        }
-    }
-
-    private async Task CheckCompliance()
-    {
-        _checking = true;
-        try
-        {
-            var result = await PermitClient.CheckComplianceAsync(applicationId);
-            if (result != null)
-            {
-                var msg = result.IsCompliant
-                    ? $"Compliance check passed (score: {result.ComplianceScore:F1}%)"
-                    : $"Compliance check failed: {result.Violations.Count} violation(s)";
-                Snackbar.Add(msg, result.IsCompliant ? Severity.Success : Severity.Warning);
-                await LoadAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Compliance check failed: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            _checking = false;
-        }
-    }
-
-    private void NavigateBack()
-    {
-        NavigationManager.NavigateTo("/ppdm39/permits");
-    }
-
-    private static Color StatusColor(string status) => status switch
-    {
-        "Draft" => Color.Default,
-        "Submitted" => Color.Info,
-        "Under Review" => Color.Warning,
-        "Approved" => Color.Success,
-        "Rejected" => Color.Error,
-        _ => Color.Default
-    };
+    private void FieldChanged(string _) => ContextChanged();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => ContextChanged();
+    private void ContextChanged() { ++_generation; _detail = null; _checkedAt = null; _fieldName = ""; _loading = false; _message = "Company, account or FIELD changed. Reload the recorded application."; if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; _workflow?.Dispose(); ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }
 }

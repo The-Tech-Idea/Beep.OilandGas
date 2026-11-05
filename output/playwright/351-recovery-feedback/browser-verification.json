@@ -1,0 +1,115 @@
+{
+  "status": "passed",
+  "scope": "Actual start/report components, states and protected storage in an isolated Chromium host with controlled typed-client outcomes, removal/readback failures and recovery outage; no production auth/API/provider claim.",
+  "checks": [
+    {
+      "name": "saved_copy_and_possible_submission_are_distinguished",
+      "status": "passed",
+      "evidence": [
+        "saved-submission-unconfirmed.txt",
+        "metadata-submitted.json"
+      ]
+    },
+    {
+      "name": "readonly_new_owner_loads_original_before_source_profile",
+      "status": "passed",
+      "evidence": [
+        "readonly-pending.txt",
+        "metadata-readonly-pending.json"
+      ]
+    },
+    {
+      "name": "validated_report_receipt_survives_unconfirmed_removal",
+      "status": "passed",
+      "evidence": [
+        "report-receipt-cleanup-failed.txt",
+        "metadata-cleanup-failed.json"
+      ]
+    },
+    {
+      "name": "failed_recovery_preserves_earlier_validated_receipt",
+      "status": "passed",
+      "evidence": [
+        "prior-receipt-survives-outage.txt",
+        "metadata-recovery-outage.json"
+      ]
+    },
+    {
+      "name": "restored_recovery_clears_without_another_write",
+      "status": "passed",
+      "evidence": [
+        "receipt-cleanup-finished.txt",
+        "metadata-cleanup-finished.json"
+      ]
+    },
+    {
+      "name": "real_quota_failure_is_memory_held_and_not_submitted",
+      "status": "passed",
+      "evidence": [
+        "quota-full.txt",
+        "quota-no-submission.txt",
+        "metadata-after-quota.json"
+      ]
+    },
+    {
+      "name": "quota_original_absence_is_reconciled_without_blind_retry",
+      "status": "passed",
+      "evidence": [
+        "quota-confirmed-absent.txt",
+        "metadata-quota-resolved.json",
+        "quota-fillers-cleaned.txt"
+      ]
+    },
+    {
+      "name": "failed_readback_does_not_falsely_promise_only_memory_or_submission",
+      "status": "passed",
+      "evidence": [
+        "readback-no-submission.txt",
+        "unconfirmed-copy-actually-present.txt",
+        "metadata-readback-failed.json"
+      ]
+    },
+    {
+      "name": "reloaded_original_does_not_infer_no_submission",
+      "status": "passed",
+      "evidence": [
+        "new-owner-conservative-knowledge.txt",
+        "metadata-new-owner-after-readback.json"
+      ]
+    },
+    {
+      "name": "new_owner_readonly_recovery_confirms_original_absence",
+      "status": "passed",
+      "evidence": [
+        "readback-original-confirmed-absent.txt",
+        "metadata-readback-resolved.json"
+      ]
+    },
+    {
+      "name": "actual_start_page_distinguishes_receipt_from_cleanup",
+      "status": "passed",
+      "evidence": [
+        "start-receipt-cleanup-failed.txt",
+        "metadata-start-cleanup-failed.json",
+        "start-cleanup-finished.txt",
+        "metadata-start-resolved.json"
+      ]
+    },
+    {
+      "name": "final_history_keeps_one_controlled_record_and_no_pending_originals",
+      "status": "passed",
+      "evidence": [
+        "metadata-final.json",
+        "final-report-history.txt",
+        "final-storage.txt",
+        "final-console.txt"
+      ]
+    }
+  ],
+  "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+  "limits": [
+    "Business record/recovery responses are controlled seams; native/API/provider behavior qualifies separately.",
+    "Storage readback/removal failure is deliberately injected; quota exhaustion is real browser behavior.",
+    "No full Web/OIDC/route/RBAC, browser matrix/RTL/a11y/concurrent-circuit or production performance qualification."
+  ]
+}

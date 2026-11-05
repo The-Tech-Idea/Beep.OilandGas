@@ -83,34 +83,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         }
 
         /// <summary>
-        /// Complete well development and transition to PRODUCING state
-        /// </summary>
-        public async Task<bool> CompleteWellDevelopmentWithStateTransitionAsync(
-            string instanceId,
-            string wellId,
-            string userId)
-        {
-            try
-            {
-                // Complete production handover step
-                var handoverComplete = await _developmentProcessService.HandoverToProductionAsync(instanceId, userId);
-
-                if (handoverComplete)
-                {
-                    // Transition well state to PRODUCING
-                    await _wellLifecycleService.TransitionWellStateAsync(wellId, "PRODUCING", userId);
-                }
-
-                return handoverComplete;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, $"Error completing well development with state transition for well {wellId}");
-                throw;
-            }
-        }
-
-        /// <summary>
         /// Start workover process and transition well to WORKOVER state
         /// </summary>
         public async Task<ProcessInstance> StartWorkoverWithStateTransitionAsync(

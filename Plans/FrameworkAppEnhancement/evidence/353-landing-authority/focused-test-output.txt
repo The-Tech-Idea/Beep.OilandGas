@@ -1,0 +1,17 @@
+Test run for C:\Users\f_ald\AppData\Local\Temp\oilgas-353-landing-focused\bin\Debug\net10.0\HseLanding.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.10]   Discovering: HseLanding
+[xUnit.net 00:00:00.16]   Discovered:  HseLanding
+[xUnit.net 00:00:00.19]   Starting:    HseLanding
+[xUnit.net 00:00:00.97]   Finished:    HseLanding
+  Passed Beep.OilandGas.Web.Auth.Tests.HseLandingAuthorityTests.LandingIncidentDataRequiresCurrentAccountAndRejectsLateResponses(fault: "role") [623 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseLandingAuthorityTests.LandingIncidentDataRequiresCurrentAccountAndRejectsLateResponses(fault: "silent") [33 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseLandingAuthorityTests.LandingIncidentDataRequiresCurrentAccountAndRejectsLateResponses(fault: "permission") [28 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseLandingAuthorityTests.LandingIncidentDataRequiresCurrentAccountAndRejectsLateResponses(fault: "foreign") [22 ms]
+  Passed Beep.OilandGas.Web.Auth.Tests.HseLandingAuthorityTests.LandingIncidentDataRequiresCurrentAccountAndRejectsLateResponses(fault: "anonymous") [28 ms]
+
+Test Run Successful.
+Total tests: 5
+     Passed: 5
+ Total time: 1.5402 Seconds

@@ -1,0 +1,44 @@
+@page "/development/fdp/history"
+@using MudBlazor
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDevelopmentServiceClient Development
+@inject OilGasCallFailures Calls
+
+<PageTitle>Recorded development review</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Recorded development review</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-4">
+        <MudButton Href="/development/fdp" Variant="Variant.Outlined">Company FIELD drafts</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company assigned work</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Loading==true)" StartIcon="@Icons.Material.Filled.Refresh">Reload recorded review</MudButton>
+    </MudStack>
+    @if(_state?.NeedsCompany!=false){<MudAlert Severity="Severity.Info">Choose a company before opening its recorded review.</MudAlert>}
+    else if(!_state.CanView){<MudAlert Severity="Severity.Info">Current Development Planning View and Workflow View permissions are required.</MudAlert>}
+    else if(_state.Loading){<MudProgressLinear Indeterminate="true" aria-label="Loading recorded development review history" />}
+    else if(_state.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+    else if(_state.Current is {} review)
+    {
+        <MudText>Company: @review.Scope.Company.TenantId / @review.Scope.Company.BusinessAssociateId · Recorded FIELD: @review.Scope.FieldId</MudText>
+        <DevelopmentDraftSourceCard Plan="review.Plan" />
+        <DevelopmentReviewProgressPanel Review="review" />
+        <DevelopmentPlanBaselinePanel Review="review" />
+    }
+    else{<MudAlert Severity="Severity.Info">Reload the recorded review after a company or workspace change.</MudAlert>}
+</MudContainer>
+
+@code{
+    [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
+    private DevelopmentReviewProgressState? _state;
+    private bool disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,Development,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>Reload();
+    private Task Reload()=>_state!.LoadAsync(ProcessId);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

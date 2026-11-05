@@ -143,9 +143,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public ActionResult CancelWorkflow(string workflowId)
         {
             if (string.IsNullOrWhiteSpace(workflowId)) return BadRequest(new { error = "Workflow ID is required." });
+            if (_progressTracking?.GetWorkflowProgress(workflowId) is null)
+                return NotFound(new { error = "Workflow not found." });
             _progressTracking?.CancelOperation(workflowId);
-            _logger.LogInformation("Cancelled workflow {WorkflowId}", workflowId);
-            return Ok(new { message = "Workflow cancellation requested" });
+            _logger.LogInformation("Cancelled tracking for workflow {WorkflowId}", workflowId);
+            return Ok(new { message = "Workflow tracking cancelled." });
         }
     }
 }

@@ -1,0 +1,13 @@
+### Result
+[
+  {
+    "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-report",
+    "characters": 101510,
+    "containsProvenance": false,
+    "containsSummary": false
+  }
+]
+### Ran Playwright code
+```js
+await page.evaluate('() => Object.entries(sessionStorage).filter(([key])=>key.endsWith(".drilling-report")).map(([key,value])=>({key,characters:value.length,containsProvenance:value.includes("Browser source log 471"),containsSummary:value.includes("Observed browser recovery report")}))');
+```

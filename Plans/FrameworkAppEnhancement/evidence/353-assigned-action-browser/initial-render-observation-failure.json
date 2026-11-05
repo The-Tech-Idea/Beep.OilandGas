@@ -1,0 +1,161 @@
+{
+  "status": "failed",
+  "error": "Error: Refresh retained old actionable links",
+  "observations": [
+    {
+      "name": "A first assigned-action page by keyboard",
+      "url": "http://127.0.0.1:61999/assigned-actions",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nMy overdue corrective actions\n\nOpen actions across all open incident stages, assigned to your current recorded company person. Due dates are compared in UTC.\n\nREVIEW MY OVERDUE ACTIONS\n\n11 overdue assigned actions \u00b7 1 returned FIELD incidents reviewed \u00b7 checked 2026-10-30 05:24:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 1: PRIVATE A action 1 \u00b7 due 2026-10-29 05:25:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 2: PRIVATE A action 2 \u00b7 due 2026-10-29 05:26:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 3: PRIVATE A action 3 \u00b7 due 2026-10-29 05:27:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 4: PRIVATE A action 4 \u00b7 due 2026-10-29 05:28:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 5: PRIVATE A action 5 \u00b7 due 2026-10-29 05:29:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 6: PRIVATE A action 6 \u00b7 due 2026-10-29 05:30:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 7: PRIVATE A action 7 \u00b7 due 2026-10-29 05:31:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 8: PRIVATE A action 8 \u00b7 due 2026-10-29 05:32:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 9: PRIVATE A action 9 \u00b7 due 2026-10-29 05:33:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 10: PRIVATE A action 10 \u00b7 due 2026-10-29 05:34:22Z\n\nPREVIOUS ASSIGNED ACTIONS\n\nPage 1 of 2\n\nNEXT ASSIGNED ACTIONS\nInteractive fixture ready",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 1,
+          "approvedIntent": null
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 0,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 0,
+        "queueCompleted": 1,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/assigned-overdue-actions",
+            "method": "GET"
+          }
+        ]
+      },
+      "layout": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "keys": []
+      }
+    },
+    {
+      "name": "A second page has exact action11 link",
+      "url": "http://127.0.0.1:61999/assigned-actions",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nMy overdue corrective actions\n\nOpen actions across all open incident stages, assigned to your current recorded company person. Due dates are compared in UTC.\n\nREVIEW MY OVERDUE ACTIONS\n\n11 overdue assigned actions \u00b7 1 returned FIELD incidents reviewed \u00b7 checked 2026-10-30 05:24:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 11: PRIVATE A action 11 \u00b7 due 2026-10-29 05:35:22Z\n\nPREVIOUS ASSIGNED ACTIONS\n\nPage 2 of 2\n\nNEXT ASSIGNED ACTIONS\nInteractive fixture ready",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 1,
+          "approvedIntent": null
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 0,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 0,
+        "queueCompleted": 1,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/assigned-overdue-actions",
+            "method": "GET"
+          }
+        ]
+      },
+      "layout": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "keys": []
+      }
+    },
+    {
+      "name": "Failure state",
+      "url": "http://127.0.0.1:61999/assigned-actions",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nMy overdue corrective actions\n\nOpen actions across all open incident stages, assigned to your current recorded company person. Due dates are compared in UTC.\n\nREVIEW MY OVERDUE ACTIONS\n\n11 overdue assigned actions \u00b7 1 returned FIELD incidents reviewed \u00b7 checked 2026-10-30 05:24:22Z\n\ncase/\u0634\u0631\u0643\u0629?one#2 \u00b7 Action 11: PRIVATE A action 11 \u00b7 due 2026-10-29 05:35:22Z\n\nPREVIOUS ASSIGNED ACTIONS\n\nPage 2 of 2\n\nNEXT ASSIGNED ACTIONS\nInteractive fixture ready",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 2,
+          "approvedIntent": null
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "queueReads": 0,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 0,
+        "queueCompleted": 1,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/assigned-overdue-actions",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/assigned-overdue-actions",
+            "method": "GET"
+          }
+        ]
+      },
+      "layout": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "keys": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Reviewed creation resource foundation",
+  "creation_inputs": 28,
+  "separate_existing_form_cleanup_inputs": 1,
+  "gates": [
+    {
+      "name": "wire",
+      "exact_methods": [
+        "PermitCreationReviewRequiresCompleteIdentitiesAndFrozenProposalContext",
+        "PermitCreationReviewApiConfirmsExactProposalSelectionAndModule",
+        "PermitCreationReviewWebClientBindsPostedProposalAndRejectsForeignOrMissingEvidence"
+      ],
+      "filter": "FullyQualifiedName~PermitCreationReviewRequiresCompleteIdentitiesAndFrozenProposalContext|FullyQualifiedName~PermitCreationReviewApiConfirmsExactProposalSelectionAndModule|FullyQualifiedName~PermitCreationReviewWebClientBindsPostedProposalAndRejectsForeignOrMissingEvidence",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "234 ms",
+      "terminal": "wire-terminal.txt",
+      "full_temporary_log": "oilgas-354-creation-review-wire.log",
+      "full_log_sha256": "96284b4646a37b46040a0b04399d44a2840e2b93f64a05f8b52ce946bdfa61bb"
+    },
+    {
+      "name": "native",
+      "exact_methods": [
+        "PermitCreationReviewUsesCurrentNativeCompanyFieldAndCompleteResourceKeys"
+      ],
+      "filter": "FullyQualifiedName~PermitCreationReviewUsesCurrentNativeCompanyFieldAndCompleteResourceKeys",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "16 s",
+      "terminal": "native-terminal.txt",
+      "full_temporary_log": "oilgas-354-creation-review-native.log",
+      "full_log_sha256": "f66c262329038d01021535aad606423269d89e5a061edd98200f743b0cf3dd1a"
+    },
+    {
+      "name": "form-status-cleanup",
+      "exact_methods": [
+        "PermitDraftFormRefusesSubmissionWhileProposedEditsAreUnsaved"
+      ],
+      "filter": "FullyQualifiedName~PermitDraftFormRefusesSubmissionWhileProposedEditsAreUnsaved",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "471 ms",
+      "terminal": "form-status-cleanup-terminal.txt",
+      "full_temporary_log": "oilgas-354-draft-form-status.log",
+      "full_log_sha256": "6289f26ff3194e80cec7487393b4c03353b3799e6aa968f16283b1957efbd30a"
+    }
+  ],
+  "build": {
+    "project": "TheTechIdea.Data",
+    "result": "passed",
+    "duration": "3.97s",
+    "warnings": 1,
+    "errors": 0,
+    "warning": "Existing missing sibling IdentityServer analyzer project"
+  },
+  "criteria": {
+    "contract": "Complete optional WELL UWI and composite facility ID/type; explicit typed header; frozen proposal, source and company/account/FIELD/module evidence.",
+    "access": "Real current app RBAC/grants, existing native row policy and resource relationships; exact active resource keys/FIELD, required physical columns, double reads and immutable materialization before later awaits. No native writes.",
+    "API": "Actual controller confirms exact proposal/current actor/FIELD/module before/after the access review. Controlled call boundary; middleware not hosted.",
+    "Web": "Actual typed client posts the exact proposal, validates returned proposal/selection and refuses missing/foreign responses and invalid input.",
+    "form_cleanup": "Correct lowercase status role on the previously changed draft form; exact existing unsaved-edit refusal component passes. No remaining MUD0002 warning for that component in final compiler log."
+  },
+  "hashes_at_checkpoint": {
+    "TheTechIdea.Data/OilGas/PermitApplicationCreationReview.cs": "3512c05d905e2f1ed3b109ab240fddc51b3a83b98749ba43c251252c03410e5b",
+    "TheTechIdea.Data/OilGas/PermitApplicationDraftChanges.cs": "52a87793d442215acc622bf1161b2835841068527d545eaade3ffa66dfc1c60c",
+    "TheTechIdea.Data/OilGas/PermitApplicationDataAccess.cs": "da76309096652f9a3e24937ab53108a11439f9a03063f7c1cbc4f1f2761b0524",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "a70c1d2b5efc4aeb5f49d7e37905df54a072cf9f4679f653607359681a73e9e8",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "1224af62e6dc7fa8610d2785d132b609cdc28f58c42b95cd478297d7640f52ce",
+    "Beep.OilandGas.Web/Services/PermitServiceClient.cs": "17e5837cf5e876a4382905c88ef71fb7037c93d9ca6699a046877d73f8143326",
+    "Beep.OilandGas.Web/Services/IPermitServiceClient.cs": "0739d2e2a3b8d744cc02d9ecf7b18b0d5aa49db7b692f4b1d22af6634148cbab",
+    "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor": "95d4d931d6128308c4763ad2544bf0b6e717847df4d929953a0c1480c25183ed",
+    "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs": "30fe3fde242327e80274b056c9d6cc8966d509ea04148b45ad73504b7f480d81",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "3698e066975d4a0f64aa64b1d85e54dd30623a7886b1f1b550582e4eb70c4576",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "e3f47cbd263ca85db318e8a5d02d2cfbbcc42ab70aa0c5ba8d70afc876e6ca8c",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "59d185654bcccdfdbcb88f2898dc907d0c800d9bcafe4a1580acd0d456edc19a",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "0acb7351eeb9254f8fd63b8e8a082c62588b944a1589d0c7414aa661ae4165c5"
+  },
+  "ordering_note": "The wire gate ran before the materialized-row freezing refinement in the access owner; the native gate compiles and exercises that final access code. The final form gate includes the lowercase status attribute. No other behavior changed between gates.",
+  "limitations": [
+    "Creation review is read-only and not a saved draft, authority token or regulator clearance.",
+    "Owned creation command/original/receipt/readback/recovery, persisted facility type, removal of direct create and retained creation form remain implementation work.",
+    "Native providers, connections and resource tables are mocked; actual hosted HTTP/OIDC/Beep Migration/provider/browser/multi-account/jurisdiction/performance qualification remains open.",
+    "No handwritten SQL, schema apply or EF migration. Full goal remains active; no commit/push."
+  ]
+}

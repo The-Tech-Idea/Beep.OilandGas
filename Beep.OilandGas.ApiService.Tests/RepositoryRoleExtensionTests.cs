@@ -1,5 +1,7 @@
+using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
+using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +29,7 @@ public class RepositoryRoleExtensionTests
         var permission = Assert.Single(catalog, x => x.PermissionKey == "Custom.Inspect");
         Assert.DoesNotContain(catalog, x => x.PermissionKey == "Not.A.Permission");
         Assert.Empty(await fixture.Db.Set<AppPermissionExtension>().ToListAsync());
+        await fixture.AuthorizeActorAsync("actor");
         await fixture.Service.GrantPermissionToRoleAsync(target.Id, permission.PermissionId, "actor");
         Assert.True(await fixture.Db.RoleClaims.AnyAsync(x => x.RoleId == target.Id && x.ClaimType == "permission" && x.ClaimValue == "Custom.Inspect"));
         Assert.Single(await fixture.Service.GetPermissionCatalogAsync(), x => x.PermissionKey == "Custom.Inspect");
@@ -41,6 +44,7 @@ public class RepositoryRoleExtensionTests
         fixture.Db.Add(new AppPermissionExtension { PermissionId = "metadata-id", PermissionKey = "Custom.Inspect" });
         await fixture.Db.SaveChangesAsync();
 
+        await fixture.AuthorizeActorAsync("actor");
         var byKey = await fixture.Service.GrantPermissionToRoleAsync(role.Id, "Custom.Inspect", "actor");
         var byId = await fixture.Service.GrantPermissionToRoleAsync(role.Id, "metadata-id", "actor");
 
@@ -48,7 +52,7 @@ public class RepositoryRoleExtensionTests
         Assert.Equal(byKey.RolePermissionId, byId.RolePermissionId);
         Assert.Equal(1, await fixture.Db.Set<AppPermissionExtension>().CountAsync());
         Assert.Equal(1, await fixture.Db.RoleClaims.CountAsync());
-        await Assert.ThrowsAsync<ArgumentException>(() => fixture.Service.GrantPermissionToRoleAsync(role.Id, "Unknown.Permission", "actor"));
+        await Assert.ThrowsAsync<RefusalException>(() => fixture.Service.GrantPermissionToRoleAsync(role.Id, "Unknown.Permission", "actor"));
     }
 
     [Theory]
@@ -61,12 +65,14 @@ public class RepositoryRoleExtensionTests
         Assert.True((await fixture.Users.CreateAsync(user)).Succeeded);
         var role = new IdentityRole(roleName);
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
+        await fixture.AuthorizeActorAsync(user.Id);
         var assignment = await fixture.Service.AssignRoleAsync(user.Id, role.Id, user.Id);
-        var removal = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Service.RevokeRoleAsync(assignment.UserRoleId, user.Id));
+        var removal = await Assert.ThrowsAsync<RefusalException>(() => fixture.Service.RevokeRoleAsync(assignment.UserRoleId, user.Id));
         Assert.Contains("last active administrator", removal.Message);
         Assert.True(await fixture.Users.IsInRoleAsync(user, "Administrator"));
         fixture.Db.ChangeTracker.Clear();
-        var deactivation = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.UserService.DeleteAsync(user.Id));
+        fixture.SetActor(user.Id);
+        var deactivation = await Assert.ThrowsAsync<RefusalException>(() => fixture.UserService.DeleteAsync(user.Id));
         Assert.Contains("last active administrator", deactivation.Message);
         Assert.True((await fixture.Users.FindByIdAsync(user.Id))!.IsActive);
     }
@@ -102,6 +108,7 @@ public class RepositoryRoleExtensionTests
         for (var i = 0; i < 2; i++)
             Assert.True((await fixture.Roles.AddClaimAsync(role, new System.Security.Claims.Claim("permission", code))).Succeeded);
 
+        await fixture.AuthorizeActorAsync("actor");
         var grant = await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, "actor");
 
         Assert.Equal(2, await fixture.Db.RoleClaims.CountAsync());
@@ -116,6 +123,7 @@ public class RepositoryRoleExtensionTests
         var role = new IdentityRole("Viewer");
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
         var code = (await fixture.Service.GetPermissionCatalogAsync()).First().PermissionId;
+        await fixture.AuthorizeActorAsync("actor");
         var old = await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, "actor");
         var claim = await fixture.Db.RoleClaims.SingleAsync();
         claim.ClaimValue = "Changed.Permission";
@@ -139,6 +147,7 @@ public class RepositoryRoleExtensionTests
         var role = new IdentityRole("Viewer");
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
         var code = (await fixture.Service.GetPermissionCatalogAsync()).First().PermissionId;
+        await fixture.AuthorizeActorAsync("actor");
         var grant = await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, "actor");
         var original = await fixture.Db.RoleClaims.SingleAsync();
         Assert.True((await fixture.Roles.AddClaimAsync(role, new System.Security.Claims.Claim("permission", code))).Succeeded);
@@ -163,6 +172,7 @@ public class RepositoryRoleExtensionTests
         var role = new IdentityRole("Viewer");
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
         var code = (await fixture.Service.GetPermissionCatalogAsync()).First().PermissionId;
+        await fixture.AuthorizeActorAsync("actor");
         var grant = await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, "actor");
         var claim = await fixture.Db.RoleClaims.SingleAsync();
         claim.ClaimValue = "Changed.Permission";
@@ -187,6 +197,7 @@ public class RepositoryRoleExtensionTests
         var grant = Assert.Single(await fixture.Service.GetRolePermissionsAsync(role.Id));
         Assert.Equal("Field.Read", grant.PermissionId);
         Assert.Empty(await fixture.Db.Set<AppRolePermissionExtension>().ToListAsync());
+        await fixture.AuthorizeActorAsync("actor");
         Assert.True(await fixture.Service.RevokePermissionFromRoleAsync(grant.RolePermissionId, "actor"));
         Assert.Empty(await fixture.Db.RoleClaims.ToListAsync());
         Assert.False(await fixture.Service.RevokePermissionFromRoleAsync(grant.RolePermissionId, "actor"));
@@ -201,6 +212,7 @@ public class RepositoryRoleExtensionTests
         Assert.True((await fixture.Roles.AddClaimAsync(role, new System.Security.Claims.Claim("department", "Engineering"))).Succeeded);
         var claim = await fixture.Db.RoleClaims.SingleAsync();
         Assert.Empty(await fixture.Service.GetRolePermissionsAsync(role.Id));
+        await fixture.AuthorizeActorAsync("actor");
         Assert.False(await fixture.Service.RevokePermissionFromRoleAsync("claim:" + claim.Id, "actor"));
         Assert.Equal(1, await fixture.Db.RoleClaims.CountAsync());
     }
@@ -216,9 +228,11 @@ public class RepositoryRoleExtensionTests
         var assignment = Assert.Single(await fixture.Service.GetUserRoleAssignmentsAsync(user.Id));
         Assert.StartsWith("identity:", assignment.UserRoleId);
         Assert.Empty(await fixture.Db.Set<AppUserRoleExtension>().ToListAsync());
+        await fixture.AuthorizeActorAsync("actor");
         Assert.True(await fixture.UserService.RemoveFromRoleAsync(user.Id, "Viewer"));
         Assert.False(await fixture.Users.IsInRoleAsync(user, "Viewer"));
         Assert.NotNull((await fixture.Db.Set<AppUserRoleExtension>().SingleAsync()).EffectiveToUtc);
+        await fixture.AuthorizeActorAsync("actor");
         Assert.False(await fixture.Service.RevokeRoleAsync(assignment.UserRoleId, "actor"));
     }
 
@@ -230,7 +244,8 @@ public class RepositoryRoleExtensionTests
         Assert.True((await fixture.Users.CreateAsync(user)).Succeeded);
         Assert.True((await fixture.Roles.CreateAsync(new IdentityRole("Administrator"))).Succeeded);
         Assert.True((await fixture.Users.AddToRoleAsync(user, "Administrator")).Succeeded);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.UserService.RemoveFromRoleAsync(user.Id, "Administrator"));
+        fixture.SetActor(user.Id);
+        await Assert.ThrowsAsync<RefusalException>(() => fixture.UserService.RemoveFromRoleAsync(user.Id, "Administrator"));
         Assert.True(await fixture.Users.IsInRoleAsync(user, "Administrator"));
         Assert.Empty(await fixture.Db.Set<AppUserRoleExtension>().ToListAsync());
     }
@@ -271,12 +286,13 @@ public class RepositoryRoleExtensionTests
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
         fixture.Db.Add(new AppRoleExtension { RoleId = role.Id, Description = "Field observer", ValidFieldScope = "FIELD-A" });
         await fixture.Db.SaveChangesAsync();
-        var grant = await fixture.Service.AssignRoleAsync(admin.Id, role.Id, admin.Id, "Approved review access");
+        await fixture.AuthorizeActorAsync("actor");
+        var grant = await fixture.Service.AssignRoleAsync(admin.Id, role.Id, "actor", "Approved review access");
         Assert.True(await fixture.Users.IsInRoleAsync(admin, "Viewer"));
         Assert.Equal("Approved review access", grant.AssignmentReason);
-        Assert.Equal(grant.UserRoleId, (await fixture.Service.AssignRoleAsync(admin.Id, role.Id, admin.Id)).UserRoleId);
-        Assert.Equal("FIELD-A", (await fixture.Service.GetRoleCatalogAsync()).Single().ValidFieldScope);
-        Assert.True(await fixture.Service.RevokeRoleAsync(grant.UserRoleId, admin.Id));
+        Assert.Equal(grant.UserRoleId, (await fixture.Service.AssignRoleAsync(admin.Id, role.Id, "actor")).UserRoleId);
+        Assert.Equal("FIELD-A", (await fixture.Service.GetRoleCatalogAsync()).Single(value => value.RoleId == role.Id).ValidFieldScope);
+        Assert.True(await fixture.Service.RevokeRoleAsync(grant.UserRoleId, "actor"));
         Assert.False(await fixture.Users.IsInRoleAsync(admin, "Viewer"));
         var history = await fixture.Db.Set<AppUserRoleExtension>().SingleAsync();
         Assert.Equal("Revoked", history.ApprovalStatus);
@@ -284,9 +300,9 @@ public class RepositoryRoleExtensionTests
         Assert.Empty(await fixture.Service.GetUserRoleAssignmentsAsync(admin.Id));
 
         var code = (await fixture.Service.GetPermissionCatalogAsync()).First().PermissionId;
-        var permission = await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, admin.Id);
+        var permission = await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, "actor");
         Assert.True(await fixture.Db.RoleClaims.AnyAsync(x => x.RoleId == role.Id && x.ClaimValue == code));
-        Assert.True(await fixture.Service.RevokePermissionFromRoleAsync(permission.RolePermissionId, admin.Id));
+        Assert.True(await fixture.Service.RevokePermissionFromRoleAsync(permission.RolePermissionId, "actor"));
         Assert.False(await fixture.Db.RoleClaims.AnyAsync(x => x.RoleId == role.Id));
         var permissionHistory = await fixture.Db.Set<AppRolePermissionExtension>().SingleAsync();
         Assert.Null(permissionHistory.RoleClaimId);
@@ -301,8 +317,9 @@ public class RepositoryRoleExtensionTests
         Assert.True((await fixture.Users.CreateAsync(user)).Succeeded);
         var role = new IdentityRole("Administrator");
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
+        await fixture.AuthorizeActorAsync(user.Id);
         var assignment = await fixture.Service.AssignRoleAsync(user.Id, role.Id, user.Id);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Service.RevokeRoleAsync(assignment.UserRoleId, user.Id));
+        await Assert.ThrowsAsync<RefusalException>(() => fixture.Service.RevokeRoleAsync(assignment.UserRoleId, user.Id));
         Assert.True(await fixture.Users.IsInRoleAsync(user, "Administrator"));
     }
 
@@ -314,13 +331,14 @@ public class RepositoryRoleExtensionTests
         Assert.True((await fixture.Users.CreateAsync(user)).Succeeded);
         var role = new IdentityRole("Viewer");
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
-        await fixture.Service.AssignRoleAsync(user.Id, role.Id, user.Id);
+        await fixture.AuthorizeActorAsync("actor");
+        await fixture.Service.AssignRoleAsync(user.Id, role.Id, "actor");
         Assert.True((await fixture.Users.RemoveFromRoleAsync(user, role.Name!)).Succeeded);
         Assert.Empty(await fixture.Service.GetUserRoleAssignmentsAsync(user.Id));
         Assert.Single(await fixture.Db.Set<AppUserRoleExtension>().ToListAsync());
 
         var code = (await fixture.Service.GetPermissionCatalogAsync()).First().PermissionId;
-        await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, user.Id);
+        await fixture.Service.GrantPermissionToRoleAsync(role.Id, code, "actor");
         Assert.Single(await fixture.Service.GetRolePermissionsAsync(role.Id));
         var claim = await fixture.Db.RoleClaims.SingleAsync();
         claim.ClaimValue = "different-permission";
@@ -339,6 +357,7 @@ public class RepositoryRoleExtensionTests
         using var fixture = new Fixture();
         var account = new OilGasUser { UserName = "ordinary" };
         Assert.True((await fixture.Users.CreateAsync(account)).Succeeded);
+        fixture.SetActor(account.Id);
         var input = (await fixture.UserService.GetByIdAsync(account.Id))!;
         Assert.NotNull(await fixture.UserService.UpdateAsync(account.Id, new("Field Engineer", null, input.ConcurrencyStamp)));
         Assert.Equal("Field Engineer", (await fixture.UserService.GetByIdAsync(account.Id))!.FullName);
@@ -358,6 +377,7 @@ public class RepositoryRoleExtensionTests
             RepositoryBootstrapService.ExternalLoginProvider("https://issuer"), "inactive-member", "OIDC"))).Succeeded);
         var role = new IdentityRole("Reader");
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
+        await fixture.AuthorizeActorAsync("actor");
         await fixture.Service.AssignRoleAsync(user.Id, role.Id, "actor");
         Assert.True(await fixture.UserService.DeleteAsync(user.Id));
         Assert.Equal(new[] { "Reader" }, await fixture.UserService.GetRolesAsync(user.Id));
@@ -370,7 +390,7 @@ public class RepositoryRoleExtensionTests
 
         Assert.True(await fixture.UserService.RemoveFromRoleAsync(user.Id, "Reader"));
         Assert.Empty(await fixture.UserService.GetRolesAsync(user.Id));
-        Assert.Empty(await fixture.Db.UserRoles.ToListAsync());
+        Assert.Empty(await fixture.Db.UserRoles.Where(value => value.UserId == user.Id).ToListAsync());
     }
 
     [Fact]
@@ -381,8 +401,10 @@ public class RepositoryRoleExtensionTests
         Assert.True((await fixture.Users.CreateAsync(user)).Succeeded);
         var role = new IdentityRole("Administrator");
         Assert.True((await fixture.Roles.CreateAsync(role)).Succeeded);
+        await fixture.AuthorizeActorAsync(user.Id);
         await fixture.Service.AssignRoleAsync(user.Id, role.Id, user.Id);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.UserService.DeleteAsync(user.Id));
+        fixture.SetActor(user.Id);
+        await Assert.ThrowsAsync<RefusalException>(() => fixture.UserService.DeleteAsync(user.Id));
         Assert.True((await fixture.Users.FindByIdAsync(user.Id))!.IsActive);
     }
 
@@ -392,16 +414,17 @@ public class RepositoryRoleExtensionTests
         using var fixture = new Fixture();
         var account = new OilGasUser { UserName = "versioned", Email = "verified@example.test" };
         Assert.True((await fixture.Users.CreateAsync(account)).Succeeded);
+        fixture.SetActor(account.Id);
         var original = (await fixture.UserService.GetByIdAsync(account.Id))!;
         var saved = (await fixture.UserService.UpdateAsync(account.Id, new("First", null, original.ConcurrencyStamp)))!;
         Assert.NotEqual(original.ConcurrencyStamp, saved.ConcurrencyStamp);
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() =>
-            fixture.UserService.UpdateAsync(account.Id, new("Stale", false, original.ConcurrencyStamp)));
+        Assert.Equal(RefusalKind.Conflict, (await Assert.ThrowsAsync<RefusalException>(() =>
+            fixture.UserService.UpdateAsync(account.Id, new("Stale", null, original.ConcurrencyStamp)))).Kind);
         var current = (await fixture.UserService.GetByIdAsync(account.Id))!;
         Assert.Equal("First", current.FullName);
         Assert.True(current.IsActive);
         Assert.Equal("verified@example.test", current.Email);
-        Assert.Equal("actor", (await fixture.Db.Set<AppUserExtension>().SingleAsync()).ChangedBy);
+        Assert.Equal(account.Id, (await fixture.Db.Set<AppUserExtension>().SingleAsync()).ChangedBy);
     }
 
     [Theory]
@@ -412,8 +435,9 @@ public class RepositoryRoleExtensionTests
         using var fixture = new Fixture();
         var account = new OilGasUser { UserName = "required-version" };
         Assert.True((await fixture.Users.CreateAsync(account)).Succeeded);
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() =>
-            fixture.UserService.UpdateAsync(account.Id, new("Not saved", null, version)));
+        fixture.SetActor(account.Id);
+        Assert.Equal(RefusalKind.Conflict, (await Assert.ThrowsAsync<RefusalException>(() =>
+            fixture.UserService.UpdateAsync(account.Id, new("Not saved", null, version)))).Kind);
         Assert.Empty(await fixture.Db.Set<AppUserExtension>().ToListAsync());
     }
 
@@ -478,6 +502,9 @@ public class RepositoryRoleExtensionTests
             services.AddScoped<RepositoryDbContext>(sp => sp.GetRequiredService<TestContext>());
             services.AddIdentityCore<OilGasUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<RepositoryDbContext>();
             services.AddScoped<RepositoryRoleAssignmentService>();
+            services.AddScoped<RepositoryRequestAccount>();
+            services.AddSingleton<Func<System.Security.Claims.ClaimsPrincipal, string?>>(_ => principal => principal.FindActingUserId());
+            services.AddScoped<IRepositoryAccessService, RepositoryAccessService>();
             services.AddSingleton<Microsoft.AspNetCore.Http.IHttpContextAccessor>(new Microsoft.AspNetCore.Http.HttpContextAccessor
             {
                 HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
@@ -496,6 +523,21 @@ public class RepositoryRoleExtensionTests
             Service = _scope.ServiceProvider.GetRequiredService<RepositoryRoleAssignmentService>();
             UserService = _scope.ServiceProvider.GetRequiredService<RepositoryUserService>();
         }
+        // The fixture explicitly seeds standard repository authority; the production service never grants it implicitly.
+        public async Task AuthorizeActorAsync(string actor)
+        {
+            var user = await Users.FindByIdAsync(actor);
+            if (user is null)
+            {
+                user = new OilGasUser { Id = actor, UserName = "repository-fixture-" + actor, IsActive = true };
+                Assert.True((await Users.CreateAsync(user)).Succeeded);
+            }
+            var role = await Roles.FindByNameAsync("Administrator");
+            if (role is null) Assert.True((await Roles.CreateAsync(new IdentityRole("Administrator"))).Succeeded);
+            if (!await Users.IsInRoleAsync(user, "Administrator")) Assert.True((await Users.AddToRoleAsync(user, "Administrator")).Succeeded);
+        }
+        public void SetActor(string actor) => _scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>().HttpContext!.User =
+            new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[] { new System.Security.Claims.Claim("party_id", actor) }, "test"));
         public void Dispose() { _scope.Dispose(); _provider.Dispose(); _connection.Dispose(); }
     }
 }

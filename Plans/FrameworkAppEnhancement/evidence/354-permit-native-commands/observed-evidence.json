@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-29",
+  "plan": "Implementation-354-Permit-Application-Workflow.md, phase 2 native persisted commands/recovery",
+  "runs": [
+    {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "4m9s",
+      "exact_methods": [
+        "PermitNativeCommandPersistsOriginalAuditAndRecoversOnlyItsExactEffect"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 4 m 9 s - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-native-command-tests.log",
+      "log_sha256": "4376e1fa73e53b602b855b62ce88d467ed62e265386670cebcef5e61c1afdd5e"
+    },
+    {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "3s",
+      "exact_methods": [
+        "PermitNativeTablesRequireOwnedCommandBeforeAnyGenericWrite",
+        "PermitCommandReceiptRejectsRewrittenOutcomeOriginalOwnershipAndAudit"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:    11, Skipped:     0, Total:    11, Duration: 3 s - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-receipt-integrity.log",
+      "log_sha256": "7ef97087caa7ab81787897ec626e79619a0e0fb5c344b23221d4770a6acc6c2d"
+    },
+    {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "43s",
+      "exact_methods": [
+        "PermitCommandRejectsInvalidAuditBeforeProviderMutation"
+      ],
+      "terminal": "Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 43 s - Beep.OilandGas.Repository.Tests.dll (net10.0)",
+      "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-audit-final.log",
+      "log_sha256": "131be6073bc8226f0a5fa0b7ef167ca03de167f19c8c9205ad3954771cde7e77"
+    }
+  ],
+  "distinct_inputs_observed": 26,
+  "methods": {
+    "PermitNativeCommandPersistsOriginalAuditAndRecoversOnlyItsExactEffect": {
+      "inputs": 12,
+      "criteria": [
+        "Real native lifecycle submission/independent approve/reject, exact saved header/history/original/outcome/audit",
+        "Failure at header/history/retained-record write restores original rows using explicit mock provider rollback ledger",
+        "Lost commit acknowledgement leaves one effect; fresh current read-only request without IssuePermit recovers and replays without writes",
+        "Late permission revocation rolls back; stale original and insufficient receipt schema refuse",
+        "Changed history cannot confirm recovery; different original cannot adopt same intent"
+      ]
+    },
+    "PermitNativeTablesRequireOwnedCommandBeforeAnyGenericWrite": {
+      "inputs": 3,
+      "criteria": [
+        "Unscoped and read-policy root/history/command writes refuse before any transaction or SDK write"
+      ]
+    },
+    "PermitCommandReceiptRejectsRewrittenOutcomeOriginalOwnershipAndAudit": {
+      "inputs": 8,
+      "criteria": [
+        "Exact receipt round-trip and changed header/history/owner/hash/audit/intent/source revision refusals"
+      ]
+    },
+    "PermitCommandRejectsInvalidAuditBeforeProviderMutation": {
+      "inputs": 3,
+      "criteria": [
+        "Current valid full submission writes exactly three rows",
+        "Bad UTC update timestamp refuses before SDK write",
+        "Bad UTC history creation timestamp refuses before its SDK write and rolls back prior header effect"
+      ]
+    }
+  },
+  "command_template": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute actual Data.dll> -p:BuildProjectReferences=false --filter <OR of FullyQualifiedName~ and exact_methods for that run> --logger \"console;verbosity=minimal\"",
+  "builds": {
+    "Data": "passed, 3.36s, zero errors, existing missing sibling analyzer warning",
+    "repository core": "passed, 2.52s, zero errors, existing missing sibling analyzer warning",
+    "native module": "initial missing IDataSource namespace compile failure corrected by importing installed namespace; final build passed 2.46s, zero errors, existing missing analyzer and duplicate using warnings"
+  },
+  "sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationCommandOutcome.cs": "5b1f8fa982e45ace87cea302f95dc3d50c7cc9bb0052dc69eb6afcba104bcae1",
+    "TheTechIdea.Data/OilGas/PERMIT_APPLICATION_COMMAND.cs": "dbd8e138f0c72896df96c2458aaaba21beba3f8c8e0d0b91c967c407b623ca8e",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "36255b4641730afd6cb0d88469f08d030314dd5fc9dc4081119b239ba588452f",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "22fc68d8e562370c4a2505f701d59397fbbe11458fd8cb102e39f076c130f553",
+    "Beep.OilandGas.PermitsAndApplications/Core/Interfaces/IPermitApplicationLifecycleService.cs": "de471d015098b27d5f3459972c017c9fb8d7c51908d420fd283e654c048b35cf",
+    "Beep.OilandGas.PermitsAndApplications/Modules/PermitsModule.cs": "122f3e0cc55c3cd43938379eeff103ab702ccea10d826f486896d99fd95a27f1",
+    "Beep.OilandGas.PPDM39/Core/PPDMGenericRepository.cs": "9239689fc31d1f45456a97ba188d4b19c8821f1f1ab8b9adaed680cd18c5829c",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "29f5f3bea37dea68e9c45e3c360af7d65827a23abbc740a803f4c83fb8d65c83",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "32bdc2a6df82f2c720878fd19525e4578f75bf4f4435411ff05e8b2271c34146",
+    "Beep.OilandGas.PPDM39/bin/Debug/net10.0/Beep.OilandGas.PPDM39.dll": "f7c4a0d857af8119f985098474190eea57bcf0a1979df12e36fa3d13daad8121",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "ef2727d06f7885caa7703f661c5b6123580d0d29172cc57fe97cdb9809077bc5",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "44a97d3918048b0c36bb1df73e95435663438e4c3b59689865b79a60df43dcc5"
+  },
+  "first_native_gate_test_assembly_sha256": "CDA5166906ACD3410EF6803A4155F9BE85AACF752C0FE6A26BF628F45785DDF0",
+  "qualification_scope": "Actual lifecycle/service, API current company/module authority, common audit handler, canonical generic repository and owned serializable Beep transaction; explicit persisting mock native source/physical connection with detached reads and rollback snapshot. Actual app registry/auth store. Not a live provider, physical migration, hosted API/OIDC or browser journey.",
+  "runtime_scope_note": "The 12 native and 11 receipt/bypass inputs precede the final additional pre-provider audit timestamp checks. The final three-input run qualifies those checks and a healthy full submission on current native runtime. No broad suite or unrelated workflow ran; counts are separate observed inputs, not a current-generation full regression claim.",
+  "migration": "PERMIT_APPLICATION_COMMAND is Data-owned and registered in existing PERMITS entity-driven Beep Migration manifest. No physical provider migration executed, handwritten SQL, new EF migration, legacy ownership adoption or compatibility forwarding.",
+  "open": [
+    "Replace old direct submission/decision API/client lanes with native reviewed source/command/recovery calls",
+    "Reviewed creation/update authoring and original-retention forms; direct generic mutations remain fenced",
+    "Persona landing/inbox and correction/rejection outcomes",
+    "Current runtime protected HTTP/multi-account/browser and actual provider migration/transaction/concurrency/regional/RTL/performance qualification"
+  ],
+  "goal": "active; phase 2/full plan incomplete; no commit/push"
+}

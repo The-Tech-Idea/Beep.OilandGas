@@ -1,4 +1,5 @@
 using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -18,43 +19,30 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         protected readonly IPPDM39DefaultsRepository Defaults;
         protected readonly IPPDMMetadataRepository Metadata;
         protected readonly ILogger? Logger;
-        protected readonly string ConnectionName;
+        protected readonly ICompanyPermitApplicationDataAccess DataAccess;
 
         protected PermitsServiceBase(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger? logger,
-            string connectionName)
+            ICompanyPermitApplicationDataAccess dataAccess,
+            ILogger? logger)
         {
             Editor = editor ?? throw new ArgumentNullException(nameof(editor));
             CommonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             Defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             Metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             Logger = logger;
-            ConnectionName = connectionName;
+            DataAccess = dataAccess ?? throw new ArgumentNullException(nameof(dataAccess));
         }
 
-        protected async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName)
+        protected async Task<PPDMGenericRepository> CreateRepositoryAsync<T>(string tableName, string? applicationId = null)
         {
-            var metadata = await Metadata.GetTableMetadataAsync(tableName);
-            Type? entityType = null;
-            if (!string.IsNullOrWhiteSpace(metadata?.EntityTypeName))
-            {
-                entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-            }
-
-            entityType ??= typeof(T);
-
-            return new PPDMGenericRepository(
-                Editor,
-                CommonColumnHandler,
-                Defaults,
-                Metadata,
-                entityType,
-                ConnectionName,
-                tableName);
+            var scope = await DataAccess.RequireReadScopeAsync(); scope.Require();
+            if (typeof(T).Name != tableName) throw new InvalidOperationException("An exact native permit entity/table is required.");
+            return new PPDMGenericRepository(Editor, CommonColumnHandler, Defaults, Metadata, typeof(T),
+                scope.Database.ConnectionName, tableName, rowAccess: DataAccess.ForRead(typeof(T), tableName, applicationId));
         }
 
         protected void SetAuditFields(dynamic entity, string userId)

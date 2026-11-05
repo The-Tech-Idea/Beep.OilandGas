@@ -1,0 +1,36 @@
+### Page
+- Page URL: http://127.0.0.1:54712/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e45]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e46]
+    - paragraph [ref=e47]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e48]:
+      - button "Use read-only unmapped profile" [ref=e49] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e51] [cursor=pointer]
+      - button "Switch other company" [ref=e53] [cursor=pointer]
+      - button "Switch other account" [ref=e55] [cursor=pointer]
+      - button "Restore original company/account" [ref=e57] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e59] [cursor=pointer]
+      - button "Show actual start recovery" [ref=e61] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e63] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e65] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e89]:
+    - heading "Execution reporting responsibility" [level=1] [ref=e90]
+    - group [ref=e91]:
+      - link "Drilling workspace" [ref=e92] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=e94] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload source and recipients" [ref=e96] [cursor=pointer]
+    - generic [ref=e98]: Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.
+    - status [ref=e200]:
+      - generic [ref=e201]: This original reporting assignment was confirmed absent. Reload current source and recipients before preparing another.
+    - generic [ref=e206]:
+      - heading "Original reporting assignment outcome" [level=2] [ref=e207]
+      - paragraph [ref=e208]: Outcome checked 2026-10-26 16:10:38Z UTC
+      - paragraph [ref=e209]: This original reporting assignment was confirmed absent.
+```

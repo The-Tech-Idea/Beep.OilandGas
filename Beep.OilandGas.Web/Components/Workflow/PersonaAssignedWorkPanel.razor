@@ -1,0 +1,174 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@if (Review?.Current is { } current)
+{
+        var counts=Review.SelectedCounts;
+        <MudText Typo="Typo.caption">Company: @current.Company.TenantId / @current.Company.BusinessAssociateId · Workspace: @WorkspaceName</MudText>
+        <MudText Typo="Typo.caption">Counts describe the loaded assigned-work response. Reload for updated work; these are task counts.</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSource("ALL"))' aria-pressed='@(Review.SourceKind=="ALL" ? "true" : "false")'>All source assignments: @Review.SourceCount("ALL")</MudButton>
+            @foreach (var source in Review.AvailableSources)
+            {
+                <MudButton @key="source" Variant="Variant.Outlined" OnClick='@(() => Review.SelectSource(source))' aria-pressed='@(Review.SourceKind==source ? "true" : "false")'>@SourceLabel(source): @Review.SourceCount(source)</MudButton>
+            }
+        </MudStack>
+        <MudText Typo="Typo.caption">Selected source: @(Review.SourceKind=="FIELD_DEVELOPMENT_PLAN"?"Development plan reviews":Review.SourceKind=="AFE"?"Investment review assignments":Review.SourceKind=="DRILLING_PROGRAM"?"Drilling program reviews":Review.SourceKind=="DRILLING_OPERATION"?"Ongoing execution reporting responsibilities":Review.SourceKind). Multiple assigned tasks may refer to one source; these counts do not establish financial or receipt completion, maintenance acceptance, execution or return to service.</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectRole(null))' aria-pressed='@(Review.AssignedRole is null ? "true" : "false")'>All assigned roles</MudButton>
+            @foreach(var role in Review.AssignedRoles)
+            {
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectRole(role))' aria-pressed='@(Review.AssignedRole==role ? "true" : "false")'>@role assignments: @Review.RoleCount(role)</MudButton>
+            }
+        </MudStack>
+        <MudText Typo="Typo.caption">Selected assigned role: @(Review.AssignedRole ?? "All roles")</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("ALL"))'>Pending work: @counts.TotalPending</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("APPROVAL"))'>Approvals: @counts.Approvals</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("REVIEW"))'>Reviews: @counts.Reviews</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("DATA_ENTRY"))'>Data entry: @counts.DataEntry</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("OVERDUE"))'>Overdue work: @counts.Overdue</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("CRITICAL"))'>Critical work: @counts.Critical</MudButton>
+            @if (Review.ScheduleCount("UNCONFIRMED") > 0) { <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("UNCONFIRMED"))'>Time zone unconfirmed: @Review.ScheduleCount("UNCONFIRMED")</MudButton> }
+            @if (Review.ScheduleCount("UNSCHEDULED") > 0) { <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectSummary("UNSCHEDULED"))'>No confirmed deadline: @Review.ScheduleCount("UNSCHEDULED")</MudButton> }
+        </MudStack>
+        @if(current.CriticalTasks.Concat(current.HighPriorityTasks).Concat(current.NormalTasks).Any(row=>row.AccountingStepReview is not null))
+        {
+            <MudText Typo="Typo.body2">Configured accounting, commercial and delivery work</MudText>
+            <MudText Typo="Typo.caption">Recorded disposition and current workflow eligibility for the selected source and role. Reload and review the process before acting.</MudText>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("ALL"))'>All work statuses</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("RECORDED_DISPOSITION_REQUIRED"))'>Disposition needed: @Review.EvidenceCount("RECORDED_DISPOSITION_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("ELIGIBLE"))'>Ready for workflow completion: @Review.EvidenceCount("ELIGIBLE")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("RECORDED_CONTROLLER_REQUIRED"))'>Recorded controller required: @Review.EvidenceCount("RECORDED_CONTROLLER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("CORRECTION_DATA_REQUIRED"))'>Accountant correction needed: @Review.EvidenceCount("CORRECTION_DATA_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("CORRECTION_ACKNOWLEDGEMENT_REQUIRED"))'>Acknowledgement configuration needed: @Review.EvidenceCount("CORRECTION_ACKNOWLEDGEMENT_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("CORRECTION_WORK_EVIDENCE_REQUIRED"))'>Latest correction work needed: @Review.EvidenceCount("CORRECTION_WORK_EVIDENCE_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("ORIGINAL_PREPARER_REQUIRED"))'>Original preparer required: @Review.EvidenceCount("ORIGINAL_PREPARER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("COMMERCIAL_APPROVAL_REQUIRED"))'>Commercial approval needed: @Review.EvidenceCount("COMMERCIAL_APPROVAL_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("COMMERCIAL_REVIEWER_REQUIRED"))'>Recorded commercial reviewer required: @Review.EvidenceCount("COMMERCIAL_REVIEWER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("COMMERCIAL_APPROVAL_PERMISSION_REQUIRED"))'>Commercial approval access needed: @Review.EvidenceCount("COMMERCIAL_APPROVAL_PERMISSION_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("COMMERCIAL_REJECTION_RECORDED"))'>Recorded rejection to route: @Review.EvidenceCount("COMMERCIAL_REJECTION_RECORDED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("COMMERCIAL_PREPARER_REQUIRED"))'>Original commercial preparer required: @Review.EvidenceCount("COMMERCIAL_PREPARER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("DELIVERY_APPROVAL_REQUIRED"))'>Delivery decision needed: @Review.EvidenceCount("DELIVERY_APPROVAL_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("DELIVERY_REJECTION_RECORDED"))'>Delivery rejection to route: @Review.EvidenceCount("DELIVERY_REJECTION_RECORDED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("DELIVERY_PREPARER_REQUIRED"))'>Original delivery preparer required: @Review.EvidenceCount("DELIVERY_PREPARER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("DELIVERY_REVIEWER_REQUIRED"))'>Recorded delivery reviewer required: @Review.EvidenceCount("DELIVERY_REVIEWER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_JOURNAL_APPROVAL_REQUIRED"))'>Journal decision needed: @Review.EvidenceCount("SALES_JOURNAL_APPROVAL_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_JOURNAL_REJECTION_RECORDED"))'>Journal rejection to route: @Review.EvidenceCount("SALES_JOURNAL_REJECTION_RECORDED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_JOURNAL_POSTING_REQUIRED"))'>Journal posting needed: @Review.EvidenceCount("SALES_JOURNAL_POSTING_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_JOURNAL_POSTER_REQUIRED"))'>Recorded journal poster required: @Review.EvidenceCount("SALES_JOURNAL_POSTER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_INVOICE_APPROVAL_REQUIRED"))'>Sales invoice decision needed: @Review.EvidenceCount("SALES_INVOICE_APPROVAL_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_INVOICE_REJECTION_RECORDED"))'>Sales invoice rejection to route: @Review.EvidenceCount("SALES_INVOICE_REJECTION_RECORDED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_INVOICE_REVIEWER_REQUIRED"))'>Recorded invoice reviewer required: @Review.EvidenceCount("SALES_INVOICE_REVIEWER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_INVOICE_SOURCE_CHANGED"))'>Invoice source reconciliation needed: @Review.EvidenceCount("SALES_INVOICE_SOURCE_CHANGED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_PAYMENT_APPROVAL_REQUIRED"))'>Payment decision needed: @Review.EvidenceCount("SALES_PAYMENT_APPROVAL_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_PAYMENT_REJECTION_RECORDED"))'>Payment rejection to route: @Review.EvidenceCount("SALES_PAYMENT_REJECTION_RECORDED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_PAYMENT_REVIEWER_REQUIRED"))'>Recorded payment reviewer required: @Review.EvidenceCount("SALES_PAYMENT_REVIEWER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_PAYMENT_PREPARER_REQUIRED"))'>Original payment maker required: @Review.EvidenceCount("SALES_PAYMENT_PREPARER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_RECEIVABLE_APPROVAL_REQUIRED"))'>Receivable financial decision needed: @Review.EvidenceCount("SALES_RECEIVABLE_APPROVAL_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_RECEIVABLE_REJECTION_RECORDED"))'>Receivable rejection to route: @Review.EvidenceCount("SALES_RECEIVABLE_REJECTION_RECORDED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_RECEIVABLE_REVIEWER_REQUIRED"))'>Recorded receivable reviewer required: @Review.EvidenceCount("SALES_RECEIVABLE_REVIEWER_REQUIRED")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick='@(() => Review.SelectAccountingEvidence("SALES_RECEIVABLE_SOURCE_CHANGED"))'>Receivable source reconciliation needed: @Review.EvidenceCount("SALES_RECEIVABLE_SOURCE_CHANGED")</MudButton>
+            </MudStack>
+            <MudText Typo="Typo.caption">Selected accounting work status: @Review.AccountingEvidence</MudText>
+        }
+        <MudSelect T="string" Label="Work type" Value="@Review.WorkType" ValueChanged="WorkTypeChanged" Class="mb-3">
+            <MudSelectItem T="string" Value='@("ALL")'>All assigned work</MudSelectItem>
+            <MudSelectItem T="string" Value='@("APPROVAL")'>Approvals</MudSelectItem>
+            <MudSelectItem T="string" Value='@("REVIEW")'>Reviews</MudSelectItem>
+            <MudSelectItem T="string" Value='@("DATA_ENTRY")'>Data entry</MudSelectItem>
+        </MudSelect>
+        <MudSelect T="string" Label="Attention" Value="@Review.Attention" ValueChanged="AttentionChanged" Class="mb-3">
+            <MudSelectItem T="string" Value='@("ALL")'>All priorities and due statuses</MudSelectItem>
+            <MudSelectItem T="string" Value='@("OVERDUE")'>Overdue work</MudSelectItem>
+            <MudSelectItem T="string" Value='@("CRITICAL")'>Critical work</MudSelectItem>
+            <MudSelectItem T="string" Value='@("UNCONFIRMED")'>Time zone unconfirmed</MudSelectItem>
+            <MudSelectItem T="string" Value='@("UNSCHEDULED")'>No confirmed deadline</MudSelectItem>
+        </MudSelect>
+        <MudText Typo="Typo.body2" role="status">Showing @Review.VisibleRows.Count of @counts.TotalPending pending tasks for @(Review.SourceKind=="FIELD_DEVELOPMENT_PLAN"?"development plan reviews":Review.SourceKind=="AFE"?"investment review assignments":Review.SourceKind=="DRILLING_PROGRAM"?"drilling program reviews":Review.SourceKind=="DRILLING_OPERATION"?"ongoing execution reporting responsibilities":Review.SourceKind) · All loaded source assignments: @current.Counts.TotalPending · Work type: @Review.WorkType · Attention: @Review.Attention</MudText>
+        @if (Review.VisibleRows.Count == 0) { <MudAlert Severity="Severity.Info">No pending work is visible for this company, workspace, source and work-type filter.</MudAlert> }
+        @foreach (var row in Review.VisibleRows)
+        {
+            <MudPaper Class="pa-3 mb-2" Outlined="true">
+                <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center">
+                    <MudText>@(row.EntityType=="FIELD_DEVELOPMENT_PLAN"?"Development plan review":row.EntityType=="AFE"?"Investment review":row.EntityType=="DRILLING_PROGRAM"?"Drilling program review":row.EntityType=="DRILLING_OPERATION"?"Ongoing execution reporting responsibility":row.TaskType+" · "+row.EntityType+" / "+row.EntityId)</MudText>
+                    <MudChip T="string" Color="@(row.SlaStatus == "BREACHED" ? Color.Error : Color.Default)">@row.SlaStatus</MudChip>
+                    <MudButton Href="@row.Route" Variant="Variant.Outlined">@(row.EntityType=="FIELD_DEVELOPMENT_PLAN"?"Open assigned development review":row.EntityType=="AFE"?"Open assigned investment source":row.EntityType=="DRILLING_PROGRAM"?"Open assigned program review":row.EntityType=="DRILLING_OPERATION"?"Open assigned execution reporting":"Open source process")</MudButton>
+                </MudStack>
+                <MudText>@row.EntityDescription</MudText>
+                @if (row.EntityType == "FACILITY") { <MudAlert Severity="Severity.Warning">This recorded facility assignment cannot advance construction, commissioning or handover through the generic process. A source-bound evidence workflow is required.</MudAlert> }
+                @if (row.EntityType == "DRILLING_OPERATION") { <MudText Typo="Typo.caption">Open the reporting responsibility to inspect current observed progress and reported completion/test evidence. A completion report alone does not close this ongoing task or authorize production handover.</MudText> }
+                @if(row.AccountingStepReview is {} evidence)
+                {
+                    @if(evidence.CorrectionEvidence is {} corrected)
+                    {
+                        <MudText>Correction version: @corrected.CorrectionVersion · Intent: @corrected.CorrectionIntentId</MudText>
+                        <MudText>@(corrected.Action==CompanyAccountingStepEvidence.InvoiceCorrectionReturn?"Newer correction requires return to the original preparer before acknowledgement.":corrected.Action==CompanyAccountingStepEvidence.InvoiceCorrectionAcknowledgement?"Independent correction acknowledgement; financial approval remains separate.":"Recorded accountant correction work; independent acknowledgement remains separate.")</MudText>
+                    }
+                    @if(evidence.EntityType=="AR_PAYMENT"){<MudAlert Severity="@(evidence.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesPaymentMessage(evidence)</MudAlert>} else if(evidence.EntityType=="JOURNAL_ENTRY"){<MudAlert Severity="@(evidence.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesJournalMessage(evidence)</MudAlert>} else if(evidence.EntityType=="AR_INVOICE"){<MudAlert Severity="@(evidence.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesReceivableMessage(evidence)</MudAlert>} else if(evidence.EntityType=="INVOICE"){<MudAlert Severity="@(evidence.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.SalesInvoiceMessage(evidence)</MudAlert>} else if(evidence.EntityType=="RUN_TICKET")
+                    {<MudAlert Severity="@(evidence.Eligible?Severity.Info:Severity.Warning)">@PersonaTaskInboxState.DeliveryMessage(evidence)</MudAlert>}
+                    else
+                    {
+                    <MudAlert Severity="@(evidence.Eligible?Severity.Info:Severity.Warning)">@(evidence.Eligibility switch
+                    {
+                        "ELIGIBLE"=>evidence.EntityType=="SALES_CONTRACT"?evidence.RequiresIndependentActor?"Recorded commercial approval confirmed. Open the process to review task completion.":"Recorded rejection requires original-preparer review. Open the process; terms remain rejected.":"Recorded disposition confirmed. Open the process to review workflow completion.",
+                        "COMMERCIAL_APPROVAL_REQUIRED"=>"Open the process to review the recorded commercial terms and record an independent approval. A rejection cannot complete approval work.",
+                        "COMMERCIAL_REVIEWER_REQUIRED"=>"Only the account that recorded the native commercial approval can complete this task.",
+                        "COMMERCIAL_APPROVAL_PERMISSION_REQUIRED"=>"Current company commercial approval permission is required to complete this task.",
+                        "COMMERCIAL_REJECTION_RECORDED"=>"The native rejection is recorded. Open the process to route it to original-preparer review.",
+                        "COMMERCIAL_RETURN_CONFIGURATION_REQUIRED"=>"The recorded workflow lacks rejection review. Ask the workflow administrator to reconcile the original handoff.",
+                        "COMMERCIAL_PREPARER_REQUIRED"=>"Only the original commercial terms preparer can complete this rejection review.",
+                        "COMMERCIAL_PREPARATION_PERMISSION_REQUIRED"=>"Current company commercial preparation permission is required for rejection review.",
+                        "RECORDED_DISPOSITION_REQUIRED"=>"Record an independent controller variance disposition on the invoice before completing this task.",
+                        "RECORDED_CONTROLLER_REQUIRED"=>"Only the controller account that recorded the disposition can complete this task.",
+                        "REQUEST_CORRECTION_REQUIRED"=>"This correction workflow requires a recorded request for correction.",
+                        "ORIGINAL_PREPARER_REQUIRED"=>"Only the original proposal preparer can perform this correction work.",
+                        "CORRECTION_ACKNOWLEDGEMENT_REQUIRED"=>"Configure the immediately following independent acknowledgement step before completing correction work.",
+                        "CORRECTION_WORK_EVIDENCE_REQUIRED"=>"Complete correction work for this latest version before acknowledgement.",
+                        "CORRECTION_DATA_REQUIRED"=>"Accountant correction is pending. A recorded corrected invoice is required before this task can complete.",
+                        "WORKFLOW_PERMISSION_REQUIRED"=>"The current company assignment lacks the workflow action permission.",
+                        _=>"The current role or independent actor requirement refuses workflow completion."
+                    })</MudAlert>
+                    }
+                }
+                <MudText Typo="Typo.caption">Process: @row.WorkflowName · Recorded step: @(row.StepDisplayName ?? "Unavailable") · Step identity: @row.StepName</MudText>
+                <MudText Typo="Typo.caption">Scope: @(row.ScopeKind == "COMPANY_ACCOUNTING" ? "Company accounting" : "Field workflow") · Assigned role: @row.AssignedRole</MudText>
+                <MudText Typo="Typo.caption">Recorded handoff workspace: @(string.IsNullOrWhiteSpace(row.FromPersona) ? "Unavailable" : row.FromPersona) · From: @(string.IsNullOrWhiteSpace(row.FromUserName) ? "Unavailable" : row.FromUserName)</MudText>
+                <MudText Typo="Typo.caption">Recorded task creation: @(row.CreatedDate == default ? "Unavailable" : row.CreatedDate.ToString("O", System.Globalization.CultureInfo.InvariantCulture))</MudText>
+                <MudText Typo="Typo.caption">Recorded task creator account: @(row.CreatedByUserId ?? "Unavailable")</MudText>
+                @if (row.DueDate is { } due)
+                {
+                    <MudText Typo="Typo.caption">@(due.Kind == DateTimeKind.Utc ? "Due (UTC): " + due.ToString("u", System.Globalization.CultureInfo.InvariantCulture) : "Recorded due date (time zone unconfirmed): " + due.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture))</MudText>
+                    @if (due.Kind == DateTimeKind.Utc && CompanyEnvironment?.Review.Company == current.Company && CompanyEnvironment.LocalTime(due) is { } local)
+                    { <MudText Typo="Typo.caption">Company time (last setup check): @local</MudText> }
+                }
+            </MudPaper>
+        }
+}
+@code {
+    private static string SourceLabel(string source) => source switch
+    {
+        "AP_INVOICE" => "Invoice workflow assignments",
+        "INVOICE" => "Sales invoice assignments",
+        "AR_PAYMENT" => "Payment review/rejection assignments",
+        "JOURNAL_ENTRY" => "Journal review/posting assignments",
+        "AR_INVOICE" => "Receivable review assignments",
+        "PURCHASE_ORDER" => "Purchase-order workflow assignments",
+        "SALES_CONTRACT" => "Commercial contract assignments",
+        "RUN_TICKET" => "Delivery acceptance assignments",
+        "FIELD" => "Field workflow assignments",
+        "WORK_ORDER" => "Maintenance work-order assignments",
+        "FIELD_DEVELOPMENT_PLAN" => "Development plan reviews",
+        "AFE" => "Investment review assignments",
+        "DRILLING_PROGRAM" => "Drilling program reviews",
+        "DRILLING_OPERATION" => "Ongoing execution reporting responsibilities",
+        _ => source
+    };
+    [Microsoft.AspNetCore.Components.CascadingParameter] public CompanyEnvironmentDisplay? CompanyEnvironment { get; set; }
+    [Microsoft.AspNetCore.Components.Parameter] public PersonaTaskInboxState? Review { get; set; }
+    [Microsoft.AspNetCore.Components.Parameter] public string? WorkspaceName { get; set; }
+    private void WorkTypeChanged(string value) { if (Review is not null) Review.SetFilters(value,Review.Attention); }
+    private void AttentionChanged(string value) { if (Review is not null) Review.SetFilters(Review.WorkType,value); }
+}

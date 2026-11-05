@@ -2,7 +2,8 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
+using Beep.OilandGas.PPDM39.Core;
+using TheTechIdea.Data.OilGas;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
@@ -14,178 +15,63 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services.WorkOrder;
 /// failure — so "has a contractor" read as no — and the qualification check answered "not qualified" with the
 /// exception's text as the reason.
 /// </remarks>
-public class ContractorManagementService : IContractorManagementService
+public partial class ContractorManagementService : IContractorManagementService, ICompanyWorkOrderPersonnelSourceOwner, ICompanyWorkOrderPersonnelAssignmentOwner, ICompanyWorkOrderPersonnelAssignmentReads, ICompanyWorkOrderPersonnelReleaseOwner, ICompanyPersonnelPolicyOwner, ICompanyPersonnelCredentialOwner, ICompanyPersonnelAcceptanceCoreProof
 {
     private readonly IDMEEditor                _editor;
     private readonly ICommonColumnHandler      _commonColumnHandler;
     private readonly IPPDM39DefaultsRepository _defaults;
     private readonly IPPDMMetadataRepository   _metadata;
-    private readonly string                    _connectionName;
+    private readonly WorkOrderDatabaseBinding _database;
     private readonly ILogger<ContractorManagementService> _logger;
-
-    private static readonly Dictionary<string, (string LicenseType, int Level)> _requirements = new()
-    {
-        [WorkOrderSubType.Preventive]        = ("CONTRACTOR_GENERAL",       2),
-        [WorkOrderSubType.Corrective]        = ("CONTRACTOR_GENERAL",       2),
-        [WorkOrderSubType.Safety]            = ("SAFETY_CRITICAL_CERT",     3),
-        [WorkOrderSubType.Environmental]     = ("ENV_REMEDIATION_CERT",     2),
-        [WorkOrderSubType.RegulatoryInspect] = ("REGULATORY_INSPECTION_CERT", 3),
-        [WorkOrderSubType.Turnaround]        = ("TURNAROUND_SUPERVISOR",    3),
-    };
-
-    private static readonly Dictionary<(string WoType, string Jurisdiction), string> _jurisdictionOverride = new()
-    {
-        [(WorkOrderSubType.Safety,       "USA")]    = "BSEE_CERT",
-        [(WorkOrderSubType.Safety,       "CANADA")] = "AER_CONTRACTOR_CERT",
-        [(WorkOrderSubType.Environmental,"USA")]    = "EPA_CERT",
-        [(WorkOrderSubType.Environmental,"CANADA")] = "ECCC_CERT",
-    };
 
     public ContractorManagementService(
         IDMEEditor editor,
         ICommonColumnHandler commonColumnHandler,
         IPPDM39DefaultsRepository defaults,
         IPPDMMetadataRepository metadata,
-        string connectionName,
+        Func<Task<(CompanyScope Company,string Actor,AssetDatabaseScope Database)>> resolveDatabase,
         ILogger<ContractorManagementService> logger)
     {
         _editor              = editor;
         _commonColumnHandler = commonColumnHandler;
         _defaults            = defaults;
         _metadata            = metadata;
-        _connectionName      = connectionName;
+        _database = new(resolveDatabase ?? throw new ArgumentNullException(nameof(resolveDatabase)));
         _logger              = logger;
     }
 
-    public async Task<ContractorAssignment> AssignContractorAsync(
-        string instanceId, string stepId, string baId,
-        string roleCode, string userId)
+    public async Task<ContractorAssignment> AssignContractorAsync(string instanceId,string stepId,string baId,string roleCode,string userId)
     {
-        _logger.LogInformation("Assigning contractor {BaId} to step {StepId} on WO {InstanceId}",
-            baId, stepId, instanceId);
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_BA");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT_STEP_BA");
-
-            dynamic entity = Activator.CreateInstance(entityType!)!;
-            entity.PROJECT_ID    = instanceId;
-            entity.STEP_SEQ      = stepId;
-            entity.BA_ID         = baId;
-            entity.STEP_BA_TYPE  = roleCode;
-            entity.ACTIVE_IND    = "Y";
-            entity.ASSIGNED_DATE = DateTime.UtcNow;
-            await repo.InsertAsync(entity, userId);
-
-            return new ContractorAssignment(stepId, baId, string.Empty, roleCode, DateTime.UtcNow);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to assign contractor {BaId}", baId);
-            throw;
-        }
+        await _database.RequireAsync(userId);
+        throw Beep.OilandGas.Models.Core.Refusals.RefusalException.Conflict("Use the retained native company/FIELD/work-order personnel assignment command with current membership, source, explicit duty and UTC window.");
     }
-
-    public async Task RemoveContractorAsync(
-        string instanceId, string stepId, string baId, string userId)
+    public async Task RemoveContractorAsync(string instanceId,string stepId,string baId,string userId)
     {
-        try
-        {
-            var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_BA");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-            var repo       = BuildRepo(entityType, "PROJECT_STEP_BA");
-
-            var filters = new List<AppFilter>
-            {
-                new() { FieldName = "PROJECT_ID",   Operator = "=", FilterValue = instanceId },
-                new() { FieldName = "STEP_SEQ",     Operator = "=", FilterValue = stepId     },
-                new() { FieldName = "BA_ID",        Operator = "=", FilterValue = baId       },
-                new() { FieldName = "ACTIVE_IND",   Operator = "=", FilterValue = "Y"        }
-            };
-            var rows = (await repo.GetAsync(filters)).ToList();
-            foreach (var row in rows)
-            {
-                dynamic d  = row;
-                string  pk = WorkOrderRowValues.Str(d, "BA_ID");  // soft-delete by BA_ID composite
-                await repo.SoftDeleteAsync(pk, userId);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to remove contractor {BaId} from WO {InstanceId}", baId, instanceId);
-            throw;
-        }
+        await _database.RequireAsync(userId);
+        throw Beep.OilandGas.Models.Core.Refusals.RefusalException.Conflict("A project-step partial key cannot remove a work-order personnel assignment. Retain the original native assignment and use a reviewed release workflow.");
     }
-
     public async Task<List<ContractorAssignment>> GetAssignmentsAsync(string instanceId)
     {
-        var meta       = await _metadata.GetTableMetadataAsync("PROJECT_STEP_BA");
-        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "PROJECT_STEP_BA");
-
-        var filters = new List<AppFilter>
-        {
-            new() { FieldName = "PROJECT_ID", Operator = "=", FilterValue = instanceId },
-            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"        }
-        };
-        return (await repo.GetAsync(filters)).Select(r =>
-        {
-            dynamic d = r;
-            return new ContractorAssignment(
-                WorkOrderRowValues.Str(d, "STEP_SEQ"),
-                WorkOrderRowValues.Str(d, "BA_ID"),
-                string.Empty,
-                WorkOrderRowValues.Str(d, "STEP_BA_TYPE"),
-                WorkOrderRowValues.Date(d, "ASSIGNED_DATE") ?? DateTime.UtcNow);
-        }).ToList();
+        await _database.RequireAsync();
+        throw Beep.OilandGas.Models.Core.Refusals.RefusalException.Conflict("An identity-free project-step lookup cannot establish current company/FIELD/work-order personnel assignments.");
     }
-
-    public async Task<ContractorQualificationResult> ValidateContractorAsync(
-        string baId, string woType, string jurisdiction)
+    public async Task<ContractorQualificationResult> ValidateContractorAsync(string baId,string woType,string jurisdiction)
     {
-        var meta       = await _metadata.GetTableMetadataAsync("BA_LICENSE");
-        var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
-        var repo       = BuildRepo(entityType, "BA_LICENSE");
-
-        var filters = new List<AppFilter>
-        {
-            new() { FieldName = "BA_ID",      Operator = "=", FilterValue = baId },
-            new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y"  }
-        };
-        var licenses = (await repo.GetAsync(filters)).ToList();
-
-        var (baseType, minLevel) = _requirements.GetValueOrDefault(woType, ("CONTRACTOR_GENERAL", 2));
-        if (_jurisdictionOverride.TryGetValue((woType, jurisdiction.ToUpperInvariant()), out var overrideType))
-            baseType = overrideType;
-
-        var now     = DateTime.UtcNow;
-        var matches = licenses
-            .Select(l => (dynamic)l)
-            .Where(l =>
-            {
-                var licType  = WorkOrderRowValues.Str(l, "LICENSE_TYPE");
-                var licLevel = WorkOrderRowValues.Int(l, "LICENSE_LEVEL");
-                var expiry   = WorkOrderRowValues.Date(l, "EXPIRY_DATE");
-                return licType == baseType && licLevel >= minLevel && expiry > now;
-            })
-            .ToList();
-
-        if (matches.Count == 0)
-            return new ContractorQualificationResult(false,
-                $"No valid {baseType} license (level ≥ {minLevel}) on file or license expired.", null);
-
-        var maxExpiry = matches.Max(l => WorkOrderRowValues.Date(l, "EXPIRY_DATE"));
-        return new ContractorQualificationResult(true, null, maxExpiry);
+        if(string.IsNullOrWhiteSpace(baId) || string.IsNullOrWhiteSpace(woType) || string.IsNullOrWhiteSpace(jurisdiction))throw Beep.OilandGas.Models.Core.Refusals.RefusalException.Invalid("An explicit employee, work-order type and jurisdiction are required.");
+        await _database.RequireAsync();
+        // BA_LICENSE has no competency-level column or work-order/jurisdiction policy.
+        // An unavailable policy is neither a fabricated qualification nor a recorded failure.
+        throw Beep.OilandGas.Models.Core.Refusals.RefusalException.Conflict("Qualification cannot be confirmed from the legacy licence shortcut. Review company-linked personnel source, current task assignment and recorded competency/jurisdiction evidence.");
     }
-
     public async Task<bool> HasContractorAssignedAsync(string instanceId)
     {
         var assignments = await GetAssignmentsAsync(instanceId);
         return assignments.Count > 0;
     }
 
-    private PPDMGenericRepository BuildRepo(Type? entityType, string tableName) =>
-        new(_editor, _commonColumnHandler, _defaults, _metadata,
-            entityType, _connectionName, tableName);
+    private async Task<PPDMGenericRepository> BuildRepoAsync(Type? entityType, string tableName)
+    {
+        var connection = await _database.RequireAsync();
+        return new(_editor, _commonColumnHandler, _defaults, _metadata, entityType, connection, tableName);
+    }
 }

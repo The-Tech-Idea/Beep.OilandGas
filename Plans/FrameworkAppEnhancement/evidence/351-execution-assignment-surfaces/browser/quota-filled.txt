@@ -1,0 +1,10 @@
+### Result
+{
+  "count": 79,
+  "error": "QuotaExceededError",
+  "totalCharacters": 5179625
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => { let count=0; let error=""; const block="x".repeat(65536); try { while(count<128){ sessionStorage.setItem("oilgas351-assignment-quota-"+count,block);count++; } } catch(e){ error=e.name; } return {count,error,totalCharacters:Object.keys(sessionStorage).reduce((n,k)=>n+k.length+sessionStorage.getItem(k).length,0)}; }');
+```

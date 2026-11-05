@@ -1,0 +1,50 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "status": "implemented and focused HTTP verified",
+  "requirement": "Company/FIELD verification and closure prerequisite evidence must not be stored by response caches.",
+  "change": "Use existing MVC ResponseCache NoStore/None policy on verification-review, verification-decision and closure-review actions. IncidentWorkflowController already has this policy.",
+  "test": {
+    "method": "Beep.OilandGas.Repository.Tests.CurrentFieldLifecycleGateTests.IncidentVerificationAndClosureEvidenceHttpMustNotBeStored",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 8.608,
+    "terminal_exit": 0,
+    "assertions": [
+      "All three actual HTTP responses are 200 with Cache-Control no-store/no-cache and Pragma no-cache.",
+      "Verification review and decision payloads round-trip exactly; closure returns the same company context and decision identity.",
+      "Actual FIELD/account/filter/standard-role HTTP composition; all configured controlled command boundaries called.",
+      "No native fixture writes."
+    ]
+  },
+  "build": {
+    "seconds": 16.69,
+    "errors": 0,
+    "existing_warnings": 643,
+    "scope": "FocusedCompanyTests/FocusedObligationPolicyTests; BuildProjectReferences=false; existing Data binary"
+  },
+  "logs": [
+    {
+      "file": "oilgas-353-closure-cache-build-final-valid.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-closure-cache-build-final-valid.log",
+      "sha256": "f3e8b593ea621f09773760a716a5e9fce48f062e09948c9c5b84a220c55554af"
+    },
+    {
+      "file": "oilgas-353-closure-cache-http.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-closure-cache-http.log",
+      "sha256": "9b9af35e99869341f51f98bc991641688a7ec58db8eb9c566543d7a1b019eaf2"
+    }
+  ],
+  "sha256": {
+    "Beep.OilandGas.ApiService/Controllers/HSE/HSEController.cs": "303c03ea2a61a2883bdfd86ce3bed23f8a910436b53f8c2e5e7f10bc981380c4",
+    "Beep.OilandGas.ApiService/Controllers/HSE/IncidentWorkflowController.cs": "184beab7d4d162c04f8158daee0e5ebe835f936a383b2a2438f7703aa85d4a28",
+    "Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.cs": "e66f482579d19ecc9f5ac92daec0d496d78aacb5d6066a4915389caa2f1b0a2d"
+  },
+  "limits": [
+    "Domain plan/verification/closure commands are controlled mocks; this gate does not requalify native approval or closure semantics.",
+    "Only this exact HTTP method ran; no permit/class/full suite.",
+    "No schema, handwritten SQL, EF migration, compatibility owner, commit or push.",
+    "Production OIDC/provider/concurrency and full goal remain open."
+  ],
+  "evidence_correction": "Removed default-output binary hash: the command actually used bin/company-focused/Debug/net10.0. No contemporaneous active runtime hash was captured for this checkpoint. Source hashes and terminal test evidence remain; the later build must not be substituted as its historical runtime."
+}

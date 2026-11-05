@@ -1,0 +1,66 @@
+{
+  "Scenario": "allowed",
+  "Stages": [
+    {
+      "Stage": "maintenance.handoff.production_link",
+      "Count": 1,
+      "Milliseconds": 18149.6447
+    },
+    {
+      "Stage": "maintenance.handoff.review",
+      "Count": 1,
+      "Milliseconds": 18634.8305
+    },
+    {
+      "Stage": "production.current_field_authority",
+      "Count": 45,
+      "Milliseconds": 16673.779499999997
+    },
+    {
+      "Stage": "production.intervention.capture",
+      "Count": 2,
+      "Milliseconds": 6171.5196
+    },
+    {
+      "Stage": "production.intervention.history",
+      "Count": 2,
+      "Milliseconds": 3056.7289
+    },
+    {
+      "Stage": "production.intervention.journal",
+      "Count": 4,
+      "Milliseconds": 10941.3302
+    },
+    {
+      "Stage": "production.intervention.maintenance_link",
+      "Count": 1,
+      "Milliseconds": 18148.6365
+    },
+    {
+      "Stage": "production.intervention.schema",
+      "Count": 30,
+      "Milliseconds": 17.600099999999998
+    },
+    {
+      "Stage": "production.intervention.work_order",
+      "Count": 2,
+      "Milliseconds": 931.2625
+    }
+  ],
+  "Reads": {
+    "R_ENT_TYPE": 600,
+    "R_ENT_COMPONENT_TYPE": 600,
+    "R_ACCESS_CONDITION": 600,
+    "ENT_COMPONENT": 600,
+    "ENTITLEMENT": 600,
+    "R_ENT_ACCESS_TYPE": 600,
+    "FIELD": 96,
+    "WELL_INTERVENTION_INTENT": 2,
+    "WELL_INTERVENTION_RESULT": 2,
+    "WELL": 24,
+    "WELL_ACTIVITY": 2,
+    "WORK_ORDER": 4,
+    "WORK_ORDER_COMPONENT": 40,
+    "PROCESS_DEFINITION": 2
+  }
+}

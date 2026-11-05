@@ -1,0 +1,110 @@
+### Page
+- Page URL: http://127.0.0.1:60559/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+### Snapshot
+```yaml
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e147]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=f2e148]
+    - paragraph [ref=f2e149]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=f2e150]:
+      - link "Open assigned HSE process" [ref=f2e151] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=f2e153] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=f2e155] [cursor=pointer]
+      - button "Restore original company" [ref=f2e157] [cursor=pointer]
+  - generic [ref=f2e159]:
+    - group [ref=f2e160]:
+      - button [ref=f2e161] [cursor=pointer]
+      - group [ref=f2e166]:
+        - heading "INJURY — Recorded assigned incident" [level=5] [ref=f2e167]
+        - group [ref=f2e168]:
+          - generic [ref=f2e169]: Tier 4
+          - generic [ref=f2e175]: 28-Oct-2026 10:01 · North FIELD · originator
+    - separator [ref=f2e176]
+    - generic [ref=f2e177]:
+      - generic [ref=f2e178]:
+        - generic [ref=f2e179]:
+          - paragraph [ref=f2e182]: Incident Details
+          - table [ref=f2e186]:
+            - rowgroup [ref=f2e187]:
+              - row [ref=f2e188]:
+                - cell "Date/Time" [ref=f2e189]
+                - cell [ref=f2e190]:
+                  - paragraph [ref=f2e191]: 28-Oct-2026 10:01
+              - row [ref=f2e192]:
+                - cell "Type" [ref=f2e193]
+                - cell [ref=f2e194]:
+                  - paragraph [ref=f2e195]: INJURY
+              - row [ref=f2e196]:
+                - cell "Tier" [ref=f2e197]
+                - cell "Tier 4" [ref=f2e198]
+              - row [ref=f2e205]:
+                - cell "Location" [ref=f2e206]
+                - cell [ref=f2e207]:
+                  - paragraph [ref=f2e208]: North FIELD
+              - row [ref=f2e209]:
+                - cell "Reported jurisdiction" [ref=f2e210]
+                - cell [ref=f2e211]:
+                  - paragraph [ref=f2e212]: KUWAIT
+              - row [ref=f2e213]:
+                - cell "Reported By" [ref=f2e214]
+                - cell [ref=f2e215]:
+                  - paragraph [ref=f2e216]: originator
+        - generic [ref=f2e217]:
+          - paragraph [ref=f2e224]: Root Cause Analysis
+          - generic [ref=f2e225]:
+            - button "Review recorded causes and classifications" [ref=f2e226] [cursor=pointer]
+            - button "Find my recorded causes" [ref=f2e228] [cursor=pointer]
+            - button "View shared recorded causes" [ref=f2e230] [cursor=pointer]
+            - button "Find my recorded RCA handoff" [ref=f2e232] [cursor=pointer]
+            - paragraph [ref=f2e234]: No root cause is displayed in the incident detail.
+      - generic [ref=f2e235]:
+        - generic [ref=f2e236]:
+          - paragraph [ref=f2e239]: Corrective Actions
+          - generic [ref=f2e240]:
+            - paragraph [ref=f2e241]: Add an action to the recorded corrective plan. The action does not complete the workflow step.
+            - link "Review or create corrective plan" [ref=f2e242] [cursor=pointer]:
+              - /url: /hse/incidents/corrective-plan?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232
+            - button "Review recorded action choices" [ref=f2e244] [cursor=pointer]
+            - separator [ref=f2e246]
+            - button "Review verification evidence" [ref=f2e247] [cursor=pointer]
+            - button "Review incident closure prerequisites" [ref=f2e249] [cursor=pointer]
+            - separator [ref=f2e251]
+            - heading "Lifecycle approval and incident closure" [level=6] [ref=f2e252]
+            - paragraph [ref=f2e253]: Review and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.
+            - button "Review assigned closure stage" [ref=f2e254] [cursor=pointer]
+            - button "Review rejected verification for correction" [ref=f2e256] [cursor=pointer]
+            - button "Recover recorded closure approval" [ref=f2e258] [cursor=pointer]
+            - table [ref=f2e263]:
+              - rowgroup [ref=f2e264]:
+                - row [ref=f2e265]:
+                  - columnheader "Action Sort Column options" [ref=f2e266]:
+                    - generic [ref=f2e267]:
+                      - generic [ref=f2e268] [cursor=pointer]: Action
+                      - generic [ref=f2e269] [cursor=pointer]:
+                        - button "Sort" [ref=f2e270]
+                        - button "Column options" [ref=f2e276]
+                  - columnheader "Assigned To Sort Column options" [ref=f2e281]:
+                    - generic [ref=f2e282]:
+                      - generic [ref=f2e283] [cursor=pointer]: Assigned To
+                      - generic [ref=f2e284] [cursor=pointer]:
+                        - button "Sort" [ref=f2e285]
+                        - button "Column options" [ref=f2e291]
+                  - columnheader "Due Sort Column options" [ref=f2e296]:
+                    - generic [ref=f2e297]:
+                      - generic [ref=f2e298] [cursor=pointer]: Due
+                      - generic [ref=f2e299] [cursor=pointer]:
+                        - button "Sort" [ref=f2e300]
+                        - button "Column options" [ref=f2e306]
+                  - columnheader "Status" [ref=f2e311]
+              - rowgroup
+              - rowgroup:
+                - row
+        - generic [ref=f2e314]:
+          - paragraph [ref=f2e315]: Incident close-out
+          - paragraph [ref=f2e316]: "Recorded corrective actions: 0; not completed: 0."
+          - paragraph [ref=f2e317]: Independent verification and reviewed closure are required before this incident can be closed.
+```
+### Events
+- New console entries: output\playwright\353-assigned-incident-browser\artifacts\console-2026-10-29T10-01-26-951Z.log#L4

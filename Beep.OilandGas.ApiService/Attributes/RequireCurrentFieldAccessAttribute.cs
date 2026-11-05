@@ -1,166 +1,93 @@
-using System;
-using System.Threading.Tasks;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Attributes;
 
-/// <summary>
-/// Enforces ABAC-style field scoping by validating user access to the active field context.
-/// </summary>
+/// <summary>Restores the existing reviewed preference and independently enforces current application FIELD access.</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
-public sealed class RequireCurrentFieldAccessAttribute : Attribute, IAsyncAuthorizationFilter
+public sealed class RequireCurrentFieldAccessAttribute(string? requiredPermission = null, bool requireWrite = false) : Attribute, IAsyncAuthorizationFilter
 {
-    private readonly string? _requiredPermission;
-
-    public RequireCurrentFieldAccessAttribute(string? requiredPermission = null)
-    {
-        _requiredPermission = requiredPermission;
-    }
-
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        var principal = context.HttpContext.User;
-        var userId = principal.FindActingUserId();
-
-        var observability = context.HttpContext.RequestServices.GetService(typeof(IAuthorizationObservabilityService))
-            as IAuthorizationObservabilityService;
-        var correlationId = context.HttpContext.TraceIdentifier;
-        var endpoint = context.HttpContext.Request.Path.ToString();
-        var method = context.HttpContext.Request.Method;
-        var clientIp = context.HttpContext.Connection.RemoteIpAddress?.ToString();
-
-        if (string.IsNullOrWhiteSpace(userId))
+        var http = context.HttpContext; var services = http.RequestServices;
+        var observations = services.GetService<IAuthorizationObservabilityService>();
+        string? actor = null; string? field = null;
+        IFieldOrchestrator? restored = null;
+        async Task Observe(string decision, string reason) => await (observations?.RecordPolicyEvaluationAsync(new AuthorizationObservation {
+            PolicyName = nameof(RequireCurrentFieldAccessAttribute), UserId = actor, AssetType = "FIELD", AssetId = field,
+            RequiredPermission = requiredPermission, Decision = decision, Reason = reason, Endpoint = http.Request.Path,
+            HttpMethod = http.Request.Method, CorrelationId = http.TraceIdentifier, ClientIp = http.Connection.RemoteIpAddress?.ToString()
+        }) ?? Task.CompletedTask);
+        if (http.User.Identity?.IsAuthenticated != true)
         {
-            context.Result = new UnauthorizedResult();
-            await EmitObservationAsync(observability, new AuthorizationObservation
-            {
-                PolicyName = nameof(RequireCurrentFieldAccessAttribute),
-                UserId = null,
-                AssetType = "FIELD",
-                RequiredPermission = _requiredPermission,
-                Decision = "Denied",
-                Reason = "Missing user identity",
-                Endpoint = endpoint,
-                HttpMethod = method,
-                CorrelationId = correlationId,
-                ClientIp = clientIp
-            });
-            return;
+            context.Result = new UnauthorizedResult(); await Observe("Denied", "An authenticated application account is required."); return;
         }
-
-        var fieldOrchestrator = context.HttpContext.RequestServices.GetService(typeof(IFieldOrchestrator)) as IFieldOrchestrator;
-        var accessControlService = context.HttpContext.RequestServices.GetService(typeof(IAccessControlService)) as IAccessControlService;
-
-        if (fieldOrchestrator == null || accessControlService == null)
+        var account = services.GetService<RepositoryRequestAccount>(); var company = services.GetService<CompanyModuleConnection>();
+        var selection = services.GetService<ICompanyFieldSelectionService>(); var access = services.GetService<IAccessControlService>();
+        if (account is null || company is null || selection is null || access is null)
         {
-            context.Result = new StatusCodeResult(500);
-            await EmitObservationAsync(observability, new AuthorizationObservation
-            {
-                PolicyName = nameof(RequireCurrentFieldAccessAttribute),
-                UserId = userId,
-                AssetType = "FIELD",
-                RequiredPermission = _requiredPermission,
-                Decision = "Error",
-                Reason = "Authorization services unavailable",
-                Endpoint = endpoint,
-                HttpMethod = method,
-                CorrelationId = correlationId,
-                ClientIp = clientIp
-            });
-            return;
+            context.Result = new StatusCodeResult(500); await Observe("Error", "Current FIELD authorization services are unavailable."); return;
         }
-
-        var fieldId = fieldOrchestrator.CurrentFieldId;
-        if (string.IsNullOrWhiteSpace(fieldId))
-        {
-            context.Result = new BadRequestObjectResult(new { error = "No active field selected." });
-            await EmitObservationAsync(observability, new AuthorizationObservation
-            {
-                PolicyName = nameof(RequireCurrentFieldAccessAttribute),
-                UserId = userId,
-                AssetType = "FIELD",
-                RequiredPermission = _requiredPermission,
-                Decision = "Denied",
-                Reason = "No active field selected",
-                Endpoint = endpoint,
-                HttpMethod = method,
-                CorrelationId = correlationId,
-                ClientIp = clientIp
-            });
-            return;
-        }
-
         try
         {
-            var accessCheck = await accessControlService.CheckAssetAccessAsync(userId, fieldId, "FIELD", _requiredPermission);
-            if (!accessCheck.HasAccess)
+            actor = await account.RequireAsync(http.RequestAborted); company.RequireActor(actor);
+            var database = await company.ResolveAsync(token: http.RequestAborted); var scope = company.Company.Scope;
+            var current = await selection.GetCurrentFieldSelectionAsync();
+            FieldSelectionReviewValidator.RequireCurrent(current, scope, actor);
+            if (current.SelectionContext!.Database != database) throw RefusalException.Conflict("The FIELD preference belongs to another database binding.");
+            if (!current.SelectionAvailable)
             {
-                context.Result = new ForbidResult();
-                await EmitObservationAsync(observability, new AuthorizationObservation
-                {
-                    PolicyName = nameof(RequireCurrentFieldAccessAttribute),
-                    UserId = userId,
-                    AssetId = fieldId,
-                    AssetType = "FIELD",
-                    RequiredPermission = _requiredPermission,
-                    Decision = "Denied",
-                    Reason = accessCheck.Reason ?? "Access denied",
-                    Endpoint = endpoint,
-                    HttpMethod = method,
-                    CorrelationId = correlationId,
-                    ClientIp = clientIp
-                });
-                return;
+                context.Result = new BadRequestObjectResult(new { error = "Choose a currently available FIELD before opening its lifecycle." });
+                await Observe("Denied", "No currently available FIELD preference."); return;
             }
-
-            await EmitObservationAsync(observability, new AuthorizationObservation
+            field = current.FieldId; var reviewed = current.SelectionContext;
+            if (context.RouteData.Values.TryGetValue("fieldId", out var route) && route?.ToString() != field ||
+                http.Request.Query.TryGetValue("fieldId", out var query) && (query.Count != 1 || query[0] != field))
+                throw RefusalException.Conflict("The asserted FIELD differs from the reviewed current selection.");
+            var check = await access.CheckAssetAccessAsync(actor, field, "FIELD", requiredPermission);
+            if (check is null) throw RefusalException.Conflict("The current FIELD access decision is unavailable.");
+            if (!check.HasAccess)
             {
-                PolicyName = nameof(RequireCurrentFieldAccessAttribute),
-                UserId = userId,
-                AssetId = fieldId,
-                AssetType = "FIELD",
-                RequiredPermission = _requiredPermission,
-                Decision = "Allowed",
-                Reason = accessCheck.Reason ?? "Access granted",
-                Endpoint = endpoint,
-                HttpMethod = method,
-                CorrelationId = correlationId,
-                ClientIp = clientIp
-            });
+                context.Result = new ForbidResult(); await Observe("Denied", "Current FIELD access and the requested application permission are required."); return;
+            }
+            if (requireWrite && (await access.CheckAssetAccessAsync(actor, field, "FIELD", "WRITE"))?.HasAccess != true)
+            {
+                context.Result = new ForbidResult(); await Observe("Denied", "Current FIELD write access is required."); return;
+            }
+            var orchestrator = services.GetRequiredService<IFieldOrchestrator>();
+            restored = orchestrator;
+            if (!await orchestrator.SetActiveFieldAsync(field) || orchestrator.CurrentFieldId != field)
+                throw RefusalException.Conflict("The request's lifecycle FIELD could not be restored from the reviewed preference.");
+            var readback = await selection.GetCurrentFieldSelectionAsync();
+            FieldSelectionReviewValidator.RequireCurrent(readback, scope, actor);
+            if (!readback.SelectionAvailable || readback.SelectionContext != reviewed || readback.FieldId != field ||
+                await account.RequireAsync(http.RequestAborted) != actor || await company.ResolveAsync(token: http.RequestAborted) != database || company.Company.Scope != scope)
+            {
+                orchestrator.ClearActiveField();
+                throw RefusalException.Conflict("Account, company, database or FIELD authority changed during lifecycle restoration.");
+            }
+            var confirmedAccess = await access.CheckAssetAccessAsync(actor, field, "FIELD", requiredPermission);
+            if (confirmedAccess is null || !confirmedAccess.HasAccess)
+                throw RefusalException.Forbidden("Current FIELD access or the requested application permission changed during restoration.");
+            if (requireWrite && (await access.CheckAssetAccessAsync(actor, field, "FIELD", "WRITE"))?.HasAccess != true)
+                throw RefusalException.Forbidden("Current FIELD write access changed during restoration.");
+            await Observe("Allowed", "Current application FIELD authority and the reviewed profile selection were revalidated.");
         }
-        // Whatever stops the access check, the decision is recorded as an error and the request is refused by the exception
-        // itself: it goes on to the API's handler, which reports it and answers 500 with its reference (OILGAS-CATCH-01: a
-        // bare 500, nothing reported, and the exception's text in the authorization record). Cancellation is the request
-        // ending, not a check failing.
-        catch (Exception checkFailure) when (checkFailure is not OperationCanceledException)
+        catch (OperationCanceledException)
         {
-            await EmitObservationAsync(observability, new AuthorizationObservation
-            {
-                PolicyName = nameof(RequireCurrentFieldAccessAttribute),
-                UserId = userId,
-                AssetId = fieldId,
-                AssetType = "FIELD",
-                RequiredPermission = _requiredPermission,
-                Decision = "Error",
-                Reason = "The access check failed; the failure is reported under the request's reference.",
-                Endpoint = endpoint,
-                HttpMethod = method,
-                CorrelationId = correlationId,
-                ClientIp = clientIp
-            });
+            restored?.ClearActiveField();
             throw;
         }
-    }
-
-    private static Task EmitObservationAsync(
-        IAuthorizationObservabilityService? observability,
-        AuthorizationObservation observation)
-    {
-        return observability == null
-            ? Task.CompletedTask
-            : observability.RecordPolicyEvaluationAsync(observation);
+        catch (Exception error)
+        {
+            restored?.ClearActiveField();
+            await Observe(error is RefusalException ? "Denied" : "Error", "Current FIELD restoration/authorization was refused; the API reports the failure.");
+            throw;
+        }
     }
 }

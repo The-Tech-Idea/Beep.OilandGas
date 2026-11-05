@@ -4,7 +4,6 @@ using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.AccessControl;
-using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -17,14 +16,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
     {
         private readonly IUserProfileService _userProfileService;
 
-        // Self or Administrator: the route id names the subject whose profile is read or changed, never the actor.
-        private bool CanAccess(string targetUserId) => User.Identity?.IsAuthenticated == true
-            && !string.IsNullOrWhiteSpace(User.FindActingUserId())
-            && (User.FindActingUserId() == targetUserId || User.IsInRole("Administrator"));
+        private readonly RepositoryRequestAccount _account;
 
-        public UserProfileController(IUserProfileService userProfileService)
+        // The route ID names the subject; current repository authority determines an administrator override.
+        public UserProfileController(IUserProfileService userProfileService, RepositoryRequestAccount account)
         {
             _userProfileService = userProfileService;
+            _account = account;
         }
 
         /// <summary>
@@ -33,9 +31,9 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpGet("{targetUserId}")]
         public async Task<ActionResult<UserProfile>> GetUserProfile(string targetUserId)
         {
-            if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
+            await _account.RequireSelfOrAdministratorAsync(targetUserId);
             var profile = await _userProfileService.GetUserProfileAsync(targetUserId);
             
             if (profile == null)
@@ -52,9 +50,9 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string targetUserId,
             [FromQuery] string? organizationId = null)
         {
-            if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
+            await _account.RequireSelfOrAdministratorAsync(targetUserId);
             var roles = await _userProfileService.GetUserRolesAsync(targetUserId, organizationId);
             return Ok(roles);
         }
@@ -65,9 +63,9 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpGet("{targetUserId}/default-layout")]
         public async Task<ActionResult<string>> GetUserDefaultLayout(string targetUserId)
         {
-            if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
+            await _account.RequireSelfOrAdministratorAsync(targetUserId);
             var layout = await _userProfileService.GetUserDefaultLayoutAsync(targetUserId);
             return Ok(layout ?? "DefaultLayout");
         }
@@ -80,9 +78,9 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string targetUserId,
             [FromBody] UpdatePreferencesRequest request)
         {
-            if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
+            await _account.RequireSelfOrAdministratorAsync(targetUserId);
             var result = await _userProfileService.UpdateUserPreferencesAsync(targetUserId, request.PreferencesJson);
             return Ok(result);
         }
@@ -91,14 +89,13 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Update user's primary role
         /// </summary>
         [HttpPut("{targetUserId}/primary-role")]
-        [Authorize(Roles = "Administrator")]
         public async Task<ActionResult<bool>> UpdateUserPrimaryRole(
             string targetUserId,
             [FromBody] UpdatePrimaryRoleRequest request)
         {
-            if (!CanAccess(targetUserId) || !User.IsInRole("Administrator")) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
+            await _account.RequireSelfOrAdministratorAsync(targetUserId);
             var result = await _userProfileService.UpdateUserPrimaryRoleAsync(targetUserId, request.PrimaryRole);
             return Ok(result);
         }
@@ -111,9 +108,9 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string targetUserId,
             [FromBody] UpdatePreferredLayoutRequest request)
         {
-            if (!CanAccess(targetUserId)) return Forbid();
             if (string.IsNullOrWhiteSpace(targetUserId))
                 return BadRequest(new { error = "User ID is required." });
+            await _account.RequireSelfOrAdministratorAsync(targetUserId);
             var result = await _userProfileService.UpdateUserPreferredLayoutAsync(targetUserId, request.PreferredLayout);
             return Ok(result);
         }
@@ -125,7 +122,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpPost("login")]
         public async Task<ActionResult> RecordUserLogin()
         {
-            var userId = User.ActingUserId();
+            var userId = await _account.RequireAsync();
             await _userProfileService.RecordUserLoginAsync(userId);
             return Ok(new { message = "Login recorded" });
         }

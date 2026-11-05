@@ -1,0 +1,9 @@
+@page "/accounting/sales-invoice-review"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Components.Workflow
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3">Sales invoice reviewer workspace</MudText>
+    <MudButton Href="/accounting/revenue-workbench" Variant="Variant.Outlined">Return to revenue workspace</MudButton>
+    <SalesInvoiceReviewWorkbench InvoiceId="@Invoice" />
+</MudContainer>
+@code {[Parameter,SupplyParameterFromQuery(Name="invoice")] public string? Invoice{get;set;}}

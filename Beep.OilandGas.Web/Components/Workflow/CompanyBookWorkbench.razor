@@ -1,0 +1,63 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4 mt-4">
+    <MudText Typo="Typo.h6">Company accounting books</MudText>
+    <MudText>Record the functional currency, precision, rounding policy, calendar and timezone before configuring accounts and posting journals.</MudText>
+    <MudButton OnClick="ReadPublic" Disabled="State.Busy" Variant="Variant.Outlined">Review recorded company books</MudButton>
+    @if(State.Books is {} recorded){@foreach(var book in recorded.Books){<MudText>@book.BookId · @book.Name · @book.FunctionalCurrency · @book.CurrencyDecimals decimals · @book.RoundingPolicy · Calendar @book.CalendarId · @book.TimeZoneId</MudText>}@if(recorded.Books.Count==0){<MudAlert Severity="Severity.Info">No company accounting books are recorded.</MudAlert>}}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.HasPendingBook)
+    {
+        <MudAlert Severity="Severity.Warning">The exact original book request is retained. Reconcile it before another ledger request.</MudAlert>
+        @if(State.PendingBook is {} pending){<MudText>@pending.Command.BookId · @pending.Command.FunctionalCurrency · Request @pending.Command.Id</MudText>@if(CanConfigure){<MudButton OnClick="Retry" Disabled="State.Busy">Reconcile original book configuration</MudButton>}<MudButton OnClick='@(()=>Recover(pending.Command.Id))' Disabled="State.Busy">Recover original book outcome</MudButton>}
+    }
+    else
+    {
+        @if(CanConfigure){<MudButton OnClick="Review" Disabled="State.Busy" Variant="Variant.Outlined">Review company book configuration</MudButton>}
+        @if(CanConfigure && State.BookConfigurationReview is {} source)
+        {
+            <MudForm @ref="_form">
+                <MudTextField T="string" Label="Book code" @bind-Value="_code" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Book name" @bind-Value="_name" Required="true" MaxLength="256" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Functional currency (uppercase three-letter code)" @bind-Value="_currency" Required="true" MaxLength="3" Disabled="State.Busy" />
+                <MudNumericField T="int?" Label="Currency decimal places" @bind-Value="_precision" Required="true" Min="0" Max="8" Disabled="State.Busy" />
+                <MudSelect T="string" Label="Rounding policy" @bind-Value="_rounding" Required="true" Disabled="State.Busy"><MudSelectItem T="string" Value='@("TO_EVEN")'>Midpoint to even</MudSelectItem><MudSelectItem T="string" Value='@("AWAY_FROM_ZERO")'>Midpoint away from zero</MudSelectItem></MudSelect>
+                <MudTextField T="string" Label="Recorded calendar ID" @bind-Value="_calendar" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Timezone ID" @bind-Value="_timezone" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Book configuration reason" @bind-Value="_reason" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudButton OnClick="Record" Color="Color.Primary" Variant="Variant.Filled" Disabled="State.Busy">Record reviewed company book</MudButton>
+            </MudForm>
+        }
+        <MudForm @ref="_recoveryForm"><MudTextField T="string" Label="Original book configuration ID" @bind-Value="_recoveryId" Required="true" MaxLength="32" /><MudButton OnClick="RecoverSelected" Disabled="State.Busy">Recover my original book configuration</MudButton></MudForm>
+    }
+    @if(State.BookResult is {} result){<MudAlert Severity="Severity.Success">The original @result.BOOK_ID company book configuration is confirmed.</MudAlert>}
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public CompanyLedgerAccountState State{get;set;}=default!;
+    private MudForm? _form,_recoveryForm;
+    private string _code="",_name="",_currency="",_rounding="",_calendar="",_timezone="",_reason="",_recoveryId="";
+    private int? _precision;
+    private string? _error;
+    private bool _disposed;
+    private long _epoch;
+    private bool CanConfigure=>Company.Selection is {} selected && selected.Roles.Count>0 && selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) && selected.Permissions.Contains("Accounting.ConfigureLedger",StringComparer.Ordinal);
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    private async Task Access(bool write){var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || (user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value)!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || write && !selected.Permissions.Contains("Accounting.ConfigureLedger",StringComparer.Ordinal))throw new UnauthorizedAccessException();}
+    private async Task Execute(Func<Task> action,bool write=true){var epoch=_epoch;_error=null;try{await Access(write);await action();}catch{if(!_disposed && epoch==_epoch)_error="The original book configuration is unconfirmed. Check current company/account, authority and explicit book facts. Recover the original request before another change.";}}
+    private Task Review()=>Execute(()=>State.LoadBookConfigurationReviewAsync(Accounting));
+    private Task ReadPublic()=>Execute(()=>State.LoadBooksAsync(Accounting),false);
+    private Task Record()=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_precision is null)throw new InvalidOperationException();await State.ConfigureBookAsync(_code,_name,_currency,_precision.Value,_rounding,_calendar,_timezone,_reason,Accounting);});
+    private Task Retry()=>Execute(()=>State.SubmitBookAsync(Accounting));
+    private Task Recover(string id)=>Execute(()=>State.RecoverBookAsync(id,Accounting),false);
+    private Task RecoverSelected()=>Execute(async()=>{if(_recoveryForm is not null){await _recoveryForm.ValidateAsync();if(!_recoveryForm.IsValid)return;}await State.RecoverBookAsync(_recoveryId,Accounting);},false);
+    private void Reset(){++_epoch;_code=_name=_currency=_rounding=_calendar=_timezone=_reason=_recoveryId="";_precision=null;_error=null;Changed();}
+    private void AuthChanged(Task<AuthenticationState> state){State.Invalidate();Reset();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

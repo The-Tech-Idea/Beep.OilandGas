@@ -1,4 +1,9 @@
 <Project>
+  <!-- Keep source-linked focused test artifacts separate from the normal integrated test assembly. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Beep.OilandGas.Repository.Tests' And '$(FocusedCompanyTests)' == 'true'">
+    <BaseIntermediateOutputPath>obj/company-focused/</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin/company-focused/</BaseOutputPath>
+  </PropertyGroup>
   <PropertyGroup>
     <BeepDMVersion>3.1.1</BeepDMVersion>
     <NoWarn>$(NoWarn);NU1605</NoWarn>

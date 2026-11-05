@@ -1,0 +1,68 @@
+@page "/drilling/program-execution/assigned"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Components.Workflow
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject OilGasCallFailures Calls
+<PageTitle>Assigned execution reporting</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Assigned execution reporting</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company inbox</MudButton><MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton><MudButton OnClick="Reload" Disabled="@(_state?.Busy==true || _state?.ProgressBusy==true)" Variant="Variant.Outlined">Reload assigned responsibility</MudButton></MudStack>
+    @if(ProcessId is {} reporting && LeaseSummaryValidator.Identifier(reporting) && reporting.StartsWith(TheTechIdea.Data.OilGas.DrillingExecutionAssignment.InstancePrefix,StringComparison.Ordinal))
+    {<MudButton Href="@("/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(reporting))" Variant="Variant.Outlined">Open reporting status and closure history</MudButton>}
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming individual execution reporting assignment" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(_state?.Current is {} assigned)
+    {
+        var scope=assigned.Source.Basis.Scope();var operation=assigned.Source.Recorded!;var start=DrillingExecutionStart.FromRecord(operation);
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Your current reporting responsibility</MudText>
+            <MudText>Company @scope.Company.TenantId / @scope.Company.BusinessAssociateId · Reader @scope.ActorUserId · Workspace @assigned.PersonaCode</MudText>
+            <MudText>Assigned role @assigned.AssignedRole · Step @assigned.Responsibility.Workflow.Step.StepName · Task @assigned.TaskId</MudText>
+            <MudText>Generation @assigned.Responsibility.Number · Accountable manager @assigned.Responsibility.ManagerUserId · @assigned.Responsibility.ManagerRole / @assigned.Responsibility.ManagerPersona</MudText>
+            <MudText>Original sender @assigned.Responsibility.Root.Scope().ActorUserId · Sender role @assigned.Responsibility.Root.SenderRole · Responsibility @assigned.InstanceId</MudText>
+            <MudText Class="development-draft-description">@assigned.Responsibility.Root.Reason</MudText>
+        </MudPaper>
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Recorded execution source</MudText>
+            <MudText>@assigned.Source.Basis.Source.Program.PROGRAM_NAME · Version @assigned.Source.Basis.Source.Program.PROGRAM_VERSION · Original FIELD @scope.FieldId · Well @operation.WELL_UWI</MudText>
+            <MudText>Operation @operation.DRILLING_OPERATION_ID · Original recorder @operation.ROW_CREATED_BY · Actual reported spud @start.SpudAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            <MudText>Assignment/source checked @assigned.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText>
+            <MudAlert Severity="Severity.Info">This is ongoing reporting responsibility. Open observed progress for the sourced report history and current recording rights. No daily-report deadline, completion or production handover is inferred from this task.</MudAlert>
+            <MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(assigned.Source.Basis.ReviewInstanceId))" Variant="Variant.Filled" Color="Color.Primary">Open assigned observed progress</MudButton>
+            <MudButton OnClick="_state.LoadProgressAsync" Disabled="@_state.ProgressBusy" Variant="Variant.Outlined">Load observed progress and completion evidence</MudButton>
+        </MudPaper>
+        @if (_state.ProgressBusy) { <MudProgressLinear Indeterminate="true" aria-label="Loading current assigned progress and completion evidence" /> }
+        @if (_state.ProgressError is {} progressError) { <MudAlert Severity="Severity.Error" role="alert">@progressError</MudAlert> }
+        @if (_state.Progress is {} progress)
+        {
+            <MudPaper Outlined="true" Class="pa-4 my-3">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Current observed progress and reported completion</MudText>
+                <MudText>Observed periods: @progress.ObservedPeriodCount; immutable history entries: @progress.Count. Checked @progress.CheckedAtUtc.ToString("u") UTC.</MudText>
+                @if (progress.ReportedCompletion is {} completion)
+                {
+                    <MudText>Completion reported by @completion.RecorderUserId; role @completion.RecorderRole / @completion.RecorderPersonaCode; recorded @completion.RecordedAtUtc.ToString("u") UTC.</MudText>
+                    <DrillingCompletionEvidenceView Report="completion.Report" />
+                }
+                else { <MudText>No current completion report is established by this checked history.</MudText> }
+                <MudAlert Severity="Severity.Info">Reported progress or completion does not close this ongoing responsibility. Independent acceptance and production handover remain separate.</MudAlert>
+            </MudPaper>
+        }
+    }
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Choose a company before opening assigned execution reporting.</MudAlert>}
+</MudContainer>
+@code {
+    [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
+    private DrillingExecutionAssignedState? _state;private bool interactive,disposed;
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
+    private Task Reload()=>_state!.LoadAsync(ProcessId);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

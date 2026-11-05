@@ -1,13 +1,11 @@
 @implements IDisposable
-@inject IDataManagementService DataManagementService
-@inject ApiClient ApiClient
-@inject OilGasCallFailures Calls
+@inject FieldSelectionState SelectionState
 
-<MudGrid AlignItems="AlignItems.Center" Spacing="2">
+<MudGrid Class="align-center" Spacing="2">
     <MudItem xs="12" sm="8" md="6">
         <MudSelect T="string" Label="Active field" Variant="Variant.Outlined" Margin="Margin.Dense"
                    Value="@_state?.SelectedId" ValueChanged="Select" Disabled="@(_state is null || _state.Loading || _state.Saving || !_state.Loaded || _state.Fields.Count == 0)"
-                   HelperText="Sets the field used by dashboards and field workbenches.">
+                   HelperText="Choose a FIELD for available workbenches in the selected company.">
             @if (_state is not null)
             {
                 @foreach (var field in _state.Fields)
@@ -27,7 +25,11 @@
 }
 @if (_state?.Error is not null)
 {
-    <MudAlert Severity="Severity.Warning" Class="mt-2">@_state.Error</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="mt-2" role="alert">@_state.Error</MudAlert>
+}
+else if (_state?.NeedsCompany == true)
+{
+    <MudAlert Severity="Severity.Info" Class="mt-2">Select an available company to review its FIELDs.</MudAlert>
 }
 else if (_state?.Loaded == true && _state.Fields.Count == 0)
 {
@@ -43,12 +45,12 @@ else if (_state?.Loaded == true && _state.Fields.Count == 0)
     private bool _disposed;
     protected override async Task OnInitializedAsync()
     {
-        _state = new(ApiClient, DataManagementService, Calls);
+        _state = SelectionState;
         _state.Changed += Changed;
         await Reload();
     }
     private Task Reload() => _state!.LoadAsync();
     private Task Select(string id) => _state!.SelectAsync(id);
     private void Changed() { if (!_disposed) _ = InvokeAsync(StateHasChanged); }
-    public void Dispose() { _disposed = true; if (_state is not null) { _state.Changed -= Changed; _state.Dispose(); } }
+    public void Dispose() { _disposed = true; if (_state is not null) { _state.Changed -= Changed; } }
 }

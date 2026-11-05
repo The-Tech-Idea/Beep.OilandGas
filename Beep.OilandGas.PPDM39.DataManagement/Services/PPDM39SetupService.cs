@@ -62,23 +62,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly ModuleSetupOrchestrator? _moduleSetupOrchestrator;
         private readonly IBackgroundOperationQueue? _backgroundOperations;
         private readonly Func<IReadOnlyList<string>, string, Task<string>>? _migrationBindingFingerprint;
+        private readonly Func<string, string>? _migrationTargetIdentity;
 
         private IProgressTrackingService? _progressTracking;
         private string? _currentConnectionName;
-
-        // Static fallback driver map — used when BeepDM has not yet loaded the driver assembly
-        private static readonly Dictionary<string, DatabaseDriverInfo> _staticDriverMap =
-            new(StringComparer.OrdinalIgnoreCase)
-            {
-                ["SqlServer"]  = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.SQLServerDataSource", DataSourceType = "SqlServer", DefaultPort = 1433, ScriptPath = "Scripts/SqlServer" },
-                ["Postgre"]    = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.PostgreDataSource",  DataSourceType = "Postgre",   DefaultPort = 5432, ScriptPath = "Scripts/PostgreSQL" },
-                ["PostgreSQL"] = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.PostgreDataSource",  DataSourceType = "Postgre",   DefaultPort = 5432, ScriptPath = "Scripts/PostgreSQL" },
-                ["Mysql"]      = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.MySqlDataSource",    DataSourceType = "Mysql",     DefaultPort = 3306, ScriptPath = "Scripts/MySQL" },
-                ["MariaDB"]    = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.MySqlDataSource",    DataSourceType = "Mysql",     DefaultPort = 3306, ScriptPath = "Scripts/MySQL" },
-                ["Oracle"]     = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.OracleDataSource",   DataSourceType = "Oracle",    DefaultPort = 1521, ScriptPath = "Scripts/Oracle" },
-                ["SqlLite"]    = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.SQLiteDataSource",   DataSourceType = "SqlLite",   DefaultPort = 0,    ScriptPath = "Scripts/SQLite" },
-                ["SQLite"]     = new DatabaseDriverInfo { NuGetPackage = "TheTechIdea.Beep.Winform.Net8.SQLiteDataSource",   DataSourceType = "SqlLite",   DefaultPort = 0,    ScriptPath = "Scripts/SQLite" },
-            };
 
         public PPDM39SetupService(
             IDMEEditor editor,
@@ -90,7 +77,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             LOVManagementService? lovService = null,
             ModuleSetupOrchestrator? moduleSetupOrchestrator = null,
             IBackgroundOperationQueue? backgroundOperations = null,
-            Func<IReadOnlyList<string>, string, Task<string>>? migrationBindingFingerprint = null)
+            Func<IReadOnlyList<string>, string, Task<string>>? migrationBindingFingerprint = null,
+            Func<string, string>? migrationTargetIdentity = null)
         {
             _editor              = editor              ?? throw new ArgumentNullException(nameof(editor));
             _logger              = logger              ?? throw new ArgumentNullException(nameof(logger));
@@ -102,6 +90,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _moduleSetupOrchestrator = moduleSetupOrchestrator;
             _backgroundOperations = backgroundOperations;
             _migrationBindingFingerprint = migrationBindingFingerprint;
+            _migrationTargetIdentity = migrationTargetIdentity;
         }
 
         // ── PROGRESS TRACKING ─────────────────────────────────────────────────
@@ -157,7 +146,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     ? Path.Combine(AppContext.BaseDirectory, "Databases")
                     : request.SavePath.Trim();
 
-                Directory.CreateDirectory(savePath);
                 var fullPath = Path.Combine(savePath, fileName);
 
                 var props = new ConnectionProperties
@@ -176,9 +164,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 PopulateBestDriver(props);
 
                 if (_editor.ConfigEditor.DataConnectionExist(props.ConnectionName))
-                    RemoveConnection(props.ConnectionName);
+                    return new CreateSqliteResult { Success = false, Message = "A connection with this name already exists. Choose another name." };
 
-                _editor.ConfigEditor.AddDataConnection(props);
+                Directory.CreateDirectory(savePath);
+                if (!_editor.ConfigEditor.AddDataConnection(props))
+                    return new CreateSqliteResult { Success = false, Message = "The Beep connection registry did not accept the connection." };
                 _editor.ConfigEditor.SaveDataconnectionsValues();
 
                 var dataSource = _editor.GetDataSource(props.ConnectionName);
@@ -299,26 +289,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 };
                 var resolvedTier = policyOptions.EnvironmentTier;
 
-                // Validate connectivity from the active datasource before trusting preflight connectivity output.
-                var connectivityValidated = false;
-                try
-                {
-                    connectivityValidated = dataSource.Openconnection() == ConnectionState.Open;
-                }
-                // Broad: a probe — whatever the driver throws means "not validated", and the plan then keeps the
-                // migration engine's own connectivity preflight, which can block it. Reported, so the cause is kept.
-                catch (Exception ex)
-                {
-                    _failures.ReportHandled(ex,
-                        $"probing connectivity of '{MaskConnectionInfo(request.ConnectionName)}' while planning a schema migration",
-                        "the plan keeps the migration engine's own connectivity preflight result, which may block it",
-                        FailureSeverity.Degraded);
-                }
-
                 var policy = migration.EvaluateMigrationPlanPolicy(plan, policyOptions);
                 var dryRun = migration.GenerateDryRunReport(plan);
                 var preflight = migration.RunPreflightChecks(plan, policyOptions);
-                NormalizeConnectivityPreflight(preflight, connectivityValidated, request.ConnectionName);
                 var compensation = migration.BuildCompensationPlan(plan);
                 var rollback = migration.CheckRollbackReadiness(
                     plan,
@@ -397,6 +370,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Message = "Migration plan was not found. Generate a new plan first."
                 };
             }
+
+            if (string.IsNullOrWhiteSpace(request.ExpectedPlanHash) || string.IsNullOrWhiteSpace(request.ExpectedManifestHash) ||
+                !string.Equals(request.ExpectedPlanHash, session.Plan.PlanHash, StringComparison.Ordinal) ||
+                !string.Equals(request.ExpectedManifestHash, session.ManifestHash, StringComparison.Ordinal))
+                return new SchemaMigrationApprovalResult { Success = false, PlanId = request.PlanId,
+                    Message = "The reviewed plan or manifest changed. Generate a new plan before approval." };
 
             if (!await BindingIsCurrentAsync(session))
                 return new SchemaMigrationApprovalResult { Success = false, PlanId = request.PlanId,
@@ -1036,111 +1015,33 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         // ── DRIVER INFO ───────────────────────────────────────────────────────
 
-        public DatabaseDriverInfo? GetDriverInfo(string databaseType)
-        {
-            if (string.IsNullOrWhiteSpace(databaseType)) return null;
-
-            // Try live BeepDM driver classes first
-            if (Enum.TryParse<BeepDataSourceType>(databaseType, true, out var dsType))
-            {
-                var driverClass = _editor.ConfigEditor?.DataDriversClasses?
-                    .FirstOrDefault(d => d.DatasourceType == dsType);
-                if (driverClass != null)
-                    return new DatabaseDriverInfo
-                    {
-                        NuGetPackage   = driverClass.PackageName,
-                        DataSourceType = driverClass.DatasourceType.ToString(),
-                        DefaultPort    = GetDefaultPort(dsType),
-                        ScriptPath     = GetScriptPath(dsType)
-                    };
-            }
-
-            // Fallback to static map
-            return _staticDriverMap.TryGetValue(databaseType, out var info) ? info : null;
-        }
-
-        public List<string> GetAvailableDatabaseTypes()
-        {
-            var fromDrivers = _editor.ConfigEditor?.DataDriversClasses?
-                .Select(d => d.DatasourceType.ToString())
-                .Distinct()
-                .ToList();
-
-            return fromDrivers?.Count > 0
-                ? fromDrivers
-                : _staticDriverMap.Keys.Distinct().OrderBy(k => k).ToList();
-        }
-
-        public DriverInfo CheckDriver(string databaseType)
-        {
-            var info = GetDriverInfo(databaseType);
-            if (info == null)
-                return new DriverInfo { DatabaseType = databaseType, IsAvailable = false, IsInstalled = false };
-
-            // Check if driver assembly is loaded in BeepDM
-            var isInstalled = _editor.ConfigEditor?.DataDriversClasses?
-                .Any(d => string.Equals(d.PackageName, info.NuGetPackage, StringComparison.OrdinalIgnoreCase)) ?? false;
-
-            return new DriverInfo
-            {
-                DatabaseType = databaseType,
-                NuGetPackage = info.NuGetPackage,
-                IsAvailable  = true,
-                IsInstalled  = isInstalled
-            };
-        }
+        public List<string> GetAvailableDatabaseTypes() =>
+            _editor.ConfigEditor?.DataDriversClasses?
+                .Select(driver => driver.DatasourceType.ToString())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(type => type, StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? [];
 
         // ── CONNECTION TESTING ────────────────────────────────────────────────
 
-        public async Task<ConnectionTestResult> TestConnectionAsync(ConnectionConfig config)
+        public Task<ConnectionTestResult> TestConnectionAsync(ConnectionConfig config)
         {
             if (config == null)
-                return new ConnectionTestResult { Success = false, Message = "Connection configuration is required" };
-
+                return Task.FromResult(new ConnectionTestResult { Success = false, Message = "Connection configuration is required" });
+            if (!TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(config.ConnectionName))
+                return Task.FromResult(new ConnectionTestResult { Success = false, Message = "Use a connection name with letters, digits and underscores, starting with a letter or underscore." });
             _logger.LogInformation("Testing connection to {Host} ({DatabaseType})", MaskConnectionInfo(config.Host), config.DatabaseType);
             try
             {
-                // Register a temporary connection under its name (or a temp name)
-                var connName = string.IsNullOrWhiteSpace(config.ConnectionName)
-                    ? $"__test_{Guid.NewGuid():N}"
-                    : config.ConnectionName;
-
-                var props = BuildConnectionProperties(config, connName);
-                var isTempConn = false;
-
-                if (!_editor.ConfigEditor.DataConnectionExist(connName))
-                {
-                    _editor.ConfigEditor.AddDataConnection(props);
-                    isTempConn = true;
-                }
-
-                var ds = _editor.GetDataSource(connName);
-                if (ds == null)
-                {
-                    if (isTempConn) RemoveConnection(connName);
-                    return new ConnectionTestResult { Success = false, Message = $"Could not create data source for type '{config.DatabaseType}'" };
-                }
-
-                var state = ds.Openconnection();
-                ds.Closeconnection();
-
-                if (isTempConn) RemoveConnection(connName);
-
-                return state == ConnectionState.Open
-                    ? new ConnectionTestResult { Success = true,  Message = "Connection successful" }
-                    : new ConnectionTestResult { Success = false, Message = "Connection failed — could not open database" };
+                var state = ConnectionProbe.Test(_editor, BuildConnectionProperties(config, config.ConnectionName));
+                return Task.FromResult(state == ConnectionState.Open
+                    ? new ConnectionTestResult { Success = true, Message = "Connection successful" }
+                    : new ConnectionTestResult { Success = false, Message = "Connection failed — could not open database" });
             }
-            // Broad: a connection test answers every failure of building and opening the datasource — each driver throws
-            // its own types. A connection that merely does not open is answered above without an exception.
             catch (Exception ex) when (ex is not RefusalException)
             {
-                return new ConnectionTestResult
-                {
-                    Success = false,
-                    Message = ReportedFailure.Sentence(_failures, ex,
-                        $"testing connection '{MaskConnectionInfo(config.ConnectionName)}'",
-                        "The connection could not be tested.")
-                };
+                return Task.FromResult(new ConnectionTestResult { Success = false, Message = ReportedFailure.Sentence(_failures, ex,
+                    $"testing connection '{MaskConnectionInfo(config.ConnectionName)}'", "The connection could not be tested.") });
             }
         }
 
@@ -1151,30 +1052,32 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (config == null)
                 return new SaveConnectionResult { Success = false, Message = "Connection configuration is required" };
 
-            if (string.IsNullOrWhiteSpace(config.ConnectionName))
-                return new SaveConnectionResult { Success = false, Message = "Connection name is required" };
+            if (!TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(config.ConnectionName))
+                return new SaveConnectionResult { Success = false, Message = "Use a connection name with letters, digits and underscores, starting with a letter or underscore." };
 
             _logger.LogInformation("Saving connection {ConnectionName}", MaskConnectionInfo(config.ConnectionName));
+            var saved = false;
             try
             {
                 var props = BuildConnectionProperties(config, config.ConnectionName);
 
                 if (_editor.ConfigEditor.DataConnectionExist(config.ConnectionName))
-                    RemoveConnection(config.ConnectionName);
+                    return new SaveConnectionResult { Success = false, ConnectionName = config.ConnectionName, Message = "A connection with this name already exists. Choose another name." };
 
-                _editor.ConfigEditor.AddDataConnection(props);
+                if (!_editor.ConfigEditor.AddDataConnection(props))
+                    return new SaveConnectionResult { Success = false, Message = "The Beep connection registry did not accept the connection." };
                 _editor.ConfigEditor.SaveDataconnectionsValues();
+                saved = true;
 
                 if (testAfterSave)
                 {
                     var ds = _editor.GetDataSource(config.ConnectionName);
-                    if (ds != null)
-                    {
-                        var state = ds.Openconnection();
-                        if (!openAfterSave) ds.Closeconnection();
-                        if (state != ConnectionState.Open)
-                            return new SaveConnectionResult { Success = false, ConnectionName = config.ConnectionName, Message = "Connection saved but test failed — could not open database" };
-                    }
+                    if (ds == null)
+                        return new SaveConnectionResult { Success = false, ConnectionName = config.ConnectionName, Message = "Connection saved but test failed — the Beep datasource is unavailable" };
+                    var state = ds.Openconnection();
+                    if (!openAfterSave) ds.Closeconnection();
+                    if (state != ConnectionState.Open)
+                        return new SaveConnectionResult { Success = false, ConnectionName = config.ConnectionName, Message = "Connection saved but test failed — could not open database" };
                 }
 
                 _currentConnectionName = config.ConnectionName;
@@ -1186,9 +1089,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 return new SaveConnectionResult
                 {
                     Success = false,
+                    ConnectionName = saved ? config.ConnectionName : null,
                     Message = ReportedFailure.Sentence(_failures, ex,
                         $"saving connection '{MaskConnectionInfo(config.ConnectionName)}'",
-                        "The connection was not saved.")
+                        saved ? "The connection was saved, but testing it failed." : "The connection save could not be confirmed.")
                 };
             }
         }
@@ -1197,14 +1101,40 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         {
             if (string.IsNullOrWhiteSpace(originalConnectionName) || config == null)
                 return new SaveConnectionResult { Success = false, Message = "Original connection name and configuration are required" };
+            if (!TheTechIdea.Data.OilGas.BeepConnectionName.IsValid(config.ConnectionName))
+                return new SaveConnectionResult { Success = false, Message = "Use a connection name with letters, digits and underscores, starting with a letter or underscore." };
 
             _logger.LogInformation("Updating connection {OriginalName} → {NewName}", MaskConnectionInfo(originalConnectionName), MaskConnectionInfo(config.ConnectionName));
             try
             {
-                if (_editor.ConfigEditor.DataConnectionExist(originalConnectionName))
-                    RemoveConnection(originalConnectionName);
+                var registry = _editor.ConfigEditor;
+                var originals = registry.DataConnections.Where(x => string.Equals(x.ConnectionName, originalConnectionName, StringComparison.OrdinalIgnoreCase)).ToArray();
+                if (originals.Length != 1 || string.IsNullOrWhiteSpace(originals[0].GuidID))
+                    return new SaveConnectionResult { Success = false, Message = "The original connection is missing or ambiguous." };
+                var original = originals[0];
+                var originalId = original.GuidID;
+                if (registry.DataConnections.Count(x => string.Equals(x.GuidID, originalId, StringComparison.OrdinalIgnoreCase)) != 1)
+                    return new SaveConnectionResult { Success = false, Message = "The original connection identity is ambiguous." };
+                if (registry.DataConnections.Any(x => !ReferenceEquals(x, original) && string.Equals(x.ConnectionName, config.ConnectionName, StringComparison.OrdinalIgnoreCase)))
+                    return new SaveConnectionResult { Success = false, Message = "A connection with this name already exists. Choose another name." };
+                if (testAfterSave && ConnectionProbe.Test(_editor, BuildConnectionProperties(config, config.ConnectionName)) != ConnectionState.Open)
+                    return new SaveConnectionResult { Success = false, Message = "The proposed connection could not be opened. The existing connection was not changed." };
 
-                return SaveConnection(config, testAfterSave);
+                if (registry.DataConnections.Count(x => string.Equals(x.GuidID, originalId, StringComparison.OrdinalIgnoreCase)) != 1 ||
+                    !registry.DataConnections.Any(x => ReferenceEquals(x, original) && x.GuidID == originalId &&
+                        string.Equals(x.ConnectionName, originalConnectionName, StringComparison.OrdinalIgnoreCase)) ||
+                    registry.DataConnections.Any(x => !ReferenceEquals(x, original) && string.Equals(x.ConnectionName, config.ConnectionName, StringComparison.OrdinalIgnoreCase)))
+                    return new SaveConnectionResult { Success = false, Message = "The connection registry changed while the update was being checked. Review it again." };
+
+                var replacement = BuildConnectionProperties(config, config.ConnectionName);
+                replacement.GuidID = originalId;
+                replacement.ID = original.ID;
+                if (!registry.UpdateDataConnection(replacement, originalId))
+                    return new SaveConnectionResult { Success = false, Message = "The Beep connection registry did not confirm the update." };
+                registry.SaveDataconnectionsValues();
+                if (string.Equals(_currentConnectionName, originalConnectionName, StringComparison.OrdinalIgnoreCase))
+                    _currentConnectionName = config.ConnectionName;
+                return new SaveConnectionResult { Success = true, ConnectionName = config.ConnectionName, Message = "Connection updated successfully" };
             }
             // Broad: removing the original entry answers every failure of the configuration store.
             catch (Exception ex) when (ex is not RefusalException)
@@ -1214,7 +1144,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     Success = false,
                     Message = ReportedFailure.Sentence(_failures, ex,
                         $"updating connection '{MaskConnectionInfo(originalConnectionName)}'",
-                        "The connection was not updated.")
+                        "The connection update could not be confirmed. Check the connection registry before retrying.")
                 };
             }
         }
@@ -1280,8 +1210,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 Host           = dc.Host,
                 Port           = dc.Port,
                 Database       = dc.Database,
-                Username       = dc.UserID,
-                ConnectionString = dc.ConnectionString
+                Username       = dc.UserID
             };
         }
 
@@ -1297,237 +1226,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             _currentConnectionName = connectionName;
             return new SetCurrentDatabaseResult { Success = true, Message = $"Current connection set to '{connectionName}'" };
-        }
-
-        // ── SCHEMA CREATION ───────────────────────────────────────────────────
-
-        public async Task<CreateSchemaResult> CreateSchemaAsync(ConnectionConfig config, string schemaName)
-        {
-            var connectionName = config?.ConnectionName ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(connectionName))
-                return new CreateSchemaResult { Success = false, Message = "Connection name is required. Save the connection first." };
-
-            var planResult = await PlanSchemaMigrationAsync(new SchemaMigrationPlanRequest
-            {
-                ConnectionName = connectionName,
-                SchemaName = schemaName,
-                BackupConfirmed = true,
-                RestoreTestEvidenceProvided = true,
-                RestoreTestEvidence = "Compatibility route"
-            });
-
-            if (!planResult.Success)
-            {
-                return new CreateSchemaResult
-                {
-                    Success = false,
-                    Message = planResult.Message,
-                    TotalEntities = planResult.TotalEntities,
-                    TablesCreated = 0
-                };
-            }
-
-            var approvalResult = await ApproveSchemaMigrationPlanAsync(new SchemaMigrationApprovalRequest
-            {
-                PlanId = planResult.PlanId,
-                ApprovedBy = "compatibility-route",
-                Notes = "Auto-approved by create-schema compatibility path."
-            });
-
-            if (!approvalResult.Success)
-            {
-                return new CreateSchemaResult
-                {
-                    Success = false,
-                    Message = approvalResult.Message,
-                    TotalEntities = planResult.TotalEntities,
-                    TablesCreated = 0
-                };
-            }
-
-            var executionResult = await ExecuteSchemaMigrationPlanAsync(new SchemaMigrationExecuteRequest
-            {
-                PlanId = planResult.PlanId,
-                ExecutedBy = "compatibility-route",
-                PlanHash = planResult.PlanHash,
-                ManifestHash = planResult.ManifestHash,
-                AcknowledgeHighRisk = true
-            });
-
-            if (!executionResult.Success)
-            {
-                return new CreateSchemaResult
-                {
-                    Success = false,
-                    Message = executionResult.Message,
-                    ErrorDetails = executionResult.CompensationOutcome,
-                    TablesCreated = planResult.TablesToCreate,
-                    TotalEntities = planResult.TotalEntities
-                };
-            }
-
-            var seedResult = await SeedRequiredModulesAsync(connectionName, "compatibility-route");
-
-            return new CreateSchemaResult
-            {
-                Success = seedResult.Success,
-                Message = seedResult.Success
-                    ? $"Schema created and required module data seeded successfully in '{connectionName}'"
-                    : $"Schema created, but required module seeding failed: {seedResult.Message}",
-                ErrorDetails = seedResult.Success ? null : string.Join(Environment.NewLine, seedResult.Errors),
-                TablesCreated = planResult.TablesToCreate,
-                TotalEntities = planResult.TotalEntities
-            };
-        }
-
-        public async Task<SchemaPrivilegeCheckResult> CheckSchemaPrivilegesAsync(ConnectionConfig config, string? schemaName = null)
-        {
-            var connectionName = config?.ConnectionName ?? string.Empty;
-            _logger.LogInformation("Checking schema privileges for {ConnectionName}", MaskConnectionInfo(connectionName));
-            try
-            {
-                var ds = _editor.GetDataSource(connectionName);
-                if (ds == null)
-                    return new SchemaPrivilegeCheckResult { HasCreatePrivilege = false, Message = $"Connection '{connectionName}' not found" };
-
-                var state = ds.Openconnection();
-                if (state != ConnectionState.Open)
-                    return new SchemaPrivilegeCheckResult { HasCreatePrivilege = false, Message = "Could not open connection" };
-
-                // Attempt a harmless DDL to verify CREATE TABLE privilege. The datasource answers a refused command in its
-                // result rather than by throwing, so the result is what is read (OILGAS-CATCH-01). The check used to
-                // ignore it and read only an exception — and the table name's "N8" format is not a Guid format, so the
-                // name itself threw every time and every account was told it lacked the privilege.
-                var tempTable = $"__PRIV_CHECK_{Guid.NewGuid().ToString("N")[..8]}";
-                var outcome = ds.ExecuteSql($"CREATE TABLE {tempTable} (ID INT); DROP TABLE {tempTable};");
-                if (outcome != null && outcome.Flag == Errors.Ok)
-                    return new SchemaPrivilegeCheckResult { HasCreatePrivilege = true, Message = "Schema creation privileges confirmed" };
-
-                _logger.LogInformation("Creating a test table on {ConnectionName} was refused: {Reason}",
-                    MaskConnectionInfo(connectionName), outcome?.Message);
-                return new SchemaPrivilegeCheckResult
-                {
-                    HasCreatePrivilege = false,
-                    Message = "Creating a test table was refused, so this account may not have the privilege to create tables."
-                };
-            }
-            // Broad: the check answers every failure of reaching the datasource, whatever the driver throws.
-            catch (Exception ex) when (ex is not RefusalException)
-            {
-                return new SchemaPrivilegeCheckResult
-                {
-                    HasCreatePrivilege = false,
-                    Message = ReportedFailure.Sentence(_failures, ex,
-                        $"checking the privilege to create tables on '{MaskConnectionInfo(connectionName)}'",
-                        "The privilege check did not run.")
-                };
-            }
-        }
-
-        // ── SCRIPTS ───────────────────────────────────────────────────────────
-
-        public List<ScriptInfo> GetAvailableScripts(string databaseType)
-        {
-            // Scripts are managed via ModuleDataRegistry in the DataManager project.
-            // Return empty; use the discover-scripts endpoint on the setup controller for full listing.
-            return new List<ScriptInfo>();
-        }
-
-        public Task<List<ScriptInfo>> GetAvailableScriptsAsync(string databaseType)
-            => Task.FromResult(GetAvailableScripts(databaseType));
-
-        public async Task<ScriptExecutionResult> ExecuteScriptAsync(ConnectionConfig config, string scriptName, string? operationId = null)
-        {
-            _logger.LogInformation("ExecuteScript '{Script}' on {ConnectionName}", scriptName, MaskConnectionInfo(config?.ConnectionName));
-            return new ScriptExecutionResult
-            {
-                ScriptFileName = scriptName,
-                Success        = false,
-                ErrorMessage   = "Script execution via setup service is not supported. Use the create-database endpoint with ModuleDataRegistry."
-            };
-        }
-
-        public async Task<AllScriptsExecutionResult> ExecuteAllScriptsAsync(ConnectionConfig config, List<string> scriptNames, string? operationId = null)
-        {
-            var result = new AllScriptsExecutionResult
-            {
-                ExecutionId  = operationId ?? Guid.NewGuid().ToString(),
-                StartTime    = DateTime.UtcNow,
-                TotalScripts = scriptNames?.Count ?? 0,
-                Success      = false,
-                ErrorMessage = "Batch script execution is not supported via setup service. Use the create-database endpoint."
-            };
-            result.EndTime = DateTime.UtcNow;
-            return result;
-        }
-
-        // ── DATABASE OPERATIONS ───────────────────────────────────────────────
-
-        public async Task<DropDatabaseResult> DropDatabaseAsync(string connectionName, string? schemaName, bool dropIfExists = true)
-        {
-            _logger.LogWarning("DropDatabase requested for {ConnectionName} / schema={Schema}", MaskConnectionInfo(connectionName), schemaName);
-            try
-            {
-                var ds = _editor.GetDataSource(connectionName);
-                if (ds == null)
-                    return new DropDatabaseResult { Success = false, Message = $"Connection '{connectionName}' not found" };
-
-                var state = ds.Openconnection();
-                if (state != ConnectionState.Open)
-                    return new DropDatabaseResult { Success = false, Message = "Could not open connection" };
-
-                var ddl = string.IsNullOrWhiteSpace(schemaName)
-                    ? (dropIfExists ? "DROP DATABASE IF EXISTS PPDM39" : "DROP DATABASE PPDM39")
-                    : (dropIfExists ? $"DROP SCHEMA IF EXISTS {schemaName}" : $"DROP SCHEMA {schemaName}");
-
-                // The datasource answers a refused command in its result, not by throwing: it used to be ignored, and a
-                // drop that did not happen was reported as done (OILGAS-CATCH-01).
-                var outcome = ds.ExecuteSql(ddl);
-                if (outcome == null || outcome.Flag != Errors.Ok)
-                {
-                    var refused = outcome?.Ex ?? new InvalidOperationException(
-                        $"The datasource refused the drop command: {outcome?.Message ?? "no result was returned"}");
-                    return new DropDatabaseResult
-                    {
-                        Success = false,
-                        Message = ReportedFailure.Sentence(_failures, refused,
-                            $"dropping the database or schema on '{MaskConnectionInfo(connectionName)}'",
-                            "The database was not dropped.")
-                    };
-                }
-                return new DropDatabaseResult { Success = true, Message = "Database dropped" };
-            }
-            // Broad: dropping answers every failure of reaching the datasource, whatever the driver throws.
-            catch (Exception ex) when (ex is not RefusalException)
-            {
-                return new DropDatabaseResult
-                {
-                    Success = false,
-                    Message = ReportedFailure.Sentence(_failures, ex,
-                        $"dropping the database or schema on '{MaskConnectionInfo(connectionName)}'",
-                        "The database was not dropped.")
-                };
-            }
-        }
-
-        public async Task<RecreateDatabaseResult> RecreateDatabaseAsync(string connectionName, string? schemaName, bool backupFirst = false, string? backupPath = null)
-        {
-            _logger.LogInformation("RecreateDatabase for {ConnectionName}", MaskConnectionInfo(connectionName));
-            var dropResult = await DropDatabaseAsync(connectionName, schemaName, dropIfExists: true);
-            if (!dropResult.Success)
-                return new RecreateDatabaseResult { Success = false, Message = "Drop step failed: " + dropResult.Message };
-
-            var connConfig = GetConnectionByName(connectionName);
-            if (connConfig == null)
-                return new RecreateDatabaseResult { Success = false, Message = $"Connection '{connectionName}' not found after drop" };
-
-            var createResult = await CreateSchemaAsync(connConfig, schemaName ?? string.Empty);
-            return new RecreateDatabaseResult
-            {
-                Success = createResult.Success,
-                Message = createResult.Success ? "Database recreated successfully" : "Recreate failed: " + createResult.Message,
-                ErrorDetails = createResult.ErrorDetails
-            };
         }
 
         public async Task<CopyDatabaseResult> CopyDatabaseAsync(CopyDatabaseRequest request, string? operationId = null)
@@ -1739,7 +1437,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (state != ConnectionState.Open)
                 return null;
 
-            return new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, dataSource);
+            var targetIdentity = _migrationTargetIdentity?.Invoke(connectionName);
+            if (string.IsNullOrWhiteSpace(targetIdentity))
+                throw new InvalidOperationException("A canonical physical migration target is required.");
+            return new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, dataSource)
+            { ExecutionTargetIdentity = targetIdentity };
         }
 
         /// <summary>
@@ -1840,58 +1542,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                       connectionName,
                       @"(?i)(password|pwd|pass)\s*=\s*[^;]+",
                       "$1=***");
-
-        private void NormalizeConnectivityPreflight(object? preflightReport, bool connectivityValidated, string connectionName)
-        {
-            if (!connectivityValidated || preflightReport == null)
-                return;
-
-            var reportType = preflightReport.GetType();
-            var checksProperty = reportType.GetProperty("Checks");
-            if (checksProperty?.GetValue(preflightReport) is not System.Collections.IEnumerable checks)
-                return;
-
-            var allChecks = checks.Cast<object>().ToList();
-            if (allChecks.Count == 0)
-                return;
-
-            var updated = false;
-            foreach (var check in allChecks)
-            {
-                var checkType = check.GetType();
-                var code = checkType.GetProperty("Code")?.GetValue(check)?.ToString();
-                var decision = checkType.GetProperty("Decision")?.GetValue(check)?.ToString();
-
-                if (!string.Equals(code, "preflight-connectivity", StringComparison.OrdinalIgnoreCase) ||
-                    !string.Equals(decision, "Block", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var decisionProperty = checkType.GetProperty("Decision");
-                if (decisionProperty?.CanWrite == true)
-                {
-                    var passValue = Enum.Parse(decisionProperty.PropertyType, "Pass", ignoreCase: true);
-                    decisionProperty.SetValue(check, passValue);
-                }
-
-                checkType.GetProperty("Message")?.SetValue(check, "Datasource connectivity probe passed via active datasource validation.");
-                checkType.GetProperty("Recommendation")?.SetValue(check, "Proceed with apply checks; runtime datasource connectivity is verified as open.");
-                updated = true;
-            }
-
-            if (!updated)
-                return;
-
-            var hasBlockingChecks = allChecks.Any(check =>
-                string.Equals(check.GetType().GetProperty("Decision")?.GetValue(check)?.ToString(), "Block", StringComparison.OrdinalIgnoreCase));
-
-            var canApplyProperty = reportType.GetProperty("CanApply");
-            if (canApplyProperty?.CanWrite == true)
-                canApplyProperty.SetValue(preflightReport, !hasBlockingChecks);
-
-            _logger.LogInformation("Normalized preflight-connectivity result for {ConnectionName} after successful datasource connectivity validation.", MaskConnectionInfo(connectionName));
-        }
 
         private static SchemaMigrationPlanResult MapPlanResult(SchemaMigrationPlanSession session)
         {
@@ -2128,33 +1778,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 _                        => BeepDataSourceType.SqlServer
             };
         }
-
-        // The datasource types this setup knows a default port and a script folder for. They are tables, not switches
-        // with a catch-all: DataSourceType has well over a hundred members, and the catch-all named a folder of SQL Server
-        // scripts for every one of them (OILGAS-CATCH-01). A type without a default port answers 0, which the driver
-        // information has always used for "none" (SQLite); a type without scripts has no script path.
-        private static readonly IReadOnlyDictionary<BeepDataSourceType, int> DefaultPorts = new Dictionary<BeepDataSourceType, int>
-        {
-            [BeepDataSourceType.SqlServer] = 1433,
-            [BeepDataSourceType.Postgre]   = 5432,
-            [BeepDataSourceType.Mysql]     = 3306,
-            [BeepDataSourceType.Oracle]    = 1521,
-        };
-
-        private static readonly IReadOnlyDictionary<BeepDataSourceType, string> ScriptFolders = new Dictionary<BeepDataSourceType, string>
-        {
-            [BeepDataSourceType.SqlServer] = "SqlServer",
-            [BeepDataSourceType.Postgre]   = "PostgreSQL",
-            [BeepDataSourceType.Mysql]     = "MySQL",
-            [BeepDataSourceType.Oracle]    = "Oracle",
-            [BeepDataSourceType.SqlLite]   = "SQLite",
-        };
-
-        private static int GetDefaultPort(BeepDataSourceType dsType) =>
-            DefaultPorts.TryGetValue(dsType, out var port) ? port : 0;
-
-        private static string GetScriptPath(BeepDataSourceType dsType) =>
-            ScriptFolders.TryGetValue(dsType, out var folder) ? $"Scripts/{folder}" : string.Empty;
 
         // ── Reference Data Seeding ─────────────────────────────────────────────
 

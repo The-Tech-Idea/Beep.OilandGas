@@ -1,0 +1,207 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <NuGetAudit>false</NuGetAudit>
+    <RootNamespace>HseBrowser</RootNamespace>
+    <StartupObject>HseBrowser.Host</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AngleSharp.Css">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\AngleSharp.Css.dll</HintPath>
+    </Reference>
+    <Reference Include="AngleSharp.Diffing">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\AngleSharp.Diffing.dll</HintPath>
+    </Reference>
+    <Reference Include="AngleSharp">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\AngleSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Beep.OilandGas.Models">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Beep.OilandGas.Models.dll</HintPath>
+    </Reference>
+    <Reference Include="Beep.OilandGas.PPDM.Models">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Beep.OilandGas.PPDM.Models.dll</HintPath>
+    </Reference>
+    <Reference Include="Beep.OilandGas.PPDM39">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Beep.OilandGas.PPDM39.dll</HintPath>
+    </Reference>
+    <Reference Include="Bunit.Core">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Bunit.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Bunit.Web">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Bunit.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="Castle.Core">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Castle.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="DataManagementEngine">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\DataManagementEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="DataManagementModels">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\TheTechIdea.Data\bin\Debug\net10.0\DataManagementModels.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.AspNetCore.Components.WebAssembly.Authentication.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Components.WebAssembly">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.AspNetCore.Components.WebAssembly.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.SqlClient">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.Data.SqlClient.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.Sqlite">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.Data.Sqlite.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore.Abstractions">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore.Relational">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Relational.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.EntityFrameworkCore.Sqlite">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Sqlite.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyModel">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.Extensions.DependencyModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Identity.Client">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.Identity.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.JSInterop.WebAssembly">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.JSInterop.WebAssembly.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TestPlatform.CommunicationUtilities">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.TestPlatform.CommunicationUtilities.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TestPlatform.CoreUtilities">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.TestPlatform.CoreUtilities.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TestPlatform.CrossPlatEngine">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.TestPlatform.CrossPlatEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TestPlatform.PlatformAbstractions">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.TestPlatform.PlatformAbstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TestPlatform.Utilities">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.TestPlatform.Utilities.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.CodeCoverage.Shim">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.VisualStudio.CodeCoverage.Shim.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.Common">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.VisualStudio.TestPlatform.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.TestPlatform.ObjectModel">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Microsoft.VisualStudio.TestPlatform.ObjectModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="MudBlazor">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\MudBlazor.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Npgsql">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Npgsql.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Common">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\NuGet.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Configuration">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\NuGet.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Frameworks">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\NuGet.Frameworks.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Packaging">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\NuGet.Packaging.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Protocol">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\NuGet.Protocol.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Versioning">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\NuGet.Versioning.dll</HintPath>
+    </Reference>
+    <Reference Include="Oracle.ManagedDataAccess">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\Oracle.ManagedDataAccess.dll</HintPath>
+    </Reference>
+    <Reference Include="PurchaseOwnership">
+      <Aliases>global,retained</Aliases>
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\PurchaseOwnership.dll</HintPath>
+    </Reference>
+    <Reference Include="SkiaSharp">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\SkiaSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="SkiaSharp.Extended.Svg">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\SkiaSharp.Extended.Svg.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLitePCLRaw.batteries_v2">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\SQLitePCLRaw.batteries_v2.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLitePCLRaw.core">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\SQLitePCLRaw.core.dll</HintPath>
+    </Reference>
+    <Reference Include="SQLitePCLRaw.provider.e_sqlite3">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\SQLitePCLRaw.provider.e_sqlite3.dll</HintPath>
+    </Reference>
+    <Reference Include="System.DirectoryServices.Protocols">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\System.DirectoryServices.Protocols.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.ProtectedData">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\System.Security.Cryptography.ProtectedData.dll</HintPath>
+    </Reference>
+    <Reference Include="testhost">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\testhost.dll</HintPath>
+    </Reference>
+    <Reference Include="TheTechIdea.Data">
+      <HintPath>C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\TheTechIdea.Data\bin\Debug\net10.0\TheTechIdea.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.abstractions">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\xunit.abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.assert">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\xunit.assert.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.core">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\xunit.core.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.execution.dotnet">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\xunit.execution.dotnet.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.runner.visualstudio.testadapter">
+      <HintPath>C:\Users\f_ald\AppData\Local\Temp\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\bin\Debug\net10.0\xunit.runner.visualstudio.testadapter.dll</HintPath>
+    </Reference>
+    <PackageReference Include="MudBlazor" Version="9.7.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\HSEServiceClient.cs" Link="Current/HSEServiceClient.cs" />
+    <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\HSEServiceClient.Closure.cs" Link="Current/HSEServiceClient.Closure.cs" />
+    <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Client\App\Services\Field\IFieldService.cs" Link="Current/IFieldService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\ApiClient.cs" Link="Current/ApiClient.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Models\Data\Security\PermissionConstants.cs" Link="Current/PermissionConstants.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\CorrectiveActionIntentStore.cs" />
+    <Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\CorrectiveActionIntentStore.Closure.cs" />
+  </ItemGroup>
+<ItemGroup><Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\IHSEServiceClient.cs" /><Compile Include="C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\HSEServiceClient.AssignedActions.cs" /></ItemGroup></Project>

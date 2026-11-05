@@ -1,3 +1,4 @@
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Core.Refusals;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Beep.OilandGas.ApiService.Middleware
 {
     /// <summary>
-    /// Answers the application's refusals (<see cref="RefusalException"/>) as problem details carrying their sentence.
+    /// Answers application refusals and known unsupported transaction-driver capabilities as problem details.
     /// Everything else goes on to the failure service's handler: reported, answered 500 with its reference.
     /// </summary>
     /// <remarks>
@@ -19,10 +20,14 @@ namespace Beep.OilandGas.ApiService.Middleware
     {
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
-            if (exception is not RefusalException refusal)
+            var refusal = exception switch
             {
-                return false;
-            }
+                RefusalException existing => existing,
+                DataSourceTransactionCapabilityException => RefusalException.Conflict("The selected data source cannot verify transactions. Ask an administrator to update its Beep driver."),
+                NativeSchemaCompatibilityException => RefusalException.Conflict("The selected data source schema is incompatible with this workflow. Ask an administrator to review the Beep migration and driver."),
+                _ => null
+            };
+            if (refusal is null) return false;
 
             var status = refusal.Kind switch
             {

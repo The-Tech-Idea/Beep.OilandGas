@@ -1,0 +1,63 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "timestamp": "2026-10-30T01:00:48.475229+00:00",
+  "method": "CurrentFieldLifecycleGateTests.InstalledSqliteClosureRecoversLostHttpAcknowledgementAndReopens",
+  "status": "diagnostic collection verified, deadline fact failed",
+  "test": {
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "exit_code": 1,
+    "minutes": 4.3706,
+    "failure": "First protected request exceeded unchanged100s HttpClient timeout."
+  },
+  "collection": {
+    "requested_seconds": 60,
+    "collector_reported_seconds": 60.6003891,
+    "process_cpu_seconds": 63.609375,
+    "samples": 477409,
+    "events_lost": 0,
+    "managed_samples": 26152,
+    "external_samples": 451257
+  },
+  "analysis": {
+    "excluded_known_blocking_polling_leaf_samples": 447981,
+    "remaining_samples": 29428,
+    "top_first_application_frames": {
+      "RepositoryAccessService.GetCompanyAccessAsync": 7691,
+      "ModuleDatabaseTarget.Sqlite": 7460,
+      "ModuleBindingService.RequireActiveTenantAsync": 2585,
+      "Beep RDBSource.GetEntity": 2487,
+      "ModuleConnectionResolver.ReadAsync": 1982
+    },
+    "interpretation": "Fresh registry authorization and physical target resolution dominate the remaining heuristic sample weights; Windows per-component file metadata checks alone account for about one quarter. No result/authority caching or source-check removal selected."
+  },
+  "next_change": "Resolve an existing Windows database path from one newly opened metadata-only file handle using the OS final-path API, preserving fresh link retarget checks and the existing component path evaluation for not-yet-created files/other platforms. Keep ordinary target hashes and relative-path creation behavior stable. Then rerun exact identity checks and the same unprofiled protected closure journey under100s.",
+  "references": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew"
+  ],
+  "limits": [
+    "Sample weights after explicit wait-leaf exclusion are a diagnostic attribution heuristic, not exact method CPU/wall time or invocation counts.",
+    "Collector source CollectedSeconds includes conversion/analysis; the console-reported60.6003891s above is collection/rundown time.",
+    "Only profiler/JIT-loader metadata collected, no new application package. Existing installed dotnet-stack10.0.731102 diagnostic assemblies used.",
+    "Profiled run can be perturbed by collection/rundown and cannot promote normal-client performance acceptance.",
+    "Both native sources and full earlier lifecycle/RCA/role seams retain the existing controlled qualification scope."
+  ],
+  "raw": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-eventpipe-profile\\closure-01.nettrace": {
+      "bytes": 58901110,
+      "sha256": "39ae5f24de49873a7957e5d96de98ea5ea81b659cec7faf1d1b0aeb7eb2bd256"
+    },
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-eventpipe-profile\\closure-01.etlx": {
+      "bytes": 71633958,
+      "sha256": "e60f46a919a204d4c7e8ef1070197ad704921c483d89cf90bc272aa96c884c0f"
+    }
+  },
+  "source_sha256": {
+    "Beep.OilandGas.ApiService\\Services\\ModuleDatabaseTarget.cs": "31ba98dc8b9f11f16c5b857323f5df452e94b8f317f8b03c70216542887017fc",
+    "Beep.OilandGas.ApiService\\Services\\ModuleConnectionResolver.cs": "f961a78b9dcde013a9b16b551acec5cac10751346f0ef0a5743970ca6d7eb87a",
+    "Beep.OilandGas.Repository.Tests\\HseClosureProviderQualificationTests.cs": "bb3ec855f370958447f4c36d5ebec3ee92529cbffc4aa7a83b20966f3e9c61f8",
+    "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll": "f545227d848e9ebb04ee7931dbdf960c76ba2ca6ab74fe22471b72fb93d2b653"
+  }
+}

@@ -1,0 +1,109 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=e10]:
+      - button "Fixture author" [ref=e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=e13] [cursor=pointer]
+      - button "Fixture read only" [ref=e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=e21] [cursor=pointer]
+      - link "HSE landing" [ref=e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=e27]:
+    - heading "Recorded permit application" [level=1] [ref=e28]
+    - group [ref=e29]:
+      - link "Permit applications" [ref=e30] [cursor=pointer]:
+        - /url: /ppdm39/permits
+      - button "Reload recorded application" [ref=e32] [cursor=pointer]
+    - paragraph [ref=e34]: Company company · FIELD Fixture FIELD A · application draft
+    - generic [ref=e35]: Read checked 2026-10-29 20:34:17Z. Source dates below are displayed as recorded; their time zones are not established here.
+    - generic [ref=e36]:
+      - heading "Application details" [level=2] [ref=e37]
+      - paragraph [ref=e38]: "Type: Drilling"
+      - paragraph [ref=e39]: "Authority: Other"
+      - paragraph [ref=e40]: "Applicant: Recorded applicant"
+      - paragraph [ref=e41]: "Status: Draft"
+      - paragraph [ref=e42]: "Decision: Not recorded"
+      - paragraph [ref=e43]: "Created: Not recorded · Submitted: Not recorded · Decision date: Not recorded"
+    - generic [ref=e44]:
+      - heading "Recorded status history" [level=2] [ref=e45]
+      - paragraph [ref=e46]: No status history was returned for this application.
+    - generic [ref=e47]:
+      - heading "Automated checker result" [level=2] [ref=e48]
+      - paragraph [ref=e49]: No automated checker result was returned.
+    - group [ref=e51]:
+      - heading "Reviewed permit workflow" [level=2] [ref=e52]
+      - paragraph [ref=e53]: Review the exact application before submission or an independent decision. The server rechecks current permissions and FIELD write authority.
+      - button "Read retained permit original" [ref=e54] [cursor=pointer]
+      - button "Review application for workflow" [active] [ref=e56] [cursor=pointer]
+      - paragraph [ref=e59]: Application draft · FIELD A
+      - paragraph [ref=e60]: Country Kuwait · region Other · authority Other
+      - paragraph [ref=e61]: Applicant Recorded applicant · status Draft
+      - paragraph [ref=e62]: "Submitting account: issuer"
+      - generic [ref=e63]: Reviewed source 672A1F49C601E72118376445BC9C877756C0BE3BD8366AADB3A06033A07D090A · recorded history entries 0
+      - heading "Proposed draft header" [level=3] [ref=e64]
+      - generic [ref=e66]:
+        - textbox "Applicant reference or name*" [ref=e68]: Recorded applicant
+        - generic: Applicant reference or name*
+      - generic [ref=e71]:
+        - combobox "Application type" [ref=e73] [cursor=pointer]: Drilling
+        - generic: Application type*
+      - generic [ref=e80]:
+        - combobox "Permit country" [ref=e82] [cursor=pointer]: Kuwait
+        - generic: Permit country*
+      - generic [ref=e89]:
+        - combobox "Permit region" [ref=e91] [cursor=pointer]: Other
+        - generic: Permit region*
+      - generic [ref=e98]:
+        - combobox "Recorded authority" [ref=e100] [cursor=pointer]: Other
+        - generic: Recorded authority*
+      - generic [ref=e106]:
+        - textbox "Draft description" [ref=e108]
+        - generic: Draft description
+      - generic [ref=e109]: Make an explicit change before saving. Classification changes are refused while active subtype or attachment records require their own amendment. Country/region/authority selections do not establish legal applicability.
+      - heading "Stage a new document" [level=3] [ref=e110]
+      - generic [ref=e111]: Select one file up to8 MiB. Only metadata and its digest are retained in this tab; a resend after reload requires the same file. Supply explicit native reference codes and UTC validity; no document applicability is inferred.
+      - button "Choose document file" [ref=e112]
+      - paragraph [ref=e113]: · No file selected bytes
+      - generic [ref=e115]:
+        - textbox "Document title*" [ref=e117]
+        - generic: Document title*
+      - generic [ref=e119]:
+        - textbox "Native document type code*" [ref=e121]
+        - generic: Native document type code*
+      - generic [ref=e123]:
+        - textbox "Recorded language code*" [ref=e125]
+        - generic: Recorded language code*
+      - generic [ref=e127]:
+        - textbox "Explicit document version*" [ref=e129]
+        - generic: Explicit document version*
+      - generic [ref=e131]:
+        - textbox "Native digital format code*" [ref=e133]
+        - generic: Native digital format code*
+      - generic [ref=e135]:
+        - textbox "Native information item subtype*" [ref=e137]
+        - generic: Native information item subtype*
+      - generic [ref=e139]:
+        - textbox "Effective from UTC (ISO8601 with Z)*" [ref=e141]
+        - generic: Effective from UTC (ISO8601 with Z)*
+      - generic [ref=e143]:
+        - textbox "Effective to UTC, exclusive (ISO8601 with Z)*" [ref=e145]
+        - generic: Effective to UTC, exclusive (ISO8601 with Z)*
+      - button "Stage reviewed document" [disabled]
+      - generic [ref=e146]:
+        - generic [ref=e147]:
+          - textbox "Reason for this permit action*" [ref=e149]
+          - generic: Reason for this permit action*
+        - generic [ref=e151]:
+          - generic [ref=e152]: Enter 20 to 2000 characters explaining the action against this reviewed evidence.
+          - generic [ref=e153]: 0 / 2000
+      - generic [ref=e156] [cursor=pointer]:
+        - checkbox "I checked this application, country, authority and recorded history for this action." [ref=e158]
+        - generic [ref=e162]: I checked this application, country, authority and recorded history for this action.
+      - group [ref=e163]:
+        - button "Save reviewed changes" [disabled]
+        - button "Submit application" [disabled]
+      - generic [ref=e58]: An internal workflow decision does not establish regulator clearance, legal compliance or permission to operate.

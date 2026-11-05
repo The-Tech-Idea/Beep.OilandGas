@@ -91,8 +91,8 @@ All connection strings and secrets should be masked through `ConnectionHelper` b
 
 ## Execution Checklist
 
-- [x] Move SQLite and external connection provisioning out of controller into setup connection service. (`PPDM39SetupConnectionService` created 2026-04-25)
-- [x] Standardize `ConnectionProperties` population for provider identity and behavior flags. (`BuildConnectionProperties` in `PPDM39SetupConnectionService` 2026-04-25)
+- [x] Move SQLite and external connection provisioning out of controller into `PPDM39SetupService`; the unused duplicate connection service was removed on 2026-10-29.
+- [x] Standardize `ConnectionProperties` population for provider identity and behavior flags in `PPDM39SetupService`.
 - [x] Resolve driver via `ConnectionHelper.GetBestMatchingDriver` for all setup-created connections. (`PopulateBestDriver` with reflection + fallback 2026-04-25)
 - [x] Validate connection string/provider requirements and mask secrets before logging. (credentials never logged; test via `TestConnectionAsync` 2026-04-25)
 - [x] Persist only through `ConfigEditor`, then reopen via `IDMEEditor` and verify state. (`SaveConnection` / `TestConnectionAsync` pattern 2026-04-25)

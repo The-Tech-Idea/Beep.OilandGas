@@ -1,0 +1,86 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IAccountingServiceClient Accounting
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-4">
+    <MudText Typo="Typo.h5">My saved delivery work</MudText>
+    <MudText>Open the original preparation or independent decision. Discovery reviews evidence and never submits a command.</MudText>
+    <MudButton OnClick="Reload" Disabled="@_busy">Reload my saved delivery work</MudButton>
+    <MudSelect T="int" Value="@_size" ValueChanged="ChangeSize" Label="Saved delivery entries per page" Disabled="@_busy">
+        @foreach(var size in new[]{1,4,8,16,32}){<MudSelectItem T="int" Value="@size">@size</MudSelectItem>}
+    </MudSelect>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Loading saved delivery work" />}
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Select a company before recovering saved delivery work.</MudAlert>}
+    else if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    else if(_page is {} savedPage)
+    {
+        <MudText Typo="Typo.caption">Company: @savedPage.Company.BusinessAssociateId · Account: @savedPage.ActorUserId · Retrieved UTC: @_retrieved?.ToString("O")</MudText>
+        <MudText>Saved delivery entries: @savedPage.TotalRecords · Page @savedPage.PageNumber of @Math.Max(1,savedPage.TotalPages). Totals count journal entries; outcome counts below apply to this page.</MudText>
+        <MudButton OnClick="@(()=>LoadPage(savedPage.PageNumber-1))" Disabled="@(_busy || !savedPage.HasPreviousPage)">Previous saved delivery page</MudButton>
+        <MudButton OnClick="@(()=>LoadPage(savedPage.PageNumber+1))" Disabled="@(_busy || !savedPage.HasNextPage)">Next saved delivery page</MudButton>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton Variant="Variant.Outlined" OnClick="@(()=>_all=false)" aria-pressed="@(!_all ? "true":"false")">Unresolved on this page (@savedPage.Rows.Count(row=>row.Status!="RECORDED"))</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="@(()=>_all=true)" aria-pressed="@(_all ? "true":"false")">All delivery entries on this page (@savedPage.Rows.Count)</MudButton>
+        </MudStack>
+        @if(Visible.Count==0){<MudAlert Severity="Severity.Info">@(_all?"No saved delivery entries were returned on this page.":"No unresolved delivery entries were confirmed on this page. Review other pages when available.")</MudAlert>}
+        else
+        {
+            <MudTable T="CompanyDeliverySavedWorkReview" Items="Visible" Dense="true" Hover="true" aria-label="My saved delivery work">
+                <HeaderContent><MudTh>Original source</MudTh><MudTh>Saved command</MudTh><MudTh>Native outcome</MudTh><MudTh>Recovery</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Original source">Ticket @context.Entry.RUN_TICKET_ID · FIELD @context.Entry.FIELD_ID</MudTd>
+                    <MudTd DataLabel="Saved command">@context.Entry.INTENT_KIND · @context.Entry.DELIVERY_ACCEPTANCE_INTENT_ID · UTC @context.Entry.ROW_CREATED_DATE?.ToString("O")</MudTd>
+                    <MudTd DataLabel="Native outcome">@(context.Status=="RECORDED"?"Exact original outcome recorded":context.Status=="SAVED_PENDING"?"Saved; original command not recorded":"Reconciliation required; current outcome unconfirmed")</MudTd>
+                    <MudTd DataLabel="Recovery"><MudButton Href="@("/accounting/delivery-intents/"+Uri.EscapeDataString(context.Entry.DELIVERY_ACCEPTANCE_INTENT_ID))">Open original delivery work</MudButton></MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
+</MudPaper>
+@code {
+    private CompanyDeliverySavedWorkPage? _page;
+    private string? _error;
+    private DateTime? _retrieved;
+    private bool _busy,_disposed,_reload,_all;
+    private int _epoch,_requested=1,_size=8;
+    private IReadOnlyList<CompanyDeliverySavedWorkReview> Visible=>_page?.Rows.Where(row=>_all || row.Status!="RECORDED").ToArray() ?? [];
+    protected override async Task OnInitializedAsync(){Company.Changed+=Changed;Authentication.AuthenticationStateChanged+=AuthChanged;await Reload();}
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;var selected=snapshot.Selection;
+        var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ??user.FindFirstValue("sub");
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || selected is null || actor!=selected.UserId || user.Identity?.IsAuthenticated!=true || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal))throw new UnauthorizedAccessException();
+    }
+    private Task Reload()=>LoadPage(_requested);
+    private Task ChangeSize(int size){DELIVERY_ACCEPTANCE_INTENT.RequirePage(1,size);_size=size;_requested=1;return Reload();}
+    private async Task LoadPage(int number)
+    {
+        if(_disposed)return;DELIVERY_ACCEPTANCE_INTENT.RequirePage(number,_size);_requested=number;if(_busy){_reload=true;return;}_busy=true;
+        try
+        {
+            do
+            {
+                _reload=false;_page=null;_error=null;_retrieved=null;_all=false;var snapshot=Company.Snapshot;var epoch=_epoch;var requested=_requested;var size=_size;
+                if(snapshot.Selection is null)continue;
+                try
+                {
+                    await Authority();if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)continue;
+                    var result=await Accounting.GetDeliverySavedPageAsync(requested,size);await Authority();
+                    if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || requested!=_requested || size!=_size)continue;
+                    result.Require(snapshot.Selection.Scope,snapshot.Selection.UserId,requested,size);_page=CompanyInventorySourceReview.Copy(result);_retrieved=DateTime.UtcNow;
+                }
+                catch{if(!_disposed && epoch==_epoch && snapshot==Company.Snapshot)_error="Saved delivery entries, native outcomes or current company/account/FIELD access could not be confirmed. Reload before recovering work.";}
+            }while(_reload && !_disposed);
+        }
+        finally{_busy=false;}
+    }
+    private void Changed(){++_epoch;_requested=1;_page=null;_error=null;_retrieved=null;if(!_disposed)_=InvokeAsync(async()=>{StateHasChanged();await Reload();if(!_disposed)StateHasChanged();});}
+    private void AuthChanged(Task<AuthenticationState> state)=>Changed();
+    public void Dispose(){_disposed=true;++_epoch;_page=null;Company.Changed-=Changed;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

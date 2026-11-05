@@ -1,0 +1,99 @@
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.Security
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Web.Services.IHSEServiceClient Client
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<HseAssignedActions> Logger
+
+<MudPaper Outlined="true" Class="pa-4 mb-4">
+    <section aria-label="My overdue corrective actions" aria-busy="@(loading ? "true" : "false")">
+        <MudText Typo="Typo.h6" HtmlTag="h2" dir="auto">My overdue corrective actions</MudText>
+        <MudText Typo="Typo.body2" dir="auto">Open actions across all open incident stages, assigned to your current recorded company person. Due dates are compared in UTC.</MudText>
+        <MudButton OnClick="LoadAsync" Disabled="@loading" Variant="Variant.Outlined">Review my overdue actions</MudButton>
+        @if (loading)
+        {
+            <MudProgressLinear Indeterminate="true" aria-label="Reviewing assigned corrective actions" />
+            <MudText role="status" aria-live="polite" dir="auto">Checking recorded responsibility and current FIELD…</MudText>
+        }
+        else if (review is not null)
+        {
+            <MudText role="status" aria-live="polite" dir="auto">@review.Actions.Count overdue assigned actions · @review.ReturnedIncidentCount returned FIELD incidents reviewed · checked <bdi dir="ltr">@review.CheckedAtUtc.ToString("u")</bdi></MudText>
+            @if (review.Actions.Count == 0)
+            { <MudText dir="auto">No overdue actions match your recorded responsibility in these incidents.</MudText> }
+            else
+            {
+                @foreach (var action in review.Actions.Skip(page * 10).Take(10))
+                {
+                    <MudText dir="auto"><MudLink Href="@($"/ppdm39/hse/incident-detail?incidentId={Uri.EscapeDataString(action.IncidentId)}#hse-action-{action.StepSequence}")"><bdi dir="ltr">@action.IncidentId</bdi> · Action @action.StepSequence: <bdi dir="auto">@action.Description</bdi></MudLink> · due <bdi dir="ltr">@action.DueAtUtc.ToString("u")</bdi></MudText>
+                }
+                <MudStack Row="true" Wrap="Wrap.Wrap">
+                    <MudButton OnClick="Previous" Disabled="@(page == 0)">Previous assigned actions</MudButton>
+                    <MudText dir="auto">Page @(page + 1) of @Math.Max(1, (review.Actions.Count + 9) / 10)</MudText>
+                    <MudButton OnClick="Next" Disabled="@((page + 1) * 10 >= review.Actions.Count)">Next assigned actions</MudButton>
+                </MudStack>
+            }
+        }
+        else { <MudText role="status" aria-live="polite" dir="auto">@message</MudText> }
+    </section>
+</MudPaper>
+
+@code {
+    private CompanyHseAssignedActions? review;
+    private string message = "Review your current assignment evidence. Missing identity mapping or unavailable data does not mean zero actions.";
+    private bool loading, disposed;
+    private int page;
+    private long generation;
+    protected override void OnInitialized()
+    {
+        Company.Changed += Changed; Fields.CurrentFieldChanged += FieldChanged;
+        Authentication.AuthenticationStateChanged += AccountChanged;
+    }
+    private void Previous() { if (page > 0) --page; }
+    private void Next() { if (review is not null && (page + 1) * 10 < review.Actions.Count) ++page; }
+    private async Task LoadAsync()
+    {
+        review = null; page = 0; loading = true;
+        var selected = Company.Snapshot; var current = ++generation;
+        bool Current() => !disposed && current == generation && selected == Company.Snapshot;
+        async Task ConfirmAccount()
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            if (selected.Selection is null || user.Identity?.IsAuthenticated != true ||
+                selected.Selection.UserId != user.FindFirst("party_id")?.Value ||
+                !selected.Selection.Roles.Any(user.IsInRole) || !selected.Selection.Permissions.Contains(PermissionConstants.HSE.View, StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current company HSE view authority is required.");
+        }
+        try
+        {
+            await ConfirmAccount(); if (!Current()) return;
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, selected.Selection!.Scope, selected.Selection.UserId);
+            if (!before.SelectionAvailable) throw new InvalidOperationException("Select an available FIELD.");
+            var result = await Client.GetAssignedOverdueActionsAsync(before.SelectionContext!); if (!Current()) return;
+            result.Require();
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, selected.Selection.Scope, selected.Selection.UserId);
+            await ConfirmAccount(); if (!Current()) return;
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext || result.Context != before.SelectionContext)
+                throw new InvalidOperationException("The company, account, database or FIELD changed. Review again.");
+            review = result;
+        }
+        catch (Exception error)
+        {
+            Logger.LogWarning(error, "Assigned HSE action review was not confirmed.");
+            if (Current()) message = "Assigned actions could not be confirmed. Check your company, FIELD and recorded account-to-person identity link, then review again.";
+        }
+        finally { if (Current()) loading = false; }
+    }
+    private void Changed() { ++generation; review = null; page = 0; loading = false; message = "Company or FIELD changed. Review assignments for the current selection."; _ = InvokeAsync(StateHasChanged); }
+    private void FieldChanged(string field) => Changed();
+    private void AccountChanged(Task<AuthenticationState> state) => Changed();
+    public void Dispose()
+    {
+        disposed = true; ++generation; Company.Changed -= Changed; Fields.CurrentFieldChanged -= FieldChanged;
+        Authentication.AuthenticationStateChanged -= AccountChanged;
+    }
+}

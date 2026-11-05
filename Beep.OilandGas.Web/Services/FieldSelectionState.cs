@@ -1,96 +1,97 @@
-using System.Net;
+using Beep.OilandGas.Client.App;
 using Beep.OilandGas.Models.Data;
+using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.Web.Services;
 
+// UI evidence for the existing profile-owned preference, never an authorization or selection store.
 public sealed class FieldSelectionState : IDisposable
 {
-    private readonly ApiClient _api;
-    private readonly IDataManagementService _data;
-    private readonly OilGasCallFailures _failures;
-    private int _version;
-    private bool _disposed;
-    public List<FieldListItem> Fields { get; private set; } = [];
+    private readonly CompanyClientContext company;
+    private readonly IFieldSelectionContext data;
+    private readonly Func<Exception, string, string, string> explain;
+    private CancellationTokenSource? pending;
+    private long generation;
+    private bool disposed;
+    private FieldSelectionReview? review;
+    private string? pendingField;
+    private (long Version, CompanyClientSelection? Selection)? loadedScope;
+    private readonly Dictionary<FieldListItem, string> identities = new(ReferenceEqualityComparer.Instance);
+    public IReadOnlyList<FieldListItem> Fields { get; private set; } = [];
     public string? SelectedId { get; private set; }
     public bool Loading { get; private set; }
     public bool Saving { get; private set; }
     public bool Loaded { get; private set; }
+    public bool NeedsCompany => company.Selection is null;
     public string? Error { get; private set; }
     public string? Confirmation { get; private set; }
     public event Action? Changed;
-    public FieldSelectionState(ApiClient api, IDataManagementService data, OilGasCallFailures failures)
-    {
-        _api = api; _data = data; _failures = failures; _data.CurrentFieldChanged += FieldChanged;
-    }
+    public FieldSelectionState(CompanyClientContext company, IFieldSelectionContext data, Func<Exception, string, string, string> explain)
+    { this.company = company; this.data = data; this.explain = explain; company.Changed += CompanyChanged; data.CurrentFieldChanged += FieldChanged; }
+
     public async Task LoadAsync()
     {
-        if (_disposed || Saving) return;
-        var version = ++_version;
-        Loading = true; Loaded = false; Error = null; Confirmation = null; Fields = []; SelectedId = null;
+        if (disposed || Saving) return;
+        Invalidate(); var version = generation; var captured = company.Snapshot;
+        if (captured.Selection is null) return;
+        using var cancellation = new CancellationTokenSource(); pending = cancellation; Loading = true;
         try
         {
-            var fields = await _api.GetAsync<List<FieldListItem>>("/api/field/fields") ?? throw new InvalidOperationException();
-            if (fields.Any(x => string.IsNullOrWhiteSpace(x.FieldId)) || fields.Select(x => x.FieldId).Distinct().Count() != fields.Count)
-                throw new InvalidOperationException("Field identities are incomplete or ambiguous.");
-            var selected = await _data.GetCurrentFieldIdAsync();
-            if (!Current(version)) return;
-            Fields = fields.OrderBy(x => x.FieldName, StringComparer.CurrentCultureIgnoreCase).ToList();
-            SelectedId = selected; Loaded = true;
-            if (!string.IsNullOrWhiteSpace(selected) && !fields.Any(x => x.FieldId == selected))
-            { SelectedId = null; Error = "The previous field is no longer available. Choose an available field."; }
+            var fields = await data.GetAvailableFieldsAsync(cancellation.Token);
+            if (!Current(version, captured)) return;
+            FieldSelectionReviewValidator.RequireCatalog(fields);
+            var snapshots = fields.Select(FieldSelectionReviewValidator.Snapshot).ToArray();
+            var selected = await data.GetCurrentFieldSelectionAsync(cancellation.Token);
+            if (!Current(version, captured)) return;
+            FieldSelectionReviewValidator.RequireCurrent(selected, captured.Selection.Scope, captured.Selection.UserId);
+            if (selected.SelectionAvailable && !snapshots.Any(row => row.FieldId == selected.FieldId))
+                throw new InvalidOperationException("The selected FIELD is absent from the reviewed catalog. Refresh the selector.");
+            review = selected.SelectionContext; loadedScope = captured;
+            Fields = snapshots.OrderBy(row => row.FieldName, StringComparer.CurrentCultureIgnoreCase).ToArray();
+            foreach (var row in Fields) identities.Add(row, row.FieldId);
+            SelectedId = selected.SelectionAvailable ? selected.FieldId : null; Loaded = true;
+            if (!selected.SelectionAvailable && review!.FieldId is not null)
+                Error = "The saved FIELD is no longer available. Choose an available FIELD.";
         }
-        // The selector renders a sentence for every failure of this load; the store keeps the exception (a superseded
-        // load's too, though nobody is shown it).
-        catch (Exception ex)
-        {
-            var sentence = Refusal(ex) is { } own
-                ? _failures.Told(ex, "loading the available fields", own)
-                : _failures.Explain(ex, "loading the available fields", "Field settings could not be loaded");
-            if (Current(version)) Error = sentence;
-        }
-        finally { if (Current(version)) Loading = false; }
+        catch (OperationCanceledException) when (!Current(version, captured)) { }
+        catch (Exception error) { if (Current(version, captured)) Error = explain(error, "loading the FIELD selector", "FIELD settings could not be confirmed"); }
+        finally { if (Current(version, captured)) { pending = null; Loading = false; Changed?.Invoke(); } }
     }
+
     public async Task SelectAsync(string id)
     {
-        if (_disposed || Loading || Saving || !Loaded || !Fields.Any(x => x.FieldId == id) || id == SelectedId) return;
-        Saving = true; Error = null; Confirmation = null;
+        if (disposed || Loading || Saving || !Loaded || loadedScope != company.Snapshot || review is null || id == SelectedId ||
+            !Fields.Any(row => identities.TryGetValue(row, out var trusted) && trusted == row.FieldId && trusted == id)) return;
+        var captured = company.Snapshot; var version = generation;
+        var intent = new SetActiveFieldRequest { FieldId = id, Context = review with { } };
+        Saving = true; pendingField = id; Error = null; Confirmation = null;
         try
         {
-            var success = await _data.SetCurrentFieldAsync(id);
-            if (_disposed) return;
-            if (success) { SelectedId = id; Confirmation = "Active field updated."; }
-            else Error = "The field was not changed. Choose another field or refresh the available fields.";
+            var success = await data.SetCurrentFieldAsync(intent);
+            if (!Current(version, captured)) return;
+            // The owner validates the acknowledgement. Its event alone can never confirm this command.
+            if (!success) throw new InvalidOperationException("The FIELD change was not confirmed.");
+            ClearEvidence(); SelectedId = id; Confirmation = "FIELD preference saved. Refresh to review another change.";
         }
-        // The selector renders a sentence for every failure of this change; the store keeps the exception.
-        catch (Exception ex)
+        catch (Exception error)
         {
-            var sentence = Refusal(ex) is { } own
-                ? _failures.Told(ex, "changing the active field", own)
-                : _failures.Explain(ex, "changing the active field", "The field change could not be confirmed. Refresh before continuing");
-            if (!_disposed) { SelectedId = null; Loaded = false; Error = sentence; }
+            if (Current(version, captured)) { ClearEvidence(); Error = explain(error, "saving the FIELD preference", "The FIELD change could not be confirmed. Refresh before continuing"); }
         }
-        finally { if (!_disposed) Saving = false; }
+        finally { Saving = false; pendingField = null; if (!disposed) Changed?.Invoke(); }
     }
+    private void CompanyChanged() { if (disposed) return; Invalidate(); Changed?.Invoke(); }
     private void FieldChanged(string id)
     {
-        if (_disposed) return;
-        ++_version; Loading = false; SelectedId = string.IsNullOrWhiteSpace(id) ? null : id;
-        if (SelectedId is null || !Loaded)
-        {
-            Loaded = false;
-            Error = "Refresh the available fields to confirm the active field.";
-        }
-        Confirmation = null;
-        Changed?.Invoke();
+        if (disposed) return;
+        if (Saving && id == pendingField) return; // A matching owner event alone cannot confirm this command.
+        if (Saving && string.IsNullOrEmpty(id)) { ClearEvidence(); return; } // Its eventual failure supplies the explanation.
+        Invalidate(); Error = "Refresh to review the current FIELD preference."; Changed?.Invoke();
     }
-    private bool Current(int version) => !_disposed && version == _version;
-
-    /// <summary>The selector's own words for a refusal it recognises; null for anything else.</summary>
-    private static string? Refusal(Exception ex) => ex switch
+    private bool Current(long version, (long Version, CompanyClientSelection? Selection) captured) => !disposed && generation == version && company.Snapshot == captured;
+    private void ClearEvidence() { Fields = []; identities.Clear(); review = null; loadedScope = null; SelectedId = null; Loaded = false; }
+    private void Invalidate()
     {
-        OilGasApiException { StatusCode: HttpStatusCode.Forbidden } => "You do not have access to these field settings. Contact your app administrator.",
-        OilGasApiException { StatusCode: HttpStatusCode.Unauthorized } => "Your session has expired. Sign in again to choose a field.",
-        _ => null,
-    };
-    public void Dispose() { _disposed = true; ++_version; _data.CurrentFieldChanged -= FieldChanged; Fields = []; SelectedId = null; }
+        ++generation; pending?.Cancel(); pending = null; ClearEvidence(); Loading = false; Error = null; Confirmation = null;
+    }
+    public void Dispose() { if (disposed) return; disposed = true; company.Changed -= CompanyChanged; data.CurrentFieldChanged -= FieldChanged; Invalidate(); }
 }

@@ -1,3 +1,4 @@
+using TheTechIdea.Data.OilGas;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -19,7 +20,12 @@ public interface IProductionServiceClient
     Task<PerformanceDeviationResult> LogPerformanceDeviationAsync(string wellId, PerformanceDeviationRequest request, CancellationToken cancellationToken = default);
     Task<List<ProductionInterventionCandidateDto>> GetInterventionCandidatesAsync(CancellationToken cancellationToken = default);
     Task<ProductionInterventionDecisionResult> RecordInterventionDecisionAsync(string wellId, ProductionInterventionDecisionRequest request, CancellationToken cancellationToken = default);
+    Task<ProductionInterventionNativeRecovery> RecoverInterventionDecisionAsync(string wellId, Guid intentId, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("Original native intervention recovery is unavailable in this client.");
+    Task<ProductionInterventionMaintenanceLink> GetInterventionMaintenanceLinkAsync(string wellId,Guid decisionId,string workOrderId,CancellationToken cancellationToken=default)
+        => throw new NotSupportedException("Recorded intervention maintenance source is unavailable in this client.");
     Task<ProductionDecommissioningTriggerResult> TransitionToDecommissioningAsync(string wellId, ProductionDecommissioningTriggerRequest request, CancellationToken cancellationToken = default);
+    Task<WellTestReview> GetWellTestReviewAsync(string wellId, CancellationToken cancellationToken = default);
     Task<List<WellTestResponse>> GetWellTestsAsync(string wellId, CancellationToken cancellationToken = default);
     Task PatchAllocationAsync(string period, string wellId, ProductionAllocationPatchRequest request, CancellationToken cancellationToken = default);
     Task<List<FIELD>> GetFieldsAsync(CancellationToken cancellationToken = default);
@@ -40,48 +46,6 @@ public sealed class ProductionWellPerformanceDto
     public double CumOil { get; set; }
     public DateTime? LastTestDate { get; set; }
     public List<WellTestResponse> WellTests { get; set; } = new();
-}
-
-public sealed class ProductionInterventionCandidateDto
-{
-    public string WellId { get; set; } = string.Empty;
-    public string WellName { get; set; } = string.Empty;
-    public string InterventionType { get; set; } = string.Empty;
-    public string Problem { get; set; } = string.Empty;
-    public double DeferredBopd { get; set; }
-    public int EstDaysSinceOnset { get; set; }
-    public string Priority { get; set; } = "MEDIUM";
-    public string Status { get; set; } = "REVIEW";
-    public double EstCostUsd { get; set; }
-    public string? WorkOrderId { get; set; }
-    public string? AfeId { get; set; }
-    public string? AfeNumber { get; set; }
-    public string? AbandonmentId { get; set; }
-    public string? ProcessInstanceId { get; set; }
-}
-
-public sealed class ProductionInterventionDecisionRequest
-{
-    public string? Decision { get; set; }
-    public string? Note { get; set; }
-    public string? InterventionType { get; set; }
-    public string? Problem { get; set; }
-    public double? EstimatedCostUsd { get; set; }
-    public bool CreateWorkOrder { get; set; } = true;
-    public bool LinkAfe { get; set; } = true;
-    public string? WorkOrderId { get; set; }
-    public string? AfeId { get; set; }
-}
-
-public sealed class ProductionInterventionDecisionResult
-{
-    public bool Success { get; set; }
-    public string WellId { get; set; } = string.Empty;
-    public string Decision { get; set; } = string.Empty;
-    public string? WorkOrderId { get; set; }
-    public string? AfeId { get; set; }
-    public string? AfeNumber { get; set; }
-    public string? Message { get; set; }
 }
 
 public sealed class ProductionDecommissioningTriggerRequest

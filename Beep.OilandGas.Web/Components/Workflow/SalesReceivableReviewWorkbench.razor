@@ -1,0 +1,175 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IAccountingServiceClient Accounting
+@inject CompanySalesReceivableWorkspaceState State
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-4">
+    <MudText Typo="Typo.h6">Independent receivable financial review</MudText>
+    <MudText>Receivable @ReceivableId · Approval records review only. Financial posting requires a separate authorized workflow.</MudText>
+    @if(_canReview){<MudButton OnClick="Load" Disabled="@State.Busy">Review current receivable evidence</MudButton>}
+    <MudButton OnClick="Recover" Disabled="@State.Busy">Recover my original reviewer decision</MudButton>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing or reconciling receivable disposition" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.ReviewRecovery is {} recovery && recovery.ReceivableId==ReceivableId && recovery.Outcome is {} known)
+    {
+        <MudAlert Severity="Severity.Success">The original reviewer decision and native disposition are confirmed.</MudAlert>
+        <MudText>@known.Receivable.STATUS · Reviewer @known.Receivable.ROW_CHANGED_BY · UTC @known.Receivable.ROW_CHANGED_DATE?.ToString("O")</MudText>
+        <MudText Typo="Typo.caption">Original reviewer request @recovery.Retained!.SALES_RECEIVABLE_REVIEW_INTENT_ID · Preserved draft receipt @known.Receipt.RECORDED_REVISION</MudText>
+    }
+    @if(State.ReviewPending is {} pending && pending.ReceivableId==ReceivableId)
+    {
+        <MudAlert Severity="Severity.Warning">Retain this exact original reviewer decision until its native outcome is confirmed.</MudAlert>
+        <MudText>@pending.Decision · Request @pending.IntentId · Reason @pending.Reason</MudText>
+        <MudButton OnClick="Retry" Disabled="@(!State.CanRetryReview)">Reconcile exact original reviewer decision</MudButton>
+    }
+    else if(State.HasPendingReview){<MudAlert Severity="Severity.Warning">A reviewer decision is retained for another original context. Return to its company, account and receivable to reconcile.</MudAlert>}
+    @if(State.ReviewSource is {} source && source.ReceivableId==ReceivableId)
+    {
+        <MudText>Document @source.Original.Receivable.INVOICE_NUMBER · Prepared by @source.Original.Intent.ROW_CREATED_BY · Proposed @source.Original.Receivable.TOTAL_AMOUNT @source.Original.Receivable.CURRENCY_CODE</MudText>
+        <MudText>Company calendar: Invoice @Calendar(source.Original.Receivable.INVOICE_DATE) · Due @Calendar(source.Original.Receivable.DUE_DATE)</MudText>
+        <MudText Typo="Typo.caption">Current review @source.Revision · Original draft receipt @source.Original.Receipt.RECORDED_REVISION</MudText>
+        @if(!source.IsIndependent){<MudAlert Severity="Severity.Warning">The receivable maker cannot independently review this draft.</MudAlert>}
+        else if(source.Original.Receivable.STATUS!="DRAFT"){<MudAlert Severity="Severity.Info">This receivable already has a recorded independent disposition.</MudAlert>}
+        else if(!State.ReviewSourceHasCurrentOriginalSource){<MudAlert Severity="Severity.Warning">The original source changed. Reconcile the original receiving, policy and invoice evidence before a new disposition.</MudAlert>}
+        @if(State.CanRecordReview)
+        {
+            <MudForm @ref="_form">
+                <MudSelect T="string" Label="Financial disposition" @bind-Value="_financial" Required="true">
+                    <MudSelectItem T="string" Value='@("CONFIRMED")'>Confirmed</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("ISSUE")'>Issue recorded</MudSelectItem>
+                </MudSelect>
+                <MudTextField T="string" Label="Financial review evidence" @bind-Value="_financialEvidence" Required="true" MaxLength="2000" Lines="3" />
+                <MudSelect T="string" Label="Source disposition" @bind-Value="_source" Required="true">
+                    <MudSelectItem T="string" Value='@("CONFIRMED")'>Confirmed</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("ISSUE")'>Issue recorded</MudSelectItem>
+                </MudSelect>
+                <MudTextField T="string" Label="Source review evidence" @bind-Value="_sourceEvidence" Required="true" MaxLength="2000" Lines="3" />
+                <MudTextField T="string" Label="Reviewer decision reason" @bind-Value="_reason" Required="true" MaxLength="1000" Lines="3" />
+                <MudText>Approval requires both dispositions confirmed. Record issues and an explicit reason when rejecting.</MudText>
+                <MudButton OnClick='@(()=>Record("APPROVE"))' Disabled="@State.Busy" Color="Color.Primary" Variant="Variant.Filled">Approve receivable review</MudButton>
+                <MudButton OnClick='@(()=>Record("REJECT"))' Disabled="@State.Busy" Color="Color.Error">Reject receivable review</MudButton>
+            </MudForm>
+        }
+        else if(!_canRecord){<MudAlert Severity="Severity.Info">Current independent receivable decision permission is required to record a disposition.</MudAlert>}
+    }
+    @if(_canReadJournal)
+    {
+        <MudText Typo="Typo.h6">Approved receivable journal source</MudText>
+        <MudForm @ref="_journalForm">
+            <MudTextField T="string" Label="Journal book" Value="_journalBook" ValueChanged='@(value=>JournalSelectionChanged("book",value))' Required="true" MaxLength="128" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Journal currency" Value="_journalCurrency" ValueChanged='@(value=>JournalSelectionChanged("currency",value))' Required="true" MaxLength="16" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Company journal calendar ID" Value="_journalCalendar" ValueChanged='@(value=>JournalSelectionChanged("calendar",value))' Required="true" MaxLength="128" Disabled="State.Busy" />
+            <MudDatePicker Label="Journal posting date" Date="_journalDate" DateChanged="JournalDateChanged" Required="true" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Receivable mapping key" Value="_journalReceivableKey" ValueChanged='@(value=>JournalSelectionChanged("receivable",value))' Required="true" MaxLength="128" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Sales revenue mapping key" Value="_journalRevenueKey" ValueChanged='@(value=>JournalSelectionChanged("revenue",value))' Required="true" MaxLength="128" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Charges revenue mapping key (required for nonzero charges)" Value="_journalChargesKey" ValueChanged='@(value=>JournalSelectionChanged("charges",value))' MaxLength="128" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Sales tax payable mapping key (required for nonzero tax)" Value="_journalTaxKey" ValueChanged='@(value=>JournalSelectionChanged("tax",value))' MaxLength="128" Disabled="State.Busy" />
+            <MudButton OnClick="LoadJournalSource" Disabled="State.Busy" Variant="Variant.Outlined">Review complete journal posting source</MudButton>
+        </MudForm>
+    }
+    @if(State.JournalSource is {} journal && journal.ReceivableId==ReceivableId)
+    {
+        <MudText>Company @journal.Company.BusinessAssociateId · FIELD @journal.FieldId · Book @journal.BookId · Currency @journal.CurrencyCode · Calendar @journal.CalendarId</MudText>
+        <MudText>Approved invoice @journal.Receivable.Invoice.Number · Receivable @journal.Receivable.Receivables.Single().Number · Posting date @Calendar(journal.PostingDate)</MudText>
+        <MudText>Recorded policy precision @journal.Policy.Rules.CurrencyDecimals · Rounding @journal.Policy.Rules.RoundingMode</MudText>
+        <CompanyFxEvidencePanel Conversion="journal.Conversion" />
+        @foreach(var line in journal.Lines){<MudPaper Outlined="true" Class="pa-3 my-3"><MudText>@line.Number · @line.Purpose · @line.MappingKey</MudText><MudText>Account @line.AccountNumber · Native ID @line.AccountId · @line.AccountType / @line.NormalBalance</MudText><MudText>Debit @line.Debit · Credit @line.Credit · @journal.CurrencyCode</MudText></MudPaper>}
+        <MudText Typo="Typo.caption">Complete source revision @journal.Revision · Original period authority @journal.PeriodAuthorityRevision</MudText>
+        <MudAlert Severity="Severity.Info" role="status">The exact approved source and balanced proposed lines are confirmed. This review creates no journal, ledger entry, payment or posted balance. Independent journal review and posting require their separate authorized forms.</MudAlert>
+        @if(State.CanPrepareJournal)
+        {
+            <MudForm @ref="_journalPrepareForm">
+                <MudTextField T="string" Label="Journal document number" @bind-Value="_journalNumber" Required="true" MaxLength="128" Disabled="State.Busy" />
+                <MudTextField T="string" Label="Journal preparation reason" @bind-Value="_journalReason" Required="true" MaxLength="1000" Lines="3" Disabled="State.Busy" />
+                <MudButton OnClick="PrepareJournal" Disabled="State.Busy" Color="Color.Primary" Variant="Variant.Filled">Retain original request and prepare balanced draft</MudButton>
+            </MudForm>
+        }
+    }
+    @if(State.PendingJournal is {} journalPending && journalPending.Source.ReceivableId==ReceivableId)
+    {
+        <MudAlert Severity="Severity.Warning" role="status">The exact original journal preparation request is retained. Reconcile it before another preparation or reviewer command.</MudAlert>
+        <MudText>Journal @journalPending.JournalId · Document @journalPending.Number · Company @journalPending.Source.Company.BusinessAssociateId · Book @journalPending.Source.BookId · Currency @journalPending.Source.CurrencyCode · FIELD @journalPending.Source.FieldId</MudText>
+        <MudButton OnClick="ReconcileJournal" Disabled="@(!State.CanRetryJournal)">Reconcile original journal preparation</MudButton>
+    }
+    else if(State.HasPendingJournal){<MudAlert Severity="Severity.Warning" role="status">A journal request is retained for another original context. Return to its company/account/receivable to reconcile.</MudAlert>}
+    @if(_canPrepareJournal && !State.HasPendingJournal)
+    {
+        <MudForm @ref="_journalRecoveryForm"><MudTextField T="string" Label="Original journal book" @bind-Value="_journalRecoveryBook" Required="true" MaxLength="128" Disabled="State.Busy" /><MudTextField T="string" Label="Original journal currency" @bind-Value="_journalRecoveryCurrency" Required="true" MaxLength="16" Disabled="State.Busy" /><MudTextField T="string" Label="Original prepared journal ID" @bind-Value="_journalRecoveryId" Required="true" MaxLength="32" Disabled="State.Busy" /><MudButton OnClick="RecoverJournal" Disabled="State.Busy" Variant="Variant.Outlined">Recover original journal request</MudButton></MudForm>
+    }
+    @if(State.JournalPreparation is {} prepared && prepared.Header.SOURCE_AR_INVOICE_ID==ReceivableId)
+    {
+        <MudAlert Severity="Severity.Info" role="status">Journal @prepared.Header.ENTRY_NUMBER · @prepared.Header.STATUS · Native ID @prepared.Header.JOURNAL_ENTRY_ID. A draft does not establish ledger posting or AR balances.</MudAlert>
+        @if(prepared.Header.ROW_CREATED_BY==Company.Selection?.UserId && Company.Selection.Permissions.Contains("Workflow.Start",StringComparer.Ordinal))
+        {<Beep.OilandGas.Web.Components.BusinessProcess.CompanyAccountingHandoffPanel EntityType="JOURNAL_ENTRY" EntityId="@prepared.Header.JOURNAL_ENTRY_ID" SourceRevision="@CompanyAccountingSourceTypes.JournalPreparationRevision(prepared)" />}
+        @foreach(var line in prepared.Lines){<MudText>Line @line.LINE_NUMBER · Native ID @line.JOURNAL_ENTRY_LINE_ID · Account @line.GL_ACCOUNT_ID · Debit @line.DEBIT_AMOUNT · Credit @line.CREDIT_AMOUNT · @line.CURRENCY_CODE</MudText>}
+    }
+</MudPaper>
+<SalesJournalReviewWorkbench ReceivableId="@ReceivableId" />
+<SalesJournalPostingWorkbench ReceivableId="@ReceivableId" />
+<SalesPostedLedgerPanel ReceivableId="@ReceivableId" />
+<SalesPaymentWorkbench ReceivableId="@ReceivableId" />
+
+@code {
+    [Parameter]public string ReceivableId{get;set;}="";
+    [Parameter]public CompanySalesReceivableProcessSourceReview? AssignedSource{get;set;}
+    [Parameter]public EventCallback RecordedOutcomeChanged{get;set;}
+    private string _financial="",_financialEvidence="",_source="",_sourceEvidence="",_reason="";
+    private string? _error;
+    private bool _canReview,_canRecord,_canReadJournal,_canPrepareJournal,_disposed;
+    private long _epoch;
+    private MudForm? _form;
+    private MudForm? _journalForm;
+    private MudForm? _journalPrepareForm,_journalRecoveryForm;
+    private string _journalNumber="",_journalReason="",_journalRecoveryId="",_journalRecoveryBook="",_journalRecoveryCurrency="";
+    private async Task JournalPreparationAction(Func<Task> action)
+    {
+        var epoch=_epoch;_error=null;try{await Access();if(!_canPrepareJournal)throw new UnauthorizedAccessException();await action();if(!_disposed && epoch==_epoch)await Access();}
+        catch{if(!_disposed && epoch==_epoch)_error="Journal preparation is unconfirmed. Retain the exact original request and return to its company/account/receivable/book/currency/binding to recover and reconcile before another command.";}
+    }
+    private Task PrepareJournal()=>JournalPreparationAction(async()=>{if(_journalPrepareForm is not null){await _journalPrepareForm.ValidateAsync();if(!_journalPrepareForm.IsValid)return;}await State.PrepareJournalAsync(_journalNumber,_journalReason,Accounting);});
+    private Task ReconcileJournal()=>JournalPreparationAction(()=>State.SubmitJournalPreparationAsync(Accounting));
+    private Task RecoverJournal()=>JournalPreparationAction(async()=>{if(_journalRecoveryForm is not null){await _journalRecoveryForm.ValidateAsync();if(!_journalRecoveryForm.IsValid)return;}await State.RecoverJournalPreparationAsync(_journalRecoveryBook,_journalRecoveryCurrency,_journalRecoveryId,ReceivableId,Accounting);});
+    private string _journalBook="",_journalCurrency="",_journalCalendar="",_journalReceivableKey="",_journalRevenueKey="",_journalChargesKey="",_journalTaxKey="";
+    private DateTime? _journalDate;
+    private void JournalSelectionChanged(string field,string value){switch(field){case "book":_journalBook=value;break;case "currency":_journalCurrency=value;break;case "calendar":_journalCalendar=value;break;case "receivable":_journalReceivableKey=value;break;case "revenue":_journalRevenueKey=value;break;case "charges":_journalChargesKey=value;break;case "tax":_journalTaxKey=value;break;}State.InvalidateJournalSource();_error=null;}
+    private void JournalDateChanged(DateTime? value){_journalDate=value;State.InvalidateJournalSource();_error=null;}
+    private async Task LoadJournalSource()
+    {
+        var epoch=_epoch;_error=null;try{await Access();if(!_canReadJournal)throw new UnauthorizedAccessException();if(_journalForm is not null){await _journalForm.ValidateAsync();if(!_journalForm.IsValid)return;}if(_journalDate is null)throw new InvalidOperationException();
+            await State.LoadJournalSourceAsync(ReceivableId,_journalBook,_journalCurrency,_journalCalendar,DateTime.SpecifyKind(_journalDate.Value,DateTimeKind.Unspecified),new(_journalReceivableKey,_journalRevenueKey,string.IsNullOrEmpty(_journalChargesKey)?null:_journalChargesKey,string.IsNullOrEmpty(_journalTaxKey)?null:_journalTaxKey),Accounting);if(!_disposed && epoch==_epoch)await Access();}
+        catch{State.InvalidateJournalSource();if(!_disposed && epoch==_epoch)_error="Journal source is unavailable or changed. Review the original approved receivable/invoice, company/account/FIELD access, book/currency/calendar date and explicit compatible account mappings.";}
+    }
+    private static string Calendar(DateTime? value)=>value?.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable";
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){ClearForm();try{await Access();}catch{_error="Current company/account and accounting role are required to review this receivable.";}}
+    private async Task Access()
+    {
+        _canReview=_canRecord=_canReadJournal=_canPrepareJournal=false;var epoch=_epoch;var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);
+        _canReview=Company.Selection!.Permissions.Contains("Accounting.ReviewSalesReceivable",StringComparer.Ordinal);
+        _canRecord=_canReview && Company.Selection.Permissions.Contains("Accounting.RecordSalesReceivableDecision",StringComparer.Ordinal);
+        _canReadJournal=Company.Selection.Permissions.Contains("Accounting.ReviewSalesJournalSource",StringComparer.Ordinal);
+        _canPrepareJournal=_canReadJournal && Company.Selection.Permissions.Contains("Accounting.PrepareSalesJournal",StringComparer.Ordinal);
+    }
+    private async Task Execute(Func<Task> action)
+    {
+        var epoch=_epoch;_error=null;
+        try{await Access();await action();if(!_disposed && epoch==_epoch)await Access();}
+        catch{if(!_disposed && epoch==_epoch)_error="The receivable review or original disposition could not be confirmed. Check current company/account, roles and FIELD access. Recover the original reviewer decision before recording again.";}
+    }
+    private Task Load(){ClearForm();return Execute(async()=>{if(AssignedSource is {} assigned){assigned.Require(Company.Selection!.Scope,Company.Selection.UserId,assigned.InstanceId);if(assigned.ReceivableId!=ReceivableId)throw new InvalidOperationException("The assigned receivable changed.");}await State.LoadReviewAsync(ReceivableId,Accounting,AssignedSource?.SourceRevision,AssignedSource?.Receivable.Revision);});}
+    private Task Recover()=>Execute(async()=>{await State.RecoverReviewAsync(ReceivableId,Accounting);await NotifyOutcome();});
+    private Task Retry()=>Execute(async()=>{await State.SubmitReviewAsync(Accounting);await NotifyOutcome();});
+    private Task Record(string decision)=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}var epoch=_epoch;await State.RecordReviewAsync(decision,_financial,_financialEvidence,_source,_sourceEvidence,_reason,Accounting);if(!_disposed && epoch==_epoch){ClearForm();await NotifyOutcome();}});
+    private Task NotifyOutcome()=>State.ReviewRecovery is {Outcome:not null} recovered && recovered.ReceivableId==ReceivableId?RecordedOutcomeChanged.InvokeAsync():Task.CompletedTask;
+    private void ClearForm(){_financial=_financialEvidence=_source=_sourceEvidence=_reason="";}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_canReview=_canRecord=_canReadJournal=_canPrepareJournal=false;_error=null;ClearForm();_journalNumber=_journalReason=_journalRecoveryId=_journalRecoveryBook=_journalRecoveryCurrency="";_journalBook=_journalCurrency=_journalCalendar=_journalReceivableKey=_journalRevenueKey=_journalChargesKey=_journalTaxKey="";_journalDate=null;if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> state){State.Invalidate();ContextChanged();}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.InvalidateJournalSource();ClearForm();}
+}

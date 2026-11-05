@@ -1,0 +1,9 @@
+### Result
+{
+  "removedOwnedFillers": 55,
+  "ownedIntents": []
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {const keys=Object.keys(sessionStorage).filter(k=>k.startsWith("oilgas-feedback-quota-"));for(const key of keys)sessionStorage.removeItem(key);return {removedOwnedFillers:keys.length,ownedIntents:Object.keys(sessionStorage).filter(k=>k.endsWith(".drilling-report")||k.endsWith(".drilling-execution"))};}');
+```

@@ -1,0 +1,12 @@
+[
+  {
+    "ProcessId": 29000,
+    "Name": "dotnet.exe",
+    "CommandLine": "\"C:\\Program Files\\dotnet\\dotnet.exe\" run --project C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-protected-tab-466b72f4e9e045bf906309441866695b\\WorkflowProtectedTab.csproj"
+  },
+  {
+    "ProcessId": 9832,
+    "Name": "WorkflowProtectedTab.exe",
+    "CommandLine": "\"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-protected-tab-466b72f4e9e045bf906309441866695b\\bin\\Debug\\net10.0\\WorkflowProtectedTab.exe\""
+  }
+]

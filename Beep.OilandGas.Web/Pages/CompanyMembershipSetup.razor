@@ -1,0 +1,431 @@
+@page "/setup/company-members"
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject ApiClient Api
+@inject UserAdministrationClient Users
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject ICompanyMembershipIntentStore Intents
+@inject ICompanyRoleIntentStore RoleIntents
+@inject ILogger<CompanyMembershipSetup> Logger
+@implements IDisposable
+
+<PageTitle>Company members</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Company members and roles</MudText>
+    <MudText Class="my-3">Review company access for active and inactive accounts. Only active accounts can receive a new membership.</MudText>
+    @if (_scope is null) { <MudAlert Severity="Severity.Info">Select a company in the top bar to manage its members.</MudAlert> }
+    else { <MudText>Company: @_scope.TenantId / @_scope.BusinessAssociateId</MudText> }
+    @if (_message is not null) { <MudAlert Severity="Severity.Info" Class="my-3" role="status">@_message</MudAlert> }
+    @if (_pending is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">An earlier membership request awaits confirmation. Retry the same request. Reference: @_pending.IntentId</MudAlert>
+        <MudText Typo="Typo.body2">Review the recorded assignments before clearing this request. Clearing it does not undo a server-side grant and an earlier request may still complete.</MudText>
+        <MudCheckBox T="bool" @bind-Value="_clearAcknowledged" Label="I reviewed the request and understand that clearing it does not undo changes" Disabled="@_busy" />
+        <MudButton OnClick="ClearRetained" Disabled="@(_busy || !_ready || !_clearAcknowledged)" Variant="Variant.Outlined">Clear retained request</MudButton>
+    }
+    @if (_rolePending is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">A role assignment outcome is unconfirmed for @_rolePending.UserId and role @_rolePending.Request.RoleId. Review current access and recorded assignments before deciding what to do.</MudAlert>
+        <MudText Typo="Typo.body2">Clearing this local request does not undo an assignment, and a request may still complete.</MudText>
+        <MudCheckBox T="bool" @bind-Value="_roleClearAcknowledged" Label="I reviewed the role request and understand that clearing it does not undo changes" Disabled="@_busy" />
+        <MudButton OnClick="ClearRoleRetained" Disabled="@(_busy || !_ready || !_roleClearAcknowledged)" Variant="Variant.Outlined">Clear retained role request</MudButton>
+    }
+    @if (_revocationPending is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">The removal of assignment @_revocationPending.AssignmentId for @_revocationPending.UserId is unconfirmed. Review recorded assignments and current access.</MudAlert>
+        <MudCheckBox T="bool" @bind-Value="_revocationClearAcknowledged" Label="I reviewed the removal and understand that clearing it does not undo changes" Disabled="@_busy" />
+        <MudButton OnClick="ClearRevocationRetained" Disabled="@(_busy || !_ready || !_revocationClearAcknowledged)" Variant="Variant.Outlined">Clear retained removal</MudButton>
+    }
+    @if (_retirementPending is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">Membership removal for @_retirementPending.UserId awaits confirmation. Retry the original request or review it before clearing.</MudAlert>
+        <MudButton OnClick="RetireMembership" Disabled="@(_busy || !_ready)" Variant="Variant.Outlined">Retry same membership removal</MudButton>
+        <MudCheckBox T="bool" @bind-Value="_retirementClearAcknowledged" Label="I reviewed the request and understand that clearing it does not undo server changes" Disabled="@_busy" />
+        <MudButton OnClick="ClearRetirementRetained" Disabled="@(_busy || !_ready || !_retirementClearAcknowledged)" Variant="Variant.Outlined">Clear retained membership removal</MudButton>
+    }
+    <MudSelect T="string" Value="@_user" ValueChanged="ChangeUser" Label="Account" Disabled="@(!_ready || _busy || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null)">
+        @foreach (var user in _users) { <MudSelectItem T="string" Value="@user.UserId">@(user.FullName ?? user.UserName)@(user.IsActive ? "" : " (inactive)")</MudSelectItem> }
+    </MudSelect>
+    <MudSelect T="string" @bind-Value="_role" Label="Company role" Disabled="@(!_ready || _busy || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null)">
+        @foreach (var role in _roles) { <MudSelectItem T="string" Value="@role.RoleId">@role.RoleName</MudSelectItem> }
+    </MudSelect>
+    <MudTextField T="string" @bind-Value="_reason" Label="Reason" Lines="2" Disabled="@(!_ready || _busy || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null)" />
+    <MudButton OnClick="ReviewCurrentAccess" Disabled="@(!_ready || _busy || string.IsNullOrWhiteSpace(_user))" Variant="Variant.Outlined" Class="my-3">Review current company access</MudButton>
+    @if (_access is not null)
+    {
+        @if (_access.Membership is null) { <MudText Typo="Typo.body2">No membership record was found for @_access.UserId.</MudText> }
+        else
+        {
+            <MudText Typo="Typo.body2">Membership starts: @_access.Membership.EffectiveFromUtc.ToString("u") · Ends: @(_access.Membership.EffectiveToUtc?.ToString("u") ?? "no recorded end")</MudText>
+            <MudText Typo="Typo.body2">Granted by: @_access.Membership.GrantedByUserId</MudText>
+        }
+        @if (_access.Access is null) { <MudText Typo="Typo.body2">No current company access was confirmed for @_access.UserId. Check the membership interval, account, tenant and company status.</MudText> }
+        else
+        {
+            <MudText Typo="Typo.body2">Active company membership for @_access.UserId.</MudText>
+            <MudText Typo="Typo.body2">Current roles: @(_access.Access.Roles.Length == 0 ? "none" : string.Join(", ", _access.Access.Roles))</MudText>
+            <MudText Typo="Typo.body2">Current permissions: @(_access.Access.Permissions.Length == 0 ? "none" : string.Join(", ", _access.Access.Permissions))</MudText>
+        }
+    }
+    @if (_access?.Membership is not null && _retirementPending is null)
+    {
+        <MudTextField T="string" @bind-Value="_retirementReason" Label="Reason for membership removal" Lines="2" Disabled="@(_busy || _pending is not null || _rolePending is not null || _revocationPending is not null)" />
+        <MudCheckBox T="bool" @bind-Value="_retirementConfirmed" Label="End this person's membership in the selected company" Disabled="@(_busy || _pending is not null || _rolePending is not null || _revocationPending is not null)" />
+        <MudText Typo="Typo.body2">Company roles will be retired and their records preserved. Asset grant records remain for review. Reinstatement is not available through this workflow.</MudText>
+        <MudButton OnClick="RetireMembership" Disabled="@(!_ready || _busy || !_retirementConfirmed || _pending is not null || _rolePending is not null || _revocationPending is not null)" Variant="Variant.Outlined" Color="Color.Error">End company membership</MudButton>
+    }
+    <MudButton OnClick="@(() => ReviewRetirements(0))" Disabled="@(!_ready || _busy || string.IsNullOrWhiteSpace(_user))" Variant="Variant.Outlined" Class="my-3">Review membership removal history</MudButton>
+    @if (_retirements is { } history)
+    {
+        <MudText Typo="Typo.body2">Recorded membership removals for @history.UserId: @history.Total.</MudText>
+        @if (history.Items.Length == 0) { <MudText Typo="Typo.body2">No removal records were found on this page.</MudText> }
+        @foreach (var record in history.Items)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-2">
+                <MudText Typo="Typo.body2">Recorded: @record.RetiredUtc.ToString("u") · By: @record.ActorUserId</MudText>
+                <MudText Typo="Typo.body2">Reason: @record.Reason</MudText>
+                <MudText Typo="Typo.body2">Membership end: @record.EffectiveToUtc.ToString("u") · Reference: @record.IntentId</MudText>
+            </MudPaper>
+        }
+        <MudButton OnClick="@(() => ReviewRetirements(Math.Max(0, history.Offset - history.Limit)))" Disabled="@(_busy || history.Offset == 0)" Variant="Variant.Text">Previous history page</MudButton>
+        <MudButton OnClick="@(() => ReviewRetirements(history.Offset + history.Limit))" Disabled="@(_busy || history.Offset + history.Items.Length >= history.Total)" Variant="Variant.Text">Next history page</MudButton>
+    }
+    <MudButton OnClick="ReviewAssignments" Disabled="@(!_ready || _busy || string.IsNullOrWhiteSpace(_user))" Variant="Variant.Outlined" Class="my-3">Review recorded role assignments</MudButton>
+    @if (_assignments is not null)
+    {
+        <MudText Typo="Typo.body2">Recorded assignments for @_user. These records do not by themselves confirm current membership.</MudText>
+        @if (_assignments.Count == 0) { <MudText Typo="Typo.body2">No role assignments were found.</MudText> }
+        @foreach (var assignment in _assignments)
+        {
+            <MudText Typo="Typo.body2">@assignment.RoleId — @assignment.ApprovalStatus — @assignment.UserRoleId</MudText>
+            @if (assignment.ApprovalStatus != "Revoked")
+            {
+                <MudButton OnClick="@(() => _revocationSelection = assignment)" Disabled="@(!_ready || _busy || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null)" Variant="Variant.Outlined">Select role for removal</MudButton>
+            }
+        }
+    }
+    @if (_revocationSelection is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">Remove role @_revocationSelection.RoleId from @_revocationSelection.UserId in this company?</MudAlert>
+        <MudButton OnClick="@(() => RevokeRole(_revocationSelection))" Disabled="@(_busy || _revocationPending is not null)" Variant="Variant.Filled" Color="Color.Error">Confirm role removal</MudButton>
+        <MudButton OnClick="@(() => _revocationSelection = null)" Disabled="@_busy" Variant="Variant.Text">Cancel</MudButton>
+    }
+    <MudButton OnClick="Save" Disabled="@(!_ready || _busy || _rolePending is not null || _revocationPending is not null || _retirementPending is not null || _pending is null && !SelectedAccountIsActive)" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">@(_pending is null ? "Add member" : "Retry same request")</MudButton>
+    <MudButton OnClick="AssignRole" Disabled="@(!_ready || _busy || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null || _access?.Access is null || _access.UserId != _user)" Variant="Variant.Outlined" Class="mx-2">Add role to existing member</MudButton>
+    <MudButton Href="@AssetReviewUrl" Disabled="@(!_ready || _busy || string.IsNullOrWhiteSpace(_user))" Variant="Variant.Outlined" Class="mx-2">Review stored asset and facility grants</MudButton>
+    <MudButton Href="/admin/access-control/user-roles" Variant="Variant.Outlined" Class="mx-2">Manage roles</MudButton>
+    <MudButton Href="/setup/repository" Variant="Variant.Text">Back to setup</MudButton>
+</MudContainer>
+
+@code {
+    private CompanyScope? _scope;
+    private string? _actor, _message;
+    private string _user = "", _role = "", _reason = "";
+    private List<RepositoryUserSummary> _users = [];
+    private List<RepositoryRoleSummary> _roles = [];
+    private List<RepositoryUserRole>? _assignments;
+    private CompanyMemberAccessReview? _access;
+    private CompanyMembershipRetirementPage? _retirements;
+    private CompanyMembershipRequest? _pending;
+    private CompanyRoleIntent? _rolePending;
+    private CompanyRoleRevocationIntent? _revocationPending;
+    private CompanyMembershipRetirementIntent? _retirementPending;
+    private RepositoryUserRole? _revocationSelection;
+    private string _retirementReason = "";
+    private bool _ready, _busy, _disposed, _interactive, _clearAcknowledged, _roleClearAcknowledged, _revocationClearAcknowledged, _retirementConfirmed, _retirementClearAcknowledged;
+    private long _generation;
+    private string AssetReviewUrl => "/admin/access-control/asset-access?user=" + Uri.EscapeDataString(_user);
+    private bool SelectedAccountIsActive => _users.Any(user => user.UserId == _user && user.IsActive);
+    protected override void OnInitialized() { Company.Changed += CompanyChanged; Authentication.AuthenticationStateChanged += AuthenticationChanged; }
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { _interactive = true; await Restore(Interlocked.Increment(ref _generation)); } }
+    private void CompanyChanged() => Changed();
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> _) => Changed();
+    private void Changed()
+    {
+        var generation = Interlocked.Increment(ref _generation);
+        _ = InvokeAsync(async () => { Reset(); StateHasChanged(); if (_interactive) await Restore(generation); });
+    }
+    private void Reset() { _scope = null; _actor = null; _ready = false; _busy = false; _pending = null; _rolePending = null; _revocationPending = null; _retirementPending = null; _revocationSelection = null; _message = null; _clearAcknowledged = false; _roleClearAcknowledged = false; _revocationClearAcknowledged = false; _retirementConfirmed = false; _retirementClearAcknowledged = false; _retirementReason = ""; _user = _role = _reason = ""; _users = []; _roles = []; _assignments = null; _access = null; _retirements = null; }
+    private void ChangeUser(string value) { _user = value; _assignments = null; _access = null; _retirements = null; _revocationSelection = null; _retirementConfirmed = false; _retirementReason = ""; }
+    private bool Current(long generation, string? actor, CompanyScope? scope) => !_disposed && generation == Interlocked.Read(ref _generation) &&
+        actor is not null && scope is not null && _actor == actor && _scope == scope && Company.Selection is { } selected && selected.UserId == actor && selected.Scope == scope;
+    private async Task Restore(long generation)
+    {
+        try
+        {
+            var selection = Company.Selection;
+            var principal = (await Authentication.GetAuthenticationStateAsync()).User;
+            var actor = principal.Identity?.IsAuthenticated == true && principal.IsInRole("Administrator") ? Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find(principal) : null;
+            if (_disposed || generation != Interlocked.Read(ref _generation)) return;
+            if (selection is null) { Reset(); return; }
+            if (string.IsNullOrWhiteSpace(actor) || selection.UserId != actor) throw new InvalidOperationException("Administrator identity is unavailable.");
+            _scope = selection.Scope; _actor = actor;
+            var retained = await Intents.ReadMembershipAsync(selection.Scope, actor);
+            var retainedRole = await RoleIntents.ReadRoleAsync(selection.Scope, actor);
+            var retainedRevocation = await RoleIntents.ReadRevocationAsync(selection.Scope, actor);
+            var retainedRetirement = await Intents.ReadMembershipRetirementAsync(selection.Scope, actor);
+            var users = await Users.GetUsersAsync(); var roles = await Users.GetRolesAsync();
+            if (!Current(generation, actor, selection.Scope)) return;
+            _users = users; _roles = roles;
+            if (retained is not null) { _pending = retained.Request; _user = _pending.UserId; _role = _pending.RoleId; _reason = _pending.Reason; }
+            if (retainedRole is not null) { _rolePending = retainedRole; _user = retainedRole.UserId; _role = retainedRole.Request.RoleId; _reason = retainedRole.Request.Reason; }
+            if (retainedRevocation is not null) { _revocationPending = retainedRevocation; _user = retainedRevocation.UserId; }
+            if (retainedRetirement is not null) { _retirementPending = retainedRetirement; _user = retainedRetirement.UserId; _retirementReason = retainedRetirement.Request.Reason; }
+            _ready = true;
+        }
+        catch (Exception error) { if (!_disposed && generation == Interlocked.Read(ref _generation)) { Logger.LogWarning(error, "Company membership setup could not be loaded"); _message = "Membership setup is unavailable. Reload before continuing."; _ready = false; } }
+        finally { if (!_disposed && generation == Interlocked.Read(ref _generation)) await InvokeAsync(StateHasChanged); }
+    }
+    private async Task Save()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope;
+        if (_busy || !_ready || _rolePending is not null || _revocationPending is not null || _retirementPending is not null || !Current(generation, actor, scope)) return;
+        if (_pending is null && !SelectedAccountIsActive) { _message = "Select an active account to add a company member."; return; }
+        var request = _pending ?? new CompanyMembershipRequest(_user, _role, _reason, Guid.NewGuid().ToString("N"));
+        try { request.Require(); } catch (ArgumentException) { _message = "Select an account, role and reason."; return; }
+        var intent = new CompanyMembershipIntent(scope!, actor!, request); _busy = true; _message = null;
+        try
+        {
+            await Intents.RetainMembershipAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _pending = request;
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership request could not be retained"); _message = "The request could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        try
+        {
+            var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/memberships";
+            var result = await Api.PostAsync<CompanyMembershipRequest, RepositoryUserRole>(path, request);
+            if (!Current(generation, actor, scope)) return;
+            if (result is null || result.UserRoleId != request.IntentId || result.UserId != request.UserId || result.RoleId != request.RoleId ||
+                result.TenantId != scope.TenantId || result.BusinessAssociateId != scope.BusinessAssociateId || result.GrantedByUserId != actor || result.AssignmentReason != request.Reason)
+                throw new InvalidOperationException("The membership result did not match the original request.");
+            await Intents.ClearMembershipAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _pending = null; _assignments = null; _access = null; _user = request.UserId; _role = _reason = ""; _message = "The original membership request was recorded. Review current company access before assigning work.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company membership outcome is unconfirmed"); _message = "The outcome is unconfirmed. Retry the same request or review company access."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+    private async Task AssignRole()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var user = _user;
+        if (_busy || !_ready || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null || !Current(generation, actor, scope) ||
+            _access?.Access is null || _access.UserId != user || _access.Company != scope) return;
+        var intent = new CompanyRoleIntent(scope!, actor!, user, new AssignCompanyRoleRequest(_role, _reason));
+        try { intent.Require(); } catch (ArgumentException) { _message = "Select an account, role and reason."; return; }
+        _busy = true; _message = null;
+        try
+        {
+            await RoleIntents.RetainRoleAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _rolePending = intent;
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role request could not be retained"); _message = "The role request could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        try
+        {
+            var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/users/{Uri.EscapeDataString(user)}/assignments";
+            var result = await Api.PostAsync<AssignCompanyRoleRequest, RepositoryUserRole>(path, intent.Request);
+            if (!Current(generation, actor, scope)) return;
+            if (result is null || result.UserId != user || result.RoleId != intent.Request.RoleId || result.TenantId != scope.TenantId ||
+                result.BusinessAssociateId != scope.BusinessAssociateId || result.GrantedByUserId != actor || result.AssignmentReason != intent.Request.Reason ||
+                result.ApprovalStatus != "Approved" || string.IsNullOrWhiteSpace(result.UserRoleId))
+                throw new InvalidOperationException("The role assignment result was not confirmed.");
+            await RoleIntents.ClearRoleAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _rolePending = null; _role = _reason = ""; _access = null; _assignments = null;
+            _message = "Role assignment recorded. Review current company access before assigning work.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role outcome is unconfirmed"); _message = "The role outcome is unconfirmed. Review current access and recorded assignments before clearing the request."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+
+    private async Task RetireMembership()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope;
+        if (_busy || !_ready || _pending is not null || _rolePending is not null || _revocationPending is not null || !Current(generation, actor, scope)) return;
+        var intent = _retirementPending;
+        if (intent is null)
+        {
+            if (!_retirementConfirmed || _access?.Membership is null || _access.Company != scope || _access.UserId != _user) return;
+            intent = new CompanyMembershipRetirementIntent(scope!, actor!, _user,
+                new(Guid.NewGuid().ToString("N"), _access.Membership.Revision, _retirementReason));
+        }
+        try { intent.Require(); } catch (ArgumentException) { _message = "Enter a valid reason and review the membership again."; return; }
+        _busy = true; _message = null;
+        try
+        {
+            await Intents.RetainMembershipRetirementAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _retirementPending = intent;
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal could not be retained"); _message = "The removal could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        try
+        {
+            var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/users/{Uri.EscapeDataString(intent.UserId)}/membership-retirements";
+            var result = await Api.PostAsync<CompanyMembershipRetirementRequest, CompanyMembershipRetirement>(path, intent.Request);
+            if (!Current(generation, actor, scope)) return;
+            if (result is null || result.IntentId != intent.Request.IntentId || result.PreviousRevision != intent.Request.ExpectedRevision ||
+                result.Reason != intent.Request.Reason || result.ActorUserId != actor || result.UserId != intent.UserId ||
+                result.TenantId != scope.TenantId || result.BusinessAssociateId != scope.BusinessAssociateId || string.IsNullOrWhiteSpace(result.ResultRevision))
+                throw new InvalidOperationException("The membership removal was not confirmed.");
+            await Intents.ClearMembershipRetirementAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _retirementPending = null; _retirementConfirmed = false; _retirementReason = ""; _access = null; _assignments = null; _retirements = null; _revocationSelection = null;
+            _message = "Company membership removal recorded. Review current access and stored grants.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal outcome is unconfirmed"); _message = "The removal is unconfirmed. Retry the original request or review current access."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+    private async Task ClearRetirementRetained()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var intent = _retirementPending;
+        if (_busy || !_ready || !_retirementClearAcknowledged || intent is null || !Current(generation, actor, scope)) return;
+        _busy = true;
+        try
+        {
+            await Intents.ClearMembershipRetirementAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _retirementPending = null; _retirementConfirmed = false; _retirementClearAcknowledged = false; _retirementReason = ""; _access = null; _assignments = null; _retirements = null;
+            _message = "The retained removal was cleared. Server changes remain and an earlier request may still complete.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal recovery could not be cleared"); _message = "The retained removal could not be cleared. Reload before continuing."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+
+    private async Task RevokeRole(RepositoryUserRole assignment)
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var user = _user;
+        if (_busy || !_ready || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null ||
+            !Current(generation, actor, scope) || _assignments is null || !_assignments.Contains(assignment) ||
+            assignment.UserId != user || assignment.TenantId != scope!.TenantId || assignment.BusinessAssociateId != scope.BusinessAssociateId || assignment.ApprovalStatus == "Revoked") return;
+        var intent = new CompanyRoleRevocationIntent(scope, actor!, user, assignment.UserRoleId);
+        try { intent.Require(); } catch (ArgumentException) { _message = "The assignment could not be confirmed. Review assignments again."; return; }
+        _busy = true; _message = null;
+        try
+        {
+            await RoleIntents.RetainRevocationAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _revocationPending = intent;
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Role removal could not be retained"); _message = "The removal could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        try
+        {
+            var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/assignments/{Uri.EscapeDataString(intent.AssignmentId)}";
+            await Api.DeleteAsync(path);
+            if (!Current(generation, actor, scope)) return;
+            await RoleIntents.ClearRevocationAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _revocationPending = null; _revocationSelection = null; _access = null; _assignments = null;
+            _message = "Company role removal recorded. Review current access before assigning work.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role removal is unconfirmed"); _message = "The removal is unconfirmed. Review current access and recorded assignments before clearing it."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+    private async Task ClearRevocationRetained()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var intent = _revocationPending;
+        if (_busy || !_ready || !_revocationClearAcknowledged || intent is null || !Current(generation, actor, scope)) return;
+        _busy = true;
+        try
+        {
+            await RoleIntents.ClearRevocationAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _revocationPending = null; _revocationSelection = null; _revocationClearAcknowledged = false; _access = null; _assignments = null;
+            _message = "The retained removal was cleared. Server-side changes remain and an earlier request may still complete.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Role removal recovery could not be cleared"); _message = "The retained removal could not be cleared. Reload before continuing."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+
+    private async Task ClearRoleRetained()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var intent = _rolePending;
+        if (_busy || !_ready || !_roleClearAcknowledged || intent is null || !Current(generation, actor, scope)) return;
+        _busy = true;
+        try
+        {
+            await RoleIntents.ClearRoleAsync(intent);
+            if (!Current(generation, actor, scope)) return;
+            _rolePending = null; _roleClearAcknowledged = false; _access = null; _assignments = null; _role = _reason = "";
+            _message = "The retained role request was cleared. Server-side assignments remain and an earlier request may still complete.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role recovery could not be cleared"); _message = "The retained role request could not be cleared. Reload before continuing."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+    private async Task ReviewRetirements(int offset)
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var user = _user;
+        if (_busy || !_ready || offset < 0 || string.IsNullOrWhiteSpace(user) || !Current(generation, actor, scope)) return;
+        _busy = true; _message = null; _retirements = null;
+        try
+        {
+            const int limit = 50;
+            var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/users/{Uri.EscapeDataString(user)}/membership-retirements?offset={offset}&limit={limit}";
+            var page = await Api.GetAsync<CompanyMembershipRetirementPage>(path) ?? throw new InvalidOperationException("Membership history is unavailable.");
+            if (!Current(generation, actor, scope) || _user != user) return;
+            if (page.Company != scope || page.UserId != user || page.Offset != offset || page.Limit != limit || page.Total < 0 || page.Items is null ||
+                page.Items.Length > limit || page.Items.Length > Math.Max(0, page.Total - offset) ||
+                page.Items.Select(x => x.IntentId).Distinct(StringComparer.Ordinal).Count() != page.Items.Length ||
+                page.Items.Any(x => x.TenantId != scope.TenantId || x.BusinessAssociateId != scope.BusinessAssociateId || x.UserId != user ||
+                    string.IsNullOrWhiteSpace(x.IntentId) || string.IsNullOrWhiteSpace(x.ActorUserId) || string.IsNullOrWhiteSpace(x.Reason)))
+                throw new InvalidOperationException("Membership history could not be matched to this company and account.");
+            _retirements = page;
+        }
+        catch (Exception error) { if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Membership removal history could not be reviewed"); _message = "Membership removal history could not be confirmed."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+
+    private async Task ReviewCurrentAccess()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var user = _user;
+        if (_busy || !_ready || string.IsNullOrWhiteSpace(user) || !Current(generation, actor, scope)) return;
+        _busy = true; _message = null; _access = null;
+        try
+        {
+            var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/users/{Uri.EscapeDataString(user)}/access";
+            var result = await Api.GetAsync<CompanyMemberAccessReview>(path) ?? throw new InvalidOperationException("Access response unavailable.");
+            if (!Current(generation, actor, scope) || _user != user) return;
+            if (result.Company != scope || result.UserId != user || result.Access is not null && result.Membership is null ||
+                result.Membership is { } membership && (string.IsNullOrWhiteSpace(membership.GrantedByUserId) || string.IsNullOrWhiteSpace(membership.Revision)) || result.Access is { } access &&
+                (access.Scope != scope || access.Roles is null || access.Permissions is null))
+                throw new InvalidOperationException("The access response belongs to another scope.");
+            _access = result;
+        }
+        catch (Exception error) { if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Current company access could not be reviewed"); _message = "Current company access could not be confirmed."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+    private async Task ReviewAssignments()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var user = _user;
+        if (_busy || !_ready || string.IsNullOrWhiteSpace(user) || !Current(generation, actor, scope)) return;
+        _busy = true; _message = null; _assignments = null; _revocationSelection = null;
+        try
+        {
+            var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/users/{Uri.EscapeDataString(user)}/assignments";
+            var result = await Api.GetAsync<List<RepositoryUserRole>>(path) ?? throw new InvalidOperationException("Assignment response unavailable.");
+            if (!Current(generation, actor, scope) || _user != user) return;
+            if (result.Any(x => x.UserId != user || x.TenantId != scope.TenantId || x.BusinessAssociateId != scope.BusinessAssociateId))
+                throw new InvalidOperationException("The assignment response belongs to another scope.");
+            _assignments = result;
+        }
+        catch (Exception error) { if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Company assignments could not be reviewed"); _message = "Recorded assignments could not be confirmed."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+    private async Task ClearRetained()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _scope; var request = _pending;
+        if (_busy || !_ready || !_clearAcknowledged || request is null || !Current(generation, actor, scope)) return;
+        _busy = true;
+        try
+        {
+            await Intents.ClearMembershipAsync(new(scope!, actor!, request));
+            if (!Current(generation, actor, scope)) return;
+            _pending = null; _clearAcknowledged = false; _assignments = null; _access = null; _user = _role = _reason = "";
+            _message = "The retained request was cleared. Server-side changes remain and an earlier request may still complete.";
+        }
+        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership recovery request could not be cleared"); _message = "The retained request could not be cleared. Reload before continuing."; } }
+        finally { if (Current(generation, actor, scope)) _busy = false; }
+    }
+    public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); Company.Changed -= CompanyChanged; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }
+}

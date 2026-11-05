@@ -1,0 +1,10 @@
+### Result
+{
+  "entries": 1,
+  "characters": 3163,
+  "containsPlainReason": false
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({entries:Object.keys(sessionStorage).length,characters:Object.values(sessionStorage).join("").length,containsPlainReason:Object.values(sessionStorage).some(v=>v.includes("The assigned reviewer checked"))})');
+```

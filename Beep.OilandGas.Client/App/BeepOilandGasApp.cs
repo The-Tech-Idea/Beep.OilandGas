@@ -40,6 +40,8 @@ namespace Beep.OilandGas.Client.App
         // Remote mode dependencies
         private readonly HttpClient? _httpClient;
         private readonly IAuthenticationProvider? _authProvider;
+        private readonly CompanyClientContext? _company;
+        private ClientApiTransport? _apiTransport;
 
         // Local mode dependencies
         private readonly IServiceProvider? _serviceProvider;
@@ -89,10 +91,12 @@ namespace Beep.OilandGas.Client.App
         public BeepOilandGasApp(
             HttpClient httpClient,
             AppOptions options,
+            CompanyClientContext company,
             IAuthenticationProvider? authProvider = null,
             ILogger<BeepOilandGasApp>? logger = null)
         {
             _accessMode = ServiceAccessMode.Remote;
+            _company = company ?? throw new ArgumentNullException(nameof(company));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _authProvider = authProvider;
@@ -212,13 +216,13 @@ namespace Beep.OilandGas.Client.App
         #region Administrative Services
 
         public IAccessControlService AccessControl => 
-            _accessControlService ??= new Services.AccessControl.AccessControlService(this);
+            _accessControlService ??= new Services.AccessControl.AccessControlService(GetApiTransport());
 
         public IPermitsService Permits => 
             _permitsService ??= new Services.Permits.PermitsService(this);
 
         public ILeaseService Lease => 
-            _leaseService ??= new Services.Lease.LeaseService(this);
+            _leaseService ??= new Services.Lease.LeaseService(GetApiTransport(), GetCompanyContext());
 
         #endregion
 
@@ -244,6 +248,14 @@ namespace Beep.OilandGas.Client.App
 
         internal ConnectionManager GetConnectionManager() => _connectionManager;
         internal HttpClient? GetHttpClient() => _httpClient;
+        internal ClientApiTransport GetApiTransport()
+        {
+            if (_accessMode != ServiceAccessMode.Remote)
+                throw new InvalidOperationException("HTTP operations require remote API access.");
+            return _apiTransport ??= new(_httpClient!, _options, GetCompanyContext(), _authProvider, _logger);
+        }
+        internal CompanyClientContext GetCompanyContext() => _company ??
+            throw new InvalidOperationException("Company HTTP scope is available only in remote mode.");
         internal IAuthenticationProvider? GetAuthProvider() => _authProvider;
         internal AppOptions GetOptions() => _options;
         internal T? GetService<T>() => _accessMode == ServiceAccessMode.Local && _serviceProvider != null 

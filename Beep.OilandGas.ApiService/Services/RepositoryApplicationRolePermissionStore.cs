@@ -7,10 +7,11 @@ using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 public sealed class RepositoryApplicationRolePermissionStore(RepositoryRoleAssignmentService assignments,
-    RepositoryDbContext repository, IHttpContextAccessor accessor) : IApplicationRolePermissionStore
+    RepositoryDbContext repository, RepositoryRequestAccount account) : IApplicationRolePermissionStore
 {
     public async Task<List<string>> GetPermissionsAsync(string roleId)
     {
+        await account.RequireAdministratorAsync();
         ArgumentException.ThrowIfNullOrWhiteSpace(roleId);
         return (await assignments.GetRolePermissionsAsync(roleId)).Select(x => x.PermissionId)
             .Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
@@ -18,14 +19,14 @@ public sealed class RepositoryApplicationRolePermissionStore(RepositoryRoleAssig
 
     public async Task<bool> GrantAsync(string roleId, string permissionId)
     {
-        var actor = GetActor();
+        var actor = await account.RequireAdministratorAsync();
         await assignments.GrantPermissionToRoleAsync(roleId, permissionId, actor);
         return true;
     }
 
     public async Task<bool> RevokeAsync(string roleId, string permissionId)
     {
-        var actor = GetActor();
+        var actor = await account.RequireAdministratorAsync();
         ArgumentException.ThrowIfNullOrWhiteSpace(roleId);
         ArgumentException.ThrowIfNullOrWhiteSpace(permissionId);
         var permission = await repository.Set<AppPermissionExtension>().AsNoTracking()
@@ -37,11 +38,4 @@ public sealed class RepositoryApplicationRolePermissionStore(RepositoryRoleAssig
         return await assignments.RevokePermissionFromRoleAsync(grants[0].RolePermissionId, actor);
     }
 
-    private string GetActor()
-    {
-        var user = accessor.HttpContext?.User;
-        if (user?.Identity?.IsAuthenticated != true || !user.IsInRole("Administrator"))
-            throw RefusalException.Forbidden("A local administrator is required to change role permissions.");
-        return user.ActingUserId();
-    }
 }

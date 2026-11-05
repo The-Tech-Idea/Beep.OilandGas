@@ -1,0 +1,138 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using System.Globalization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject CompanyBillingPolicyWorkspaceState State
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 mt-4">
+    <MudText Typo="Typo.h5">Company sales billing policies</MudText>
+    <MudText>Prepare explicit currency and review rules, then have another account approve the unchanged draft.</MudText>
+    <MudButton OnClick="Reload" Disabled="@State.Busy" Variant="Variant.Outlined">Reload company policy history</MudButton>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading or recording company billing policies" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(!_authorized){<MudAlert Severity="Severity.Info">Select the company and account with current accounting access, then reload.</MudAlert>}
+    @if(_authorized)
+    {
+        @if(State.HasPendingIntent)
+        {
+            <MudAlert Severity="Severity.Warning" role="status">A billing policy outcome is unconfirmed. The original request is retained in this session. Return to its original company and account and reconcile before another policy action.</MudAlert>
+            @if(State.PendingIntentId is {} intent)
+            {
+                <MudText>Original policy: @State.PendingPolicyId · Action: @State.PendingAction · Intent: @intent</MudText>
+                @if(State.CanRetryPending && Grant(State.PendingAction!)){<MudButton OnClick="Retry" Disabled="@State.Busy" Variant="Variant.Outlined">Reconcile original policy request</MudButton>}
+            }
+        }
+        @if(State.History is {} history)
+        {
+            <MudText>Company: @history.Company.BusinessAssociateId · History revision: @history.Revision</MudText>
+            @if(history.Records.Count==0){<MudAlert Severity="Severity.Info">No sales billing policy records are available for this company. Invoice policy remains unavailable.</MudAlert>}
+            @foreach(var row in history.Records)
+            {
+                var proof=CompanyBillingPolicyProof.Require(history.Company,row);var record=proof.Record;var rules=record.Rules;
+                <MudPaper Outlined="true" Class="pa-3 my-3">
+                    <MudText Typo="Typo.h6">Policy @record.PolicyId · @row.MATCHING_POLICY_STATUS</MudText>
+                    <MudText>Version: @rules.Version · Currency: @rules.CurrencyCode · Decimal places: @rules.CurrencyDecimals · Rounding: @RoundingLabel(rules.RoundingMode)</MudText>
+                    <MudText>Effective date: @Calendar(rules.EffectiveFrom) · Through: @(rules.EffectiveThrough is {} end?Calendar(end):"No recorded end date")</MudText>
+                    <MudText>Tax: Explicit per-invoice review · Charges: Explicit per-invoice review · Rights: Contract entitlement review</MudText>
+                    <MudText>Prepared by: @record.PreparedBy · @record.PreparedAtUtc.ToString("O") · Reason: @record.PreparationReason</MudText>
+                    @if(record.ApprovedBy is {} reviewer){<MudText>Independent reviewer: @reviewer · @record.ApprovedAtUtc?.ToString("O") · Reason: @record.ApprovalReason</MudText>}
+                    else{<MudText>Independent approval has not been recorded.</MudText>}
+                    <MudText>Preparation intent: @record.PrepareIntentId · Row revision: @proof.RowRevision</MudText>
+                </MudPaper>
+            }
+        }
+        @if(State.Result is {} outcome){<MudAlert Severity="Severity.Success" role="status">Policy @outcome.Policy.ACCOUNTING_METHOD_ID @outcome.Policy.MATCHING_POLICY_STATUS outcome confirmed in complete company history. Invoice amounts, taxes, charges, entitlement, approval and posting need their own review.</MudAlert>}
+        @if(!State.HasPendingIntent)
+        {
+            @if(_canPrepare){<MudButton OnClick="ReviewDraft" Disabled="@State.Busy" Variant="Variant.Outlined">Review policy preparation authority</MudButton>}
+            @if(_canApprove){<MudButton OnClick="ReviewApproval" Disabled="@State.Busy" Variant="Variant.Outlined">Review independent approval authority</MudButton>}
+            @if(State.Review is {} review)
+            {
+                <MudText>Reviewed action: @review.Action · Company history: @review.History.Revision</MudText>
+                <MudForm @ref="_form">
+                    @if(review.Action=="DRAFT")
+                    {
+                        <MudGrid>
+                            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_policyId" Label="New policy identity" Required="true" MaxLength="128" Disabled="@State.Busy" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_version" Label="Policy version" Required="true" MaxLength="128" Disabled="@State.Busy" /></MudItem>
+                            <MudItem xs="12" md="6"><MudTextField T="string" @bind-Value="_currency" Label="Currency code" Required="true" MaxLength="16" Disabled="@State.Busy" HelperText="Use the currency reviewed by the company. No conversion is implied." /></MudItem>
+                            <MudItem xs="12" md="6"><MudNumericField T="int?" @bind-Value="_decimals" Label="Currency decimal places" Required="true" Min="0" Max="8" Disabled="@State.Busy" /></MudItem>
+                            <MudItem xs="12" md="6"><MudSelect T="string" @bind-Value="_rounding" Label="Currency rounding rule" Required="true" Disabled="@State.Busy"><MudSelectItem T="string" Value='@("TO_EVEN")'>Round midpoint to even</MudSelectItem><MudSelectItem T="string" Value='@("AWAY_FROM_ZERO")'>Round midpoint away from zero</MudSelectItem><MudSelectItem T="string" Value='@("EXACT_ONLY")'>Require an exact amount at this precision</MudSelectItem></MudSelect></MudItem>
+                            <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_from" Label="Effective calendar date" Required="true" Disabled="@State.Busy" HelperText="Stored company calendar date; this is not a UTC instant." /></MudItem>
+                            <MudItem xs="12" md="6"><MudDatePicker @bind-Date="_through" Label="Through calendar date (optional)" Disabled="@State.Busy" /></MudItem>
+                            <MudItem xs="12" md="6"><MudSelect T="string" @bind-Value="_tax" Label="Invoice tax rule" Required="true" Disabled="@State.Busy"><MudSelectItem T="string" Value='@("EXPLICIT_INVOICE_TAX_REVIEW")'>Explicit per-invoice tax review</MudSelectItem></MudSelect></MudItem>
+                            <MudItem xs="12" md="6"><MudSelect T="string" @bind-Value="_charges" Label="Invoice charges rule" Required="true" Disabled="@State.Busy"><MudSelectItem T="string" Value='@("EXPLICIT_INVOICE_CHARGES_REVIEW")'>Explicit per-invoice charges review</MudSelectItem></MudSelect></MudItem>
+                            <MudItem xs="12" md="6"><MudSelect T="string" @bind-Value="_rights" Label="Invoice rights rule" Required="true" Disabled="@State.Busy"><MudSelectItem T="string" Value='@("CONTRACT_ENTITLEMENT_REVIEW")'>Contract entitlement review</MudSelectItem></MudSelect></MudItem>
+                        </MudGrid>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info">Review the exact rules, calendar dates and preparer in company history above. Approval cannot change them.</MudAlert>
+                        @if(State.ReviewableDraftIds.Count==0){<MudAlert Severity="Severity.Info">No verified draft prepared by another account is available for approval.</MudAlert>}
+                        else{<MudSelect T="string" Value="@State.SelectedDraftId" ValueChanged="State.SelectDraft" Label="Verified independently prepared draft" Required="true" Disabled="@State.Busy">@foreach(var id in State.ReviewableDraftIds){<MudSelectItem T="string" Value="@id">@id</MudSelectItem>}</MudSelect>}
+                    }
+                    <MudTextField T="string" @bind-Value="_reason" Label="Preparation or independent review reason" Required="true" RequiredError="Enter a single-line preparation or independent review reason." MaxLength="1000" HelperText="Use a single-line reason up to 1,000 characters." Disabled="@State.Busy" />
+                    <MudButton OnClick="Record" Disabled="@(State.Busy || review.Action=="APPROVE" && State.SelectedDraftId is null)" Variant="Variant.Filled" Color="Color.Primary">@(review.Action=="DRAFT"?"Record reviewed policy draft":"Approve exact draft independently")</MudButton>
+                </MudForm>
+            }
+        }
+    }
+</MudPaper>
+
+@code {
+    private MudForm? _form;
+    private string _policyId="",_version="",_currency="",_rounding="",_tax="",_charges="",_rights="",_reason="";
+    private int? _decimals;
+    private DateTime? _from,_through;
+    private string? _error;
+    private bool _authorized,_canPrepare,_canApprove,_disposed;
+    private long _epoch;
+    private static string Calendar(DateTime value)=>value.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture);
+    private static string RoundingLabel(string value)=>value switch{"TO_EVEN"=>"Midpoint to even","AWAY_FROM_ZERO"=>"Midpoint away from zero","EXACT_ONLY"=>"Exact amount only",_=>"Unavailable"};
+    private bool Grant(string action)=>action=="DRAFT"?_canPrepare:action=="APPROVE" && _canApprove;
+    private async Task Access()
+    {
+        _authorized=false;_canPrepare=false;_canApprove=false;var snapshot=Company.Snapshot;var epoch=_epoch;
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ??user.FindFirstValue("sub");
+        if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || actor!=selected.UserId ||
+            !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal))throw new UnauthorizedAccessException();
+        _authorized=true;_canPrepare=selected.Permissions.Contains("Accounting.PrepareBillingPolicy",StringComparer.Ordinal);_canApprove=selected.Permissions.Contains("Accounting.ApproveBillingPolicy",StringComparer.Ordinal);
+    }
+    protected override void OnInitialized(){State.AttachOwner(this);State.Changed+=StateChanged;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override Task OnInitializedAsync()=>Reload();
+    private void Reset(){_policyId="";_version="";_currency="";_rounding="";_tax="";_charges="";_rights="";_reason="";_decimals=null;_from=null;_through=null;}
+    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();await State.LoadHistoryAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="Company billing policy history could not be confirmed. Check current company/account access and policy provisioning, then reload.";}}
+    private Task ReviewDraft()=>Review("DRAFT");
+    private Task ReviewApproval()=>Review("APPROVE");
+    private async Task Review(string action){var epoch=_epoch;_error=null;try{await Access();if(!Grant(action))throw new UnauthorizedAccessException();await State.LoadReviewAsync(action,Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch{if(!_disposed && epoch==_epoch)_error="The policy action could not be reviewed. Check current authority and reconcile any original retained request.";}}
+    private async Task Record()
+    {
+        var epoch=_epoch;_error=null;
+        try
+        {
+            await Access();var action=State.Review?.Action ??throw new InvalidOperationException();if(!Grant(action))throw new UnauthorizedAccessException();
+            if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
+            if(action=="DRAFT")
+            {
+                if(_from is null || _decimals is null || _from.Value.TimeOfDay!=TimeSpan.Zero || _through is {} end && end.TimeOfDay!=TimeSpan.Zero)throw new InvalidOperationException();
+                var rules=new CompanyBillingPolicyRules(_version,_currency,_decimals.Value,_rounding,DateTime.SpecifyKind(_from.Value,DateTimeKind.Unspecified),
+                    _through is {} through?DateTime.SpecifyKind(through,DateTimeKind.Unspecified):null,_tax,_charges,_rights);rules.Require();
+                await State.PrepareAsync(_policyId,rules,_reason,Accounting);
+            }
+            else await State.ApproveAsync(_reason,Accounting);
+            if(!_disposed && epoch==_epoch){Reset();await Access();}
+        }
+        catch{if(!_disposed && epoch==_epoch)_error="The policy outcome was not confirmed. Check explicit fields, independent reviewer authority and reason. Retain any original request and reconcile it before another action.";}
+    }
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(!State.CanRetryPending || !Grant(State.PendingAction!))throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch{if(!_disposed && epoch==_epoch)_error="The original policy request remains unconfirmed. Return to its original company/account with current authority and reconcile before another action.";}}
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_canApprove=false;_error=null;Reset();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}
+    public void Dispose(){_disposed=true;State.Changed-=StateChanged;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.DetachOwner(this);}
+}

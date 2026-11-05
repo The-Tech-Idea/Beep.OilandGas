@@ -1,0 +1,52 @@
+# Implementation 74: reviewed corrective-action plan API and SDK
+
+Current focused app check: 23 incident, investigator, and corrective-plan screen/state tests passed. They cover refusal to display a retained plan after a FIELD revision changes, refusal to clear investigator recovery evidence after a FIELD change during review, and refusal to submit after a FIELD change during retention. The protected original remains retained for its original context. The focused native HTTP/SDK harness now includes the investigator intent-store contract; two targeted corrective-plan review and create/retry tests passed against the source-linked simulated native provider (the API test build preceded the subsequent investigator UI state change). The shared Beep transaction helper is public for existing cross-project callers. Live provider and full-host checks remain open.
+
+
+Corrective action plan app workflow (2026-10-27): incident rows link to an authenticated plan workspace using the existing typed Field SDK and reviewed company/FIELD participant and response-type catalog. The user selects an exact recorded role, enters plan name and number, confirms, and the app retains the original reviewed GUID submission in protected tab storage before calling the existing native command. A failed or lost acknowledgement retains the same original for retry; read-only linkage does not by itself clear it or prove its contents. Focused actual rendered form, protected storage, state and incident/investigator screen tests pass 20/20 with controlled SDK/FIELD data, including permission refusal, retention failure before send, late company change, lost response and exact retry. Existing historical native tests are separate; this gate does not prove combined live HTTP/native, full host, cross-circuit concurrency, browser or lifetime intent recovery.
+
+
+Date: 2026-10-06. Task owners: CA-32, FG-40/42 and the existing HSE/corrective-action API/Field SDK owners. The [root master tracker](../../MASTER-TODO-TRACKER.md) owns current execution status. This continues the [atomic command](Implementation-73-Atomic-Corrective-Action-Plan-Creation.md); no SQL, schema migration, business EF lane, domain store, grant or workflow engine is added.
+
+## Delivered behavior
+
+The existing corrective-action service and Field HSE facade now call the mandatory `ICompanyCorrectiveActionCommands.CreatePlanAsync` for actual creation. The public POST `/api/field/current/hse/incidents/{incidentId}/ca-plan` requires a JSON `CreateCAPlanSubmission`: the existing immutable seven-field creation intent plus the exact `FieldSelectionReview` the caller used. A mismatched actor/company/database/FIELD/revision refuses before mutation. The API independently resolves current account, FIELD/case ownership, app HSE permissions, FIELD write/data entitlement, state, participant and references through existing owners. The caller context is an assertion, never authority.
+
+The existing service and facade now expose explicit read-only plan resolution, and GET at the same resource returns its current canonical incident-to-PROJECT linkage. POST and GET return the same Data-owned `CAPlanResolution` containing context, incident and plan identity. Creation additionally confirms that the actual persisted plan resolves to the submitted stable GUID. Resolution is a current recorded fact, not a durable lifetime intent receipt or creation attribution.
+
+The former bodyless create-as-read operation is removed. Historical read fixtures now use the explicit read owner. The process caller's redundant create-as-read call is removed; each existing AddCorrectiveAction command still requires an actual recorded plan and independently resolves its authority. This process source change does not make the batch, process history or workflow transition atomic and has no full process-host acceptance claim.
+
+The existing `HseIncidentClient` and Field SDK interface/facade now expose typed creation and resolution through the existing company-scoped HTTP transport. Creation freezes the context and intent before awaiting authentication/transport, sends one POST attempt and validates the returned current context/incident/exact submitted plan ID. It never refreshes a context, creates a new ID or retries automatically. Read-only resolution validates the expected complete FIELD review and permits an actual recorded PPDM project key. Late reads or acknowledgments after company/account generation changes, including switching away and back, are discarded. No local database access path is added.
+
+## Source owners
+
+- [Submission and resolution contracts](../../TheTechIdea.Data/OilGas/CorrectiveActionPlanContracts.cs) reference the [existing creation intent](../../TheTechIdea.Data/OilGas/CreateCAPlanRequest.cs) and [existing FIELD review](../../TheTechIdea.Data/OilGas/FieldSelectionReview.cs); business fields are not copied into a second intent DTO.
+- [Corrective-action owner](../../Beep.OilandGas.PPDM39.DataManagement/Services/HSE/CorrectiveActionService.cs), [service contract](../../Beep.OilandGas.Models/Core/Interfaces/ICorrectiveActionService.cs), [Field facade](../../Beep.OilandGas.LifeCycle/Services/HSE/PPDMHSEService.cs) and [facade contract](../../Beep.OilandGas.Models/Core/Interfaces/IFieldHSEService.cs).
+- [Actual controller](../../Beep.OilandGas.ApiService/Controllers/HSE/HSEController.cs), with the existing active-account/current-FIELD guards. [Process caller](../../Beep.OilandGas.ApiService/Controllers/BusinessProcess/HSEProcessController.cs) removes the misleading resolution call; its complete process workflow remains source-only for this slice.
+- [Existing HSE SDK helper](../../Beep.OilandGas.Client/App/Services/Field/HseIncidentClient.cs), [Field SDK interface](../../Beep.OilandGas.Client/App/Services/Field/IFieldService.cs) and [Field SDK facade](../../Beep.OilandGas.Client/App/Services/Field/FieldService.cs). The complete FieldService/client assembly remains source-only; actual helper/transport/native HTTP is in focused acceptance.
+- [Actual HTTP integration cases](../../Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.PlanCreation.cs) reuse the existing test host/guard boundaries and canonical owners; [SDK wire/lifetime cases](../../Beep.OilandGas.Repository.Tests/InvestigatorClientTests.cs) exercise the actual helper/transport with explicit HTTP-handler boundaries.
+
+## Verification
+
+The API/SDK checkpoint reached terminal exit 0: **60 passed**, no failures/skips, in **4.8449 minutes**. It includes 38 existing/new SDK cases and 22 native HTTP cases. The actual SDK-to-controller-to-facade/service/command test created the four-row plan, retried without more writes, resolved it read-only, added one action through the existing command and then refused creation replay after later child history. Mandatory JSON fields, actor/case/FIELD/permission and stale-review refusals were also verified.
+
+A test-only correction distinguishes an actual bodyless POST (415) from an empty JSON object (400); the initial test sent only the latter. The final affected gate reached terminal exit 0: **272 passed**, no failures/skips, in **11.3628 minutes**. It covers both body cases, all current HSE service/facade boundary cases, corrective-action relationship/read authority cases and the HAZOP collision refusal. These scopes overlap with the checkpoint; the counts are not a combined unique-test total. Production source remains unchanged since the passing API/SDK checkpoint. The atomic command and policy source from Implementation 73 remain unchanged; its prior 186-case gate is historical scoped evidence, not a new count to sum.
+
+```powershell
+# Passing API/SDK checkpoint
+dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj -p:FocusedCompanyTests=true --no-restore --filter 'FullyQualifiedName~InvestigatorClientTests|FullyQualifiedName~Actual_HSE_plan_HTTP' --logger 'console;verbosity=normal'
+# Passing final affected gate
+dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj -p:FocusedCompanyTests=true --no-restore --filter 'FullyQualifiedName~CompanyHseBoundaryTests|FullyQualifiedName~CompanyCorrectiveActionAuthorityTests|FullyQualifiedName~Explicit_mocked_incident_input_cannot_turn_an_ID_matching_HAZOP_project|FullyQualifiedName~Actual_HSE_plan_HTTP_creation_never_turns_a_bodyless_or_empty_call' --logger 'console;verbosity=normal'
+```
+
+Logs: `%TEMP%/oilgas-plan-integration-checkpoint.log` and `%TEMP%/oilgas-plan-integration-affected.log`. The initial compile caught an incorrect company-header constant in a test; it was corrected to the actual shared `CompanyRequestHeaders.Company`. Missing external analyzer-project warnings were recorded; no projects were cloned or replaced. Fixtures use real services/policy/metadata/Beep repository/transaction plus simulated persisting provider and SQLite app authorization; HTTP authentication, top-level orchestrator and outer permission-decision boundaries are explicit test fixtures. They do not certify production OIDC, physical provider locking/FKs or the complete host.
+
+## Remaining gates
+
+- Rendered Web creation and authoritative reference/participant pickers, frozen pending intent/outcome state and circuit/restart recovery. Required UI guidance paths or the pending explicit substitute-guidance decision from [Implementation 72](Implementation-72-Investigator-Outcome-Review-State.md) remain unresolved; no Razor was edited in this slice.
+- A reviewed creation catalog and participant/reference revision beyond the mandatory FIELD review, and explicit qualification/disclosure/jurisdiction policies. Current server references are required by the command; this slice does not claim a rendered review/approval journey.
+- Durable lifetime intent/ledger/reconciliation/outbox, process/history consistency, participant enrollment, attachments, configuration and incident approval/closure.
+- Actual full SDK facade, Program/orchestrator/process-host/DI/OIDC and browser/provider/concurrency/performance acceptance. The entire multinational, finance, engineering, operations and release plan stays active; no phase or CA-32 closes.
+
+
+Catalog-bound creation follow-up: [Implementation 76](Implementation-76-Catalog-Bound-Plan-Creation.md) adds mandatory `ExpectedRevision` to the existing creation intent. Its current verification and remaining gates are tracked there; the earlier seven-field API/SDK evidence above retains its checkpoint scope.

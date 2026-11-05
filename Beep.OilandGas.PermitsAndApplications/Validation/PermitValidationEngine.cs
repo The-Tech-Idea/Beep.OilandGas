@@ -36,8 +36,6 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation
                 attachments ?? Array.Empty<APPLICATION_ATTACHMENT>(),
                 requiredForms ?? Array.Empty<REQUIRED_FORM>(),
                 requirements,
-                application.REGULATORY_AUTHORITY,
-                application.APPLICATION_TYPE,
                 drillingApplication,
                 environmentalApplication,
                 injectionApplication);

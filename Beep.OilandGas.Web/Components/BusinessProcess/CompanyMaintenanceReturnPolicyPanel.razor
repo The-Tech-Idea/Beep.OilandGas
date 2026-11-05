@@ -1,0 +1,143 @@
+@using TheTechIdea.Data.OilGas
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject CompanyMaintenanceReturnPolicyState State
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Company maintenance return policy</MudText>
+        <MudText>Record explicit jurisdiction, licence applicability and native status transitions for the company's facility and equipment workflows. A recorded policy does not activate an asset or establish legal clearance. Current source evidence and independent return authority remain required.</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        <MudButton OnClick="ReviewAsync" Disabled="@(!Allowed || !State.CanReview)">Review recorded return policies</MudButton>
+        @if(State.Catalog is {} catalog)
+        {
+            <MudText>Complete company policy history compared UTC @catalog.ComparedAtUtc.ToString("O"). Existing versions remain immutable.</MudText>
+            <MudTable Items="@catalog.Versions" Dense="true" aria-label="Company maintenance return policy versions">
+                <HeaderContent><MudTh>Policy and version</MudTh><MudTh>Work and jurisdiction</MudTh><MudTh>Effective UTC window</MudTh><MudTh>Source and maker</MudTh></HeaderContent>
+                <RowTemplate><MudTd DataLabel="Policy and version">@context.RecordId · @context.Version</MudTd><MudTd DataLabel="Work and jurisdiction">@context.Policy.WorkOrderType / @context.Policy.FacilityType · @context.Policy.Jurisdiction · @context.Policy.AreaId / @context.Policy.AreaType</MudTd><MudTd DataLabel="Effective UTC window">@context.Policy.EffectiveFromUtc.ToString("O") / @context.Policy.EffectiveToUtc.ToString("O")</MudTd><MudTd DataLabel="Source and maker">@context.Policy.SourceReference · @context.RecordedBy · @context.RecordedAtUtc.ToString("O")</MudTd></RowTemplate>
+                <NoRecordsContent><MudText>No recorded return-policy versions were returned for this company.</MudText></NoRecordsContent><PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+        }
+        @if(State.CanAppend)
+        {
+            <MudText Typo="Typo.subtitle1">Proposed effective policy version</MudText>
+            <MudTextField T="string" @bind-Value="_orderType" Label="Exact work-order type" Disabled="@State.Busy" />
+            <MudTextField T="string" @bind-Value="_facilityType" Label="Exact facility type" Disabled="@State.Busy" />
+            <MudTextField T="string" @bind-Value="_jurisdiction" Label="Explicit reviewed jurisdiction" Disabled="@State.Busy" />
+            <MudTextField T="string" @bind-Value="_areaId" Label="Exact native area ID" Disabled="@State.Busy" />
+            <MudTextField T="string" @bind-Value="_areaType" Label="Exact native area type" Disabled="@State.Busy" />
+            <MudSelect T="string" @bind-Value="_areaDecision" Label="Explicit area applicability" Disabled="@State.Busy"><MudSelectItem T="string" Value="@("APPLIES")">Apply return requirements to this area</MudSelectItem><MudSelectItem T="string" Value="@("NOT_APPLICABLE")">Recorded area non-applicability</MudSelectItem></MudSelect>
+            <MudText>Non-applicable areas retain their reviewed source and authorized role, with no transitions or licence decisions. Every current area must be accounted for.</MudText>
+            <MudTextField T="string" @bind-Value="_roles" Label="Authorized app return roles, one per line" Lines="2" Disabled="@State.Busy" />
+            <MudText>Each role must already exist in app RBAC with the maintenance return permission. A policy does not assign a user to a role.</MudText>
+            <MudTextField T="string" @bind-Value="_from" Label="Effective from UTC, ending Z" Disabled="@State.Busy" />
+            <MudTextField T="string" @bind-Value="_to" Label="Effective until UTC, ending Z" Disabled="@State.Busy" />
+            <MudNumericField T="int?" @bind-Value="_version" Label="Explicit next policy version" Disabled="@State.Busy" />
+            <MudTextField T="string" @bind-Value="_source" Label="Reviewed policy source reference" Disabled="@State.Busy" />
+            <MudExpansionPanels>
+                <MudExpansionPanel Text="Exact native operating transitions" Expanded="true">
+                    <MudSelect T="string" @bind-Value="_assetType" Label="Native asset family" Disabled="@State.Busy"><MudSelectItem T="string" Value="@("FACILITY")">Facility</MudSelectItem><MudSelectItem T="string" Value="@("EQUIPMENT")">Equipment</MudSelectItem></MudSelect>
+                    <MudSelect T="string" @bind-Value="_disposition" Label="Explicit facet disposition" Disabled="@State.Busy"><MudSelectItem T="string" Value="@("TRANSITION")">Change to the exact target</MudSelectItem><MudSelectItem T="string" Value="@("PRESERVE")">Preserve the exact current facet</MudSelectItem></MudSelect>
+                    <MudText>For a preserved facet, leave target value and replacement native source empty.</MudText>
+                    <MudTextField T="string" @bind-Value="_transitionType" Label="Exact native status type" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_sourceValues" Label="Accepted native source values, one per line" Lines="2" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_target" Label="Exact distinct native target value" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_nativeSource" Label="Native status source" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_transitionSource" Label="Reviewed transition source reference" Disabled="@State.Busy" />
+                    <MudButton OnClick="AddTransition" Disabled="@State.Busy">Add explicit transition</MudButton>
+                    @foreach(var row in _transitions){<MudText>@row.AssetType / @row.StatusType · @string.Join("; ",row.AcceptedSourceValues) → @row.TargetValue · @row.NativeSource · @row.SourceReference</MudText>}
+                    <MudButton OnClick="@(()=>_transitions.Clear())" Disabled="@State.Busy">Clear proposed transitions</MudButton>
+                </MudExpansionPanel>
+                <MudExpansionPanel Text="Licence applicability decisions" Expanded="true">
+                    <MudTextField T="string" @bind-Value="_issuer" Label="Exact native licence issuer BA ID" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_licenseType" Label="Exact issuer-specific licence type" Disabled="@State.Busy" />
+                    <MudSelect T="string" @bind-Value="_applicability" Label="Explicit licence applicability" Disabled="@State.Busy"><MudSelectItem T="string" Value="@("REQUIRED")">Required</MudSelectItem><MudSelectItem T="string" Value="@("NOT_APPLICABLE")">Not applicable, with reviewed source</MudSelectItem></MudSelect>
+                    <MudSelect T="string" @bind-Value="_fees" Label="Explicit fee applicability" Disabled="@State.Busy"><MudSelectItem T="string" Value="@("REQUIRED_PAID")">Recorded paid fees required</MudSelectItem><MudSelectItem T="string" Value="@("NOT_APPLICABLE")">Not applicable, with reviewed source</MudSelectItem></MudSelect>
+                    <MudTextField T="string" @bind-Value="_licenseSource" Label="Reviewed licence applicability source" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_licenseStatusType" Label="Exact licence status type" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_licenseStatuses" Label="Accepted licence status values, one per line" Lines="2" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_licenseStatusSource" Label="Reviewed licence status source" Disabled="@State.Busy" />
+                    <MudButton OnClick="AddLicenseStatus" Disabled="@State.Busy">Add accepted licence status type</MudButton>
+                    @foreach(var row in _statuses){<MudText>@row.StatusType · @string.Join("; ",row.AcceptedValues) · @row.SourceReference</MudText>}
+                    <MudButton OnClick="@(()=>_statuses.Clear())" Disabled="@State.Busy">Clear proposed licence status types</MudButton>
+                    <MudText Typo="Typo.subtitle2">Condition applicability and exact terms</MudText>
+                    <MudTextField T="string" @bind-Value="_conditionType" Label="Exact condition type" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_conditionCode" Label="Exact condition code" Disabled="@State.Busy" />
+                    <MudSelect T="string" @bind-Value="_conditionDecision" Label="Explicit condition applicability" Disabled="@State.Busy">@foreach(var choice in ConditionChoices){<MudSelectItem T="string" Value="@choice">@choice</MudSelectItem>}</MudSelect>
+                    <MudTextField T="string" @bind-Value="_fulfilledBy" Label="Accepted fulfilment business-associate IDs, one per line" Lines="2" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_dueCondition" Label="Exact due-condition code" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_frequency" Label="Exact recorded frequency text, if applicable" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_product" Label="Exact product/substance ID, if recorded" Disabled="@State.Busy" />
+                    <MudSelect T="string" @bind-Value="_valueDecision" Label="Numeric term applicability" Disabled="@State.Busy">@foreach(var choice in TermChoices){<MudSelectItem T="string" Value="@choice">@choice</MudSelectItem>}</MudSelect>
+                    <MudNumericField T="decimal?" @bind-Value="_value" Label="Exact recorded numeric value, including zero" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_valueUnit" Label="Exact numeric value unit ID" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_valueSource" Label="Reviewed numeric-term source" Disabled="@State.Busy" />
+                    <MudSelect T="string" @bind-Value="_termDecision" Label="Due term applicability" Disabled="@State.Busy">@foreach(var choice in TermChoices){<MudSelectItem T="string" Value="@choice">@choice</MudSelectItem>}</MudSelect>
+                    <MudNumericField T="decimal?" @bind-Value="_term" Label="Exact recorded due term, including zero" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_termUnit" Label="Exact due-term unit ID" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_termSource" Label="Reviewed due-term source" Disabled="@State.Busy" />
+                    <MudText>For a non-applicable numeric term, leave both value and unit empty and record its reviewed source.</MudText>
+                    <MudSelect T="string" @bind-Value="_restrictionDecision" Label="Explicit restriction requirement" Disabled="@State.Busy"><MudSelectItem T="string" Value="@("NO_RECORDED_RESTRICTION")">Require no recorded restriction key</MudSelectItem><MudSelectItem T="string" Value="@("EXACT_VERSION")">Require exact reviewed restriction version</MudSelectItem></MudSelect>
+                    <MudTextField T="string" @bind-Value="_restrictionId" Label="Exact restriction ID" Disabled="@State.Busy" />
+                    <MudNumericField T="decimal?" @bind-Value="_restrictionVersion" Label="Exact restriction version, including zero" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_restrictionDocument" Label="Exact restriction source document ID" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_restrictionInterpretation" Label="Reviewed restriction and event applicability" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_conditionSource" Label="Reviewed condition applicability source" Disabled="@State.Busy" />
+                    <MudButton OnClick="AddCondition" Disabled="@State.Busy">Add explicit condition decision</MudButton>
+                    @foreach(var row in _conditions){<MudText>@row.ConditionType / @row.ConditionCode · @row.Decision · value @row.Value.Decision @row.Value.Value @row.Value.UnitId · due @row.DueTerm.Decision @row.DueTerm.Value @row.DueTerm.UnitId · restriction @row.RestrictionDecision @row.RestrictionId / @row.RestrictionVersion · @row.SourceReference</MudText>}
+                    <MudButton OnClick="@(()=>_conditions.Clear())" Disabled="@State.Busy">Clear proposed condition decisions</MudButton>
+                    <MudTextField T="string" @bind-Value="_violationType" Label="Exact violation type, if resolved violations are permitted" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_resolutions" Label="Accepted resolution type codes, one per line" Lines="2" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_violationSource" Label="Reviewed violation resolution source" Disabled="@State.Busy" />
+                    <MudButton OnClick="AddViolation" Disabled="@State.Busy">Add resolved violation decision</MudButton>
+                    @foreach(var row in _violations){<MudText>@row.ViolationType · @string.Join("; ",row.AcceptedResolutionTypes) · @row.SourceReference</MudText>}
+                    <MudButton OnClick="@(()=>_violations.Clear())" Disabled="@State.Busy">Clear proposed violation decisions</MudButton>
+                    <MudText>Empty condition or violation lists authorize no unlisted condition or violation. Non-applicable licences must have no status, condition or violation rules.</MudText>
+                    <MudButton OnClick="AddLicense" Disabled="@State.Busy">Add reviewed licence applicability</MudButton>
+                    @foreach(var row in _licenses){<MudText>@row.IssuerBaId / @row.LicenseType · @row.Applicability · fees @row.FeesDecision · @row.Statuses.Count status types / @row.Conditions.Count conditions / @row.Violations.Count resolved violation types · @row.SourceReference</MudText>}
+                    <MudButton OnClick="@(()=>_licenses.Clear())" Disabled="@State.Busy">Clear proposed licence decisions</MudButton>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+            <MudTextField T="string" @bind-Value="_reason" Label="Explicit policy version rationale" Disabled="@State.Busy" />
+            <MudButton OnClick="AppendAsync" Color="Color.Primary" Disabled="@(!Allowed || !State.CanAppend)">Retain and append return-policy version</MudButton>
+        }
+        <MudTextField T="string" @bind-Value="_recordId" Label="Original maintenance policy record reference" Disabled="@(State.Busy || State.VisibleReference is not null)" />
+        <MudTextField T="string" @bind-Value="_intent" Label="Original maintenance policy intent" Disabled="@(State.Busy || State.VisibleReference is not null)" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(State.Busy || !Allowed)">Recover original return-policy version</MudButton>
+        @if(State.VisibleReference is {} reference){<MudAlert Severity="Severity.Info">Retained original policy @reference.RecordId · intent @reference.IntentId. Recover this exact reference if confirmation is unavailable.</MudAlert>}
+        @if(State.Receipt is {} saved){<MudAlert Severity="Severity.Success">Return-policy version recorded: @saved.POLICY_RECORD_ID · @saved.VERSION_NO · maker @saved.ROW_CREATED_BY · recorded UTC @saved.ROW_CREATED_DATE?.ToString("O"). Asset return remains a separate controlled action.</MudAlert><MudButton OnClick="BeginNextAsync" Disabled="@(State.Busy || !Allowed)">Begin another return-policy version review</MudButton>}
+    </MudStack>
+</MudPaper>
+@code {
+    private static readonly string[] ConditionChoices=["FULFILLED_ONLY","FULFILLED_OR_EXEMPT","EXEMPT_ONLY","NOT_APPLICABLE"],TermChoices=["EXACT","NOT_APPLICABLE"];
+    private string _areaDecision="",_disposition="",_fulfilledBy="",_orderType="",_facilityType="",_jurisdiction="",_areaId="",_areaType="",_roles="",_from="",_to="",_source="",_reason="",_recordId="",_intent="";
+    private string _assetType="",_transitionType="",_sourceValues="",_target="",_nativeSource="",_transitionSource="",_issuer="",_licenseType="",_applicability="",_fees="",_licenseSource="",_licenseStatusType="",_licenseStatuses="",_licenseStatusSource="";
+    private string _conditionType="",_conditionCode="",_conditionDecision="",_dueCondition="",_frequency="",_product="",_valueDecision="",_valueUnit="",_valueSource="",_termDecision="",_termUnit="",_termSource="",_restrictionDecision="",_restrictionId="",_restrictionDocument="",_restrictionInterpretation="",_conditionSource="",_violationType="",_resolutions="",_violationSource="";
+    private int? _version;private decimal? _value,_term,_restrictionVersion;private bool _disposed;private string? _error;
+    private readonly List<CompanyMaintenanceReturnTransition> _transitions=[];private readonly List<CompanyMaintenanceReturnStatusRule> _statuses=[];private readonly List<CompanyMaintenanceReturnConditionRule> _conditions=[];private readonly List<CompanyMaintenanceReturnViolationRule> _violations=[];private readonly List<CompanyMaintenanceReturnLicenseRule> _licenses=[];
+    private bool Allowed=>Company.Selection is {} selected && selected.Roles.Contains("Administrator",StringComparer.Ordinal) && selected.Permissions.Contains("Maintenance.ConfigureReturnPolicy",StringComparer.Ordinal);
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Clear;Authentication.AuthenticationStateChanged+=AuthChanged;var query=Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);if(query.TryGetValue("maintenancePolicyRecord",out var record))_recordId=record.ToString();if(query.TryGetValue("maintenancePolicyIntent",out var intent))_intent=intent.ToString();}
+    private static string? Optional(string value)=>value.Length==0?null:value;
+    private static string[] Lines(string value)=>value.Split('\n',StringSplitOptions.RemoveEmptyEntries).Select(line=>line.EndsWith('\r')?line[..^1]:line).ToArray();
+    private static DateTime Utc(string value){if(!value.Contains('T') || !value.EndsWith('Z') || !DateTime.TryParse(value,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out var utc) || utc.Kind!=DateTimeKind.Utc)throw new ArgumentException("Enter explicit UTC timestamps ending Z.");return utc;}
+    private void Proposed(Action action){if(State.Busy || !Allowed)return;try{action();_error=null;}catch(Exception error){_error=error.Message;}}
+    private void AddTransition()=>Proposed(()=>{if(_disposition is not ("TRANSITION" or "PRESERVE"))throw new ArgumentException("Choose an explicit facet disposition.");var row=new CompanyMaintenanceReturnTransition(_assetType,_transitionType,Lines(_sourceValues),_target,_nativeSource,_transitionSource){Disposition=_disposition=="PRESERVE"?"PRESERVE":null};row.Require();if(_transitions.Count>=64 || _transitions.Any(value=>value.AssetType==row.AssetType && value.StatusType==row.StatusType))throw new ArgumentException("Proposed transition families/types must be bounded and unique.");_transitions.Add(row);});
+    private void AddLicenseStatus()=>Proposed(()=>{var row=new CompanyMaintenanceReturnStatusRule(_licenseStatusType,Lines(_licenseStatuses),_licenseStatusSource);row.Require();if(_statuses.Count>=64 || _statuses.Any(value=>value.StatusType==row.StatusType))throw new ArgumentException("Proposed licence status types must be bounded and unique.");_statuses.Add(row);});
+    private void AddCondition()=>Proposed(()=>{var row=new CompanyMaintenanceReturnConditionRule(_conditionType,_conditionCode,_conditionDecision,_dueCondition,Optional(_frequency),Optional(_product),new(_valueDecision,_value,Optional(_valueUnit),_valueSource),new(_termDecision,_term,Optional(_termUnit),_termSource),_restrictionDecision,Optional(_restrictionId),_restrictionVersion,Optional(_restrictionDocument),Optional(_restrictionInterpretation),_conditionSource){AcceptedFulfilledByBaIds=Lines(_fulfilledBy)};row.Require();if(_conditions.Count>=64 || _conditions.Any(value=>value.ConditionType==row.ConditionType && value.ConditionCode==row.ConditionCode))throw new ArgumentException("Proposed condition decisions must be bounded and unique.");_conditions.Add(row);});
+    private void AddViolation()=>Proposed(()=>{var row=new CompanyMaintenanceReturnViolationRule(_violationType,Lines(_resolutions),_violationSource);row.Require();if(_violations.Count>=64 || _violations.Any(value=>value.ViolationType==row.ViolationType))throw new ArgumentException("Proposed violation decisions must be bounded and unique.");_violations.Add(row);});
+    private void AddLicense()=>Proposed(()=>{var row=new CompanyMaintenanceReturnLicenseRule(_issuer,_licenseType,_applicability,_fees,_statuses.ToArray(),_conditions.ToArray(),_violations.ToArray(),_licenseSource);row.Require();if(_licenses.Count>=64 || _licenses.Any(value=>value.IssuerBaId==row.IssuerBaId && value.LicenseType==row.LicenseType))throw new ArgumentException("Proposed licence issuer/type decisions must be bounded and unique.");_licenses.Add(row);_statuses.Clear();_conditions.Clear();_violations.Clear();});
+    private async Task Guard(){var selected=Company.Selection;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(selected is null || !Allowed || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !user.IsInRole("Administrator")){State.ClearDisplay();Clear();throw new UnauthorizedAccessException("Current app Administrator/company/account and maintenance policy permission are required.");}}
+    private async Task Run(Func<Task> action,string operation){var snapshot=Company.Snapshot;_error=null;try{await Guard();await action();await Guard();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original return-policy operation is unconfirmed; retain and recover its original reference");}}
+    private Task ReviewAsync()=>Run(()=>State.ReviewAsync(Workflows),"reviewing company maintenance return policies");
+    private Task AppendAsync()=>Run(async()=>{if(_version is not {} version)throw new ArgumentException("Enter the explicit next policy version.");if(_areaDecision is not ("APPLIES" or "NOT_APPLICABLE"))throw new ArgumentException("Choose explicit area applicability.");var policy=new CompanyMaintenanceReturnPolicyDraft(_orderType,_facilityType,_jurisdiction,_areaId,_areaType,Lines(_roles),_transitions.ToArray(),_licenses.ToArray(),Utc(_from),Utc(_to),_source){AreaApplicability=_areaDecision=="NOT_APPLICABLE"?"NOT_APPLICABLE":null};await State.AppendAsync(Workflows,policy,version,_reason,RetainAsync);},"appending company maintenance return policy");
+    private async Task RetainAsync(CompanyMaintenanceReturnPolicyReference reference){await Guard();_recordId=reference.RecordId;_intent=reference.IntentId.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"maintenancePolicyRecord",_recordId},{"maintenancePolicyIntent",_intent}}),new NavigationOptions{ReplaceHistoryEntry=true});await Guard();}
+    private Task RecoverAsync()=>Run(async()=>{if(!Guid.TryParse(_intent,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original policy intent.");await State.RecoverReferenceAsync(Workflows,new(_recordId,id),RetainAsync);},"recovering original maintenance return policy");
+    private async Task BeginNextAsync(){await Guard();State.BeginNextReview();Clear();Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"maintenancePolicyRecord",null},{"maintenancePolicyIntent",null}}),new NavigationOptions{ReplaceHistoryEntry=true});}
+    private void Clear(){_areaDecision=_disposition=_fulfilledBy="";_orderType=_facilityType=_jurisdiction=_areaId=_areaType=_roles=_from=_to=_source=_reason=_recordId=_intent="";_assetType=_transitionType=_sourceValues=_target=_nativeSource=_transitionSource=_issuer=_licenseType=_applicability=_fees=_licenseSource=_licenseStatusType=_licenseStatuses=_licenseStatusSource="";_conditionType=_conditionCode=_conditionDecision=_dueCondition=_frequency=_product=_valueDecision=_valueUnit=_valueSource=_termDecision=_termUnit=_termSource=_restrictionDecision=_restrictionId=_restrictionDocument=_restrictionInterpretation=_conditionSource=_violationType=_resolutions=_violationSource="";_version=null;_value=_term=_restrictionVersion=null;_transitions.Clear();_licenses.Clear();_statuses.Clear();_conditions.Clear();_violations.Clear();_error=null;Changed();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> _){State.ClearDisplay();Clear();}
+    public void Dispose(){_disposed=true;State.Changed-=Changed;Company.Changed-=Clear;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

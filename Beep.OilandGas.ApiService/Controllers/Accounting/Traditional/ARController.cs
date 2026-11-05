@@ -1,113 +1,22 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Accounting;
-using Beep.OilandGas.Accounting.Services;
-using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.ApiService.Exceptions;
-using Microsoft.Extensions.Logging;
-using Beep.OilandGas.ApiService.Services;
+namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 
-namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
+/// <summary>Retired companyless AR routes; reviewed company source commands own receivable creation and financial continuation.</summary>
+[ApiController]
+[Authorize]
+[Route("api/accounting/traditional/ar")]
+public sealed class ARController:ControllerBase
 {
-    /// <summary>
-    /// API controller for Accounts Receivable operations.
-    /// </summary>
-    [ApiController]
-    [Route("api/accounting/traditional/ar")]
-    public class ARController : ControllerBase
+    private object CompanyWorkflowRequired()=>new
     {
-        private readonly ProductionAccountingService _service;
-        private readonly GLIntegrationService _glIntegration;
-        private readonly ILogger<ARController> _logger;
-
-        public ARController(
-            ProductionAccountingService service,
-            GLIntegrationService glIntegration,
-            ILogger<ARController> logger)
-        {
-            _service = service ?? throw new ArgumentNullException(nameof(service));
-            _glIntegration = glIntegration ?? throw new ArgumentNullException(nameof(glIntegration));
-            _logger = logger;
-        }
-
-        /// <summary>
-        /// Get AR invoice by ID.
-        /// </summary>
-        [HttpGet("{id}")]
-        public ActionResult<object> GetARInvoice(
-            string id,
-            [FromQuery] string connectionName = "PPDM39")
-        {
-            if (string.IsNullOrWhiteSpace(id))
-                return BadRequest(new { error = "Invoice ID is required." });
-            var invoice = _service.TraditionalAccounting.AccountsReceivable.GetARInvoice(id);
-            if (invoice == null)
-                    return NotFound(new { error = $"AR invoice with ID {id} not found." });
-
-            return Ok(new
-            {
-                ArInvoiceId = invoice.AR_INVOICE_ID,
-                InvoiceNumber = invoice.INVOICE_NUMBER,
-                CustomerBaId = invoice.CUSTOMER_BA_ID,
-                InvoiceDate = invoice.INVOICE_DATE,
-                DueDate = invoice.DUE_DATE,
-                TotalAmount = invoice.TOTAL_AMOUNT,
-                BalanceDue = invoice.BALANCE_DUE,
-                Status = invoice.STATUS
-            });
-        }
-
-        /// <summary>
-        /// Create a new AR invoice.
-        /// </summary>
-        [HttpPost]
-        public async Task<ActionResult<object>> CreateARInvoice(
-            [FromBody] CreateARInvoiceRequest request,
-            [FromQuery] string connectionName = "PPDM39")
-        {
-            var userId = User.ActingUserId();
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var invoice = _service.TraditionalAccounting.AccountsReceivable.CreateARInvoice(request, userId);
-
-            // Post to GL: Debit AR, Credit Revenue
-            var lines = new List<JournalEntryLineData>
-            {
-                new JournalEntryLineData
-                {
-                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "1200")?.GL_ACCOUNT_ID ?? "",
-                    DebitAmount = invoice.TOTAL_AMOUNT,
-                    CreditAmount = null,
-                    Description = $"AR Invoice {invoice.INVOICE_NUMBER}"
-                },
-                new JournalEntryLineData
-                {
-                    GlAccountId = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                        .FirstOrDefault(a => a.ACCOUNT_NUMBER == "4000")?.GL_ACCOUNT_ID ?? "",
-                    DebitAmount = null,
-                    CreditAmount = invoice.TOTAL_AMOUNT,
-                    Description = $"AR Invoice {invoice.INVOICE_NUMBER}"
-                }
-            };
-
-            var journalEntryId = await LedgerPosting.PostAsync(
-                () => _glIntegration.PostTraditionalAccountingToGL(
-                    invoice.AR_INVOICE_ID,
-                    "AR_Invoice",
-                    lines,
-                    invoice.INVOICE_DATE,
-                    userId),
-                $"AR invoice {invoice.INVOICE_NUMBER}", invoice.AR_INVOICE_ID, "AR_Invoice");
-
-            return Ok(new { ArInvoiceId = invoice.AR_INVOICE_ID, InvoiceNumber = invoice.INVOICE_NUMBER, JournalEntryId = journalEntryId });
-        }
-    }
+        code="company_receivable_workflow_required",
+        error="Receivable access requires the selected company, independently reviewed sales invoice and original source-bound command. The companyless AR path is unavailable."
+    };
+    [HttpGet("{id}")]
+    public ActionResult<object> GetARInvoice(string id,[FromQuery]string? connectionName=null)=>Conflict(CompanyWorkflowRequired());
+    [HttpPost]
+    public Task<ActionResult<object>> CreateARInvoice([FromBody]CreateARInvoiceRequest request,[FromQuery]string? connectionName=null)=>
+        Task.FromResult<ActionResult<object>>(Conflict(CompanyWorkflowRequired()));
 }
-

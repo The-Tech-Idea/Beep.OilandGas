@@ -1,0 +1,73 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Beep.OilandGas.Web.Services
+@using MudBlazor
+@using Microsoft.AspNetCore.Components
+@if(Review?.Detail is {} item)
+{
+    <MudText Typo="Typo.h5">Recorded inventory item</MudText>
+    <MudText>Item: @item.Id · Number: @Text(item.Number) · @Text(item.Name)</MudText>
+    <MudText>Warehouse: @Text(item.Warehouse) · Location: @Text(item.Location)</MudText>
+    <MudText>Recorded on-hand quantity: @Amount(item.Quantity) · Unit: @Text(item.Unit)</MudText>
+    <MudText>Recorded unit cost: @Amount(item.UnitCost) · Value: @Amount(item.Value) · Currency: @Text(item.Currency) · Valuation method: @Text(item.Valuation)</MudText>
+    <MudText>Active indicator: @Text(item.Active) · Created: @Text(item.CreatedBy) · @Date(item.CreatedAt) · Changed: @Text(item.ChangedBy) · @Date(item.ChangedAt)</MudText>
+    <MudAlert Severity="Severity.Info">Recorded on-hand quantity does not establish available stock. Reservations, receipt linkage, supplier returns, warehouse catalog validity and financial posting remain unconfirmed. Movement rows retain recorded values without unit or currency conversion.</MudAlert>
+    <MudText Typo="Typo.h6" Class="mt-4">Recorded movement history (active and inactive)</MudText>
+    @if(Review.Movements is {} movements)
+    {
+        @if(movements.Count==0){<MudAlert Severity="Severity.Info">No recorded movements were returned for this item. Receipt and stock movement completion remain unconfirmed.</MudAlert>}
+        else
+        {
+            <MudTable T="InventoryWorkspaceState.Movement" Items="movements" Dense="true">
+                <HeaderContent><MudTh>Movement / type</MudTh><MudTh>Date / quantity</MudTh><MudTh>Recorded unit cost / total</MudTh><MudTh>Reference / notes</MudTh><MudTh>Active / audit</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Movement / type">@context.Id · @Text(context.Type)</MudTd>
+                    <MudTd DataLabel="Date / quantity">@Date(context.Date) · @Amount(context.Quantity)</MudTd>
+                    <MudTd DataLabel="Recorded unit cost / total">@Amount(context.UnitCost) · @Amount(context.Cost)</MudTd>
+                    <MudTd DataLabel="Reference / notes">@Text(context.Reference) · @Text(context.Notes)</MudTd>
+                    <MudTd DataLabel="Active / audit">@Text(context.Active) · Created: @Text(context.CreatedBy) · @Date(context.CreatedAt) · Changed: @Text(context.ChangedBy) · @Date(context.ChangedAt)</MudTd>
+                </RowTemplate><PagerContent><MudTablePager /></PagerContent>
+            </MudTable>
+        }
+    }
+    <MudText Typo="Typo.caption">Source content review: @Review.Revision</MudText>
+}
+else if(Review?.Rows is {} rows)
+{
+    <MudText Typo="Typo.h5">Company warehouse evidence queues</MudText>
+    <MudSelect T="string" Value='@(Review.WarehouseFilter ?? "")' ValueChanged="WarehouseChanged" Label="Recorded warehouse">
+        <MudSelectItem T="string" Value="@string.Empty">All recorded warehouses, including unavailable</MudSelectItem>
+        @foreach(var warehouse in Review.Warehouses){<MudSelectItem T="string" Value="@warehouse">@warehouse</MudSelectItem>}
+    </MudSelect>
+    <MudSelect T="InventoryWorkspaceState.EvidenceQueue" Value="Review.Queue" ValueChanged="QueueChanged" Label="Inventory evidence queue">
+        <MudSelectItem T="InventoryWorkspaceState.EvidenceQueue" Value="InventoryWorkspaceState.EvidenceQueue.All">All recorded items (@Review.Count(InventoryWorkspaceState.EvidenceQueue.All))</MudSelectItem>
+        <MudSelectItem T="InventoryWorkspaceState.EvidenceQueue" Value="InventoryWorkspaceState.EvidenceQueue.MissingLocation">Missing warehouse or location (@Review.Count(InventoryWorkspaceState.EvidenceQueue.MissingLocation))</MudSelectItem>
+        <MudSelectItem T="InventoryWorkspaceState.EvidenceQueue" Value="InventoryWorkspaceState.EvidenceQueue.UnknownQuantity">Unknown recorded on-hand quantity (@Review.Count(InventoryWorkspaceState.EvidenceQueue.UnknownQuantity))</MudSelectItem>
+        <MudSelectItem T="InventoryWorkspaceState.EvidenceQueue" Value="InventoryWorkspaceState.EvidenceQueue.NonpositiveQuantity">Nonpositive recorded on-hand quantity (@Review.Count(InventoryWorkspaceState.EvidenceQueue.NonpositiveQuantity))</MudSelectItem>
+    </MudSelect>
+    <MudText>Company query items: @rows.Count · Warehouse: @(Review.WarehouseFilter ?? "All") · Showing: @(Review.VisibleRows?.Count ?? 0)</MudText>
+    <MudAlert Severity="Severity.Info">Counts filter the complete returned company query and recorded warehouse. Exception queues can overlap. Quantities and values are not summed across units or currencies. Recorded quantity does not confirm available stock or replenishment approval.</MudAlert>
+    @if(rows.Count==0){<MudAlert Severity="Severity.Info">No active company-owned inventory items were returned. Unassigned legacy items remain outside this query.</MudAlert>}
+    else if(Review.VisibleRows?.Count==0){<MudAlert Severity="Severity.Info">No items match this evidence queue and recorded warehouse.</MudAlert>}
+    else
+    {
+        <MudTable T="InventoryWorkspaceState.Item" Items="Review.VisibleRows" Dense="true" Hover="true">
+            <HeaderContent><MudTh>Item</MudTh><MudTh>Warehouse / location</MudTh><MudTh>Recorded quantity / unit</MudTh><MudTh>Recorded value / currency</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Item"><MudLink Href="@context.Route">@(string.IsNullOrWhiteSpace(context.Number)?context.Id:context.Number)</MudLink> · @Text(context.Name)</MudTd>
+                <MudTd DataLabel="Warehouse / location">@Text(context.Warehouse) · @Text(context.Location)</MudTd>
+                <MudTd DataLabel="Recorded quantity / unit">@Amount(context.Quantity) · @Text(context.Unit)</MudTd>
+                <MudTd DataLabel="Recorded value / currency">@Amount(context.Value) · @Text(context.Currency)</MudTd>
+            </RowTemplate><PagerContent><MudTablePager /></PagerContent>
+        </MudTable>
+    }
+}
+else{<MudAlert Severity="Severity.Info">No company inventory source is confirmed. Select a company and reload current access.</MudAlert>}
+@if(Review?.RetrievedAtUtc is {} retrieved){<MudText Typo="Typo.caption">Retrieved UTC: @retrieved.ToString("O")</MudText>}
+@code {
+    [Parameter] public InventoryWorkspaceState? Review {get;set;}
+    private void WarehouseChanged(string value)=>Review?.SetWarehouse(string.IsNullOrEmpty(value)?null:value);
+    private void QueueChanged(InventoryWorkspaceState.EvidenceQueue value)=>Review?.SetQueue(value);
+    private static string Text(string? value)=>string.IsNullOrWhiteSpace(value)?"Unavailable":value;
+    private static string Amount(decimal? value)=>value?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable";
+    private static string Date(DateTime? value)=>value?.ToString("O") ?? "Unavailable";
+}

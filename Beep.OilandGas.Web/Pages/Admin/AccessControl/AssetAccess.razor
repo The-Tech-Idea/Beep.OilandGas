@@ -1,206 +1,266 @@
-﻿@page "/admin/access-control/asset-access"
-@using Beep.OilandGas.Models.Data.AccessControl
+@page "/admin/access-control/asset-access"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Administrator")]
+@using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
-@inject ISnackbar Snackbar
+@inject CompanyClientContext Company
+@inject AssetGrantAdministrationState State
+@implements IDisposable
 
-<PageTitle>Assign Asset Access</PageTitle>
-
+<PageTitle>Asset Access</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-    <MudText Typo="Typo.h5" Class="mb-4">Assign Asset Access</MudText>
-    
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudText Typo="Typo.h6" Class="mb-4">Grant Asset Access to Users</MudText>
-        
-        <MudGrid>
-            <MudItem xs="12" md="4">
-                <MudTextField @bind-Value="@_userId" 
-                             Label="User ID" 
-                             Variant="Variant.Outlined" />
-            </MudItem>
-            <MudItem xs="12" md="4">
-                <MudSelect T="string" 
-                          @bind-Value="@_assetType"
-                          Label="Asset Type"
-                          Variant="Variant.Outlined">
-                    <MudSelectItem Value="@("FIELD")">Field</MudSelectItem>
-                    <MudSelectItem Value="@("POOL")">Pool</MudSelectItem>
-                    <MudSelectItem Value="@("FACILITY")">Facility</MudSelectItem>
-                    <MudSelectItem Value="@("WELL")">Well</MudSelectItem>
-                    <MudSelectItem Value="@("AREA")">Area</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="4">
-                <MudTextField @bind-Value="@_assetId" 
-                             Label="Asset ID" 
-                             Variant="Variant.Outlined" />
-            </MudItem>
-            <MudItem xs="12" md="4">
-                <MudSelect T="string" 
-                          @bind-Value="@_accessLevel"
-                          Label="Access Level"
-                          Variant="Variant.Outlined">
-                    <MudSelectItem Value="@("READ")">Read</MudSelectItem>
-                    <MudSelectItem Value="@("WRITE")">Write</MudSelectItem>
-                    <MudSelectItem Value="@("DELETE")">Delete</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" md="4">
-                <MudSwitch T="bool" @bind-Value="@_inherit"
-                          Label="Inherit to children"
-                          Color="Color.Primary" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudButton Variant="Variant.Filled" 
-                          Color="Color.Primary"
-                          OnClick="GrantAccess"
-                          StartIcon="@Icons.Material.Filled.CheckCircle">
-                    Grant Access
-                </MudButton>
-            </MudItem>
-        </MudGrid>
-
-        @if (_assetAccessList != null && _assetAccessList.Any())
+    <MudText Typo="Typo.h5" Class="mb-4">Asset Access</MudText>
+    <MudPaper Elevation="2" Class="pa-4" aria-busy="@State.Busy.ToString().ToLowerInvariant()">
+        @if (Company.Selection is { } selected)
+        {
+            <MudText Typo="Typo.body1" Class="mb-3">Company: @selected.Scope.BusinessAssociateId (@selected.Scope.TenantId)</MudText>
+            @if (!selected.Roles.Contains("Administrator", StringComparer.Ordinal))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-3">A company Administrator is required to manage asset grants.</MudAlert>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-3">Select a company before managing asset access.</MudAlert>
+        }
+        <section aria-label="FIELD interest review" aria-busy="@State.Busy.ToString().ToLowerInvariant()">
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h6" Class="mb-3">Company FIELD Interests</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">Review recorded interests for the selected company using your own current FIELD access. Recorded roles and percentages do not assign legal title, operatorship, billing rights or application access.</MudText>
+            <MudTextField T="string" Value="State.InterestFieldId" ValueChanged="State.SelectInterestField" Label="Exact FIELD ID"
+                          HelperText="Enter the stored FIELD ID. This review uses your account, independently of the grant subject below."
+                          Variant="Variant.Outlined" MaxLength="128" Immediate="true" Disabled="@(!State.CanChooseInterestField)"
+                          Error="@(State.InterestFieldError is not null)" ErrorText="State.InterestFieldError" />
+            <MudButton OnClick="State.LoadInterestReviewAsync" Disabled="@(!State.CanReviewInterests)" Color="Color.Primary"
+                       Variant="Variant.Outlined" Size="Size.Large" Class="mt-3" StartIcon="@Icons.Material.Filled.Search">Review FIELD Interests</MudButton>
+            @if (State.InterestReview is { } interest)
+            {
+                <MudText Typo="Typo.body2" Class="mt-3">Company @interest.Company.BusinessAssociateId (@interest.Company.TenantId), FIELD @interest.FieldId. Reviewed @RecordedDate(interest.ReviewedUtc).</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3">Date zone: @interest.DateZoneId. Times ending in Z are UTC; unmarked times use this date zone. Percentages are displayed as recorded.</MudText>
+                @if (interest.Sets.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" role="status">No current company interest records were returned for this FIELD.</MudAlert>
+                }
+                @foreach (var set in interest.Sets)
+                {
+                    <MudDivider Class="my-4" />
+                    <MudText Typo="Typo.subtitle1">Interest set @set.InterestSet.INTEREST_SET_ID — sequence @InterestNumber(set.InterestSet.INTEREST_SET_SEQ_NO)</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3">Recorded type: @set.InterestSet.INTEREST_SET_TYPE. Effective: @RecordedDate(set.InterestSet.EFFECTIVE_DATE). Expiry: @RecordedDate(set.InterestSet.EXPIRY_DATE).</MudText>
+                    <div role="region" aria-label="@($"FIELD components for interest set {set.InterestSet.INTEREST_SET_ID}, sequence {set.InterestSet.INTEREST_SET_SEQ_NO}")" tabindex="0" class="overflow-auto">
+                        <MudSimpleTable Dense="true" Hover="true" Striped="true" Class="mb-3">
+                            <caption>Recorded FIELD components</caption>
+                            <thead><tr><th scope="col">Observation</th><th scope="col">FIELD</th><th scope="col">Component Type</th><th scope="col">Effective</th><th scope="col">Expiry</th></tr></thead>
+                            <tbody>
+                                @foreach (var component in set.Components)
+                                {
+                                    <tr><th scope="row">@InterestNumber(component.COMPONENT_OBS_NO)</th><td>@component.FIELD_ID</td><td>@component.COMPONENT_TYPE</td><td>@RecordedDate(component.EFFECTIVE_DATE)</td><td>@RecordedDate(component.EXPIRY_DATE)</td></tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </div>
+                    <div role="region" aria-label="@($"Company partners for interest set {set.InterestSet.INTEREST_SET_ID}, sequence {set.InterestSet.INTEREST_SET_SEQ_NO}")" tabindex="0" class="overflow-auto">
+                        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                            <caption>Recorded selected-company partners</caption>
+                            <thead><tr><th scope="col">Company</th><th scope="col">Observation</th><th scope="col">Recorded Role</th><th scope="col">Gross Interest (%)</th><th scope="col">Net Interest (%)</th><th scope="col">Recorded Breach Indicator</th><th scope="col">Recorded Escrow Indicator</th><th scope="col">Recorded Right-to-Earn Indicator</th><th scope="col">Effective</th><th scope="col">Expiry</th><th scope="col">Inactive Date</th></tr></thead>
+                            <tbody>
+                                @foreach (var partner in set.CompanyPartners)
+                                {
+                                    <tr><th scope="row">@partner.PARTNER_BA_ID</th><td>@InterestNumber(partner.PARTNER_OBS_NO)</td><td>@partner.INTEREST_SET_ROLE</td><td>@InterestNumber(partner.GROSS_PERCENT_INTEREST)</td><td>@InterestNumber(partner.NET_PERCENT_INTEREST)</td><td>@RecordedIndicator(partner.BREACH_IND)</td><td>@RecordedIndicator(partner.ESCROW_IND)</td><td>@RecordedIndicator(partner.RIGHT_TO_EARN_IND)</td><td>@RecordedDate(partner.EFFECTIVE_DATE)</td><td>@RecordedDate(partner.EXPIRY_DATE)</td><td>@RecordedDate(partner.INACTIVE_DATE)</td></tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </div>
+                }
+            }
+        </section>
+        <MudDivider Class="my-4" />
+        <MudTextField T="string" Value="State.UserId" ValueChanged="State.SelectUser" Label="Application User ID"
+                      HelperText="Use the account ID resolved by this application." Variant="Variant.Outlined" MaxLength="128"
+                      Immediate="true" Disabled="@(State.Busy || Company.Selection is null)" />
+        <MudButton OnClick="State.LoadAsync" Disabled="@(!State.CanLoad)" Color="Color.Primary" Variant="Variant.Filled"
+                   Class="mt-3" StartIcon="@Icons.Material.Filled.Refresh">Load Direct Grants</MudButton>
+        <MudButton OnClick="State.LoadReviewAsync" Disabled="@(!State.CanReview)" Color="Color.Primary" Variant="Variant.Outlined"
+                   Class="mt-3 ml-2" StartIcon="@Icons.Material.Filled.History">Review Stored Grants</MudButton>
+        @if (State.Busy)
+        {
+            <MudProgressLinear Indeterminate="true" Class="my-4" aria-label="Updating asset administration" />
+        }
+        @if (State.Error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-3" role="alert">@State.Error</MudAlert>
+        }
+        @if (State.Confirmation is not null)
+        {
+            <MudAlert Severity="Severity.Success" Class="mt-3">@State.Confirmation</MudAlert>
+        }
+        @if (State.ReviewPage is { } page)
         {
             <MudDivider Class="my-4" />
-            <MudText Typo="Typo.h6" Class="mb-3">User Asset Access</MudText>
-            <MudDataGrid T="Beep.OilandGas.Models.Data.AssetAccess" Items="@_assetAccessList" Dense="true" Hover="true" Striped="true"
-                         SortMode="SortMode.Multiple">
-                <Columns>
-                    <PropertyColumn Property="a => a.UserId" Title="User ID" />
-                    <PropertyColumn Property="a => a.AssetType" Title="Asset Type" />
-                    <PropertyColumn Property="a => a.AssetId" Title="Asset ID" />
-                    <TemplateColumn Title="Access Level">
-                        <CellTemplate>
-                            <MudChip T="string" Size="Size.Small" Color="@GetAccessLevelColor(context.Item.AccessLevel)">
-                                @context.Item.AccessLevel
-                            </MudChip>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Inherit">
-                        <CellTemplate>
-                            <MudIcon Icon="@(context.Item.Inherit ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)"
-                                     Color="@(context.Item.Inherit ? Color.Success : Color.Default)"
-                                     Size="Size.Small" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="" Sortable="false">
-                        <CellTemplate>
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                          Title="Revoke access"
-                                          Color="Color.Error"
-                                          Size="Size.Small"
-                                          OnClick="@(() => RevokeAccess(context.Item))" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-            </MudDataGrid>
+            <MudText Typo="Typo.h6" Class="mb-3">Stored Grant Review</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">These are stored records for this user in the selected company's reviewed database scope, including inactive grants and unqualified historical facilities. This inventory does not prove effective asset access. Retirement preserves the record and requires a reason.</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">@(page.Total) records; showing @(page.Items.Count) on this page.</MudText>
+            @if (page.Items.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No stored grants were returned on this page.</MudAlert>
+            }
+            else
+            {
+                <MudDataGrid T="TheTechIdea.Data.OilGas.AppUserAssetAccess" Items="page.Items" Dense="true" Hover="true" Striped="true">
+                    <Columns>
+                        <PropertyColumn Property="row => row.AssetType" Title="Asset Type" />
+                        <PropertyColumn Property="row => row.AssetId" Title="Asset ID" />
+                        <TemplateColumn Title="Facility Type">
+                            <CellTemplate>@(context.Item.AssetType == "FACILITY" ? context.Item.FacilityType ?? "Unqualified" : "—")</CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="row => row.AccessLevel" Title="Stored Level" />
+                        <PropertyColumn Property="row => row.IsActive" Title="Active" />
+                        <PropertyColumn Property="row => row.ChangedBy" Title="Last Actor" />
+                        <PropertyColumn Property="row => row.ChangedUtc" Title="Last Change (UTC)" />
+                        <TemplateColumn Title="Review" Sortable="false">
+                            <CellTemplate>
+                                <MudButton OnClick="() => State.LoadRetirementHistoryAsync(context.Item)" Disabled="@(!State.CanReviewRow(context.Item))"
+                                           Variant="Variant.Text">Retirement History</MudButton>
+                                <MudButton OnClick="() => _retireTarget = context.Item" Disabled="@(!State.CanRetire(context.Item))" Color="Color.Error"
+                                           Variant="Variant.Outlined" aria-label="@($"Review retirement of stored {context.Item.AssetType} {context.Item.AssetId} {context.Item.FacilityType} grant for {context.Item.UserId}")">Retire</MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            <MudButton OnClick="() => State.LoadReviewPageAsync(Math.Max(0, page.Offset - page.Limit))" Disabled="@(State.Busy || page.Offset == 0)" Class="mt-3">Previous Grants</MudButton>
+            <MudButton OnClick="() => State.LoadReviewPageAsync(page.Offset + page.Limit)" Disabled="@(State.Busy || (long)page.Offset + page.Limit >= page.Total)" Class="mt-3">Next Grants</MudButton>
+            @if (_retireTarget is { } stored && State.CanRetire(stored))
+            {
+                <MudAlert Severity="Severity.Warning" Class="mt-3">Retire stored @stored.AssetType @stored.AssetId @(stored.FacilityType ?? "(unqualified)") access for @stored.UserId in @stored.OrganizationId? The current record will become inactive and its reviewed revision will be preserved in retirement history.</MudAlert>
+                <MudTextField T="string" @bind-Value="State.RetirementReason" Label="Retirement Reason (one line)" Required="true" MaxLength="1000" Variant="Variant.Outlined" Class="mt-3" />
+                <MudButton OnClick="ConfirmRetirement" Color="Color.Error" Variant="Variant.Filled" Class="mt-3">Confirm Retirement</MudButton>
+                <MudButton OnClick="() => _retireTarget = null" Class="mt-3">Cancel</MudButton>
+            }
+            @if (State.RetirementHistory is { } history)
+            {
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.h6" Class="mb-3">Retirement History — Grant @history.GrantId</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3">@history.Total retirement records. These records do not represent earlier grant/revoke history.</MudText>
+                <MudDataGrid T="TheTechIdea.Data.OilGas.AssetGrantRetirement" Items="history.Items" Dense="true" Hover="true">
+                    <Columns>
+                        <PropertyColumn Property="row => row.ChangedUtc" Title="Retired (UTC)" />
+                        <PropertyColumn Property="row => row.ActorUserId" Title="Application Actor" />
+                        <PropertyColumn Property="row => row.Reason" Title="Reason" />
+                        <PropertyColumn Property="row => row.PreviousRevision" Title="Reviewed Revision" />
+                        <PropertyColumn Property="row => row.Revision" Title="Retirement Revision" />
+                    </Columns>
+                </MudDataGrid>
+                @if (page.Items.FirstOrDefault(row => row.Id == history.GrantId) is { } historyRow)
+                {
+                    <MudButton OnClick="() => State.LoadRetirementHistoryAsync(historyRow, Math.Max(0, history.Offset - history.Limit))" Disabled="@(State.Busy || history.Offset == 0)" Class="mt-3">Previous History</MudButton>
+                    <MudButton OnClick="() => State.LoadRetirementHistoryAsync(historyRow, history.Offset + history.Limit)" Disabled="@(State.Busy || (long)history.Offset + history.Limit >= history.Total)" Class="mt-3">Next History</MudButton>
+                }
+            }
+        }
+        @if (State.Loaded)
+        {
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h6" Class="mb-3">Grant access</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">Field grants can pass access to related wells, pools and facilities. Direct facility assignments require both the facility ID and facility type.</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">Work orders require direct access. The API checks every recorded FIELD component against current company entitlement; FIELD inheritance does not grant order access.</MudText>
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" Value="State.AssetType" ValueChanged="State.SelectAssetType" Label="Asset Type"
+                               Disabled="@(!State.CanEdit)" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("FIELD")">Field</MudSelectItem>
+                        <MudSelectItem Value="@("WELL")">Well</MudSelectItem>
+                        <MudSelectItem Value="@("POOL")">Pool</MudSelectItem>
+                        <MudSelectItem Value="@("FACILITY")">Facility</MudSelectItem>
+                        <MudSelectItem Value="@("EQUIPMENT")">Equipment</MudSelectItem>
+                        <MudSelectItem Value="@("WORK_ORDER")">Work order</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" @bind-Value="State.AssetId" Label="Exact Asset ID" MaxLength="128"
+                                  Disabled="@(!State.CanEdit)" Required="true" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" @bind-Value="State.AccessLevel" Label="Access Level" Disabled="@(!State.CanEdit)" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("READ")">Read</MudSelectItem>
+                        <MudSelectItem Value="@("WRITE")">Write</MudSelectItem>
+                        <MudSelectItem Value="@("DELETE")">Delete</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                @if (State.AssetType == "FACILITY")
+                {
+                    <MudItem xs="12" md="4">
+                        <MudTextField T="string" @bind-Value="State.FacilityType" Label="Exact Facility Type" MaxLength="128"
+                                      Required="true" Disabled="@(!State.CanEdit)" Variant="Variant.Outlined" />
+                    </MudItem>
+                }
+                <MudItem xs="12">
+                    <MudSwitch T="bool" @bind-Value="State.Inherit" Label="Inherit field access to children" Color="Color.Primary"
+                               Disabled="@(!State.CanEdit || State.AssetType != "FIELD")" />
+                    <MudButton OnClick="State.GrantAsync" Disabled="@(!State.CanEdit)" Color="Color.Primary" Variant="Variant.Filled"
+                               StartIcon="@Icons.Material.Filled.CheckCircle">Grant Access</MudButton>
+                </MudItem>
+            </MudGrid>
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h6" Class="mb-3">Confirmed Direct Grants</MudText>
+            @if (State.Grants.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info">No active direct grants were returned for this user in the selected company.</MudAlert>
+            }
+            else
+            {
+                <MudDataGrid T="Beep.OilandGas.Models.Data.AssetAccess" Items="State.Grants" Dense="true" Hover="true" Striped="true">
+                    <Columns>
+                        <PropertyColumn Property="row => row.UserId" Title="User ID" />
+                        <PropertyColumn Property="row => row.AssetType" Title="Asset Type" />
+                        <PropertyColumn Property="row => row.AssetId" Title="Asset ID" />
+                        <PropertyColumn Property="row => row.FacilityType" Title="Facility Type" />
+                        <PropertyColumn Property="row => row.AccessLevel" Title="Access Level" />
+                        <PropertyColumn Property="row => row.Inherit" Title="Inherit" />
+                        <TemplateColumn Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudButton Color="Color.Error" Variant="Variant.Outlined" Disabled="@(!State.CanRevoke(context.Item))"
+                                           OnClick="() => _revokeTarget = context.Item" aria-label="@($"Review revocation of {context.Item.AssetType} {context.Item.AssetId} {context.Item.FacilityType} from {context.Item.UserId}")">Revoke</MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+                @if (_revokeTarget is { } target && State.CanRevoke(target))
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mt-3">Revoke @target.AssetType @target.AssetId @target.FacilityType from @target.UserId in the selected company?</MudAlert>
+                    <MudButton OnClick="ConfirmRevoke" Color="Color.Error" Variant="Variant.Filled" Class="mt-3">Confirm Revocation</MudButton>
+                    <MudButton OnClick="() => _revokeTarget = null" Class="mt-3">Cancel</MudButton>
+                }
+            }
         }
     </MudPaper>
 </MudContainer>
 
 @code {
-    private string _userId = string.Empty;
-    private string _assetType = string.Empty;
-    private string _assetId = string.Empty;
-    private string _accessLevel = "READ";
-    private bool _inherit = true;
-    private List<Beep.OilandGas.Models.Data.AssetAccess>? _assetAccessList;
-
-    protected override async Task OnInitializedAsync()
+    [SupplyParameterFromQuery(Name = "user")] public string? RequestedUser { get; set; }
+    private bool _disposed;
+    private Beep.OilandGas.Models.Data.AssetAccess? _revokeTarget;
+    private TheTechIdea.Data.OilGas.AppUserAssetAccess? _retireTarget;
+    private static string InterestNumber(decimal value) => value.ToString("G29", System.Globalization.CultureInfo.CurrentCulture);
+    private static string RecordedDate(DateTime? value) => value?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "Not recorded";
+    private static string RecordedIndicator(string? value) => string.IsNullOrEmpty(value) ? "Not recorded" : value;
+    protected override void OnInitialized() => State.Changed += StateChanged;
+    protected override void OnParametersSet()
     {
-        await LoadAssetAccess();
+        if (RequestedUser is { Length: > 0 and <= 128 } user && user == user.Trim() && !user.Any(char.IsControl))
+            State.SelectUser(user);
+        else
+            State.SelectUser(null);
     }
-
-    private async Task LoadAssetAccess()
+    private void StateChanged() { if (!_disposed) _ = InvokeAsync(() => { if (!_disposed) { if (_revokeTarget is not null && !State.CanRevoke(_revokeTarget)) _revokeTarget = null; if (_retireTarget is not null && !State.Busy && !State.CanRetire(_retireTarget)) _retireTarget = null; StateHasChanged(); } }); }
+    private async Task ConfirmRetirement()
     {
-        if (string.IsNullOrEmpty(_userId)) return;
-
-        try
-        {
-            _assetAccessList = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.AssetAccess>>($"/api/accesscontrol/user/{Uri.EscapeDataString(_userId)}/assets");
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error loading asset access.", Severity.Error);
-        }
+        var target = _retireTarget; _retireTarget = null;
+        if (target is not null) await State.RetireAsync(target);
     }
-
-    private async Task GrantAccess()
+    private async Task ConfirmRevoke()
     {
-        if (string.IsNullOrEmpty(_userId) || string.IsNullOrEmpty(_assetType) || string.IsNullOrEmpty(_assetId))
-        {
-            Snackbar.Add("Please fill in all required fields", Severity.Warning);
-            return;
-        }
-
-        try
-        {
-            var request = new GrantAccessRequest
-            {
-                UserId = _userId,
-                AssetId = _assetId,
-                AssetType = _assetType,
-                AccessLevel = _accessLevel,
-                Inherit = _inherit
-            };
-
-            var result = await ApiClient.PostAsync<GrantAccessRequest, bool>("/api/accesscontrol/grant-access", request);
-            
-            if (result)
-            {
-                Snackbar.Add("Access granted successfully", Severity.Success);
-                await LoadAssetAccess();
-            }
-            else
-            {
-                Snackbar.Add("Failed to grant access", Severity.Error);
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error granting access.", Severity.Error);
-        }
+        var target = _revokeTarget; _revokeTarget = null;
+        if (target is not null) await State.RevokeAsync(target);
     }
-
-    private async Task RevokeAccess(Beep.OilandGas.Models.Data.AssetAccess access)
-    {
-        try
-        {
-            var request = new RevokeAccessRequest
-            {
-                UserId = access.UserId,
-                AssetId = access.AssetId,
-                AssetType = access.AssetType
-            };
-
-            var result = await ApiClient.PostAsync<RevokeAccessRequest, bool>("/api/accesscontrol/revoke-access", request);
-            
-            if (result)
-            {
-                Snackbar.Add("Access revoked successfully", Severity.Success);
-                await LoadAssetAccess();
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error revoking access.", Severity.Error);
-        }
-    }
-
-    private Color GetAccessLevelColor(string accessLevel)
-    {
-        return accessLevel.ToUpper() switch
-        {
-            "READ" => Color.Info,
-            "WRITE" => Color.Warning,
-            "DELETE" => Color.Error,
-            _ => Color.Default
-        };
-    }
+    public void Dispose() { _disposed = true; State.Changed -= StateChanged; State.Dispose(); }
 }
-
-
-
-
-

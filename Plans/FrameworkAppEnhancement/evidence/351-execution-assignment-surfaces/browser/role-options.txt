@@ -1,0 +1,55 @@
+### Page
+- Page URL: http://127.0.0.1:54712/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - listbox [ref=e152]:
+    - option [ref=e153] [cursor=pointer]:
+      - paragraph [ref=e155]: ConfiguredExecutionAssigner
+  - generic [ref=e45]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e46]
+    - paragraph [ref=e47]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e48]:
+      - button "Use read-only unmapped profile" [ref=e49] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e51] [cursor=pointer]
+      - button "Switch other company" [ref=e53] [cursor=pointer]
+      - button "Switch other account" [ref=e55] [cursor=pointer]
+      - button "Restore original company/account" [ref=e57] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e59] [cursor=pointer]
+      - button "Show actual start recovery" [ref=e61] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e63] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e65] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e89]:
+    - heading "Execution reporting responsibility" [level=1] [ref=e90]
+    - group [ref=e91]:
+      - link "Drilling workspace" [ref=e92] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=e94] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload source and recipients" [ref=e96] [cursor=pointer]
+    - generic [ref=e98]: Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.
+    - generic [ref=e105]:
+      - heading "Recorded execution source" [level=2] [ref=e106]
+      - paragraph [ref=e107]: Company tenant / company · Sender execution-recorder · Original FIELD original-field/واحد
+      - paragraph [ref=e108]: Original drilling program · Version 1 · Well recorded-well/one
+      - paragraph [ref=e109]: Operation drilling-execution-2CD26F1A43E0FB28B413B2C20F606946BC6E54ECB8532CD8ECEDE7E3F7823BEB · Actual reported spud 2026-10-26 16:07:30Z UTC · Original recorder execution-recorder
+      - link "Open observed drilling progress" [ref=e110] [cursor=pointer]:
+        - /url: /drilling/program-execution/reports?reviewId=drilling-program-review-B9340AD93A99654129A3190C1C916DB0A69A4BC8F136EFBB1E5B90E4080E5C0A
+    - generic [ref=e112]:
+      - heading "Configured reporting destinations" [level=2] [ref=e113]
+      - generic [ref=e116]:
+        - combobox "Configured reporting workflow" [ref=e148] [cursor=pointer]: Configured ongoing execution reporting · ConfiguredReportingRole
+        - generic: Configured reporting workflow
+      - paragraph [ref=e123]: Configured ongoing execution reporting · Version 1.1.0 · Step Record observed execution progress · Receiving role ConfiguredReportingRole
+      - paragraph [ref=e124]: "1 eligible company accounts · 1 persona destinations: SITE-1"
+      - paragraph [ref=e125]: Recipient site-recorder-1 · Workspace SITE-1
+      - generic [ref=e128]:
+        - combobox "Your assignment sender role" [expanded] [active] [ref=e130] [cursor=pointer]
+        - generic: Your assignment sender role
+      - generic [ref=e136]:
+        - textbox "Assignment reason*" [ref=e138]
+        - generic: Assignment reason*
+      - button "Review reporting assignment" [ref=e139] [cursor=pointer]
+```

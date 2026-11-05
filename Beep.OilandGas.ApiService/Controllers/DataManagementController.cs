@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
@@ -10,8 +9,6 @@ using System.Reflection;
 using System.Text.Json;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Refusals;
-using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM.Models;
@@ -38,8 +35,6 @@ namespace Beep.OilandGas.ApiService.Controllers
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IPPDMDataValidationService _validationService;
-        private readonly IPPDMDataQualityService _qualityService;
-        private readonly IPPDMDataQualityDashboardService _qualityDashboardService;
         private readonly ILogger<DataManagementController> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -49,8 +44,6 @@ namespace Beep.OilandGas.ApiService.Controllers
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             IPPDMDataValidationService validationService,
-            IPPDMDataQualityService qualityService,
-            IPPDMDataQualityDashboardService qualityDashboardService,
             ILogger<DataManagementController> logger)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -58,8 +51,6 @@ namespace Beep.OilandGas.ApiService.Controllers
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
-            _qualityService = qualityService ?? throw new ArgumentNullException(nameof(qualityService));
-            _qualityDashboardService = qualityDashboardService ?? throw new ArgumentNullException(nameof(qualityDashboardService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -351,49 +342,6 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         // ============================================
-        // DATA QUALITY OPERATIONS
-        // ============================================
-
-        /// <summary>
-        /// Get quality metrics for a table
-        /// GET /api/datamanagement/quality/{tableName}/metrics
-        /// </summary>
-        [HttpGet("quality/{tableName}/metrics")]
-        public async Task<ActionResult<DATA_QUALITY_METRICS>> GetQualityMetrics(string tableName)
-        {
-            if (string.IsNullOrWhiteSpace(tableName))
-                return BadRequest(new { error = "Table name is required." });
-            var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
-            return Ok(metrics);
-        }
-
-        /// <summary>
-        /// Get quality dashboard data for a table
-        /// GET /api/datamanagement/quality/{tableName}/dashboard
-        /// </summary>
-        [HttpGet("quality/{tableName}/dashboard")]
-        public async Task<ActionResult<QualityDashboardData>> GetQualityDashboard(string tableName)
-        {
-            if (string.IsNullOrWhiteSpace(tableName))
-                return BadRequest(new { error = "Table name is required." });
-            var dashboard = await _qualityDashboardService.GetDashboardDataAsync(tableName);
-            return Ok(dashboard);
-        }
-
-        /// <summary>
-        /// Get quality alerts
-        /// GET /api/datamanagement/quality/alerts
-        /// </summary>
-        [HttpGet("quality/alerts")]
-        public async Task<ActionResult<List<QualityAlert>>> GetQualityAlerts(
-            [FromQuery] string? tableName = null,
-            [FromQuery] QualityAlertSeverity? severity = null)
-        {
-            var alerts = await _qualityDashboardService.GetQualityAlertsAsync(tableName, severity);
-            return Ok(alerts);
-        }
-
-        // ============================================
         // METADATA ENDPOINT
         // ============================================
 
@@ -487,6 +435,12 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// </summary>
         private async Task<PPDMGenericRepository?> GetRepositoryForTable(string tableName)
         {
+            if(string.Equals(tableName,"COMPANY_OILGAS_ENVIRONMENT",StringComparison.OrdinalIgnoreCase) || string.Equals(tableName,"SYSTEM_SETUP_RECORD",StringComparison.OrdinalIgnoreCase) || string.Equals(tableName,"COMPANY_GHG_CATALOG_SELECTION",StringComparison.OrdinalIgnoreCase))
+                throw RefusalException.Forbidden("Company environment settings require the protected company setup endpoints.");
+            if(string.Equals(tableName,"WORK_ORDER_ASSET_RETURN",StringComparison.OrdinalIgnoreCase))
+                throw RefusalException.Forbidden("Original private well-return intents require the protected maintenance command or reference recovery endpoint.");
+            if(string.Equals(tableName,"WORK_ORDER_MAINTENANCE_RETURN_POLICY",StringComparison.OrdinalIgnoreCase))
+                throw RefusalException.Forbidden("Maintenance return policy history and private intents require the protected company policy endpoints.");
             // Get table metadata to find entity type
             var tableMetadata = await _metadata.GetTableMetadataAsync(tableName);
             if (tableMetadata == null)

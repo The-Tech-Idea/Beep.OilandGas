@@ -78,8 +78,8 @@ private  System.String CONDITION_TYPEValue;
 
           set { SetProperty(ref  CONDITION_TYPEValue, value); }
         } 
-private  System.Decimal CONDITION_VALUEValue; 
- public System.Decimal CONDITION_VALUE
+private  System.Decimal? CONDITION_VALUEValue;
+ public System.Decimal? CONDITION_VALUE
         {  
             get  
             {  
@@ -158,8 +158,8 @@ private  System.String DUE_FREQUENCYValue;
 
           set { SetProperty(ref  DUE_FREQUENCYValue, value); }
         } 
-private  System.Decimal DUE_TERMValue; 
- public System.Decimal DUE_TERM
+private  System.Decimal? DUE_TERMValue;
+ public System.Decimal? DUE_TERM
         {  
             get  
             {  
@@ -278,8 +278,8 @@ private  System.String RESTRICTION_IDValue;
 
           set { SetProperty(ref  RESTRICTION_IDValue, value); }
         } 
-private  System.Decimal RESTRICTION_VERSIONValue; 
- public System.Decimal RESTRICTION_VERSION
+private  System.Decimal? RESTRICTION_VERSIONValue;
+ public System.Decimal? RESTRICTION_VERSION
         {  
             get  
             {  

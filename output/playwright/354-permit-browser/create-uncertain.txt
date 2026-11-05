@@ -1,0 +1,36 @@
+### Page
+- Page URL: http://127.0.0.1:55005/ppdm39/permits/new
+### Snapshot
+```yaml
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=f3e10]:
+      - button "Fixture author" [ref=f3e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=f3e13] [cursor=pointer]
+      - button "Fixture read only" [ref=f3e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=f3e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=f3e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=f3e21] [cursor=pointer]
+      - link "HSE landing" [ref=f3e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=f3e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=f3e238]:
+    - heading "New permit application" [level=1] [ref=f3e239]
+    - paragraph [ref=f3e240]: Review the explicit draft and linked company resources before retaining one creation original.
+    - generic [ref=f3e854]: The permit creation outcome is unconfirmed
+    - button "Read retained creation original" [ref=f3e241] [cursor=pointer]
+    - generic [ref=f3e861]: Retained original permit command · original 08d6e6b2-acc0-43f9-8705-ff9df2028556
+    - paragraph [ref=f3e868]: The original is saved in this tab. A submission may have reached the server. Recover it before preparing another.
+    - paragraph [ref=f3e869]: Proposed application PA-08d6e6b2acc043f98705ff9df2028556 · FIELD A · applicant Browser reviewed applicant
+    - paragraph [ref=f3e870]: Country Kuwait · region Other · authority Other
+    - paragraph [ref=f3e871]: Well None · facility None · type None
+    - paragraph [ref=f3e872]: "Original reason: The author confirms this explicit company draft and its selected FIELD evidence."
+    - group [ref=f3e873]:
+      - button "Recover recorded creation" [ref=f3e874] [cursor=pointer]
+      - button "Resend the same creation original" [disabled]
+    - text: A draft or internal decision does not establish regulator clearance, jurisdiction applicability or permission to operate.
+    - link "Back to permits" [ref=f3e300] [cursor=pointer]:
+      - /url: /ppdm39/permits
+```

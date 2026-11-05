@@ -5,10 +5,12 @@ using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Data.OilGas;
 using Xunit;
 
 namespace Beep.OilandGas.ApiService.Tests;
@@ -89,6 +91,9 @@ public class UnavailableExecutionTests
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
             _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var migration = new Mock<IPPDM39SchemaMigrationService>(MockBehavior.Strict);
+        var access = new Mock<IRepositoryAccessService>();
+        access.Setup(x => x.GetAccessAsync("local-admin", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RepositoryUserAccess("local-admin", true, ["Administrator"], []));
         if (authenticatedLocally)
         {
             migration.Setup(x => x.ApproveSchemaMigrationPlanAsync(It.Is<SchemaMigrationApprovalRequest>(r => r.ApprovedBy == "local-admin")))
@@ -107,40 +112,59 @@ public class UnavailableExecutionTests
                 [new System.Security.Claims.Claim("party_id", "local-admin")], "repository"));
         if (authenticatedLocally)
         {
-            Assert.IsType<OkObjectResult>((await controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" })).Result);
-            Assert.IsType<OkObjectResult>((await controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" })).Result);
-            Assert.IsType<OkObjectResult>((await controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" })).Result);
+            Assert.IsType<OkObjectResult>((await controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" }, access.Object)).Result);
+            Assert.IsType<OkObjectResult>((await controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" }, access.Object)).Result);
+            Assert.IsType<OkObjectResult>((await controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" }, access.Object)).Result);
             migration.VerifyAll();
         }
         else
         {
-            await Refusals.ForbiddenAsync(() => controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" }));
-            await Refusals.ForbiddenAsync(() => controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" }));
-            await Refusals.ForbiddenAsync(() => controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" }));
+            await Refusals.ForbiddenAsync(() => controller.ApproveSchemaMigration(new() { ApprovedBy = "spoofed" }, access.Object));
+            await Refusals.ForbiddenAsync(() => controller.ExecuteSchemaMigration(new() { ExecutedBy = "spoofed" }, access.Object));
+            await Refusals.ForbiddenAsync(() => controller.StartSchemaMigration(new() { ExecutedBy = "spoofed" }, access.Object));
             migration.VerifyNoOtherCalls();
         }
     }
 
     [Fact]
-    public async Task ModuleDatabaseCreationRejectsLegacySecurityBeforeDatabaseAccess()
+    public async Task RevokedAdministratorCannotDispatchMigrationCommands()
     {
-        var authorization = Assert.Single(typeof(PPDM39SetupController)
-            .GetCustomAttributes(typeof(Microsoft.AspNetCore.Authorization.AuthorizeAttribute), true)
-            .Cast<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>());
-        Assert.Equal("Administrator", authorization.Roles);
-        Assert.False(new DatabaseCreationOptions().SeedDefaultSecurityData);
         var service = new PPDM39SetupService(_editor.Object, NullLogger<PPDM39SetupService>.Instance,
             _columns.Object, _defaults.Object, _metadata.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
-        var controller = new PPDM39SetupController(service, service, _editor.Object,
+        var migration = new Mock<IPPDM39SchemaMigrationService>(MockBehavior.Strict);
+        var access = new Mock<IRepositoryAccessService>();
+        access.Setup(x => x.GetAccessAsync("local-admin", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RepositoryUserAccess("local-admin", true, [], []));
+        var controller = new PPDM39SetupController(service, migration.Object, _editor.Object,
             NullLogger<PPDM39SetupController>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(),
-            commonColumnHandler: _columns.Object, defaults: _defaults.Object, metadata: _metadata.Object);
-        var result = await controller.CreateDatabase(new CreateDatabaseRequest
-        {
-            Connection = new TheTechIdea.Beep.ConfigUtil.ConnectionProperties(),
-            Options = new DatabaseCreationOptions { SeedDefaultSecurityData = true }
-        });
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-        _editor.VerifyNoOtherCalls();
+            commonColumnHandler: _columns.Object, defaults: _defaults.Object, metadata: _metadata.Object)
+        { ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User =
+            new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity([new("party_id", "local-admin"), new(System.Security.Claims.ClaimTypes.Role, "Administrator")], "test")) } } };
+        await Refusals.ForbiddenAsync(() => controller.PlanSchemaMigration(new(), access.Object));
+        await Refusals.ForbiddenAsync(() => controller.ApproveSchemaMigration(new(), access.Object));
+        await Refusals.ForbiddenAsync(() => controller.ExecuteSchemaMigration(new(), access.Object));
+        await Refusals.ForbiddenAsync(() => controller.StartSchemaMigration(new(), access.Object));
+        migration.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public void SetupDoesNotExposeScriptExecutionRoutes()
+    {
+        var routes = typeof(PPDM39SetupController).GetMethods()
+            .SelectMany(method => method.GetCustomAttributes(typeof(Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute), true)
+                .Cast<Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute>())
+            .Select(attribute => attribute.Template).ToArray();
+        Assert.DoesNotContain("create-database", routes);
+        Assert.DoesNotContain("execute-script", routes);
+        Assert.DoesNotContain("execute-all-scripts", routes);
+        Assert.DoesNotContain("discover-scripts/{databaseType}", routes);
+        Assert.DoesNotContain("scripts/generate", routes);
+        Assert.DoesNotContain("check-schema-privileges", routes);
+        Assert.DoesNotContain("create-schema", routes);
+        Assert.DoesNotContain("create-schema-from-migration", routes);
+        Assert.DoesNotContain("drop-database", routes);
+        Assert.DoesNotContain("recreate-database", routes);
+        Assert.Contains("schema/plan", routes);
     }
 
     [Theory]

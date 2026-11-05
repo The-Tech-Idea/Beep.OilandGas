@@ -1,0 +1,118 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using System.Globalization
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject CompanySalesInvoiceReviewWorkspaceState State
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 mt-4">
+    <MudText Typo="Typo.h5">Independent sales invoice review evidence</MudText>
+    <MudButton OnClick="Reload" Disabled="@State.Busy" Variant="Variant.Outlined">Reload original invoice and current review source</MudButton>
+    @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading independent invoice review evidence" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    @if(State.Source is {} review)
+    {
+        var command=review.Original.Intent.Restore(review.Current.Company,review.Original.Intent.ROW_CREATED_BY);var invoice=review.Original.Invoice;var facts=command.Facts;var basis=review.Current.Delivery.ReviewBillingBasis();
+        <MudText>Company: @review.Current.Company.BusinessAssociateId · FIELD: @review.Current.FieldId · Delivery: @review.Current.TicketId</MudText>
+        <MudText>Invoice: @invoice.INVOICE_NUMBER · Status: @invoice.STATUS · Buyer: @invoice.CUSTOMER_BA_ID</MudText>
+        <MudText>Maker: @invoice.ROW_CREATED_BY · Prepared UTC: @invoice.ROW_CREATED_DATE?.ToString("O") · Current reviewer account: @review.Current.ActorUserId</MudText>
+        @if(invoice.REVIEW_WORKFLOW_JSON is not null)
+        {
+            var recorded=CompanySalesInvoiceDecisionProof.Require(review.Current.Company,invoice);var decision=recorded.Intent.Restore(review.Current.Company,recorded.Intent.ROW_CREATED_BY);
+            <MudAlert Severity="Severity.Success">Recorded independent invoice disposition: @invoice.STATUS · Reviewer: @decision.ActorUserId · UTC: @recorded.DecidedAtUtc.ToString("O")</MudAlert>
+            <MudText>Tax disposition: @decision.TaxDisposition · Evidence: @decision.TaxEvidence</MudText>
+            <MudText>Charges disposition: @decision.ChargesDisposition · Evidence: @decision.ChargesEvidence</MudText>
+            <MudText>Entitlement disposition: @decision.EntitlementDisposition · Evidence: @decision.EntitlementEvidence</MudText>
+            <MudText>Reviewer reason: @decision.Reason · Original reviewer intent: @decision.IntentId</MudText>
+        }
+        else if(!review.IsIndependent){<MudAlert Severity="Severity.Warning">The invoice maker cannot independently review their own proposal. Use a different authorized reviewer account.</MudAlert>}
+        else if(!review.HasCurrentOriginalSource){<MudAlert Severity="Severity.Warning">Current receiving, commercial evidence, applicable policy or binding differs from the original proposal. Resolve the changed source before independent review.</MudAlert>}
+        else{<MudAlert Severity="Severity.Info">The reviewer is independent and current evidence matches the original proposal. A recorded independent decision is still required.</MudAlert>}
+        <MudText>Original company calendar dates: @Calendar(facts.InvoiceDate) · Due: @Calendar(facts.DueDate)</MudText>
+        <MudText>Approved receiving quantity: @basis.ApprovedQuantity @basis.QuantityUnit · Approved price: @basis.ApprovedUnitPrice @basis.CurrencyCode / @basis.PriceUnit</MudText>
+        <MudText>Original proposed subtotal: @invoice.SUBTOTAL @invoice.CURRENCY_CODE · Tax: @invoice.TAX_AMOUNT @invoice.CURRENCY_CODE · Total: @invoice.TOTAL_AMOUNT @invoice.CURRENCY_CODE</MudText>
+        <MudText>Original charges proposal: @facts.ChargesAmount @invoice.CURRENCY_CODE</MudText>
+        <MudText>Tax preparation evidence: @facts.TaxReviewNotes</MudText>
+        <MudText>Charges preparation evidence: @facts.ChargesReviewNotes</MudText>
+        <MudText>Contract entitlement preparation evidence: @facts.EntitlementReviewNotes</MudText>
+        <MudText>Maker reason: @facts.Reason</MudText>
+        <MudText Typo="Typo.caption">Original intent: @command.IntentId · Outcome receipt: @review.Original.Receipt.RECORDED_REVISION · Current review revision: @review.Revision</MudText>
+        @if(invoice.REVIEW_WORKFLOW_JSON is null && !State.CanDecide && State.Pending is null){<MudAlert Severity="Severity.Info">This evidence view records no approval or rejection. The invoice remains a draft proposal. Independent disposition requires current decision authority.</MudAlert>}
+        <MudAlert Severity="Severity.Info">Invoice disposition creates no receivable, payment or ledger posting. Amounts, company currency and original preparation evidence remain unchanged.</MudAlert>
+        @if(State.CanDecide)
+        {
+            <MudForm @ref="_form" @key="_epoch">
+                <MudGrid Class="mt-2">
+                    <MudItem xs="12" md="6"><MudSelect T="string" Label="Invoice decision" @bind-Value="_decision" Required="true" RequiredError="Choose approval or rejection."><MudSelectItem Value='@("APPROVE")'>Approve</MudSelectItem><MudSelectItem Value='@("REJECT")'>Reject</MudSelectItem></MudSelect></MudItem>
+                    <MudItem xs="12" md="6"><MudSelect T="string" Label="Tax disposition" @bind-Value="_taxDisposition" Required="true" RequiredError="Choose an explicit tax disposition."><MudSelectItem Value='@("CONFIRMED")'>Confirmed</MudSelectItem><MudSelectItem Value='@("ISSUE")'>Issue found</MudSelectItem></MudSelect></MudItem>
+                    <MudItem xs="12"><MudTextField T="string" Label="Independent tax evidence" @bind-Value="_taxEvidence" Required="true" RequiredError="Provide independent tax evidence." MaxLength="2000" /></MudItem>
+                    <MudItem xs="12" md="6"><MudSelect T="string" Label="Charges disposition" @bind-Value="_chargesDisposition" Required="true" RequiredError="Choose an explicit charges disposition."><MudSelectItem Value='@("CONFIRMED")'>Confirmed</MudSelectItem><MudSelectItem Value='@("ISSUE")'>Issue found</MudSelectItem></MudSelect></MudItem>
+                    <MudItem xs="12" md="6"><MudSelect T="string" Label="Contract entitlement disposition" @bind-Value="_entitlementDisposition" Required="true" RequiredError="Choose an explicit entitlement disposition."><MudSelectItem Value='@("CONFIRMED")'>Confirmed</MudSelectItem><MudSelectItem Value='@("ISSUE")'>Issue found</MudSelectItem></MudSelect></MudItem>
+                    <MudItem xs="12"><MudTextField T="string" Label="Independent charges evidence" @bind-Value="_chargesEvidence" Required="true" RequiredError="Provide independent charges evidence." MaxLength="2000" /></MudItem>
+                    <MudItem xs="12"><MudTextField T="string" Label="Independent entitlement evidence" @bind-Value="_entitlementEvidence" Required="true" RequiredError="Provide independent entitlement evidence." MaxLength="2000" /></MudItem>
+                    <MudItem xs="12"><MudTextField T="string" Label="Reviewer decision reason" @bind-Value="_reason" Required="true" RequiredError="Explain this independent decision." MaxLength="1000" /></MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.caption">Approval requires all three dispositions to be confirmed. Rejection retains the original invoice and evidence for resolution.</MudText>
+                <MudButton OnClick="Record" Disabled="@State.Busy" Color="Color.Primary" Variant="Variant.Filled" Class="mt-2">Record independent invoice decision</MudButton>
+            </MudForm>
+        }
+    }
+    @if(State.Pending is {} pending)
+    {
+        <MudAlert Severity="Severity.Warning">The original reviewer command remains unconfirmed. Reconcile this exact decision before recording another invoice decision.</MudAlert>
+        <MudText>Original reviewer intent: @pending.IntentId · Invoice: @pending.Review.Original.Invoice.INVOICE_NUMBER · Decision: @pending.Decision · Reviewer: @pending.ActorUserId</MudText>
+        <MudText>Tax: @pending.TaxDisposition · @pending.TaxEvidence</MudText><MudText>Charges: @pending.ChargesDisposition · @pending.ChargesEvidence</MudText><MudText>Entitlement: @pending.EntitlementDisposition · @pending.EntitlementEvidence</MudText><MudText>Reason: @pending.Reason</MudText>
+        <MudButton OnClick="Retry" Disabled="@(State.Busy || Company.Selection?.Permissions.Contains("Accounting.RecordSalesInvoiceDecision",StringComparer.Ordinal)!=true)" Variant="Variant.Outlined">Retry original reviewer command</MudButton>
+    }
+</MudPaper>
+@code {
+    [Parameter] public string? InvoiceId{get;set;}
+    [Parameter] public CompanySalesInvoiceProcessSourceReview? AssignedSource{get;set;}
+    [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
+    private string? _loaded,_error;
+    private string? _loadedProcess,_loadedEvidence;
+    private bool _disposed;
+    private long _epoch;
+    private MudForm? _form;
+    private string? _decision,_taxDisposition,_taxEvidence,_chargesDisposition,_chargesEvidence,_entitlementDisposition,_entitlementEvidence,_reason;
+    private void ClearForm(){_decision=null;_taxDisposition=null;_taxEvidence=null;_chargesDisposition=null;_chargesEvidence=null;_entitlementDisposition=null;_entitlementEvidence=null;_reason=null;_form=null;}
+    private static string Calendar(DateTime value)=>value.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture);
+    protected override void OnInitialized(){State.AttachOwner(this);State.Changed+=StateChanged;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    protected override async Task OnParametersSetAsync(){if(_loaded==InvoiceId && _loadedProcess==AssignedSource?.ProcessRevision && _loadedEvidence==AssignedSource?.Invoice.Revision)return;State.Invalidate();ContextChanged();_loaded=InvoiceId;_loadedProcess=AssignedSource?.ProcessRevision;_loadedEvidence=AssignedSource?.Invoice.Revision;await Reload();}
+    private async Task Reload()
+    {
+        var epoch=_epoch;var snapshot=Company.Snapshot;_error=null;ClearForm();
+        try{var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);
+            if(InvoiceId is null)throw new InvalidOperationException();
+            if(AssignedSource is not null){AssignedSource.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,AssignedSource.InstanceId);if(AssignedSource.InvoiceId!=InvoiceId)throw new InvalidOperationException("The assigned invoice changed.");}
+            await State.LoadAsync(InvoiceId,Accounting,AssignedSource?.SourceRevision,AssignedSource?.Invoice.Revision);}
+        catch{if(!_disposed && epoch==_epoch)_error="Complete invoice review evidence could not be confirmed. Check selected company/account, invoice review authority and FIELD access, then reload.";}
+    }
+    private Task Record()=>Submit(false);
+    private Task Retry()=>Submit(true);
+    private async Task Submit(bool retry)
+    {
+        var epoch=_epoch;var snapshot=Company.Snapshot;_error=null;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException();State.Admit(user);
+            if(retry)await State.RetryAsync(Accounting);
+            else
+            {
+                if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)throw new InvalidOperationException();}
+                await State.RecordAsync(_decision!,_taxDisposition!,_taxEvidence!,_chargesDisposition!,_chargesEvidence!,_entitlementDisposition!,_entitlementEvidence!,_reason!,Accounting);
+            }
+            if(!_disposed && epoch==_epoch && snapshot==Company.Snapshot && State.Source?.Original.Invoice.REVIEW_WORKFLOW_JSON is not null)await RecordedOutcomeChanged.InvokeAsync();
+        }
+        catch{if(!_disposed && epoch==_epoch)_error="Invoice disposition could not be confirmed. Check independent tax, charges and entitlement evidence, current decision and FIELD authority; retain and reconcile any original reviewer command.";}
+        finally{if(epoch==_epoch)ClearForm();}
+    }
+    private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_epoch;_error=null;ClearForm();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}
+    public void Dispose(){_disposed=true;State.Changed-=StateChanged;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthChanged;State.DetachOwner(this);}
+}

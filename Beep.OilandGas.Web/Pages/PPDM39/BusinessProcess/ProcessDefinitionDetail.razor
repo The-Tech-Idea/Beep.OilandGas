@@ -1,245 +1,100 @@
 @page "/ppdm39/process/definitions/{Id}"
-@inject ApiClient ApiClient
-@inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
-@inject ILifeCycleService LifeCycleService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Services
+@inject IBusinessProcessServiceClient BusinessProcessClient
+@inject IDataManagementService DataManagement
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject OilGasCallFailures Calls
 @inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
-
-<PageTitle>Process Definition — @_def?.ProcessName</PageTitle>
-
+@inject Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService Access
+@implements IDisposable
+<PageTitle>Configured process definition</PageTitle>
 <MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
-
-    @* ── Header ──────────────────────────────────────────────────────── *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/definitions")' />
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">@(_def?.ProcessName ?? "Loading…")</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <MudChip T="string" Size="Size.Small" Color="Color.Primary">@_def?.ProcessType</MudChip>
-                <MudChip T="string" Size="Size.Small" Color="Color.Info">@_def?.EntityType</MudChip>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">@_fieldName</MudText>
-            </MudStack>
-        </MudStack>
-        <MudSpacer />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.PlayArrow"
-                   OnClick="StartInstanceAsync">
-            Start Instance
-        </MudButton>
-    </MudStack>
-
-    <MudDivider Class="mb-4" />
-
-    @if (_def == null)
+    <MudButton Href="/ppdm39/process/definitions">Process definitions</MudButton>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable")</MudText>
+    <FieldSelector />
+    <MudButton OnClick="Reload" Disabled="_loading || _starting">Reload definition</MudButton>
+    @if(_loading){<MudProgressLinear Indeterminate="true" />}
+    @if(_error is not null && !_showStart){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(!_loading && _error is null){<ProcessDefinitionReviewPanel Review="@_state" />}
+    @if(_state?.Current is {IsActive:true} definition && definition.Steps.Count>0 && definition.EntityType is ("JOURNAL_ENTRY" or "WORK_ORDER"))
     {
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" />
+        <MudButton OnClick="OpenStart" Disabled="_loading || _starting" Variant="Variant.Outlined">Review source for a new instance</MudButton>
     }
-    else
-    {
-        <MudGrid Spacing="3">
-
-            @* ── Overview ─────────────────────────────────────────────── *@
-            <MudItem xs="12" md="4">
-                <MudCard Elevation="2" Class="h-100">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Overview</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudText Typo="Typo.body2" Class="mb-3">@_def.Description</MudText>
-                        <MudSimpleTable Dense="true">
-                            <tbody>
-                                <tr><td><MudText Typo="Typo.caption">Process ID</MudText></td>
-                                    <td><MudText Typo="Typo.body2">@_def.ProcessId</MudText></td></tr>
-                                <tr><td><MudText Typo="Typo.caption">Type</MudText></td>
-                                    <td><MudText Typo="Typo.body2">@_def.ProcessType</MudText></td></tr>
-                                <tr><td><MudText Typo="Typo.caption">Entity</MudText></td>
-                                    <td><MudText Typo="Typo.body2">@_def.EntityType</MudText></td></tr>
-                                <tr><td><MudText Typo="Typo.caption">Steps</MudText></td>
-                                    <td><MudText Typo="Typo.body2">@_def.Steps.Count</MudText></td></tr>
-                                <tr><td><MudText Typo="Typo.caption">Created</MudText></td>
-                                    <td><MudText Typo="Typo.body2">@_def.CreatedDate.ToString("dd-MMM-yyyy")</MudText></td></tr>
-                            </tbody>
-                        </MudSimpleTable>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-
-            @* ── Step list ─────────────────────────────────────────────── *@
-            <MudItem xs="12" md="8">
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1">Process Steps</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent Class="pa-0">
-                        <MudDataGrid T="StepRow" Items="@_steps" Dense="true" Hover="true" Striped="true">
-                            <Columns>
-                                <PropertyColumn Property="s => s.Seq"      Title="#" />
-                                <PropertyColumn Property="s => s.StepName" Title="Step" />
-                                <PropertyColumn Property="s => s.StepType" Title="Type" />
-                                <TemplateColumn Title="PPDM Tables" Sortable="false">
-                                    <CellTemplate>
-                                        @foreach (var tbl in context.Item.PpdmTables)
-                                        {
-                                            <PPDMTableLink TableName="@tbl" />
-                                            <MudText Typo="Typo.caption"> </MudText>
-                                        }
-                                    </CellTemplate>
-                                </TemplateColumn>
-                                <TemplateColumn Title="Approval" Sortable="false">
-                                    <CellTemplate>
-                                        @if (context.Item.RequiresApproval)
-                                        {
-                                            <MudIcon Icon="@Icons.Material.Filled.HowToReg"
-                                                     Color="Color.Warning" Size="Size.Small" />
-                                        }
-                                    </CellTemplate>
-                                </TemplateColumn>
-                            </Columns>
-                        </MudDataGrid>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-
-        </MudGrid>
-    }
-
+    @if(_state?.Current is {} unsupported && unsupported.EntityType is not ("JOURNAL_ENTRY" or "WORK_ORDER"))
+    {<MudAlert Severity="Severity.Info">A recorded initiation review is available for journal entries and work orders. Starting this source type remains unavailable on this screen.</MudAlert>}
+    @if(_state?.IsBlocked(_entity)==true){<MudAlert Severity="Severity.Warning">A start outcome for this definition/source is unconfirmed. Review recorded instances before another attempt; automatic retry is disabled. This protection lasts for the page session.</MudAlert>}
 </MudContainer>
-
-@* ── Start Instance dialog ─────────────────────────────────────────────── *@
-<MudDialog @bind-IsVisible="_showStartDialog">
-    <TitleContent>
-        <MudText Typo="Typo.h6">Start Process Instance</MudText>
-    </TitleContent>
+<MudDialog @bind-IsVisible="_showStart">
+    <TitleContent><MudText Typo="Typo.h6">Start from the reviewed definition</MudText></TitleContent>
     <DialogContent>
-        <MudStack Spacing="3">
-            <MudTextField @bind-Value="_startEntityId"
-                          Label="Entity ID (UWI, Facility ID, Prospect ID…)"
-                          Variant="Variant.Outlined"
-                          Required="true" />
-            <MudTextField @bind-Value="_startEntityType"
-                          Label="Entity Type"
-                          Variant="Variant.Outlined" />
-        </MudStack>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudText>Original FIELD: @_state?.FieldId · Source type: @_state?.Current?.EntityType</MudText>
+        <MudTextField T="string" Value="_entity" ValueChanged="EntityChanged" Immediate="true" Label="Recorded source entity ID" Required="true" Disabled="_starting || _reviewing" />
+        <MudButton OnClick="ReviewSource" Disabled="_reviewing || _starting || string.IsNullOrWhiteSpace(_entity)">Review recorded source</MudButton>
+        @if(_reviewing){<MudProgressLinear Indeterminate="true" />}
+        <ProcessStartSourcePanel Review="@_state?.SourceReview" />
+        <MudAlert Severity="Severity.Info">A missing or changed response leaves this start unconfirmed. Current source access is reviewed independently by the API.</MudAlert>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => _showStartDialog = false)">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   Disabled="@_starting"
-                   OnClick="ConfirmStartInstanceAsync">
-            @(_starting ? "Starting…" : "Start")
-        </MudButton>
+        <MudButton OnClick="@(()=>_showStart=false)" Disabled="_starting">Cancel</MudButton>
+        <MudButton OnClick="Start" Disabled="_starting || _reviewing || _state?.SourceReview is null || string.IsNullOrWhiteSpace(_entity) || _state?.IsBlocked(_entity)==true">Start reviewed instance</MudButton>
     </DialogActions>
 </MudDialog>
-
-@using Beep.OilandGas.Models.Processes
-@using Beep.OilandGas.Models.Data
-@using Beep.OilandGas.Models.Data.Process
-
 @code {
-    [Parameter] public string Id { get; set; } = string.Empty;
-
-    private string _loadedId  = string.Empty;
-    private string _fieldName = string.Empty;
-    private ProcessDefinition? _def;
-    private List<StepRow> _steps = new();
-
-    // ── Start-instance dialog state ──────────────────────────────────────
-    private bool   _showStartDialog = false;
-    private string _startEntityId   = string.Empty;
-    private string _startEntityType = string.Empty;
-    private bool   _starting        = false;
-
-    protected override async Task OnInitializedAsync()
+    [Parameter] public string Id {get;set;}="";
+    private ProcessDefinitionDetailState? _state;
+    private bool _reviewing,_loading,_starting,_disposed,_reloadRequested,_showStart;
+    private int? _dialogVersion;
+    private string _entity="";
+    private string? _error;
+    protected override void OnInitialized(){_state=new(Company);Company.Changed+=ContextChanged;DataManagement.CurrentFieldChanged+=FieldChanged;}
+    protected override Task OnParametersSetAsync()=>Reload();
+    private void OpenStart(){if(_state?.Current is not {IsActive:true} || _loading || _starting)return;_entity="";_state.ClearSource();_dialogVersion=_state.Version;_showStart=true;}
+    private async Task Reload()
     {
+        if(_disposed)return;_showStart=false;
+        if(_loading){_state?.Clear();_reloadRequested=true;return;}_loading=true;
+        try{do{
+            _reloadRequested=false;_error=null;var scope=Company.Snapshot;var id=Id;var version=_state!.Version+1;
+            try{await _state.LoadAsync(id,()=>DataManagement.GetCurrentFieldIdAsync(),value=>BusinessProcessClient.GetDefinitionAsync(value));}
+            catch(Exception ex){var message=Calls.Explain(ex,"loading the configured process definition","The definition could not be confirmed. Reload before continuing");if(!_disposed && scope==Company.Snapshot && id==Id && version==_state.Version)_error=message;}
+        }while(_reloadRequested && !_disposed);}finally{_loading=false;}
+    }
+    private void EntityChanged(string value){_entity=value;_state?.ClearSource();_error=null;}
+    private async Task ReviewSource()
+    {
+        if(_reviewing || _starting || _loading || !_showStart || _dialogVersion!=_state?.Version)return;
+        _reviewing=true;_error=null;var scope=Company.Snapshot;var version=_state!.Version;var entity=_entity;
+        try{await _state.ReviewSourceAsync(entity,BusinessProcessClient.ReviewStartSourceAsync);}
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing the recorded start source","The source could not be confirmed. Review it before starting");if(!_disposed && scope==Company.Snapshot && version==_state.Version && entity==_entity)_error=message;}
+        finally{_reviewing=false;}
+    }
+    private async Task Start()
+    {
+        if(_starting || _reviewing || _loading || !_showStart || _dialogVersion!=_state?.Version)return;
+        var scope=Company.Snapshot;var version=_state!.Version;_starting=true;_error=null;
         try
         {
-            var summary = await LifeCycleService.GetFieldLifecycleSummaryAsync();
-            if (summary != null)
-                _fieldName = summary.FieldName ?? _fieldName;
+            var field=_state.FieldId;var definition=_state.Current;var entity=_entity;
+            if(scope.Selection is null || field is null || definition is null)return;
+            var allowed=await Access.CheckAssetAccessAsync(scope.Selection.UserId,field,"FIELD",requiredPermission:"WRITE");
+            if(allowed)allowed=await Access.CheckAssetAccessAsync(scope.Selection.UserId,entity,definition.EntityType,requiredPermission:"WRITE");
+            if(_disposed || scope!=Company.Snapshot || version!=_state.Version || entity!=_entity || !_showStart)return;
+            if(!allowed)throw new InvalidOperationException("Current original FIELD/source WRITE access is required to start an instance.");
+            var attempt=_state.Begin(entity);var response=await BusinessProcessClient.StartInstanceAsync(attempt.Request);
+            if(!_state.IsCurrent(attempt) || _disposed)return;
+            if(response is null)throw new InvalidOperationException("The start response was empty; review recorded instances.");
+            var readback=await BusinessProcessClient.GetInstanceAsync(response.InstanceId);
+            if(!_state.IsCurrent(attempt) || _disposed)return;
+            _state.Confirm(attempt,response,readback);
+            if(!_state.IsCurrent(attempt) || _disposed)return;
+            _showStart=false;NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(response.InstanceId)}");
         }
-        catch { /* field name is non-critical */ }
-
-        _loadedId = Id;
-        await LoadDefinitionAsync();
+        catch(Exception ex){var message=Calls.Explain(ex,"starting the reviewed process instance","The start outcome could not be confirmed. Review recorded instances before retrying");if(!_disposed && scope==Company.Snapshot && version==_state.Version)_error=message;}
+        finally{_starting=false;}
     }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (Id == _loadedId) return;
-        _loadedId = Id;
-        await LoadDefinitionAsync();
-    }
-
-    private async Task LoadDefinitionAsync()
-    {
-        try
-        {
-            _def = await BusinessProcessClient.GetDefinitionAsync(Id);
-            if (_def != null)
-            {
-                _steps = (_def.Steps ?? new())
-                    .OrderBy(s => s.SequenceNumber)
-                    .Select(s => new StepRow(
-                        s.SequenceNumber, s.StepName, s.StepType, s.RequiresApproval,
-                        GetPpdmTablesForStepType(s.StepType)
-                    )).ToList();
-            }
-        }
-        catch
-        {
-            Snackbar.Add("Could not load process definition.", Severity.Warning);
-        }
-    }
-
-    private async Task StartInstanceAsync()
-    {
-        _startEntityId   = string.Empty;
-        _startEntityType = _def?.EntityType ?? string.Empty;
-        _showStartDialog = true;
-    }
-
-    private async Task ConfirmStartInstanceAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_startEntityId))
-        {
-            Snackbar.Add("Entity ID is required.", Severity.Warning);
-            return;
-        }
-
-        _starting = true;
-        try
-        {
-            var request = new ProcessInstanceRequest
-            {
-                ProcessId  = Id,
-                EntityId   = _startEntityId,
-                EntityType = _startEntityType
-            };
-            var instance = await BusinessProcessClient.StartInstanceAsync(request);
-            _showStartDialog = false;
-            Snackbar.Add("Process instance started.", Severity.Success);
-            if (instance != null)
-                NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(instance.InstanceId)}");
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Failed to start instance.", Severity.Error);
-        }
-        finally { _starting = false; }
-    }
-
-    private static List<string> GetPpdmTablesForStepType(string stepType) =>
-        stepType switch
-        {
-            "APPROVAL" => new() { "PROJECT_STEP_BA", "BA_AUTHORITY" },
-            "ACTION"   => new() { "PROJECT_STEP", "PROJECT_PLAN" },
-            _          => new() { "PROJECT_STEP" }
-        };
-
-    private record StepRow(int Seq, string StepName, string StepType, bool RequiresApproval, List<string> PpdmTables);
+    private void FieldChanged(string _)=>ContextChanged();
+    private void ContextChanged(){_state?.Clear();_error=null;_showStart=false;if(!_disposed)_=InvokeAsync(async()=>{await Reload();if(!_disposed)StateHasChanged();});}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;DataManagement.CurrentFieldChanged-=FieldChanged;_state?.Dispose();}
 }

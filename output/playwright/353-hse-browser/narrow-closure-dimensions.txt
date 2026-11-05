@@ -1,0 +1,10 @@
+### Result
+{
+  "viewport": 390,
+  "documentWidth": 390,
+  "entries": 0
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,entries:Object.keys(sessionStorage).length})');
+```

@@ -12,6 +12,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IARService
     {
+        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome> GetCompanySalesReceivableForReviewAsync(TheTechIdea.Data.OilGas.CompanyScope company,string receivableId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<TheTechIdea.Data.OilGas.SALES_RECEIVABLE_REVIEW_INTENT?> GetCompanySalesReceivableReviewIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string receivableId,Func<Task> requireAuthority,Func<string,Task> requireFieldAccess);
+        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome> RecordCompanySalesReceivableDecisionAsync(TheTechIdea.Data.OilGas.CompanySalesReceivableDecisionCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesReceivableReviewSource>> readCurrent);
+        Task<IReadOnlyList<AR_INVOICE>> GetCompanySalesReceivablesAsync(TheTechIdea.Data.OilGas.CompanyScope company,string field,string invoiceId,Func<Task> requireAuthority);
+        Task<TheTechIdea.Data.OilGas.SALES_RECEIVABLE_INTENT?> GetCompanySalesReceivableIntentAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority);
+        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome?> GetCompanySalesReceivableOutcomeAsync(TheTechIdea.Data.OilGas.CompanyScope company,string actor,string invoiceId,Func<Task> requireAuthority);
+        Task<TheTechIdea.Data.OilGas.CompanySalesReceivableOutcome> PrepareCompanySalesReceivableAsync(TheTechIdea.Data.OilGas.CompanySalesReceivableCommand command,Func<Task> requireAuthority,Func<Task<TheTechIdea.Data.OilGas.CompanySalesReceivableSource>> readCurrent);
         /// <summary>
         /// Creates a new AR invoice.
         /// </summary>

@@ -16,10 +16,8 @@ namespace Beep.OilandGas.HSE.Modules
     /// </summary>
     public sealed class HseModule : ModuleSetupBase
     {
-        // EntityTypes intentionally empty: no project-owned persisted table classes exist yet in HSE.
-        // All Data classes are projections/contracts, not persisted schema types.
-        // Register local table types here when HSE-specific schema classes are added.
-        private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>();
+        // The incident command binds to PPDM_CORE; its private intent is migrated by CorePpdmModule.
+        private static readonly IReadOnlyList<Type> _entityTypes = Array.Empty<Type>();
 
         private readonly PPDMReferenceDataSeeder _referenceSeeder;
 

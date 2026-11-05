@@ -1,0 +1,217 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md reviewed drilling amendments",
+  "observed_at": "2026-10-29T21:19:08.698913+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; previous work preserved; no commit/push; overall goal active",
+  "verification_policy": "Master tracker AND active plan read immediately before each test command; exact methods mapped to changed acceptance criteria. No full/class/incident sweeps.",
+  "methods": {
+    "InstalledPermitDrillingAmendmentUsesReviewedOwnedLedger": {
+      "inputs": 3,
+      "proves": "Physical Beep Migration schema, create/update,2048-character casing, explicit unit, parent preservation, rollback/retry, stale supporting review refusal, immutable historical read-only recovery/replay after later amendment."
+    },
+    "PermitDrillingOriginalRejectsForeignInvalidAndChangedEvidence": {
+      "inputs": 6,
+      "proves": "Foreign child, missing unit, terminal stage, audit tampering, changed/unfingerprinted supporting evidence,4097-character refusal."
+    },
+    "ActualDrillingAmendmentFormUsesRoleStageAndRetainedOriginal": {
+      "inputs": 4,
+      "proves": "Actual MudBlazor static render for author/read-only/independent; actual unsaved-submit and save handlers; exact retained proposal/result render; controlled lost-ack reload/read-only recovery without another effect."
+    },
+    "PermitDrillingOriginalUsesExistingApiWebAndSdkCommandRecoveryWire": {
+      "inputs": 6,
+      "proves": "Existing source-linked controller and Web/SDK record/recovery contracts preserve exact supporting original/result. Controlled lifecycle/HTTP transports."
+    },
+    "InstalledPermitReviewRefusesUnavailableSupportingSchema": {
+      "inputs": 1,
+      "proves": "Physical three-table-only Beep Migration installation cannot represent unavailable supporting tables as confirmed absence."
+    },
+    "InstalledPermitProviderRollsBackThenRecoversExactNativeSubmission": {
+      "inputs": 1,
+      "proves": "Affected existing submission path reads all three supporting tables and retains rollback/retry/read-only recovery/replay behavior."
+    }
+  },
+  "gates": [
+    {
+      "log": "oilgas-354-drilling-01.log",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "14s",
+      "exit_code": 0,
+      "scope": "Initial three physical/five contract/four form/one affected submission inputs."
+    },
+    {
+      "log": "oilgas-354-drilling-02.log",
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "11s",
+      "exit_code": 0,
+      "scope": "Final three physical/six contract/four actual form/six API-Web-SDK wire inputs."
+    },
+    {
+      "log": "oilgas-354-drilling-03.log",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "14s",
+      "exit_code": 0,
+      "scope": "After fail-closed schema/read review fix: only three affected physical amendment inputs, one new unavailable-schema fact and one affected submission fact."
+    }
+  ],
+  "distinct_selected_inputs": 21,
+  "counts_note": "Gates overlap; do not sum executions into distinct coverage. Latest19 and5 overlap on three physical amendment cases.",
+  "command_template": "OILGAS_TEST_PERMIT_DRIVER_FEED=<isolated local feed>; dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<workspace>/TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter <exact-method OR selection> --logger console;verbosity=minimal",
+  "builds": "Data/native/focused target builds passed with warnings; retained logs include initial and final builds. No full solution build.",
+  "construction_observation": "One UI edit script assertion failed at an exact Unicode-line anchor before saving UI; earlier Data text-width changes had saved. Corrected the anchor and completed subsequent builds. No failing test attempt.",
+  "self_review": "Same canonical source/command/transaction/receipt owners extended. Snapshot parsed getters are JsonIgnore to avoid duplicate wire representations. Supporting source schema/key/type/context/provider checks prevent unavailable-as-absent; current supporting changes invalidate author/independent reviews. Immutable result recovery does not compare later mutable supporting state. README obsolete mapper/facade usage replaced in active docs.",
+  "limits": [
+    "Physical local SQLite uses setup-installed isolated connector1.0.59/provider1.0.119 and existing changed engine runtime from prior evidence; no public package distribution or other-provider qualification.",
+    "Physical storage fixture supplies controlled authority/defaults/metadata/fault hooks. New amendment controller/Web/SDK cases use controlled native/HTTP responses; not a new protected production HTTP/OIDC/provider qualification.",
+    "HtmlRenderer/actual method invocation and controlled protected-original state prove selected component behavior, not real-browser keyboard/a11y/RTL or device behavior.",
+    "Fresh physical schema only; explicit reviewed Beep Migration for existing depth-unit/text-width/removal evolution remains unqualified.",
+    "Environmental/injection amendments, attachments/documents, binding reconciliation, explicit company jurisdiction policy and broader approved roadmap remain pending."
+  ],
+  "source_files": [
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationSupportingSnapshot.cs",
+      "sha256": "9f72fc9e31764bf657d02995f91f599c6d19b02fe809f9e87ba541f948581abc"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitDrillingDraftChanges.cs",
+      "sha256": "54974b180cbfb091a81d9389c7d82d96e7698becbf52881eb5cc65647ef11005"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs",
+      "sha256": "4410c024b0a0ad397df21a9af847447e426e221acad2fe8b3dfd7dd7740d696e"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationCommandOutcome.cs",
+      "sha256": "5d10195e16007c5515ebe0b282ba6fc82625f818493718a1c2dce75f83ab4e03"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/PermitApplicationSupportingRecords.cs",
+      "sha256": "bd564a62a8859199ba109976fb86ac18ba64504186477c70c6d1ed7b96b38773"
+    },
+    {
+      "path": "TheTechIdea.Data/OilGas/DRILLING_PERMIT_APPLICATION.cs",
+      "sha256": "ce1857f1ec6c6535cda3282e57bd6d2dd250bc238803601ba95982b90c724755"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs",
+      "sha256": "cc1f358ef0f603a1c4569e062526d4bdd5b0d32c4d0c51e4c3a2c0bfcb148a5f"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs",
+      "sha256": "26cfc98d0bf92b5fbb157151f90340ed13e4774f760c46ededbdef3cf68219c6"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs",
+      "sha256": "87262df0ddc9a16c2c0202439cfa1ea0435f80366916a78ce61ff85f8dbf7d44"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor",
+      "sha256": "8a9b942b57af389f0e545a90fe45b0ccca7b808a6e61a0993906d304462d63ee"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs",
+      "sha256": "da4c897cf0dfd6baac9f66691c36ccd6b62b44afea1e6d0d1179f6811d20d72b"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs",
+      "sha256": "b463028dcd5eeb4f290c9e5b38eb3337a07ab51b3b2dd90bc6dd3def897df3be"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs",
+      "sha256": "bc3c205bddce09f1c8e7973f70de6b14d092f3cc2473310f1876a9de0524aa8a"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/README.md",
+      "sha256": "b3cddbf97161cc3dcbdd9c1b92b4dc4fcc943b84f174a328bb31d8e3e32d1135"
+    },
+    {
+      "path": "Beep.OilandGas.LifeCycle/README.md",
+      "sha256": "9853aa512a6a93518a43a7fca211e7fa259b125db5c5f0974a63259d0e6a6efa"
+    }
+  ],
+  "runtime_hashes": [
+    {
+      "path": "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll",
+      "sha256": "74f028c812dc1ed2e91b07d622d0ef4c1d94335b9e312e1049e0588ff30cdf36"
+    },
+    {
+      "path": "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll",
+      "sha256": "ec75aa652a41f6267d4f31ec2082012cdfc8a5ad6350d067f28ba2948840b5f2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "ba4a9abad0b95edd10babb46e33d2dad86164a6891c8ffcdb8501454c2354f8c"
+    }
+  ],
+  "logs": [
+    {
+      "path": "oilgas-354-drilling-01.log",
+      "sha256": "b94b3f55d240fcf3ad3d6b942693e4e75c658c79e4ef4aa0c778020a4bf548e8"
+    },
+    {
+      "path": "oilgas-354-drilling-02.log",
+      "sha256": "44a33fbebce5cfa059f778971d4e21a376f8992c6c794929da07958c54c4be02"
+    },
+    {
+      "path": "oilgas-354-drilling-03.log",
+      "sha256": "cdfca80427e83e47b511d4120ae2c77428c835385238ba8b76ad218b545cdaa8"
+    },
+    {
+      "path": "oilgas-354-drilling-data-build-02.log",
+      "sha256": "b24c12162bff98694bbc4f54f66dadc7aa440baba2670b2021b818d86c192ab2"
+    },
+    {
+      "path": "oilgas-354-drilling-data-build-03.log",
+      "sha256": "c59271b06ec436993bb7efe02554e88dcc7d8c281b8d9e757628d956df24e5cd"
+    },
+    {
+      "path": "oilgas-354-drilling-data-build.log",
+      "sha256": "88b86a68537ef4d9ab15d8e5ae3d6cf1f6a1d05f84b48603691dd62ddf9bf3c4"
+    },
+    {
+      "path": "oilgas-354-drilling-native-build-02.log",
+      "sha256": "2bfcd5d794f8f304f8df957af2dc163b8674536ec8e7e90476db7c883d0bb79e"
+    },
+    {
+      "path": "oilgas-354-drilling-native-build-03.log",
+      "sha256": "1589f3766831ade3f9488809d3edad584827a750477fa212bf2773134b4f8d53"
+    },
+    {
+      "path": "oilgas-354-drilling-native-build-04.log",
+      "sha256": "b0b3ba9a1c2a53fbf0b04a0c597652df5fdd81859b9f985a617c2c275837b79a"
+    },
+    {
+      "path": "oilgas-354-drilling-native-build.log",
+      "sha256": "b0654d90445e1c361f0f65df4ffa5d42bedc1fa6178b2a360cec5e2d299dc1d5"
+    },
+    {
+      "path": "oilgas-354-drilling-tests-build-02.log",
+      "sha256": "4b9d1e3cb240f5372015a457c2e5e19fd6f70a1816017e4869378b5a42adc3cf"
+    },
+    {
+      "path": "oilgas-354-drilling-tests-build-03.log",
+      "sha256": "9dd84f2a42773cbc4177e2578a7e0f557e9af80f173bc8571daa328c7d2358aa"
+    },
+    {
+      "path": "oilgas-354-drilling-tests-build-04.log",
+      "sha256": "8ef06bfe6c9220320db6b929e33b2a3b28c7bfda94ffa88fca91146218528ba9"
+    },
+    {
+      "path": "oilgas-354-drilling-tests-build-05.log",
+      "sha256": "aabc3b05d4b365ad7eeb938c4bfec628a62fd1bee4d78f54cacaaa25a9aadb54"
+    },
+    {
+      "path": "oilgas-354-drilling-tests-build-06.log",
+      "sha256": "89a3e193ea7e7bc93f29a410ec4aeba9e4d1507dc8888778aa00ba2e5e4c40c2"
+    },
+    {
+      "path": "oilgas-354-drilling-tests-build.log",
+      "sha256": "cc29b13680461f45fdf77fe56a2961e7df2c1d1d11eb9cf7a44c3bd98353e55b"
+    }
+  ]
+}

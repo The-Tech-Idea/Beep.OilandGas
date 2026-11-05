@@ -10,5 +10,5 @@ public interface IGHGReportingService
     Task<List<EmissionSourceLine>> GetEmissionSourcesAsync(string fieldId, int year);
 
     Task<double> GetTotalEmissionsAsync(
-        string fieldId, int year, string? jurisdiction = null);
+        string fieldId, int year, string? jurisdiction);
 }

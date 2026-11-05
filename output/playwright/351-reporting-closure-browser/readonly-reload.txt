@@ -1,0 +1,36 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e44]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e45]
+    - paragraph [ref=f1e46]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e47]:
+      - button "Use read-only unmapped profile" [ref=f1e48] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e50] [cursor=pointer]
+      - button "Switch other company" [ref=f1e52] [cursor=pointer]
+      - button "Switch other account" [ref=f1e54] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e56] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e58] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [disabled]
+      - button "Retain an unrecorded competing start" [ref=f1e60] [cursor=pointer]
+      - button "Retain a different unrecorded report" [disabled]
+      - button "Show actual start recovery" [ref=f1e62] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f1e64] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f1e66] [cursor=pointer]
+      - button "Show actual reporting closure" [ref=f1e68] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=f1e70]:
+    - heading "Reporting responsibility and closure" [level=1] [ref=f1e71]
+    - group [ref=f1e72]:
+      - link "Drilling workspace" [ref=f1e73] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=f1e75] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload reporting status" [ref=f1e80] [cursor=pointer]
+    - generic [ref=f1e82]:
+      - heading "Retained original reporting closure" [level=2] [ref=f1e83]
+      - status [ref=f1e84]:
+        - generic [ref=f1e85]: The original is saved in this tab. A submission may have reached the server. Recover it before preparing another.
+      - paragraph [ref=f1e91]: Original drilling program · Well recorded-well/one · FIELD original-field/واحد
+      - paragraph [ref=f1e92]: Original sender execution-recorder · ConfiguredExecutionAssigner / EXECUTION_COORDINATION
+      - paragraph [ref=f1e93]: Actual closure UTC 2026-10-27 04:47:55Z · 1 owned reporting tasks
+      - paragraph [ref=f1e94]: Checked independent acceptance; close original reporting after all work completed.
+      - button "Recover original reporting closure" [ref=f1e95] [cursor=pointer]

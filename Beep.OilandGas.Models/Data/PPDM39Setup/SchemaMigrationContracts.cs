@@ -45,6 +45,8 @@ namespace Beep.OilandGas.Models.Data
     public class SchemaMigrationApprovalRequest : ModelEntityBase
     {
         public string PlanId { get; set; } = string.Empty;
+        public string ExpectedPlanHash { get; set; } = string.Empty;
+        public string ExpectedManifestHash { get; set; } = string.Empty;
         // Set by the API from the signed-in account; a value a client sends is overwritten.
         public string ApprovedBy { get; set; } = string.Empty;
         public string? Notes { get; set; }

@@ -1,0 +1,248 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "status": "Selected same-account cross-process live-authority revocation and closure recovery passed; overall goal incomplete.",
+  "recorded_at": "2026-10-30T02:51:49.127017+00:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "Pre-existing dirty implementation. Qualification helper and existing fixture changed; no production native owner/schema/migration change for this slice.",
+  "test": {
+    "method": "Beep.OilandGas.Repository.Tests.CurrentFieldLifecycleGateTests.InstalledSqliteClosureObservesCrossProcessAuthorityRevocation",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "minutes": 4.6264,
+    "selection": "Master tracker and Plan353 read immediately before exact FullyQualifiedName test command. No class/full/permit tests."
+  },
+  "build": {
+    "focused_seconds": 23.62,
+    "focused_errors": 0,
+    "focused_warnings": 660,
+    "worker_seconds": 1.69,
+    "worker_errors": 0,
+    "worker_warnings": 1,
+    "scope": "Existing focused company/obligation target; BuildProjectReferences=false. Separate HSE console worker."
+  },
+  "observed": {
+    "reports": [
+      {
+        "ProcessId": 21708,
+        "Stage": "a",
+        "Status": "authority-refused",
+        "Error": "Beep.OilandGas.Models.Core.Refusals.RefusalException: Company access changed. Refresh your selection before accessing business data.\r\n   at Beep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(CancellationToken token) in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyModuleConnection.cs:line 47\r\n   at Beep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(String queryConnection, String bodyConnection, CancellationToken token) in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\CompanyModuleConnection.cs:line 27\r\n   at Beep.OilandGas.ApiService.Services.RepositoryUserProfileService.RequireSelectionBoundary(FieldSelectionReview captured) in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\RepositoryUserProfileService.Fields.cs:line 106\r\n   at Beep.OilandGas.ApiService.Services.RepositoryUserProfileService.RequireStoredSelectionAsync(FieldSelectionReview review) in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\RepositoryUserProfileService.Fields.cs:line 19\r\n   at Beep.OilandGas.ApiService.Services.PPDMCompanyCorrectiveActionCommands.RequireAuthorityAsync(FieldSelectionReview review, String incidentId, String projectId, String actor) in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\PPDMCompanyCorrectiveActionCommands.cs:line 518\r\n   at Beep.OilandGas.ApiService.Services.PPDMCompanyCorrectiveActionCommands.<>c__DisplayClass59_0.<<RecordIncidentClosedCoreAsync>g__Guard|0>d.MoveNext() in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\PPDMCompanyCorrectiveActionCommands.Closure.cs:line 86\r\n--- End of stack trace from previous location ---\r\n   at Beep.OilandGas.ApiService.Services.PPDMCompanyCorrectiveActionCommands.RecordIncidentClosedCoreAsync(CompanyHseClosureCommand original, CompanyHseClosureReceipt lifecycle, IncidentClosureResolution resolution, Func`1 confirmLifecycle) in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\PPDMCompanyCorrectiveActionCommands.Closure.cs:line 126\r\n   at Beep.OilandGas.ApiService.Services.PPDMCompanyCorrectiveActionCommands.RecordIncidentClosedAsync(CompanyHseClosureCommand original, CompanyHseClosureReceipt lifecycle, Func`1 confirmLifecycle) in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.ApiService\\Services\\PPDMCompanyCorrectiveActionCommands.Closure.cs:line 47\r\n   at Beep.OilandGas.Repository.Tests.CurrentFieldLifecycleGateTests.<>c__DisplayClass154_0.<<RunHseClosureRaceStageAsync>b__0>d.MoveNext() in C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Repository.Tests\\HseClosureConcurrencyQualification.cs:line 230",
+        "Receipt": null
+      },
+      {
+        "ProcessId": 1164,
+        "Stage": "revoke",
+        "Status": "revoked",
+        "Error": null,
+        "Receipt": null
+      }
+    ],
+    "restored": {
+      "ProcessId": 25896,
+      "Stage": "restore",
+      "Status": "restored",
+      "Error": null,
+      "Receipt": null
+    },
+    "confirmed": {
+      "ProcessId": 50264,
+      "Stage": "recover",
+      "Status": "confirmed",
+      "Error": null,
+      "Receipt": {
+        "Original": {
+          "IntentId": "88adad73-d083-4520-8f69-b6f85a17dc45",
+          "Review": {
+            "Evidence": {
+              "Actions": {
+                "Context": {
+                  "Company": {
+                    "TenantId": "tenant",
+                    "BusinessAssociateId": "company"
+                  },
+                  "Database": {
+                    "ConnectionName": "selected-tenant",
+                    "Fingerprint": "1AE5C7B7562D97A202A9C7AF6168C26B42F4A8122D9BF1682A9B091096F22AC1"
+                  },
+                  "ActorUserId": "actor",
+                  "Revision": "4d01049faf704446b3d0f4eff6e30d5b",
+                  "FieldId": "A"
+                },
+                "IncidentId": "local",
+                "PlanId": "recorded-project-73",
+                "Revision": "F9E35DC40AB5B479C893A60246E2865AFE54480B2D158B51C4243271ACF315E7",
+                "Actions": [
+                  {
+                    "StepSequence": 1,
+                    "StepId": "recorded-project-73-actual-step",
+                    "Description": "recorded action",
+                    "Status": "COMPLETED",
+                    "ResponsiblePerson": "local-person",
+                    "DueDate": "2026-01-12T00:00:00Z",
+                    "CompletedAt": "2026-10-30T01:46:35.0143027Z",
+                    "CompletedBy": "operator",
+                    "CompletionEvidence": "Valve pressure test completed by the operator."
+                  }
+                ],
+                "CanReviewIndependently": true
+              },
+              "Decisions": [
+                {
+                  "IntentId": "77b312cf-e64a-46d7-ac63-c1e638e8c40b",
+                  "Review": {
+                    "Context": {
+                      "Company": {
+                        "TenantId": "tenant",
+                        "BusinessAssociateId": "company"
+                      },
+                      "Database": {
+                        "ConnectionName": "selected-tenant",
+                        "Fingerprint": "1AE5C7B7562D97A202A9C7AF6168C26B42F4A8122D9BF1682A9B091096F22AC1"
+                      },
+                      "ActorUserId": "actor",
+                      "Revision": "4d01049faf704446b3d0f4eff6e30d5b",
+                      "FieldId": "A"
+                    },
+                    "IncidentId": "local",
+                    "PlanId": "recorded-project-73",
+                    "Revision": "F9E35DC40AB5B479C893A60246E2865AFE54480B2D158B51C4243271ACF315E7",
+                    "Actions": [
+                      {
+                        "StepSequence": 1,
+                        "StepId": "recorded-project-73-actual-step",
+                        "Description": "recorded action",
+                        "Status": "COMPLETED",
+                        "ResponsiblePerson": "local-person",
+                        "DueDate": "2026-01-12T00:00:00Z",
+                        "CompletedAt": "2026-10-30T01:46:35.0143027Z",
+                        "CompletedBy": "operator",
+                        "CompletionEvidence": "Valve pressure test completed by the operator."
+                      }
+                    ],
+                    "CanReviewIndependently": true
+                  },
+                  "Decision": "VERIFIED",
+                  "Reason": "Independent pressure inspection confirms the recorded repair."
+                }
+              ],
+              "VerificationSatisfied": true
+            },
+            "LifecycleDatabase": {
+              "ConnectionName": "hse-lifecycle-physical",
+              "Fingerprint": "A2B305D07567A1CD341340945332866FA98C41CF4F8D6E7C581FE2E8C7FF2C6F"
+            },
+            "InstanceId": "hse-process-148FCEEA4B12786490D4A046BF65FD8A9FD8CC4C11EDD4699B34A140CC3A795A",
+            "StepInstanceId": "hse-step-B107A87C8611AC628C8AAA04F61516C2FBFA689E352B49A7F35C83C6AAC338CB",
+            "Stage": "INC_CLOSURE",
+            "AssignedRole": "HSEOfficer",
+            "GraphRevision": "DDF5D2B57947C593CB83BBF75C263365F7737BC4152CA10FFA01F3ED906338F6",
+            "NativeRevision": "3334CA45486C3459F2695C284C27269115C9F17A3E97D62EEFE7910913E168AC",
+            "Context": {
+              "Company": {
+                "TenantId": "tenant",
+                "BusinessAssociateId": "company"
+              },
+              "Database": {
+                "ConnectionName": "selected-tenant",
+                "Fingerprint": "1AE5C7B7562D97A202A9C7AF6168C26B42F4A8122D9BF1682A9B091096F22AC1"
+              },
+              "ActorUserId": "actor",
+              "Revision": "4d01049faf704446b3d0f4eff6e30d5b",
+              "FieldId": "A"
+            },
+            "RecordedCause": {
+              "Company": {
+                "TenantId": "tenant",
+                "BusinessAssociateId": "company"
+              },
+              "Database": {
+                "ConnectionName": "selected-tenant",
+                "Fingerprint": "1AE5C7B7562D97A202A9C7AF6168C26B42F4A8122D9BF1682A9B091096F22AC1"
+              },
+              "FieldId": "A",
+              "IncidentId": "local",
+              "IntentId": "6d9c65ea-30c6-4ba0-8fe3-d979e3d575bb",
+              "Observation": 1,
+              "CauseCode": "PROCESS",
+              "Summary": "Recorded process cause requires the verified valve correction.",
+              "RecordedBy": "actor",
+              "Revision": "E8E4299EDBABDEF481ED92B3157F0324FCD1D2E4F38C47E421E029F1ADC0DB0E"
+            },
+            "CorrectionRound": null
+          },
+          "Reason": "Reviewed this exact independently verified incident stage."
+        },
+        "Lifecycle": {
+          "IntentId": "88adad73-d083-4520-8f69-b6f85a17dc45",
+          "Company": {
+            "TenantId": "tenant",
+            "BusinessAssociateId": "company"
+          },
+          "Actor": "actor",
+          "InstanceId": "hse-process-148FCEEA4B12786490D4A046BF65FD8A9FD8CC4C11EDD4699B34A140CC3A795A",
+          "StepInstanceId": "hse-step-B107A87C8611AC628C8AAA04F61516C2FBFA689E352B49A7F35C83C6AAC338CB",
+          "Stage": "INC_CLOSURE",
+          "HistoryId": "hse-close-88adad73d08345208f69b6f85a17dc45",
+          "ApprovalId": "hse-close-88adad73d08345208f69b6f85a17dc45",
+          "NextStepInstanceId": null,
+          "CompletedTasks": [
+            "task-9E3C8E47EACFD9B1F874D659E3017A3221C85A0ACA55DFBA0360577F34FE845A"
+          ],
+          "NextTasks": [],
+          "GraphRevision": "D590357B6C8BA8A69FA1AC5A18470E7D2677949ED3739E2964EEB19190BCF97F"
+        },
+        "StatusObservation": 3,
+        "Resolution": null
+      }
+    },
+    "AuthorityChangedAfterApprovalConfirmation": true,
+    "NativeHashBeforeRefusal": "137E8FA23D19A0DDD326B142DD041849FA810D2C04770F0F86FDD466B1086A94",
+    "NativeHashAfterRefusal": "137E8FA23D19A0DDD326B142DD041849FA810D2C04770F0F86FDD466B1086A94",
+    "LifecycleHashBeforeRefusal": "F222CA1EA2E2846215A990D1C94D7800058611FF18B7A8890FE9A8A5D5157FC1",
+    "LifecycleHashAfterRefusal": "F222CA1EA2E2846215A990D1C94D7800058611FF18B7A8890FE9A8A5D5157FC1",
+    "NativeHashBeforeReconcile": "3FFCFC2E4639B4C554DD6EB320B62299580537B1795EF105065CCFE70F13F555",
+    "NativeHashAfterReconcile": "3FFCFC2E4639B4C554DD6EB320B62299580537B1795EF105065CCFE70F13F555",
+    "LifecycleHashBeforeReconcile": "F222CA1EA2E2846215A990D1C94D7800058611FF18B7A8890FE9A8A5D5157FC1",
+    "LifecycleHashAfterReconcile": "F222CA1EA2E2846215A990D1C94D7800058611FF18B7A8890FE9A8A5D5157FC1"
+  },
+  "reopen": {
+    "passed": true,
+    "basis": "Selected fact asserts one CLOSED status/closure receipt and unchanged native/lifecycle hashes after new editor, sources and services recover persisted original and receipt. Foundation fixture and metadata retained."
+  },
+  "construction": [
+    "Parent prepares canonical RCA and eight-stage approval using existing fixture and actual installed Beep SQLite connector; native/lifecycle schema uses Beep Migration.",
+    "SQLite backup API copies the existing controlled identity fixture into one shared registry file. Independent native caller and grant-changing workers use separate contexts/connections to that same registry. No seeding after attachment. Existing foundation identity EF context is a test fixture, not a domain EF migration.",
+    "Native worker confirms exact persisted lifecycle approval and no native receipt before publishing a.ready. Revoker waits for that barrier, removes HSE.ManageIncidents, saves, then releases native caller. Caller must fail with Forbidden.",
+    "Separate restoration process restores grant. Fresh native worker confirms same original; parent reconciles without changed file hashes, then fresh native/lifecycle owners reopen.",
+    "Existing provider installer helper is reused; no permit test method executes."
+  ],
+  "source_sha256": {
+    "Beep.OilandGas.Repository.Tests/HseClosureConcurrencyQualification.cs": "587903240B61DBDD7B373F5408F5AEBDA3E91AA573633F3B395E2C74EEF76144",
+    "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs": "9D8528C84F1CA4D039D4E451CD63D7721B8C97907828CE205A82BC6520FE7988",
+    "Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs": "522054CF411972901552BD63D848C3249AD5D13F7370B077D8817808445345D1",
+    "tools/HseClosureProviderWorker/HseClosureProviderWorker.csproj": "CDD34D3C20CB0DD587E0437CD90D0B950AD68D0417BEB6FEAFCFF26F11CE593B",
+    "tools/HseClosureProviderWorker/Program.cs": "31E78B1E848D65F4BF08F209022AA334428BA4C26BE8CC9AC02F3BA3AB5977FE",
+    "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.Closure.cs": "1A4D7C4DBA7C6462FB0BEFA24D093126F8BAE116CEC467FD6BFDAE8A0630481C"
+  },
+  "runtime_sha256": {
+    "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll": "F059E2DE4A3047057A122BB1F962C503C35B9AC79B9161F441F473E813A9DC6C",
+    "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.HseClosureProviderWorker.dll": "6E882B7836BA0C98CBE110EA9ECEA7FAD031716CA039EE2646A483250967758E",
+    "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\TheTechIdea.Data.dll": "E3D394C50B556E982380A1A8A0C4BA06420A7FCCF9372B61379E9AB05BF9D40C"
+  },
+  "logs": {
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-authority-build.log": "2DA0DDB49C7C52C0B97687E7C7E19DB7E3B919054CA9823D53DE39E1464B393D",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-authority-worker-build.log": "B0E847A6C265BE9D446B796B699C33924BCCD26D4C36DDC8B638B6E092AB7760",
+    "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-authority-tests.log": "03579583B80D10BD54ED56F29B913FA6B873996E2282B2865D1EF48B8543F0B2"
+  },
+  "physical_directory": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-e57c82b85fa74cda909e048cf4e3dad5",
+  "limits": [
+    "Same account with cross-process role mutation, not different-account adoption/conflicting originals.",
+    "Native service/provider boundary, not full production Web/OIDC startup or a physical-driver lost commit acknowledgement.",
+    "SQLite only; other providers, regional/persona deployment and production latency remain unqualified.",
+    "No whole-plan completion claim, commit or push."
+  ],
+  "prior_concurrency_evidence": "../353-native-concurrency/observed-evidence.json",
+  "next": "Review remaining Plan353 independent-account/conflicting-original requirements before implementation or selection. No further test is selected by this checkpoint."
+}

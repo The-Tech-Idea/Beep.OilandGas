@@ -1,0 +1,9 @@
+{
+  "state": "CLOSED",
+  "attempts": 1,
+  "writes": 1,
+  "sourceReads": 2,
+  "incidentReads": 1,
+  "genericActionReads": 0,
+  "recorded": true
+}

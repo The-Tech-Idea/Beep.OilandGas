@@ -4,6 +4,7 @@
 @inject ThemeState Theme
 @inject Beep.OilandGas.Web.Services.RepositoryAccountClient RepositoryClient
 @inject TheTechIdeaWeb.Diagnostics.IFailureReporter Failures
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
 @using Microsoft.AspNetCore.Components.Authorization
 @using Beep.OilandGas.Web.Theme
 @using TheTechIdeaWeb.Diagnostics.Components
@@ -25,7 +26,8 @@
                      onerror="this.style.display='none';" />
             </MudNavLink>
             <MudSpacer />
-            
+            @if (_isAuthenticated) { <CompanySelector /> }
+            @if (_companyMatchesAccount) { <CompanyEnvironmentIndicator @key="Company.Version" OnEnvironmentChanged="SetCompanyEnvironment" /> }
             <!-- Horizontal Navigation Menu -->
             <div class="og-nav-wrapper">
                 <NavMenu />
@@ -33,13 +35,16 @@
             <MudSpacer />
             
             <!-- Persona Selector (W11-07) -->
+            @if (_companyMatchesAccount)
+            {
             <div class="persona-selector-container">
-                <PersonaSelector />
+                <PersonaSelector @key="Company.Version" />
             </div>
+            }
             <MudSpacer />
             
             <!-- User Actions - Single Icon with Menu -->
-            @if (_isAuthenticated)
+            @if (_companyMatchesAccount)
             {
                 <NotificationCenter />
             }
@@ -58,6 +63,7 @@
                         <MudMenuItem Href="@BeepClientEndpoints.Manage" Icon="@Icons.Material.Filled.Person">My account</MudMenuItem>
                         @* DIAG-01. In this menu rather than the navigation's, whose menus do not open (MudBlazor 9's activator). *@
                         <AuthorizeView Roles="Administrator" Context="failuresAdmin">
+                            <MudMenuItem Href="/setup/repository" Icon="@Icons.Material.Filled.Settings">First-time setup</MudMenuItem>
                             <MudMenuItem Href="/admin/failures" Icon="@Icons.Material.Filled.ReportProblem">Failures</MudMenuItem>
                         </AuthorizeView>
                         <MudDivider />
@@ -85,16 +91,30 @@
     <MudMainContent>
         <div class="og-main-content">
             <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
-                @if (_isAuthenticated && !_isLandingPage)
+                @if (_companyMatchesAccount && !_isLandingPage)
                 {
                     <MudPaper Outlined="true" Class="pa-3 mb-4">
-                        <FieldSelector />
+                        <FieldSelector @key="Company.Version" />
                     </MudPaper>
                 }
                 @* DIAG-01. A page that fails is reported and says so with its reference, instead of ending the circuit. *@
                 <ReportingErrorBoundary @ref="_errorBoundary">
                     <ChildContent>
-                        @Body
+                        <div @key="Company.Version">
+                            @if (!_setupGateAllowed)
+                            {
+                                <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Checking repository readiness" />
+                            }
+                            else if (_isAuthenticated && !_isLandingPage && !_companyMatchesAccount &&
+                                !CompanyUiRoutes.IsRepositorySurface(new Uri(NavigationManager.Uri).AbsolutePath))
+                            {
+                                <MudAlert Severity="Severity.Info">Select an available company to open this workspace.</MudAlert>
+                            }
+                            else
+                            {
+                                <CascadingValue Value="@CurrentCompanyEnvironment" IsFixed="false">@Body</CascadingValue>
+                            }
+                        </div>
                     </ChildContent>
                     <ErrorContent>
                         <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">
@@ -132,15 +152,27 @@
     [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
 
     private bool _isAuthenticated;
+    private string? _authenticatedActor;
+    private Task<AuthenticationState>? _lastAuthenticationState;
+    private long _authenticationGeneration;
     private bool _isLandingPage;
+    private bool _setupGateAllowed, _disposed;
+    private long _setupGateGeneration;
     private ReportingErrorBoundary? _errorBoundary;
     private BrandingConfig _branding = new();
+    private Beep.OilandGas.Web.Services.CompanyEnvironmentDisplay? _companyEnvironment;
+    private Beep.OilandGas.Web.Services.CompanyEnvironmentDisplay? CurrentCompanyEnvironment =>
+        _companyMatchesAccount && !_isLandingPage && _companyEnvironment?.Matches(Company) == true ? _companyEnvironment : null;
+    private bool _companyMatchesAccount => _isAuthenticated && _authenticatedActor is not null && Company.Selection?.UserId == _authenticatedActor;
+    private void SetCompanyEnvironment(Beep.OilandGas.Web.Services.CompanyEnvironmentDisplayUpdate value) => _companyEnvironment =
+        _companyMatchesAccount ? value.Apply(Company, _companyEnvironment) : null;
 
     private string CurrentPath => new Uri(NavigationManager.Uri).PathAndQuery;
 
     protected override async Task OnInitializedAsync()
     {
         _branding = ThemeProvider.GetBranding();
+        Company.Changed += CompanyChanged;
         CheckIfLandingPage();
         NavigationManager.LocationChanged += OnLocationChanged;
         await EnsureFirstRunSetupGateAsync(new Uri(NavigationManager.Uri).AbsolutePath);
@@ -148,14 +180,22 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        _isAuthenticated = AuthenticationState is not null
-            && (await AuthenticationState).User.Identity?.IsAuthenticated == true;
+        var generation = Interlocked.Increment(ref _authenticationGeneration);
+        var task = AuthenticationState;
+        if (!ReferenceEquals(task, _lastAuthenticationState))
+        {
+            _lastAuthenticationState = task; _isAuthenticated = false; _authenticatedActor = null; _companyEnvironment = null;
+        }
+        var principal = task is null ? null : (await task).User;
+        if (_disposed || generation != Interlocked.Read(ref _authenticationGeneration)) return;
+        _isAuthenticated = principal?.Identity?.IsAuthenticated == true;
+        _authenticatedActor = _isAuthenticated ? Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find(principal) : null;
     }
 
     private void CheckIfLandingPage()
     {
-        var uri = NavigationManager.Uri;
-        _isLandingPage = uri.EndsWith("/") || uri.EndsWith("/index") || uri.Contains("/?");
+        var path = new Uri(NavigationManager.Uri).AbsolutePath.TrimEnd('/');
+        _isLandingPage = path.Length == 0 || path.Equals("/index", StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
@@ -167,7 +207,9 @@
         // the circuit (it was an async void handler with no catch).
         try
         {
-            if (!await EnsureFirstRunSetupGateAsync(new Uri(location).AbsolutePath))
+            var gate = EnsureFirstRunSetupGateAsync(new Uri(location).AbsolutePath);
+            StateHasChanged();
+            if (!await gate)
             {
                 return;
             }
@@ -184,19 +226,34 @@
         }
     }
 
+    private void CompanyChanged() => _ = InvokeAsync(StateHasChanged);
+
     public void Dispose()
     {
+        _disposed = true; ++_setupGateGeneration; Interlocked.Increment(ref _authenticationGeneration);
+        Company.Changed -= CompanyChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 
     private async Task<bool> EnsureFirstRunSetupGateAsync(string currentPath)
     {
+        var generation = ++_setupGateGeneration;
+        _setupGateAllowed = false;
         if (IsSetupExemptPath(currentPath))
+        {
+            _setupGateAllowed = true;
             return true;
+        }
 
         var status = await RepositoryClient.GetReadinessAsync();
+        if (_disposed || generation != _setupGateGeneration ||
+            !string.Equals(currentPath, new Uri(NavigationManager.Uri).AbsolutePath, StringComparison.OrdinalIgnoreCase))
+            return false;
         if (status == TheTechIdea.Data.OilGas.RepositoryReadiness.Ready)
+        {
+            _setupGateAllowed = true;
             return true;
+        }
 
         NavigationManager.NavigateTo("/setup/repository", forceLoad: false);
         return false;
@@ -207,9 +264,13 @@
     /// application hosts for the identity server's client library — none of them reads the repository. The library's own
     /// endpoints are not pages and never reach this layout.
     /// </summary>
-    private static bool IsSetupExemptPath(string currentPath) =>
-        !string.IsNullOrWhiteSpace(currentPath)
-        && (currentPath.Equals("/setup/repository", StringComparison.OrdinalIgnoreCase)
-            || currentPath.Equals(BeepClientEndpoints.AccessDenied, StringComparison.OrdinalIgnoreCase)
-            || currentPath.Equals(BeepClientEndpoints.Manage, StringComparison.OrdinalIgnoreCase));
+    private static bool IsSetupExemptPath(string currentPath)
+    {
+        if (string.IsNullOrWhiteSpace(currentPath)) return false;
+        var path = currentPath.TrimEnd('/');
+        return path.Equals("/setup/repository", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/setup/bootstrap-drivers", StringComparison.OrdinalIgnoreCase)
+            || path.Equals(BeepClientEndpoints.AccessDenied, StringComparison.OrdinalIgnoreCase)
+            || path.Equals(BeepClientEndpoints.Manage, StringComparison.OrdinalIgnoreCase);
+    }
 }

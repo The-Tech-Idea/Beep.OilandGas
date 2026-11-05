@@ -1,0 +1,32 @@
+### Page
+- Page URL: http://127.0.0.1:58870/
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e47]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e48]
+    - paragraph [ref=e49]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e50]:
+      - button "Use read-only unmapped profile" [ref=e51] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e53] [cursor=pointer]
+      - button "Switch other company" [active] [ref=e55] [cursor=pointer]
+      - button "Switch other account" [ref=e57] [cursor=pointer]
+      - button "Restore original company/account" [ref=e59] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e61] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [disabled]
+      - button "Retain an unrecorded competing start" [ref=e63] [cursor=pointer]
+      - button "Retain a different unrecorded report" [ref=e362] [cursor=pointer]
+      - button "Show actual start recovery" [ref=e65] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e67] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e69] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e71]:
+    - heading "Observed drilling progress" [level=1] [ref=e72]
+    - group [ref=e73]:
+      - link "Original execution" [ref=e74] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-09698F601E27A467BC24CBFF814A355C2166526DDECCB0ACD1E0B4DADF3FF2EA
+      - button "Reload original report history" [ref=e76] [cursor=pointer]
+    - generic [ref=e364]: Choose the company with drilling daily-report, workflow, planning and financial view access, then open its exact recorded execution.
+    - generic [ref=e87]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

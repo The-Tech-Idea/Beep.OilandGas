@@ -1,0 +1,5 @@
+- generic [ref=f2e1]:
+  - heading "OilGas protected workflow transport diagnostic" [level=1] [ref=f2e6]
+  - button "Retain large original" [ref=f2e7]
+  - button "Read retained original" [active] [ref=f2e8]
+  - paragraph [ref=f2e9]: Retained 100000 characters

@@ -1,0 +1,9 @@
+### Result
+{
+  "remainingOwnedIntents": [],
+  "remainingQuotaFillers": []
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({remainingOwnedIntents:Object.keys(sessionStorage).filter(k=>k.endsWith(".drilling-report")||k.endsWith(".drilling-execution")),remainingQuotaFillers:Object.keys(sessionStorage).filter(k=>k.startsWith("oilgas-test-quota-"))})');
+```

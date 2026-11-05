@@ -9,7 +9,7 @@ public interface IRepositoryReadinessService
     Task<RepositoryReadiness> CheckAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed class RepositoryReadinessService(RepositoryDbContext context, IFailureReporter failures)
+public sealed class RepositoryReadinessService(RepositoryDbContext context, IFailureReporter failures, TimeProvider? clock = null)
     : IRepositoryReadinessService
 {
     public async Task<RepositoryReadiness> CheckAsync(CancellationToken cancellationToken = default)
@@ -23,7 +23,8 @@ public sealed class RepositoryReadinessService(RepositoryDbContext context, IFai
             if (!await context.Bootstrap.AnyAsync(x => x.Id == 1, cancellationToken))
                 return await context.Users.AnyAsync(cancellationToken)
                     ? RepositoryReadiness.RecoveryRequired : RepositoryReadiness.BootstrapRequired;
-            var hasAdministrator = await (from membership in context.UserRoles
+            var hasAdministrator = await (from membership in RepositoryRoleScope.Memberships(context,
+                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime)
                 join account in context.Users on membership.UserId equals account.Id
                 join role in context.Roles on membership.RoleId equals role.Id
                 where account.IsActive && role.NormalizedName == "ADMINISTRATOR"

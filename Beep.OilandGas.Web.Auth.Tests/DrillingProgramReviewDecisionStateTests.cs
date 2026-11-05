@@ -1,0 +1,54 @@
+#if WORKFLOW_INBOX_FOCUSED
+using Beep.OilandGas.Web.Services;
+using Beep.OilandGas.Client.App;
+using Bunit;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using MudBlazor.Services;
+using TheTechIdea.Data.OilGas;
+using TheTechIdeaWeb.Diagnostics;
+using Xunit;
+namespace Beep.OilandGas.Web.Auth.Tests;
+public sealed class DrillingProgramReviewDecisionStateTests
+{
+    internal static DrillingProgramReviewDecisionReceipt Receipt(DrillingProgramReviewDecision command,bool recorded=true)=>new(command.Revision(),command.Review.InstanceId,recorded,recorded?command.AuditId("approval"):null,recorded?command.AuditId("decision"):null,recorded && !command.Terminal()?DrillingProgramReviewStartReceipt.StepId(command.Review.InstanceId,command.Review.Original.Workflow.Stages[command.Review.StageNumber].Definition.StepId):null,recorded?(command.Decision=="REJECT"?"REVIEW_REJECTED":"REVIEW_APPROVED"):"INITIAL",new('D',64),DateTimeOffset.UtcNow);
+    [Theory][InlineData("", "Rationale")][InlineData("APPROVE", " ")][InlineData("REJECT", "")]
+    public async Task ExplicitDecisionAndRationaleAreRequiredBeforeRetainingOrSending(string choice,string rationale)
+    {
+        using var f=new DrillingProgramAssignedReviewStateTests.Fixture();await f.Prepare();await f.State.LoadAsync(f.Packet.InstanceId);f.State.PrepareDecision(choice,rationale);Assert.Null(f.State.PreparedDecision);Assert.NotNull(f.State.DecisionError);await f.State.SubmitDecisionAsync();Assert.Null(f.Journal.ProgramDecisionOriginal);f.Client.Verify(c=>c.DecideProgramReviewAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>()),Times.Never());
+    }
+    [Theory][InlineData("APPROVE")][InlineData("REJECT")]
+    public async Task FrozenDisplayedDecisionIsRetainedBeforeTransportAndClearedOnlyOnExactAcknowledgement(string decision)
+    {
+        using var f=new DrillingProgramAssignedReviewStateTests.Fixture();await f.Prepare();await f.State.LoadAsync(f.Packet.InstanceId);f.State.PrepareDecision(decision,"  Exact original rationale  ");var command=f.State.PreparedDecision!;Assert.Equal("Exact original rationale",command.Rationale);command.Review.Source.Program.PROGRAM_NAME="Consumer mutation";
+        f.Client.Setup(c=>c.DecideProgramReviewAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>())).Returns((DrillingProgramReviewDecision value,CancellationToken _)=>{Assert.Equal(value.Revision(),f.Journal.ProgramDecisionOriginal!.Revision());Assert.NotEqual("Consumer mutation",value.Review.Source.Program.PROGRAM_NAME);return Task.FromResult(Receipt(value));});await f.State.SubmitDecisionAsync();Assert.Null(f.State.Current);Assert.Null(f.State.PendingDecision);Assert.Null(f.Journal.ProgramDecisionOriginal);Assert.True(f.State.DecisionReceipt!.Recorded);Assert.False(f.State.CanPrepareDecision);
+    }
+    [Theory][InlineData("retain")][InlineData("response")][InlineData("receipt")][InlineData("clear")]
+    public async Task UncertainSubmissionPreservesItsExactOriginalAndRecoveryDoesNotResubmit(string fault)
+    {
+        using var f=new DrillingProgramAssignedReviewStateTests.Fixture();await f.Prepare();await f.State.LoadAsync(f.Packet.InstanceId);f.State.PrepareDecision("REJECT","Independent source review rationale");var original=f.State.PreparedDecision!;f.Journal.FailRetain=fault=="retain";f.Journal.FailClear=fault=="clear";
+        f.Client.Setup(c=>c.DecideProgramReviewAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>())).Returns((DrillingProgramReviewDecision value,CancellationToken _)=>fault=="response"?Task.FromException<DrillingProgramReviewDecisionReceipt>(new HttpRequestException("Lost response")):Task.FromResult(fault=="receipt"?Receipt(value) with{IntentRevision=new('F',64)}:Receipt(value)));
+        await f.State.SubmitDecisionAsync();Assert.Equal(original.Revision(),f.State.PendingDecision!.Revision());Assert.NotNull(f.State.DecisionError);Assert.Null(f.State.DecisionReceipt);await f.State.SubmitDecisionAsync();f.Client.Verify(c=>c.DecideProgramReviewAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>()),fault=="retain"?Times.Never():Times.Once());f.Journal.FailRetain=false;f.Journal.FailClear=false;f.Client.Setup(c=>c.RecoverProgramReviewDecisionAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>())).ReturnsAsync(Receipt(original,fault!="retain"));await f.State.RecoverDecisionAsync();Assert.Null(f.State.PendingDecision);Assert.Null(f.Journal.ProgramDecisionOriginal);Assert.NotNull(f.State.DecisionReceipt);
+    }
+    [Fact]public async Task NewPageOwnerLoadsRetainedDecisionBeforePendingTaskAndRecoversWithOnlyOriginalViewRights()
+    {
+        using var f=new DrillingProgramAssignedReviewStateTests.Fixture();await f.Prepare();var original=new DrillingProgramReviewDecision(f.Packet,Guid.NewGuid(),"REJECT","Private recorded original");f.Journal.ProgramDecisionOriginal=original;var selected=f.Company.Selection!;f.Company.TrySelect(f.Company.Clear(),selected.UserId,new(selected.Scope,["CurrentReader"],["Drilling.View","Accounting.View","DevelopmentPlanning.View","Workflow.View"]));f.Client.Setup(c=>c.GetAssignedProgramReviewAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ThrowsAsync(new HttpRequestException("Task already closed"));await f.State.LoadAsync(f.Packet.InstanceId);Assert.True(f.State.CanRecoverDecision);Assert.False(f.State.CanPrepareDecision);f.Client.Verify(c=>c.GetAssignedProgramReviewAsync(It.IsAny<string>(),It.IsAny<CancellationToken>()),Times.Never());f.Client.Setup(c=>c.RecoverProgramReviewDecisionAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>())).ReturnsAsync(Receipt(original));await f.State.RecoverDecisionAsync();Assert.True(f.State.DecisionReceipt!.Recorded);Assert.Null(f.Journal.ProgramDecisionOriginal);
+    }
+    [Theory][InlineData("company")][InlineData("persona")][InlineData("route")][InlineData("dispose")]
+    public async Task LateAcknowledgementCannotClearOriginalOrPublishPrivateOutcomeInAnotherContext(string change)
+    {
+        using var f=new DrillingProgramAssignedReviewStateTests.Fixture();await f.Prepare();await f.State.LoadAsync(f.Packet.InstanceId);f.State.PrepareDecision("APPROVE","Independent source rationale");var original=f.State.PreparedDecision!;var waiting=new TaskCompletionSource<DrillingProgramReviewDecisionReceipt>();f.Client.Setup(c=>c.DecideProgramReviewAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>())).Returns(waiting.Task);var write=f.State.SubmitDecisionAsync();Assert.NotNull(f.Journal.ProgramDecisionOriginal);if(change=="company")f.Company.Clear();else if(change=="persona")f.Personas.Raise(p=>p.Changed+=null!);else if(change=="route")await f.State.LoadAsync(DrillingProgramReviewStart.InstancePrefix+"other");else f.State.Dispose();waiting.SetResult(Receipt(original));await write;Assert.Null(f.State.DecisionReceipt);Assert.Null(f.State.Current);Assert.Equal(original.Revision(),f.Journal.ProgramDecisionOriginal!.Revision());
+    }
+    [Fact]public async Task ActualScreenConfirmsDisplayedRoleVersionAndRationaleBeforeTransportThenShowsRecordedOutcome()
+    {
+        using var f=new DrillingProgramAssignedReviewStateTests.Fixture();await f.Prepare();f.Client.Setup(c=>c.DecideProgramReviewAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>())).Returns((DrillingProgramReviewDecision command,CancellationToken _)=>Task.FromResult(Receipt(command)));using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-review/assigned?processId="+Uri.EscapeDataString(f.Packet.InstanceId));var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingProgramAssignedReview>();page.WaitForAssertion(()=>Assert.Contains("Review rationale",page.Markup));page.Find("textarea").Change("Explicit independent program source rationale");page.FindAll("button").Single(b=>b.TextContent.Trim()=="Review rejection").Click();Assert.Contains("Confirm independent program decision",page.Markup);Assert.Contains("Explicit independent program source rationale",page.Markup);f.Client.Verify(c=>c.DecideProgramReviewAsync(It.IsAny<DrillingProgramReviewDecision>(),It.IsAny<CancellationToken>()),Times.Never());page.FindAll("button").Single(b=>b.TextContent.Trim()=="Confirm program decision").Click();page.WaitForAssertion(()=>Assert.Contains("Recorded outcome: REVIEW_REJECTED",page.Markup));Assert.Null(f.Journal.ProgramDecisionOriginal);Assert.DoesNotContain("Pending independent program review",page.Markup);Assert.DoesNotContain("Choose a company",page.Markup);
+    }
+    [Fact]public async Task ActualEncryptedTabStorageSeparatesDecisionKindCompanyAccountAndConflictingOriginals()
+    {
+        using var f=new DrillingProgramAssignedReviewStateTests.Fixture();await f.Prepare();var original=new DrillingProgramReviewDecision(f.Packet,Guid.NewGuid(),"REJECT","Private program rationale / قرار");var scope=original.Scope();var tab=new DevelopmentDraftIntentStoreTests.TabStorage();var protection=new EphemeralDataProtectionProvider();DevelopmentDraftIntentStore Store()=>new(new ProtectedSessionStorage(tab,protection));await Store().RetainProgramDecisionAsync(original);var encrypted=Assert.Single(tab.Values).Value;Assert.DoesNotContain(original.Rationale,encrypted);Assert.DoesNotContain(original.IntentId.ToString(),encrypted);Assert.Equal(original.Revision(),(await Store().ReadProgramDecisionAsync(scope.Company,scope.ActorUserId))!.Revision());Assert.Null(await Store().ReadProgramDecisionAsync(new("tenant","foreign"),scope.ActorUserId));Assert.Null(await Store().ReadProgramDecisionAsync(scope.Company,"another"));Assert.Null(await Store().ReadProgramReviewAsync(scope.Company,scope.ActorUserId));await Assert.ThrowsAsync<InvalidOperationException>(()=>Store().RetainProgramDecisionAsync(original with{IntentId=Guid.NewGuid()}));await Assert.ThrowsAsync<InvalidOperationException>(()=>Store().ClearProgramDecisionAsync(original with{Rationale="Changed original"}));await Store().ClearProgramDecisionAsync(original);Assert.Empty(tab.Values);await Store().RetainProgramDecisionAsync(original);tab.Values[Assert.Single(tab.Values).Key]="corrupt";await Assert.ThrowsAnyAsync<Exception>(()=>Store().ReadProgramDecisionAsync(scope.Company,scope.ActorUserId));
+    }
+}
+#endif

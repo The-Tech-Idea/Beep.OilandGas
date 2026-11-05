@@ -1,0 +1,67 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+<MudPaper Outlined="true" Class="pa-4 mt-4">
+    <MudText Typo="Typo.h6">Company book FX rates</MudText>
+    <MudText>Review the original provider quote and authority reference before recording a directed rate. Source amounts remain in their recorded currency; journal amounts use the configured book precision and rounding.</MudText>
+    @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    <MudForm @ref="_selectionForm"><MudTextField T="string" Label="Source currency" Value="_source" ValueChanged="SourceChanged" Required="true" MaxLength="3" Disabled="State.Busy" /><MudDatePicker Label="Company calendar rate review / proposed start date" Date="_date" DateChanged="DateChanged" Required="true" Disabled="State.Busy" /><MudButton OnClick="ReadPublic" Disabled="State.Busy">Review recorded FX rates</MudButton></MudForm>
+    @if(CanConfigure && !State.HasPendingLedgerRequest){<MudForm @ref="_windowForm"><MudDatePicker Label="Proposed rate effective through" Date="_reviewThrough" DateChanged="ThroughChanged" Required="true" Disabled="State.Busy" /><MudButton OnClick="Review" Disabled="State.Busy">Review FX configuration authority</MudButton></MudForm>}
+    @if(State.FxRates is {} rates && rates.BookId==Book){<MudText>Book @rates.BookId · @rates.SourceCurrency to @rates.Books.Books.Single(row=>row.BookId==Book).FunctionalCurrency · Review date @rates.ReviewDate.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture)</MudText>@foreach(var rate in rates.Rates){<MudText>Version @rate.Version · @rate.Rate @rate.TargetCurrency per @rate.SourceCurrency · @rate.EffectiveFrom.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) through @rate.EffectiveThrough.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · @rate.Provider · @rate.Provenance · @rate.AuthorityReference</MudText>}@if(rates.Rates.Count==0){<MudAlert Severity="Severity.Info">No company rate versions are recorded for this book/source currency.</MudAlert>}}
+    @if(State.HasPendingFx){<MudAlert Severity="Severity.Warning">The exact original FX request is retained. Reconcile it before another ledger request.</MudAlert>@if(State.PendingFx is {} pending){<MudText>@pending.Command.Version · @pending.Command.SourceCurrency to @pending.Command.Book.FunctionalCurrency · Request @pending.Command.Id</MudText>@if(CanConfigure){<MudButton OnClick="Retry" Disabled="State.Busy">Reconcile original FX configuration</MudButton>}<MudButton OnClick='@(()=>Recover(pending.Command.Id))' Disabled="State.Busy">Recover original FX outcome</MudButton>}}
+    else if(CanConfigure && State.FxConfigurationReview is {} source && source.Source.BookId==Book)
+    {
+        var configured=source.Source.Books.Books.Single(row=>row.BookId==Book);
+        <MudText>Target book currency @configured.FunctionalCurrency · @configured.CurrencyDecimals decimals · @configured.RoundingPolicy · @configured.CalendarId · @configured.TimeZoneId</MudText>
+        <MudText>Reviewed effective interval @source.Source.Window!.From.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) through @source.Source.Window.Through.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture)</MudText>
+        <MudForm @ref="_form">
+            <MudTextField T="string" Label="Rate version" @bind-Value="_version" Required="true" MaxLength="128" Disabled="State.Busy" />
+            <MudNumericField T="decimal?" Label="Target currency units per source unit" @bind-Value="_rate" Required="true" Disabled="State.Busy" />
+            <MudNumericField T="int?" Label="Exact rate decimal places" @bind-Value="_precision" Required="true" Min="0" Max="12" Disabled="State.Busy" />
+            <MudSelect T="string" Label="Quote direction" @bind-Value="_direction" Required="true" Disabled="State.Busy"><MudSelectItem T="string" Value='@("TARGET_PER_SOURCE")'>Target currency per source currency</MudSelectItem></MudSelect>
+            <MudDatePicker Label="Original quote date" @bind-Date="_quote" Required="true" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Provider observation UTC timestamp (ISO 8601)" @bind-Value="_observed" Required="true" MaxLength="64" Disabled="State.Busy" />
+            <MudTextField T="string" Label="Provider name" @bind-Value="_provider" Required="true" MaxLength="256" Disabled="State.Busy" /><MudTextField T="string" Label="Original quote provenance reference" @bind-Value="_provenance" Required="true" MaxLength="2000" Disabled="State.Busy" /><MudTextField T="string" Label="Reviewed quote authority reference" @bind-Value="_authority" Required="true" MaxLength="2000" Disabled="State.Busy" />
+            <MudSelect T="string" Label="Functional residual allocation" @bind-Value="_allocation" Required="true" Disabled="State.Busy"><MudSelectItem T="string" Value='@("LARGEST_REMAINDER")'>Largest remainder; revenue, charges, tax tie order</MudSelectItem></MudSelect>
+            <MudTextField T="string" Label="Rate configuration reason" @bind-Value="_reason" Required="true" MaxLength="128" Disabled="State.Busy" /><MudButton OnClick="Record" Color="Color.Primary" Variant="Variant.Filled" Disabled="State.Busy">Record reviewed company FX rate</MudButton>
+        </MudForm>
+    }
+    <MudForm @ref="_recoveryForm"><MudTextField T="string" Label="Original FX configuration ID" @bind-Value="_recoveryId" Required="true" MaxLength="32" /><MudButton OnClick="RecoverSelected" Disabled="State.Busy">Recover my original FX configuration</MudButton></MudForm>
+    @if(State.FxResult is {} result){<MudAlert Severity="Severity.Success">The original @result.RATE_VERSION company FX rate is confirmed.</MudAlert>}
+</MudPaper>
+@code {
+    [Parameter,EditorRequired]public CompanyLedgerAccountState State{get;set;}=default!;
+    [Parameter]public string Book{get;set;}="";
+    private MudForm? _form,_selectionForm,_windowForm,_recoveryForm;
+    private string _source="",_version="",_direction="",_observed="",_provider="",_provenance="",_authority="",_allocation="",_reason="",_recoveryId="";
+    private DateTime? _date,_quote,_reviewThrough;
+    private decimal? _rate;
+    private int? _precision;
+    private string? _error;
+    private bool _disposed;
+    private long _epoch;
+    private bool CanConfigure=>Company.Selection is {} selected && selected.Roles.Count>0 && selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) && selected.Permissions.Contains("Accounting.ConfigureLedger",StringComparer.Ordinal);
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
+    private async Task Access(bool write){var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || (user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value)!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || write && !CanConfigure)throw new UnauthorizedAccessException();}
+    private async Task Execute(Func<Task> action,bool write=true){var epoch=_epoch;_error=null;try{await Access(write);await action();}catch{if(!_disposed && epoch==_epoch)_error="The original FX configuration is unconfirmed. Check current company/account/book, directed quote evidence and authority. Recover the original request before another change.";}}
+    private async Task Selection(){if(_selectionForm is not null){await _selectionForm.ValidateAsync();if(!_selectionForm.IsValid)throw new InvalidOperationException();}if(_date is null || string.IsNullOrWhiteSpace(Book))throw new InvalidOperationException();}
+    private Task ReadPublic()=>Execute(async()=>{await Selection();await State.LoadFxRatesAsync(Book,_source,DateTime.SpecifyKind(_date!.Value,DateTimeKind.Unspecified),Accounting);},false);
+    private Task Review()=>Execute(async()=>{await Selection();if(_windowForm is not null){await _windowForm.ValidateAsync();if(!_windowForm.IsValid)return;}if(_reviewThrough is null)throw new InvalidOperationException();await State.LoadFxRatesAsync(Book,_source,DateTime.SpecifyKind(_date!.Value,DateTimeKind.Unspecified),Accounting,true,DateTime.SpecifyKind(_reviewThrough.Value,DateTimeKind.Unspecified));});
+    private Task Record()=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_rate is null || _precision is null || _quote is null || State.FxConfigurationReview?.Source.Window is not {} window || !(_observed.EndsWith("Z",StringComparison.Ordinal) || _observed.EndsWith("+00:00",StringComparison.Ordinal)) || !DateTimeOffset.TryParse(_observed,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out var observed) || observed.Offset!=TimeSpan.Zero)throw new InvalidOperationException();await State.ConfigureFxAsync(_version,_rate.Value,_precision.Value,_direction,DateTime.SpecifyKind(_quote.Value,DateTimeKind.Unspecified),window.From,window.Through,observed.UtcDateTime,_provider,_provenance,_authority,_allocation,_reason,Accounting);});
+    private Task Retry()=>Execute(()=>State.SubmitFxAsync(Accounting));
+    private Task Recover(string id)=>Execute(()=>State.RecoverFxAsync(id,Accounting),false);
+    private Task RecoverSelected()=>Execute(async()=>{if(_recoveryForm is not null){await _recoveryForm.ValidateAsync();if(!_recoveryForm.IsValid)return;}await State.RecoverFxAsync(_recoveryId,Accounting);},false);
+    private void SourceChanged(string value){_source=value;SelectionChanged();}
+    private void DateChanged(DateTime? value){_date=value;SelectionChanged();}
+    private void ThroughChanged(DateTime? value){_reviewThrough=value;SelectionChanged();}
+    private void SelectionChanged(){++_epoch;State.Invalidate();_error=null;Changed();}
+    private void Reset(){++_epoch;_source=_version=_direction=_observed=_provider=_provenance=_authority=_allocation=_reason=_recoveryId="";_date=_quote=_reviewThrough=null;_rate=null;_precision=null;_error=null;Changed();}
+    private void AuthChanged(Task<AuthenticationState> state){State.Invalidate();Reset();}
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;++_epoch;State.Changed-=Changed;Company.Changed-=Reset;Authentication.AuthenticationStateChanged-=AuthChanged;}
+}

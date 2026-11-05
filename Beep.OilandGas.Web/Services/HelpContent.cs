@@ -74,7 +74,7 @@ public static class HelpContent
         ["/economics/afe"] = new PageHelp
         {
             Title = "AFE Management",
-            Content = "Create and track Authorization for Expenditure (AFE) requests. AFEs can be linked to work orders and production interventions."
+            Content = "Prepare a DRAFT AFE from a recorded approved FDP baseline using a configured company book, explicit currency amount and calendar date. Recover retained requests before preparing another. The company investment queue opens each exact approved-FDP/AFE source. An independent current investment reviewer records an explicit approve/reject decision; original recovery and public outcomes retain the immutable request. Commitments, payments and actual expenditure remain separate. Work-order budgets start on the work-order board."
         },
 
         // ── Accounting ────────────────────────────────────────────────────────
@@ -95,8 +95,8 @@ public static class HelpContent
         },
         ["/ppdm39/accounting/revenue-recognition"] = new PageHelp
         {
-            Title = "Revenue Recognition",
-            Content = "Monitor revenue recognition by well, product, and period under ASC 606 / IFRS 15. Track recognized vs deferred revenue."
+            Title = "Recorded Revenue Source Review",
+            Content = "Review recorded FIELD revenue transactions for the selected company and date window. Currency, amounts and prices remain as recorded; unavailable values are explicit. Approved terms, billing and revenue recognition require their own governed workflow."
         },
 
         // ── Compliance ────────────────────────────────────────────────────────

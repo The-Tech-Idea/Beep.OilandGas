@@ -1,0 +1,11 @@
+@namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
+@page "/accounting/sales-receivables"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Components.Workflow
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h3">Sales receivable workspace</MudText>
+    <MudButton Href="/accounting/sales-invoices" Variant="Variant.Outlined">Return to recorded sales invoices</MudButton>
+    <MudButton Href="/accounting/ledger-accounts" Variant="Variant.Outlined">Review company ledger accounts</MudButton>
+    <SalesReceivableWorkbench InvoiceId="@Invoice" />
+</MudContainer>
+@code{[Parameter,SupplyParameterFromQuery(Name="invoice")] public string? Invoice{get;set;}}

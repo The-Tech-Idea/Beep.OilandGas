@@ -1,0 +1,9 @@
+### Ran Playwright code
+```js
+await page.getByRole('link', { name: 'Open recorded incident' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:52246/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-assigned-incident-browser\artifacts\page-2026-10-29T10-04-00-206Z.yml)

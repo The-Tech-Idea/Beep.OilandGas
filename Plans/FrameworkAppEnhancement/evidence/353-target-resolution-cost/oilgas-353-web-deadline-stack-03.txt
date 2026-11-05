@@ -1,0 +1,217 @@
+Thread (0xB0F0):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.Monitor.Wait(class System.Object,int32)
+  System.Private.CoreLib.il!System.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.SpinThenBlockingWait(int32,value class System.Threading.CancellationToken)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.InternalWaitCore(int32,value class System.Threading.CancellationToken)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.InternalWait(int32,value class System.Threading.CancellationToken)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.Wait(int32,value class System.Threading.CancellationToken)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.Wait()
+  testhost!Microsoft.VisualStudio.TestPlatform.TestHost.DefaultEngineInvoker.Invoke(class System.Collections.Generic.IDictionary`2<class System.String,class System.String>)
+  testhost!Microsoft.VisualStudio.TestPlatform.TestHost.Program.Run(class System.String[],class Microsoft.VisualStudio.TestPlatform.Execution.UiLanguageOverride)
+  testhost!Microsoft.VisualStudio.TestPlatform.TestHost.Program.Run(class System.String[])
+  testhost!Microsoft.VisualStudio.TestPlatform.TestHost.Program.Main(class System.String[])
+
+Thread (0x9CF0):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOne()
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner+<>c__DisplayClass32_0.<RunTests>b__5(class Xunit.Runner.VisualStudio.AssemblyRunInfo)
+  System.Private.CoreLib.il!System.Collections.Generic.List`1[System.__Canon].ForEach(class System.Action`1<!0>)
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner+<RunTests>d__32.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0&)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0&)
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner.RunTests(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle,class Xunit.Runner.VisualStudio.LoggerHelper,value class Xunit.Runner.VisualStudio.TestPlatformContext,class Xunit.Runner.VisualStudio.RunSettings,class System.Func`1<class System.Collections.Generic.List`1<class Xunit.Runner.VisualStudio.AssemblyRunInfo>>)
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner.RunTests(class System.Collections.Generic.IEnumerable`1<class System.String>,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)
+  Microsoft.VisualStudio.TestPlatform.Common!Microsoft.VisualStudio.TestPlatform.Common.ExtensionDecorators.SerialTestRunDecorator.RunTests(class System.Collections.Generic.IEnumerable`1<class System.String>,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.RunTestsWithSources.InvokeExecutor(class Microsoft.VisualStudio.TestPlatform.Common.ExtensionFramework.Utilities.LazyExtension`2<class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestExecutor,class Microsoft.VisualStudio.TestPlatform.Common.Interfaces.ITestExecutorCapabilities>,class System.Tuple`2<class System.Uri,class System.String>,class Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Adapter.RunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTestInternalWithExecutors(class System.Collections.Generic.IEnumerable`1<class System.Tuple`2<class System.Uri,class System.String>>,int64)
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTestsInternal()
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTests()
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.ExecutionManager.StartTestRun(class System.Collections.Generic.Dictionary`2<class System.String,class System.Collections.Generic.IEnumerable`1<class System.String>>,class System.String,class System.String,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.ClientProtocol.TestExecutionContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.ITestCaseEventsHandler,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.IInternalTestRunEventsHandler)
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler+<>c__DisplayClass45_4.<OnMessageReceived>b__3()
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler+<>c.<.ctor>b__31_2(class System.Action)
+  Microsoft.TestPlatform.CoreUtilities!Microsoft.VisualStudio.TestPlatform.Utilities.JobQueue`1[System.__Canon].SafeProcessJob(!0)
+  Microsoft.TestPlatform.CoreUtilities!Microsoft.VisualStudio.TestPlatform.Utilities.JobQueue`1[System.__Canon].BackgroundJobProcessor(class System.String)
+  Microsoft.TestPlatform.CoreUtilities!Microsoft.VisualStudio.TestPlatform.Utilities.JobQueue`1[System.__Canon].<.ctor>b__16_0()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task&,class System.Threading.Thread)
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0xCE14):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitAnyMultiple(value class System.ReadOnlySpan`1<class Microsoft.Win32.SafeHandles.SafeWaitHandle>,int32)
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+WaitThread.WaitThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0xB134):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+IOCompletionPoller.Poll()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x8480):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+IOCompletionPoller.Poll()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0xB4C):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOne()
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner+<RunTestsInAssembly>d__33.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0&)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0&)
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner.RunTestsInAssembly(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle,class Xunit.Runner.VisualStudio.LoggerHelper,value class Xunit.Runner.VisualStudio.TestPlatformContext,class Xunit.Runner.VisualStudio.RunSettings,class Xunit.Sdk.IMessageSink,class Xunit.Runner.VisualStudio.AssemblyRunInfo)
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner+<>c__DisplayClass34_0+<<RunTestsInAssemblyAsync>b__0>d.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0&)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncVoidMethodBuilder.Start(!!0&)
+  xunit.runner.visualstudio.testadapter!Xunit.Runner.VisualStudio.VsTestRunner+<>c__DisplayClass34_0.<RunTestsInAssemblyAsync>b__0(class System.Object)
+  System.Private.CoreLib.il!System.Threading.ThreadPoolWorkQueue.Dispatch()
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x47E8):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+GateThread.GateThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x9DC4):
+  [Native Frames]
+  System.Net.Sockets.il!System.Net.Sockets.SocketPal.Poll(class System.Net.Sockets.SafeSocketHandle,int32,value class System.Net.Sockets.SelectMode,bool&)
+  System.Net.Sockets.il!System.Net.Sockets.Socket.Poll(int32,value class System.Net.Sockets.SelectMode)
+  Microsoft.TestPlatform.CommunicationUtilities!Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TcpClientExtensions.MessageLoopAsync(class System.Net.Sockets.TcpClient,class Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Interfaces.ICommunicationChannel,class System.Action`1<class System.Exception>,value class System.Threading.CancellationToken)
+  Microsoft.TestPlatform.CommunicationUtilities!Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.SocketClient.<OnServerConnected>b__16_0()
+  System.Private.CoreLib.il!System.Threading.Tasks.Task`1[System.__Canon].InnerInvoke()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task&,class System.Threading.Thread)
+  System.Private.CoreLib.il!System.Threading.ThreadPoolWorkQueue.Dispatch()
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x33D0):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.Monitor.Wait(class System.Object,int32)
+  System.Private.CoreLib.il!System.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)
+  System.Private.CoreLib.il!System.Threading.ManualResetEventSlim.Wait()
+  Microsoft.TestPlatform.CrossPlatEngine!Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler.ProcessRequests(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.TesthostProtocol.ITestHostManagerFactory)
+  testhost!Microsoft.VisualStudio.TestPlatform.TestHost.DefaultEngineInvoker+<>c__DisplayClass22_0.<StartProcessingAsync>b__0()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task&,class System.Threading.Thread)
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x58B8):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)
+  System.Private.CoreLib.il!System.Threading.TimerQueue.TimerThread()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x3FAC):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)
+  System.Private.CoreLib.il!System.Threading.WaitHandle.WaitOne()
+  xunit.execution.dotnet!Xunit.Sdk.MessageBus.ReporterWorker()
+  xunit.execution.dotnet!Xunit.Sdk.XunitWorkerThread+<>c.<QueueUserWorkItem>b__5_0(class System.Object)
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task&,class System.Threading.Thread)
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x8C28):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.LowLevelLifoSemaphore.WaitForSignal(int32)
+  System.Private.CoreLib.il!System.Threading.LowLevelLifoSemaphore.Wait(int32,bool)
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0xB778):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.LowLevelLifoSemaphore.WaitForSignal(int32)
+  System.Private.CoreLib.il!System.Threading.LowLevelLifoSemaphore.Wait(int32,bool)
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x34BC):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)
+  Microsoft.AspNetCore.Server.Kestrel.Core.il!Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.Heartbeat.TimerLoop()
+  System.Private.CoreLib.il!System.Threading.Thread+StartHelper.Callback(class System.Object)
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+
+Thread (0x2DA4):
+  [Native Frames]
+  System.Private.CoreLib.il!System.Threading.LowLevelLifoSemaphore.WaitForSignal(int32)
+  System.Private.CoreLib.il!System.Threading.LowLevelLifoSemaphore.Wait(int32,bool)
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+
+Thread (0x8020):
+  CPU_TIME
+  System.Private.CoreLib.il!System.IO.File.GetAttributes(class System.String)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Sqlite(class System.String,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties,class System.String)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.BuildKey(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Key(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.ModuleConnectionResolver+<GetMigrationBindingFingerprintAsync>d__10.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].Start(!!0&)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.ModuleConnectionResolver.GetMigrationBindingFingerprintAsync(class System.Collections.Generic.IReadOnlyList`1<class System.String>,class System.String)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.ModuleConnectionResolver+<ResolveAssetScopeAsync>d__9.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].Start(!!0&)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveAssetScopeAsync()
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.CompanyModuleConnection+<ResolveAsync>d__9.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].Start(!!0&)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader+<RequireCurrentAsync>d__10.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0&)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader+<ReadAsync>d__11.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].Start(!!0&)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.ReadAsync(class System.Type,class System.Collections.Generic.IReadOnlyList`1<class TheTechIdea.Beep.Report.AppFilter>,class System.Collections.Generic.IReadOnlyList`1<class System.String>,class System.Collections.Generic.IReadOnlyList`1<class System.String>)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility+<>c__DisplayClass8_0.<GetMaximumLevelAsync>g__Read|3(class System.Type,class TheTechIdea.Beep.Report.AppFilter[])
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility+<>c__DisplayClass8_0+<<GetMaximumLevelAsync>g__Reference|4>d.MoveNext()
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.Boolean].Start(!!0&)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility+<>c__DisplayClass8_0.<GetMaximumLevelAsync>g__Reference|4(class System.Type,class System.String,class System.String)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility+<GetMaximumLevelAsync>d__8.MoveNext()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[System.__Canon,System.__Canon].MoveNext()
+  System.Private.CoreLib.il!System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.RunContinuations(class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.Boolean].SetExistingTaskResult(class System.Threading.Tasks.Task`1<!0>,!0)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.PPDMCompanyFieldEligibility+<>c__DisplayClass8_0+<<GetMaximumLevelAsync>g__Reference|4>d.MoveNext()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[System.Boolean,System.__Canon].MoveNext()
+  System.Private.CoreLib.il!System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.RunContinuations(class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task`1<!0>,!0)
+  Beep.OilandGas.Repository.Tests!Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader+<ReadAsync>d__11.MoveNext()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[System.__Canon,System.__Canon].MoveNext()
+  System.Private.CoreLib.il!System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.RunContinuations(class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task`1<!0>,!0)
+  Beep.OilandGas.PPDM39!Beep.OilandGas.PPDM39.Core.PPDMGenericRepository+<GetAsync>d__62.MoveNext()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[System.__Canon,System.__Canon].MoveNext()
+  System.Private.CoreLib.il!System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.RunContinuations(class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task`1<!0>,!0)
+  Beep.OilandGas.PPDM39!Beep.OilandGas.PPDM39.Core.PPDMGenericRepository+<GetEntitiesWithFiltersAsync>d__36.MoveNext()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[System.__Canon,System.__Canon].MoveNext()
+  System.Private.CoreLib.il!System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.RunContinuations(class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task`1<!0>,!0)
+  Beep.OilandGas.PPDM39!Beep.OilandGas.PPDM39.Core.PPDMDataSourceTransaction+<WithSourceAsync>d__5`1[System.__Canon].MoveNext()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[System.__Canon,System.__Canon].MoveNext()
+  System.Private.CoreLib.il!System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.RunContinuations(class System.Object)
+  System.Private.CoreLib.il!System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task`1<!0>,!0)
+  Beep.OilandGas.PPDM39!Beep.OilandGas.PPDM39.Core.PPDMGenericRepository+<ReadProviderRowsAsync>d__37.MoveNext()
+  System.Private.CoreLib.il!System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)
+  System.Private.CoreLib.il!System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.RunContinuations(class System.Object)
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.FinishStageTwo()
+  System.Private.CoreLib.il!System.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task&,class System.Threading.Thread)
+  System.Private.CoreLib.il!System.Threading.ThreadPoolWorkQueue.Dispatch()
+  System.Private.CoreLib.il!System.Threading.PortableThreadPool+WorkerThread.WorkerThreadStart()
+  System.Private.CoreLib.il!System.Threading.Thread.StartCallback()
+

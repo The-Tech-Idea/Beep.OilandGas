@@ -1,0 +1,82 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderBudgetDecisionState State
+@inject IWorkOrderServiceClient Orders
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Independent work-order budget review</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudTextField @bind-Value="_book" Label="Original recorded company book" Required="true" Disabled="@State.Busy" />
+        <MudTextField @bind-Value="_afe" Label="Original draft AFE identity" Required="true" Disabled="@State.Busy" />
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || !State.CanReview)">Review exact original draft, work scope and book</MudButton>
+        @if(_authorized && State.Review is {} review)
+        {
+            var draft=review.Original();
+            <MudText>Original AFE @draft.Number · @draft.Name · @draft.AfeId</MudText>
+            <MudText>Recorded budget @draft.BudgetAmount.ToString("N"+draft.CurrencyDecimals) @draft.CurrencyCode · book @draft.BookId</MudText>
+            <MudText>Original author @draft.CreatedBy · original UTC @draft.CreatedAtUtc.ToString("O")</MudText>
+            <MudText>Original work scope and configured book revisions confirmed at UTC @review.Current.ComparedAtUtc.ToString("O")</MudText>
+            <MudSelect T="WorkOrderBudgetDecision" @bind-Value="_decision" Label="Explicit independent decision" Required="true" Disabled="@State.Busy">
+                <MudSelectItem Value="WorkOrderBudgetDecision.Approve">Approve</MudSelectItem>
+                <MudSelectItem Value="WorkOrderBudgetDecision.Reject">Reject</MudSelectItem>
+            </MudSelect>
+            <MudTextField @bind-Value="_reason" Label="Independent decision rationale" Lines="3" Required="true" Disabled="@State.Busy" />
+            <MudCheckBox @bind-Value="_confirm" Label="I independently reviewed the original scope, book, currency and amount" Disabled="@State.Busy" />
+            <MudButton OnClick="RecordAsync" Disabled="@(!_confirm || !State.CanRecord)" Color="Color.Primary">Retain original reference and record independent decision</MudButton>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original independent decision intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy)">Read original independent decision without replay</MudButton>
+        @if(_authorized && State.VisibleReference is {} id){<MudText>Retained original decision reference @id</MudText>}
+        @if(_authorized && State.Receipt is {} outcome){<MudAlert Severity="Severity.Success">Recorded independent @outcome.Recorded.STATUS · decision @outcome.Recorded.APPROVAL_WORKFLOW_ID · original AFE @outcome.Recorded.ENTITY_ID · reviewer @outcome.Recorded.APPROVED_BY · UTC @outcome.Recorded.APPROVAL_DATE?.ToString("O").</MudAlert>}
+        <MudAlert Severity="Severity.Info">The budget author cannot review their own draft. A decision preserves the original draft and does not record actual costs, post a journal or accept return to service. An uncertain decision uses its original book, AFE and retained reference.</MudAlert>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    private string _attached="",_book="",_afe="",_reason="",_reference="";
+    private WorkOrderBudgetDecision _decision;
+    private bool _authorized,_confirm,_disposed;
+    private string? _error;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        var key=FieldId+"\n"+WorkOrderId;if(_attached!=key){Invalidate();_attached=key;}
+        var query=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
+        if(query.TryGetValue("budgetDecisionBook",out var book) && book.Count==1)_book=book[0]??"";
+        if(query.TryGetValue("budgetDecisionAfe",out var afe) && afe.Count==1)_afe=afe[0]??"";
+        if(query.TryGetValue("budgetDecisionIntent",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        if(!string.IsNullOrEmpty(_book) && !string.IsNullOrEmpty(_afe))Attach();
+        try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+    }
+    private void Attach()=>State.Attach(new(new(WorkOrderId,FieldId,_book),_afe));
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId ||
+            !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !selected.Permissions.Contains("Accounting.ReviewWorkOrderBudget",StringComparer.Ordinal) ||
+            !LeaseSummaryValidator.Identifier(WorkOrderId) || await Fields.GetCurrentFieldIdAsync()!=FieldId || snapshot!=Company.Snapshot)
+            throw new UnauthorizedAccessException("Current independent financial roles, company/account and original FIELD/order are required.");
+    }
+    private Task ReviewAsync()=>Run(async()=>{await Authority();Attach();await State.ReviewAsync(Orders);_reason="";_decision=WorkOrderBudgetDecision.Unspecified;_confirm=false;},"reviewing original work-order budget independently");
+    private Task Retain(Guid id){_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"budgetDecisionBook",_book},{"budgetDecisionAfe",_afe},{"budgetDecisionIntent",_reference}}),replace:true);return Task.CompletedTask;}
+    private Task RecordAsync()=>Run(async()=>{await Authority();if(!_confirm)throw new ArgumentException("Confirm the independent original scope/book/currency/amount review.");await State.RecordAsync(Orders,_decision,_reason,Retain);},"recording the original independent budget decision");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();Attach();if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original independent decision reference.");await State.RecoverAsync(Orders,id,Retain);},"reading original independent budget decision history");
+    private async Task Run(Func<Task> action,string operation)
+    {
+        if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original independent decision is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    private void Invalidate(){State.Attach(null);_authorized=false;_book="";_afe="";_reference="";_reason="";_decision=WorkOrderBudgetDecision.Unspecified;_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _)=>Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _)=>Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

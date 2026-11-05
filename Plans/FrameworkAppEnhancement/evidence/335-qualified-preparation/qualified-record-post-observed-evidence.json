@@ -1,0 +1,2190 @@
+{
+  "observed_at_utc": "2026-10-25T07:36:25.493596+00:00",
+  "status": "failed",
+  "scope": "Protected mixed well/facility/equipment return after actual execution handoff, verification, return acceptance and closure; prepared original work-start/report and recorded observations remain explicit seams.",
+  "git": {
+    "staging_commit_push_performed": false,
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7"
+  },
+  "environment": {
+    "framework_snapshot": "a80d41ad0affd81b549f5f063787e186d162e37f",
+    "sdk": "10.0.401",
+    "os": "Microsoft Windows NT 10.0.26200.0"
+  },
+  "sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "40877b2cea978f93d862923768a9f310ac20f587e1fe9e054342db3ccbce425a"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "fde5f3c6374a12d5cd8a97a002ae62a200cd8e86e49e293ce0911d71c7129b21"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    }
+  ],
+  "data_assembly": {
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+    "sha256": "1f0a5419ad0d98aaec486823583c2432f4c374738a16d3a163eb20e9d624f14d"
+  },
+  "command": "./Scripts/Test-MaintenanceHandoffHttp.ps1 -DataAssemblyPath \"C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll\" -Filter \"FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure\"",
+  "checks": [
+    {
+      "log": "oilgas-335-qualified-record-post-http-source-fixture.log",
+      "status": "failed",
+      "note": "Actual work-scope reader refused fixture missing its schema conversion helper; fixed by configuring the actual ClassCreator.",
+      "exit_code": 1,
+      "name": "initial-source-fixture",
+      "duration": "3.4493 minutes"
+    },
+    {
+      "log": "oilgas-335-qualified-record-post-http-second.log",
+      "status": "failed",
+      "note": "Actual asset grant store refused self-administration by the return approver. Corrected fixture to use the existing separate company Administrator store; production checks unchanged.",
+      "exit_code": 1,
+      "name": "administrator-grant-fixture",
+      "duration": "5.9411 minutes"
+    },
+    {
+      "duration": "8.3768 minutes",
+      "log": "oilgas-335-qualified-record-post-http-third.log",
+      "name": "complete-schema-fixture",
+      "status": "failed",
+      "exit_code": 1,
+      "note": "Protected evidence refused missing declared native licensing schema; copying only populated row types was incomplete."
+    },
+    {
+      "duration": "14.4318 seconds",
+      "log": "oilgas-335-qualified-record-source-preflight-missing-licence-references.log",
+      "name": "licensing-source-preflight",
+      "status": "failed",
+      "exit_code": 1,
+      "note": "Fast actual native source check identified missing licence-status reference tables in the fixture whitelist."
+    },
+    {
+      "duration": "20.4699 seconds",
+      "passed": 1,
+      "name": "complete-native-source-preflight",
+      "status": "verified",
+      "exit_code": 0,
+      "log": "oilgas-335-qualified-record-source-preflight-final.log",
+      "note": "Actual native identity/operating/licensing readers validate copied schema including empty tables; no business writes."
+    },
+    {
+      "log": "oilgas-335-qualified-and-well-record-post-http-final.log",
+      "process_session": 95323,
+      "name": "mixed-and-original-well-protected-workflows",
+      "note": "Terminal process 95323: existing original well-only journey passed (10 minutes 54 seconds); mixed case failed (8 minutes 41 seconds) at canonical metadata refusal in protected evidence. Source investigation identified shared personnel metadata replacing canonical type names with full CLR names; correction is under a new preflight. No mixed protected record or two-case pass.",
+      "status": "failed",
+      "partial_results": [
+        {
+          "cause": "Canonical qualified metadata refusal; shared fixture overlap under investigation",
+          "phase": "Protected read-only asset evidence after actual native verification/return acceptance/closure",
+          "status": "failed",
+          "name": "ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+          "duration": "8 minutes 41 seconds"
+        },
+        {
+          "process_session": 95323,
+          "status": "verified",
+          "name": "ActualPhysicalReturnAcceptanceHttpRequiresIndependentEvidenceAndRecoversWithoutReplay",
+          "duration": "10 minutes 54 seconds"
+        }
+      ],
+      "exit_code": 1,
+      "passed": 1,
+      "failed": 1,
+      "duration": "19.6370 minutes"
+    },
+    {
+      "name": "exact-policy-protected-mixed-workflow",
+      "status": "failed",
+      "session": 41336,
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "17.5383 minutes",
+      "log": "oilgas-335-qualified-record-post-exact-policy-http-resumed.log",
+      "note": "Terminal observed on 2026-10-22. Original qualified record response, native write count/status effects, unchanged original report and retained command assertions passed before line 48 retry/reference recovery loop exceeded the original 100-second request timeout. Whole case failed; no complete mixed workflow pass."
+    },
+    {
+      "name": "return-diagnostics-native-preflight",
+      "status": "verified",
+      "session": 68995,
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "duration": "43.1445 seconds",
+      "log": "oilgas-335-return-diagnostics-preflight.log",
+      "note": "Source/licensing/policy/person preflight, forged private proof/missing participant refusal, and later valid policy append preserving original recovery. Actual native owners with controlled provider; timing additions preserve all validation and original timeout."
+    },
+    {
+      "name": "protected-mixed-return-timing-diagnosis",
+      "session": 63580,
+      "status": "failed",
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "10.3103 minutes",
+      "log": "oilgas-335-qualified-return-timed-http.log",
+      "timing_log": "oilgas-asset-return-http-fb5f0a39422e4aa39da2ddad297affb5.log",
+      "note": "Terminal diagnostic rerun failed during protected asset-return/review at original 100-second limit, before record in this run. A prior authorized evidence request completed in 48.7 seconds with 2401 authority spans/35.5 inclusive seconds. The timed-out review had 4038 completed authority spans/64.7 inclusive seconds, repeated entitlement/reference native reads (8828 each for six listed tables), and incomplete source spans. Inclusive nested times must not be added. Prior 41336 partial record assertions remain a distinct failed case, not a complete pass."
+    },
+    {
+      "name": "paired-parent-native-source-and-late-change-gate",
+      "status": "verified",
+      "session": 61815,
+      "exit_code": 0,
+      "passed": 31,
+      "failed": 0,
+      "duration": "25.3465 seconds",
+      "log": "oilgas-335-parent-observation-preflight.log",
+      "filter": "FullyQualifiedName~CompanyMaintenanceQualifiedOperatingTests|FullyQualifiedName~CompanyMaintenanceQualifiedLicensingTests.ClosingLicensingParentCheck|FullyQualifiedName~LicensingCannotReadThroughAChangedParentOrRevokedAuthority|FullyQualifiedName~PairedLicensingReadRejectsAChangedOriginalHolderOrStatusWithoutWrites|FullyQualifiedName~PairedAreaReadRejectsChangedReferencedAreaBeforeDeliveringEvidence|FullyQualifiedName~QualifiedHttpSourceFixtureReadsCompleteIdentityStatusAndLicensingIncludingEmptyTables",
+      "note": "Six new late owner/grant/installation changes after the second status/licence population refuse. Existing current-source/order closing, native status/reference/predicate/date evidence, licensing parent/area changes and full source preflight remain covered."
+    },
+    {
+      "name": "paired-parent-actual-api-owned-rollback",
+      "status": "verified",
+      "session": 37526,
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "duration": "33.1678 seconds",
+      "log": "oilgas-335-parent-observation-owned-rollback.log",
+      "filter": "FullyQualifiedName~ActualApiQualifiedParticipantRefusesChangedConfiguredRoleOrZoneAndRollsBackAllTargets",
+      "note": "Actual API adapter/native participant refuses configured role or zone changes before and after the first write and rolls back the complete target set; controlled provider/auth facts."
+    },
+    {
+      "name": "paired-parent-full-protected-mixed-workflow",
+      "status": "failed",
+      "session": 7777,
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "11.0893 minutes",
+      "log": "oilgas-335-parent-observation-mixed-http.log",
+      "timing_log": "oilgas-asset-return-http-6fdfb13d78a34efb8e6e1c28633e790e.log",
+      "note": "Optimized parent bracketing passed31 native and4 API rollback cases, but whole mixed workflow failed during authorized review at100.1seconds before record in this run. Evidence request44.7s/2041 authority spans32.6inclusive seconds versus diagnostic48.7s/2401 spans35.5s. Timed-out review reached four complete qualified source reads,4090 completed authority spans62.5inclusive seconds; cumulative six entitlement/reference tables8912reads each. Counts differ in completed work; nested inclusive durations are not additive. No complete mixed pass."
+    },
+    {
+      "name": "app-rbac-query-plan-initial-build",
+      "status": "failed-compile",
+      "session": 71983,
+      "exit_code": 1,
+      "log": "oilgas-335-current-rbac-query-plan-preflight.log",
+      "note": "Two ordered-query expressions selected the scalar-task CompileAsyncQuery overload. Explicit IQueryable result expressions corrected the return overload; no test result is inferred from this failed build."
+    },
+    {
+      "name": "fresh-app-rbac-and-protected-executive-query-plans",
+      "status": "verified",
+      "session": 46082,
+      "exit_code": 0,
+      "passed": 61,
+      "failed": 0,
+      "duration": "10.5505 seconds",
+      "log": "oilgas-335-current-rbac-query-plan-preflight2.log",
+      "filter": "FullyQualifiedName~RepositoryCompanyAccessTests|FullyQualifiedName~ProtectedExecutivePortfolioUsesCurrentAppAuthorityAndNativeCompanyFields",
+      "note": "49 current repository company-access cases including six warmed-service account/membership/standard-role/scoped-role/permission/clock changes, plus12 existing protected executive client/native cases across distinct actual EF models. No authorization values cached."
+    },
+    {
+      "name": "query-plan-current-bindings-and-native-rollback",
+      "status": "verified",
+      "session": 84422,
+      "exit_code": 0,
+      "passed": 32,
+      "failed": 0,
+      "duration": "30.9351 seconds",
+      "log": "oilgas-335-current-rbac-native-rollback.log",
+      "filter": "FullyQualifiedName~ActualApiQualifiedParticipantRefusesChangedConfiguredRoleOrZoneAndRollsBackAllTargets|FullyQualifiedName~QualifiedHttpSourceFixtureReadsCompleteIdentityStatusAndLicensingIncludingEmptyTables|FullyQualifiedName~CompanyModuleConnectionTests",
+      "note": "Actual before/after-write role/zone rollback, qualified native source preflight and current company/module/target/binding/cancellation gates. Controlled Beep provider/auth seams remain."
+    },
+    {
+      "name": "fresh-query-plan-full-protected-mixed-workflow",
+      "status": "failed",
+      "session": 76712,
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "9.3487 minutes",
+      "log": "oilgas-335-current-rbac-query-plan-mixed-http.log",
+      "timing_log": "oilgas-asset-return-http-1c4e5148015e464dabeb7da841be1181.log",
+      "note": "Same full protected mixed case: evidence passed in32.6s with2041 authority spans21.9inclusive seconds, authorized review passed in78.9s with4092 authority spans43.8inclusive seconds, unconfirmed command correctly refused400. Actual record request then exceeded unchanged100s (100.1s observed) with4867 completed authority spans55.6inclusive seconds and an active record span. Whole case failed; no confirmed write/rollback/absence/retry/recovery/public outcome is inferred after timeout. Nested times are not additive."
+    },
+    {
+      "name": "paired-authority-and-fresh-role-catalog-preflight",
+      "status": "verified",
+      "session": 10322,
+      "exit_code": 0,
+      "passed": 62,
+      "failed": 0,
+      "duration": "50.4253 seconds",
+      "log": "oilgas-335-paired-authority-role-catalog-preflight.log",
+      "filter": "FullyQualifiedName~ActualReturnAuthorityUsesCurrentOriginalTargetsAndAppCapabilities|FullyQualifiedName~ReturnEvidenceGuardRechecksBothBindingsAndCurrentAuthorityAfterNativeRead|FullyQualifiedName~ReturnRoleCatalogDeduplicatesExactClaimsAndRechecksTheConfiguredRoleDespiteAnotherRolesCapability|FullyQualifiedName~CompanyMaintenanceReturnPolicyTests|FullyQualifiedName~ActualApiQualifiedParticipantRefusesChangedConfiguredRoleOrZoneAndRollsBackAllTargets|FullyQualifiedName~QualifiedHttpSourceFixtureReadsCompleteIdentityStatusAndLicensingIncludingEmptyTables",
+      "note": "Includes late target-capability revocation for W/E/F/mixed, exact-case/current duplicate role claims and configured-role removal while another role keeps the overall capability, source/binding/role/field/preference changes, native policy/source integrity and actual API after-write role/zone whole rollback."
+    },
+    {
+      "name": "fresh-joined-role-catalog-protected-policy-http",
+      "status": "verified",
+      "session": "completed synchronous",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "duration": "5.9388 seconds",
+      "log": "oilgas-335-paired-role-policy-http.log",
+      "filter": "FullyQualifiedName~MaintenanceReturnPolicyHttpRequiresCurrentAdminPermissionAndConfiguredRolesAndRecoversOriginalAppend",
+      "note": "Actual protected current admin/case-sensitive configured return-role policy append/recovery with native table, original body/no replay/privacy and changed-role refusal; controlled provider/auth facts."
+    },
+    {
+      "name": "paired-authority-full-protected-mixed-workflow",
+      "status": "failed",
+      "session": 74833,
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "9.4349 minutes",
+      "log": "oilgas-335-paired-authority-role-mixed-http.log",
+      "timing_log": "oilgas-asset-return-http-441c08f811f641b5a2f6dd463f28aa4c.log",
+      "note": "Same full mixed case passed evidence33.5s/review80.0s and rejected unconfirmed command. Actual record timed out at100.1s with5018 completed authority spans55.4inclusive seconds. Qualified preparation completed33.3s; qualified apply remained active53.8s; native owned transaction active92.7s. Physical checks current6.4s/owned4.7s and well checks0.6s each. Apply repeats full prepared-source proof and full parent reads through internal row-policy hooks. Whole case failed; no post-timeout write/rollback/absence/recovery result inferred. Nested times are not additive."
+    },
+    {
+      "name": "pinned-preimage-native-write-initial-matrix",
+      "status": "failed",
+      "session": 44313,
+      "exit_code": 1,
+      "passed": 33,
+      "failed": 3,
+      "duration": "4.9775 minutes",
+      "log": "oilgas-335-pinned-preimage-mutation-gate.log",
+      "note": "All production write/rollback/private-public recovery/unknown commit cases and two new grant cases passed. Three new owner/installation cases correctly refused before native mutation but their final fixture assertion incorrectly expected an injected external parent change to roll back. Corrected test preserves external fault while requiring unchanged remaining native rows, zero additional writes, no ledger and explicit external change retained. Production source unchanged for targeted rerun."
+    },
+    {
+      "name": "pinned-preimage-current-late-target-guard",
+      "status": "verified",
+      "session": 9063,
+      "exit_code": 0,
+      "passed": 5,
+      "failed": 0,
+      "duration": "27.8245 seconds",
+      "log": "oilgas-335-pinned-preimage-final-gate.log",
+      "note": "Current production unchanged from initial36-case matrix. Corrected five late direct-grant/owner/installation tests require refusal at mutation validation, no additional native write, unchanged non-faulted rows/no ledger and preservation of the explicitly injected external change. Two cases overlap earlier passes; no aggregate unique case count inferred."
+    },
+    {
+      "name": "pinned-preimage-full-protected-mixed-workflow",
+      "status": "failed",
+      "session": 74471,
+      "exit_code": 1,
+      "passed": 0,
+      "failed": 1,
+      "duration": "10.5496 minutes",
+      "log": "oilgas-335-pinned-write-policy-mixed-http.log",
+      "timing_log": "oilgas-asset-return-http-6c9e1936be4e4783b98855c513621843.log",
+      "note": "Same full protected mixed case passed evidence33.3s/review81.5s and rejected unconfirmed command. Record exceeded unchanged100s (100.1 observed). Qualified preparation35.0s and apply50.8s completed; first retained-proof verification was active1.1s at timeout.4996 authority spans55.8inclusive seconds; native transaction active92.5s. Whole case failed; no confirmed write/whole rollback/absence/retry/recovery/public outcome inferred. Nested timings are not additive; prior apply53.8s was unfinished, not a directly comparable completed duration."
+    },
+    {
+      "name": "shared-preparation-current-source-input-mutation-gate",
+      "status": "verified",
+      "session": 86825,
+      "exit_code": 0,
+      "passed": 22,
+      "failed": 0,
+      "duration": "1.2653 minutes",
+      "log": "oilgas-335-shared-preparation-input-gate.log",
+      "filter": "FullyQualifiedName~PreparedQualifiedApplyRechecksCompleteCurrentInputsAndSourcesBeforeAnyMutation|FullyQualifiedName~QualifiedReturnWriteJoinsOneOwnedTransactionAndPersistsOnlyItsExactPreparedNativeGraph|FullyQualifiedName~QualifiedMutationRechecksDirectWriteAfterItsPinnedPreimageWasRead|FullyQualifiedName~QualifiedReturnWriteCannotAcceptForgedPreparedRowsOrAChangedOriginalCommand",
+      "note": "Six new changed raw audit/extra status/licensing/zone audit/capacity/policy cases refuse before any additional write. Existing native complete graph, facility/equipment/nullable-zero observations, late target changes and forged prepared body/reason/reference remain covered. No full mixed HTTP pass inferred."
+    },
+    {
+      "name": "shared-preparation-owned-rollback-and-original-recovery",
+      "status": "verified",
+      "session": 49908,
+      "exit_code": 0,
+      "passed": 22,
+      "failed": 0,
+      "duration": "2.3527 minutes",
+      "log": "oilgas-335-shared-preparation-rollback-recovery.log",
+      "filter": "FullyQualifiedName~QualifiedReturnWriteFailureRollsBackAllEarlierNativeTargetsWithTheOwningCommand|FullyQualifiedName~CompleteMixedReturnRollsBackWellQualifiedTargetsAndOriginalIntentTogether|FullyQualifiedName~ActualApiQualifiedParticipantRefusesChangedConfiguredRoleOrZoneAndRollsBackAllTargets|FullyQualifiedName~CompleteQualifiedReturnUsesOneOriginalIntentCommonAuditAndReadOnlyRecovery|FullyQualifiedName~CompleteMixedReturnConfirmsTheOriginalOutcomeAfterCommitAcknowledgementFailure|FullyQualifiedName~CompleteQualifiedReturnRecoveryRetainsOriginalPolicyAfterALaterValidAppend|FullyQualifiedName~CompleteQualifiedReturnRequiresItsParticipantAndRejectsForgedFrozenProofWithoutNativeWrites",
+      "note": "Current shared validators preserve one intent/common audit, native whole rollback, late role/zone failure, uncertain commit distinction, private/public recovery, later valid policy append and forged proof/participant refusal. Provider/auth/physical/closure facts remain controlled seams; no full protected mixed acceptance inferred."
+    }
+  ],
+  "all_processes_terminal": true,
+  "seams": [
+    "Native business rows/provider schema/transactions use the existing controlled Beep source fixture.",
+    "Original canonical work-start/report is prepared from original native work scope, and operational/physical observations are pre-recorded fixture sources.",
+    "Actual native receiving, report reads, execution handoff, independent verification, return-role handoff, physical acceptance, closure and protected asset-return owners are exercised.",
+    "Authentication/provider/FIELD-orchestrator and asset grant target-admission seams remain explicit.",
+    "No live provider/OIDC/browser/full original work-start and submission certification."
+  ],
+  "review": {
+    "kind": "self-review",
+    "checks": [
+      "Qualified scope is seeded before original process/report and uses canonical current work-scope source.",
+      "Existing API role bridge and separate administrator grants are preserved; no role escalation to the return approver.",
+      "Physical-return service receives the existing qualified participant and evidence owner used by production.",
+      "No application owner, SQL/domain EF/schema/migration/new ledger/endpoint/permission mechanism changed.",
+      "Original well-only helper behavior and all test assertions remain unchanged; earlier full well-only path passed in 10m54s before the additive timing instrumentation.",
+      "Timing spans contain fixed operation names without actor/company/source/command tags. The focused fixture records only fixed endpoint names, status, timing aggregates and bounded table read counts on failure.",
+      "Earlier exact-policy mixed case 41336 is a terminal failed whole case, not a mixed workflow pass. Original record assertions before its retry/reference timeout are partial observations only.",
+      "Diagnostic rerun is a failed whole case before record; actual native source/auth checks remained enabled and timeout was not increased.",
+      "High repeated authority and entitlement-source read volume is an observed controlled-host bottleneck; exact production/provider latency and a safe reduction preserving original source/role/transaction/revocation checks remain unverified.",
+      "Affected maintenance docs: 1118 internal links resolved; current diagnostic source/runtime/Data8 hashes matched12/12 before terminal, and relevant whitespace checks passed.",
+      "Current paired source observations are closed by opening/middle/final complete parent checks; six new late owner/grant/installation changes refuse and existing after-write role/zone changes still roll back.",
+      "Existing app-RBAC compiled query plans are keyed to actual EF IModel; account, tenant, company and current UTC remain parameters. Six warmed-service change cases and two distinct EF models return current rights; no authority result cached.",
+      "The current whole protected mixed case still fails at record timeout after successful authorized review. Client timeout does not establish absence or whole rollback; original-reference recovery remains required and no successful mixed workflow is claimed.",
+      "Final current-state review:18 current source/runtime/Data8 hashes and25 retained outputs match; six changed source/test files have no conflicts/trailing whitespace.1133 affected internal links resolve and eight current tracker markers are unique.",
+      "All current jobs are terminal. Branch/master HEAD6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7 is unchanged and index is empty. Goal/plan remain active; no stage/commit/push occurred.",
+      "Current paired authority/configured-role62-case gate and protected policy1-case gate passed. Native write matrix33 passed/3 failed fixture assertions; corrected late preimage5-case gate passed, with two overlaps. These do not establish a successful whole mixed run.",
+      "Final current source/runtime/Data8 hashes22/22 and retained outputs33/33 match. Six changed code/test files are free of conflict/trailing whitespace;1133 internal links resolve and eight current markers are unique. All jobs terminal, master/head6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7 unchanged, index empty and no commit/push."
+    ]
+  },
+  "outputs": [
+    {
+      "path": "oilgas-335-qualified-record-post-http-source-fixture.log",
+      "sha256": "69b4f1f842de08f1009030bfb488f3c4a912ae51e28c844b8da6b48dbf60b0ec"
+    },
+    {
+      "path": "oilgas-335-qualified-record-post-http-second.log",
+      "sha256": "77d5d12a9fbc11ca0e53b99fd3375a42fda73d15f4dc37414acadce6190341b2"
+    },
+    {
+      "path": "oilgas-335-qualified-record-post-http-third.log",
+      "sha256": "c25ccee90d7909db2dfdc3325a38cfbc4802faf43f122780f7b6371233864cb6"
+    },
+    {
+      "path": "oilgas-335-qualified-record-source-preflight-missing-licence-references.log",
+      "sha256": "09f3ba80345512c6c7d3ff63198f059dd4e8211d3851eddecbe28d3d0d703039"
+    },
+    {
+      "path": "oilgas-335-qualified-record-source-preflight-final.log",
+      "sha256": "aa493aaadf23bddcdcbf7a70d52a78e83b54d7bdd8a5217ea109a084b9d811cf"
+    },
+    {
+      "path": "oilgas-335-qualified-and-well-record-post-http-final.log",
+      "sha256": "5797cc8cde4a70080d1ab15fba184e6370524cdc677da019449df940da47736d"
+    },
+    {
+      "sha256": "fa424dfc64784c749e8f34d4884807603cb9bbe154f91de54813625854e33b63",
+      "path": "oilgas-335-qualified-and-personnel-schema-preflight.log"
+    },
+    {
+      "path": "oilgas-335-qualified-record-post-canonical-schema-http.log",
+      "sha256": "9a15954c553a608fea11f8668ec5861faad4913a22a99db951a8b719f3429b5d"
+    },
+    {
+      "path": "oilgas-335-work-scope-and-return-identity-preflight.log",
+      "sha256": "76a1ca9e254b85585b66e4f5ad44e2b8b6a39a7ed6173f57de15aa127623c3c8"
+    },
+    {
+      "path": "oilgas-335-qualified-record-post-source-blockers-http.log",
+      "sha256": "dfee264c60b04c72f8f4babaabd2ea4b6272fd860f1bdfe73dd85a6f5719a1fc"
+    },
+    {
+      "path": "oilgas-335-exact-work-order-policy-preflight.log",
+      "sha256": "5fd34830bf37f01ff632abd84929398896a4cf246505b4e61e9b0159939ab8fa"
+    },
+    {
+      "sha256": "0ea8c9428296ee8a22c8be8869e0f2178102343583ae8aa0cef3d684d0b6cf5e",
+      "path": "oilgas-335-qualified-record-post-exact-policy-http.log"
+    },
+    {
+      "path": "oilgas-335-qualified-record-post-exact-policy-http-resumed.log",
+      "sha256": "0bc1d850b3e0fb8e060f7bc2b63cc6a1dd618fa123ab0e0579e055ea614f4e22"
+    },
+    {
+      "path": "oilgas-335-return-diagnostics-preflight.log",
+      "sha256": "7af455227c825f4601239c3fc486b415abe6c5aab8ade16a0eb6f58150e4825c"
+    },
+    {
+      "path": "oilgas-335-qualified-return-timed-http.log",
+      "sha256": "9e1e6f9b53a743c377337abe38b1372cedb92aa99f7dc6a805ffdf4c1fe1bef2"
+    },
+    {
+      "path": "oilgas-asset-return-http-fb5f0a39422e4aa39da2ddad297affb5.log",
+      "sha256": "9c3bd2af204b8688bad85cab8de01ab0d4babee716613513a6e4831e1d09278e"
+    },
+    {
+      "path": "oilgas-335-parent-observation-preflight.log",
+      "sha256": "5f1cee56344692565f1fe57cbfbb4e4b0c79a775ff2fa4b124dee03b26c83f6a"
+    },
+    {
+      "path": "oilgas-335-parent-observation-owned-rollback.log",
+      "sha256": "f343990534c22180b2ac552bb8f200ff30be330aad18a1c432d7cbf5187bf2c6"
+    },
+    {
+      "path": "oilgas-335-parent-observation-mixed-http.log",
+      "sha256": "2b0f7307c36d9fc441a06805963feb8e1e53d0a1d7ff379db66c38f17dc1a8a3"
+    },
+    {
+      "path": "oilgas-asset-return-http-6fdfb13d78a34efb8e6e1c28633e790e.log",
+      "sha256": "ef4e50fddb9d3f1a71d4fa3f05d6aeb9c61a2b0fbcd3b83c79683bb67c550a1e"
+    },
+    {
+      "path": "oilgas-335-current-rbac-query-plan-preflight.log",
+      "sha256": "781a51053d26be64c9bdee0004ea37fd22fef6e39c7e6b3742290e8b51973a0d"
+    },
+    {
+      "path": "oilgas-335-current-rbac-query-plan-preflight2.log",
+      "sha256": "0cd7240a54de7712cd81dc78184a1ee98655e10bde827529084a11f5c160cd12"
+    },
+    {
+      "path": "oilgas-335-current-rbac-native-rollback.log",
+      "sha256": "0bc5e2ffe8cab329d23891bfed03f9424dcd6c83a12e58af01cc39fc3b89d2df"
+    },
+    {
+      "path": "oilgas-335-current-rbac-query-plan-mixed-http.log",
+      "sha256": "43e04179c2b93af6b8508f330b148b7f35411da5577faebd029458efd66c88e6"
+    },
+    {
+      "path": "oilgas-asset-return-http-1c4e5148015e464dabeb7da841be1181.log",
+      "sha256": "42f6c1be26155c7cdc70e842d011ccf4b5020276cac00a280fe9ff963f49a09a"
+    },
+    {
+      "path": "oilgas-335-paired-authority-role-catalog-preflight.log",
+      "sha256": "fb8d788258abc69dd4b4db7e498e16e6714781c43d056a175f8ddaa412b098fb"
+    },
+    {
+      "path": "oilgas-335-paired-role-policy-http.log",
+      "sha256": "cbddfbe18bd1c334cceecc7e726f5067bc67a19033361277de9ab99d55944b4e"
+    },
+    {
+      "path": "oilgas-335-paired-authority-role-mixed-http.log",
+      "sha256": "c751459b92465fd627bb7ec57ad148b5a408053c8e69a62f69cd502edbe11d0e"
+    },
+    {
+      "path": "oilgas-asset-return-http-441c08f811f641b5a2f6dd463f28aa4c.log",
+      "sha256": "3701aa30cec2464b509b53159c21021842db1125df02588b927b147558a3da18"
+    },
+    {
+      "path": "oilgas-335-pinned-preimage-mutation-gate.log",
+      "sha256": "136c2949c5fe337a85e5e1810e2d7e151815002ae880d89e02288729ef6fd3bf"
+    },
+    {
+      "path": "oilgas-335-pinned-preimage-final-gate.log",
+      "sha256": "b420bdf88aae6ff57e276a7ce189d0e94bd163b90e7d346f8278ce7ae69aa172"
+    },
+    {
+      "path": "oilgas-335-pinned-write-policy-mixed-http.log",
+      "sha256": "afaa6d437fde40942bee0396bd2c365f3a02987c009723173a05f445925043f9"
+    },
+    {
+      "path": "oilgas-asset-return-http-6c9e1936be4e4783b98855c513621843.log",
+      "sha256": "dbe35e6322f0f08b823627b4a67d3872a7befc3e179603103baf29350226f753"
+    },
+    {
+      "path": "oilgas-335-shared-preparation-input-gate.log",
+      "sha256": "339c1c7367ad862b1f182cfc1e4891a0ea18fa0338ad6a453e415aed1df82e3f"
+    },
+    {
+      "path": "oilgas-335-shared-preparation-rollback-recovery.log",
+      "sha256": "93eda2dda2655df7fc9d6bfddbed87842db4806ce7f42bc08678524d89ceb3c0"
+    },
+    {
+      "path": "oilgas-335-shared-preparation-mixed-http.log",
+      "sha256": "eafaa7c6f8e4700782e065fff30e4710f02d785728afa450c7d68f15efaa47f9"
+    },
+    {
+      "path": "oilgas-asset-return-http-9b2fe12e8dbb4dcc81cd99adcade2cea.log",
+      "sha256": "d08b448f7dfcd3fc56a7ad74e3b4d7fbf0e5e30716100ff92a4c1f9f30bf5db8"
+    },
+    {
+      "path": "oilgas-335-closing-receipt-native-gate.log",
+      "sha256": "ab6879d6c5b1526e7144cd94355d977dfc53ed1c5e6680c1c002450386cd702d"
+    },
+    {
+      "path": "oilgas-335-closing-receipt-initial-sources.json",
+      "sha256": "ab3fbbaac4c2c932fbada5b621ac445ec468efffc7fdee197b65b4561c89ed29"
+    },
+    {
+      "path": "oilgas-335-closing-receipt-corrected-faults.log",
+      "sha256": "3193928d11957f59b5b081362a6d94f520f3ccf6323e0be27216baf1e469cbb8"
+    },
+    {
+      "path": "oilgas-335-closing-receipt-well-regression.log",
+      "sha256": "0e21426fabb7e95cc31466a98b6eacd552bfa2c0e7e4d6a50ccfa8d5e61bac32"
+    },
+    {
+      "path": "oilgas-335-closing-receipt-mixed-http.log",
+      "sha256": "0f5bf896e3691c4242b5981ee13e8702457fe62cc6a39c8760792b3b460805a2"
+    },
+    {
+      "path": "oilgas-asset-return-http-bfece4ac47d04f6faedbbd9eafef1a86.log",
+      "sha256": "3aa136244f03ea8e0c304bea386f8875a20810108cbe6fa59bc1c32c0cd47030"
+    },
+    {
+      "path": "oilgas-335-current-authority-projection-initial.log",
+      "sha256": "92d8e9f3ec2700d1ba74f99021edaf6399066ff5267e3523410639d625743d0e"
+    },
+    {
+      "path": "oilgas-335-current-authority-projection-collation.log",
+      "sha256": "d5d38d4802dd27df196feb267a03d96248d66fbd9a0f57b9aa1e6bf7df797fb2"
+    },
+    {
+      "path": "oilgas-335-current-authority-projection-model-collation.log",
+      "sha256": "2e91982d664cea38cbdd44a20de8302d8ee0526a955fc0c09f2e1a44d1e63343"
+    },
+    {
+      "path": "oilgas-335-current-authority-projection-final.log",
+      "sha256": "da9d7c8b6a6129732d1e1013d80ca3e1c4a34a8e235cfa9d40aebe41f9ad22d3"
+    },
+    {
+      "path": "oilgas-335-current-authority-projection-native-guards.log",
+      "sha256": "f1fd48749f6364dbe1302bf287a0afd712f61e900ecd653b317f7a494841d98c"
+    },
+    {
+      "path": "oilgas-335-current-authority-projection-mixed-http.log",
+      "sha256": "8e676a25fc9085d4ae78b22c8c61544185e2fb52e16521945051e8c0225d8d6c"
+    },
+    {
+      "path": "oilgas-asset-return-http-ca88e369c882474595f75b265aa4fc65.log",
+      "sha256": "23f9698f46abe54aabd064f026644ae964e6817053b3f0541963f6ef714dccad"
+    },
+    {
+      "path": "oilgas-335-consecutive-schema-boundary-source-gate.log",
+      "sha256": "4f2850db406ac6828aed84dbd4e8045f3164b166c1d4961b20f7d1656815cc9c"
+    },
+    {
+      "path": "oilgas-335-consecutive-schema-boundary-owned-gate.log",
+      "sha256": "57e1b1eb77e93dfd8280c8fb2f351a31a1031ac2de8ef702d9baae4b0b5991f7"
+    },
+    {
+      "path": "oilgas-335-consecutive-schema-current-rebuild.log",
+      "sha256": "c6da122aee701c5ffca95a77939522b690fe7725f0330c61be53d002a7ad4b32"
+    },
+    {
+      "path": "oilgas-335-consecutive-schema-owned-runtime-before-resume.json",
+      "sha256": "82f8fc6a46061c0dbc8163d1e1fc043d191f714b40f539180b8daacef542df88"
+    },
+    {
+      "path": "oilgas-335-consecutive-schema-current-protected-preflight.log",
+      "sha256": "bd2071ce96b016e83236e6a9e987bf642460738a77b265f0ac218024c6ed2116"
+    },
+    {
+      "path": "oilgas-335-consecutive-schema-boundary-mixed-http.log",
+      "sha256": "dc9a9559fcf41af2faf8e9d690a1158c9b4835161868a21e91901ccb77e1993f"
+    },
+    {
+      "path": "oilgas-asset-return-http-6871e9d27bf340ad9b3ed61c9b03836f.log",
+      "sha256": "8c6652652dc6762dca9adbc867b5366eddda17427bdc6a6c53ac577fd4d27ab7"
+    },
+    {
+      "path": "oilgas-335-current-account-preference-initial.log",
+      "sha256": "ed6f0b3c9d91fa6befd0298e29cf2052a7d0febfc12d3952dab3b28961b24aba"
+    },
+    {
+      "path": "oilgas-335-current-account-preference-protected.log",
+      "sha256": "ff18de64275d533f00d904950bddc8b78fb3fb17dbf0b1470c57d5abebaee289"
+    },
+    {
+      "path": "oilgas-335-current-account-preference-refusal-status.log",
+      "sha256": "f0694c2ad0c1a8bd47e028e08207e01f274ab73995eb921e5865e9871b3182f3"
+    },
+    {
+      "path": "oilgas-335-current-account-preference-refusal-status-corrected.log",
+      "sha256": "16be8e60b46cea9a920cedd6567036670b2dd8ac71800ab79eec4838c45eb711"
+    },
+    {
+      "path": "oilgas-335-current-account-preference-mixed-http.log",
+      "sha256": "da0dc679a06b46d333f229821c400158c3a58da9629ed010e8216491540c4f5d"
+    },
+    {
+      "path": "oilgas-asset-return-http-5ac4b7157a42405181438b5bdcfb34af.log",
+      "sha256": "66ec3cab52a6ebb482dd2296aba4d8c3575e2d8c3129aec0d07d505a7380373a"
+    }
+  ],
+  "runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "c0e58f8ad13714be93218a9fa3d8b15a9cc47ce6d8b7d4243569245d2cd5bc93"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build -p:FocusedCompanyTests=true -p:FocusedDataAssemblyPath=<canonical Data8 path above> -p:BuildProjectReferences=false -p:GeneratePackageOnBuild=false -p:UseBeepDMSource=false --filter \"FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure\" --logger \"console;verbosity=normal\"",
+  "completed_attempt_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "c6be77b68a23103d2bf8583a77e7148d778d51d5d01ad9e3482d47b2f3f93a7c"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "8c00eabb5dd0bfa2b1ec85c1e38e225c0325a5609e004bc5fc09f3df236f4220"
+    }
+  ],
+  "current_preflight": {
+    "change": "Shared personnel and qualified readers use the same canonical source metadata; fast source check also reads a native person.",
+    "log": "oilgas-335-qualified-and-personnel-schema-preflight.log",
+    "session": 21688,
+    "status": "verified",
+    "exit_code": 0,
+    "passed": 1,
+    "duration": "17.4718 seconds"
+  },
+  "previous_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "73c223924070b6f97c51e6cc39258f416201f868b451bf36ce29f6bd227a8243"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_workflow": {
+    "status": "failed",
+    "session": 48596,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "11.6537 Minutes",
+    "log": "oilgas-335-current-account-preference-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-5ac4b7157a42405181438b5bdcfb34af.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Original whole case failed during authorized review at unchanged100s (100.6s observed), before recording. Evidence58.7s passed; its3654 preference checks took16.9s versus28.4s in previous22986, while app reads remained1.9s. Review completed2753 authority spans/55.1 inclusive seconds and three qualified source compositions/74.9s; preference5656 calls/26.4s and grants5661/14.8s. A second evidence read/closure remained active at timeout. Request-stage timings vary and nested totals are not additive. No full mixed recording/retry/private recovery/public outcome or end-to-end latency pass is proved.",
+    "original_timeout_seconds": 100,
+    "all_behavior_assertions_retained": true,
+    "original_preparation_provider_seams_retained": true,
+    "real_provider_browser_oidc_certified": false
+  },
+  "canonical_schema_workflow_result": {
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "session": 59783,
+    "log": "oilgas-335-qualified-record-post-canonical-schema-http.log",
+    "status": "failed",
+    "note": "Terminal 59783: schema passes; final strict asset return review refuses source/physical/WRITE agreement. No mixed record pass. New source-blocker assertion narrows the next diagnosis.",
+    "exit_code": 1,
+    "duration": "10.1859 minutes"
+  },
+  "work_start_return_identity_preflight": {
+    "exit_code": 0,
+    "status": "verified",
+    "passed": 1,
+    "note": "Strengthened fast check verifies work-start identity equals current identity while personnel/qualified schema coexists; no native writes.",
+    "duration": "14.8858 seconds",
+    "log": "oilgas-335-work-scope-and-return-identity-preflight.log"
+  },
+  "source_blocker_workflow_result": {
+    "note": "Terminal 12810: protected source evidence identified absent exact jurisdiction policy. Reused policy was CORRECTIVE; actual workflow native type was WO-CORRECTIVE. Existing exact-match production guard correctly refused.",
+    "log": "oilgas-335-qualified-record-post-source-blockers-http.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "session": 12810,
+    "status": "failed",
+    "exit_code": 1,
+    "duration": "7.8287 minutes"
+  },
+  "exact_policy_preflight": {
+    "log": "oilgas-335-exact-work-order-policy-preflight.log",
+    "exit_code": 0,
+    "passed": 1,
+    "note": "Fixture policy is explicitly prepared for the original native order type before process/report; source identity, operating/licensing, scoped policy/native sources and personnel readers pass with no business write.",
+    "status": "verified",
+    "duration": "15.8760 seconds"
+  },
+  "interrupted_exact_policy_workflow": {
+    "status": "interrupted",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "session": 29027,
+    "note": "Handle 29027 missing and no matching OS test host exists on 2026-10-22. Retained log ends at test start with no terminal result; no pass, failure exit or completion inferred.",
+    "log": "oilgas-335-qualified-record-post-exact-policy-http.log"
+  },
+  "exact_policy_workflow_result": {
+    "status": "failed",
+    "session": 41336,
+    "log": "oilgas-335-qualified-record-post-exact-policy-http-resumed.log",
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "17.5383 minutes",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Terminal observed on 2026-10-22. Original qualified record response, native write count/status effects, unchanged original report and retained command assertions passed before line 48 retry/reference recovery loop exceeded the original 100-second request timeout. Whole case failed; no complete mixed workflow pass."
+  },
+  "diagnostic_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "40877b2cea978f93d862923768a9f310ac20f587e1fe9e054342db3ccbce425a"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "6568dbd59bccad3df3d532463d354d0b557e10974eee9faee583ecae83cf11c8"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "d229cf802fdc052b22e58210dceeb24c7bd112ba61430f36e1a311e927041f64"
+    }
+  ],
+  "diagnostic_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "b05e93bb28accb8fc1c5442f72d030f435d1bfd79bee6a74c5c3dcf1bf2e60d3"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "diagnostic_workflow_result": {
+    "status": "failed",
+    "session": 63580,
+    "log": "oilgas-335-qualified-return-timed-http.log",
+    "timing_log": "oilgas-asset-return-http-fb5f0a39422e4aa39da2ddad297affb5.log",
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "10.3103 minutes",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Terminal diagnostic rerun failed during protected asset-return/review at original 100-second limit, before record in this run. A prior authorized evidence request completed in 48.7 seconds with 2401 authority spans/35.5 inclusive seconds. The timed-out review had 4038 completed authority spans/64.7 inclusive seconds, repeated entitlement/reference native reads (8828 each for six listed tables), and incomplete source spans. Inclusive nested times must not be added. Prior 41336 partial record assertions remain a distinct failed case, not a complete pass."
+  },
+  "optimized_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "40877b2cea978f93d862923768a9f310ac20f587e1fe9e054342db3ccbce425a"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "6568dbd59bccad3df3d532463d354d0b557e10974eee9faee583ecae83cf11c8"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "d229cf802fdc052b22e58210dceeb24c7bd112ba61430f36e1a311e927041f64"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    }
+  ],
+  "optimized_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "c06f1c2de710ce1ac5c40e8fb811490128f6d6d77550971ddf5aa447eb729484"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "parent_observation_change": {
+    "description": "Status/licensing paired observations share the middle parent snapshot. Opening Parents checks each observation; next opening or final Parents closes it. Three full parent checks replace five, retaining both complete source observations, metadata closing checks, source/order/lane/authority guards and final parent/source equality.",
+    "authority_success_cache_added": false,
+    "timeout_or_behavior_assertions_removed": false,
+    "new_business_schema_sql_or_ef": false,
+    "review": "Self-review: data observations remain bracketed by opening/middle/final complete parent identity/installation/rights reads. Six new final-population changes refuse without writes; actual API after-write role/zone changes roll back all native targets."
+  },
+  "parent_observation_workflow_result": {
+    "status": "failed",
+    "session": 7777,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "11.0893 minutes",
+    "log": "oilgas-335-parent-observation-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-6fdfb13d78a34efb8e6e1c28633e790e.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Optimized parent bracketing passed31 native and4 API rollback cases, but whole mixed workflow failed during authorized review at100.1seconds before record in this run. Evidence request44.7s/2041 authority spans32.6inclusive seconds versus diagnostic48.7s/2401 spans35.5s. Timed-out review reached four complete qualified source reads,4090 completed authority spans62.5inclusive seconds; cumulative six entitlement/reference tables8912reads each. Counts differ in completed work; nested inclusive durations are not additive. No complete mixed pass."
+  },
+  "query_plan_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "40877b2cea978f93d862923768a9f310ac20f587e1fe9e054342db3ccbce425a"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "6568dbd59bccad3df3d532463d354d0b557e10974eee9faee583ecae83cf11c8"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "d229cf802fdc052b22e58210dceeb24c7bd112ba61430f36e1a311e927041f64"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "cf761a414fbabd8d6e02c87e507fa94a277e920e1b92fbb47164a36e88f3c9d0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "096d12b69584f91b32812e5027504a59788b2a251798d7afacc93daa93fe3ebe"
+    }
+  ],
+  "query_plan_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "62cdaae482c6d4ca77d020ba0b2af8e8327eff2a07401ed8b77103952e60a394"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_app_query_plan_change": {
+    "description": "Existing RepositoryAccessService compiles membership/role/permission translation plans per actual EF IModel using ConditionalWeakTable. Every call supplies current account, tenant, company and UTC as parameters and enumerates three fresh AsNoTracking database queries with cancellation.",
+    "authorization_values_cached": false,
+    "business_ef_or_sql_lane_added": false,
+    "review": "Current active user/company/tenant/membership and scoped approved/effective role plus AspNetUserRoles remain required. Permission join does not invent a role or permission source. Distinct ordered results and standard role bridging remain. Different EF models get separate compiled plans; no request/account/authorization result retained.",
+    "superseded_by": "single_statement_projection_change"
+  },
+  "query_plan_workflow_result": {
+    "status": "failed",
+    "session": 76712,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "9.3487 minutes",
+    "log": "oilgas-335-current-rbac-query-plan-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-1c4e5148015e464dabeb7da841be1181.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Same full protected mixed case: evidence passed in32.6s with2041 authority spans21.9inclusive seconds, authorized review passed in78.9s with4092 authority spans43.8inclusive seconds, unconfirmed command correctly refused400. Actual record request then exceeded unchanged100s (100.1s observed) with4867 completed authority spans55.6inclusive seconds and an active record span. Whole case failed; no confirmed write/rollback/absence/retry/recovery/public outcome is inferred after timeout. Nested times are not additive."
+  },
+  "next_record_gate": "Factor duplicate complete qualified re-preparation inside ApplyQualifiedAssetReturnRowsAsync through the existing source/preimage/capacity validators. Preserve one fresh complete licensing/operating/policy/role/time comparison immediately before mutation, exact current full raw preimages/time-zone/schema/capacity, frozen expected graph/audit, mutation-time target checks, complete postimage/retained proof and owned transaction/rollback/private-public recovery. Do not cache permissions, remove source checks, raise timeout or replace upstream facts. Current total preparation35.0s plus apply50.8s leaves retained proof outside original100s request budget.",
+  "paired_authority_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "d229cf802fdc052b22e58210dceeb24c7bd112ba61430f36e1a311e927041f64"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "cf761a414fbabd8d6e02c87e507fa94a277e920e1b92fbb47164a36e88f3c9d0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "096d12b69584f91b32812e5027504a59788b2a251798d7afacc93daa93fe3ebe"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "e55b969fc04d714fd2ab9294d843abade05d8647648f7fcd96cee9032556779f"
+    }
+  ],
+  "paired_authority_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "232add37dea4b2d859dedea909c2e8bb387ea3c05d85f0e34b7b04944cec8620"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_paired_authority_change": {
+    "description": "Asset-return target capabilities reuse the just-refreshed company snapshot after the complete paired authority guard, with no native read/await between. Every source boundary still performs that paired refresh. Configured return-role claims/roles are read in one fresh ordered app query, exact claim strings filtered ordinally and duplicate role records removed in memory.",
+    "authorization_results_cached": false,
+    "source_or_transaction_guard_removed": false,
+    "timeout_or_assertions_weakened": false,
+    "observability": "Native record/physical/well/transaction/qualified prepare/apply/receipt spans use fixed operation names without actor/company/source/command tags; no persistence behavior changed.",
+    "review": "Self-review: paired PermitAuthorities compares the complete current roles/permissions/grants and source/preference bindings; no data read separates it from target checks. Exact configured roles still require their own live permission, even if another account role supplies the aggregate capability. Native source/schema/lane checks and whole rollback/recovery remain unchanged."
+  },
+  "paired_authority_workflow_result": {
+    "status": "failed",
+    "session": 74833,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "9.4349 minutes",
+    "log": "oilgas-335-paired-authority-role-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-441c08f811f641b5a2f6dd463f28aa4c.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Same full mixed case passed evidence33.5s/review80.0s and rejected unconfirmed command. Actual record timed out at100.1s with5018 completed authority spans55.4inclusive seconds. Qualified preparation completed33.3s; qualified apply remained active53.8s; native owned transaction active92.7s. Physical checks current6.4s/owned4.7s and well checks0.6s each. Apply repeats full prepared-source proof and full parent reads through internal row-policy hooks. Whole case failed; no post-timeout write/rollback/absence/recovery result inferred. Nested times are not additive."
+  },
+  "pinned_preimage_initial_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "d229cf802fdc052b22e58210dceeb24c7bd112ba61430f36e1a311e927041f64"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "cf761a414fbabd8d6e02c87e507fa94a277e920e1b92fbb47164a36e88f3c9d0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "096d12b69584f91b32812e5027504a59788b2a251798d7afacc93daa93fe3ebe"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "e55b969fc04d714fd2ab9294d843abade05d8647648f7fcd96cee9032556779f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "938ed97c91e4bab19c5004b698c1dccca2c924920f9d8ff6ed98492635d5e4c9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "1a8b52e40d1b43f4f446d5b316b9ca1553d3f8169ab735cb60fea9efd8da0502"
+    }
+  ],
+  "pinned_preimage_initial_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "76dd64150ef1ab63ceb4d4533451ecc483514429500f074e02ecd3c7668c4cfe"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_native_preflight": {
+    "name": "refusal-status-corrected",
+    "status": "verified",
+    "session": 52906,
+    "exit_code": 0,
+    "passed": 10,
+    "failed": 0,
+    "duration": "22.8312 seconds",
+    "log": "oilgas-335-current-account-preference-refusal-status-corrected.log",
+    "note": "Current exact conflict statuses for missing/malformed preferences, actor mismatch and duplicate selections, plus original account/stamp/FIELD and same-service active-state cases. No extra native reads, writes or open owned transaction. Counts overlap earlier gates."
+  },
+  "pinned_preimage_initial_result": {
+    "status": "failed",
+    "session": 44313,
+    "exit_code": 1,
+    "passed": 33,
+    "failed": 3,
+    "duration": "4.9775 minutes",
+    "log": "oilgas-335-pinned-preimage-mutation-gate.log",
+    "note": "All production write/rollback/private-public recovery/unknown commit cases and two new grant cases passed. Three new owner/installation cases correctly refused before native mutation but their final fixture assertion incorrectly expected an injected external parent change to roll back. Corrected test preserves external fault while requiring unchanged remaining native rows, zero additional writes, no ledger and explicit external change retained. Production source unchanged for targeted rerun."
+  },
+  "pinned_preimage_final_result": {
+    "status": "verified",
+    "session": 9063,
+    "exit_code": 0,
+    "passed": 5,
+    "failed": 0,
+    "duration": "27.8245 seconds",
+    "log": "oilgas-335-pinned-preimage-final-gate.log",
+    "filter": "FullyQualifiedName~QualifiedMutationRechecksDirectWriteAfterItsPinnedPreimageWasRead",
+    "note": "Current production unchanged from initial36-case matrix. Corrected five late direct-grant/owner/installation tests require refusal at mutation validation, no additional native write, unchanged non-faulted rows/no ledger and preservation of the explicitly injected external change. Two cases overlap earlier passes; no aggregate unique case count inferred."
+  },
+  "pinned_preimage_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "d229cf802fdc052b22e58210dceeb24c7bd112ba61430f36e1a311e927041f64"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "cf761a414fbabd8d6e02c87e507fa94a277e920e1b92fbb47164a36e88f3c9d0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "096d12b69584f91b32812e5027504a59788b2a251798d7afacc93daa93fe3ebe"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "e55b969fc04d714fd2ab9294d843abade05d8647648f7fcd96cee9032556779f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "938ed97c91e4bab19c5004b698c1dccca2c924920f9d8ff6ed98492635d5e4c9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "f7f215262f27e510c66ad7f09f3558ee9babb245cb0e1fcdee1c4c5fd882a1fc"
+    }
+  ],
+  "pinned_preimage_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "0a7add1ec2936097534e56580bbcc3420747219fb82be2222515102ae8b29ef0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_pinned_preimage_change": {
+    "description": "Qualified row policy uses the fresh current role/source/owned-lane Guard for bounded private exact-preimage read hooks. Complete original target identity/installation/WRITE checks remain immediately before and after every native write and inside every ValidateMutation call. Complete re-preparation, actual postimage/UTC verification and final source/transaction checks remain unchanged.",
+    "authorization_values_cached": false,
+    "mutation_target_validation_removed": false,
+    "private_read_expansion_allowed": false,
+    "review": "Private preimage read constraints remain exact type/table/composite keys with complete before-row equality and no general effective access. A late direct grant, owner or equipment installation change after read is rechecked before mutation; five cases show zero additional writes. Existing whole-command rollback, unknown commit/private-public recovery cases passed in the initial matrix; failed fixture assertions retained separately."
+  },
+  "pinned_preimage_workflow_result": {
+    "status": "failed",
+    "session": 74471,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "10.5496 minutes",
+    "log": "oilgas-335-pinned-write-policy-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-6c9e1936be4e4783b98855c513621843.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Same full protected mixed case passed evidence33.3s/review81.5s and rejected unconfirmed command. Record exceeded unchanged100s (100.1 observed). Qualified preparation35.0s and apply50.8s completed; first retained-proof verification was active1.1s at timeout.4996 authority spans55.8inclusive seconds; native transaction active92.5s. Whole case failed; no confirmed write/whole rollback/absence/retry/recovery/public outcome inferred. Nested timings are not additive; prior apply53.8s was unfinished, not a directly comparable completed duration."
+  },
+  "shared_preparation_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "d229cf802fdc052b22e58210dceeb24c7bd112ba61430f36e1a311e927041f64"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "cf761a414fbabd8d6e02c87e507fa94a277e920e1b92fbb47164a36e88f3c9d0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "096d12b69584f91b32812e5027504a59788b2a251798d7afacc93daa93fe3ebe"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "e55b969fc04d714fd2ab9294d843abade05d8647648f7fcd96cee9032556779f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "2181992f17b16a415ec5f864ad39592ff35a19011c7cd9571d4c66374e2d75df"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "84456348de0410a3b7f5048f75b8d62234914e1b8d9417adeec026a2930733d2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "caa9aaeaea6e71229cec24d8bcfaaa77ba2820ad2459b446c803c94908756ce9"
+    }
+  ],
+  "shared_preparation_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "13da657bf32ac97aeeb3299f570c9ca36217551a54b0819a37efeb7db899f3e0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_shared_preparation_change": {
+    "description": "Existing preparation and apply share current complete source, raw status/time-zone inputs, schema/capacity and closing-zone validators. Initial preparation keeps both source observations. Apply checks complete target authority first, privately reads current bounded raw inputs, closes with fresh complete operating/licensing/policy/role/time evidence, reconstructs the expected graph at the original audit UTC and compares the whole prepared graph before mutation.",
+    "authorization_results_cached": false,
+    "native_raw_preimage_or_schema_checks_removed": false,
+    "mutation_or_final_proof_checks_removed": false,
+    "review": "Only duplicated opening full source composition inside a second preparation is removed. Current identity/installation/WRITE guard remains before private inputs and at mutation validation/write bookends; raw complete graph, exact original proof, current effective policy/role/source and capacity remain checked before writing. No new public model, command, ledger, transaction, SQL or business EF lane."
+  },
+  "shared_preparation_workflow_result": {
+    "status": "failed",
+    "session": 19339,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "8.7523 minutes",
+    "log": "oilgas-335-shared-preparation-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-9b2fe12e8dbb4dcc81cd99adcade2cea.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Whole protected mixed case failed at unchanged100-second record limit (100.1s observed). Evidence29.4s/review72.0s passed; unconfirmed body refused. Qualified preparation31.1s/apply31.1s and first retained-proof verification24.2s completed; second owned physical check active2.3s, native transaction active93.8s.5502 authority spans55.0 inclusive seconds. No confirmed write, whole rollback, absence, retry/recovery or public outcome inferred; nested timings are not additive."
+  },
+  "closing_receipt_initial_result": {
+    "status": "failed",
+    "session": 67985,
+    "exit_code": 1,
+    "passed": 27,
+    "failed": 8,
+    "duration": "3.6166 minutes",
+    "log": "oilgas-335-closing-receipt-native-gate.log",
+    "source_hashes": "oilgas-335-closing-receipt-initial-sources.json",
+    "runtime_hashes_captured": false,
+    "note": "Production correctly refused/rolled back in seven new external-source cases, but fixture assertions incorrectly expected independent source changes to be undone. The eighth well-effect setup selected multiple active facets and never injected the target fault. Corrected only test selection and assertions: exact return effects/intent roll back, explicit independently injected source remains, every other row unchanged. All original positive/common audit/private-public recovery/later append/unknown commit/role-zone rollback cases and six retained-source cases passed; original failure is retained."
+  },
+  "closing_receipt_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "47b3ead117b3056b6cd96b0c1b3fc6a7926114f2ade6133a88b218b73f5255cb"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "cf761a414fbabd8d6e02c87e507fa94a277e920e1b92fbb47164a36e88f3c9d0"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "096d12b69584f91b32812e5027504a59788b2a251798d7afacc93daa93fe3ebe"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "6338539cf1ee926b0d85d37c36b4a7e65db82c832cecf25d49e1c628d4cc420b"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "df158513c0c0acb79eb94bd98d4e188f5a52399da079d62a9c78b0c8797f56c1"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "a013198ecd49a0504e6ed7dc9fb0f359cf563cfb317721099b6ef8ceaf1a458f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "caa9aaeaea6e71229cec24d8bcfaaa77ba2820ad2459b446c803c94908756ce9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "1b4e65af12d74e64af61e5e43c04d9c881318a7b49b1e53d0bfb7be8724096cb"
+    }
+  ],
+  "closing_receipt_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "55d3d87bdb9d6ae3abec1e3b91584f9fabaae10759405b434b04236db2f89d7e"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "current_closing_receipt_change": {
+    "description": "Final owned receipt validates the entire well/qualified graph and retained source proof after inserting the still-uncommitted exact intent; mismatch rolls back all native effects and intent. Removes duplicated pre-intent graph/proof verification, not precommit receipt or postcommit private recovery. Historical qualified verification admits bounded raw postimage reads with current target identity/WRITE for private recovery, and closes with full fresh original identity/licensing/reference/timezone/immutable-policy/source comparison. Constituent readers retain paired complete observations. Apply brackets private complete postimage/UTC reads with fresh target identity/installation/WRITE; role/source/owned-lane guard remains on every read and full target checks remain on every mutation and write bookend.",
+    "authorization_results_cached": false,
+    "final_owned_receipt_removed": false,
+    "postcommit_recovery_removed": false,
+    "timeout_changed": false,
+    "self_review": "The final receipt is inside the original serializable transaction after all mutations/intent/physical checks and before commit; no return is exposed first. Failure propagates through existing rollback/cause handling. Retained historical sources compare with frozen original proof rather than derive new activation eligibility; opening complete target authority and strict actual postimages precede closing full source validation. No public contracts, role sources, business EF/SQL, native schema, extra command/intent/ledger or prepared upstream seam substitution. Existing fixed-name activities retained; no payload logging added."
+  },
+  "closing_receipt_corrected_fault_result": {
+    "status": "verified",
+    "session": 87091,
+    "exit_code": 0,
+    "passed": 19,
+    "failed": 0,
+    "duration": "2.5771 minutes",
+    "log": "oilgas-335-closing-receipt-corrected-faults.log",
+    "filter": "FullyQualifiedName~FinalOwnedReceiptRejectsLateProofChangesAndRollsBackTheCompleteUncommittedReturn|FullyQualifiedName~RetainedQualifiedProofClosesCurrentSourcesAfterReadingTheExactPostimage|FullyQualifiedName~QualifiedPostimageReadClosesTargetAuthorityBeforeTheOwningTransactionCanCommit",
+    "note": "All nineteen new late graph/intent/source/identity/installation/direct-grant cases pass after correcting the initial fixture assertions/selection. Seven external changes remain explicitly retained while every command-owned native row/intent rolls back; exact successor well fault is now injected. Current source comparisons after raw postimage refuse for both private and public recovery. Counts overlap initial35 matrix; not full protected mixed acceptance."
+  },
+  "closing_receipt_well_regression": {
+    "status": "verified",
+    "session": 63382,
+    "exit_code": 0,
+    "passed": 18,
+    "failed": 0,
+    "duration": "3.7395 minutes",
+    "log": "oilgas-335-closing-receipt-well-regression.log",
+    "note": "Actual current native well-only owner: common original audit/unspecified local source zone, all-well atomic effects/refusal, forged/foreign/changed graph refusal, current private WRITE, partial failure rollback, public read account/privacy/no replay/absence boundaries. Controlled native provider/physical/lifecycle fixtures; separate isolated source-linked harness, no application/browser/provider qualification."
+  },
+  "closing_receipt_well_sources": [
+    {
+      "path": "Scripts/Test-MaintenanceProcessStart.ps1",
+      "sha256": "aacbdff6e9b6b4a71e42fb9a98774e7399bd417482591fb3a20e36a442d7afbc"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceAssetReturnTests.cs",
+      "sha256": "729ae213855d7aed6db421a900fd33d1c5d6ffdfe0fbe1eddbd2048a7b0c56cf"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceWellEvidenceTests.cs",
+      "sha256": "92213d8f3d0f2c5490a64fbca68e066e0db72ddcccdc8e1b4fed79fd21c4cf3f"
+    }
+  ],
+  "closing_receipt_well_runtime": {
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-maintenance-start-a285c0e66b7a4b4d90643a78563e15f2\\bin\\Debug\\net10.0\\MaintenanceStart.dll",
+    "sha256": "7046e14202958953c9809dfc105c517b5731da491dc2a4fd6348e9b267b0cb45"
+  },
+  "closing_receipt_workflow_result": {
+    "status": "failed",
+    "session": 48355,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "10.4247 Minutes",
+    "log": "oilgas-335-closing-receipt-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-bfece4ac47d04f6faedbbd9eafef1a86.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Whole protected mixed workflow failed at the unchanged 100-second record limit (100.1s observed). Evidence 37.3s and review 87.9s passed; unconfirmed command refused. Qualified preparation 35.3s and apply 33.9s completed. At timeout, final owned receipt was active 10.6s, its historical proof verification 10.0s and licensing comparison 7.9s; native transaction active 91.8s. There were 4257 completed authority spans accounting for 51.1 inclusive seconds. No confirmed write, whole rollback, absence, retry, private recovery or public outcome is inferred. Nested timings are not additive and no end-to-end latency pass is claimed.",
+    "original_timeout_seconds": 100,
+    "all_behavior_assertions_retained": true,
+    "original_work_start_and_observation_preparation_seams_retained": true,
+    "real_provider_browser_oidc_certified": false
+  },
+  "closing_receipt_final_review": {
+    "kind": "self-review",
+    "current_source_runtime_data_hashes_matched": 28,
+    "retained_outputs_matched": 43,
+    "changed_code_files_without_conflict_or_trailing_whitespace": 5,
+    "affected_internal_links_resolved": 1133,
+    "unique_current_tracker_markers": 8,
+    "all_jobs_terminal": true,
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "index_empty": true,
+    "commit_push_performed": false,
+    "note": "Two superseded implementation instructions reconciled in active335 owner; historical observed outcomes retained. New production proof/target/receipt boundaries validated by initial27 passes and current corrected19/well-only18 gates, with explicit overlapping counts and controlled provider/source seams. Whole protected48355 remains failed100s; no native outcome, whole persona completion or end-to-end latency pass inferred. Next fresh app-RBAC projection is a proposal only, no source change."
+  },
+  "single_statement_projection_checks": [
+    {
+      "name": "initial",
+      "session": 88315,
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 61,
+      "failed": 0,
+      "duration": "18.1934 seconds",
+      "log": "oilgas-335-current-authority-projection-initial.log"
+    },
+    {
+      "name": "collation-regression",
+      "session": 9018,
+      "status": "failed",
+      "exit_code": 1,
+      "passed": 63,
+      "failed": 1,
+      "duration": "14.3673 seconds",
+      "log": "oilgas-335-current-authority-projection-collation.log",
+      "note": "Actual production ordering regression: UNION marker/null columns lost configured NOCASE ordering. One new compatibility case failed. Fixed in production with trusted per-model role/claim/default collations; failing test/assertions retained. Initial failed source/runtime hashes were not captured before repair."
+    },
+    {
+      "name": "model-collation-fix",
+      "session": 72764,
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 64,
+      "failed": 0,
+      "duration": "13.0499 seconds",
+      "log": "oilgas-335-current-authority-projection-model-collation.log"
+    },
+    {
+      "name": "final",
+      "session": 76799,
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 66,
+      "failed": 0,
+      "duration": "11.6673 seconds",
+      "log": "oilgas-335-current-authority-projection-final.log",
+      "filter": "FullyQualifiedName~RepositoryCompanyAccessTests|FullyQualifiedName~ProtectedExecutivePortfolioUsesCurrentAppAuthorityAndNativeCompanyFields",
+      "note": "54 company-access cases including five new null-role/duplicate-claim and binary/both-role-claim/role-only/claim-only collation cases; twelve actual protected executive cases on another EF model. Reused query plans still observe current account/membership/standard-role/scoped-role/permission/UTC expiry. Counts overlap earlier gates; no unique aggregate inferred."
+    },
+    {
+      "name": "native-guards",
+      "session": 77501,
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 32,
+      "failed": 0,
+      "duration": "33.9047 seconds",
+      "log": "oilgas-335-current-authority-projection-native-guards.log",
+      "filter": "FullyQualifiedName~ActualApiQualifiedParticipantRefusesChangedConfiguredRoleOrZoneAndRollsBackAllTargets|FullyQualifiedName~QualifiedHttpSourceFixtureReadsCompleteIdentityStatusAndLicensingIncludingEmptyTables|FullyQualifiedName~CompanyModuleConnectionTests",
+      "note": "Actual current API role/zone before and after native writes, full owned rollback, exact qualified source/schema preflight, company/module/target/binding/cancellation checks. Controlled Beep provider/auth/physical/closure seams remain explicit."
+    }
+  ],
+  "single_statement_projection_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "e239ecda37662137af526825e147aacdcf452a5d27f015bbe48699bcdf853c23"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "47b3ead117b3056b6cd96b0c1b3fc6a7926114f2ade6133a88b218b73f5255cb"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "5d3c9ceced45dda22f1ee50c88d9654788fc4a000be4e4bd7a4b89418f7f3d06"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "3549db003672109449dcbb62c764c207e2ba3088f26517518c9a95dd545bbd41"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "8732d90faf97eacd258736b4fd5e09c5866319eefeac689aedc5502162ca3d7f"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "2e0b6d73e4c0331cc57a8f1447c9fee338bb5dd200938ebf6d419abb3de708ce"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "e842accebb527365b9f20cbbcb28588b178b90ee5a6bbffb1e324753fab9d5f9"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "6338539cf1ee926b0d85d37c36b4a7e65db82c832cecf25d49e1c628d4cc420b"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "df158513c0c0acb79eb94bd98d4e188f5a52399da079d62a9c78b0c8797f56c1"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "a013198ecd49a0504e6ed7dc9fb0f359cf563cfb317721099b6ef8ceaf1a458f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "caa9aaeaea6e71229cec24d8bcfaaa77ba2820ad2459b446c803c94908756ce9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "1b4e65af12d74e64af61e5e43c04d9c881318a7b49b1e53d0bfb7be8724096cb"
+    }
+  ],
+  "single_statement_projection_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "cc8e554c5e259b5010cc258406badfa79bdb0d0bb90b4067884e0d1b901fc14e"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "single_statement_projection_change": {
+    "description": "Existing RepositoryAccessService reads active account/tenant/company membership, standard identity plus approved/effective scoped roles, and permissions in one fresh compiled app-RBAC statement. A first-sorted private membership marker is required before any role/permission is returned. Role and permission branches retain their original database DISTINCT independently; current trusted EF model property/default collations preserve independent ordering after UNION. Each invocation still supplies current account/company/UTC and performs AsNoTracking enumeration with cancellation. The per-IModel cache holds translation plans and trusted schema comparison metadata only, never authority values.",
+    "authorization_results_cached": false,
+    "business_ef_sql_or_schema_added": false,
+    "public_contract_or_role_source_changed": false,
+    "timeout_changed": false,
+    "self_review": "Only app-owned RBAC reads changed. No native source/parent/grant/field/account/report/body/receipt/transaction guard removed. Missing/disabled/expired membership returns null before authority values can escape; no standard role or effective approved company metadata is synthesized. Empty authority remains valid current membership, null role names do not silently remove independently sourced permission claims, duplicate/case/sort semantics remain database-owned. The collation regression was fixed in source, not asserted away. Current role/claim comparison settings are taken only from the actual model, not user input. Exceptions/cancellation propagate; no silent success, payload logging, extra command/ledger or schema/migration lane. SQLite generated-schema evidence over distinct actual EF models is scoped proof, not multi-provider/concurrency/browser/OIDC qualification."
+  },
+  "single_statement_projection_workflow_result": {
+    "status": "failed",
+    "session": 32253,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "9.2149 Minutes",
+    "log": "oilgas-335-current-authority-projection-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-ca88e369c882474595f75b265aa4fc65.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Same full protected mixed case failed at the unchanged 100-second record limit (100.1s observed). Evidence32.7s/review80.2s passed; unconfirmed command refused. Preparation36.3s/apply29.4s and final owned receipt14.0s/retained proof13.7s completed. The owning transaction span completed91.4s; the following physical-current check was active1.4s at timeout.4579 completed authority spans accounted for51.6 inclusive seconds. Nested timings are not additive. No confirmed write, whole rollback, absence, retry, private recovery or public outcome is inferred from these timings; final original current recovery was not reached. No whole-workflow latency pass is claimed.",
+    "original_timeout_seconds": 100,
+    "all_behavior_assertions_retained": true,
+    "original_work_start_report_observation_preparation_seams_retained": true,
+    "real_provider_browser_oidc_certified": false
+  },
+  "single_statement_projection_final_review": {
+    "kind": "self-review",
+    "current_source_runtime_data_hashes_matched": 28,
+    "retained_outputs_matched": 50,
+    "code_files_without_conflicts_or_trailing_whitespace": 7,
+    "affected_internal_links_resolved": 1133,
+    "unique_current_tracker_markers": 8,
+    "all_jobs_terminal": true,
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "index_empty": true,
+    "commit_push_performed": false,
+    "note": "Actual final66 matrix preserves independent database DISTINCT/order over configured binary/case-folding property combinations and fresh current role/permission/membership/time reads on reused per-model plans. Original semantic failure retained, not asserted away. Current actual executive12 and native role-zone/source/binding/rollback32 cases pass within their recorded scopes. One fresh statement reduces separate app-query composition; full32253 still fails100s after owned receipt/transaction spans completed. No current native outcome or full persona/phase/goal is certified. No native proof or transaction check removed, success cache, public/domain model, business EF/SQL/migration, timeout change or substituted upstream result."
+  },
+  "consecutive_schema_checks": [
+    {
+      "name": "source-and-schema-boundary",
+      "status": "verified",
+      "session": 16330,
+      "exit_code": 0,
+      "passed": 76,
+      "failed": 0,
+      "duration": "33.5708 seconds",
+      "log": "oilgas-335-consecutive-schema-boundary-source-gate.log",
+      "note": "Eight new opening/closing schema-batch faults change authority, source, original order or physical key. Each refuses before the next definition or native licence read and without writes. Existing identity/operating/licensing/area paired sources, late parents and prepared raw-input/native proof cases pass. This gate preceded authority-component tracing; its native schema source changes are unchanged."
+    },
+    {
+      "name": "owned-rollback-recovery-and-executive",
+      "status": "verified",
+      "session": 89886,
+      "exit_code": 0,
+      "passed": 70,
+      "failed": 0,
+      "duration": "4.5551 minutes",
+      "log": "oilgas-335-consecutive-schema-boundary-owned-gate.log",
+      "note": "Recovered terminal successful output after interruption; old session handle is missing and no testhost remains. Actual API late role/zone rollback, entire mixed rollback, final owned receipt late faults, retained private/public source rejection, uncertain commit, original common audit/recovery, company/module bindings and twelve protected executive cases. Current clean rebuild reproduced this exact runtime hash."
+    },
+    {
+      "name": "current-source-clean-rebuild",
+      "status": "verified",
+      "session": 19989,
+      "exit_code": 0,
+      "log": "oilgas-335-consecutive-schema-current-rebuild.log",
+      "duration": "53.52 seconds",
+      "warnings": 369,
+      "errors": 0,
+      "note": "Current focused target cleanly rebuilt with --no-incremental; identical DLL SHA256 to the recovered70 run. Existing warning output retained; no full application/solution qualification."
+    },
+    {
+      "name": "current-protected-source-and-late-role-zone-preflight",
+      "status": "verified",
+      "session": 38950,
+      "exit_code": 0,
+      "passed": 13,
+      "failed": 0,
+      "duration": "1.1426 minutes",
+      "log": "oilgas-335-consecutive-schema-current-protected-preflight.log",
+      "filter": "FullyQualifiedName~ConsecutiveNativeSchemaChecksCloseCurrentAuthorityBeforeTheNextDefinition|FullyQualifiedName~QualifiedHttpSourceFixtureReadsCompleteIdentityStatusAndLicensingIncludingEmptyTables|FullyQualifiedName~ActualApiQualifiedParticipantRefusesChangedConfiguredRoleOrZoneAndRollsBackAllTargets",
+      "note": "Eight schema-boundary faults, one actual protected complete identity/status/licensing fixture (including empty tables) and four actual API late role/zone refusal/rollback cases. Current source/runtime, controlled provider/auth/physical/closure seams. Counts overlap prior gates."
+    }
+  ],
+  "consecutive_schema_rebuild_reproduction": {
+    "status": "verified",
+    "before_resume_sha256": "3d805c53db26ffe798d946aa29513cd1a87273d20c4e1f315719c747b8d0fcf7",
+    "after_clean_rebuild_sha256": "3d805c53db26ffe798d946aa29513cd1a87273d20c4e1f315719c747b8d0fcf7",
+    "identical": true,
+    "record": "oilgas-335-consecutive-schema-owned-runtime-before-resume.json",
+    "note": "Identical deterministic rebuilt assembly ties recovered terminal70 to current compiled source; not inferred from file timestamps alone."
+  },
+  "consecutive_schema_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "25ad3014853618e141d7804ed80a88e4fd4850b186a176e8e06168889070304b"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "47b3ead117b3056b6cd96b0c1b3fc6a7926114f2ade6133a88b218b73f5255cb"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "b3d7e23ac8965fa70b819db67c5c115e7c03d73038525143c5075d11d10bed25"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "05656ecdc2f9f3eaa6f8a29e1213c5af4b8c517fb24244d94f47cdf9f54efd64"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "e5e242d2b0fa198391923b286d48b63736aa3765b4847001c94b93e5ed0bf5f4"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "2e0b6d73e4c0331cc57a8f1447c9fee338bb5dd200938ebf6d419abb3de708ce"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "e842accebb527365b9f20cbbcb28588b178b90ee5a6bbffb1e324753fab9d5f9"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "6338539cf1ee926b0d85d37c36b4a7e65db82c832cecf25d49e1c628d4cc420b"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "df158513c0c0acb79eb94bd98d4e188f5a52399da079d62a9c78b0c8797f56c1"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "a013198ecd49a0504e6ed7dc9fb0f359cf563cfb317721099b6ef8ceaf1a458f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "caa9aaeaea6e71229cec24d8bcfaaa77ba2820ad2459b446c803c94908756ce9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "1b4e65af12d74e64af61e5e43c04d9c881318a7b49b1e53d0bfb7be8724096cb"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs",
+      "sha256": "195e5a59b62e771add1c4d2db112a82bdb43e4c9beac509886e5058a67081a04"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "sha256": "f40bd943bddadd2e9641ba7c2a5759940402f05d07dcbaab251be8285327ecc2"
+    }
+  ],
+  "consecutive_schema_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "3d805c53db26ffe798d946aa29513cd1a87273d20c4e1f315719c747b8d0fcf7"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "consecutive_schema_change": {
+    "description": "Only immediately consecutive schema validations share a closing/opening authority boundary: G,D1,G,D2,G. Every canonical/physical definition is still read and validated afresh with its original key/relationship/type/column/error checks. Applied to five consecutive licensing definitions and closing definition lists for identity/operating/licensing. No business/native row read or publication lies between joined checks. Raw reads keep full fresh guards before and after; paired source observations, current parents, exact graph, mutation/write checks, final owned receipt and original postcommit recovery remain.",
+    "authorization_results_cached": false,
+    "schema_results_cached": false,
+    "business_read_guard_removed": false,
+    "final_proof_or_recovery_removed": false,
+    "timeout_changed": false,
+    "domain_sql_ef_schema_or_public_contract_added": false,
+    "diagnostics": "Fixed-name spans identify preference, app authority, lifecycle resolve/binding, core resolve/binding and direct grants. Existing exceptions propagate. No actor/company/source/role/command/body tags or payload logging added. Bounded timing aggregate expands from12 to20 entries; original100s and behavior assertions unchanged.",
+    "self_review": "Private schema batching preserves each original schema read block and its fresh authority at both ends; one check serves adjacent blocks only. The local requested-definition lists are not validation/data/permission caches. Fault injection proves the next definition/raw source is not reached after a closing-boundary change. Current force rebuild exactly reproduced recovered70 runtime, and current protected13 passes. Native business read guards are untouched. Controlled SQLite/Beep provider/auth/physical/closure fixtures are scoped proof, not real-provider/concurrency/browser/OIDC or whole persona acceptance."
+  },
+  "consecutive_schema_workflow_result": {
+    "status": "failed",
+    "session": 22986,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "16.7443 Minutes",
+    "log": "oilgas-335-consecutive-schema-boundary-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-6871e9d27bf340ad9b3ed61c9b03836f.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "The original whole case failed during authorized review at unchanged100s (100.1s observed), before recording. Evidence76.6s passed. Review completed2017 authority spans/60.4 inclusive seconds, including preference4184 calls/35.0s, grants4189/12.9s and app authority4189/2.4s; only two qualified source compositions had completed (73.8s inclusive), with another operating/source/evidence read active. These are nested timings and cumulative diagnostic counters, not additive totals or a whole latency pass. No mixed recording/retry/private recovery/public outcome is proved by this run.",
+    "original_timeout_seconds": 100,
+    "all_behavior_assertions_retained": true,
+    "original_preparation_provider_seams_retained": true,
+    "real_provider_browser_oidc_certified": false
+  },
+  "consecutive_schema_final_review": {
+    "kind": "self-review",
+    "current_source_runtime_data_hashes_matched": 30,
+    "retained_outputs_matched": 57,
+    "relevant_code_test_files_without_conflicts_or_trailing_whitespace": 13,
+    "affected_internal_links_resolved": 1133,
+    "unique_current_tracker_markers": 8,
+    "all_jobs_terminal": true,
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "index_empty": true,
+    "commit_push_performed": false,
+    "note": "Current76 source, reproduced70 owned and protected13 scopes remain distinct, with overlap explicit. Every schema block retains fresh before/after authority; adjacent blocks share only the intervening boundary with no native/business read or publication between. Raw reads, current parents, complete paired sources, all mutation/write/final receipt/postcommit recovery checks retained. Component spans contain fixed names and durations only, propagate exceptions and retain original100s/assertions. No permission/schema result cache or public/business data/migration/command/ledger change. Whole22986 outcome is recorded separately; wider persona/phase/goal scope remains open."
+  },
+  "account_preference_checks": [
+    {
+      "name": "account-profile-role-workspace-field",
+      "status": "verified",
+      "session": 90467,
+      "exit_code": 0,
+      "passed": 157,
+      "failed": 0,
+      "duration": "40.4184 seconds",
+      "log": "oilgas-335-current-account-preference-initial.log",
+      "note": "Existing company roles, account/profile/global administration, persona workspace, FIELD selection and stored preference checks plus two new same-service active-state disable/delete/cancellation tests. No role/permission source or administrator rule removed."
+    },
+    {
+      "name": "current-protected-native-executive",
+      "status": "verified",
+      "session": 3301,
+      "exit_code": 0,
+      "passed": 52,
+      "failed": 0,
+      "duration": "47.0698 seconds",
+      "log": "oilgas-335-current-account-preference-protected.log",
+      "note": "Eight stored selection faults, twelve actual protected executive cases, complete qualified protected source fixture, four actual API late role/zone rollback and current company/module bindings. Native reads/writes remain unchanged; controlled provider/auth/physical/closure scope."
+    },
+    {
+      "name": "refusal-status-initial",
+      "status": "failed",
+      "session": 80800,
+      "exit_code": 1,
+      "passed": 9,
+      "failed": 1,
+      "duration": "16.2699 seconds",
+      "log": "oilgas-335-current-account-preference-refusal-status.log",
+      "note": "One new test wrongly expected Invalid for malformed stored JSON. The existing PreferenceRoot owner explicitly returns Conflict; production correctly preserved that status. Corrected only the assertion to the existing contract, and strengthened all four new preference faults to require Conflict. Production unchanged; failed output retained."
+    },
+    {
+      "name": "refusal-status-corrected",
+      "status": "verified",
+      "session": 52906,
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "duration": "22.8312 seconds",
+      "log": "oilgas-335-current-account-preference-refusal-status-corrected.log",
+      "note": "Current exact conflict statuses for missing/malformed preferences, actor mismatch and duplicate selections, plus original account/stamp/FIELD and same-service active-state cases. No extra native reads, writes or open owned transaction. Counts overlap earlier gates."
+    }
+  ],
+  "account_preference_sources": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAcceptanceHttpTests.cs",
+      "sha256": "af31cdd263536a8e9a6b45ac104c60512c2da8135053f57d1bac10fff72866d9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceExecutionHandoffHttpTests.cs",
+      "sha256": "0a043388d4f2cfbf38f67d9dbfa2d2cd09efaa029674df1af8ce4c7b8af10180"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+      "sha256": "e80ea14bfd14e62976b92b13a649001451957b64e3d9bf2dae53d5daf89b0841"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderReturnAcceptanceHttpTests.cs",
+      "sha256": "a364639c977377159079abed287548fbf5a31f046a5b04e4996a5caad512d196"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetEvidenceHttpTests.cs",
+      "sha256": "010a58b9d82e38a68083968f4e658b7dfce5f465422a673a392cbb2285ebcbf2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceAssetReturnHttpTests.cs",
+      "sha256": "25ad3014853618e141d7804ed80a88e4fd4850b186a176e8e06168889070304b"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyWorkOrderCompletionDecisionHttpTests.cs",
+      "sha256": "86760e4acc9129696c45647f371355a362289a59606009d00bb228cb2ad1a8c5"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+      "sha256": "fdd6d93b1a438588c369ef40c418b89d3fc4a5518688d44f6f1d89b2fe9116f2"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceReturnParticipant.cs",
+      "sha256": "47b3ead117b3056b6cd96b0c1b3fc6a7926114f2ade6133a88b218b73f5255cb"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceOperating.cs",
+      "sha256": "b3d7e23ac8965fa70b819db67c5c115e7c03d73038525143c5075d11d10bed25"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceLicensing.cs",
+      "sha256": "05656ecdc2f9f3eaa6f8a29e1213c5af4b8c517fb24244d94f47cdf9f54efd64"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedOperatingTests.cs",
+      "sha256": "00adb0c991132d23fa0794cf05e2a0ebd2b584f932c7a36a7dddd67ea5e9f220"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedLicensingTests.cs",
+      "sha256": "e5e242d2b0fa198391923b286d48b63736aa3765b4847001c94b93e5ed0bf5f4"
+    },
+    {
+      "path": "Beep.OilandGas.Repository/RepositoryAccessService.cs",
+      "sha256": "a0fab949ea95e4b7a816ac7a784c46c305a99b8fdb8add27da136296ab32a3c2"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RepositoryCompanyAccessTests.cs",
+      "sha256": "9eca6f005c878a241f36f4a49bb89ee211784876e78734786020171ee4b5d3e1"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceReturnPolicyService.cs",
+      "sha256": "f20b69ba32a151001e0fd6990cfaa97737b5a7d0b573dd458e95eaed2c50d907"
+    },
+    {
+      "path": "Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.MaintenanceAssetReturn.cs",
+      "sha256": "6338539cf1ee926b0d85d37c36b4a7e65db82c832cecf25d49e1c628d4cc420b"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturnWrite.cs",
+      "sha256": "df158513c0c0acb79eb94bd98d4e188f5a52399da079d62a9c78b0c8797f56c1"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetReturnWriteTests.cs",
+      "sha256": "a013198ecd49a0504e6ed7dc9fb0f359cf563cfb317721099b6ef8ceaf1a458f"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceAssetReturn.cs",
+      "sha256": "caa9aaeaea6e71229cec24d8bcfaaa77ba2820ad2459b446c803c94908756ce9"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedReturnParticipantTests.cs",
+      "sha256": "1b4e65af12d74e64af61e5e43c04d9c881318a7b49b1e53d0bfb7be8724096cb"
+    },
+    {
+      "path": "Beep.OilandGas.ProductionOperations/Services/FacilityManagementService.MaintenanceIdentity.cs",
+      "sha256": "195e5a59b62e771add1c4d2db112a82bdb43e4c9beac509886e5058a67081a04"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+      "sha256": "f40bd943bddadd2e9641ba7c2a5759940402f05d07dcbaab251be8285327ecc2"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/RepositoryRequestAccount.cs",
+      "sha256": "fc7f95b8d81b5c55c17861087dc7ab9203e8f84bde897b138fd0b70f07f8e94d"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Services/RepositoryUserProfileService.Fields.cs",
+      "sha256": "dc4069cef90aebf42af1e062c2db516d607fa83eedb411c82afcc8a569d978a8"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/RoleWorkspaceTests.cs",
+      "sha256": "4dc06df02aeb8eb448dff597bc1a0ee2e66910c7e1bfedffa20411e1838444ce"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests/StoredFieldSelectionAuthorityTests.cs",
+      "sha256": "efe10b7fafe73bb35e752c1398df591775754d11fb162410bd44647cb3069f30"
+    }
+  ],
+  "account_preference_runtime": [
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.Repository.Tests.dll",
+      "sha256": "c4f39c5014869c6f57ecf265fe40d94d994beae91abf08eda97575cb2b804641"
+    },
+    {
+      "path": "Beep.OilandGas.Repository.Tests\\bin\\company-focused\\Debug\\net10.0\\Beep.OilandGas.PPDM39.dll",
+      "sha256": "887afb60ec519e5d59d2e4bcc2b29990427d9bace2c797b54f69f7e923c42363"
+    }
+  ],
+  "account_preference_change": {
+    "description": "Existing IRepositoryAccessService/RepositoryAccessService adds a fresh active-account-only query. RepositoryRequestAccount.RequireAsync uses it solely for the authenticated auth-owner-resolved actor active check; administrator decisions and claims/full role APIs keep their existing full authoritative role/permission reads. No active status/authority is cached. Each stored-selection Check now left-joins the current active user/concurrency stamp and existing optional profile preferences in one app-owned query. Both checks and their current actor/company/binding boundaries remain in the original order. Missing/malformed/foreign/duplicate preference, missing profile and stamp/FIELD refusal semantics are preserved.",
+    "authorization_results_cached": false,
+    "paired_preference_check_removed": false,
+    "role_bridge_or_administrator_source_changed": false,
+    "native_guard_proof_or_recovery_removed": false,
+    "business_sql_ef_schema_or_model_added": false,
+    "timeout_changed": false,
+    "self_review": "The bool query is not a role grant and is confined to account admission. It reads the existing app account owner every time, propagates cancellation, and rejects missing/disabled actors. No IdentityServer or new identity/role store. Left join retains active account plus absent extension as the original Conflict rather than misclassifying it as missing account; original parsing and revision checks unchanged. Both profile observations and company/binding checks remain, as do all business/native source/transaction/mutation/final receipt/recovery checks. Exceptions still propagate to current owners. No payload logging, public business DTO, schema/migration, extra command/intent/ledger or new business EF/SQL lane. Existing simple RoleWorkspace test authority implements the additive active-state method with the same always-active behavior as its prior full getter."
+  },
+  "account_preference_workflow_result": {
+    "status": "failed",
+    "session": 48596,
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 1,
+    "duration": "11.6537 Minutes",
+    "log": "oilgas-335-current-account-preference-mixed-http.log",
+    "timing_log": "oilgas-asset-return-http-5ac4b7157a42405181438b5bdcfb34af.log",
+    "filter": "FullyQualifiedName~ActualQualifiedPhysicalReturnHttpRecordsMixedAssetsThroughOriginalVerificationAndClosure",
+    "note": "Original whole case failed during authorized review at unchanged100s (100.6s observed), before recording. Evidence58.7s passed; its3654 preference checks took16.9s versus28.4s in previous22986, while app reads remained1.9s. Review completed2753 authority spans/55.1 inclusive seconds and three qualified source compositions/74.9s; preference5656 calls/26.4s and grants5661/14.8s. A second evidence read/closure remained active at timeout. Request-stage timings vary and nested totals are not additive. No full mixed recording/retry/private recovery/public outcome or end-to-end latency pass is proved.",
+    "original_timeout_seconds": 100,
+    "all_behavior_assertions_retained": true,
+    "original_preparation_provider_seams_retained": true,
+    "real_provider_browser_oidc_certified": false
+  },
+  "account_preference_final_review": {
+    "kind": "self-review",
+    "current_source_runtime_data_hashes_matched": 34,
+    "retained_outputs_matched": 63,
+    "relevant_code_test_files_without_conflicts_or_trailing_whitespace": 17,
+    "affected_internal_links_resolved": 1133,
+    "unique_current_tracker_markers": 8,
+    "all_jobs_terminal": true,
+    "branch": "master",
+    "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+    "index_empty": true,
+    "commit_push_performed": false,
+    "note": "Current157/protected52/exact-status10 remain distinct overlapping scopes. Account admission reads fresh active state only; full role bridge/account/administrator decisions stay with existing full authoritative source. Both preference observations/boundaries remain, with current joined account/stamp/optional profile and original refusal semantics. The malformed-JSON expectation error was fixed only in tests, to the existing Conflict contract. No result cache, parallel identity/role source, native proof/mutation/recovery removal, business SQL/EF/schema, new command/intent/ledger or timeout change. Whole48596 is recorded separately; broader persona/phase/goal remains open."
+  }
+}

@@ -7,22 +7,27 @@ using TheTechIdea.Data.OilGas;
 namespace Beep.OilandGas.ApiService.Services;
 
 public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<OilGasUser> users,
-    RoleManager<IdentityRole> roles, RepositoryRoleAssignmentService assignments, IHttpContextAccessor accessor)
+    RoleManager<IdentityRole> roles, RepositoryRoleAssignmentService assignments, RepositoryRequestAccount account,
+    TimeProvider? clock = null)
 {
+    private readonly TimeProvider time = clock ?? TimeProvider.System;
     public async Task<RepositoryUserSummary?> GetByIdAsync(string id)
     {
+        await account.RequireSelfOrAdministratorAsync(id);
         var user = await users.FindByIdAsync(id);
         return user is null ? null : Map(user, await db.Set<AppUserExtension>().FindAsync(id));
     }
 
     public async Task<RepositoryUserSummary?> GetByUsernameAsync(string username)
     {
+        await account.RequireAdministratorAsync();
         var user = await users.FindByNameAsync(username);
         return user is null ? null : Map(user, await db.Set<AppUserExtension>().FindAsync(user.Id));
     }
 
     public async Task<IEnumerable<RepositoryUserSummary>> GetAllAsync()
     {
+        await account.RequireAdministratorAsync();
         var metadata = await db.Set<AppUserExtension>().AsNoTracking().ToDictionaryAsync(x => x.UserId);
         return (await db.Users.AsNoTracking().OrderBy(x => x.UserName).ToListAsync())
             .Select(user => Map(user, metadata.GetValueOrDefault(user.Id))).ToList();
@@ -35,20 +40,31 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
     /// </summary>
     public async Task<bool> IsLastActiveAdministratorAsync(string id)
     {
+        await account.RequireSelfOrAdministratorAsync(id);
         var user = await users.FindByIdAsync(id);
-        if (user is not { IsActive: true } || !await users.IsInRoleAsync(user, "Administrator")) return false;
-        var role = (await roles.FindByNameAsync("Administrator"))!;
+        if (user is not { IsActive: true }) return false;
+        var role = await roles.FindByNameAsync("Administrator");
+        if (role is null || !await RepositoryRoleScope.Memberships(db, time.GetUtcNow().UtcDateTime)
+            .AnyAsync(x => x.UserId == id && x.RoleId == role.Id)) return false;
         return await ActiveAdministratorCountAsync(role.Id) <= 1;
     }
 
     private Task<int> ActiveAdministratorCountAsync(string administratorRoleId) =>
-        (from membership in db.UserRoles join account in db.Users on membership.UserId equals account.Id
+        (from membership in RepositoryRoleScope.Memberships(db, time.GetUtcNow().UtcDateTime)
+         join account in db.Users on membership.UserId equals account.Id
          where membership.RoleId == administratorRoleId && account.IsActive select account.Id).CountAsync();
 
     public async Task<RepositoryUserSummary?> UpdateAsync(string id, RepositoryUserUpdate input)
     {
+        ArgumentNullException.ThrowIfNull(input);
+        var actor = await account.RequireSelfOrAdministratorAsync(id);
+        if (input.IsActive.HasValue) await account.RequireAdministratorAsync();
+        return await UpdateCoreAsync(id, input, actor);
+    }
+
+    private async Task<RepositoryUserSummary?> UpdateCoreAsync(string id, RepositoryUserUpdate input, string actor)
+    {
         if (input.FullName?.Length > 1000) throw RefusalException.Invalid("Full name exceeds 1000 characters.");
-        var actor = (accessor.HttpContext?.User).ActingUserId();
         var user = await users.FindByIdAsync(id);
         if (user is null) return null;
         // The version the caller read: a change made since is theirs to reload, not EF's concurrency failure.
@@ -56,11 +72,12 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
             throw RefusalException.Conflict("The user changed. Reload before saving.");
         await using var transaction = await db.Database.BeginTransactionAsync();
         var active = input.IsActive ?? user.IsActive;
-        if (!active && user.IsActive && await users.IsInRoleAsync(user, "Administrator"))
+        var administrator = await roles.FindByNameAsync(RepositoryBootstrapService.AdministratorRole);
+        if (!active && user.IsActive && administrator is not null &&
+            await RepositoryRoleScope.Memberships(db, time.GetUtcNow().UtcDateTime).AnyAsync(value => value.UserId == id && value.RoleId == administrator.Id))
         {
-            var role = (await roles.FindByNameAsync("Administrator"))!;
-            Require(await roles.UpdateAsync(role));
-            if (await ActiveAdministratorCountAsync(role.Id) <= 1)
+            Require(await roles.UpdateAsync(administrator));
+            if (await ActiveAdministratorCountAsync(administrator.Id) <= 1)
                 throw RefusalException.Conflict("The last active administrator cannot be disabled.");
         }
         user.IsActive = active;
@@ -68,12 +85,12 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
         var metadata = await db.Set<AppUserExtension>().FindAsync(user.Id);
         if (metadata is null)
         {
-            metadata = new AppUserExtension { UserId = user.Id, CreatedUtc = DateTime.UtcNow };
+            metadata = new AppUserExtension { UserId = user.Id, CreatedUtc = time.GetUtcNow().UtcDateTime };
             db.Add(metadata);
         }
         metadata.FullName = input.FullName;
         metadata.ChangedBy = actor;
-        metadata.ChangedUtc = DateTime.UtcNow;
+        metadata.ChangedUtc = time.GetUtcNow().UtcDateTime;
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
         return Map(user, metadata);
@@ -81,32 +98,45 @@ public sealed class RepositoryUserService(RepositoryDbContext db, UserManager<Oi
 
     public async Task<bool> DeleteAsync(string id)
     {
-        var user = await GetByIdAsync(id);
+        var actor = await account.RequireSelfOrAdministratorAsync(id);
+        var user = await users.FindByIdAsync(id);
         if (user is null) return false;
-        return await UpdateAsync(id, new(user.FullName, false, user.ConcurrencyStamp)) is not null;
+        var metadata = await db.Set<AppUserExtension>().FindAsync(id);
+        return await UpdateCoreAsync(id, new(metadata?.FullName, false, user.ConcurrencyStamp ?? ""), actor) is not null;
+    }
+
+    public async Task<bool> DeactivateSelfAsync()
+    {
+        var actor = await account.RequireAsync();
+        await account.RequireSelfAsync(actor);
+        return await DeleteAsync(actor);
     }
 
     public async Task<bool> AddToRoleAsync(string userId, string roleName)
     {
+        var actor = await account.RequireAdministratorAsync();
         var role = await roles.FindByNameAsync(roleName);
         if (role is null) return false;
-        await assignments.AssignRoleAsync(userId, role.Id, (accessor.HttpContext?.User).ActingUserId());
+        await assignments.AssignRoleAsync(userId, role.Id, actor);
         return true;
     }
 
     public async Task<bool> RemoveFromRoleAsync(string userId, string roleName)
     {
+        var actor = await account.RequireAdministratorAsync();
         var role = await roles.FindByNameAsync(roleName);
         if (role is null) return false;
         var assignment = (await assignments.GetUserRoleAssignmentsAsync(userId)).SingleOrDefault(x => x.RoleId == role.Id);
-        return assignment is not null && await assignments.RevokeRoleAsync(assignment.UserRoleId, (accessor.HttpContext?.User).ActingUserId());
+        return assignment is not null && await assignments.RevokeRoleAsync(assignment.UserRoleId, actor);
     }
 
     public async Task<IEnumerable<string>> GetRolesAsync(string userId)
     {
-        var user = await users.FindByIdAsync(userId);
-        // Management shows stored assignments; RepositoryAccessService separately denies inactive accounts.
-        return user is null ? [] : await users.GetRolesAsync(user);
+        await account.RequireSelfOrAdministratorAsync(userId);
+        return await (from membership in RepositoryRoleScope.Memberships(db, time.GetUtcNow().UtcDateTime)
+                      join role in db.Roles.AsNoTracking() on membership.RoleId equals role.Id
+                      where membership.UserId == userId && role.Name != null
+                      select role.Name!).ToArrayAsync();
     }
 
     private static RepositoryUserSummary Map(OilGasUser user, AppUserExtension? metadata) =>

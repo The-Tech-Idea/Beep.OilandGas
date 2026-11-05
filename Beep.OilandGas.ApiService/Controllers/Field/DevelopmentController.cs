@@ -55,16 +55,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             return Ok(wells ?? new List<WELL>());
         }
 
-        /// <summary>GET /api/field/current/development/facilities</summary>
-        [HttpGet("facilities")]
-        public async Task<ActionResult<List<FACILITY>>> GetFacilitiesAsync()
-        {
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
-            return Ok(facilities ?? new List<FACILITY>());
-        }
-
         /// <summary>GET /api/field/current/development/pools</summary>
         [HttpGet("pools")]
         public async Task<ActionResult<List<POOL>>> GetPoolsAsync()
@@ -109,42 +99,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
             var pool = await _developmentService.UpdatePoolForFieldAsync(fieldId, poolId, request, userId);
             return Ok(pool);
-        }
-
-        /// <summary>POST /api/field/current/development/facilities</summary>
-        [HttpPost("facilities")]
-        public async Task<ActionResult<FacilityResponse>> CreateFacilityAsync([FromBody] FacilityRequest request)
-        {
-            var userId = User.ActingUserId();
-            if (request == null)
-                return BadRequest(new { error = "Facility request is required." });
-            if (string.IsNullOrWhiteSpace(request.FacilityName))
-                return BadRequest(new { error = "Facility name is required." });
-
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-
-            var facility = await _developmentService.CreateFacilityForFieldAsync(fieldId, request, userId);
-            return Ok(facility);
-        }
-
-        /// <summary>PUT /api/field/current/development/facilities/{facilityId}</summary>
-        [HttpPut("facilities/{facilityId}")]
-        public async Task<ActionResult<FacilityResponse>> UpdateFacilityAsync(string facilityId, [FromBody] FacilityRequest request)
-        {
-            var userId = User.ActingUserId();
-            if (string.IsNullOrWhiteSpace(facilityId))
-                return BadRequest(new { error = "Facility ID is required." });
-            if (request == null)
-                return BadRequest(new { error = "Facility request is required." });
-            if (string.IsNullOrWhiteSpace(request.FacilityName))
-                return BadRequest(new { error = "Facility name is required." });
-
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-
-            var facility = await _developmentService.UpdateFacilityForFieldAsync(fieldId, facilityId, request, userId);
-            return Ok(facility);
         }
 
         /// <summary>GET /api/field/current/development/wells/{uwi}</summary>
@@ -382,56 +336,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             return Ok(wells);
         }
 
-        /// <summary>GET /api/field/current/development/construction-progress</summary>
-        [HttpGet("construction-progress")]
-        public async Task<ActionResult<ConstructionProgressDto>> GetConstructionProgressAsync()
-        {
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            var wells      = await _developmentService.GetDevelopmentWellsForFieldAsync(fieldId);
-            var facilities = await _developmentService.GetFacilitiesForFieldAsync(fieldId);
-
-            // Build "Wells" work group from well records
-            var wellPackages = (wells ?? new()).Select(w =>
-            {
-                var statusCode = w.CURRENT_STATUS ?? "PLANNED";
-                bool isCompleted = statusCode is "PRODUCING" or "COMPLETED" or "ABANDONED";
-                bool isActive    = statusCode is "DRILLING" or "COMPLETING" or "TESTING";
-                double pct = isCompleted ? 100 : isActive ? 50 : 0;
-                return new WorkPackageDto(
-                    Name:       w.UWI ?? w.CURRENT_STATUS ?? "Unknown Well",
-                    TargetDate: w.SPUD_DATE.HasValue ? w.SPUD_DATE.Value.ToString("MMM yyyy") : string.Empty,
-                    IsCompleted: isCompleted,
-                    IsActive:    isActive,
-                    PercentComplete: pct,
-                    Note:        statusCode);
-            }).ToList();
-
-            // Build "Facilities" work group
-            var facilityPackages = (facilities ?? new()).Select(f =>
-            {
-                var statusCode = f.ACTIVE_IND == "Y" ? "OPERATIONAL" : "PLANNED";
-                bool isCompleted = statusCode is "OPERATIONAL";
-                bool isActive    = false;
-                double pct = isCompleted ? 100 : 0;
-                return new WorkPackageDto(
-                    Name:       f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME ?? f.FACILITY_ID ?? "Unknown Facility",
-                    TargetDate: string.Empty,
-                    IsCompleted: isCompleted,
-                    IsActive:    isActive,
-                    PercentComplete: pct,
-                    Note:        f.FACILITY_TYPE ?? string.Empty);
-            }).ToList();
-
-            var workGroups = new List<WorkGroupDto>();
-            if (facilityPackages.Count > 0)
-                workGroups.Add(new WorkGroupDto("Facilities & Infrastructure", facilityPackages));
-            if (wellPackages.Count > 0)
-                workGroups.Add(new WorkGroupDto("Wells", wellPackages));
-
-            return Ok(new ConstructionProgressDto(workGroups, new List<PunchItemDto>()));
-        }
-
         #endregion
 
         // ── Rig Assignment ─────────────────────────────────────────────────────────────
@@ -453,95 +357,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             return NoContent();
         }
 
-// ── FDP Gate Review ────────────────────────────────────────────────────────────
-
-        // Step-name lookup for the GATE_FDP_REVIEW process definition
-        private static readonly Dictionary<string, string> _fdpStepNames = new()
-        {
-            { "FDP_DRAFT",          "FDP Drafting" },
-            { "FDP_RESERVES_CLASS", "PRMS Reserves Classification" },
-            { "FDP_ECONOMICS",      "Project Economics Review" },
-            { "FDP_PARTNER_ALIGN",  "Partner Alignment" },
-            { "FDP_APPROVAL",       "Board / Regulator Approval" },
-            { "FDP_SANCTION",       "Project Sanction" },
-        };
-
-        /// <summary>GET /api/field/current/development/fdp
-        /// Returns the current FDP gate review status for the active field.
-        /// HasFdp = false when no FDP process has been started.</summary>
-        [HttpGet("fdp")]
-        public async Task<ActionResult<FdpStatusResponse>> GetCurrentFdpAsync()
-        {
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            var instance = await _developmentProcessService.GetCurrentFdpStatusAsync(fieldId);
-            if (instance == null)
-                return Ok(new FdpStatusResponse { HasFdp = false });
-
-            var steps = instance.StepInstances
-                .OrderBy(s => s.SequenceNumber)
-                .Select(s => new FdpStepStatus
-                {
-                    StepId        = s.StepId,
-                    StepName      = _fdpStepNames.TryGetValue(s.StepId, out var n) ? n : s.StepId,
-                    IsCompleted   = s.Status == Beep.OilandGas.Models.Processes.StepStatus.COMPLETED,
-                    IsActive      = s.Status == Beep.OilandGas.Models.Processes.StepStatus.IN_PROGRESS,
-                    CompletedDate = s.CompletionDate?.ToString("MMM yyyy") ?? string.Empty,
-                }).ToList();
-
-            return Ok(new FdpStatusResponse
-            {
-                HasFdp            = true,
-                ProcessInstanceId = instance.InstanceId,
-                Status            = instance.Status.ToString(),
-                CurrentStepId     = instance.CurrentStepId,
-                StartDate         = instance.StartDate,
-                Steps             = steps,
-            });
-        }
-
-        /// <summary>
-        /// POST /api/field/current/development/fdp
-        /// Submits a Field Development Plan draft and starts the FDP Gate Review process.
-        /// </summary>
-        [HttpPost("fdp")]
-        public async Task<ActionResult<SubmitFdpDraftResponse>> SubmitFdpAsync(
-            [FromBody] SubmitFdpDraftRequest request)
-        {
-            var userId = User.ActingUserId();
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-
-            var instance = await _developmentProcessService.StartFdpGateProcessAsync(fieldId, userId);
-            return Ok(new SubmitFdpDraftResponse
-            {
-                InstanceId = instance?.InstanceId ?? string.Empty,
-                Status     = instance != null ? instance.Status.ToString() : "SUBMITTED"
-            });
-        }
 
     }
-
-    // ── Construction-progress response DTOs ────────────────────────────────
-    public record ConstructionProgressDto(
-        List<WorkGroupDto>  WorkGroups,
-        List<PunchItemDto>  PunchItems);
-
-    public record WorkGroupDto(string Title, List<WorkPackageDto> Packages);
-
-    public record WorkPackageDto(
-        string Name,
-        string TargetDate,
-        bool   IsCompleted,
-        bool   IsActive,
-        double PercentComplete,
-        string Note);
-
-    public record PunchItemDto(
-        string Description,
-        string Owner,
-        string DueDate,
-        string Category);
 
     public record AssignRigRequest(string RigName, DateTime? MobDate);
 }

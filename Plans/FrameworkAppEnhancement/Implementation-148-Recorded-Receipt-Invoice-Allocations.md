@@ -1,0 +1,27 @@
+# Implementation 148: Recorded receipt invoice allocations
+
+## Procurement to accountant relationship foundation
+
+Source inventory found no existing receipt-to-vendor-invoice allocation entity or matching owner. PO_RECEIPT identifies an order and order line; AP_INVOICE_LINE identifies the vendor invoice and its recorded PO reference. Those references cannot establish receipt allocation. A single AP_RECEIPT_ALLOCATION now lives in TheTechIdea.Data under the existing production-accounting namespace. The existing PRODUCTION Beep manifest declares it next to AP_INVOICE_LINE. No duplicate receipt/invoice entity or alternative persistence lane is introduced.
+
+Each allocation records its own identity, AP invoice and line, order and line, receipt, allocated quantity/unit and inherited audit/history fields. IDs and units are bounded. Quantity/unit are nullable in the source model for explicit incomplete evidence, while confirmed allocation review requires a positive recorded quantity and nonblank bounded unit. Missing values are never backfilled. Multiple receipts can allocate partial quantities to one invoice line; there is no one-to-one constraint or fabricated allocation from PO receipt totals. This relationship also permits separate allocations to different invoice lines; global receipt consumption requires a command-side consistency gate before writes.
+
+## Native read and shared proof
+
+APInvoiceService.GetReceiptAllocationsForLineAsync uses the existing canonical repository. It validates the owned AP header, reads the confirmed AP line set and requires exact requested-line membership before opening the allocation repository. Native predicates include exact AP_INVOICE_ID and AP_INVOICE_LINE_ID; active and inactive allocation history are retained. Fresh allocation metadata requires a unique nonnullable allocation key and every relationship/quantity/unit column. Missing metadata, null payloads, incompatible, foreign or duplicate records refuse. An actually empty returned collection remains distinct from an unavailable table/read.
+
+Data-owned APReceiptAllocationReview composes APLinePurchaseSourceReview with frozen, ID-sorted allocation history and a content revision. It requires the original company, actor, invoice revision and line, exact referenced owned PO line/supplier, and actual receipt membership on that PO line. A receipt on another order line cannot satisfy the relationship. The revision covers source invoice/order revisions and known allocation business/audit fields; changed allocation or receipt evidence refuses. Web JSON preserves raw distinct units and quantity values without conversion or aggregation.
+
+The review establishes recorded membership only. It does not certify receipt acceptance, effective allocation, item/unit catalog equivalence, quantity sufficiency, no global over-allocation, match tolerances, independent approval, stock, posting or payment. Those rules require the configured reviewer/command path and a transactional global receipt-allocation owner. No new command is exposed here.
+
+## Focused verification
+
+Current complete Data sources build with zero warnings/errors in 1.55 seconds after correcting an unsupported ROW_ID assumption in the new digest. The final affected actual-source gate passes **258 tests**, zero failed/skipped, terminal exit 0, in 1.7491 seconds. Log: `%TEMP%/oilgas-receipt-allocations-148.log`. It includes the previous 231 checks plus 27 new cases; overlapping totals are not summed. The existing 175 dependency/source-precedence warnings remain.
+
+Twenty shared-contract cases cover frozen Web JSON with different source/allocation units; twelve incomplete/foreign/duplicate cases; five changed-content cases; confirmed empty history; and partial allocations from multiple exact receipts including inactive history. Seven native/metadata cases cover exact owned parent/line and query predicates; missing line, foreign/duplicate/null rows and missing schema; plus actual Beep key/length/type ownership metadata. The initial JSON fixture assumed receipt order; it was corrected to assert exact receipt identity under canonical sorting. Actual AP service and repository sources compile in the affected gate.
+
+The PRODUCTION manifest change is source-only. No migration is planned/applied, allocation written, role granted, handwritten SQL, business EF path, deployment or live provider action occurs. Physical keys/FKs/types, provider capabilities, global/concurrent allocation limits and durable transactions remain unverified. No API/client/UI allocation path is connected yet; existing PO source screens still correctly describe allocation as unconfirmed. This is the required relationship/read foundation for that next screen slice, not a completed persona handoff.
+
+## Next delivery
+
+Connect a separately authorized allocation review from the existing AP line/owned PO source through the current API/client/state/panel. Preserve original company/actor and both accounting/procurement permissions, reviewed invoice/order revisions, explicit empty/unavailable history, stale clearing and actual receipt links. Then implement configured preparer/reviewer actions, receipt-consumption/tolerance/currency/unit controls, independent approval and durable commands/readback. Beep schema application/reconciliation, full HTTP/browser/provider verification and every remaining company/persona/multinational requirement remain open. No phase closes.

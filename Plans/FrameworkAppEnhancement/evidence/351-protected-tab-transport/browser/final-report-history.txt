@@ -1,0 +1,64 @@
+### Open tabs
+- 0: (current) [](http://127.0.0.1:65142/)
+- 1: [](http://127.0.0.1:65142/)
+### Page
+- Page URL: http://127.0.0.1:65142/
+### Snapshot
+```yaml
+- generic [ref=f1e1]:
+  - generic [ref=f1e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f1e44]
+    - paragraph [ref=f1e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f1e46]:
+      - button "Use read-only unmapped profile" [ref=f1e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f1e49] [cursor=pointer]
+      - button "Switch other company" [ref=f1e51] [cursor=pointer]
+      - button "Switch other account" [ref=f1e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=f1e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f1e57] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f1e59] [cursor=pointer]
+      - button "Show actual report recorder" [active] [ref=f1e61] [cursor=pointer]
+    - status [ref=f1e84]: Exact original start retained in its own protected tab key.
+  - generic [ref=f1e687]:
+    - heading "Observed drilling progress" [level=1] [ref=f1e688]
+    - group [ref=f1e689]:
+      - link "Original execution" [ref=f1e690] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-26B6303D53DBA89774319391018BC23D1E63011141808431AE02F467F4CE923F
+      - button "Reload original report history" [ref=f1e702] [cursor=pointer]
+    - generic [ref=f1e704]:
+      - heading "Recorded execution and report history" [level=2] [ref=f1e705]
+      - paragraph [ref=f1e706]: Original drilling program · Version 1 · Operation drilling-execution-C9872A5B77C6CD9AD52BF5E1C99F2A989FBAC392C12ABABB015FF2A5C732AE75
+      - paragraph [ref=f1e707]: Company tenant / company · FIELD original-field/واحد · Well recorded-well/one · Reader execution-recorder
+      - paragraph [ref=f1e708]: 2 recorded observed reports · History checked 2026-10-26 13:28:45Z UTC
+      - table [ref=f1e711]:
+        - caption [ref=f1e712]: Observed drilling report history — UTC periods, source provenance and accountable recorders
+        - rowgroup [ref=f1e713]:
+          - row [ref=f1e714]:
+            - columnheader "Report / UTC period" [ref=f1e715]
+            - columnheader "Observed hole MD" [ref=f1e716]
+            - columnheader "Rotating / NPT hours" [ref=f1e717]
+            - columnheader "Recorder / audit UTC" [ref=f1e718]
+        - rowgroup [ref=f1e719]:
+          - row [ref=f1e720]:
+            - rowheader "1 · RECORDED 2026-10-26 13:01:00Z to 2026-10-26 13:01:01Z" [ref=f1e721]: 1 · RECORDED2026-10-26 13:01:00Z to 2026-10-26 13:01:01Z
+            - cell "100 to 125 m" [ref=f1e722]
+            - cell "Unknown / Unknown" [ref=f1e723]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 13:04:31Z" [ref=f1e724]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 13:04:31Z
+          - row [ref=f1e725]:
+            - cell [ref=f1e726]:
+              - paragraph [ref=f1e727]: Report drilling-report-251623DF8ABE9AEEFC95B043EAA1DA713D934FAFB0FBE7C428CA1ACFF70CDC17
+              - paragraph [ref=f1e728]: "Source: Browser source log 471"
+              - paragraph [ref=f1e729]: "Observed operations: Observed browser recovery report"
+          - row [ref=f1e730]:
+            - rowheader "2 · RECORDED 2026-10-26 13:01:01Z to 2026-10-26 13:19:35Z" [ref=f1e731]: 2 · RECORDED2026-10-26 13:01:01Z to 2026-10-26 13:19:35Z
+            - cell "125 to 150 m" [ref=f1e732]
+            - cell "Unknown / Unknown" [ref=f1e733]
+            - cell "execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER 2026-10-26 13:22:16Z" [ref=f1e734]: execution-recorder · ConfiguredExecutionRecorder / DRILLING_RECORDER2026-10-26 13:22:16Z
+          - row [ref=f1e735]:
+            - cell [ref=f1e736]:
+              - paragraph [ref=f1e737]: Report drilling-report-A50DEEF50BCC83A5EAA2DA9C605243391672FB5BE051441E0FA75E2DA51BAAEA
+              - paragraph [ref=f1e738]: "Source: Restored encrypted log 473"
+              - paragraph [ref=f1e739]: "Observed operations: Corruption must preserve unavailable evidence"
+      - button "Inspect current report basis" [ref=f1e740] [cursor=pointer]
+    - generic [ref=f1e695]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

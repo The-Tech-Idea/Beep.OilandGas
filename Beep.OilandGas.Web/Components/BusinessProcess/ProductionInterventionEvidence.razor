@@ -1,0 +1,52 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@if (Source is null)
+{
+    <MudAlert Severity="Severity.Info">Recorded intervention evidence is unavailable.</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudText Typo="Typo.h6">Recorded activity for well @Source.WellId</MudText>
+        <MudText>Company @Source.Company?.BusinessAssociateId · FIELD @Source.FieldId</MudText>
+        @if(NativeDecisionId is {} nativeId && nativeId!=Guid.Empty)
+        {
+            <MudText>Original decision reference: @nativeId</MudText>
+            <MudButton OnClick="ReviewNativeDecision" Disabled="Reviewing" Variant="Variant.Outlined">Review original recorded decision</MudButton>
+            @if(!string.IsNullOrWhiteSpace(NativeReviewMessage)){<MudAlert Severity="Severity.Info">@NativeReviewMessage</MudAlert>}
+        }
+        @if(OriginalDecision is {} original && original.Company.Scope==Source.Company && original.Company.UserId==Source.Actor && original.Well==Source.WellId && original.Request.FieldId==Source.FieldId)
+        {
+            <MudAlert Severity="Severity.Warning">The original decision outcome is unconfirmed. Reload recorded source before another action. Returning to this page preserves the original request in this session; leaving the page does not resolve it.</MudAlert>
+            <MudText>Original @original.Request.Decision · FIELD @original.Request.FieldId · Well @original.Well · Source @original.Request.ExpectedSourceRevision</MudText>
+            <MudText>Original reason: @original.Request.Note</MudText>
+            @if(original.Request.WorkOrderId is {} order){<MudText>Original maintenance order: @order</MudText>}
+            @if(HasAcknowledgement && original.Request.IntentId==Guid.Empty){<MudButton OnClick="ReviewAcknowledgement" Disabled="Reviewing" Variant="Variant.Outlined">Review acknowledged decision against recorded activity</MudButton>}
+        }
+        <MudText>Recorded preparer: @(string.IsNullOrWhiteSpace(Source.SourcePreparer) ? "Unavailable" : Source.SourcePreparer)</MudText>
+        <MudText>Source observation: @Source.SourceObservationNumber · Latest observation: @Source.LatestObservationNumber</MudText>
+        <MudText>Latest recorded activity: @(string.IsNullOrWhiteSpace(Source.LatestActivityType)?"Unavailable":Source.LatestActivityType) · Recorded by: @(string.IsNullOrWhiteSpace(Source.LatestRecordedBy)?"Unavailable":Source.LatestRecordedBy)</MudText>
+        <MudText>Latest activity rationale and links: @(string.IsNullOrWhiteSpace(Source.LatestActivityRemark)?"Unavailable":Source.LatestActivityRemark)</MudText>
+        <MudText>Retrieved (UTC): @Source.RetrievedAtUtc.ToString("u")</MudText>
+        <MudText>Activity start: @(Source.SourceStartedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Unavailable") (source timezone unavailable)</MudText>
+        <MudText>Recorded activity type: @(string.IsNullOrWhiteSpace(Source.InterventionType) ? "Unavailable" : Source.InterventionType)</MudText>
+        <MudText>Recorded note: @(string.IsNullOrWhiteSpace(Source.Problem) ? "Unavailable" : Source.Problem)</MudText>
+        <MudText>Deferred production: @(Source.DeferredBopd is {} rate ? rate.ToString("N2") + " BOPD" : "Unavailable")</MudText>
+        <MudText>Days deferred: @(Source.EstDaysSinceOnset?.ToString() ?? "Unavailable")</MudText>
+        <MudText>Estimated cost: @(Source.EstCostUsd is {} cost ? cost.ToString("N2") + " USD" : "Unavailable")</MudText>
+        <MudText>Priority: @(string.IsNullOrWhiteSpace(Source.Priority) ? "Unavailable" : Source.Priority)</MudText>
+        <MudAlert Severity="Severity.Info">Lost revenue, root cause, approved scope, duration and payout are unavailable. Review recorded diagnostics and planning evidence before deciding.</MudAlert>
+    </MudPaper>
+}
+@code {
+    [Parameter] public ProductionInterventionCandidateDto? Source { get; set; }
+    [Parameter] public ProductionInterventionDecisionState.Attempt? OriginalDecision { get; set; }
+    [Parameter] public bool HasAcknowledgement { get; set; }
+    [Parameter] public bool Reviewing { get; set; }
+    [Parameter] public EventCallback ReviewAcknowledgement { get; set; }
+    [Parameter] public Guid? NativeDecisionId {get;set;}
+    [Parameter] public EventCallback ReviewNativeDecision {get;set;}
+    [Parameter] public string? NativeReviewMessage {get;set;}
+}

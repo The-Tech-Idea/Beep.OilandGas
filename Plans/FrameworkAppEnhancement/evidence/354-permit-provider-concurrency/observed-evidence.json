@@ -1,0 +1,146 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase4 selected SUBMIT contention only",
+  "observed_at": "2026-10-29T19:19:32.964337+03:00",
+  "head": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; existing work preserved; no commit or push",
+  "result": {
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "35s",
+    "exit_code": 0,
+    "attempts": 1
+  },
+  "methods": {
+    "InstalledPermitProviderSerializesConcurrentOriginalsAcrossProcesses": {
+      "inputs": 2,
+      "criteria": "Same retained original delivered twice versus distinct originals from the same source; two independent processes/physical connections behind barrier, owned Serializable guard windows, one history/receipt, exact winning outcome/losing absence, read-only audit/original preservation."
+    },
+    "InstalledPermitProviderRollsBackThenRecoversExactNativeSubmission": {
+      "inputs": 1,
+      "criteria": "Affected shared authority-hook fixture still preserves physical receipt-stage rollback and same-original retry."
+    },
+    "InstalledPermitProviderRecoversUnacknowledgedSubmissionAcrossProcesses": {
+      "inputs": 1,
+      "criteria": "Affected generic worker/dispatcher still preserves separate-process read-only recovery/replay."
+    }
+  },
+  "command": "OILGAS_TEST_PERMIT_DRIVER_FEED=<isolated local feed>; dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-build --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\TheTechIdea.Data\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll -p:BuildProjectReferences=false --filter FullyQualifiedName~InstalledPermitProviderSerializesConcurrentOriginalsAcrossProcesses|FullyQualifiedName~InstalledPermitProviderRollsBackThenRecoversExactNativeSubmission|FullyQualifiedName~InstalledPermitProviderRecoversUnacknowledgedSubmissionAcrossProcesses --logger console;verbosity=minimal",
+  "observations": {
+    "distinct-originals": {
+      "retained_directory": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-race-face05adddb5458ca9a8fc074fa85e23",
+      "reports": {
+        "race-a": {
+          "ProcessId": 7552,
+          "IntentId": "deb2ec9d-51db-422b-b183-cc964324b214",
+          "Decision": "source-conflict",
+          "OutcomeHash": null,
+          "HistoryCount": 0,
+          "ReceiptCount": 0
+        },
+        "race-b": {
+          "ProcessId": 52320,
+          "IntentId": "13e8c0ee-4f1b-426c-9508-e40963a81b21",
+          "Decision": "recorded",
+          "OutcomeHash": "99AAE2FCA3AEBCE18EA114C0CDB3AC0EB70DCC1DC1B05A1BE1547967D26BF528",
+          "HistoryCount": 0,
+          "ReceiptCount": 0
+        },
+        "race-audit": {
+          "ProcessId": 8312,
+          "IntentId": "13e8c0ee-4f1b-426c-9508-e40963a81b21",
+          "Decision": "audited",
+          "OutcomeHash": "99AAE2FCA3AEBCE18EA114C0CDB3AC0EB70DCC1DC1B05A1BE1547967D26BF528",
+          "HistoryCount": 1,
+          "ReceiptCount": 1
+        }
+      },
+      "owned_guard_windows": {
+        "a": {
+          "ProcessId": 7552,
+          "Isolation": "Serializable",
+          "StartTicks": 639288874607377882,
+          "ReleasedTicks": 639288874609896920
+        },
+        "b": {
+          "ProcessId": 52320,
+          "Isolation": "Serializable",
+          "StartTicks": 639288874600531103,
+          "ReleasedTicks": 639288874603331989
+        }
+      },
+      "database_sha256_after_read_only_audit": "90895f80078cb1d52c631494d06e41ce9fe1acedd0af3bfb1eb3595ab6754103",
+      "original_sha256": {
+        "a": "b7f704614e3d583280a28ac78eac0063c6985acc305c0c10a2b72538a3c6f5be",
+        "b": "7403571d6bb7335cd89b67a3b769b2e6b8830d19314ad72ac88e7ea5bd5306ea"
+      }
+    },
+    "same-original": {
+      "retained_directory": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-race-3980a5a54e4543c299ea94080a633211",
+      "reports": {
+        "race-a": {
+          "ProcessId": 6788,
+          "IntentId": "b93fc9f0-37c1-4c7c-b091-bf2d82d2733e",
+          "Decision": "recorded",
+          "OutcomeHash": "5C35AE8285A0FA64DE8DBF5136CE4E3331050DAC3EC6790084EDEC0404573DB8",
+          "HistoryCount": 0,
+          "ReceiptCount": 0
+        },
+        "race-b": {
+          "ProcessId": 33896,
+          "IntentId": "b93fc9f0-37c1-4c7c-b091-bf2d82d2733e",
+          "Decision": "recorded",
+          "OutcomeHash": "5C35AE8285A0FA64DE8DBF5136CE4E3331050DAC3EC6790084EDEC0404573DB8",
+          "HistoryCount": 0,
+          "ReceiptCount": 0
+        },
+        "race-audit": {
+          "ProcessId": 9424,
+          "IntentId": "b93fc9f0-37c1-4c7c-b091-bf2d82d2733e",
+          "Decision": "audited",
+          "OutcomeHash": "5C35AE8285A0FA64DE8DBF5136CE4E3331050DAC3EC6790084EDEC0404573DB8",
+          "HistoryCount": 1,
+          "ReceiptCount": 1
+        }
+      },
+      "owned_guard_windows": {
+        "a": {
+          "ProcessId": 6788,
+          "Isolation": "Serializable",
+          "StartTicks": 639288874496932783,
+          "ReleasedTicks": 639288874499402733
+        },
+        "b": {
+          "ProcessId": 33896,
+          "Isolation": "Serializable",
+          "StartTicks": 639288874503454059,
+          "ReleasedTicks": 639288874505973633
+        }
+      },
+      "database_sha256_after_read_only_audit": "a64e8688e775918a3334ae0698a26ccf02cb257897729d2ed22ff225fe867b82",
+      "original_sha256": {
+        "a": "031c02c2892f68e182d0a8676943ed8b4bce6be55e59c3951e68c798229c027d",
+        "b": "031c02c2892f68e182d0a8676943ed8b4bce6be55e59c3951e68c798229c027d"
+      }
+    }
+  },
+  "limits": [
+    "Two bounded SUBMIT inputs on SQLite, not general stress/load or every interleaving.",
+    "Concurrent creation/edit/independent decision and other-provider cases remain open.",
+    "Authority/metadata/defaults/read policy remain controlled boundaries; no production app RBAC/HTTP/OIDC/two-company qualification.",
+    "Current local connector1.0.59/provider1.0.119 and changed BeepDM runtime are dependencies; public distribution remains unverified.",
+    "Only initial three-table ledger schema is installed by Beep Migration; full supporting schema/existing evolution remain open.",
+    "No handwritten SQL/EF migration, unrelated test, commit or push."
+  ],
+  "sha256": {
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "d2a5ebc816984a84765c41ee6c2f9d54ce46e28d2cef2105780f0cf1c94de423",
+    "tools/PermitProviderWorker/Program.cs": "097d7318da339e099a5160e7ec066e0a32a5c71ecc188f1ddafb4ccc2d1486a9",
+    "tools/PermitProviderWorker/PermitProviderWorker.csproj": "f3cac472cb8a02f5f00b39ac513a9ac7a0f0226420e32e157a7177c3b3054e64",
+    "tools/PermitProviderWorker/README.md": "0412815f5f5e2d063152c2ca5e9954bef1f46f68470a7feae602506938d26aef",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "dc0bf6aba2333c4cd6dacb41f57f156817b232d915cd19cd07244b72bab69294",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.PermitProviderWorker.dll": "3ff6ce522b8918f347d915ad74fd34fe7fb1b576494858e4842cf833e4d8f52a",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "ac42115b9f829ed524ba3de62af516d941be43bbf1e0cc43d3e494d8b0c2ba57",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "df6ed94226122f2a038a53081cfbd40f3dc0fa6d84da2b59e4462506b36c3408",
+    "../BeepDM/DataManagementEngineStandard/bin/Debug/net10.0/DataManagementEngine.dll": "55783166f492c83cc95c79fef4233e00b97da879ce0730d4959ae13ba0ba8f46"
+  }
+}

@@ -1,3 +1,4 @@
+using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -56,6 +57,8 @@ public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<RepositoryUserService>();
         builder.Services.AddScoped<RepositoryRoleAssignmentService>();
+        builder.Services.AddScoped<RepositoryRequestAccount>();
+        builder.Services.AddSingleton<Func<System.Security.Claims.ClaimsPrincipal, string?>>(_ => principal => principal.FindActingUserId());
         builder.Services.AddScoped<RepositoryRoleCatalogService>();
         // The API's own identity over signed tokens: each person is provisioned at first sight, the first administers.
         builder.AddApiIdentity();

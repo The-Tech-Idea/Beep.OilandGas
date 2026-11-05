@@ -8,6 +8,7 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.ApiService.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace Beep.OilandGas.ApiService.Controllers.AccessControl
 {
@@ -17,16 +18,53 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
     public class AccessControlController : ControllerBase
     {
         private readonly IAccessControlService _accessControlService;
+        private readonly Func<ClaimsPrincipal, string?> _resolveAccount;
         private bool IsLocalUser => User.Identity?.IsAuthenticated == true
-            && !string.IsNullOrWhiteSpace(User.FindActingUserId());
+            && !string.IsNullOrWhiteSpace(_resolveAccount(User));
         private bool IsAdministrator => IsLocalUser && User.IsInRole("Administrator");
         // Self or Administrator: the route/body id names the subject whose access is read, never the actor.
         private bool CanAccess(string targetUserId) => IsLocalUser
-            && (User.FindActingUserId() == targetUserId || IsAdministrator);
+            && (_resolveAccount(User) == targetUserId || IsAdministrator);
 
-        public AccessControlController(IAccessControlService accessControlService)
+        public AccessControlController(IAccessControlService accessControlService, Func<ClaimsPrincipal, string?> resolveAccount)
         {
             _accessControlService = accessControlService;
+            _resolveAccount = resolveAccount ?? throw new ArgumentNullException(nameof(resolveAccount));
+        }
+
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("user/{targetUserId}/stored-grants")]
+        public async Task<ActionResult<TheTechIdea.Data.OilGas.AssetGrantReviewPage>> ReviewStoredGrants(string targetUserId,
+            [FromQuery] int offset = 0, [FromQuery] int limit = 50, CancellationToken token = default)
+        {
+            if (!IsAdministrator) return Forbid();
+            return Ok(await _accessControlService.ReviewStoredGrantsAsync(targetUserId, offset, limit, token));
+        }
+
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("fields/{fieldId}/interest-review")]
+        public async Task<ActionResult<TheTechIdea.Data.OilGas.FieldInterestReview>> GetFieldInterestReview(string fieldId)
+        {
+            if (!IsAdministrator) return Forbid();
+            return Ok(await _accessControlService.GetFieldInterestReviewAsync(fieldId));
+        }
+
+        [Authorize(Roles = "Administrator")]
+        [HttpPost("stored-grants/{grantId}/retire")]
+        public async Task<ActionResult<TheTechIdea.Data.OilGas.AssetGrantRetirement>> RetireStoredGrant(string grantId,
+            [FromBody] TheTechIdea.Data.OilGas.RetireAssetGrantRequest request, CancellationToken token = default)
+        {
+            if (!IsAdministrator) return Forbid();
+            return Ok(await _accessControlService.RetireStoredGrantAsync(grantId, request, token));
+        }
+
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("stored-grants/{grantId}/retirements")]
+        public async Task<ActionResult<TheTechIdea.Data.OilGas.AssetGrantRetirementPage>> GetGrantRetirements(string grantId,
+            [FromQuery] int offset = 0, [FromQuery] int limit = 50, CancellationToken token = default)
+        {
+            if (!IsAdministrator) return Forbid();
+            return Ok(await _accessControlService.GetGrantRetirementsAsync(grantId, offset, limit, token));
         }
 
         /// <summary>
@@ -40,7 +78,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 request.UserId, 
                 request.AssetId, 
                 request.AssetType, 
-                request.RequiredPermission);
+                request.RequiredPermission,
+                request.FacilityType);
             return Ok(response);
         }
 
@@ -109,7 +148,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 request.AssetType, 
                 request.AccessLevel, 
                 request.Inherit, 
-                request.OrganizationId);
+                request.OrganizationId,
+                request.FacilityType);
             return Ok(result);
         }
 
@@ -124,7 +164,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             var result = await _accessControlService.RevokeAssetAccessAsync(
                 request.UserId, 
                 request.AssetId, 
-                request.AssetType);
+                request.AssetType,
+                request.FacilityType);
             return Ok(result);
         }
 

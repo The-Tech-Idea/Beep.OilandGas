@@ -21,36 +21,176 @@ two genuinely distinct subjects that collide under a provider's current unique-k
 collation remains unresolved: such a second registration is denied, never mapped
 to the existing account. Live OIDC registration remains unverified.
 
-AssetHierarchyController now requires a local authenticated principal. Unfiltered
-organization/children/path reads and configuration administration require the
-standard Administrator role; user-filtered reads and path validation require the
-owner or Administrator. Eight controller cases verify denial before service calls
-and permitted owner/admin calls. The LocalDB HTTP fixture verifies that a member's
-forged external Administrator claim cannot authorize unfiltered hierarchy reads,
-configuration writes, or another user's hierarchy and access validation.
+## Current hierarchy implementation (2026-10-05)
 
-The API registers BoundAssetHierarchyService to resolve a reviewed PPDM_CORE scope
-per operation, construct the hierarchy reader for that explicit connection, and
-reject results when the scope changes before completion. The factory validates
-cached datasource identity against the configured target. The underlying hierarchy
-service no longer has a default connection argument. Nine boundary tests cover all
-seven operations with missing bindings, per-operation selection, and a mid-read
-binding change. All 836 API tests passed with LocalDB enabled and zero skipped
-(TestResults/hierarchy-api-boundary.log). These checks do not prove the hierarchy
-feature complete: ORGANIZATION_HIERARCHY_CONFIG still uses an invalid untyped
-repository, so configuration persistence needs replacement; tree construction and
-user filtering still need correction and live PPDM data verification. Configuration
-writes also need a canonical local audit actor instead of the organization ID.
-Live OIDC registration remains unverified.
+[Implementation 61](../Plans/FrameworkAppEnhancement/Implementation-61-Company-HSE-Request-and-Evidence-Boundary.md) binds all 60 actual HSE facade/direct-owner operations and 13 repository factories to reviewed company/FIELD/account/revision, actors and mandatory row policy. Specific unavailable and fabricated evidence paths refuse; all 522 final affected tests pass, including 183 HSE cases. Complete seven actual HSE sources compile. Existing HSE/PROJECT canonical ownership policy, durable workflows and approved exposure/scientific inputs remain required before HSE availability. Actual host/auth/provider/browser and wider plan acceptance remain open. Business schemas remain Beep MigrationManager-owned; no SQL/schema execution or phase closure.
 
-Hierarchy path validation now rejects empty/null paths, blank users, null nodes,
-and blank asset identifiers/types before any access lookup. Every supplied node
-must receive an explicit grant; denied/null results or lookup failures deny the
-whole check, while cancellation propagates. Eleven direct service cases cover
-these outcomes. `TestResults/hierarchy-path-access-full.log` records 872 passing
-API tests, zero failures and zero skips, with all three LocalDB integration flags
-enabled. This validates authorization of the supplied nodes, not the accuracy of
-their parent-child relationships or the incomplete hierarchy construction above.
+Previous development evidence:
+
+[Implementation 60](../Plans/FrameworkAppEnhancement/Implementation-60-Company-Development-Request-and-Failure-Boundary.md) binds the actual development owner's 28 operations and repositories to reviewed company/FIELD/account/revision and mandatory row policy. Resource membership/identity and failed/missing storage/read behavior have 90 new cases; all 339 final affected tests pass. Complete actual development, mapper and required calculator/contracts compile. Canonical domain, composite facilities, PIPELINE/child/reference policy, typed durable persistence, numerical provenance and provider/host acceptance remain open. Business schemas remain Beep MigrationManager-owned; no SQL/schema execution or phase closure.
+
+Previous production evidence:
+
+[Implementation 59](../Plans/FrameworkAppEnhancement/Implementation-59-Company-Production-Request-and-Failure-Boundary.md)
+binds the actual production owner to reviewed company/FIELD/account/revision and
+mandatory row policy in all 38 repositories. Supported company FIELD/POOL reads
+work before selection; failed equipment reads/saves propagate. All 249 final
+affected tests pass, including 55 actual production cases. Complete production,
+mapper and required calculator sources compile. Child/reference policy, typed
+complete-key equipment persistence/transactions/readback, numerical provenance
+and real provider/HTTP/host acceptance remain open. Other phase owners and the
+complete plan remain active. No SQL/schema change; business migration ownership
+remains Beep MigrationManager.
+
+[Implementation 58](../Plans/FrameworkAppEnhancement/Implementation-58-Company-Retirement-Request-Boundary.md)
+binds the actual retirement service to this reviewed profile/account/company/FIELD
+and database revision, with mandatory row policy in every repository call. All
+194 final affected tests pass, including 28 actual retirement cases. The complete
+class and mapper compile; missing extension metadata refuses rather than becoming
+an empty/alternate portfolio. Retirement extension setup/keys/FKs/resource policy,
+cost inputs, transitions/transactions/readback and durable mutation/provider gates
+remain open. The concrete orchestrator/Program/host paths and other phase owners
+remain unverified or incomplete. No SQL/schema change; business migrations remain
+Beep MigrationManager-owned. The root tracker owns wider plan status.
+
+[Implementation 57](../Plans/FrameworkAppEnhancement/Implementation-57-Current-FIELD-Lifecycle-Guard.md)
+uses this actual account/company/profile authority to restore the reviewed FIELD
+before five lifecycle GET routes, independently rechecks permission and clears
+failed/cancelled restoration. All 166 final affected tests pass, including 20
+actual lifecycle HTTP cases with the complete controller. Concrete orchestrator
+and Program edits remain source-only. Mandatory reviewed connection/resource/row
+policy through existing phase helpers and direct registrations, production
+DI/auth/Web/browser/provider and durable lease/circuit/retention gates remain
+open. No schema or SQL change; business/module schemas remain Beep Migration.
+
+[Implementation 56](../Plans/FrameworkAppEnhancement/Implementation-56-Company-FIELD-Selection.md)
+uses this existing self-profile JSON and Identity concurrency token for reviewed
+account/company/database-scoped FIELD preferences. Catalog/current/set revalidate
+actual app FIELD grants and Beep entitlement; the preference grants no authority.
+Fresh-context persistence and concurrent profile saves have focused proof. All
+97 final affected core/UI/MVC/profile checks and 15 exact selector/lease static
+renders pass; exact components compile cleanly. Web transport/lifecycle adapters
+and host registration remain source-only. Remaining lifecycle restoration,
+production auth/HTTP/DI/browser/provider, retained-binding retirement and durable
+status/creation/circuit acceptance remain open. No schema or SQL is introduced;
+business/module schemas remain Beep MigrationManager-owned. The root tracker owns
+combined-gate evidence and wider plan status.
+
+[Implementation 55](../Plans/FrameworkAppEnhancement/Implementation-55-FIELD-Bound-Lease-Portfolio.md)
+consolidates the existing lease API/core/SDK/Web owners onto explicit FIELD routing.
+The portfolio clears stale records and counts, surfaces read failures, preserves full
+LAND identity/raw values and fences uncertain status writes across FIELD changes.
+Six real-controller MVC/standard-role checks and eight exact-page static rendering
+checks pass; no full host/OIDC/provider/browser claim follows from these fixtures.
+Shared selector persistence/resource authority and durable status interpretation,
+revision/reconciliation/circuit recovery remain open alongside real Beep driver and
+canonical LAND area/FK acceptance. The final combined gate passed **1463 checks**, adding 56, with zero failures/skips; the master tracker owns status.
+No schema, SQL or live migration is added; business/module schemas remain Beep MigrationManager.
+
+[Implementation 45](../Plans/FrameworkAppEnhancement/Implementation-45-Company-Hierarchy-Configuration.md)
+implements canonical company hierarchy configuration in this existing repository.
+TheTechIdea.Data owns its entities/DTOs/store contract. Current company Administrator
+commands use one serializable EF transaction for the aggregate and immutable audit
+revision, server-derived metadata and expected-revision checks. Configuration reads
+require active membership; administrative reads additionally require Administrator.
+Three provider migrations/snapshots are generated; no live upgrade was applied.
+Business/module schemas remain Beep MigrationManager, and no handwritten SQL is used.
+
+The existing hierarchy service/controller enforce current selected-company and
+subject authority, stored FIELD relationships, complete facility identities,
+PPDM row policy, current grants and binding/cached-target checks. Configured labels
+and visibility change presentation independently of grants. Revision changes during
+reads refuse stale results. The redundant binding wrapper is removed. The existing
+Web page supports drafts, editing and save/readback confirmation.
+[Implementation 46](../Plans/FrameworkAppEnhancement/Implementation-46-Company-Asset-Grant-Administration.md)
+also aligns the existing asset-grant page with current company/subject direct
+reads, supported identities and confirmed mutation readback.
+[Implementation 47](../Plans/FrameworkAppEnhancement/Implementation-47-Composite-Facility-Grants.md)
+adds complete direct facility keys, verified admission, grouped row predicates
+and qualified command/readback consumers. Historical unqualified rows retain
+their evidence without granting facility authority. Three generated EF migrations
+add only a nullable qualifier; no live migration was applied.
+[Implementation 48](../Plans/FrameworkAppEnhancement/Implementation-48-Stored-Grant-Review-and-Retirement.md)
+extends the same store with owned stored-grant inventory and revision-checked retirement,
+including historical unqualified/inactive grants and former accounts. Retirement preserves
+the reviewed snapshot and persists server actor/UTC/reason evidence atomically; SaveChanges
+refuses changes/deletions of that evidence. The existing administration page uses the SDK
+and confirms both persistent history and fresh inactive inventory. Three EF migrations
+add only the retirement audit table/indexes/constraints; no live upgrade is applied.
+[Implementation 49](../Plans/FrameworkAppEnhancement/Implementation-49-Company-FIELD-Data-Entitlement.md)
+requires current company PPDM data entitlement for FIELD grants and inherited child paths.
+Admission and effective row/facade/SDK/diagnostic levels use exact ENT_COMPONENT/ENTITLEMENT
+and reference evidence with reviewed company vocabulary/date zones. Stored grants remain
+intact; missing numeric keys are refused before conversion defaults. **1122 focused checks
+pass**, adding 91. No schema migration or live write is performed. The three-component
+compile result from Implementation 48 remains historical; no Razor source changed here.
+Those 1122 checks are historical evidence before the shared-reader refactor.
+[Implementation 50](../Plans/FrameworkAppEnhancement/Implementation-50-Company-FIELD-Interest-Review.md)
+adds selected-company FIELD interest review through the existing facade/controller/SDK,
+with complete canonical interest-set/component/partner keys and current Administrator/FIELD
+authority. The same internal Beep evidence reader serves entitlement and review;
+missing raw numeric values, foreign partners and stale authority refuse responses.
+**1184 focused checks pass**, adding 62 and retaining all previous cases after the refactor.
+No schema migration, live write or Razor change occurs. Administration UI consumption,
+legal/operator/JV decisions, existing billing/posting boundary gaps, company configuration,
+real-provider acceptance and unowned/old-binding provenance remain open. Full
+HTTP/DI/OIDC/browser/large-inventory/provider upgrades/concurrency, remaining domain
+ownership/administration and wider release validation remain open.
+
+[Implementation 51](../Plans/FrameworkAppEnhancement/Implementation-51-Company-FIELD-Interest-Administration.md)
+consumes the same interest review in the existing administration page/state. The FIELD
+selector uses the administrator's account independently of the grant subject. Canonical
+keys, recorded percentage/role/conditional facts and server date-zone provenance are
+displayed. The SDK and state share one typed validator; context changes cancel/clear
+old work and late/error/malformed responses cannot retain evidence. **1235 focused
+checks pass**, adding 51. All three exact access-control components compile against
+MudBlazor 9.7.0 with zero warnings/errors; five static actual-page rendering checks pass
+(English/French populated records, empty, error and loading). No schema migration or
+live write occurs. These focused/static checks do not prove browser/route authorization,
+full DI/HTTP/OIDC, real provider snapshots/concurrency or legal/operator/JV approvals.
+
+[Implementation 52](../Plans/FrameworkAppEnhancement/Implementation-52-Company-Lease-Data-Boundary.md)
+extends the existing canonical lease acquisition owner with mandatory company/FIELD
+authority, reviewed subtype/component/status/date-zone configuration and complete
+LAND keys. Evaluation reads recorded status and raw calculated interest without
+financial/title inference. The Beep repository's mutation callback snapshots full
+keys and rechecks current actor, Administrator/resource access, associations and
+references after preparation. Active shared lease contracts move to TheTechIdea.Data.
+**1302 focused checks pass**, adding 67, with zero failures/skips. Two exact edited Razor
+fragments compile against MudBlazor 9.7.0 with zero warnings/errors. Sequential
+multi-record writes still need atomicity/idempotency/concurrency/readback and real
+canonical area/FK acceptance. Advanced fabricated outputs, SDK/Web/current-field
+integration, financial owner repairs and full runtime/provider gates remain open.
+No schema migration, handwritten SQL or live write occurs; no phase closure.
+
+[Implementation 53](../Plans/FrameworkAppEnhancement/Implementation-53-Lease-Transaction-and-Readback.md)
+adds owned Beep transaction/connection checks, shared repository SDK lanes, rollback
+and immutable business-value/key/actor readback before and after commit. Unconfirmed
+commit/rollback outcomes remain errors and cannot trigger automatic command retry.
+**1332 focused checks pass**, adding 30, with zero failures/skips. The recording
+fixture proves orchestration/undo/readback; real provider conformance is open. The
+inspected local RDB 2.0.21 binary lacks the required ownership property; unsupported
+providers refuse changes before writes. Durable retries/history concurrency, area/FK,
+actual lease SDK/Web/current-field consumers and the wider plan remain open. No
+schema migration, SQL, live datasource write or deployment occurs.
+
+[Implementation 54](../Plans/FrameworkAppEnhancement/Implementation-54-Lease-Creation-Intent-and-Reconciliation.md)
+adds stable context-bound creation IDs and canonical retained-record replay/read-only
+reconciliation. The actual SDK/Web adapters use typed API contracts; the dialog
+freezes unconfirmed intents and requires explicit reconciliation before a same-ID
+retry. **1407 focused checks passed**, adding 75, with zero failures/skips. Provider/area/FK, lifetime ledger/fencing, concurrency,
+circuit recovery, full current-field/portfolio/auth/browser and wider delivery remain
+open. No schema, SQL, live datasource write or deployment occurs.
+
+Historical September evidence: `TestResults/hierarchy-api-boundary.log` recorded
+836 API checks with LocalDB, and `TestResults/hierarchy-path-access-full.log`
+recorded 872. Those runs covered the earlier principal gates, binding wrapper and
+individual-node checks. They do not verify the current company/subject policy,
+stored relationship implementation or integrated runtime. Their mock-only
+controller/path fixtures are replaced by the current focused production-service,
+company registry, policy and recording Beep SDK cases. The obsolete wrapper cases
+are retired with that wrapper; mandatory binding checks remain in the active
+hierarchy service and focused tests. Live OIDC registration remains unverified.
 
 The sixth EF migration, AssetAccessExtensions, adds APP_USER_ASSET_ACCESS as an
 AspNetUsers extension in the default repository for all three providers. Grants
@@ -663,7 +803,20 @@ modify the default application database nor exercise OIDC or BeepDM module DDL.
 The API requires Repository:Provider and Repository:ConnectionString. Production
 has no implicit LocalDB or PPDM39 fallback. AddOilGasRepository registers scoped
 EF contexts and UserManager/RoleManager stores without replacing JWT authentication.
-It does not run migrations or seed an administrator. GET /health/repository returns
+For first-time setup, an operator can use the temporary setup key to review and apply
+the configured identity repository's pending EF migrations from the driver setup
+screen. EF creates the configured database if the provider reports it does not exist.
+The reviewed target, database existence and pending
+list are checked again before execution. The key does not seed an administrator.
+When using the source-linked Beep runtime, the API can protect connection credentials
+with Beep's AES-GCM provider. Supply `Beep:CredentialProtection:CurrentKeyId` and
+`Beep:CredentialProtection:Keys:<key-id>` through the host's secret configuration;
+the key value is base64-encoded 256-bit key material. Keep older keys available while
+connections encrypted with them remain in use. Without this portable key setup, the
+source runtime uses Beep's Windows user-bound DPAPI provider; non-Windows hosts need
+the portable key configuration. The Beep 3.1.1 package path cannot protect the full
+connection string and bootstrap therefore accepts only credential-free options there.
+GET /health/repository returns
 Ready (200) or Unavailable, MigrationRequired, BootstrapRequired, RecoveryRequired (503); response
 bodies do not expose connection strings or database exception details.
 

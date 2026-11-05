@@ -859,7 +859,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Create a period closing journal entry to lock the period
                 var repo = await CreateRepositoryAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
-                var referenceNumber = $"CLOSE-{fieldId}-{periodEnd:yyyyMM}";
+                var referenceNumber = PeriodCloseJournalRecords.Reference(fieldId,periodEnd);
                 var existing = await repo.GetAsync(new List<AppFilter>
                 {
                     new AppFilter { FieldName = "REFERENCE_NUMBER", Operator = "=", FilterValue = referenceNumber },
@@ -867,10 +867,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
                 });
 
-                if (existing != null && existing.Any())
+                var recordedStatus=PeriodCloseJournalRecords.Status(existing?.Cast<JOURNAL_ENTRY>().ToList(),fieldId,periodEnd,_defaults.GetActiveIndicatorYes());
+                if (recordedStatus!=PeriodCloseStatusCodes.Open)
                 {
-                    if (existing.Cast<JOURNAL_ENTRY>().Any(entry =>
-                        !string.Equals(entry.STATUS, JournalEntryStatusCodes.Posted, StringComparison.OrdinalIgnoreCase)))
+                    if (recordedStatus!=PeriodCloseStatusCodes.Closed)
                         throw RefusalException.Conflict("An unfinished closing journal requires review before this period can be closed.");
 
                     _logger?.LogInformation(

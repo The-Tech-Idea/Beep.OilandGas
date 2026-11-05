@@ -1,0 +1,65 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IProductionServiceClient Production
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 mt-3">
+    <MudText Typo="Typo.h6">Recorded intervention source</MudText>
+    <MudButton OnClick="LoadAsync" Disabled="_loading">Reload original decision link</MudButton>
+    @if(_loading){<MudProgressLinear Indeterminate="true" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(_source is {} source)
+    {
+        <MudText>FIELD @source.FieldId · Work order @source.WorkOrderId · Well @source.WellId</MudText>
+        <MudText>Original approval: @source.DecisionId · Reviewer @source.Reviewer</MudText>
+        <MudText>Recorded rationale: @source.Reason</MudText>
+        <MudText>Reviewed (UTC): @source.ReviewedAtUtc.ToString("u") · Retrieved (UTC): @source.RetrievedAtUtc.ToString("u")</MudText>
+        <MudAlert Severity="Severity.Info">This recorded link does not establish task assignment, permits, execution or accepted return to service. Review the assigned workflow and its recorded prerequisites.</MudAlert>
+        <CompanyMaintenanceHandoff Source="source" OriginalReference="MaintenanceIntent" />
+    }
+    else if(!_loading && _error is null){<MudAlert Severity="Severity.Info">Original intervention source is unconfirmed.</MudAlert>}
+</MudPaper>
+
+@code {
+    [Parameter] public WorkOrderSummary? Order {get;set;}
+    [Parameter] public Guid DecisionId {get;set;}
+    [Parameter] public string WellId {get;set;}=string.Empty;
+    [Parameter] public Guid? MaintenanceIntent {get;set;}
+    private ProductionInterventionMaintenanceLink? _source;
+    private string? _error;
+    private bool _loading,_disposed;
+    private long _version;
+    private (string?,Guid,string,string) _key;
+    protected override void OnInitialized(){Company.Changed+=Changed;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync(){var key=(Order?.InstanceId,DecisionId,WellId,System.Text.Json.JsonSerializer.Serialize(Order));if(key!=_key){_key=key;Changed();await LoadAsync();}}
+    private void AuthenticationChanged(Task<AuthenticationState> _)=>Changed();
+    private void Changed(){++_version;_source=null;_error=null;if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || snapshot!=Company.Snapshot || snapshot.Selection is null || user.Identity?.IsAuthenticated!=true || !snapshot.Selection.Roles.Any(user.IsInRole))throw new UnauthorizedAccessException("Current receiving company roles are required.");
+    }
+    private async Task LoadAsync()
+    {
+        if(_disposed || _loading)return;var snapshot=Company.Snapshot;var version=++_version;var key=_key;var order=Order;var original=System.Text.Json.JsonSerializer.Serialize(order);_source=null;_error=null;_loading=true;
+        try
+        {
+            await Authority();
+            if(order is null || DecisionId==Guid.Empty || !order.Components.Any(row=>row.FieldId==order.FieldId && row.WellId==WellId))throw new InvalidOperationException("The displayed recorded order must contain the original FIELD/well component.");
+            RecordedWorkOrderComponentChecks.RequireWellLink(order,order.FieldId,order.InstanceId,WellId);
+            var source=await Production.GetInterventionMaintenanceLinkAsync(WellId,DecisionId,order.InstanceId);
+            await Authority();
+            if(_disposed || snapshot!=Company.Snapshot || version!=_version || key!=_key || !ReferenceEquals(order,Order) || original!=System.Text.Json.JsonSerializer.Serialize(Order))return;
+            source.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,order.FieldId,order.InstanceId,WellId,DecisionId);_source=source;
+        }
+        catch(Exception ex){var message=Calls.Explain(ex,"reading the original intervention maintenance source","The original recorded link could not be confirmed");if(!_disposed && snapshot==Company.Snapshot && version==_version)_error=message;}
+        finally{_loading=false;}
+    }
+    public void Dispose(){_disposed=true;++_version;Company.Changed-=Changed;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

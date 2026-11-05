@@ -1,0 +1,72 @@
+- generic [ref=e1]:
+  - generic [ref=e49]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e50]
+    - paragraph [ref=e51]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e52]:
+      - button "Use read-only unmapped profile" [ref=e53] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=e55] [cursor=pointer]
+      - button "Switch other company" [ref=e57] [cursor=pointer]
+      - button "Switch other account" [ref=e59] [cursor=pointer]
+      - button "Restore original company/account" [ref=e61] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e63] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [disabled]
+      - button "Retain an unrecorded competing start" [ref=e65] [cursor=pointer]
+      - button "Retain a different unrecorded report" [disabled]
+      - button "Show actual start recovery" [ref=e67] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e69] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e71] [cursor=pointer]
+      - button "Show actual reporting closure" [ref=e73] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e98]:
+    - heading "Reporting responsibility and closure" [level=1] [ref=e99]
+    - group [ref=e100]:
+      - link "Drilling workspace" [ref=e101] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=e103] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload reporting status" [ref=e105] [cursor=pointer]
+    - alert [ref=e171]:
+      - generic [ref=e172]: Enter actual UTC after the readiness check, a rationale and explicit confirmation
+    - generic [ref=e107]:
+      - heading "Original reporting responsibility" [level=2] [ref=e108]
+      - paragraph [ref=e109]: Company tenant / company · Reader execution-recorder
+      - paragraph [ref=e110]: Original drilling program · Well recorded-well/one · Original FIELD original-field/واحد
+      - paragraph [ref=e111]: Accountable sender execution-recorder · ConfiguredExecutionAssigner / EXECUTION_COORDINATION
+      - paragraph [ref=e112]: Reporting role ConfiguredReportingRole · Workspaces SITE-1
+      - paragraph [ref=e113]: Pending reporting tasks 1 · Checked 2026-10-27 04:24:10Z UTC
+      - link "Open observed report history" [ref=e114] [cursor=pointer]:
+        - /url: /drilling/program-execution/reports?reviewId=drilling-program-review-4D1C7054FEC60FCE74CCF9453FF328FE30F277579B6CD2ACED03666165F9FC51
+    - generic [ref=e116]: Reporting remains ongoing until the original accountable sender checks current accepted completion and closes this responsibility. Independent physical acceptance alone leaves reporting tasks pending.
+    - button "Check accepted completion for closure" [ref=e123] [cursor=pointer]
+    - generic [ref=e125]:
+      - heading "Current accepted completion checked" [level=2] [ref=e126]
+      - paragraph [ref=e127]: Management role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION · 1 original reporting tasks
+      - paragraph [ref=e128]: Current accepted native tests 2 · Readiness checked 2026-10-27 04:22:24Z UTC
+      - generic [ref=e129]:
+        - heading "Original physical completion acceptance evidence" [level=3] [ref=e130]
+        - paragraph [ref=e131]: Claim drilling-report-707DEB04C7B517EE155B5BFF9B26CE350DFEEC689F4C386AC38EEBE6F79E1EDF; independent reviewer completion-inspector-1 / ConfiguredCompletionReviewer / COMPLETION-1; actual acceptance 2026-10-27 04:21:52Z UTC
+        - paragraph [ref=e132]: "Test 1: Signed test certificate / site reference 42"
+        - paragraph [ref=e133]: Native well recorded-well/one / source LAB-CERTIFICATES / type PRESSURE_TEST / run run-1 / test test-1; recorded result code RECORDED_RESULT_CODE
+        - paragraph [ref=e134]: Criteria Approved acceptance criteria / specification 42; reviewer-verified certificate UTC evidence Signed UTC certificate / reference Signed test certificate / site reference 42; reported test UTC 2026-10-27 04:21:43Z
+        - paragraph [ref=e135]: Native recorded date 2026-10-27 04:21:43; created by lab-recorder; last changed by lab-recorder; checked native revision C8DC72640C3D2A1797DF28873D45D02CAC38CEC045C0E540B1DA7C7FA5DE76DD
+        - paragraph
+        - paragraph [ref=e136]: Independent checked certificate meets the referenced acceptance criteria
+        - paragraph [ref=e137]: "Test 2: Signed cement certificate / site reference 43"
+        - paragraph [ref=e138]: Native well recorded-well/one / source LAB-CERTIFICATES / type PRESSURE_TEST / run run-1 / test test-2; recorded result code RECORDED_RESULT_CODE
+        - paragraph [ref=e139]: Criteria Approved acceptance criteria / specification 42; reviewer-verified certificate UTC evidence Signed UTC certificate / reference Signed cement certificate / site reference 43; reported test UTC 2026-10-27 04:21:43Z
+        - paragraph [ref=e140]: Native recorded date 2026-10-27 04:21:43; created by lab-recorder; last changed by lab-recorder; checked native revision DB61BDE0D62D07E9567713DEEC99DC96DB692D3569C5EBFF9278B9D1346DD20E
+        - paragraph
+        - paragraph [ref=e141]: Independent checked certificate meets the referenced acceptance criteria
+        - generic [ref=e142]: These are the independent reviewer's explicit certificate and criteria signoffs. The app does not execute physical tests, infer native timezones or compute passing thresholds.
+      - generic [ref=e149]:
+        - generic [ref=e150]:
+          - textbox "Actual reporting closure UTC*" [ref=e152]
+          - generic: Actual reporting closure UTC*
+        - generic [ref=e153]: Use an explicit UTC value ending in Z or +00:00, after the readiness check.
+      - generic [ref=e157]:
+        - textbox "Closure rationale*" [ref=e159]
+        - generic: Closure rationale*
+      - generic [ref=e162] [cursor=pointer]:
+        - checkbox "I confirm the accepted work is complete and these original reporting tasks may be closed." [ref=e164]
+        - generic [ref=e168]: I confirm the accepted work is complete and these original reporting tasks may be closed.
+      - button "Review reporting closure" [active] [ref=e169] [cursor=pointer]

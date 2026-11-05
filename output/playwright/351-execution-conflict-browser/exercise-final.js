@@ -1,0 +1,33 @@
+async (page) => {
+ const observations=[];
+ const observe=async label=>{const metadata=await(await page.request.get(new URL("/fixture/metadata",page.url()).href)).json();const storage=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.endsWith(".drilling-execution")).map(([key,value])=>({key,length:value.length,plaintext:value.includes("Controlled retained start that was never recorded")})));observations.push({label,text:await page.locator("body").innerText(),metadata,storage});};
+ await observe("retained-readonly-reloaded");
+ await page.getByRole("button",{name:"Inspect a different recorded execution",exact:true}).click();
+ await page.getByRole("heading",{name:"Different recorded execution requires your review",exact:true}).waitFor({state:"visible"});
+ await observe("inspected-retained");
+ await page.evaluate(()=>window.__oilgasBlockRemoval=true);
+ await page.getByRole("button",{name:"Keep recorded execution and clear my unrecorded original",exact:true}).click();
+ await page.getByRole("alert").filter({hasText:"Clearing the tab input is not confirmed"}).waitFor({state:"visible"});
+ await observe("clear-failed-known-proof");
+ await page.request.post(new URL("/fixture/recovery-outage/true",page.url()).href);
+ await page.getByRole("button",{name:"Keep recorded execution and clear my unrecorded original",exact:true}).click();
+ await page.getByRole("alert").filter({hasText:"The reviewed competing execution is unconfirmed"}).waitFor({state:"visible"});
+ await observe("outage-keeps-checked-proof");
+ await page.request.post(new URL("/fixture/recovery-outage/false",page.url()).href);
+ await page.evaluate(()=>window.__oilgasBlockRemoval=false);
+ await page.getByRole("button",{name:"Switch other company",exact:true}).click();
+ await page.getByRole("button",{name:"Reload original execution outcome",exact:true}).click();
+ await observe("other-company-denied");
+ await page.getByRole("button",{name:"Switch other account",exact:true}).click();
+ await page.getByRole("button",{name:"Reload original execution outcome",exact:true}).click();
+ await observe("other-account-denied");
+ await page.getByRole("button",{name:"Restore original company/account",exact:true}).click();
+ await page.getByRole("button",{name:"Reload original execution outcome",exact:true}).click();
+ await page.getByRole("button",{name:"Inspect a different recorded execution",exact:true}).waitFor({state:"visible"});
+ await page.getByRole("button",{name:"Inspect a different recorded execution",exact:true}).click();
+ await page.getByRole("heading",{name:"Different recorded execution requires your review",exact:true}).waitFor({state:"visible"});
+ await page.getByRole("button",{name:"Keep recorded execution and clear my unrecorded original",exact:true}).click();
+ await page.getByRole("status").filter({hasText:"You kept the exact different recorded execution"}).waitFor({state:"visible"});
+ await observe("explicit-rechecked-clear");
+ return {observations};
+}

@@ -73,7 +73,10 @@ public class FieldDashboardStateTests
     {
         using var http = new HttpClient(new Handler(code, body)) { BaseAddress = new("https://api.example") };
         var reporter = new RecordingFailureReporter();
-        var client = new LifeCycleService(new ApiClient(http, reporter), TestFailures.Calls(reporter), reporter);
+        var api = new ApiClient(http, reporter, TestCompany.Selected());
+        var calls = TestFailures.Calls(reporter);
+        var fields = new DataManagementService(api, Microsoft.Extensions.Logging.Abstractions.NullLogger<DataManagementService>.Instance, calls, reporter);
+        var client = new LifeCycleService(api, calls, reporter, fields);
         await Assert.ThrowsAnyAsync<Exception>(() => client.GetFieldDashboardAsync());
     }
     [Fact]

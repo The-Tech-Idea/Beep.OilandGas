@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "scope": [
+    "Required empty fields refuse preparation before transport",
+    "Actual MudBlazor workflow and management selections, explicit UTC, reason and confirmation",
+    "Frozen confirmation and one simulated lost acknowledgement",
+    "Protected tab input remains encrypted with no plaintext test reason",
+    "Company switch removes the retained private details from the displayed page",
+    "Full reload with read-only unmapped profile recovers without catalog or profile lookup",
+    "Validated recovery clears the exact retained input",
+    "390-pixel viewport has no horizontal document overflow"
+  ],
+  "controlled_backend_writes": 1,
+  "controlled_backend_recoveries": 1,
+  "encrypted_characters": 205382,
+  "readonly_source_reads_delta": 0,
+  "readonly_profile_loads_delta": 0,
+  "narrow_width": 390,
+  "document_width": 390,
+  "screenshot": "artifacts/page-2026-10-27T09-24-07-254Z.png",
+  "screenshot_visually_inspected": true,
+  "construction": [
+    "First host failed because the fixture had Beep DataManagementModels 3.1.1 while current Data requires 3.2.2; host now selects the matching dependency from the current Data build.",
+    "Earlier browser session expired before submission and was reopened with no transfer write.",
+    "Only an owned browser host was stopped and the named browser was closed."
+  ],
+  "limits": [
+    "Actual Blazor component, state, protected storage and SignalR transport with controlled typed-client outcomes; no production auth, API or provider claim.",
+    "Selected narrow viewport and pointer/input interactions; no comprehensive keyboard, screen-reader, RTL or browser matrix acceptance.",
+    "One favicon 404; no application or circuit exception observed."
+  ],
+  "fixture_runtime": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-90bb5f00d62141829848fa780062052c\\bin\\Debug\\net10.0\\PurchaseOwnership.dll"
+}

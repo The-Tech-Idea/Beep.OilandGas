@@ -1,11 +1,16 @@
-﻿@page "/ppdm39/workorder/{Id}"
+@page "/ppdm39/workorder/{Id}"
+@page "/ppdm39/workorder/detail"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject TheTechIdea.Data.OilGas.IFieldSelectionContext Fields
+@implements IDisposable
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject IWorkOrderServiceClient WorkOrderService
 @inject ISnackbar Snackbar
-@inject OilGasApiFailures Answers
+@inject OilGasCallFailures Calls
 
-<PageTitle>Work Order @Id</PageTitle>
+<PageTitle>Work Order @OrderId</PageTitle>
 
 <MudStack Spacing="3">
 
@@ -15,9 +20,9 @@
             <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack"
                            Href="/ppdm39/workorder" Size="Size.Small" />
             <MudStack Spacing="0">
-                <MudText Typo="Typo.h6">@(_detail?.InstanceName ?? "Work Order Detail")</MudText>
+                <MudText Typo="Typo.h6">@(string.IsNullOrWhiteSpace(_detail?.InstanceName) ? "Work Order Detail" : _detail.InstanceName)</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @Id — @(_detail?.WoSubType)
+                    @OrderId — @(_detail?.WoSubType)
                 </MudText>
             </MudStack>
         </MudStack>
@@ -34,9 +39,9 @@
                     </MudButton>
                 }
                 <MudChip T="string" Color="StateColor(_detail.State)" Value="@_detail.State">
-                    @_detail.State
+                    @(string.IsNullOrWhiteSpace(_detail.State)?"Workflow state unavailable":_detail.State)
                 </MudChip>
-                @if (_transitions.Count > 0)
+                @if (_transitions.Count > 0 && !_transitionBusy && _review?.Blocked == false)
                 {
                     <MudMenu Label="Transition" EndIcon="@Icons.Material.Outlined.ArrowDropDown"
                              Variant="Variant.Filled" Color="Color.Primary">
@@ -50,9 +55,64 @@
         }
     </MudStack>
 
+    <MudButton Disabled="@(_loading || _transitionBusy)" OnClick="LoadAsync">Reload recorded work order</MudButton>
+    @if(_review?.Blocked == true){<MudAlert Severity="Severity.Warning">An earlier transition outcome remains unconfirmed. Further transition submission is disabled for this order in this page session.</MudAlert>}
     @if (_loading)
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_detail is { Source: "WORK_ORDER" })
+    {
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Recorded work-order header</MudText>
+            <MudText>FIELD @_detail.FieldId · WORK_ORDER @_detail.InstanceId</MudText>
+            <MudText>Recorded number: @(string.IsNullOrWhiteSpace(_detail.InstanceName)?"Unavailable":_detail.InstanceName)</MudText>
+            <MudText>Recorded type: @(string.IsNullOrWhiteSpace(_detail.WoSubType)?"Unavailable":_detail.WoSubType)</MudText>
+            <MudText>Request date: @(_detail.RequestDate?.ToString("yyyy-MM-dd") ?? "Unavailable") · Due date: @(_detail.DueDate?.ToString("yyyy-MM-dd") ?? "Unavailable")</MudText>
+            <MudText>Recorded completion date: @(_detail.ActualEnd?.ToString("yyyy-MM-dd") ?? "Unavailable")</MudText>
+            <MudText Typo="Typo.h6">Recorded FIELD components</MudText>
+            @if(_detail.Components.Count==0){<MudAlert Severity="Severity.Info">Recorded component references are unavailable.</MudAlert>}
+            @foreach(var component in _detail.Components)
+            {
+                <MudText>Component @component.ComponentId · FIELD @component.FieldId</MudText>
+                <MudText>Well UWI: @(string.IsNullOrWhiteSpace(component.WellId)?"Not recorded":component.WellId)</MudText>
+                <MudText>Equipment ID: @(string.IsNullOrWhiteSpace(component.EquipmentId)?"Not recorded":component.EquipmentId)</MudText>
+            }
+            <MudText>Instructions: @(_detail.Instructions ?? "Unavailable")</MudText>
+            @if(Company.Selection is {} executor && executor.Permissions.Contains("Maintenance.ExecuteWork",StringComparer.Ordinal) && executor.Permissions.Contains("Workflow.Execute",StringComparer.Ordinal))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderExecutionHandoffPanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" />}
+            @if(Company.Selection is {} completionReviewer && completionReviewer.Permissions.Contains("Maintenance.VerifyCompletion",StringComparer.Ordinal))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderCompletionReviewPanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" />}
+            @if(Company.Selection?.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal)==true)
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderReturnAcceptancePanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" /><Beep.OilandGas.Web.Components.BusinessProcess.MaintenanceClosurePanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" />}
+            @if(Company.Selection is {} financialViewer && financialViewer.Permissions.Contains("Accounting.View",StringComparer.Ordinal))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderBudgetDecisionStatusPanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" OriginalBookId="@FinancialBookId" OriginalAfeId="@FinancialAfeId" />}
+            @if(Company.Selection is {} costActor && costActor.Permissions.Contains("Accounting.View",StringComparer.Ordinal) && costActor.Permissions.Contains("Accounting.RecordWorkOrderActualCost",StringComparer.Ordinal))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderLaborCostPanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" />}
+            @if(Company.Selection is {} materialCostActor && materialCostActor.Permissions.Contains("Accounting.RecordWorkOrderActualCost",StringComparer.Ordinal) && materialCostActor.Permissions.Contains("Accounting.View",StringComparer.Ordinal))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderMaterialCostPanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" />}
+            @if(Company.Selection is {} budgetActor && budgetActor.Permissions.Contains("Accounting.View",StringComparer.Ordinal) && budgetActor.Permissions.Contains("Accounting.PrepareWorkOrderBudget",StringComparer.Ordinal))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderBudgetPanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" />}
+            @if(Company.Selection is {} decisionActor && decisionActor.Permissions.Contains("Accounting.View",StringComparer.Ordinal) && decisionActor.Permissions.Contains("Accounting.ReviewWorkOrderBudget",StringComparer.Ordinal))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderBudgetDecisionPanel WorkOrderId="@_detail.InstanceId" FieldId="@_detail.FieldId" />}
+            <MudAlert Severity="Severity.Info">@_detail.EvidenceUnavailableReason A completion date alone does not confirm accepted return to service. Date timezone is not supplied by these records.</MudAlert>
+            @if(InterventionId is {} intervention && !string.IsNullOrWhiteSpace(InterventionWell))
+            {<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderInterventionSource Order="_detail" DecisionId="intervention" WellId="@InterventionWell" MaintenanceIntent="MaintenanceIntent" />}
+            @if(_inspectionReview is not null){<Beep.OilandGas.Web.Components.BusinessProcess.WorkOrderInspectionPanel Source="_detail" Review="_inspectionReview" />}
+            <MudText Typo="Typo.h6">Explicitly linked workflows</MudText>
+            <MudButton OnClick="LoadProcessesAsync" Disabled="_processLoading">Reload workflow evidence</MudButton>
+            @if(_processLoading){<MudProgressLinear Indeterminate="true" />}
+            @if(_processError is not null){<MudAlert Severity="Severity.Error">@_processError</MudAlert>}
+            @if(_review?.Processes is {} processes)
+            {
+                <MudText>Retrieved (UTC): @processes.RetrievedAtUtc.ToString("u")</MudText>
+                @if(processes.Links.Count==0){<MudAlert Severity="Severity.Info">No explicit WORK_ORDER workflow relationship was returned for this FIELD. Equipment workflows are not inferred as order workflows.</MudAlert>}
+                @foreach(var link in processes.Links)
+                {
+                    <MudPaper Class="pa-3 mt-2"><MudText>@link.ProcessName · @link.InstanceId · Recorded status @link.Status</MudText><MudText>Recorded state: @(string.IsNullOrWhiteSpace(link.State)?"Unavailable":link.State) · Step: @(string.IsNullOrWhiteSpace(link.StepId)?"Unavailable":link.StepId)</MudText><MudButton Href="@link.Route">Open recorded workflow evidence</MudButton></MudPaper>
+                }
+            }
+        </MudPaper>
     }
     else if (_detail is not null)
     {
@@ -84,72 +144,6 @@
                             </MudStack>
                         </MudPaper>
                     </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudPaper Elevation="1" Class="pa-3">
-                            <MudText Typo="Typo.subtitle2" Class="mb-2">Budget vs Actual</MudText>
-                            <MudStack Spacing="1">
-                                <MudStack Row="true">
-                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Budget</MudText>
-                                    <MudText Typo="Typo.caption">@_detail.BudgetAmt.ToString("N0")</MudText>
-                                </MudStack>
-                                <MudStack Row="true">
-                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Actual</MudText>
-                                    <MudText Typo="Typo.caption">@_detail.ActualAmt.ToString("N0")</MudText>
-                                </MudStack>
-                                <MudStack Row="true">
-                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Steps</MudText>
-                                    <MudText Typo="Typo.caption">@_detail.StepCount</MudText>
-                                </MudStack>
-                                <MudStack Row="true">
-                                    <MudText Typo="Typo.subtitle2" Class="mr-2">Checklist</MudText>
-                                    <MudText Typo="Typo.caption">@_detail.PassedConditions / @_detail.ConditionCount passed</MudText>
-                                </MudStack>
-                            </MudStack>
-                        </MudPaper>
-                    </MudItem>
-
-                    <MudItem xs="12">
-                        <MudPaper Elevation="1" Class="pa-3">
-                            <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Spacing="2">
-                                <MudStack Spacing="1">
-                                    <MudText Typo="Typo.subtitle2">AFE Linkage</MudText>
-                                    @if (_linkedAfe is not null)
-                                    {
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Linked AFE @_linkedAfe.AfeNumber</MudText>
-                                        <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap" Class="mt-1">
-                                            <MudText Typo="Typo.caption"><strong>Status:</strong> @(_linkedAfe.Status ?? "Unknown")</MudText>
-                                            <MudText Typo="Typo.caption"><strong>Estimate:</strong> @((_linkedAfe.EstimatedCost ?? 0m).ToString("N0"))</MudText>
-                                            <MudText Typo="Typo.caption"><strong>Actual:</strong> @((_linkedAfe.ActualCost ?? 0m).ToString("N0"))</MudText>
-                                        </MudStack>
-                                    }
-                                    else
-                                    {
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">No AFE is linked yet. Create or link one to move this work order into the accounting lifecycle.</MudText>
-                                    }
-                                </MudStack>
-
-                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                                    @if (_linkedAfe is not null)
-                                    {
-                                        <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small"
-                                                   Href="@GetAfeHref()"
-                                                   StartIcon="@Icons.Material.Outlined.OpenInNew">
-                                            Open AFE
-                                        </MudButton>
-                                    }
-                                    <MudButton Variant="@(_linkedAfe is null ? Variant.Filled : Variant.Outlined)"
-                                               Color="Color.Primary"
-                                               Size="Size.Small"
-                                               Disabled="@_afeBusy"
-                                               StartIcon="@Icons.Material.Outlined.RequestQuote"
-                                               OnClick="CreateOrLinkAfeAsync">
-                                        @(_afeBusy ? "Linking..." : (_linkedAfe is null ? "Create / Link AFE" : "Refresh AFE Link"))
-                                    </MudButton>
-                                </MudStack>
-                            </MudStack>
-                        </MudPaper>
-                    </MudItem>
-
                     @* Steps *@
                     @if (_detail.Steps.Count > 0)
                     {
@@ -178,94 +172,7 @@
                 </MudGrid>
             </MudTabPanel>
 
-            @* ── Checklist tab ───────────────────────────────────────── *@
-            <MudTabPanel Text="Checklist" Icon="@Icons.Material.Outlined.Checklist">
-                <MudPaper Elevation="0" Class="pa-3">
-                    @if (_checklist.Count == 0)
-                    {
-                        <MudText Color="Color.Secondary">No checklist items yet. Checklist is seeded when WO moves to Planned.</MudText>
-                    }
-                    else
-                    {
-                        <MudTable Items="_checklist" Dense="true" Hover="true" Elevation="0">
-                            <HeaderContent>
-                                <MudTh>#</MudTh>
-                                <MudTh>Type</MudTh>
-                                <MudTh>Condition</MudTh>
-                                <MudTh>Status</MudTh>
-                                <MudTh>Regulatory Ref</MudTh>
-                                <MudTh>Action</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd>@context.CondSeq</MudTd>
-                                <MudTd>@context.CondType</MudTd>
-                                <MudTd>@context.RequiredText</MudTd>
-                                <MudTd>
-                                    <MudChip T="string" Size="Size.Small"
-                                             Color="@CondStatusColor(context.Status)"
-                                             Value="@context.Status">
-                                        @context.Status
-                                    </MudChip>
-                                </MudTd>
-                                <MudTd><MudText Typo="Typo.caption" Color="Color.Secondary">@context.RegulatoryRef</MudText></MudTd>
-                                <MudTd>
-                                    @if (!string.Equals(context.Status, "PASS", StringComparison.OrdinalIgnoreCase)
-                                         && !string.Equals(context.Status, "FAIL", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <MudIconButton Icon="@Icons.Material.Outlined.CheckCircleOutline"
-                                                       Color="Color.Success" Size="Size.Small"
-                                                       Title="Record PASS"
-                                                       OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "PASS"))" />
-                                        <MudIconButton Icon="@Icons.Material.Outlined.Cancel"
-                                                       Color="Color.Error" Size="Size.Small"
-                                                       Title="Record FAIL"
-                                                       OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "FAIL"))" />
-                                    }
-                                </MudTd>
-                            </RowTemplate>
-                        </MudTable>
-                    }
-                </MudPaper>
-            </MudTabPanel>
 
-            @* ── Costs tab ───────────────────────────────────────────── *@
-            <MudTabPanel Text="Costs" Icon="@Icons.Material.Outlined.AttachMoney">
-                <MudPaper Elevation="0" Class="pa-3">
-                    @if (_costs.Count == 0)
-                    {
-                        <MudText Color="Color.Secondary">No cost lines found.</MudText>
-                    }
-                    else
-                    {
-                        <MudTable Items="_costs" Dense="true" Hover="true" Elevation="0">
-                            <HeaderContent>
-                                <MudTh>Code</MudTh>
-                                <MudTh>Description</MudTh>
-                                <MudTh><MudText Align="Align.Right">Budget</MudText></MudTh>
-                                <MudTh><MudText Align="Align.Right">Actual</MudText></MudTh>
-                                <MudTh><MudText Align="Align.Right">Variance %</MudText></MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd>@context.CompCode</MudTd>
-                                <MudTd>@context.Description</MudTd>
-                                <MudTd><MudText Align="Align.Right">@context.BudgetAmt.ToString("N0")</MudText></MudTd>
-                                <MudTd><MudText Align="Align.Right">@context.ActualAmt.ToString("N0")</MudText></MudTd>
-                                <MudTd><MudText Align="Align.Right">
-                                    <MudText Color="@(context.VariancePct > 10 ? Color.Error : Color.Default)">
-                                        @context.VariancePct.ToString("F1")%
-                                    </MudText>
-                                </MudText></MudTd>
-                            </RowTemplate>
-                            <FooterContent>
-                                <MudTd colspan="2"><strong>Total</strong></MudTd>
-                                <MudTd><MudText Align="Align.Right"><strong>@_costs.Sum(c => c.BudgetAmt).ToString("N0")</strong></MudText></MudTd>
-                                <MudTd><MudText Align="Align.Right"><strong>@_costs.Sum(c => c.ActualAmt).ToString("N0")</strong></MudText></MudTd>
-                                <MudTd></MudTd>
-                            </FooterContent>
-                        </MudTable>
-                    }
-                </MudPaper>
-            </MudTabPanel>
 
             @* ── Contractors tab ─────────────────────────────────────── *@
             <MudTabPanel Text="Contractors" Icon="@Icons.Material.Outlined.Engineering">
@@ -314,28 +221,38 @@
         <MudTextField @bind-Value="_transitionNotes" Label="Notes (optional)" Lines="3" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => _showTransition = false)">Cancel</MudButton>
+        <MudButton Disabled="_transitionBusy" OnClick="@(() => _showTransition = false)">Cancel</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled"
-                   OnClick="ConfirmTransitionAsync">Confirm</MudButton>
+                   Disabled="@(_transitionBusy || _review?.Blocked != false)" OnClick="ConfirmTransitionAsync">Confirm</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
+    [SupplyParameterFromQuery(Name="financialBook")]public string? FinancialBookId{get;set;}
+    [SupplyParameterFromQuery(Name="financialAfe")]public string? FinancialAfeId{get;set;}
+    [SupplyParameterFromQuery(Name="workOrderId")] public string? RecordedOrderId {get;set;}
+    [SupplyParameterFromQuery(Name="sourceTenant")] public string? SourceTenant {get;set;}
+    [SupplyParameterFromQuery(Name="sourceCompany")] public string? SourceCompany {get;set;}
+    [SupplyParameterFromQuery(Name="sourceField")] public string? SourceField {get;set;}
+    private string OrderId=>RecordedOrderId ?? Id;
 
     [SupplyParameterFromQuery(Name = "returnTo")]
     public string? ReturnTo { get; set; }
+    [SupplyParameterFromQuery(Name="interventionId")]public Guid? InterventionId {get;set;}
+    [SupplyParameterFromQuery(Name="wellId")]public string? InterventionWell {get;set;}
+    [SupplyParameterFromQuery(Name="maintenanceIntent")]public Guid? MaintenanceIntent {get;set;}
 
-    private string _loadedId = string.Empty;
+    private (string,string?,string?,string?,string?) _loadedRoute;
 
+    private WorkOrderDetailState? _review;
+    private bool _disposed, _transitionBusy, _processLoading;
+    private string? _processError;
     private WorkOrderDetailModel?         _detail;
     private List<string>                _transitions  = new();
-    private List<InspectionCondition>   _checklist    = new();
-    private List<CostVarianceLine>      _costs        = new();
+    private WorkOrderInspectionState? _inspectionReview;
     private List<ContractorAssignment>  _contractors  = new();
-    private AFEResponse?                _linkedAfe;
     private bool                        _loading;
-    private bool                        _afeBusy;
     private string?                     _error;
 
     // Transition
@@ -345,38 +262,82 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _loadedId = Id;
+        _review = new(Company);_inspectionReview=new(Company);
+        Company.Changed += CompanyChanged;
+        Fields.CurrentFieldChanged += FieldChanged;
+        _loadedRoute = (Id,RecordedOrderId,SourceTenant,SourceCompany,SourceField);
         await LoadAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Id == _loadedId) return;
-        _loadedId = Id;
+        if ((Id,RecordedOrderId,SourceTenant,SourceCompany,SourceField) == _loadedRoute) return;
+        _loadedRoute = (Id,RecordedOrderId,SourceTenant,SourceCompany,SourceField);
         await LoadAsync();
     }
 
+    private void ClearDisplayed()
+    {
+        _detail=null;_transitions=[];_inspectionReview?.Clear();_contractors=[];
+        _processError=null;_processLoading=false;_showTransition=false;_pendingTransition=string.Empty;_transitionNotes=null;_error=null;
+    }
+    private void CompanyChanged(){_loading=false;ClearDisplayed();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string field){if(_disposed)return;_review?.Clear();_loading=false;ClearDisplayed();_error="The current FIELD changed. Reload the recorded order in its original FIELD.";_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;Company.Changed-=CompanyChanged;Fields.CurrentFieldChanged-=FieldChanged;_review?.Dispose();_inspectionReview?.Dispose();}
     private async Task LoadAsync()
     {
-        _loading = true;
-        _error   = null;
+        if(_disposed || _review is null)return;
+        var id=OrderId;var scope=Company.Snapshot;ClearDisplayed();_loading=true;
+        if(!TheTechIdea.Data.OilGas.LeaseSummaryValidator.Identifier(id) ||
+            RecordedOrderId is not null && !string.IsNullOrEmpty(Id) && RecordedOrderId!=Id)
+        {
+            _review.Clear();_error="One original recorded work-order identity is required; route and query identities must agree.";_loading=false;return;
+        }
+        var version=_review.Version+1;
         try
         {
-            _detail      = await WorkOrderService.GetWorkOrderAsync(Id);
-            _transitions = await WorkOrderService.GetTransitionsAsync(Id);
-            _checklist   = await WorkOrderService.GetChecklistAsync(Id);
-            _costs       = await WorkOrderService.GetCostsAsync(Id);
-            _contractors = await WorkOrderService.GetContractorsAsync(Id);
-            await LoadLinkedAfeAsync();
+            async Task<string?> OriginalField()
+            {
+                var current=await Fields.GetCurrentFieldIdAsync();
+                if(new[]{SourceTenant,SourceCompany,SourceField}.Any(value=>value is not null) && (scope.Selection is not {} selected || SourceTenant!=selected.Scope.TenantId || SourceCompany!=selected.Scope.BusinessAssociateId || SourceField!=current))throw new UnauthorizedAccessException("Return to the original recorded-work company and FIELD before opening this report.");
+                return current;
+            }
+            await _review.LoadAsync(id,OriginalField,key=>WorkOrderService.GetWorkOrderAsync(key));
+            if(_disposed || id!=OrderId || scope!=Company.Snapshot || version!=_review.Version || _review.Current is null)return;
+            var detail=_review.Current;
+            if(detail.Source=="WORK_ORDER")
+            {
+                _detail=detail;
+                _loading=false;
+                await InvokeAsync(StateHasChanged);
+                await LoadProcessesAsync();
+                return;
+            }
+            var transitions=await WorkOrderService.GetTransitionsAsync(id);
+            var contractors=await WorkOrderService.GetContractorsAsync(id);
+            if(_disposed || id!=OrderId || scope!=Company.Snapshot || version!=_review.Version)return;
+            _detail=detail;_transitions=transitions;_contractors=contractors;
         }
-        catch (Exception) { _error = "Failed to load work order."; Snackbar.Add(_error, Severity.Error); }
-        finally { _loading = false; }
+        catch(Exception ex)
+        {
+            var message=Calls.Explain(ex,"reading recorded work-order evidence","Work-order evidence could not be confirmed");
+            if(!_disposed && id==OrderId && scope==Company.Snapshot && version==_review.Version)
+            {_review.Clear();ClearDisplayed();_error=message;}
+        }
+        finally{if(!_disposed && id==OrderId && scope==Company.Snapshot)_loading=false;}
     }
 
-    private async Task LoadLinkedAfeAsync()
+    private async Task LoadProcessesAsync()
     {
-        var afe = await WorkOrderService.GetAfeAsync(Id);
-        _linkedAfe = string.IsNullOrWhiteSpace(afe.AfeId) ? null : afe;
+        if(_review?.Current is not {} source || _disposed || _processLoading)return;
+        var scope=Company.Snapshot;var version=_review.Version;_processLoading=true;_processError=null;
+        try{await _review.LoadProcessesAsync(()=>WorkOrderService.GetProcessesAsync(source.InstanceId));}
+        catch(Exception ex)
+        {
+            var message=Calls.Explain(ex,"reading linked work-order process evidence","Linked process evidence could not be confirmed");
+            if(!_disposed && scope==Company.Snapshot && version==_review.Version)_processError=message;
+        }
+        finally{if(!_disposed && scope==Company.Snapshot && version==_review.Version)_processLoading=false;}
     }
 
     private void OpenTransitionDialog(string toState)
@@ -388,73 +349,29 @@
 
     private async Task ConfirmTransitionAsync()
     {
+        if(_transitionBusy || _review is null || _disposed)return;
+        WorkOrderDetailState.Attempt? attempt=null;_transitionBusy=true;
         try
         {
-            var request = new TransitionWorkOrderRequest
-            {
-                ToState = _pendingTransition,
-                Notes   = _transitionNotes
-            };
-            await WorkOrderService.TransitionAsync(Id, request);
-            _showTransition = false;
+            attempt=_review.Begin(_pendingTransition,_transitionNotes,_transitions);
+            var response=await WorkOrderService.TransitionAsync(attempt.Id,attempt.Request);
+            if(!_review.IsCurrent(attempt,OrderId))return;
+            var field=await Fields.GetCurrentFieldIdAsync();
+            if(!_review.IsCurrent(attempt,OrderId) || field!=attempt.Request.ExpectedFieldId)return;
+            var readback=await WorkOrderService.GetWorkOrderAsync(attempt.Id);
+            if(!_review.IsCurrent(attempt,OrderId))return;
+            _review.Confirm(attempt,response,readback);
+            _showTransition=false;
             await LoadAsync();
         }
-        catch (Exception) { _error = "Transition failed."; Snackbar.Add(_error, Severity.Error); }
+        catch(Exception ex)
+        {
+            var message=Calls.Explain(ex,"confirming a reviewed work-order transition","Transition outcome is unconfirmed");
+            if(!_disposed && (attempt is null || _review.IsCurrent(attempt,OrderId)))
+                _error=message+" Review the recorded order before another submission; automatic retry is disabled.";
+        }
+        finally{_transitionBusy=false;}
     }
-
-    private async Task RecordConditionAsync(int condSeq, string result)
-    {
-        try
-        {
-            await WorkOrderService.RecordConditionAsync(
-                Id,
-                condSeq,
-                new RecordInspectionResultRequest { Result = result });
-            _checklist = await WorkOrderService.GetChecklistAsync(Id);
-        }
-        catch (OilGasApiException answer)
-        {
-            _error = Answers.Explain(answer, "recording a work order inspection result", "The inspection result was not recorded");
-            Snackbar.Add(_error, Severity.Error);
-        }
-        catch (Exception) { _error = "Failed to record result."; Snackbar.Add(_error, Severity.Error); }
-    }
-
-    private async Task CreateOrLinkAfeAsync()
-    {
-        _afeBusy = true;
-        try
-        {
-            var afe = await WorkOrderService.CreateOrLinkAfeAsync(Id);
-            if (string.IsNullOrWhiteSpace(afe.AfeId))
-            {
-                Snackbar.Add("AFE linking is not available for this work order yet.", Severity.Warning);
-                return;
-            }
-
-            _linkedAfe = afe;
-            Snackbar.Add($"AFE {afe.AfeNumber} linked to work order {Id}.", Severity.Success);
-        }
-        catch (Exception)
-        {
-            _error = "Failed to create or link AFE.";
-            Snackbar.Add(_error, Severity.Error);
-        }
-        finally
-        {
-            _afeBusy = false;
-        }
-    }
-
-    private string GetAfeHref() =>
-        string.IsNullOrWhiteSpace(_linkedAfe?.AfeNumber)
-            ? "/economics/afe"
-            : $"/economics/afe?afeNumber={Uri.EscapeDataString(_linkedAfe.AfeNumber)}{BuildReturnToQuery()}";
-
-    private string BuildReturnToQuery() =>
-        string.IsNullOrWhiteSpace(ReturnTo)
-            ? string.Empty
-            : $"&returnTo={Uri.EscapeDataString(ReturnTo)}";
 
     private static Color StateColor(string state) => state switch
     {

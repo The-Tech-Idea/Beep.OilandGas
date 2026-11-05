@@ -1,0 +1,371 @@
+{
+  "checks": [
+    {
+      "check": "Readonly unmapped whole reload restores encrypted different original without another source/profile lookup",
+      "passed": true
+    },
+    {
+      "check": "Inspection preserves original and shows exact sender/role/persona/recipient/source",
+      "passed": true
+    },
+    {
+      "check": "Injected removal failure keeps original/proof and explicit recheck guidance",
+      "passed": true
+    },
+    {
+      "check": "Confirmation outage preserves exact prior checked stamp and original",
+      "passed": true
+    },
+    {
+      "check": "other-company-denied hides private recorded recipients and keeps protected original",
+      "passed": true
+    },
+    {
+      "check": "other-account-denied hides private recorded recipients and keeps protected original",
+      "passed": true
+    },
+    {
+      "check": "Restored account explicitly rechecks and clears only retained input",
+      "passed": true
+    },
+    {
+      "check": "Reviewed source remains visible without false read-only warning",
+      "passed": true
+    },
+    {
+      "check": "Reconciliation neither writes another assignment nor records reports",
+      "passed": true
+    },
+    {
+      "check": "Final page has zero console errors/warnings",
+      "passed": true
+    }
+  ],
+  "encrypted_characters": 101659,
+  "initial": {
+    "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.",
+    "metadata": {
+      "recordRequests": 0,
+      "recoverRequests": 0,
+      "sourceRequests": 2,
+      "profileLoads": 4,
+      "startRecoverRequests": 0,
+      "assignmentWrites": 1,
+      "assignmentRecoveries": 1,
+      "assignmentReads": 2,
+      "assignedReads": 0,
+      "mode": "assignment",
+      "conflictReads": 0,
+      "conflictConfirmations": 0,
+      "assignmentConflictReads": 0,
+      "assignmentConflictConfirmations": 0,
+      "assignmentRecorded": true,
+      "recordedReports": 0,
+      "readOnly": true,
+      "recoveryUnavailable": false,
+      "lastIntentRevision": null,
+      "role": "ConfiguredExecutionRecorder",
+      "unit": "m",
+      "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+      "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+      "previousEnd": null
+    },
+    "storage": []
+  },
+  "retained_before_inspection": {
+    "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nRetained original reporting assignment\nThe original is saved in this tab. A submission may have reached the server. Recover it before preparing another.\n\nOriginal drilling program · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5 · FIELD original-field/واحد\n\nOriginal sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nReceiving role ConfiguredReportingRole · 1 configured persona destinations\n\nDifferent unrecorded browser reporting original\n\nRECOVER ORIGINAL REPORTING ASSIGNMENT\nINSPECT A DIFFERENT RECORDED RESPONSIBILITY\n Use this when recovery reports another assignment for this execution. Inspection preserves your original and never retries a write.",
+    "metadata": {
+      "recordRequests": 0,
+      "recoverRequests": 0,
+      "sourceRequests": 2,
+      "profileLoads": 4,
+      "startRecoverRequests": 0,
+      "assignmentWrites": 1,
+      "assignmentRecoveries": 1,
+      "assignmentReads": 2,
+      "assignedReads": 0,
+      "mode": "assignment",
+      "conflictReads": 0,
+      "conflictConfirmations": 0,
+      "assignmentConflictReads": 0,
+      "assignmentConflictConfirmations": 0,
+      "assignmentRecorded": true,
+      "recordedReports": 0,
+      "readOnly": true,
+      "recoveryUnavailable": false,
+      "lastIntentRevision": null,
+      "role": "ConfiguredExecutionRecorder",
+      "unit": "m",
+      "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+      "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+      "previousEnd": null
+    },
+    "storage": [
+      {
+        "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-execution-assignment",
+        "length": 101659,
+        "plaintext": false
+      }
+    ]
+  },
+  "observations": [
+    {
+      "label": "retained-readonly-reloaded",
+      "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nRetained original reporting assignment\nThe original is saved in this tab. A submission may have reached the server. Recover it before preparing another.\n\nOriginal drilling program · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5 · FIELD original-field/واحد\n\nOriginal sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nReceiving role ConfiguredReportingRole · 1 configured persona destinations\n\nDifferent unrecorded browser reporting original\n\nRECOVER ORIGINAL REPORTING ASSIGNMENT\nINSPECT A DIFFERENT RECORDED RESPONSIBILITY\n Use this when recovery reports another assignment for this execution. Inspection preserves your original and never retries a write.\nDifferent recorded reporting responsibility\n\nOriginal drilling-execution-assignment-63F99450D0899ED05023241DFAF6EB7763F5837C597DEF901254B33123468C78 was confirmed unrecorded. Recorded responsibility drilling-execution-assignment-38FAC87EB18E2FA1D2F2EC932C692427C0CFFBD48DE607F86267152439AC5E15 owns this execution.\n\nCompany company · FIELD original-field/واحد · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5\n\nRecorded sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nWorkflow Configured ongoing execution reporting version 1.1.0 · Receiving role ConfiguredReportingRole · 1 persona tasks\n\nRecorded recipient site-recorder-1 · Workspace SITE-1\n\nFrozen actual reporting destination 473\n\nConflict checked 2026-10-26 18:17:34Z UTC\n\nReview this exact responsibility before clearing your original. Confirmation rechecks the complete native graph and original absence. It clears only this tab input; it does not replace or transfer a responsibility.\nKEEP RECORDED RESPONSIBILITY AND CLEAR MY UNRECORDED ORIGINAL\nEligible recipients can open the recorded responsibility from their company inbox.",
+      "metadata": {
+        "recordRequests": 0,
+        "recoverRequests": 0,
+        "sourceRequests": 2,
+        "profileLoads": 4,
+        "startRecoverRequests": 0,
+        "assignmentWrites": 1,
+        "assignmentRecoveries": 1,
+        "assignmentReads": 2,
+        "assignedReads": 0,
+        "mode": "assignment",
+        "conflictReads": 0,
+        "conflictConfirmations": 0,
+        "assignmentConflictReads": 1,
+        "assignmentConflictConfirmations": 0,
+        "assignmentRecorded": true,
+        "recordedReports": 0,
+        "readOnly": true,
+        "recoveryUnavailable": false,
+        "lastIntentRevision": null,
+        "role": "ConfiguredExecutionRecorder",
+        "unit": "m",
+        "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+        "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+        "previousEnd": null
+      },
+      "storage": [
+        {
+          "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-execution-assignment",
+          "length": 101659,
+          "plaintext": false
+        }
+      ]
+    },
+    {
+      "label": "inspected-retained",
+      "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nRetained original reporting assignment\nThe original is saved in this tab. A submission may have reached the server. Recover it before preparing another.\n\nOriginal drilling program · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5 · FIELD original-field/واحد\n\nOriginal sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nReceiving role ConfiguredReportingRole · 1 configured persona destinations\n\nDifferent unrecorded browser reporting original\n\nRECOVER ORIGINAL REPORTING ASSIGNMENT\nINSPECT A DIFFERENT RECORDED RESPONSIBILITY\n Use this when recovery reports another assignment for this execution. Inspection preserves your original and never retries a write.\nDifferent recorded reporting responsibility\n\nOriginal drilling-execution-assignment-63F99450D0899ED05023241DFAF6EB7763F5837C597DEF901254B33123468C78 was confirmed unrecorded. Recorded responsibility drilling-execution-assignment-38FAC87EB18E2FA1D2F2EC932C692427C0CFFBD48DE607F86267152439AC5E15 owns this execution.\n\nCompany company · FIELD original-field/واحد · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5\n\nRecorded sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nWorkflow Configured ongoing execution reporting version 1.1.0 · Receiving role ConfiguredReportingRole · 1 persona tasks\n\nRecorded recipient site-recorder-1 · Workspace SITE-1\n\nFrozen actual reporting destination 473\n\nConflict checked 2026-10-26 18:17:34Z UTC\n\nReview this exact responsibility before clearing your original. Confirmation rechecks the complete native graph and original absence. It clears only this tab input; it does not replace or transfer a responsibility.\nKEEP RECORDED RESPONSIBILITY AND CLEAR MY UNRECORDED ORIGINAL\nEligible recipients can open the recorded responsibility from their company inbox.",
+      "metadata": {
+        "recordRequests": 0,
+        "recoverRequests": 0,
+        "sourceRequests": 2,
+        "profileLoads": 4,
+        "startRecoverRequests": 0,
+        "assignmentWrites": 1,
+        "assignmentRecoveries": 1,
+        "assignmentReads": 2,
+        "assignedReads": 0,
+        "mode": "assignment",
+        "conflictReads": 0,
+        "conflictConfirmations": 0,
+        "assignmentConflictReads": 1,
+        "assignmentConflictConfirmations": 0,
+        "assignmentRecorded": true,
+        "recordedReports": 0,
+        "readOnly": true,
+        "recoveryUnavailable": false,
+        "lastIntentRevision": null,
+        "role": "ConfiguredExecutionRecorder",
+        "unit": "m",
+        "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+        "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+        "previousEnd": null
+      },
+      "storage": [
+        {
+          "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-execution-assignment",
+          "length": 101659,
+          "plaintext": false
+        }
+      ]
+    },
+    {
+      "label": "clear-failed-known-proof",
+      "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nThe last validated conflict review confirmed this original assignment graph absent. Clearing the tab input is not confirmed. Keep this page open and use Keep recorded responsibility and clear my unrecorded original again to recheck and finish.\nOriginal reporting assignment awaiting input cleanup\nThe last validated conflict review confirmed this original assignment graph absent. Clearing the tab input is not confirmed. Keep this page open and use Keep recorded responsibility and clear my unrecorded original again to recheck and finish.\n\nOriginal drilling program · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5 · FIELD original-field/واحد\n\nOriginal sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nReceiving role ConfiguredReportingRole · 1 configured persona destinations\n\nDifferent unrecorded browser reporting original\n\nRECOVER ORIGINAL REPORTING ASSIGNMENT\nINSPECT A DIFFERENT RECORDED RESPONSIBILITY\n Use this when recovery reports another assignment for this execution. Inspection preserves your original and never retries a write.\nDifferent recorded reporting responsibility\n\nOriginal drilling-execution-assignment-63F99450D0899ED05023241DFAF6EB7763F5837C597DEF901254B33123468C78 was confirmed unrecorded. Recorded responsibility drilling-execution-assignment-38FAC87EB18E2FA1D2F2EC932C692427C0CFFBD48DE607F86267152439AC5E15 owns this execution.\n\nCompany company · FIELD original-field/واحد · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5\n\nRecorded sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nWorkflow Configured ongoing execution reporting version 1.1.0 · Receiving role ConfiguredReportingRole · 1 persona tasks\n\nRecorded recipient site-recorder-1 · Workspace SITE-1\n\nFrozen actual reporting destination 473\n\nConflict checked 2026-10-26 18:17:54Z UTC\n\nReview this exact responsibility before clearing your original. Confirmation rechecks the complete native graph and original absence. It clears only this tab input; it does not replace or transfer a responsibility.\nKEEP RECORDED RESPONSIBILITY AND CLEAR MY UNRECORDED ORIGINAL\nEligible recipients can open the recorded responsibility from their company inbox.",
+      "metadata": {
+        "recordRequests": 0,
+        "recoverRequests": 0,
+        "sourceRequests": 2,
+        "profileLoads": 4,
+        "startRecoverRequests": 0,
+        "assignmentWrites": 1,
+        "assignmentRecoveries": 1,
+        "assignmentReads": 2,
+        "assignedReads": 0,
+        "mode": "assignment",
+        "conflictReads": 0,
+        "conflictConfirmations": 0,
+        "assignmentConflictReads": 1,
+        "assignmentConflictConfirmations": 1,
+        "assignmentRecorded": true,
+        "recordedReports": 0,
+        "readOnly": true,
+        "recoveryUnavailable": false,
+        "lastIntentRevision": null,
+        "role": "ConfiguredExecutionRecorder",
+        "unit": "m",
+        "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+        "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+        "previousEnd": null
+      },
+      "storage": [
+        {
+          "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-execution-assignment",
+          "length": 101659,
+          "plaintext": false
+        }
+      ]
+    },
+    {
+      "label": "outage-keeps-checked-proof",
+      "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nThe reviewed responsibility is unconfirmed. The original input was preserved\nOriginal reporting assignment awaiting input cleanup\nThe last validated conflict review confirmed this original assignment graph absent. Clearing the tab input is not confirmed. Keep this page open and use Keep recorded responsibility and clear my unrecorded original again to recheck and finish.\n\nOriginal drilling program · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5 · FIELD original-field/واحد\n\nOriginal sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nReceiving role ConfiguredReportingRole · 1 configured persona destinations\n\nDifferent unrecorded browser reporting original\n\nRECOVER ORIGINAL REPORTING ASSIGNMENT\nINSPECT A DIFFERENT RECORDED RESPONSIBILITY\n Use this when recovery reports another assignment for this execution. Inspection preserves your original and never retries a write.\nDifferent recorded reporting responsibility\n\nOriginal drilling-execution-assignment-63F99450D0899ED05023241DFAF6EB7763F5837C597DEF901254B33123468C78 was confirmed unrecorded. Recorded responsibility drilling-execution-assignment-38FAC87EB18E2FA1D2F2EC932C692427C0CFFBD48DE607F86267152439AC5E15 owns this execution.\n\nCompany company · FIELD original-field/واحد · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5\n\nRecorded sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nWorkflow Configured ongoing execution reporting version 1.1.0 · Receiving role ConfiguredReportingRole · 1 persona tasks\n\nRecorded recipient site-recorder-1 · Workspace SITE-1\n\nFrozen actual reporting destination 473\n\nConflict checked 2026-10-26 18:17:54Z UTC\n\nReview this exact responsibility before clearing your original. Confirmation rechecks the complete native graph and original absence. It clears only this tab input; it does not replace or transfer a responsibility.\nKEEP RECORDED RESPONSIBILITY AND CLEAR MY UNRECORDED ORIGINAL\nEligible recipients can open the recorded responsibility from their company inbox.",
+      "metadata": {
+        "recordRequests": 0,
+        "recoverRequests": 0,
+        "sourceRequests": 2,
+        "profileLoads": 4,
+        "startRecoverRequests": 0,
+        "assignmentWrites": 1,
+        "assignmentRecoveries": 1,
+        "assignmentReads": 2,
+        "assignedReads": 0,
+        "mode": "assignment",
+        "conflictReads": 0,
+        "conflictConfirmations": 0,
+        "assignmentConflictReads": 1,
+        "assignmentConflictConfirmations": 2,
+        "assignmentRecorded": true,
+        "recordedReports": 0,
+        "readOnly": true,
+        "recoveryUnavailable": true,
+        "lastIntentRevision": null,
+        "role": "ConfiguredExecutionRecorder",
+        "unit": "m",
+        "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+        "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+        "previousEnd": null
+      },
+      "storage": [
+        {
+          "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-execution-assignment",
+          "length": 101659,
+          "plaintext": false
+        }
+      ]
+    },
+    {
+      "label": "other-company-denied",
+      "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nThe recorded execution and configured reporting assignment could not be confirmed",
+      "metadata": {
+        "recordRequests": 0,
+        "recoverRequests": 0,
+        "sourceRequests": 2,
+        "profileLoads": 4,
+        "startRecoverRequests": 0,
+        "assignmentWrites": 1,
+        "assignmentRecoveries": 1,
+        "assignmentReads": 2,
+        "assignedReads": 0,
+        "mode": "assignment",
+        "conflictReads": 0,
+        "conflictConfirmations": 0,
+        "assignmentConflictReads": 1,
+        "assignmentConflictConfirmations": 2,
+        "assignmentRecorded": true,
+        "recordedReports": 0,
+        "readOnly": true,
+        "recoveryUnavailable": false,
+        "lastIntentRevision": null,
+        "role": "ConfiguredExecutionRecorder",
+        "unit": "m",
+        "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+        "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+        "previousEnd": null
+      },
+      "storage": [
+        {
+          "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-execution-assignment",
+          "length": 101659,
+          "plaintext": false
+        }
+      ]
+    },
+    {
+      "label": "other-account-denied",
+      "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nThe recorded execution and configured reporting assignment could not be confirmed",
+      "metadata": {
+        "recordRequests": 0,
+        "recoverRequests": 0,
+        "sourceRequests": 2,
+        "profileLoads": 4,
+        "startRecoverRequests": 0,
+        "assignmentWrites": 1,
+        "assignmentRecoveries": 1,
+        "assignmentReads": 2,
+        "assignedReads": 0,
+        "mode": "assignment",
+        "conflictReads": 0,
+        "conflictConfirmations": 0,
+        "assignmentConflictReads": 1,
+        "assignmentConflictConfirmations": 2,
+        "assignmentRecorded": true,
+        "recordedReports": 0,
+        "readOnly": true,
+        "recoveryUnavailable": false,
+        "lastIntentRevision": null,
+        "role": "ConfiguredExecutionRecorder",
+        "unit": "m",
+        "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+        "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+        "previousEnd": null
+      },
+      "storage": [
+        {
+          "key": "oilgas.fdp.intent.70AD9B105DEF123B54366DB4C9F0D45B5192CED8E602C86031D40D3494F5CE21.drilling-execution-assignment",
+          "length": 101659,
+          "plaintext": false
+        }
+      ]
+    },
+    {
+      "label": "explicit-rechecked-clear",
+      "text": "Isolated workflow browser controls\n\nControlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.\n\nUSE READ-ONLY UNMAPPED PROFILE\nUSE EDITABLE MAPPED PROFILE\nSWITCH OTHER COMPANY\nSWITCH OTHER ACCOUNT\nRESTORE ORIGINAL COMPANY/ACCOUNT\nRETAIN ORIGINAL START ALONGSIDE REPORT\nRETAIN A DIFFERENT UNRECORDED REPORTING ASSIGNMENT\nRETAIN AN UNRECORDED COMPETING START\nSHOW ACTUAL START RECOVERY\nSHOW ACTUAL REPORT RECORDER\nSHOW ACTUAL REPORTING ASSIGNMENT\nSHOW ACTUAL RECEIVING RESPONSIBILITY\nExecution reporting responsibility\nDRILLING WORKSPACE\nCOMPANY INBOX\nRELOAD SOURCE AND RECIPIENTS\nAssign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.\nYou kept the exact different recorded responsibility and cleared this confirmed-unrecorded original from this tab. No responsibility, task, execution or report was changed or completed. Reload its recorded source.\nDifferent recorded reporting responsibility\n\nOriginal drilling-execution-assignment-63F99450D0899ED05023241DFAF6EB7763F5837C597DEF901254B33123468C78 was confirmed unrecorded. Recorded responsibility drilling-execution-assignment-38FAC87EB18E2FA1D2F2EC932C692427C0CFFBD48DE607F86267152439AC5E15 owns this execution.\n\nCompany company · FIELD original-field/واحد · Operation drilling-execution-43EEAE169858F890F1E01A75B2966CBD311F55C71D358EA39798AC0358300AC5\n\nRecorded sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION\n\nWorkflow Configured ongoing execution reporting version 1.1.0 · Receiving role ConfiguredReportingRole · 1 persona tasks\n\nRecorded recipient site-recorder-1 · Workspace SITE-1\n\nFrozen actual reporting destination 473\n\nConflict checked 2026-10-26 18:17:58Z UTC\n\nEligible recipients can open the recorded responsibility from their company inbox.",
+      "metadata": {
+        "recordRequests": 0,
+        "recoverRequests": 0,
+        "sourceRequests": 2,
+        "profileLoads": 4,
+        "startRecoverRequests": 0,
+        "assignmentWrites": 1,
+        "assignmentRecoveries": 1,
+        "assignmentReads": 2,
+        "assignedReads": 0,
+        "mode": "assignment",
+        "conflictReads": 0,
+        "conflictConfirmations": 0,
+        "assignmentConflictReads": 2,
+        "assignmentConflictConfirmations": 3,
+        "assignmentRecorded": true,
+        "recordedReports": 0,
+        "readOnly": true,
+        "recoveryUnavailable": false,
+        "lastIntentRevision": null,
+        "role": "ConfiguredExecutionRecorder",
+        "unit": "m",
+        "periodStart": "2026-10-26T18:14:44.9370048+00:00",
+        "periodEnd": "2026-10-26T18:14:45.9298408+00:00",
+        "previousEnd": null
+      },
+      "storage": []
+    }
+  ],
+  "limits": [
+    "Actual page/state/encrypted browser storage/component transport, with controlled typed business responses.",
+    "Initial assignment uses controlled lost acknowledgement; removal failure and recovery outage injected.",
+    "Native/API persistence/current authority have separate gates; no full host/OIDC/provider/concurrency/browser matrix/RTL/a11y/performance/multinational qualification."
+  ]
+}

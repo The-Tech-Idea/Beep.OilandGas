@@ -1,7 +1,8 @@
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
 @inject IPersonaContextService PersonaContext
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
-@inject IDataManagementService DataManagement
+@inject TheTechIdea.Data.OilGas.IFieldSelectionContext DataManagement
 @inject INotificationService Notifications
 @inject OilGasCallFailures Calls
 @implements IDisposable
@@ -13,7 +14,7 @@
 }
 else if (PersonaContext.Catalog.Count > 0)
 {
-    <MudSelect T="string" Label="Workspace persona" Value="@PersonaContext.CurrentProfile?.PersonaCode" ValueChanged="SwitchPersona"
+    <MudSelect T="string" Label="Workspace persona" Value="@PersonaContext.CurrentPersona?.Code" ValueChanged="SwitchPersona"
                Disabled="@_busy" Margin="Margin.Dense" Class="persona-selector" HelperText="Personalizes your workspace; access follows your app roles.">
         @foreach (var persona in PersonaContext.Catalog)
         {
@@ -24,25 +25,34 @@ else if (PersonaContext.Catalog.Count > 0)
 
 @code {
     private bool _busy;
+    private bool _reloadRequested;
     private bool _disposed;
     private string? _error;
     protected override async Task OnInitializedAsync()
     {
         PersonaContext.Changed += Changed;
+        Company.Changed += CompanyChanged;
         await Reload();
     }
     private async Task Reload()
     {
+        if (_disposed) return;
+        if (_busy) { _reloadRequested = true; return; }
         _busy = true; _error = null;
-        try { await PersonaContext.ReloadAsync(); }
+        try
+        {
+            do { _reloadRequested = false; await PersonaContext.ReloadAsync(); }
+            while (_reloadRequested && !_disposed);
+        }
         // A component answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex) { _error = Calls.Explain(ex, "loading the persona settings", "Persona settings could not be loaded"); }
-        finally { _busy = false; }
+        finally { _busy = false; if (_reloadRequested && !_disposed) await Reload(); }
     }
     private async Task SwitchPersona(string code)
     {
         if (_busy || code == PersonaContext.CurrentProfile?.PersonaCode) return;
         _busy = true;
+        var company = Company.Snapshot;
         try
         {
             try { await PersonaContext.SwitchAsync(code); }
@@ -53,20 +63,37 @@ else if (PersonaContext.Catalog.Count > 0)
                 if (!_disposed) _error = sentence;
                 return;
             }
-            if (_disposed || PersonaContext.CurrentPersona is not { } persona) return;
+            if (_disposed || company != Company.Snapshot || PersonaContext.CurrentPersona is not { } persona) return;
             Snackbar.Add($"Workspace changed to {persona.Name}.", Severity.Success);
-            try { await Notifications.SubscribeToPersonaAsync(persona.Code, await DataManagement.GetCurrentFieldIdAsync() ?? string.Empty); }
+            try
+            {
+                var field = await DataManagement.GetCurrentFieldIdAsync();
+                if (_disposed || company != Company.Snapshot) return;
+                await Notifications.SubscribeToPersonaAsync(persona.Code, field ?? string.Empty);
+            }
             // The persona is saved either way; a failure here only leaves notifications on the old persona, and says so.
             catch (Exception ex)
             {
                 var sentence = Calls.Explain(ex, "reconnecting persona notifications after a persona change", "Your persona is saved, but notifications could not reconnect; refresh the page to retry");
                 if (!_disposed) Snackbar.Add(sentence, Severity.Warning);
             }
-            if (!_disposed && PersonaContext.CurrentPersona?.Code == persona.Code)
-                Nav.NavigateTo(PersonaNavigation.HomeRoute(persona.DefaultRoute));
+            if (!_disposed && company == Company.Snapshot && PersonaContext.CurrentPersona?.Code == persona.Code)
+            {
+                var route = PersonaNavigation.HomeRoute(persona.DefaultRoute);
+                if (route != persona.DefaultRoute || route is "/" or "/landing")
+                {
+                    _error = "Your preference is saved, but its landing page is unavailable. Contact your administrator.";
+                    return;
+                }
+                Nav.NavigateTo(route);
+            }
         }
-        finally { _busy = false; }
+        finally { _busy = false; if (_reloadRequested && !_disposed) await Reload(); }
     }
     private void Changed() { if (!_disposed) _ = InvokeAsync(StateHasChanged); }
-    public void Dispose() { _disposed = true; PersonaContext.Changed -= Changed; }
+    private void CompanyChanged()
+    {
+        if (!_disposed) _ = InvokeAsync(async () => { await Reload(); if (!_disposed) StateHasChanged(); });
+    }
+    public void Dispose() { _disposed = true; PersonaContext.Changed -= Changed; Company.Changed -= CompanyChanged; }
 }

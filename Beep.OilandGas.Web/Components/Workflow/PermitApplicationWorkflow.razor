@@ -1,0 +1,456 @@
+@using Beep.OilandGas.Models.Data.PermitsAndApplications
+@using TheTechIdea.Data.OilGas
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject OilGasCallFailures Calls
+@inject ILogger<PermitApplicationWorkflow> Logger
+@implements IDisposable
+<MudPaper Outlined="true" Class="permit-workflow pa-4 my-3">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Reviewed permit workflow</MudText>
+        <MudText>Review the exact application before submission or an independent decision. The server rechecks current permissions and FIELD write authority.</MudText>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Checking permit workflow" />}
+        @if(!string.IsNullOrWhiteSpace(_message)){<MudAlert Severity="Severity.Warning">@_message</MudAlert>}
+        <MudButton OnClick="ReadOriginal" Disabled="@State.Busy" Variant="Variant.Outlined">Read retained permit original</MudButton>
+        @if(State.PendingReference is not null)
+        {
+            <MudAlert Severity="Severity.Warning">
+                <MudText>@State.OriginalTitle · @State.PendingReference</MudText>
+                <MudText>@State.OriginalExplanation</MudText>
+            </MudAlert>
+            @if(State.VisibleOriginal is {} original)
+            {
+                <MudText>Retained action @original.Action · source revision @original.Review.Revision</MudText>
+                <MudText>Original reason: @original.Reason</MudText>
+                @if(original.InjectionChanges is {} retainedInjection)
+                {
+                    <MudText Typo="Typo.subtitle1">Retained injection proposal</MudText>
+                    @foreach(var entry in InjectionValues(retainedInjection)){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+                }
+                @if(original.EnvironmentalChanges is {} retainedEnvironmental)
+                {
+                    <MudText Typo="Typo.subtitle1">Retained environmental proposal</MudText>
+                    @foreach(var entry in EnvironmentalValues(retainedEnvironmental)){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+                }
+                @if(original.DrillingChanges is {} retainedDrilling)
+                {
+                    <MudText Typo="Typo.subtitle1">Retained drilling proposal</MudText>
+                    @foreach(var entry in DrillingValues(retainedDrilling)){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+                }
+                <MudButton OnClick="Recover" Disabled="@(!State.CanRecover)" Variant="Variant.Outlined">Recover retained outcome</MudButton>
+                @if(State.AbsenceObserved)
+                {
+                    <MudAlert Severity="Severity.Info">No result was recorded in this check. The original stays retained because an earlier request may still complete.</MudAlert>
+                    <MudButton OnClick="Resend" Disabled="@(!State.CanResend)" Variant="Variant.Outlined">Resend exact retained original</MudButton>
+                }
+            }
+            else
+            {<MudText>The retained original uses another selection or database binding. Restore its original authorized context; it has not been replaced.</MudText>}
+        }
+        else
+        {<MudButton OnClick="Review" Disabled="@(!State.CanReview)" Variant="Variant.Outlined">Review application for workflow</MudButton>}
+        @if(State.HasPendingDocument && State.VisibleDocumentOriginal is null)
+        {
+            <MudAlert Severity="Severity.Warning">Retained document upload @State.PendingDocumentReference. Restore its original authorized company, account, FIELD and database binding to recover it. The original has not been replaced.</MudAlert>
+        }
+        @if(State.VisibleDocumentOriginal is {} documentOriginal)
+        {
+            <MudAlert Severity="Severity.Warning">Retained document upload @documentOriginal.IntentId · @State.DocumentExplanation</MudAlert>
+            <MudText>Original file @documentOriginal.Document.FileName · @documentOriginal.Document.ContentBytes bytes · SHA256 @documentOriginal.Document.ContentHash</MudText>
+            <MudText>Version @documentOriginal.Document.Version · language @documentOriginal.Document.Language · original reason @documentOriginal.Reason</MudText>
+            <MudButton OnClick="RecoverDocument" Disabled="@(!State.CanRecoverDocument)" Variant="Variant.Outlined">Recover retained upload</MudButton>
+            @if(State.DocumentAbsenceObserved)
+            {
+                <MudText>No staging confirmation was recorded in this read. Earlier requests may still complete. Reselect the exact file to resend the same original.</MudText>
+                @if(State.CanResendDocument)
+                {
+                    <Microsoft.AspNetCore.Components.Forms.InputFile OnChange="ReadUploadFile" aria-label="Reselect original upload file" />
+                    <MudButton OnClick="ResendDocument" Disabled="@(_uploadBytes is null || _readingFile || State.Busy)" Variant="Variant.Outlined">Resend exact retained upload</MudButton>
+                }
+            }
+        }
+        @if(State.StagedDocument is {} staged)
+        {
+            <MudAlert Severity="Severity.Info">Staged document candidate @staged.StageIntentId. Staging is separate from attaching it to the current application.</MudAlert>
+            <MudText>@staged.Document.FileName · version @staged.Document.Version · @staged.Document.ContentBytes bytes · SHA256 @staged.Document.ContentHash</MudText>
+            <MudText>Review the current source, confirm this exact version and give a reason before linking.</MudText>
+        }
+        @if(State.Review is {} review)
+        {
+            var source=review.ReadApplication();
+            <MudText>Application @source.PERMIT_APPLICATION_ID · FIELD @source.FIELD_ID</MudText>
+            <MudText>Country @source.COUNTRY · region @source.STATE_PROVINCE · authority @source.REGULATORY_AUTHORITY</MudText>
+            <MudText>Applicant @source.APPLICANT_ID · status @source.STATUS</MudText>
+            <MudText>Submitting account: @(string.IsNullOrWhiteSpace(source.SUBMITTED_BY_USER_ID)?"Not recorded":source.SUBMITTED_BY_USER_ID)</MudText>
+            <MudText Typo="Typo.caption">Reviewed source @review.Revision · recorded history entries @review.ReadHistory().Count</MudText>
+            @if(review.Supporting.Attachments.Count>0)
+            {
+                <MudText Typo="Typo.subtitle1" HtmlTag="h3">Recorded attachment metadata</MudText>
+                @if(!review.Supporting.AllDocumentsVerified)
+                {<MudAlert Severity="Severity.Warning">File content has not been confirmed. Submission and positive approval are unavailable while these attachments lack reviewed content evidence. Rejection and correction remain separate permitted actions.</MudAlert>}
+                else {<MudText>Current linked bytes, version and native headers match their recorded staged receipts. This check is not regulator approval.</MudText>}
+                <MudText Typo="Typo.caption">These are recorded metadata values. A name, type, size or uploader reference does not verify bytes, version or ownership of a file. No file is opened from a path or URL.</MudText>
+                <MudTable T="Beep.OilandGas.PermitsAndApplications.Data.PermitTables.APPLICATION_ATTACHMENT" Items="review.Supporting.Attachments" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent><MudTh>Attachment</MudTh><MudTh>Name / type</MudTh><MudTh>Recorded size</MudTh><MudTh>Recorded uploader / date</MudTh><MudTh>Current content</MudTh></HeaderContent>
+                    <RowTemplate Context="attachment">
+                        <MudTd DataLabel="Attachment">@attachment.APPLICATION_ATTACHMENT_ID · @(attachment.DOCUMENT_TYPE??"Not recorded")</MudTd>
+                        <MudTd DataLabel="Name / type"><MudStack Spacing="1" Class="permit-attachment-value"><MudText>@attachment.FILE_NAME · @(attachment.FILE_TYPE??"Not recorded")</MudText><MudText Typo="Typo.caption">@attachment.DESCRIPTION</MudText></MudStack></MudTd>
+                        <MudTd DataLabel="Recorded size">@(attachment.FILE_SIZE?.ToString(System.Globalization.CultureInfo.InvariantCulture)??"Unknown") · @(attachment.FILE_SIZE_UOM??"unit not established")</MudTd>
+                        <MudTd DataLabel="Recorded uploader / date">@(string.IsNullOrWhiteSpace(attachment.UPLOADED_BY)?"Not recorded":attachment.UPLOADED_BY) · @(attachment.UPLOAD_DATE==default?"Unknown":attachment.UPLOAD_DATE.ToString("yyyy-MM-dd HH:mm"))</MudTd>
+                        <MudTd DataLabel="Current content">
+                            @{var document=review.Supporting.Documents.Single(row=>row.AttachmentId==attachment.APPLICATION_ATTACHMENT_ID);}
+                            <MudStack Spacing="1" Class="permit-attachment-value">
+                            <MudText>@document.State</MudText>
+                            @if(document.Receipt is {} receipt){<MudText Typo="Typo.caption">Version @receipt.Document.Version · language @receipt.Document.Language · SHA256 @receipt.Document.ContentHash</MudText>}
+                            @if(document.State=="VERIFIED"){<MudButton OnClick="@(()=>DownloadAttachment(attachment.APPLICATION_ATTACHMENT_ID))" Disabled="@(State.Busy || State.HasPending)" Variant="Variant.Text">Download verified attachment</MudButton>}
+                            </MudStack>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            @if(review.Supporting.Drilling is {} drilling)
+            {
+                <MudText Typo="Typo.subtitle1" HtmlTag="h3">Reviewed drilling details</MudText>
+                <MudText>Depth @drilling.PROPOSED_DEPTH.ToString(System.Globalization.CultureInfo.CurrentCulture) · unit @(drilling.PROPOSED_DEPTH_UNIT??"Not recorded")</MudText>
+                <MudText>Target formation: @(drilling.TARGET_FORMATION??"Not recorded")</MudText>
+                <MudText>Drilling method: @(drilling.DRILLING_METHOD??"Not recorded")</MudText>
+                <MudText>Mud type: @(drilling.MUD_TYPE??"Not recorded")</MudText>
+                <MudText>Casing program: @(drilling.CASING_PROGRAM??"Not recorded")</MudText>
+                <MudText>Legal description: @(drilling.LEGAL_DESCRIPTION??"Not recorded")</MudText>
+                <MudText>Environmental assessment reference: @(drilling.ENVIRONMENTAL_ASSESSMENT_REFERENCE??"Not recorded")</MudText>
+                <MudText>Spacing unit: @(drilling.SPACING_UNIT??"Not recorded")</MudText>
+                <MudText>Supporting permit type: @(drilling.PERMIT_TYPE??"Not recorded")</MudText>
+                <MudText>Supporting notes: @(drilling.REMARKS??"Not recorded")</MudText>
+                <MudText>Surface owner notified: @(drilling.SURFACE_OWNER_NOTIFIED_IND??"Unknown") · environmental assessment required: @(drilling.ENVIRONMENTAL_ASSESSMENT_REQUIRED_IND??"Unknown")</MudText>
+            }
+            @if(review.Supporting.Environmental is {} reviewedEnvironmental)
+            {
+                <MudText Typo="Typo.subtitle1" HtmlTag="h3">Reviewed environmental details</MudText>
+                @foreach(var entry in EnvironmentalValues(PermitEnvironmentalDraftChanges.From(reviewedEnvironmental))){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+            }
+            @if(review.Supporting.Injection is {} reviewedInjection)
+            {
+                <MudText Typo="Typo.subtitle1" HtmlTag="h3">Reviewed injection details</MudText>
+                @foreach(var entry in InjectionValues(PermitInjectionDraftChanges.From(reviewedInjection))){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+            }
+            @if(State.CanPrepare("EDIT_DRAFT") || State.CanPrepare("SUBMIT") || State.CanPrepare("APPROVE") || State.CanPrepare("REJECT") || State.CanPrepare("RETURN_FOR_CORRECTION"))
+            {
+                @if(State.CanPrepare("EDIT_DRAFT"))
+                {
+                    <MudText Typo="Typo.subtitle1" HtmlTag="h3">Proposed draft header</MudText>
+                    <MudTextField T="string" @bind-Value="_draftApplicant" Immediate="true" Label="Applicant reference or name" Required="true" MaxLength="128" Disabled="@State.Busy" />
+                    <MudSelect T="string" @bind-Value="_draftType" Label="Application type" Required="true" Disabled="@State.Busy">
+                        @foreach(var value in Enum.GetNames<PermitApplicationType>()){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}
+                    </MudSelect>
+                    <MudSelect T="string" @bind-Value="_draftCountry" Label="Permit country" Required="true" Disabled="@State.Busy">
+                        @foreach(var value in Enum.GetNames<Country>().Where(x=>x!=nameof(Country.Other))){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}
+                    </MudSelect>
+                    <MudSelect T="string" @bind-Value="_draftRegion" Label="Permit region" Required="true" Disabled="@State.Busy">
+                        @foreach(var value in Enum.GetNames<StateProvince>()){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}
+                    </MudSelect>
+                    <MudSelect T="string" @bind-Value="_draftAuthority" Label="Recorded authority" Required="true" Disabled="@State.Busy">
+                        @foreach(var value in Enum.GetNames<RegulatoryAuthority>()){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}
+                    </MudSelect>
+                    <MudTextField T="string" @bind-Value="_draftDescription" Immediate="true" Label="Draft description" Lines="3" MaxLength="4096" Disabled="@State.Busy" />
+                    <MudText Typo="Typo.caption">Make an explicit change before saving. Classification changes are refused while active subtype or attachment records require their own amendment. Country/region/authority selections do not establish legal applicability.</MudText>
+                }
+                @if(State.CanPrepare("AMEND_DRILLING"))
+                {
+                    <MudText Typo="Typo.subtitle1" HtmlTag="h3">Proposed drilling details</MudText>
+                    <MudNumericField T="decimal" Value="_drilling.ProposedDepth" ValueChanged="@(value=>_drilling=_drilling with { ProposedDepth=value })" Label="Proposed depth" Min="0" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.DepthUnit" ValueChanged="@(value=>_drilling=_drilling with { DepthUnit=value })" Label="Recorded depth unit" HelperText="Enter the explicit unit; no conversion is performed." MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.TargetFormation" ValueChanged="@(value=>_drilling=_drilling with { TargetFormation=Clean(value) })" Label="Target formation" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.DrillingMethod" ValueChanged="@(value=>_drilling=_drilling with { DrillingMethod=Clean(value) })" Label="Drilling method" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.MudType" ValueChanged="@(value=>_drilling=_drilling with { MudType=Clean(value) })" Label="Mud type" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.CasingProgram" ValueChanged="@(value=>_drilling=_drilling with { CasingProgram=Clean(value) })" Label="Casing program" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.LegalDescription" ValueChanged="@(value=>_drilling=_drilling with { LegalDescription=Clean(value) })" Label="Legal description" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.EnvironmentalAssessmentReference" ValueChanged="@(value=>_drilling=_drilling with { EnvironmentalAssessmentReference=Clean(value) })" Label="Environmental assessment reference" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.SpacingUnit" ValueChanged="@(value=>_drilling=_drilling with { SpacingUnit=Clean(value) })" Label="Spacing unit" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.PermitType" ValueChanged="@(value=>_drilling=_drilling with { PermitType=Clean(value) })" Label="Supporting permit type" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_drilling.Remarks" ValueChanged="@(value=>_drilling=_drilling with { Remarks=Clean(value) })" Label="Supporting notes" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudSelect T="string" Value="@(_drilling.SurfaceOwnerNotified??"")" ValueChanged="@(value=>_drilling=_drilling with { SurfaceOwnerNotified=Clean(value) })" Label="Surface owner notified" Disabled="@State.Busy">
+                        <MudSelectItem T="string" Value="@(string.Empty)">Unknown / not recorded</MudSelectItem><MudSelectItem T="string" Value='@("Y")'>Yes</MudSelectItem><MudSelectItem T="string" Value='@("N")'>No</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="string" Value="@(_drilling.EnvironmentalAssessmentRequired??"")" ValueChanged="@(value=>_drilling=_drilling with { EnvironmentalAssessmentRequired=Clean(value) })" Label="Environmental assessment required" Disabled="@State.Busy">
+                        <MudSelectItem T="string" Value="@(string.Empty)">Unknown / not recorded</MudSelectItem><MudSelectItem T="string" Value='@("Y")'>Yes</MudSelectItem><MudSelectItem T="string" Value='@("N")'>No</MudSelectItem>
+                    </MudSelect>
+                    <MudButton OnClick="SaveDrilling" Disabled="@(!FormReady || !HasDrillingEdits)" Variant="Variant.Outlined">Save reviewed drilling details</MudButton>
+                    @if(HasDrillingEdits){<MudText role="status">Save the drilling details and review the saved source before submitting.</MudText>}
+                }
+                @if(State.CanPrepare("AMEND_ENVIRONMENTAL"))
+                {
+                    <MudText Typo="Typo.subtitle1" HtmlTag="h3">Proposed environmental details</MudText>
+                    <MudText Typo="Typo.caption">Leave a measurement and its unit blank together when unknown. Recorded units are not converted. This save records supporting details only.</MudText>
+                    <MudTextField T="string" Value="_environmental.PermitType" ValueChanged="@(value=>_environmental=_environmental with { PermitType=value?.Trim()??"" })" Label="Environmental permit type" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.WasteType" ValueChanged="@(value=>_environmental=_environmental with { WasteType=Clean(value) })" Label="Waste type" MaxLength="128" Disabled="@State.Busy" />
+                    <MudNumericField T="decimal?" Value="_environmental.WasteVolume" ValueChanged="@(value=>_environmental=_environmental with { WasteVolume=value })" Label="Waste volume" Min="0" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.WasteVolumeUnit" ValueChanged="@(value=>_environmental=_environmental with { WasteVolumeUnit=Clean(value) })" Label="Recorded waste volume unit" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.FacilityLocation" ValueChanged="@(value=>_environmental=_environmental with { FacilityLocation=Clean(value) })" Label="Recorded facility location" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.MonitoringPlan" ValueChanged="@(value=>_environmental=_environmental with { MonitoringPlan=Clean(value) })" Label="Monitoring plan" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.EnvironmentalImpact" ValueChanged="@(value=>_environmental=_environmental with { EnvironmentalImpact=Clean(value) })" Label="Environmental impact" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.MitigationPlan" ValueChanged="@(value=>_environmental=_environmental with { MitigationPlan=Clean(value) })" Label="Mitigation plan" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.DisposalMethod" ValueChanged="@(value=>_environmental=_environmental with { DisposalMethod=Clean(value) })" Label="Disposal method" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_environmental.WaterSource" ValueChanged="@(value=>_environmental=_environmental with { WaterSource=Clean(value) })" Label="Water source" MaxLength="128" Disabled="@State.Busy" />
+                    <MudSelect T="string" Value="@(_environmental.NormInvolved??"")" ValueChanged="@(value=>_environmental=_environmental with { NormInvolved=Clean(value) })" Label="NORM involved" Disabled="@State.Busy">
+                        <MudSelectItem T="string" Value="@(string.Empty)">Unknown / not recorded</MudSelectItem><MudSelectItem T="string" Value='@("Y")'>Yes</MudSelectItem><MudSelectItem T="string" Value='@("N")'>No</MudSelectItem>
+                    </MudSelect>
+                    <MudTextField T="string" Value="_environmental.Remarks" ValueChanged="@(value=>_environmental=_environmental with { Remarks=Clean(value) })" Label="Supporting notes" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudButton OnClick="SaveEnvironmental" Disabled="@(!FormReady || !HasEnvironmentalEdits)" Variant="Variant.Outlined">Save reviewed environmental details</MudButton>
+                    @if(HasEnvironmentalEdits){<MudText role="status">Save the environmental details and review the saved source before submitting.</MudText>}
+                }
+                @if(State.CanPrepare("AMEND_INJECTION"))
+                {
+                    <MudText Typo="Typo.subtitle1" HtmlTag="h3">Proposed injection details</MudText>
+                    <MudText Typo="Typo.caption">Leave a measurement and its unit blank together when unknown. Recorded units are not converted. This save records supporting details only.</MudText>
+                    <MudTextField T="string" Value="_injection.InjectionType" ValueChanged="@(value=>_injection=_injection with { InjectionType=value?.Trim()??"" })" Label="Injection type" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_injection.InjectionZone" ValueChanged="@(value=>_injection=_injection with { InjectionZone=Clean(value) })" Label="Injection zone" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_injection.InjectionFluid" ValueChanged="@(value=>_injection=_injection with { InjectionFluid=value?.Trim()??"" })" Label="Injection fluid" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudNumericField T="decimal?" Value="_injection.MaximumPressure" ValueChanged="@(value=>_injection=_injection with { MaximumPressure=value })" Label="Maximum injection pressure" Min="0" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_injection.PressureUnit" ValueChanged="@(value=>_injection=_injection with { PressureUnit=Clean(value) })" Label="Recorded pressure unit" MaxLength="128" Disabled="@State.Busy" />
+                    <MudNumericField T="decimal?" Value="_injection.MaximumRate" ValueChanged="@(value=>_injection=_injection with { MaximumRate=value })" Label="Maximum injection rate" Min="0" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_injection.RateUnit" ValueChanged="@(value=>_injection=_injection with { RateUnit=Clean(value) })" Label="Recorded rate unit" MaxLength="128" Disabled="@State.Busy" />
+                    <MudTextField T="string" Value="_injection.MonitoringRequirements" ValueChanged="@(value=>_injection=_injection with { MonitoringRequirements=Clean(value) })" Label="Monitoring requirements" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudSelect T="string" Value="@(_injection.Co2Storage??"")" ValueChanged="@(value=>_injection=_injection with { Co2Storage=Clean(value) })" Label="CO2 storage" Disabled="@State.Busy">
+                        <MudSelectItem T="string" Value="@(string.Empty)">Unknown / not recorded</MudSelectItem><MudSelectItem T="string" Value='@("Y")'>Yes</MudSelectItem><MudSelectItem T="string" Value='@("N")'>No</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="string" Value="@(_injection.GasStorage??"")" ValueChanged="@(value=>_injection=_injection with { GasStorage=Clean(value) })" Label="Gas storage" Disabled="@State.Busy">
+                        <MudSelectItem T="string" Value="@(string.Empty)">Unknown / not recorded</MudSelectItem><MudSelectItem T="string" Value='@("Y")'>Yes</MudSelectItem><MudSelectItem T="string" Value='@("N")'>No</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="string" Value="@(_injection.BrineMining??"")" ValueChanged="@(value=>_injection=_injection with { BrineMining=Clean(value) })" Label="Brine mining" Disabled="@State.Busy">
+                        <MudSelectItem T="string" Value="@(string.Empty)">Unknown / not recorded</MudSelectItem><MudSelectItem T="string" Value='@("Y")'>Yes</MudSelectItem><MudSelectItem T="string" Value='@("N")'>No</MudSelectItem>
+                    </MudSelect>
+                    <MudTextField T="string" Value="_injection.Remarks" ValueChanged="@(value=>_injection=_injection with { Remarks=Clean(value) })" Label="Supporting notes" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+                    <MudButton OnClick="SaveInjection" Disabled="@(!FormReady || !HasInjectionEdits)" Variant="Variant.Outlined">Save reviewed injection details</MudButton>
+                    @if(HasInjectionEdits){<MudText role="status">Save the injection details and review the saved source before submitting.</MudText>}
+                }
+                @if(State.CanStageDocument)
+                {
+                    <MudText Typo="Typo.subtitle1" HtmlTag="h3">Stage a new document</MudText>
+                    <MudText Typo="Typo.caption">Select one file up to8 MiB. Only metadata and its digest are retained in this tab; a resend after reload requires the same file. Supply explicit native reference codes and UTC validity; no document applicability is inferred.</MudText>
+                    <Microsoft.AspNetCore.Components.Forms.InputFile OnChange="ReadUploadFile" aria-label="Choose document file" />
+                    <MudText>@_uploadName · @(_uploadBytes?.LongLength.ToString()??"No file selected") bytes</MudText>
+                    <MudTextField T="string" @bind-Value="_uploadTitle" Label="Document title" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_uploadType" Label="Native document type code" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_uploadLanguage" Label="Recorded language code" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_uploadVersion" Label="Explicit document version" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_uploadFormat" Label="Native digital format code" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_uploadSubtype" Label="Native information item subtype" MaxLength="128" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_uploadFrom" Label="Effective from UTC (ISO8601 with Z)" Required="true" Disabled="@State.Busy" />
+                    <MudTextField T="string" @bind-Value="_uploadTo" Label="Effective to UTC, exclusive (ISO8601 with Z)" Required="true" Disabled="@State.Busy" />
+                    <MudButton OnClick="StageDocument" Disabled="@(!FormReady || _readingFile || _uploadBytes is null)" Variant="Variant.Outlined">Stage reviewed document</MudButton>
+                }
+                @if(State.CanLinkDocument){<MudButton OnClick="LinkDocument" Disabled="@(!FormReady)" Variant="Variant.Outlined">Link reviewed staged document</MudButton>}
+                <MudTextField T="string" @bind-Value="_reason" Immediate="true" Label="Reason for this permit action" Lines="3" MaxLength="2000" Counter="2000" HelperText="Enter 20 to 2000 characters explaining the action against this reviewed evidence." Required="true" Disabled="@State.Busy" />
+                <MudCheckBox T="bool" @bind-Value="_confirmed" Label="I checked this application, country, authority and recorded history for this action." Disabled="@State.Busy" />
+                @if(HasDraftEdits){<MudText role="status">Save the reviewed draft changes and review the saved source before submitting.</MudText>}
+                <MudStack Row="true" Wrap="Wrap.Wrap">
+                    @if(State.CanPrepare("EDIT_DRAFT")){<MudButton OnClick="SaveDraft" Disabled="@(!FormReady || Draft() is null)" Variant="Variant.Outlined">Save reviewed changes</MudButton>}
+                    @if(State.CanPrepare("SUBMIT")){<MudButton OnClick="Submit" Disabled="@(!FormReady || HasDraftEdits || HasSupportingEdits)" Variant="Variant.Filled" Color="Color.Primary">Submit application</MudButton>}
+                    @if(State.CanPrepare("APPROVE")){<MudButton OnClick="Approve" Disabled="@(!FormReady)" Variant="Variant.Filled" Color="Color.Primary">Record independent approval</MudButton>}
+                    @if(State.CanPrepare("REJECT")){<MudButton OnClick="Reject" Disabled="@(!FormReady)" Variant="Variant.Outlined" Color="Color.Error">Record independent rejection</MudButton>}
+                    @if(State.CanPrepare("RETURN_FOR_CORRECTION")){<MudButton OnClick="RequestCorrection" Disabled="@(!FormReady)" Variant="Variant.Outlined">Request correction</MudButton>}
+                </MudStack>
+            }
+            else
+            {<MudAlert Severity="Severity.Info">This account or stage cannot prepare a new action. Decisions require a recorded submitting account different from the current reviewer.</MudAlert>}
+        }
+        @if(State.Outcome is {} outcome)
+        {
+            var recorded=outcome.ReadApplication();
+            <MudAlert Severity="Severity.Success">Recorded result for original @outcome.Original.IntentId</MudAlert>
+            <MudText>Action @outcome.Original.Action · recorded status @recorded.STATUS · account @outcome.Original.Review.Context.Field.ActorUserId</MudText>
+            <MudText>Recorded UTC @outcome.RecordedAtUtc.ToString("u") · history @outcome.ReadHistory().PERMIT_STATUS_HISTORY_ID</MudText>
+            @if(outcome.Original.Action=="AMEND_DRILLING" && outcome.Supporting.Drilling is {} savedDrilling)
+            {
+                <MudText Typo="Typo.subtitle1">Recorded drilling result for this original</MudText>
+                @foreach(var entry in DrillingValues(PermitDrillingDraftChanges.From(savedDrilling))){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+            }
+            @if(outcome.Original.Action=="AMEND_ENVIRONMENTAL" && outcome.Supporting.Environmental is {} savedEnvironmental)
+            {
+                <MudText Typo="Typo.subtitle1">Recorded environmental result for this original</MudText>
+                @foreach(var entry in EnvironmentalValues(PermitEnvironmentalDraftChanges.From(savedEnvironmental))){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+            }
+            @if(outcome.Original.Action=="AMEND_INJECTION" && outcome.Supporting.Injection is {} savedInjection)
+            {
+                <MudText Typo="Typo.subtitle1">Recorded injection result for this original</MudText>
+                @foreach(var entry in InjectionValues(PermitInjectionDraftChanges.From(savedInjection))){<MudText>@entry.Label: @(entry.Value??"Not recorded")</MudText>}
+            }
+            <MudText Typo="Typo.caption">This is the result of that original. Reloaded application details show the current state separately.</MudText>
+        }
+        <MudText Typo="Typo.caption">An internal workflow decision does not establish regulator clearance, legal compliance or permission to operate.</MudText>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter,EditorRequired] public PermitApplicationCommandState State{get;set;}=null!;
+    [Parameter,EditorRequired] public string ApplicationId{get;set;}="";
+    [Parameter] public EventCallback OnConfirmed{get;set;}
+    private PermitApplicationCommandState? _subscribed;private PermitApplicationSourceReview? _shown;private long _seen=-1,_attempted=-1;private bool _disposed,_initializing,_confirmed;private string _reason="",_message="";
+    private string _draftApplicant="",_draftType="",_draftCountry="",_draftRegion="",_draftAuthority="",_draftDescription="";
+    private static PermitEnvironmentalDraftChanges EmptyEnvironmental()=>new("",null,null,null,null,null,null,null,null,null,null,null);
+    private PermitEnvironmentalDraftChanges _environmental=EmptyEnvironmental();
+    private bool HasEnvironmentalEdits=>State.CanPrepare("AMEND_ENVIRONMENTAL") && _environmental!=(State.Review?.Supporting.Environmental is {} row?PermitEnvironmentalDraftChanges.From(row):EmptyEnvironmental());
+    private Task SaveEnvironmental()=>Run(async()=>
+    {
+        var review=State.Review??throw new InvalidOperationException("Review the current permit first.");
+        _environmental.Require(review);
+        await State.RecordAsync("AMEND_ENVIRONMENTAL",_reason,_confirmed,environmentalChanges:_environmental);
+    },"saving reviewed environmental details");
+    private static IEnumerable<(string Label,string? Value)> EnvironmentalValues(PermitEnvironmentalDraftChanges details)=>new (string,string?)[] {
+        ("Environmental permit type",details.PermitType),
+        ("Waste type",details.WasteType),
+        ("Waste volume",details.WasteVolume?.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+        ("Recorded waste volume unit",details.WasteVolumeUnit),
+        ("Recorded facility location",details.FacilityLocation),
+        ("Monitoring plan",details.MonitoringPlan),
+        ("Environmental impact",details.EnvironmentalImpact),
+        ("Mitigation plan",details.MitigationPlan),
+        ("Disposal method",details.DisposalMethod),
+        ("Water source",details.WaterSource),
+        ("NORM involved",details.NormInvolved),
+        ("Supporting notes",details.Remarks) };
+    private static PermitInjectionDraftChanges EmptyInjection()=>new("",null,"",null,null,null,null,null,null,null,null,null);
+    private PermitInjectionDraftChanges _injection=EmptyInjection();
+    private bool HasInjectionEdits=>State.CanPrepare("AMEND_INJECTION") && _injection!=(State.Review?.Supporting.Injection is {} row?PermitInjectionDraftChanges.From(row):EmptyInjection());
+    private Task SaveInjection()=>Run(async()=>
+    {
+        var review=State.Review??throw new InvalidOperationException("Review the current permit first.");
+        _injection.Require(review);
+        await State.RecordAsync("AMEND_INJECTION",_reason,_confirmed,injectionChanges:_injection);
+    },"saving reviewed injection details");
+    private static IEnumerable<(string Label,string? Value)> InjectionValues(PermitInjectionDraftChanges details)=>new (string,string?)[] {
+        ("Injection type",details.InjectionType),
+        ("Injection zone",details.InjectionZone),
+        ("Injection fluid",details.InjectionFluid),
+        ("Maximum injection pressure",details.MaximumPressure?.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+        ("Recorded pressure unit",details.PressureUnit),
+        ("Maximum injection rate",details.MaximumRate?.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+        ("Recorded rate unit",details.RateUnit),
+        ("Monitoring requirements",details.MonitoringRequirements),
+        ("CO2 storage",details.Co2Storage),
+        ("Gas storage",details.GasStorage),
+        ("Brine mining",details.BrineMining),
+        ("Supporting notes",details.Remarks) };
+    private bool HasSupportingEdits=>HasDrillingEdits || HasEnvironmentalEdits || HasInjectionEdits;
+    private static IEnumerable<(string Label,string? Value)> DrillingValues(PermitDrillingDraftChanges details)=>new (string,string?)[] {
+        ("Proposed depth",details.ProposedDepth.ToString(System.Globalization.CultureInfo.InvariantCulture)),("Recorded depth unit",details.DepthUnit),
+        ("Target formation",details.TargetFormation),("Drilling method",details.DrillingMethod),("Mud type",details.MudType),
+        ("Casing program",details.CasingProgram),("Legal description",details.LegalDescription),("Surface owner notified",details.SurfaceOwnerNotified),
+        ("Environmental assessment required",details.EnvironmentalAssessmentRequired),("Environmental assessment reference",details.EnvironmentalAssessmentReference),
+        ("Spacing unit",details.SpacingUnit),("Supporting permit type",details.PermitType),("Supporting notes",details.Remarks) };
+    private static PermitDrillingDraftChanges EmptyDrilling()=>new(0,"",null,null,null,null,null,null,null,null,null,null,null);
+    private PermitDrillingDraftChanges _drilling=EmptyDrilling();
+    private static string? Clean(string? value)=>string.IsNullOrWhiteSpace(value)?null:value.Trim();
+    private bool HasDrillingEdits=>State.CanPrepare("AMEND_DRILLING") && _drilling!=(State.Review?.Supporting.Drilling is {} row?PermitDrillingDraftChanges.From(row):EmptyDrilling());
+    private Task SaveDrilling()=>Run(async()=>
+    {
+        var review=State.Review??throw new InvalidOperationException("Review the current permit first.");
+        _drilling.Require(review);
+        await State.RecordAsync("AMEND_DRILLING",_reason,_confirmed,drillingChanges:_drilling);
+    },"saving reviewed drilling details");
+    private byte[]? _uploadBytes;private string _uploadName="",_uploadTitle="",_uploadType="",_uploadLanguage="",_uploadVersion="",_uploadFormat="",_uploadSubtype="",_uploadFrom="",_uploadTo="";
+    private bool _readingFile;private long _fileGeneration;
+    private async Task ReadUploadFile(Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs args)
+    {
+        var epoch=State.Epoch;var generation=++_fileGeneration;_uploadBytes=null;_message="";_readingFile=true;
+        try
+        {
+            if(!State.CanStageDocument && !State.CanResendDocument)throw new InvalidOperationException("Current author upload authority is required.");
+            var file=args.File;if(file.Size is <=0 or >CompanyWorkOrderPermitDocumentFacts.MaximumContentBytes)throw new InvalidOperationException("Choose one nonempty file up to8 MiB.");
+            await using var stream=file.OpenReadStream(CompanyWorkOrderPermitDocumentFacts.MaximumContentBytes);using var memory=new MemoryStream();await stream.CopyToAsync(memory);
+            if(_disposed || epoch!=State.Epoch || generation!=_fileGeneration)return;
+            _uploadBytes=memory.ToArray();_uploadName=file.Name;if(string.IsNullOrWhiteSpace(_uploadTitle))_uploadTitle=file.Name;
+        }
+        catch(Exception error){if(!_disposed && epoch==State.Epoch && generation==_fileGeneration)_message=Calls.Explain(error,"reading the selected upload","The file was not staged");}
+        finally{if(generation==_fileGeneration)_readingFile=false;}
+    }
+    private static DateTimeOffset UploadUtc(string value)
+    {
+        if(!value.EndsWith("Z",StringComparison.Ordinal) || !DateTimeOffset.TryParse(value,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out var date) || date.Offset!=TimeSpan.Zero)
+            throw new InvalidOperationException("Enter an explicit ISO8601 UTC value ending in Z.");return date;
+    }
+    private Task StageDocument()=>Run(async()=>
+    {
+        var bytes=_uploadBytes??throw new InvalidOperationException("Select the exact file first.");
+        if(HasDraftEdits || HasSupportingEdits)throw new InvalidOperationException("Save other section changes and review the source before staging a document.");
+        var proposal=new PermitDocumentUploadProposal(_uploadName,_uploadTitle.Trim(),_uploadType.Trim(),_uploadLanguage.Trim(),_uploadVersion.Trim(),_uploadFormat.Trim(),_uploadSubtype.Trim(),
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)),bytes.LongLength,UploadUtc(_uploadFrom.Trim()),UploadUtc(_uploadTo.Trim()));
+        await State.StageDocumentAsync(proposal,bytes,_reason,_confirmed);
+    },"staging reviewed document content");
+    private Task RecoverDocument()=>Run(State.RecoverDocumentAsync,"recovering the retained document upload");
+    private Task ResendDocument()=>Run(()=>State.ResendDocumentAsync(_uploadBytes??throw new InvalidOperationException("Reselect the exact original file first.")),"resending the retained upload");
+    private Task LinkDocument()=>Run(()=>State.LinkDocumentAsync(_reason,_confirmed),"linking the reviewed staged document");
+    private bool FormReady=>!State.Busy && _confirmed && _reason.Trim().Length is >=20 and <=2000;
+    protected override void OnParametersSet()
+    {
+        if(!ReferenceEquals(_subscribed,State)){if(_subscribed is not null)_subscribed.Changed-=Changed;_subscribed=State;State.Changed+=Changed;}
+        State.SetApplication(ApplicationId);Sync();
+    }
+    private void Sync()
+    {
+        if(_seen==State.Epoch && ReferenceEquals(_shown,State.Review))return;
+        _seen=State.Epoch;_shown=State.Review;_reason="";_confirmed=false;_message="";
+        _fileGeneration++;_uploadBytes=null;_readingFile=false;_uploadName="";_uploadTitle="";_uploadType="";_uploadLanguage="";_uploadVersion="";_uploadFormat="";_uploadSubtype="";_uploadFrom="";_uploadTo="";
+        var source=State.Review?.ReadApplication();_draftApplicant=source?.APPLICANT_ID??"";_draftType=source?.APPLICATION_TYPE.ToString()??"";
+        _draftCountry=source is null || source.COUNTRY==Country.Other?"":source.COUNTRY.ToString();_draftRegion=source?.STATE_PROVINCE.ToString()??"";
+        _draftAuthority=source?.REGULATORY_AUTHORITY.ToString()??"";_draftDescription=source?.REMARKS??"";
+        _drilling=State.Review?.Supporting.Drilling is {} drilling?PermitDrillingDraftChanges.From(drilling):EmptyDrilling();
+        _injection=State.Review?.Supporting.Injection is {} injection?PermitInjectionDraftChanges.From(injection):EmptyInjection();
+        _environmental=State.Review?.Supporting.Environmental is {} environmental?PermitEnvironmentalDraftChanges.From(environmental):EmptyEnvironmental();
+    }
+    private bool HasDraftEdits
+    {
+        get
+        {
+            if(State.Review is not {} review)return false;
+            var source=review.ReadApplication();
+            return _draftApplicant.Trim()!=source.APPLICANT_ID || _draftType!=source.APPLICATION_TYPE.ToString() ||
+                _draftCountry!=(source.COUNTRY==Country.Other?"":source.COUNTRY.ToString()) || _draftRegion!=source.STATE_PROVINCE.ToString() ||
+                _draftAuthority!=source.REGULATORY_AUTHORITY.ToString() || _draftDescription.Trim()!=(source.REMARKS??"");
+        }
+    }
+    private PermitApplicationDraftChanges? Draft()
+    {
+        if(State.Review is null || !Enum.TryParse<PermitApplicationType>(_draftType,out var type) || !Enum.TryParse<Country>(_draftCountry,out var country) ||
+            !Enum.TryParse<StateProvince>(_draftRegion,out var region) || !Enum.TryParse<RegulatoryAuthority>(_draftAuthority,out var authority))return null;
+        var changes=new PermitApplicationDraftChanges(type,authority,country,region,_draftApplicant.Trim(),string.IsNullOrWhiteSpace(_draftDescription)?null:_draftDescription.Trim());
+        try{changes.Require(State.Review.ReadApplication());return changes;}catch(InvalidOperationException){return null;}
+    }
+    private Task SaveDraft()=>Run(async()=>
+    {
+        var changes=Draft()??throw new InvalidOperationException("Choose valid changed draft values before saving.");
+        await State.RecordAsync("EDIT_DRAFT",_reason,_confirmed,changes);
+    },"saving the reviewed permit draft changes");
+    private void Changed(){if(_disposed)return;Sync();_ = InvokeAsync(StateHasChanged);}
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(_disposed || _initializing || State.Ready || State.Busy || _attempted==State.Epoch)return;
+        _attempted=State.Epoch;_initializing=true;try{await ReadOriginal();}finally{_initializing=false;}
+    }
+    private async Task Run(Func<Task> action,string operation)
+    {
+        var epoch=State.Epoch;_message="";
+        try{await action();if(!_disposed && epoch==State.Epoch && State.Outcome is not null && !State.HasPending)await OnConfirmed.InvokeAsync();}
+        catch(Exception error)
+        {
+            if(!_disposed && epoch==State.Epoch)
+                _message=Calls.Explain(error,operation,"The permit workflow outcome is unconfirmed");
+            else Logger.LogDebug(error,"Permit workflow operation ended after its context changed");
+        }
+    }
+    private Task DownloadAttachment(string id)=>Run(async()=>
+    {
+        var epoch=State.Epoch;var review=State.Review;
+        var result=await State.ReadAttachmentAsync(id);
+        if(_disposed || epoch!=State.Epoch || review!=State.Review)throw new OperationCanceledException("The attachment selection changed before browser delivery.");
+        await Microsoft.JSInterop.JSRuntimeExtensions.InvokeVoidAsync(JS,"oilGasDocuments.download",Convert.ToBase64String(result.Content),result.Receipt.Document.ContentHash,result.Receipt.Document.FileName);
+    },"reading verified attachment content");
+    private Task ReadOriginal()=>Run(()=>State.AttachAsync(ApplicationId),"reading the protected permit original");
+    private Task Review()=>Run(State.ReviewAsync,"reviewing current permit evidence");
+    private Task Record(string action)=>Run(()=>State.RecordAsync(action,_reason,_confirmed),"recording the reviewed permit action");
+    private Task Submit()=>Run(async()=>
+    {
+        if(HasDraftEdits || HasSupportingEdits)throw new InvalidOperationException("Save the reviewed draft changes and review the saved source before submitting.");
+        await State.RecordAsync("SUBMIT",_reason,_confirmed);
+    },"submitting the reviewed permit");private Task Approve()=>Record("APPROVE");private Task Reject()=>Record("REJECT");private Task RequestCorrection()=>Record("RETURN_FOR_CORRECTION");
+    private Task Recover()=>Run(State.RecoverAsync,"recovering the retained permit original");private Task Resend()=>Run(State.ResendAsync,"resending the exact retained permit original");
+    public void Dispose(){_disposed=true;if(_subscribed is not null)_subscribed.Changed-=Changed;}
+}

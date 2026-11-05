@@ -1,0 +1,29 @@
+- generic [ref=e1]:
+  - generic [ref=e49]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=e50]
+    - paragraph [ref=e51]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=e52]:
+      - button "Use read-only unmapped profile" [ref=e53] [cursor=pointer]
+      - button "Use editable mapped profile" [active] [ref=e55] [cursor=pointer]
+      - button "Switch other company" [ref=e57] [cursor=pointer]
+      - button "Switch other account" [ref=e59] [cursor=pointer]
+      - button "Restore original company/account" [ref=e61] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=e63] [cursor=pointer]
+      - button "Retain a different unrecorded reporting assignment" [disabled]
+      - button "Retain an unrecorded competing start" [ref=e65] [cursor=pointer]
+      - button "Retain a different unrecorded report" [disabled]
+      - button "Show actual start recovery" [ref=e67] [cursor=pointer]
+      - button "Show actual report recorder" [ref=e69] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=e71] [cursor=pointer]
+      - button "Show actual reporting closure" [ref=e73] [cursor=pointer]
+      - button "Show actual receiving responsibility" [disabled]
+  - generic [ref=e98]:
+    - heading "Reporting responsibility and closure" [level=1] [ref=e99]
+    - group [ref=e100]:
+      - link "Drilling workspace" [ref=e101] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=e103] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload reporting status" [ref=e105] [cursor=pointer]
+    - status [ref=e214]:
+      - generic [ref=e215]: Reporting evidence has not been loaded for this company/account. Reload status or reopen the original company.

@@ -1,0 +1,252 @@
+@page "/drilling/program-execution/reports"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Components.Workflow
+@implements IDisposable
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+<PageTitle>Observed drilling progress</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Observed drilling progress</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        <MudButton Href="@("/drilling/program-execution?reviewId="+Uri.EscapeDataString(ReviewId??""))" Variant="Variant.Outlined">Original execution</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Busy==true)" Variant="Variant.Outlined">Reload original report history</MudButton>
+    </MudStack>
+    @if (_state?.Busy == true) { <MudProgressLinear Indeterminate="true" aria-label="Confirming original drilling reports" /> }
+    @if (_state?.Error is {} error) { <MudAlert Severity="Severity.Error" role="alert">@error</MudAlert> }
+    @if (completionError is {} completionFailure) { <MudAlert Severity="Severity.Error" role="alert">@completionFailure</MudAlert> }
+    @if (_state?.Confirmation is {} confirmation) { <MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert> }
+    @if(_state is not null){<DrillingCompletionSubmissionPanel State="_state" />}
+    @if (_state?.Pending is {} pending)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">@_state.PendingTitle</MudText>
+            <MudAlert Severity="@(_state.Busy || _state.PendingTabCopyConfirmed ? Severity.Info : Severity.Warning)" role="status">@_state.PendingExplanation</MudAlert>
+            <MudText>Original @pending.ReportId() · Report @pending.Basis.NextNumber · Company @pending.Basis.Scope().Company.BusinessAssociateId · Recorder @pending.Basis.Scope().ActorUserId · @pending.RecorderRole / @pending.Basis.PersonaCode</MudText>
+            <MudText>@pending.PeriodStartUtc.ToString("u") to @pending.PeriodEndUtc.ToString("u") UTC · MD @pending.DepthStartMd to @pending.DepthEndMd @pending.DepthUnit</MudText>
+            @if (pending.Correction is {} pendingCorrection) { <MudText>Correction of entry @pendingCorrection.Number / @pendingCorrection.ReportId, revision @pendingCorrection.NativeRevision</MudText><MudText Class="development-draft-description">Correction reason: @pendingCorrection.Reason</MudText> }
+            @if (pending.Completion is {} pendingCompletion) { <DrillingCompletionEvidenceView Report="pendingCompletion" /> }
+            @if (pending.WithdrawCompletion) { <MudAlert Severity="Severity.Warning">This original explicitly withdraws a reported completion. Its reason and original history remain recorded.</MudAlert> }
+            <MudText>Original rotating @Hours(pending.RotatingHours) / NPT @Hours(pending.NptHours) hours</MudText>
+            <MudText Class="development-draft-description">@pending.Provenance</MudText>
+            <MudText Class="development-draft-description">@pending.Summary</MudText>
+            @if (pending.NptReason is {} pendingReason) { <MudText Class="development-draft-description">Original NPT reason: @pendingReason</MudText> }
+            @if (pending.NextPlan is {} pendingPlan) { <MudText Class="development-draft-description">Original next period plan: @pendingPlan</MudText> }
+            <MudButton OnClick="_state.RecoverAsync" Disabled="@(!_state.CanRecover)" Variant="Variant.Outlined">Recover original drilling report</MudButton>
+            @if (_state.CanInspectConflict)
+            {
+                <MudButton OnClick="_state.InspectConflictAsync" Variant="Variant.Outlined">Inspect a different recorded report</MudButton>
+            }
+        </MudPaper>
+    }
+    else if (_state?.RetainedReviewId is {} other)
+    {
+        <MudAlert Severity="Severity.Warning">Recover the retained drilling report before preparing another.</MudAlert>
+        <MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(other))">Open retained drilling report</MudButton>
+    }
+    @if (_state?.Receipt is {} receipt)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Original report outcome</MudText>
+            <MudText>Outcome checked @receipt.CheckedAtUtc.ToString("u") UTC</MudText>
+            @if (receipt.Recorded is {} recorded)
+            {
+                var receiptOriginal = DrillingDailyReportInput.FromRecord(recorded);
+                <MudText>Recorded report @recorded.DDR_ID · Number @recorded.REPORT_NUMBER · @recorded.REPORT_STATUS</MudText>
+                <MudText>Observed MD @recorded.DEPTH_START_MD to @recorded.DEPTH_END_MD @recorded.DEPTH_OUOM · Recorder @recorded.ROW_CREATED_BY · @recorded.RECORDER_ROLE / @recorded.RECORDER_PERSONA_CODE</MudText>
+                @if (recorded.CORRECTS_REPORT_ID is {} corrected) { <MudText>Correction of @corrected, revision @recorded.CORRECTS_REPORT_REVISION</MudText><MudText Class="development-draft-description">Correction reason: @recorded.CORRECTION_REASON</MudText> }
+                @if (receiptOriginal.Completion is {} receiptCompletion) { <DrillingCompletionEvidenceView Report="receiptCompletion" /> }
+                @if (receiptOriginal.WithdrawCompletion) { <MudAlert Severity="Severity.Warning">The reported completion was explicitly withdrawn. No accepted completion or production release is implied.</MudAlert> }
+                <MudText Class="development-draft-description">@recorded.REPORT_PROVENANCE</MudText>
+                <MudText Class="development-draft-description">@recorded.DAILY_OPERATIONS_SUMMARY</MudText>
+            }
+            else { <MudText>The original drilling report was confirmed absent.</MudText> }
+        </MudPaper>
+    }
+    @if (_state?.Conflict is {} conflict)
+    {
+        var recorded = conflict.Competing;
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Different recorded observations at the original report position</MudText>
+            <MudText>Unrecorded original @conflict.OriginalReportId · Recorded report @recorded.DDR_ID · Number @recorded.REPORT_NUMBER</MudText>
+            <MudText>Company @recorded.OWNER_TENANT_ID / @recorded.OWNER_COMPANY_BA_ID · FIELD @recorded.FIELD_ID · Well @recorded.WELL_UWI · Execution @recorded.DRILLING_OPERATION_ID</MudText>
+            <MudText>@recorded.PERIOD_START_UTC?.ToString("u") to @recorded.PERIOD_END_UTC?.ToString("u") UTC · Observed MD @recorded.DEPTH_START_MD to @recorded.DEPTH_END_MD @recorded.DEPTH_OUOM</MudText>
+            <MudText>Recorder @recorded.ROW_CREATED_BY · Role @recorded.RECORDER_ROLE · Workspace @recorded.RECORDER_PERSONA_CODE · Recorded @recorded.ROW_CREATED_DATE?.ToString("u") UTC</MudText>
+            <MudText>Rotating @Hours(recorded.ROTATING_HOURS) / NPT @Hours(recorded.NPT_HOURS) hours</MudText>
+            @if (recorded.CORRECTS_REPORT_ID is {} correctedConflict) { <MudText>Corrects @correctedConflict, revision @recorded.CORRECTS_REPORT_REVISION</MudText><MudText Class="development-draft-description">Correction reason: @recorded.CORRECTION_REASON</MudText> }
+            <MudText Class="development-draft-description">Recorded source: @recorded.REPORT_PROVENANCE</MudText>
+            <MudText Class="development-draft-description">Recorded observations: @recorded.DAILY_OPERATIONS_SUMMARY</MudText>
+            @if (recorded.NPT_REASON is {} reason) { <MudText Class="development-draft-description">NPT reason: @reason</MudText> }
+            @if (recorded.NEXT_PERIOD_PLAN is {} plan) { <MudText Class="development-draft-description">Next period plan: @plan</MudText> }
+            <MudText>@conflict.ReportCount immutable history entries in the checked history · Checked @conflict.CheckedAtUtc.ToString("u") UTC</MudText>
+            @if (_state.Pending is not null)
+            {
+                <MudAlert Severity="Severity.Warning">A different original occupies your reviewed report position. Your retained original was confirmed absent. Review both sources before clearing your input; this action does not merge measurements, correct a report or complete reporting responsibility.</MudAlert>
+                <MudButton OnClick="_state.AcknowledgeConflictAsync" Disabled="@(!_state.CanAcknowledgeConflict)" Variant="Variant.Outlined">Keep recorded report and clear my unrecorded original</MudButton>
+            }
+            else { <MudText>The checked report remains recorded. Reload its history to inspect the current report head.</MudText> }
+        </MudPaper>
+    }
+    @if (_state?.Page is {} page)
+    {
+        var history = page.History; var execution = history.Execution; var source = execution.Basis; var program = source.Source.Program;
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Recorded execution and report history</MudText>
+            <MudText>@program.PROGRAM_NAME · Version @program.PROGRAM_VERSION · Operation @execution.Recorded!.DRILLING_OPERATION_ID</MudText>
+            <MudText>Company @source.Scope().Company.TenantId / @source.Scope().Company.BusinessAssociateId · FIELD @source.Scope().FieldId · Well @execution.Recorded.WELL_UWI · Reader @source.Scope().ActorUserId</MudText>
+            <MudText>@history.Count recorded history entries · History checked @history.CheckedAtUtc.ToString("u") UTC</MudText>
+            @if (history.ReportedCompletion is {} currentCompletion)
+            {
+                <MudText Typo="Typo.h6" HtmlTag="h3">Current completion report, pending independent acceptance</MudText>
+                <MudText>Recorder @currentCompletion.RecorderUserId; role @currentCompletion.RecorderRole / @currentCompletion.RecorderPersonaCode; reported @currentCompletion.RecordedAtUtc.ToString("u") UTC; source entry @currentCompletion.Number.</MudText>
+                <DrillingCompletionEvidenceView Report="currentCompletion.Report" />
+                <MudButton OnClick="_state.InspectCompletionRoutingAsync" Disabled="@(!_state.CanInspectCompletionRouting)" Variant="Variant.Outlined">Inspect independent completion routing</MudButton>
+                @if (_state.CompletionRoutingError is {} routingError) { <MudAlert Severity="Severity.Error" role="alert">@routingError</MudAlert> }
+                @if (_state.CompletionRouting is {} routing) { <DrillingCompletionRoutingView Review="routing" /> }
+            }
+            else { <MudText>No current completion report is established by this checked history. Accepted completion and production handover remain separate.</MudText> }
+            @if (history.Count == 0) { <MudText>No observed reports are recorded for this exact execution.</MudText> }
+            else
+            {
+                <MudSimpleTable Dense="true" Hover="true">
+                    <caption>Observed drilling report history — UTC periods, source provenance and accountable recorders</caption>
+                    <thead><tr><th scope="col">Report / UTC period</th><th scope="col">Observed hole MD</th><th scope="col">Rotating / NPT hours</th><th scope="col">Recorder / audit UTC</th></tr></thead>
+                    <tbody>
+                        @foreach (var report in page.Reports)
+                        {
+                            <tr><th scope="row">@report.REPORT_NUMBER · @(report.SupersededByReportId is not null ? "SUPERSEDED" : report.Correction is not null ? "CURRENT CORRECTION" : "CURRENT OBSERVATION")<br />@report.PERIOD_START_UTC.ToString("u") to @report.PERIOD_END_UTC.ToString("u")</th><td>@report.DEPTH_START_MD to @report.DEPTH_END_MD @report.DEPTH_OUOM</td><td>@Hours(report.ROTATING_HOURS) / @Hours(report.NPT_HOURS)</td><td>@report.ROW_CREATED_BY · @report.RECORDER_ROLE / @report.RECORDER_PERSONA_CODE<br />@report.ROW_CREATED_DATE.ToString("u")</td></tr>
+                            <tr><td colspan="4"><MudText>History entry @report.DDR_ID</MudText>
+                                @if (report.Correction is {} correction) { <MudText>Corrects entry @correction.Number / @correction.ReportId, revision @correction.NativeRevision</MudText><MudText Class="development-draft-description">Correction reason: @correction.Reason</MudText> }
+                                @if (report.SupersededByReportId is {} successor) { <MudText>Superseded by @successor. These original observations are retained for audit.</MudText> }
+                                @if (_state.CanInspect && report.SupersededByReportId is null)
+                                {
+                                    <MudButton OnClick="@(() => Correct(report.DDR_ID))" Variant="Variant.Outlined">Correct observations from entry @report.REPORT_NUMBER</MudButton>
+                                    @if (history.LatestObservedReport?.ReportId == report.DDR_ID && report.Completion is null) { <MudButton OnClick="@(() => Complete(report.DDR_ID))" Variant="Variant.Outlined">Report execution completion from entry @report.REPORT_NUMBER</MudButton> }
+                                }
+                                @if (report.Completion is {} reportedCompletion) { <DrillingCompletionEvidenceView Report="reportedCompletion" /> }
+                                @if (report.CompletionWithdrawn) { <MudAlert Severity="Severity.Warning">This entry explicitly withdrew the preceding reported completion. The reason and original evidence remain in history.</MudAlert> }<MudText Class="development-draft-description">Source: @report.REPORT_PROVENANCE</MudText><MudText Class="development-draft-description">Observed operations: @report.DAILY_OPERATIONS_SUMMARY</MudText>@if(report.NPT_REASON is {} reason){<MudText Class="development-draft-description">NPT reason: @reason</MudText>}@if(report.NEXT_PERIOD_PLAN is {} plan){<MudText Class="development-draft-description">Next period plan: @plan</MudText>}</td></tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+            @if (history.Count > 0)
+            {
+                <MudText>@history.ObservedPeriodCount observed periods; @(history.Count - history.ObservedPeriodCount) corrections; @history.Count immutable history entries.</MudText>
+                <MudText role="status">Showing history entries @(page.AfterNumber + 1) to @(page.AfterNumber + page.Reports.Count) of @history.Count in this checked history.</MudText>
+                <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3" aria-label="Observed report history pages">
+                    <MudButton OnClick="_state.PreviousPageAsync" Disabled="@(!_state.CanNavigate || !page.HasPrevious)" Variant="Variant.Outlined">Previous reports</MudButton>
+                    <MudButton OnClick="_state.NextPageAsync" Disabled="@(!_state.CanNavigate || !page.HasNext)" Variant="Variant.Outlined">Next reports</MudButton>
+                </MudStack>
+                <MudText>Current checked head: entry @history.Head!.Number · @history.Head.ReportId. New-report preparation uses this complete head, including when earlier reports are shown.</MudText>
+            }
+            @if (_state.CanInspect) { <MudButton OnClick="Inspect" Variant="Variant.Outlined" Class="my-3">Inspect current report basis</MudButton> }
+            else if (_state.Pending is null && _state.Receipt is null && _state.Conflict is null) { <MudText>Recording requires current drilling edit/manage permissions, configured role/workspace and original FIELD write access.</MudText> }
+        </MudPaper>
+    }
+    @if (_state?.Basis is {} basis)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">@(_state.CompletionMode ? "Report or amend execution completion" : _state.CorrectionTarget is null ? "Report observed drilling period" : "Correct recorded observations")</MudText>
+            @if (_state.CorrectionTarget is {} target)
+            {
+                <MudAlert Severity="Severity.Info">@(_state.CompletionMode ? "Completion report based on entry" : "Correcting entry") @target.REPORT_NUMBER / @target.DDR_ID. The original stays in history. Corrected periods must fit between the current neighbouring observed periods.</MudAlert>
+                <MudText>Original: @target.PERIOD_START_UTC.ToString("u") to @target.PERIOD_END_UTC.ToString("u") UTC; MD @target.DEPTH_START_MD to @target.DEPTH_END_MD @target.DEPTH_OUOM</MudText>
+                <MudText Class="development-draft-description">Original source: @target.REPORT_PROVENANCE; original observations: @target.DAILY_OPERATIONS_SUMMARY</MudText>
+                <MudTextField T="string" Label="@(_state.CompletionMode ? "Completion reporting or amendment reason" : "Correction reason")" @bind-Value="correctionReason" Required="true" Lines="2" MaxLength="1600" Disabled="@(!_state.CanPrepare)" HelperText="@(_state.CompletionMode ? "Explain the basis for reporting, amending or withdrawing completion. The original observations remain in history." : "Explain what was wrong and why these corrected observations are supported.")" />
+            }
+            @if (_state.CompletionMode && _state.CorrectionTarget is {} completionTarget)
+            {
+                @if (completionTarget.Completion is not null) { <MudCheckBox T="bool" @bind-Value="withdrawCompletion" Disabled="@(!_state.CanPrepare)" Label="Explicitly withdraw this reported completion with the amendment reason" /> }
+                @if (!withdrawCompletion) { <DrillingCompletionReportEditor @key="completionTarget.DDR_ID" @ref="completionEditor" TargetId="completionTarget.DDR_ID" Initial="completionTarget.Completion" Disabled="@(!_state.CanPrepare)" /> }
+            }
+            <MudText>Next report @basis.NextNumber · Previous report @(basis.PreviousReportId??"None") · Workspace @basis.PersonaCode</MudText>
+            <MudSelect T="string" Label="Current report recorder role" @bind-Value="role" Required="true" Disabled="@(!_state.CanPrepare)">@foreach(var item in basis.RecorderRoles){<MudSelectItem T="string" Value="@item">@item</MudSelectItem>}</MudSelect>
+            <MudTextField T="string" Label="Observed period start UTC" @bind-Value="start" Required="true" Disabled="@(!_state.CanPrepare)" HelperText="Enter Z or +00:00. New periods follow the latest effective report end; corrections must fit their original neighbours." />
+            <MudTextField T="string" Label="Observed period end UTC" @bind-Value="end" Required="true" Disabled="@(!_state.CanPrepare)" HelperText="Completed observed period, up to 24 hours. No midnight or local-time default." />
+            <MudNumericField T="decimal?" Label="Observed hole MD at start" @bind-Value="startMd" Required="true" Disabled="@(!_state.CanPrepare)" Culture="CultureInfo.InvariantCulture" />
+            <MudNumericField T="decimal?" Label="Observed hole MD at end" @bind-Value="endMd" Required="true" Disabled="@(!_state.CanPrepare)" Culture="CultureInfo.InvariantCulture" />
+            <MudSelect T="string" Label="Observed MD unit" @bind-Value="unit" Required="true" Disabled="@(!_state.CanPrepare)"><MudSelectItem T="string" Value="@basis.Execution.Basis.Source.Program.DEPTH_OUOM">@basis.Execution.Basis.Source.Program.DEPTH_OUOM</MudSelectItem></MudSelect>
+            <MudNumericField T="decimal?" Label="Observed rotating hours (optional)" @bind-Value="rotating" Disabled="@(!_state.CanPrepare)" HelperText="Leave unknown values empty. Zero means observed zero." Culture="CultureInfo.InvariantCulture" />
+            <MudNumericField T="decimal?" Label="Observed NPT hours (optional)" @bind-Value="npt" Disabled="@(!_state.CanPrepare)" Culture="CultureInfo.InvariantCulture" />
+            <MudTextField T="string" Label="NPT reason (required when NPT is positive)" @bind-Value="nptReason" Lines="2" MaxLength="1600" Disabled="@(!_state.CanPrepare)" />
+            <MudTextField T="string" Label="Report source provenance" @bind-Value="provenance" Required="true" Lines="2" MaxLength="1600" Disabled="@(!_state.CanPrepare)" HelperText="Identify the observed site log, report or measurement reference." />
+            <MudTextField T="string" Label="Observed operations summary" @bind-Value="summary" Required="true" Lines="3" MaxLength="1600" Disabled="@(!_state.CanPrepare)" />
+            <MudTextField T="string" Label="Next period plan (optional)" @bind-Value="next" Lines="2" MaxLength="1600" Disabled="@(!_state.CanPrepare)" />
+            <MudButton OnClick="Prepare" Disabled="@(!_state.CanPrepare)" Variant="Variant.Outlined" Class="my-3">Review observed drilling report</MudButton>
+        </MudPaper>
+    }
+    @if (_state?.Prepared is {} prepared)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Confirm original observed report</MudText>
+            <MudText>Company @prepared.Basis.Scope().Company.BusinessAssociateId · Well @prepared.Basis.Execution.Recorded!.WELL_UWI · Report @prepared.Basis.NextNumber</MudText>
+            <MudText>@prepared.PeriodStartUtc.ToString("u") to @prepared.PeriodEndUtc.ToString("u") UTC · Observed MD @prepared.DepthStartMd to @prepared.DepthEndMd @prepared.DepthUnit</MudText>
+            <MudText>Recorder @prepared.Basis.Scope().ActorUserId · Role @prepared.RecorderRole · Workspace @prepared.Basis.PersonaCode · Rotating @Hours(prepared.RotatingHours) / NPT @Hours(prepared.NptHours) hours</MudText>
+            @if (prepared.Correction is {} frozenCorrection) { <MudText>Corrects entry @frozenCorrection.Number / @frozenCorrection.ReportId, revision @frozenCorrection.NativeRevision</MudText><MudText Class="development-draft-description">Correction reason: @frozenCorrection.Reason</MudText><MudText>The original remains immutable; this confirmation appends one correction.</MudText> }
+            @if (prepared.Completion is {} preparedCompletion) { <DrillingCompletionEvidenceView Report="preparedCompletion" /> }
+            @if (prepared.WithdrawCompletion) { <MudAlert Severity="Severity.Warning">Confirming explicitly withdraws the reported completion and preserves its original history. It does not establish accepted completion.</MudAlert> }
+            <MudText Class="development-draft-description">Source: @prepared.Provenance</MudText><MudText Class="development-draft-description">@prepared.Summary</MudText>
+            @if(prepared.NptReason is {} reason){<MudText>NPT reason: @reason</MudText>}@if(prepared.NextPlan is {} plan){<MudText>Next period plan: @plan</MudText>}
+            <MudButton OnClick="_state.SubmitAsync" Disabled="@_state.Busy" Variant="Variant.Filled" Color="Color.Primary">Confirm and retain observed report</MudButton>
+            <MudButton OnClick="_state.Cancel" Disabled="@_state.Busy">Cancel report confirmation</MudButton>
+        </MudPaper>
+    }
+    @if (_state?.Busy != true && _state?.Error is null && _state?.Page is null && _state?.Receipt is null && _state?.Conflict is null && _state?.RetainedReviewId is null)
+    { <MudAlert Severity="Severity.Info">Choose the company with drilling daily-report, workflow, planning and financial view access, then open its exact recorded execution.</MudAlert> }
+    <MudAlert Severity="Severity.Info" Class="my-3">Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.</MudAlert>
+</MudContainer>
+@code {
+    [Parameter, SupplyParameterFromQuery(Name="reviewId")] public string? ReviewId { get; set; }
+    private DrillingDailyReportState? _state;
+    private bool disposed, interactive;
+    private string role="", start="", end="", unit="", nptReason="", provenance="", summary="", next="", correctionReason="";
+    private decimal? startMd, endMd, rotating, npt;
+    private DrillingCompletionReportEditor? completionEditor;
+    private bool withdrawCompletion;
+    private string? completionError;
+    private static string Hours(decimal? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "Unknown";
+    protected override void OnInitialized() { _state=new(Company,Personas,Drilling,Journal,Calls.Explain); _state.Changed+=Changed; }
+    protected override Task OnParametersSetAsync() => interactive ? Reload() : Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool firstRender) { if(!firstRender)return Task.CompletedTask; interactive=true; return Reload(); }
+    private void ResetInputs()
+    {
+        role=start=end=unit=nptReason=provenance=summary=next=correctionReason=""; startMd=endMd=rotating=npt=null;
+        completionError=null; withdrawCompletion=false;
+    }
+    private Task Reload() { ResetInputs(); return _state!.LoadAsync(ReviewId); }
+    private async Task Inspect() { ResetInputs(); await _state!.InspectAsync(); }
+    private void Prepare()
+    {
+        completionError=null;
+        try
+        {
+            DrillingCompletionReport? completion=null;
+            if (_state!.CompletionMode && !withdrawCompletion)
+            {
+                var target=_state.CorrectionTarget!; var execution=_state.Basis!.Execution.Recorded!;
+                completion=(completionEditor??throw new InvalidOperationException("Complete the completion report form before confirming.")).Create(
+                    new(DateTime.SpecifyKind(execution.SPUD_DATE!.Value,DateTimeKind.Utc)), new(DateTime.SpecifyKind(target.PERIOD_END_UTC,DateTimeKind.Utc)));
+            }
+            _state!.Prepare(role,start,end,startMd,endMd,unit,rotating,npt,nptReason,provenance,summary,next,correctionReason,completion,withdrawCompletion);
+        }
+        catch(Exception error){completionError=Calls.Explain(error,"preparing reported drilling completion","Confirm actual completion UTC, supporting test references and explicit review of outstanding work/defects");}
+    }
+    private void LoadTarget()
+    {
+        if (_state!.CorrectionTarget is not {} target) return;
+        completionError=null; withdrawCompletion=false; role=correctionReason="";
+        start=target.PERIOD_START_UTC.ToString("O"); end=target.PERIOD_END_UTC.ToString("O");
+        startMd=target.DEPTH_START_MD; endMd=target.DEPTH_END_MD; unit=target.DEPTH_OUOM;
+        rotating=target.ROTATING_HOURS; npt=target.NPT_HOURS; nptReason=target.NPT_REASON??"";
+        provenance=target.REPORT_PROVENANCE; summary=target.DAILY_OPERATIONS_SUMMARY; next=target.NEXT_PERIOD_PLAN??"";
+    }
+    private async Task Correct(string reportId) { await _state!.InspectCorrectionAsync(reportId); LoadTarget(); }
+    private async Task Complete(string reportId) { await _state!.InspectCompletionAsync(reportId); LoadTarget(); }
+    private void Changed() { if(_state?.Basis is null)completionError=null; if(!disposed)_=InvokeAsync(StateHasChanged); }
+    public void Dispose() { disposed=true; if(_state is not null){_state.Changed-=Changed;_state.Dispose();} }
+}

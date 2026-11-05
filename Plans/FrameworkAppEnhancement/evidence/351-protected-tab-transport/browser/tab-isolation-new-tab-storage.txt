@@ -1,0 +1,9 @@
+### Result
+{
+  "hasOpener": false,
+  "ownedIntents": []
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({hasOpener:!!window.opener,ownedIntents:Object.keys(sessionStorage).filter(k=>k.endsWith(".drilling-report")||k.endsWith(".drilling-execution"))})');
+```

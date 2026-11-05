@@ -21,17 +21,21 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         [HttpGet("kpi")]
-        public async Task<IActionResult> GetKpi()
+        public IActionResult GetKpi()
         {
-            var result = await _service.GetExecutiveKpiAsync();
-            return Ok(result);
+            return StatusCode(501,new { error="Production/finance/HSE executive KPIs require approved unit, period, source and consolidation evidence. No measured totals are available from this endpoint." });
         }
+
+        [HttpGet("portfolio")]
+        public async Task<ActionResult<TheTechIdea.Data.OilGas.ExecutivePortfolioReview>> GetPortfolio()
+        {Response.Headers.CacheControl="no-store";return Ok(await _service.GetPortfolioAsync(User));}
 
         [HttpGet("assets")]
         public async Task<IActionResult> GetAssets()
         {
-            var result = await _service.GetAssetPerformanceAsync();
-            return Ok(result);
+            Response.Headers.CacheControl="no-store";
+            var result = await _service.GetPortfolioAsync(User);
+            return Ok(result.Assets);
         }
     }
 }

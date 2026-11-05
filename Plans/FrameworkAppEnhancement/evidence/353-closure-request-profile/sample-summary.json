@@ -1,0 +1,621 @@
+{
+  "ProcessId": 16372,
+  "StartedUtc": "2026-10-30T00:55:37.2458677+00:00",
+  "RequestedSeconds": 60,
+  "CollectedSeconds": 65.0607167,
+  "ProcessCpuSeconds": 63.609375,
+  "Samples": 477409,
+  "EventsWithoutStack": 0,
+  "EventsLost": 0,
+  "EventKinds": {
+    "Thread/Sample:Type=External": 451257,
+    "Thread/Sample:Type=Managed": 26152
+  },
+  "Inclusive": [
+    {
+      "Key": "System.Threading.Thread.StartCallback()",
+      "Value": 418502
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()",
+      "Value": 184599
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)",
+      "Value": 146163
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)",
+      "Value": 145890
+    },
+    {
+      "Key": "System.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 141065
+    },
+    {
+      "Key": "System.Threading.LowLevelLifoSemaphore.Wait(int32,bool)",
+      "Value": 97232
+    },
+    {
+      "Key": "System.Threading.LowLevelLifoSemaphore.WaitForSignal(int32)",
+      "Value": 97132
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitOne()",
+      "Value": 87726
+    },
+    {
+      "Key": "System.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)",
+      "Value": 87720
+    },
+    {
+      "Key": "System.Threading.ThreadPoolWorkQueue.Dispatch()",
+      "Value": 87388
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)",
+      "Value": 78467
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)",
+      "Value": 66506
+    },
+    {
+      "Key": "System.Threading.Monitor.Wait(class System.Object,int32)",
+      "Value": 63610
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BIOCompletionPoller.Poll()",
+      "Value": 58484
+    },
+    {
+      "Key": "System.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()",
+      "Value": 34333
+    },
+    {
+      "Key": "System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 34333
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.SpinThenBlockingWait(int32,value class System.Threading.CancellationToken)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.InternalWaitCore(int32,value class System.Threading.CancellationToken)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.InternalWait(int32,value class System.Threading.CancellationToken)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.Wait(int32,value class System.Threading.CancellationToken)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.Wait()",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.TestHost.DefaultEngineInvoker.Invoke(class System.Collections.Generic.IDictionary\u00602\u003Cclass System.String,class System.String\u003E)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.TestHost.Program.Run(class System.String[],class Microsoft.VisualStudio.TestPlatform.Execution.UiLanguageOverride)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.TestHost.Program.Run(class System.String[])",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.TestHost.Program.Main(class System.String[])",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner\u002B\u003C\u003Ec__DisplayClass32_0.\u003CRunTests\u003Eb__5(class Xunit.Runner.VisualStudio.AssemblyRunInfo)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Collections.Generic.List\u00601[System.__Canon].ForEach(class System.Action\u00601\u003C!0\u003E)",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner\u002B\u003CRunTests\u003Ed__32.MoveNext()",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner.RunTests(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle,class Xunit.Runner.VisualStudio.LoggerHelper,value class Xunit.Runner.VisualStudio.TestPlatformContext,class Xunit.Runner.VisualStudio.RunSettings,class System.Func\u00601\u003Cclass System.Collections.Generic.List\u00601\u003Cclass Xunit.Runner.VisualStudio.AssemblyRunInfo\u003E\u003E)",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner.RunTests(class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.String\u003E,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.Common.ExtensionDecorators.SerialTestRunDecorator.RunTests(class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.String\u003E,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.RunTestsWithSources.InvokeExecutor(class Microsoft.VisualStudio.TestPlatform.Common.ExtensionFramework.Utilities.LazyExtension\u00602\u003Cclass Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestExecutor,class Microsoft.VisualStudio.TestPlatform.Common.Interfaces.ITestExecutorCapabilities\u003E,class System.Tuple\u00602\u003Cclass System.Uri,class System.String\u003E,class Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Adapter.RunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTestInternalWithExecutors(class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.Tuple\u00602\u003Cclass System.Uri,class System.String\u003E\u003E,int64)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTestsInternal()",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTests()",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.ExecutionManager.StartTestRun(class System.Collections.Generic.Dictionary\u00602\u003Cclass System.String,class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.String\u003E\u003E,class System.String,class System.String,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.ClientProtocol.TestExecutionContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.ITestCaseEventsHandler,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.IInternalTestRunEventsHandler)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler\u002B\u003C\u003Ec__DisplayClass45_4.\u003COnMessageReceived\u003Eb__3()",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler\u002B\u003C\u003Ec.\u003C.ctor\u003Eb__31_2(class System.Action)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.Utilities.JobQueue\u00601[System.__Canon].SafeProcessJob(!0)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.Utilities.JobQueue\u00601[System.__Canon].BackgroundJobProcessor(class System.String)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.Utilities.JobQueue\u00601[System.__Canon].\u003C.ctor\u003Eb__16_0()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitAnyMultiple(value class System.ReadOnlySpan\u00601\u003Cclass Microsoft.Win32.SafeHandles.SafeWaitHandle\u003E,int32)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BWaitThread.WaitThreadStart()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Net.Sockets.SocketPal.Poll(class System.Net.Sockets.SafeSocketHandle,int32,value class System.Net.Sockets.SelectMode,bool\u0026)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Net.Sockets.Socket.Poll(int32,value class System.Net.Sockets.SelectMode)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TcpClientExtensions.MessageLoopAsync(class System.Net.Sockets.TcpClient,class Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Interfaces.ICommunicationChannel,class System.Action\u00601\u003Cclass System.Exception\u003E,value class System.Threading.CancellationToken)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.SocketClient.\u003COnServerConnected\u003Eb__16_0()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BGateThread.GateThreadStart()",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner\u002B\u003CRunTestsInAssembly\u003Ed__33.MoveNext()",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner.RunTestsInAssembly(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle,class Xunit.Runner.VisualStudio.LoggerHelper,value class Xunit.Runner.VisualStudio.TestPlatformContext,class Xunit.Runner.VisualStudio.RunSettings,class Xunit.Sdk.IMessageSink,class Xunit.Runner.VisualStudio.AssemblyRunInfo)",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner\u002B\u003C\u003Ec__DisplayClass34_0\u002B\u003C\u003CRunTestsInAssemblyAsync\u003Eb__0\u003Ed.MoveNext()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.AsyncVoidMethodBuilder.Start(!!0\u0026)",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Runner.VisualStudio.VsTestRunner\u002B\u003C\u003Ec__DisplayClass34_0.\u003CRunTestsInAssemblyAsync\u003Eb__0(class System.Object)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.ManualResetEventSlim.Wait()",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler.ProcessRequests(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.TesthostProtocol.ITestHostManagerFactory)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.VisualStudio.TestPlatform.TestHost.DefaultEngineInvoker\u002B\u003C\u003Ec__DisplayClass22_0.\u003CStartProcessingAsync\u003Eb__0()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.TimerQueue.TimerThread()",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Sdk.MessageBus.ReporterWorker()",
+      "Value": 29242
+    },
+    {
+      "Key": "Xunit.Sdk.XunitWorkerThread\u002B\u003C\u003Ec.\u003CQueueUserWorkItem\u003Eb__5_0(class System.Object)",
+      "Value": 29242
+    },
+    {
+      "Key": "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.Heartbeat.TimerLoop()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.Thread\u002BStartHelper.Callback(class System.Object)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()",
+      "Value": 24096
+    },
+    {
+      "Key": "System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)",
+      "Value": 24096
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.RunContinuations(class System.Object)",
+      "Value": 24096
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CReadProviderRowsAsync\u003Ed__37.MoveNext()",
+      "Value": 23951
+    },
+    {
+      "Key": "System.Threading.Tasks.Task.FinishStageTwo()",
+      "Value": 23848
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task\u00601\u003C!0\u003E,!0)",
+      "Value": 23555
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetAsync\u003Ed__62.MoveNext()",
+      "Value": 23528
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetEntitiesWithFiltersAsync\u003Ed__36.MoveNext()",
+      "Value": 23517
+    },
+    {
+      "Key": "Beep.OilandGas.PPDM39.Core.PPDMDataSourceTransaction\u002B\u003CWithSourceAsync\u003Ed__5\u00601[System.__Canon].MoveNext()",
+      "Value": 23462
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()",
+      "Value": 23444
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)",
+      "Value": 22945
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()",
+      "Value": 21020
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)",
+      "Value": 21020
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()",
+      "Value": 17563
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()",
+      "Value": 17563
+    },
+    {
+      "Key": "System.Threading.ManualResetEventSlim.Wait(value class System.TimeSpan)",
+      "Value": 14851
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.ValueTuple\u00602[System.__Canon,System.__Canon]].Start(!!0\u0026)",
+      "Value": 13902
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveBindingSnapshotAsync\u003Ed__11.MoveNext()",
+      "Value": 13836
+    },
+    {
+      "Key": "Beep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveBindingSnapshotAsync(class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E,class System.String)",
+      "Value": 13836
+    }
+  ],
+  "Leaves": [
+    {
+      "Key": "System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)",
+      "Value": 146163
+    },
+    {
+      "Key": "System.Threading.LowLevelLifoSemaphore.WaitForSignal(int32)",
+      "Value": 97130
+    },
+    {
+      "Key": "System.Threading.Monitor.Wait(class System.Object,int32)",
+      "Value": 63610
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BIOCompletionPoller.Poll()",
+      "Value": 58484
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitAnyMultiple(value class System.ReadOnlySpan\u00601\u003Cclass Microsoft.Win32.SafeHandles.SafeWaitHandle\u003E,int32)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Net.Sockets.SocketPal.Poll(class System.Net.Sockets.SafeSocketHandle,int32,value class System.Net.Sockets.SelectMode,bool\u0026)",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)",
+      "Value": 24110
+    },
+    {
+      "Key": "System.IO.File.GetAttributes(class System.String)",
+      "Value": 7064
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CPrepareAndEnumerateStatements\u003Ed__64.MoveNext()",
+      "Value": 6280
+    },
+    {
+      "Key": "System.Threading.Thread.\u003CPollGC\u003Eg__PollGCWorker|70_0()",
+      "Value": 4495
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Step(class System.Data.SQLite.SQLiteStatement)",
+      "Value": 1421
+    },
+    {
+      "Key": "System.Threading.Monitor.Enter_Slowpath(class System.Object)",
+      "Value": 1257
+    },
+    {
+      "Key": "System.Object.MemberwiseClone()",
+      "Value": 1092
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.NextResult()",
+      "Value": 986
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Prepare(class System.Data.SQLite.SQLiteConnection,class System.Data.SQLite.SQLiteCommand,class System.String,class System.Data.SQLite.SQLiteStatement,unsigned int32,class System.String\u0026)",
+      "Value": 820
+    },
+    {
+      "Key": "System.Security.Cryptography.SHA256.HashData(unsigned int8[])",
+      "Value": 629
+    },
+    {
+      "Key": "System.Reflection.Emit.DynamicMethod.CreateDelegate(class System.Type,class System.Object)",
+      "Value": 620
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataRecord.Read()",
+      "Value": 442
+    },
+    {
+      "Key": "System.GC.\u003CAllocateUninitializedArray\u003Eg__AllocateNewArrayWorker|77_0(int32,bool)",
+      "Value": 365
+    },
+    {
+      "Key": "System.Reflection.RuntimeMethodInfo.MakeGenericMethod(class System.Type[])",
+      "Value": 359
+    },
+    {
+      "Key": "System.IO.PathHelper.Normalize(class System.String)",
+      "Value": 334
+    },
+    {
+      "Key": "System.Guid.NewGuid()",
+      "Value": 291
+    },
+    {
+      "Key": "System.Runtime.CompilerServices.RuntimeHelpers.\u003CGetHashCode\u003Eg__GetHashCodeWorker|15_0(class System.Object)",
+      "Value": 244
+    },
+    {
+      "Key": "SQLitePCL.raw.sqlite3_bind_text(class SQLitePCL.sqlite3_stmt,int32,class System.String)",
+      "Value": 137
+    },
+    {
+      "Key": "System.Reflection.RuntimeMethodInfo.GetBaseDefinition()",
+      "Value": 136
+    },
+    {
+      "Key": "SQLitePCL.sqlite3_stmt.ReleaseHandle()",
+      "Value": 123
+    },
+    {
+      "Key": "System.RuntimeMethodHandle.\u003CGetStubIfNeeded\u003Eg__GetStubIfNeededWorker|47_0(value class System.RuntimeMethodHandleInternal,class System.RuntimeType,class System.RuntimeType[])",
+      "Value": 119
+    },
+    {
+      "Key": "Microsoft.EntityFrameworkCore.Query.Internal.ExpressionTreeFuncletizer.VisitConstant(class System.Linq.Expressions.ConstantExpression)",
+      "Value": 110
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BWorkerThread.MaybeAddWorkingWorker(class System.Threading.PortableThreadPool)",
+      "Value": 110
+    },
+    {
+      "Key": "System.Enum.\u003CGetEnumInfo\u003Eg__InitializeEnumInfo|5_0(class System.RuntimeType,bool)",
+      "Value": 106
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.GetString(int32)",
+      "Value": 101
+    },
+    {
+      "Key": "System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(class System.Object,value class System.Reflection.BindingFlags)",
+      "Value": 100
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.IsDBNull(int32)",
+      "Value": 96
+    },
+    {
+      "Key": "System.Reflection.RuntimeMethodInfo.Invoke(class System.Object,value class System.Reflection.BindingFlags,class System.Reflection.Binder,class System.Object[],class System.Globalization.CultureInfo)",
+      "Value": 91
+    },
+    {
+      "Key": "System.DefaultBinder.SelectMethod(value class System.Reflection.BindingFlags,class System.Reflection.MethodBase[],class System.Type[],value class System.Reflection.ParameterModifier[])",
+      "Value": 88
+    },
+    {
+      "Key": "System.Buffer.MemmoveInternal(unsigned int8\u0026,unsigned int8\u0026,unsigned int)",
+      "Value": 82
+    },
+    {
+      "Key": "!\u003Cunresolved\u003E",
+      "Value": 79
+    },
+    {
+      "Key": "System.Data.SQLite.SQLiteStatementHandle.ReleaseHandle()",
+      "Value": 77
+    },
+    {
+      "Key": "System.Data.SQLite.SQLiteDataReader.GetName(int32)",
+      "Value": 68
+    },
+    {
+      "Key": "System.RuntimeType.MakeGenericType(class System.Type[])",
+      "Value": 61
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.GetInt32(int32)",
+      "Value": 54
+    },
+    {
+      "Key": "System.Reflection.RuntimePropertyInfo.SetValue(class System.Object,class System.Object,value class System.Reflection.BindingFlags,class System.Reflection.Binder,class System.Object[],class System.Globalization.CultureInfo)",
+      "Value": 54
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CGetStatements\u003Ed__54.MoveNext()",
+      "Value": 48
+    },
+    {
+      "Key": "System.Reflection.CustomAttribute.FilterCustomAttributeRecord(value class System.Reflection.MetadataToken,value class System.Reflection.MetadataImport\u0026,class System.Reflection.RuntimeModule,value class System.Reflection.MetadataToken,class System.RuntimeType,bool,value class ListBuilder\u00601\u003Cclass System.Object\u003E\u0026,class System.RuntimeType\u0026,class System.IRuntimeMethodInfo\u0026,bool\u0026)",
+      "Value": 45
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BCpuUtilizationReader.get_CurrentUtilization()",
+      "Value": 45
+    },
+    {
+      "Key": "System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(class System.Object,value class System.Span\u00601\u003Cclass System.Object\u003E,value class System.Reflection.BindingFlags)",
+      "Value": 41
+    },
+    {
+      "Key": "System.RuntimeMethodHandle.GetMethodInstantiationPublic(class System.IRuntimeMethodInfo)",
+      "Value": 37
+    },
+    {
+      "Key": "System.RuntimeType.GetGenericArguments()",
+      "Value": 37
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteDataReader.GetInt64(int32)",
+      "Value": 32
+    },
+    {
+      "Key": "System.Threading.LowLevelLifoSemaphore.Wait(int32,bool)",
+      "Value": 27
+    }
+  ],
+  "Stacks": [
+    {
+      "Key": "System.Threading.LowLevelLifoSemaphore.WaitForSignal(int32)\nSystem.Threading.LowLevelLifoSemaphore.Wait(int32,bool)\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 97130
+    },
+    {
+      "Key": "System.Threading.PortableThreadPool\u002BIOCompletionPoller.Poll()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 58484
+    },
+    {
+      "Key": "System.Threading.Monitor.Wait(class System.Object,int32)\nSystem.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)\nSystem.Threading.Tasks.Task.SpinThenBlockingWait(int32,value class System.Threading.CancellationToken)\nSystem.Threading.Tasks.Task.InternalWaitCore(int32,value class System.Threading.CancellationToken)\nSystem.Threading.Tasks.Task.InternalWait(int32,value class System.Threading.CancellationToken)\nSystem.Threading.Tasks.Task.Wait(int32,value class System.Threading.CancellationToken)\nSystem.Threading.Tasks.Task.Wait()\nMicrosoft.VisualStudio.TestPlatform.TestHost.DefaultEngineInvoker.Invoke(class System.Collections.Generic.IDictionary\u00602\u003Cclass System.String,class System.String\u003E)\nMicrosoft.VisualStudio.TestPlatform.TestHost.Program.Run(class System.String[],class Microsoft.VisualStudio.TestPlatform.Execution.UiLanguageOverride)\nMicrosoft.VisualStudio.TestPlatform.TestHost.Program.Run(class System.String[])\nMicrosoft.VisualStudio.TestPlatform.TestHost.Program.Main(class System.String[])",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)\nSystem.Threading.WaitHandle.WaitOne()\nXunit.Runner.VisualStudio.VsTestRunner\u002B\u003C\u003Ec__DisplayClass32_0.\u003CRunTests\u003Eb__5(class Xunit.Runner.VisualStudio.AssemblyRunInfo)\nSystem.Collections.Generic.List\u00601[System.__Canon].ForEach(class System.Action\u00601\u003C!0\u003E)\nXunit.Runner.VisualStudio.VsTestRunner\u002B\u003CRunTests\u003Ed__32.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nXunit.Runner.VisualStudio.VsTestRunner.RunTests(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle,class Xunit.Runner.VisualStudio.LoggerHelper,value class Xunit.Runner.VisualStudio.TestPlatformContext,class Xunit.Runner.VisualStudio.RunSettings,class System.Func\u00601\u003Cclass System.Collections.Generic.List\u00601\u003Cclass Xunit.Runner.VisualStudio.AssemblyRunInfo\u003E\u003E)\nXunit.Runner.VisualStudio.VsTestRunner.RunTests(class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.String\u003E,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)\nMicrosoft.VisualStudio.TestPlatform.Common.ExtensionDecorators.SerialTestRunDecorator.RunTests(class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.String\u003E,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)\nMicrosoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.RunTestsWithSources.InvokeExecutor(class Microsoft.VisualStudio.TestPlatform.Common.ExtensionFramework.Utilities.LazyExtension\u00602\u003Cclass Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestExecutor,class Microsoft.VisualStudio.TestPlatform.Common.Interfaces.ITestExecutorCapabilities\u003E,class System.Tuple\u00602\u003Cclass System.Uri,class System.String\u003E,class Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Adapter.RunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle)\nMicrosoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTestInternalWithExecutors(class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.Tuple\u00602\u003Cclass System.Uri,class System.String\u003E\u003E,int64)\nMicrosoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTestsInternal()\nMicrosoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.BaseRunTests.RunTests()\nMicrosoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.ExecutionManager.StartTestRun(class System.Collections.Generic.Dictionary\u00602\u003Cclass System.String,class System.Collections.Generic.IEnumerable\u00601\u003Cclass System.String\u003E\u003E,class System.String,class System.String,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.ClientProtocol.TestExecutionContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.ITestCaseEventsHandler,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.IInternalTestRunEventsHandler)\nMicrosoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler\u002B\u003C\u003Ec__DisplayClass45_4.\u003COnMessageReceived\u003Eb__3()\nMicrosoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler\u002B\u003C\u003Ec.\u003C.ctor\u003Eb__31_2(class System.Action)\nMicrosoft.VisualStudio.TestPlatform.Utilities.JobQueue\u00601[System.__Canon].SafeProcessJob(!0)\nMicrosoft.VisualStudio.TestPlatform.Utilities.JobQueue\u00601[System.__Canon].BackgroundJobProcessor(class System.String)\nMicrosoft.VisualStudio.TestPlatform.Utilities.JobQueue\u00601[System.__Canon].\u003C.ctor\u003Eb__16_0()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitAnyMultiple(value class System.ReadOnlySpan\u00601\u003Cclass Microsoft.Win32.SafeHandles.SafeWaitHandle\u003E,int32)\nSystem.Threading.PortableThreadPool\u002BWaitThread.WaitThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Net.Sockets.SocketPal.Poll(class System.Net.Sockets.SafeSocketHandle,int32,value class System.Net.Sockets.SelectMode,bool\u0026)\nSystem.Net.Sockets.Socket.Poll(int32,value class System.Net.Sockets.SelectMode)\nMicrosoft.VisualStudio.TestPlatform.CommunicationUtilities.TcpClientExtensions.MessageLoopAsync(class System.Net.Sockets.TcpClient,class Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Interfaces.ICommunicationChannel,class System.Action\u00601\u003Cclass System.Exception\u003E,value class System.Threading.CancellationToken)\nMicrosoft.VisualStudio.TestPlatform.CommunicationUtilities.SocketClient.\u003COnServerConnected\u003Eb__16_0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)\nSystem.Threading.WaitHandle.WaitOne()\nXunit.Runner.VisualStudio.VsTestRunner\u002B\u003CRunTestsInAssembly\u003Ed__33.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nXunit.Runner.VisualStudio.VsTestRunner.RunTestsInAssembly(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IRunContext,class Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IFrameworkHandle,class Xunit.Runner.VisualStudio.LoggerHelper,value class Xunit.Runner.VisualStudio.TestPlatformContext,class Xunit.Runner.VisualStudio.RunSettings,class Xunit.Sdk.IMessageSink,class Xunit.Runner.VisualStudio.AssemblyRunInfo)\nXunit.Runner.VisualStudio.VsTestRunner\u002B\u003C\u003Ec__DisplayClass34_0\u002B\u003C\u003CRunTestsInAssemblyAsync\u003Eb__0\u003Ed.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nSystem.Runtime.CompilerServices.AsyncVoidMethodBuilder.Start(!!0\u0026)\nXunit.Runner.VisualStudio.VsTestRunner\u002B\u003C\u003Ec__DisplayClass34_0.\u003CRunTestsInAssemblyAsync\u003Eb__0(class System.Object)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.Monitor.Wait(class System.Object,int32)\nSystem.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)\nSystem.Threading.ManualResetEventSlim.Wait()\nMicrosoft.VisualStudio.TestPlatform.CommunicationUtilities.TestRequestHandler.ProcessRequests(class Microsoft.VisualStudio.TestPlatform.ObjectModel.Engine.TesthostProtocol.ITestHostManagerFactory)\nMicrosoft.VisualStudio.TestPlatform.TestHost.DefaultEngineInvoker\u002B\u003C\u003Ec__DisplayClass22_0.\u003CStartProcessingAsync\u003Eb__0()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)\nSystem.Threading.WaitHandle.WaitOne()\nXunit.Sdk.MessageBus.ReporterWorker()\nXunit.Sdk.XunitWorkerThread\u002B\u003C\u003Ec.\u003CQueueUserWorkItem\u003Eb__5_0(class System.Object)\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29242
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)\nSystem.Threading.TimerQueue.TimerThread()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29241
+    },
+    {
+      "Key": "System.Threading.WaitHandle.WaitOneNoCheck(int32,bool,class System.Object,value class WaitHandleWaitSourceMap)\nSystem.Threading.PortableThreadPool\u002BGateThread.GateThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 29196
+    },
+    {
+      "Key": "System.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)\nMicrosoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.Heartbeat.TimerLoop()\nSystem.Threading.Thread\u002BStartHelper.Callback(class System.Object)\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 14385
+    },
+    {
+      "Key": "System.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)\nSystem.Threading.ManualResetEventSlim.Wait(value class System.TimeSpan)\nMicrosoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.Heartbeat.TimerLoop()\nSystem.Threading.Thread\u002BStartHelper.Callback(class System.Object)\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 9725
+    },
+    {
+      "Key": "System.Threading.Monitor.Wait(class System.Object,int32)\nSystem.Threading.ManualResetEventSlim.Wait(int32,value class System.Threading.CancellationToken)\nSystem.Threading.ManualResetEventSlim.Wait(value class System.TimeSpan)\nMicrosoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.Heartbeat.TimerLoop()\nSystem.Threading.Thread\u002BStartHelper.Callback(class System.Object)\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 5126
+    },
+    {
+      "Key": "System.IO.File.GetAttributes(class System.String)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Sqlite(class System.String,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties,class System.String)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.BuildKey(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)\nBeep.OilandGas.ApiService.Services.ModuleDatabaseTarget.Key(class TheTechIdea.Beep.Editor.IDMEEditor,class TheTechIdea.Beep.ConfigUtil.IConnectionProperties)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveBindingSnapshotAsync\u003Ed__11.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.ValueTuple\u00602[System.__Canon,System.__Canon]].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveBindingSnapshotAsync(class System.Collections.Generic.IReadOnlyList\u00601\u003Cclass System.String\u003E,class System.String)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver\u002B\u003CResolveAssetScopeAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.ModuleConnectionResolver.ResolveAssetScopeAsync()\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()\nSystem.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)\nSystem.Threading.Tasks.Task.RunContinuations(class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task\u00601\u003C!0\u003E,!0)\nBeep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetAsync\u003Ed__62.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601\u002BAsyncStateMachineBox\u00601[System.__Canon,System.__Canon].MoveNext()\nSystem.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(class System.Runtime.CompilerServices.IAsyncStateMachineBox,bool)\nSystem.Threading.Tasks.Task.RunContinuations(class System.Object)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].SetExistingTaskResult(class System.Threading.Tasks.Task\u00601\u003C!0\u003E,!0)\nBeep.OilandGas.PPDM39.Core.PPDMGenericRepository\u002B\u003CGetEntitiesWithFiltersAsync\u003Ed__36.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 2547
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CPrepareAndEnumerateStatements\u003Ed__64.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CGetStatements\u003Ed__54.MoveNext()\nMicrosoft.Data.Sqlite.SqliteDataReader.NextResult()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CExecuteDbDataReaderAsync\u003Ed__60.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(value class System.Data.CommandBehavior,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Storage.RelationalCommand\u002B\u003CExecuteReaderAsync\u003Ed__22.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CInitializeReaderAsync\u003Ed__21[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].InitializeReaderAsync(class AsyncEnumerator\u003C!0\u003E,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CMoveNextAsync\u003Ed__20[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].MoveNextAsync()\nSystem.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable\u00601\u002BEnumerator[System.__Canon].MoveNextAsync()\nBeep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryAccessService.GetCompanyAccessAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver\u002B\u003CResolveAsync\u003Ed__2.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver.ResolveAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CRefreshCompanyAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Threading.ExecutionContext.RunInternal(class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)",
+      "Value": 1855
+    },
+    {
+      "Key": "Microsoft.Data.Sqlite.SqliteCommand\u002B\u003CPrepareAndEnumerateStatements\u003Ed__64.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CGetStatements\u003Ed__54.MoveNext()\nMicrosoft.Data.Sqlite.SqliteDataReader.NextResult()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nMicrosoft.Data.Sqlite.SqliteCommand\u002B\u003CExecuteDbDataReaderAsync\u003Ed__60.MoveNext()\nMicrosoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(value class System.Data.CommandBehavior,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Storage.RelationalCommand\u002B\u003CExecuteReaderAsync\u003Ed__22.MoveNext()\nSystem.Runtime.CompilerServices.AsyncMethodBuilderCore.Start(!!0\u0026)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CInitializeReaderAsync\u003Ed__21[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].InitializeReaderAsync(class AsyncEnumerator\u003C!0\u003E,value class System.Threading.CancellationToken)\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator\u002B\u003CMoveNextAsync\u003Ed__20[System.__Canon].MoveNext()\nMicrosoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable\u00601\u002BAsyncEnumerator[System.__Canon].MoveNextAsync()\nSystem.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable\u00601\u002BEnumerator[System.__Canon].MoveNextAsync()\nBeep.OilandGas.Repository.RepositoryAccessService\u002B\u003CGetCompanyAccessAsync\u003Ed__8.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryAccessService.GetCompanyAccessAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver\u002B\u003CResolveAsync\u003Ed__2.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.Repository.RepositoryCompanyContextResolver.ResolveAsync(class System.String,class TheTechIdea.Data.OilGas.CompanyScope,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CRefreshCompanyAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.RefreshCompanyAsync(value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection\u002B\u003CResolveAsync\u003Ed__9.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyModuleConnection.ResolveAsync(class System.String,class System.String,value class System.Threading.CancellationToken)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CRequireCurrentAsync\u003Ed__10.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start(!!0\u0026)\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader.RequireCurrentAsync()\nBeep.OilandGas.ApiService.Services.CompanyPPDMEvidenceReader\u002B\u003CReadAsync\u003Ed__11.MoveNext()\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601[System.__Canon].Start(!!0\u0026)",
+      "Value": 1612
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Step(class System.Data.SQLite.SQLiteStatement)\nSystem.Data.SQLite.SQLiteDataReader.NextResult()\nSystem.Data.SQLite.SQLiteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()\nSystem.Collections.Generic.List\u00601[System.__Canon]..ctor(class System.Collections.Generic.IEnumerable\u00601\u003C!0\u003E)\nSystem.Linq.Enumerable.ToList(class System.Collections.Generic.IEnumerable\u00601\u003C!!0\u003E)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 1336
+    },
+    {
+      "Key": "System.Object.MemberwiseClone()\nTheTechIdea.Beep.Editor.Entity.CopyWithoutObservers()\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyModel(class TheTechIdea.Beep.Editor.Entity,class System.Type)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyValue(class System.Object,class System.Type,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyValue(class System.Object,class System.Type,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.CopyValue(class System.Object,class System.Type,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot\u002BCopyContext.Copy(class System.Object,int32)\nTheTechIdea.Beep.DataBase.EntityMetadataSnapshot.Capture(class TheTechIdea.Beep.DataBase.EntityStructure)\nTheTechIdea.Beep.Utilities.DMTypeBuilder.GetOrCreateType(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)\nTheTechIdea.Beep.Utilities.DMTypeBuilder.CreateNewObject(class TheTechIdea.Beep.Editor.IDMEEditor,class System.String,class System.String,class System.Collections.Generic.List\u00601\u003Cclass TheTechIdea.Beep.DataBase.EntityField\u003E)\nTheTechIdea.Beep.DataBase.RDBSource.ReadEntityTypeCore(class System.String)\nTheTechIdea.Beep.DataBase.RDBSource.GetEntityType(class System.String)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()\nSystem.Collections.Generic.List\u00601[System.__Canon]..ctor(class System.Collections.Generic.IEnumerable\u00601\u003C!0\u003E)\nSystem.Linq.Enumerable.ToList(class System.Collections.Generic.IEnumerable\u00601\u003C!!0\u003E)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 1039
+    },
+    {
+      "Key": "System.Data.SQLite.SQLite3.Prepare(class System.Data.SQLite.SQLiteConnection,class System.Data.SQLite.SQLiteCommand,class System.String,class System.Data.SQLite.SQLiteStatement,unsigned int32,class System.String\u0026)\nSystem.Data.SQLite.SQLiteCommand.BuildNextCommand()\nSystem.Data.SQLite.SQLiteDataReader.NextResult()\nSystem.Data.SQLite.SQLiteCommand.ExecuteReader(value class System.Data.CommandBehavior)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003CGetEntity\u003Ed__242.MoveNext()\nSystem.Collections.Generic.List\u00601[System.__Canon]..ctor(class System.Collections.Generic.IEnumerable\u00601\u003C!0\u003E)\nSystem.Linq.Enumerable.ToList(class System.Collections.Generic.IEnumerable\u00601\u003C!!0\u003E)\nTheTechIdea.Beep.DataBase.RDBSource\u002B\u003C\u003Ec__DisplayClass246_0.\u003CGetEntityAsync\u003Eb__0()\nSystem.Threading.Tasks.Task\u00601[System.__Canon].InnerInvoke()\nSystem.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(class System.Threading.Thread,class System.Threading.ExecutionContext,class System.Threading.ContextCallback,class System.Object)\nSystem.Threading.Tasks.Task.ExecuteWithThreadLocal(class System.Threading.Tasks.Task\u0026,class System.Threading.Thread)\nSystem.Threading.ThreadPoolWorkQueue.Dispatch()\nSystem.Threading.PortableThreadPool\u002BWorkerThread.WorkerThreadStart()\nSystem.Threading.Thread.StartCallback()",
+      "Value": 794
+    }
+  ],
+  "Limits": "Diagnostic stack-sample weights, not exact method wall-time or invocation counts. Collection and rundown can perturb the request. No production deadline acceptance from this run."
+}

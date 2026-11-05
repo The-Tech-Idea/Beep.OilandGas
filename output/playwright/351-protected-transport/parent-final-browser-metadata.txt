@@ -1,0 +1,14 @@
+### Result
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "remainingOwnedIntents": [],
+  "remainingQuotaFillers": []
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({userAgent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight},remainingOwnedIntents:Object.keys(sessionStorage).filter(k=>k.endsWith(".drilling-report")||k.endsWith(".drilling-execution")),remainingQuotaFillers:Object.keys(sessionStorage).filter(k=>k.startsWith("oilgas-test-quota-"))})');
+```

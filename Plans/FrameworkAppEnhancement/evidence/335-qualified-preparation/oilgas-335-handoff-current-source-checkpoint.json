@@ -1,0 +1,30 @@
+[
+  {
+    "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+    "sha256": "9c6f77994bd808983e3759140c049ffd8e16760fc541e099733db60dd94e0892"
+  },
+  {
+    "path": "Beep.OilandGas.LifeCycle/Services/Production/PPDMProductionService.cs",
+    "sha256": "142f6225fe897871d7c3e35ac765144551e3a3388e95d0d030e29ed3d8848641"
+  },
+  {
+    "path": "Beep.OilandGas.LifeCycle/Services/Production/PPDMProductionService.InterventionDecisions.cs",
+    "sha256": "498238571cca0e70c450731718fe8214c628a17483628b7bf7cf38c833103b3b"
+  },
+  {
+    "path": "Beep.OilandGas.LifeCycle/Services/Processes/PPDMProcessService.MaintenanceStart.cs",
+    "sha256": "3e6ddd3cec5da2d6becbf9187a31fa385554b321aa91bad27bef49321bf8fae5"
+  },
+  {
+    "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceHandoffHttpTests.cs",
+    "sha256": "1a8fe779f852d6c78d3ce35c08e9cac2ceb6df98e9ee551c75921b73fd521a64"
+  },
+  {
+    "path": "Beep.OilandGas.Repository.Tests/ProductionInterventionNativeDecisionTests.cs",
+    "sha256": "b67f62f9ca64103b4e7bf3f767d43ea4d94dd3855ddc2df8d9eed0d636329463"
+  },
+  {
+    "path": "Beep.OilandGas.ApiService.Tests/CompanyMaintenanceProcessStartTests.cs",
+    "sha256": "f542329615c65c652619f38c82f663a732d4b02589cd6e16969a63a767f2d264"
+  }
+]

@@ -1,0 +1,9 @@
+### Result
+{
+  "viewport": 390,
+  "content": 380
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({ viewport: window.innerWidth, content: document.documentElement.scrollWidth })');
+```

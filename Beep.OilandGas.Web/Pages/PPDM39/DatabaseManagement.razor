@@ -1,4 +1,4 @@
-﻿@page "/ppdm39/database-management"
+@page "/ppdm39/database-management"
 @implements IAsyncDisposable
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @using Beep.OilandGas.Client.App
@@ -125,93 +125,10 @@
     <!-- Database Operations Section -->
     <MudPaper Elevation="2" Class="pa-4 mt-4">
         <MudText Typo="Typo.h6" Class="mb-4">Database Operations</MudText>
+        <MudText Class="mb-3">Review and apply schema changes through Beep Migration.</MudText>
+        <MudButton Href="/ppdm39/create-database/target" Variant="Variant.Outlined" Class="mb-3">Open migration setup</MudButton>
         
         <MudExpansionPanels Elevation="0" Variant="Variant.Outlined" MultiExpansion="false">
-            <!-- Drop Database -->
-            <MudExpansionPanel Text="Drop Database" Icon="@Icons.Material.Filled.Delete">
-                <MudText Typo="Typo.body2" Color="Color.Warning" Class="mb-3">
-                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-2" />
-                    Warning: This will permanently delete the database or schema. This action cannot be undone.
-                </MudText>
-                <MudGrid>
-                    <MudItem xs="12" md="6">
-                        <MudSelect T="string" Label="Select Connection" Variant="Variant.Outlined" @bind-Value="@_dropConnectionName">
-                            @if (_connections != null)
-                            {
-                                @foreach (var conn in _connections)
-                                {
-                                    <MudSelectItem Value="@conn.ConnectionName">@conn.ConnectionName</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="@_dropSchemaName" 
-                                     Label="Schema Name (Optional)" 
-                                     Variant="Variant.Outlined"
-                                     HelperText="Leave empty to drop the entire database (where supported)" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled" 
-                                  Color="Color.Error" 
-                                  StartIcon="@Icons.Material.Filled.Delete"
-                                  OnClick="DropDatabase"
-                                  Disabled="@(string.IsNullOrEmpty(_dropConnectionName) || _isDropping)">
-                            @if (_isDropping)
-                            {
-                                <text>Dropping...</text>
-                            }
-                            else
-                            {
-                                <text>Drop Database</text>
-                            }
-                        </MudButton>
-                    </MudItem>
-                </MudGrid>
-            </MudExpansionPanel>
-
-            <!-- Recreate Database -->
-            <MudExpansionPanel Text="Recreate Database" Icon="@Icons.Material.Filled.Refresh">
-                <MudText Typo="Typo.body2" Color="Color.Warning" Class="mb-3">
-                    This will drop and recreate the database or schema. All data will be lost.
-                </MudText>
-                <MudGrid>
-                    <MudItem xs="12" md="6">
-                        <MudSelect T="string" Label="Select Connection" Variant="Variant.Outlined" @bind-Value="@_recreateConnectionName">
-                            @if (_connections != null)
-                            {
-                                @foreach (var conn in _connections)
-                                {
-                                    <MudSelectItem Value="@conn.ConnectionName">@conn.ConnectionName</MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudTextField @bind-Value="@_recreateSchemaName" 
-                                     Label="Schema Name (Optional)" 
-                                     Variant="Variant.Outlined"
-                                     HelperText="Leave empty to recreate the entire database" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled" 
-                                  Color="Color.Warning" 
-                                  StartIcon="@Icons.Material.Filled.Refresh"
-                                  OnClick="RecreateDatabase"
-                                  Disabled="@(string.IsNullOrEmpty(_recreateConnectionName) || _isRecreating)">
-                            @if (_isRecreating)
-                            {
-                                <text>Recreating...</text>
-                            }
-                            else
-                            {
-                                <text>Recreate Database</text>
-                            }
-                        </MudButton>
-                    </MudItem>
-                </MudGrid>
-            </MudExpansionPanel>
-
             <!-- Copy Database (ETL) -->
             <MudExpansionPanel Text="Copy Database (ETL)" Icon="@Icons.Material.Filled.ContentCopy">
                 <MudText Typo="Typo.body2" Color="Color.Info" Class="mb-3">
@@ -293,16 +210,6 @@
     private bool _isLoading = true;
     private string? _currentConnectionName;
     
-    // Drop Database
-    private string? _dropConnectionName;
-    private string? _dropSchemaName;
-    private bool _isDropping = false;
-    
-    // Recreate Database
-    private string? _recreateConnectionName;
-    private string? _recreateSchemaName;
-    private bool _isRecreating = false;
-    
     // Copy Database (ETL)
     private string? _copySourceConnection;
     private string? _copyTargetConnection;
@@ -342,10 +249,10 @@
 
     private async Task OpenAddWizard()
     {
-        var parameters = new DialogParameters();
+        var parameters = new DialogParameters { { nameof(ConnectionSetupDialog.ConnectionOnly), true } };
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
         
-        var dialog = await DialogService.ShowAsync<PPDM39DatabaseWizard>("Add New Database Connection", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConnectionSetupDialog>("Add New Database Connection", parameters, options);
         var result = await dialog.Result;
 
         if (result?.Canceled == false)
@@ -368,8 +275,7 @@
 
             var parameters = new DialogParameters
             {
-                { "Connection", connection },
-                { "IsEditMode", true }
+                { "Connection", connection }
             };
             var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
             
@@ -440,104 +346,6 @@
             catch (Exception)
             {
                 Snackbar.Add("Error deleting connection.", Severity.Error);
-            }
-        }
-    }
-
-    private async Task DropDatabase()
-    {
-        if (string.IsNullOrEmpty(_dropConnectionName))
-        {
-            Snackbar.Add("Please select a connection", Severity.Warning);
-            return;
-        }
-
-        var dropConfirmed = await DialogService.ShowMessageBoxAsync(
-            "Drop Database",
-            $"Are you sure you want to drop the database/schema '{(_dropSchemaName ?? "database")}' for connection '{_dropConnectionName}'? This action cannot be undone and will permanently delete all data.",
-            yesText: "Drop", cancelText: "Cancel");
-
-        if (dropConfirmed == true)
-        {
-            _isDropping = true;
-            try
-            {
-                var request = new DropDatabaseRequest
-                {
-                    ConnectionName = _dropConnectionName,
-                    SchemaName = _dropSchemaName,
-                    DropIfExists = true
-                };
-
-                var dropResult = await DataManagementService.DropDatabaseAsync(request);
-
-                if (dropResult.Success)
-                {
-                    Snackbar.Add(dropResult.Message, Severity.Success);
-                    _dropConnectionName = null;
-                    _dropSchemaName = null;
-                }
-                else
-                {
-                    Snackbar.Add($"Failed to drop database: {dropResult.Message}", Severity.Error);
-                }
-            }
-            catch (Exception)
-            {
-                Snackbar.Add("Error dropping database.", Severity.Error);
-            }
-            finally
-            {
-                _isDropping = false;
-            }
-        }
-    }
-
-    private async Task RecreateDatabase()
-    {
-        if (string.IsNullOrEmpty(_recreateConnectionName))
-        {
-            Snackbar.Add("Please select a connection", Severity.Warning);
-            return;
-        }
-
-        var recreateConfirmed = await DialogService.ShowMessageBoxAsync(
-            "Recreate Database",
-            $"Are you sure you want to recreate the database/schema '{(_recreateSchemaName ?? "database")}' for connection '{_recreateConnectionName}'? This will drop and recreate it, and all existing data will be lost.",
-            yesText: "Recreate", cancelText: "Cancel");
-
-        if (recreateConfirmed == true)
-        {
-            _isRecreating = true;
-            try
-            {
-                var request = new RecreateDatabaseRequest
-                {
-                    ConnectionName = _recreateConnectionName,
-                    SchemaName = _recreateSchemaName,
-                    BackupFirst = false
-                };
-
-                var recreateResult = await DataManagementService.RecreateDatabaseAsync(request);
-
-                if (recreateResult.Success)
-                {
-                    Snackbar.Add(recreateResult.Message, Severity.Success);
-                    _recreateConnectionName = null;
-                    _recreateSchemaName = null;
-                }
-                else
-                {
-                    Snackbar.Add($"Failed to recreate database: {recreateResult.Message}", Severity.Error);
-                }
-            }
-            catch (Exception)
-            {
-                Snackbar.Add("Error recreating database.", Severity.Error);
-            }
-            finally
-            {
-                _isRecreating = false;
             }
         }
     }

@@ -1,0 +1,137 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderExecutionStartState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Record actual work start</MudText>
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || State.Busy || !State.CanReview || !CanInventory)" Color="Color.Primary">Review my assigned executor identity</MudButton>
+        @if(State.Busy){<MudProgressLinear Indeterminate="true" aria-label="Checking original work-start evidence" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_authorized && (State.Review??State.VisibleCommand?.Review) is {} scopedReview && scopedReview.QualifiedWorkAssets is {} scope)
+        {
+            <MudText Typo="Typo.subtitle1">Assets included in this work</MudText>
+            <MudText>Captured UTC @scope.ComparedAtUtc.ToString("O") · source time zone @scope.DateTimeZoneId</MudText>
+            <MudSimpleTable Dense="true" Hover="true">
+                <caption>Reviewed equipment and facility scope</caption>
+                <thead><tr><th scope="col">Asset</th><th scope="col">Work scope</th><th scope="col">Installation details</th></tr></thead>
+                <tbody>
+                    @foreach(var equipment in scope.Equipment)
+                    {
+                        <tr><td>Equipment @equipment.EquipmentId</td><td>Work target</td><td>Facility @equipment.Installation.FacilityId · type @equipment.Installation.FacilityType · observation @equipment.Installation.InstallationObservation · source @equipment.Installation.Source</td></tr>
+                    }
+                    @foreach(var facility in scope.Facilities)
+                    {
+                        <tr><td>Facility @facility.FacilityId · type @facility.FacilityType</td><td>@(CompanyMaintenanceQualifiedAssets.IsOriginalFacilityTarget(scopedReview.Prerequisites.Requirements.Order,facility.FacilityId,facility.FacilityType)?"Work target":"Equipment installation parent")</td><td>Field @facility.FieldId</td></tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+            <MudAlert Severity="Severity.Info">This identifies the assets covered by the work. Return to service requires a separate approval after the work.</MudAlert>
+        }
+        @if(_authorized && State.QualifiedWorkScopeMissing)
+        {
+            <MudAlert Severity="Severity.Warning" role="status">The original equipment and facility scope is unavailable. Refresh the start review before starting work.</MudAlert>
+        }
+        @if(_authorized && State.Review is {} review)
+        {
+            <MudText>Mapped account @review.Identity.UserId · employee @review.Person.PersonBaId · identity version @review.Identity.Version</MudText>
+            <MudText>Duty @review.Prerequisites.Personnel.DutyCode · assignment @review.Prerequisites.Personnel.AssignmentId · review UTC @review.ComparedAtUtc.ToString("O")</MudText>
+            <MudText>Current stage @review.Stage.StepName · configured role @review.Stage.AssignedRole</MudText>
+            <MudTextField @bind-Value="_reason" Label="Actual work-start rationale" Required="true" MaxLength="4096" Lines="3" Disabled="@State.Busy" />
+            <MudCheckBox @bind-Value="_confirm" Label="I confirm I am starting the reviewed work now within the approved scope" Disabled="@State.Busy" />
+            <MudButton OnClick="StartAsync" Disabled="@(!State.CanStart || State.Busy || !_confirm || string.IsNullOrWhiteSpace(_reason))" Color="Color.Primary">Record work starting now (UTC)</MudButton>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original work-start intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy)">Read original work-start outcome without replay</MudButton>
+        @if(_authorized && State.VisibleReference is {} retained){<MudText>Retained original start reference @retained</MudText>}
+        @if(_authorized && State.Receipt is {} receipt){<MudAlert Severity="Severity.Success">Recorded work start @receipt.StartId · UTC @receipt.StartedAtUtc.ToString("O"). This records no stock consumption, completed work, independent verification or return to service.</MudAlert>}
+        <MudButton OnClick="SubmissionInspectionsAsync" Disabled="@(!_authorized || State.Busy || _inspectionBusy || State.Receipt is null)">Compare my original start and submission inspections</MudButton>
+        @if(_inspectionBusy){<MudProgressLinear Indeterminate="true" aria-label="Comparing submission inspections" />}
+        @if(_authorized && _submissionInspections is {} comparison)
+        {
+            <MudText Typo="Typo.subtitle1">Submission inspection comparison · UTC @comparison.ComparedAtUtc.ToString("O")</MudText>
+            <MudText>Original start @comparison.Start.StartId · employee @comparison.Start.EmployeeBaId</MudText>
+            @foreach(var blocker in comparison.Blockers){<MudAlert Severity="Severity.Warning">@blocker</MudAlert>}
+            @foreach(var row in comparison.Current.Requirements)
+            {
+                <MudText>@row.RequiredText · stage @(row.ApplicableStage??"Unclassified original requirement") · result @row.Status · inspector @(string.IsNullOrWhiteSpace(row.Inspector)?"Not recorded":row.Inspector) · inspection UTC @(row.InspectDate?.ToString("O")??"Not recorded")</MudText>
+            }
+            <MudAlert Severity="Severity.Info">This comparison records no work submission, material use, cost, completion verification or return acceptance.</MudAlert>
+        }
+        <MudAlert Severity="Severity.Info">Review binds your actual account to the exact assigned native employee. Recording rechecks current authority and native prerequisites. An uncertain acknowledgement must use the original reference; a replacement start is refused.</MudAlert>
+    </MudStack>
+</MudPaper>
+@if(_authorized && Permit is {} originalPermit && State.Receipt is {} originalStart)
+{
+    <WorkOrderMaterialUsagePanel Start="@(new CompanyWorkOrderExecutionStartReference(originalPermit,originalStart.IntentId))" />
+    <WorkOrderLaborUsagePanel Start="@(new CompanyWorkOrderExecutionStartReference(originalPermit,originalStart.IntentId))" />
+    <WorkOrderSubmissionPanel Start="@(new CompanyWorkOrderExecutionStartReference(originalPermit,originalStart.IntentId))" />
+}
+
+@code {
+    [Parameter] public CompanyWorkOrderExecutionPermitReference? Permit {get;set;}
+    private string _reason="",_reference="";
+    private string? _error;
+    private bool _confirm,_authorized,_disposed;
+    private bool _inspectionBusy;
+    private long _inspectionVersion;
+    private CompanyWorkOrderExecutionPermitReference? _inspectionPermit;
+    private CompanyWorkOrderSubmissionInspectionReview? _submissionInspections;
+    private bool CanInventory=>Company.Selection?.Permissions.Contains("Inventory.View",StringComparer.Ordinal)==true;
+    protected override void OnInitialized(){State.Changed+=Changed;Fields.CurrentFieldChanged+=FieldChanged;Company.Changed+=CompanyChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        if(_inspectionPermit!=Permit){_inspectionPermit=Permit;_inspectionVersion++;_submissionInspections=null;}
+        State.Attach(Permit);var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
+        if(values.TryGetValue("workStart",out var id) && id.Count==1 && Guid.TryParse(id[0],out var saved))_reference=saved.ToString("D");
+        try{await Authority(false);_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+    }
+    private async Task Authority(bool inventory)
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Permit is null || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Maintenance.ExecuteWork",StringComparer.Ordinal) || inventory && !selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=Permit.Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Current standard role, actual executing account, original FIELD and work-start capabilities are required.");
+        if(inventory && State.Review is {} review && !user.IsInRole(review.Stage.AssignedRole))throw new UnauthorizedAccessException("The current configured executing role is required.");
+    }
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void CompanyChanged(){_inspectionVersion++;_submissionInspections=null;_authorized=false;_error=null;_reason="";_confirm=false;Changed();}
+    private void FieldChanged(string _){State.Attach(null);CompanyChanged();}
+    private void AuthenticationChanged(Task<AuthenticationState> _){State.Attach(null);CompanyChanged();}
+    private Task Retain(Guid id)
+    {
+        _reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("workStart",_reference),replace:true);return Task.CompletedTask;
+    }
+    private Task ReviewAsync()=>RunAsync(async()=>{_confirm=false;await Authority(true);await State.ReviewAsync(Workflows);},"reviewing the actual assigned executor");
+    private Task StartAsync()=>RunAsync(async()=>{await Authority(true);if(!_confirm)throw new InvalidOperationException("Confirm the actual reviewed work is starting now.");await State.StartAsync(Workflows,_reason,Retain);},"recording the original work start");
+    private Task RecoverAsync()=>RunAsync(async()=>{await Authority(false);if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original work-start intent reference.");await State.RecoverAsync(Workflows,id,Retain);},"reading the original work-start outcome");
+    private async Task SubmissionInspectionsAsync()
+    {
+        if(_inspectionBusy || State.Busy || _disposed)return;var snapshot=Company.Snapshot;var version=_inspectionVersion;_inspectionBusy=true;_submissionInspections=null;_error=null;
+        try
+        {
+            await Authority(false);var receipt=State.Receipt??throw new InvalidOperationException("Recover the exact original work start before comparing submission inspections.");
+            var reference=new CompanyWorkOrderExecutionStartReference(Permit!,receipt.IntentId);var result=await Workflows.ReviewWorkOrderSubmissionInspectionsAsync(reference);
+            await Authority(false);if(_disposed || snapshot!=Company.Snapshot || version!=_inspectionVersion || State.Receipt?.IntentId!=reference.IntentId)return;
+            result.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,reference);
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(!snapshot.Selection.Roles.Contains(result.Start.AssignedRole,StringComparer.Ordinal) || !user.IsInRole(result.Start.AssignedRole))throw new UnauthorizedAccessException("The original configured execution role is required for submission inspection review.");
+            if(_disposed || snapshot!=Company.Snapshot || version!=_inspectionVersion)return;_submissionInspections=result;
+        }
+        catch(Exception error){if(!_disposed && snapshot==Company.Snapshot && version==_inspectionVersion)_error=Calls.Explain(error,"comparing original work-submission inspections","Submission inspections could not be confirmed");}
+        finally{_inspectionBusy=false;if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    private async Task RunAsync(Func<Task> action,string operation)
+    {
+        if(State.Busy || _inspectionBusy || _disposed)return;_error=null;var snapshot=Company.Snapshot;
+        try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original work-start outcome is unconfirmed");}
+        finally{if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Fields.CurrentFieldChanged-=FieldChanged;Company.Changed-=CompanyChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

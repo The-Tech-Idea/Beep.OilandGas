@@ -10,12 +10,14 @@ using TheTechIdea.Data.OilGas;
 
 namespace Beep.OilandGas.ApiService.Services;
 
-public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
-    IApplicationAuthorizationReader authorization, ILookupNormalizer normalizer, IHttpContextAccessor accessor) : IUserProfileService
+public sealed partial class RepositoryUserProfileService(RepositoryDbContext repository,
+    IApplicationAuthorizationReader authorization, ILookupNormalizer normalizer, RepositoryRequestAccount account,
+    CompanyModuleConnection company, IPPDM39DataService fields, TimeProvider? clock = null) : IUserProfileService, ICompanyFieldSelectionService, ICompanyFieldSelectionAuthority
 {
+    private readonly TimeProvider time = clock ?? TimeProvider.System;
     public async Task<UserProfile?> GetUserProfileAsync(string userId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        await RequireSubjectAsync(userId);
         var active = await repository.Users.AsNoTracking().AnyAsync(x => x.Id == userId && x.IsActive);
         if (!active) return null;
         var metadata = await repository.Set<AppUserExtension>().AsNoTracking().SingleOrDefaultAsync(x => x.UserId == userId);
@@ -31,10 +33,11 @@ public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
         };
     }
 
-    public Task<List<string>> GetUserRolesAsync(string userId, string? organizationId = null)
+    public async Task<List<string>> GetUserRolesAsync(string userId, string? organizationId = null)
     {
-        if (!string.IsNullOrWhiteSpace(organizationId)) throw RefusalException.Invalid("Application roles are not organization-scoped.");
-        return authorization.GetRolesAsync(userId);
+        await RequireSubjectAsync(userId);
+        if (organizationId is not null) throw RefusalException.Invalid("Select the company in validated request context; organization cannot override profile role scope.");
+        return await authorization.GetRolesAsync(userId);
     }
 
     public async Task<string?> GetUserDefaultLayoutAsync(string userId)
@@ -48,17 +51,22 @@ public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
         if (string.IsNullOrWhiteSpace(preferencesJson)) throw RefusalException.Invalid("Preferences are required.");
         if (preferencesJson.Length > 4000) throw RefusalException.Invalid("Preferences cannot exceed 4000 characters.");
         EnsureJson(preferencesJson);
-        return UpdateAsync(userId, metadata => metadata.PreferencesJson = preferencesJson);
+        return UpdateAsync(userId, metadata => metadata.PreferencesJson = PreserveFieldSelections(metadata.PreferencesJson, preferencesJson));
     }
 
     public async Task<bool> UpdateUserPrimaryRoleAsync(string userId, string primaryRole)
     {
+        await RequireSubjectAsync(userId);
         if (string.IsNullOrWhiteSpace(primaryRole)) throw RefusalException.Invalid("A primary role is required.");
         var normalized = normalizer.NormalizeName(primaryRole);
         var role = await repository.Roles.SingleOrDefaultAsync(x => x.NormalizedName == normalized);
-        if (role is null || !await repository.UserRoles.AnyAsync(x => x.UserId == userId && x.RoleId == role.Id))
-            throw RefusalException.Invalid("The primary role must already be assigned to the user.");
-        return await UpdateAsync(userId, metadata => metadata.PrimaryRoleId = role.Id);
+        if (role is null) throw RefusalException.Invalid("The primary role must be currently assigned in the selected company.");
+        return await UpdateAsync(userId, metadata => metadata.PrimaryRoleId = role.Id, async () =>
+        {
+            var current = await authorization.GetRolesAsync(userId);
+            if (role.Name is null || !current.Contains(role.Name, StringComparer.Ordinal))
+                throw RefusalException.Invalid("The primary role must be currently assigned in the selected company.");
+        });
     }
 
     public Task<bool> UpdateUserPreferredLayoutAsync(string userId, string preferredLayout)
@@ -70,7 +78,8 @@ public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
 
     public async Task RecordUserLoginAsync(string userId)
     {
-        if (!await UpdateAsync(userId, metadata => metadata.LastLoginUtc = DateTime.UtcNow))
+        await account.RequireSelfAsync(userId);
+        if (!await UpdateAsync(userId, metadata => metadata.LastLoginUtc = time.GetUtcNow().UtcDateTime))
             throw RefusalException.Forbidden("Only an active user of this application has a sign-in recorded.");
     }
 
@@ -88,21 +97,32 @@ public sealed class RepositoryUserProfileService(RepositoryDbContext repository,
         }
     }
 
-    private async Task<bool> UpdateAsync(string userId, Action<AppUserExtension> update)
+    private async Task<string> RequireSubjectAsync(string subject)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-        var actor = (accessor.HttpContext?.User).ActingUserId();
-        if (!await repository.Users.AnyAsync(x => x.Id == userId && x.IsActive)) return false;
+        var actor = await account.RequireSelfOrAdministratorAsync(subject);
+        company.RequireActor(actor);
+        await company.RefreshCompanyAsync();
+        return actor;
+    }
+
+    private async Task<bool> UpdateAsync(string userId, Action<AppUserExtension> update, Func<Task>? validate = null)
+    {
+        var actor = await RequireSubjectAsync(userId);
+        if (validate is not null) await validate();
+        var user = await repository.Users.SingleOrDefaultAsync(x => x.Id == userId && x.IsActive);
+        if (user is null) return false;
         var metadata = await repository.Set<AppUserExtension>().SingleOrDefaultAsync(x => x.UserId == userId);
         if (metadata is null)
         {
-            metadata = new AppUserExtension { UserId = userId, CreatedUtc = DateTime.UtcNow };
+            metadata = new AppUserExtension { UserId = userId, CreatedUtc = time.GetUtcNow().UtcDateTime };
             repository.Add(metadata);
         }
         update(metadata);
+        user.ConcurrencyStamp = Guid.NewGuid().ToString("N"); // Existing Identity CAS also protects shared preference updates.
         metadata.ChangedBy = actor;
-        metadata.ChangedUtc = DateTime.UtcNow;
-        await repository.SaveChangesAsync();
+        metadata.ChangedUtc = time.GetUtcNow().UtcDateTime;
+        try { await repository.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException error) { throw new RefusalException(RefusalKind.Conflict, "The profile changed during this update; refresh before submitting again.", error); }
         return true;
     }
 }

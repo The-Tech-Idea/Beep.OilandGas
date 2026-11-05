@@ -5,7 +5,7 @@ using Beep.OilandGas.Models.Data.WorkOrder;
 
 namespace Beep.OilandGas.Web.Services
 {
-    public class WorkOrderServiceClient : IWorkOrderServiceClient
+    public partial class WorkOrderServiceClient : IWorkOrderServiceClient
     {
         private readonly ApiClient _apiClient;
 
@@ -27,7 +27,13 @@ namespace Beep.OilandGas.Web.Services
                 endpoint += "?" + string.Join("&", query);
 
             var result = await _apiClient.GetAsync<List<WorkOrderSummary>>(endpoint);
-            return result ?? new List<WorkOrderSummary>();
+            return result ?? throw new InvalidOperationException("Recorded work orders were not returned.");
+        }
+
+        public async Task<List<WorkOrderSummary>> GetWorkOrderSampleAsync(CancellationToken cancellationToken = default)
+        {
+            var result = await _apiClient.GetAsync<List<WorkOrderSummary>>("/api/field/current/workorder/sample", cancellationToken);
+            return result ?? throw new InvalidOperationException("The recorded work-order sample was not returned.");
         }
 
         public async Task<WorkOrderSummary?> CreateWorkOrderAsync(CreateWorkOrderRequest request)
@@ -41,6 +47,10 @@ namespace Beep.OilandGas.Web.Services
             return await _apiClient.GetAsync<WorkOrderDetailModel>(
                 $"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}");
         }
+
+        public async Task<TheTechIdea.Data.OilGas.WorkOrderProcessReview> GetProcessesAsync(string instanceId) =>
+            await _apiClient.GetAsync<TheTechIdea.Data.OilGas.WorkOrderProcessReview>($"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/processes")
+                ?? throw new InvalidOperationException("Recorded work-order process evidence was not returned.");
 
         public async Task<List<string>> GetTransitionsAsync(string instanceId)
         {
@@ -59,22 +69,15 @@ namespace Beep.OilandGas.Web.Services
         {
             var result = await _apiClient.GetAsync<List<InspectionCondition>>(
                 $"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/checklist");
-            return result ?? new List<InspectionCondition>();
+            return result ?? throw new InvalidOperationException("Recorded inspection evidence was not returned.");
         }
 
-        public async Task RecordConditionAsync(string instanceId, int condSeq, RecordInspectionResultRequest request)
-        {
-            await _apiClient.PostAsync(
-                $"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/checklist/{condSeq}",
-                request);
-        }
-
-        public async Task<List<CostVarianceLine>> GetCostsAsync(string instanceId)
-        {
-            var result = await _apiClient.GetAsync<List<CostVarianceLine>>(
-                $"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/costs");
-            return result ?? new List<CostVarianceLine>();
-        }
+        public async Task<InspectionCondition> AddInspectionRequirementAsync(string instanceId,AddWorkOrderInspectionRequirementRequest request)
+            => await _apiClient.PostAsync<AddWorkOrderInspectionRequirementRequest,InspectionCondition>($"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/checklist",request)
+                ?? throw new InvalidOperationException("The recorded requirement outcome was not returned.");
+        public async Task<InspectionCondition> RecordConditionAsync(string instanceId,int condSeq,RecordInspectionResultRequest request)
+            => await _apiClient.PostAsync<RecordInspectionResultRequest,InspectionCondition>($"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/checklist/{condSeq}",request)
+                ?? throw new InvalidOperationException("The recorded result outcome was not returned.");
 
         public async Task<List<ContractorAssignment>> GetContractorsAsync(string instanceId)
         {
@@ -91,17 +94,5 @@ namespace Beep.OilandGas.Web.Services
             return result ?? new List<CalendarSlot>();
         }
 
-        public async Task<AFEResponse> GetAfeAsync(string instanceId)
-        {
-            return await _apiClient.GetAsync<AFEResponse>(
-                $"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/afe") ?? new AFEResponse();
-        }
-
-        public async Task<AFEResponse> CreateOrLinkAfeAsync(string instanceId)
-        {
-            return await _apiClient.PostAsync<AFEResponse>(
-                $"/api/field/current/workorder/{Uri.EscapeDataString(instanceId)}/afe",
-                (System.Net.Http.HttpContent?)null) ?? new AFEResponse();
-        }
     }
 }

@@ -11,19 +11,6 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
     /// </summary>
     public interface IDrillingService
     {
-        #region Operations
-
-        Task<DRILLING_OPERATION> CreateDrillingProgramAsync(DRILLING_OPERATION request, CancellationToken cancellationToken = default);
-        Task<DRILLING_OPERATION> GetDrillingStatusAsync(string wellId, CancellationToken cancellationToken = default);
-        Task<WELL_CONSTRUCTION> GetBHADesignAsync(string wellId, CancellationToken cancellationToken = default);
-        Task<DRILLING_REPORT> GetMudProgramAsync(string wellId, CancellationToken cancellationToken = default);
-        Task<DRILLING_OPERATION> UpdateDrillingProgressAsync(string wellId, DRILLING_REPORT progress, CancellationToken cancellationToken = default);
-        Task<List<DRILLING_REPORT>> GetDrillingHistoryAsync(string wellId, CancellationToken cancellationToken = default);
-        Task<List<CASING_STRING>> GetCasingDesignAsync(string wellId, CancellationToken cancellationToken = default);
-        Task<List<COMPLETION_STRING>> GetCementingProgramAsync(string wellId, CancellationToken cancellationToken = default);
-
-        #endregion
-
         #region Enhanced Recovery
 
         Task<EORAnalysisResult> AnalyzeEORAsync(EORAnalysisRequest request, CancellationToken cancellationToken = default);

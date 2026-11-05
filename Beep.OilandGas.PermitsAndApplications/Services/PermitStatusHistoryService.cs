@@ -1,3 +1,4 @@
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PermitsAndApplications.Exceptions;
 using Beep.OilandGas.PPDM39.Core;
 using System;
@@ -29,9 +30,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitStatusHistoryService>? logger = null,
-            string connectionName = "PPDM39")
-            : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
+            ICompanyPermitApplicationDataAccess dataAccess,
+            ILogger<PermitStatusHistoryService>? logger = null)
+            : base(editor, commonColumnHandler, defaults, metadata, dataAccess, logger)
         {
             _logger = logger;
         }
@@ -50,7 +51,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (string.IsNullOrWhiteSpace(applicationId))
                 throw new InvalidApplicationException("The permit application ID is required.");
 
-            var repo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY");
+            var repo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY", applicationId);
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PERMIT_APPLICATION_ID", Operator = "=", FilterValue = applicationId },
@@ -113,7 +114,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             SetAuditFields(application, userId);
             await applicationRepo.UpdateAsync(application, userId);
 
-            var historyRepo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY");
+            var historyRepo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY", applicationId);
             var history = new PERMIT_STATUS_HISTORY
             {
                 PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),

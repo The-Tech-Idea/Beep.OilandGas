@@ -1,0 +1,31 @@
+### Page
+- Page URL: http://127.0.0.1:64072/
+### Snapshot
+```yaml
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e43]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f3e44]
+    - paragraph [ref=f3e45]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f3e46]:
+      - button "Use read-only unmapped profile" [ref=f3e47] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f3e49] [cursor=pointer]
+      - button "Switch other company" [ref=f3e51] [cursor=pointer]
+      - button "Switch other account" [ref=f3e53] [cursor=pointer]
+      - button "Restore original company/account" [ref=f3e55] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f3e57] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f3e59] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f3e61] [cursor=pointer]
+  - generic [ref=f3e63]:
+    - heading "Observed drilling progress" [level=1] [ref=f3e64]
+    - group [ref=f3e65]:
+      - link "Original execution" [ref=f3e66] [cursor=pointer]:
+        - /url: /drilling/program-execution?reviewId=drilling-program-review-13B398B3582A2414B3E8B805EB53FE60F1E8A7E619E6838610C054FE56A80221
+      - button "Reload original report history" [ref=f3e68] [cursor=pointer]
+    - status [ref=f3e91]:
+      - generic [ref=f3e92]: The original report was confirmed absent. Reload history before preparing another.
+    - generic [ref=f3e97]:
+      - heading "Original report outcome" [level=2] [ref=f3e98]
+      - paragraph [ref=f3e99]: Outcome checked 2026-10-26 14:26:52Z UTC
+      - paragraph [ref=f3e100]: The original drilling report was confirmed absent.
+    - generic [ref=f3e84]: Observed reports retain their original measurements and source. Reported progress is separate from financial actuals, WELL updates, completion acceptance and production handover.
+```

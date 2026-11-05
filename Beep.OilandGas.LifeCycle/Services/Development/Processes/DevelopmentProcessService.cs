@@ -132,32 +132,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
             return await _processService.ExecuteStepAsync(instanceId, "FACILITY_PERMITTING", stepData, userId);
         }
 
-        public async Task<bool> StartConstructionAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
-        {
-            stepData.StepType = "CONSTRUCTION";
-            stepData.LastUpdated = DateTime.UtcNow;
-            return await _processService.ExecuteStepAsync(instanceId, "CONSTRUCTION", stepData, userId);
-        }
-
-        public async Task<bool> TestFacilityAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
-        {
-            stepData.StepType = "FACILITY_TESTING";
-            stepData.LastUpdated = DateTime.UtcNow;
-            return await _processService.ExecuteStepAsync(instanceId, "FACILITY_TESTING", stepData, userId);
-        }
-
-        public async Task<bool> CommissionFacilityAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
-        {
-            stepData.StepType = "COMMISSIONING";
-            stepData.LastUpdated = DateTime.UtcNow;
-            return await _processService.ExecuteStepAsync(instanceId, "COMMISSIONING", stepData, userId);
-        }
-
-        public async Task<bool> ActivateFacilityAsync(string instanceId, string userId)
-        {
-            return await _processService.CompleteStepAsync(instanceId, "FACILITY_ACTIVATION", "ACTIVE", userId);
-        }
-
         #endregion
 
         #region Well Development Process
@@ -218,11 +192,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
             stepData.StepType = "PRODUCTION_TESTING";
             stepData.LastUpdated = DateTime.UtcNow;
             return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_TESTING", stepData, userId);
-        }
-
-        public async Task<bool> HandoverToProductionAsync(string instanceId, string userId)
-        {
-            return await _processService.CompleteStepAsync(instanceId, "PRODUCTION_HANDOVER", "HANDED_OVER", userId);
         }
 
         #endregion
@@ -301,58 +270,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
 
         #endregion
 
-        #region FDP Gate Review Process
 
-        /// <summary>
-        /// Starts the GATE_FDP_REVIEW process for the current field.
-        /// The field ID is used as the entity ID since FDP is a field-level document.
-        /// </summary>
-        public async Task<ProcessInstance> StartFdpGateProcessAsync(string fieldId, string userId)
-        {
-            try
-            {
-                var processDefs = await _processService.GetProcessDefinitionsByTypeAsync("DEVELOPMENT");
-                var fdpProcess  = processDefs.FirstOrDefault(p => p.ProcessId == "GATE_FDP_REVIEW")
-                               ?? processDefs.FirstOrDefault(p => p.ProcessName == "FDPGateReview");
-
-                if (fdpProcess == null)
-                    throw new InvalidOperationException("GATE_FDP_REVIEW process definition not found. Ensure process definitions have been initialised.");
-
-                return await _processService.StartProcessAsync(
-                    fdpProcess.ProcessId,
-                    fieldId,
-                    "FIELD",
-                    fieldId,
-                    userId);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error starting FDP Gate Review process for field {FieldId}", fieldId);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Returns the most recent GATE_FDP_REVIEW process instance for the given field, or null if none exists.
-        /// Entity type stored by StartFdpGateProcessAsync is "FIELD".
-        /// </summary>
-        public async Task<ProcessInstance?> GetCurrentFdpStatusAsync(string fieldId)
-        {
-            try
-            {
-                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "FIELD");
-                return instances
-                    .Where(i => i.ProcessId == "GATE_FDP_REVIEW")
-                    .OrderByDescending(i => i.StartDate)
-                    .FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error fetching FDP status for field {FieldId}", fieldId);
-                throw;
-            }
-        }
-
-        #endregion
     }
 }

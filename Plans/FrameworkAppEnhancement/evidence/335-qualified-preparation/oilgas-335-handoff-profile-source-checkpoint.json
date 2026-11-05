@@ -1,0 +1,18 @@
+[
+  {
+    "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.cs",
+    "sha256": "e186dc912f3ab06fe76c62842af935386367a78d8aa29331e6e4ce6f3547d8fb"
+  },
+  {
+    "path": "Beep.OilandGas.LifeCycle/Services/Production/PPDMProductionService.cs",
+    "sha256": "ea47f22f4f117f15fbabcbe623d8c712117207922cf07b8930c3e84250864773"
+  },
+  {
+    "path": "Beep.OilandGas.LifeCycle/Services/Production/PPDMProductionService.InterventionDecisions.cs",
+    "sha256": "c7cc5a1ab1c5d22df75571678544bf97fa22cf977da91ef462ccd7ee985adaab"
+  },
+  {
+    "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceHandoffHttpTests.cs",
+    "sha256": "1a8fe779f852d6c78d3ce35c08e9cac2ceb6df98e9ee551c75921b73fd521a64"
+  }
+]

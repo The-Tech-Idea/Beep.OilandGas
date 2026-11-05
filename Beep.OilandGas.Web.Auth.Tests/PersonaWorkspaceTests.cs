@@ -27,7 +27,13 @@ public class PersonaWorkspaceTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token) => send(request);
     }
     private static HttpResponseMessage Json(object value) => new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(value)) };
-    private static PersonaContextService Context(HttpClient http, Auth auth) => new(new PersonaClient(new ApiClient(http, new RecordingFailureReporter())), auth);
+    private static PersonaContextService Context(HttpClient http, Auth auth)
+    {
+        var company = TestCompany.Selected("local");
+        return new(new PersonaClient(new ApiClient(http, new RecordingFailureReporter(), company)), auth, company, Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find);
+    }
+    private static CompanyPersonaWorkspaceReview Review(string company = "test-company", string code = "ACCOUNTANT", string[]? roles = null) =>
+        new(new("test-tenant", company), "local", roles ?? [], [new() { Code = code, Name = code, DefaultRoute = "/accounting/dashboard" }], new string('A',64));
     private static List<AppPersona> Catalog() => new() {
         new() { Code = "ACCOUNTANT", Name = "Accountant", DefaultRoute = "/accounting/dashboard" },
         new() { Code = "OLD", Name = "Inactive", IsActive = false }
@@ -39,7 +45,7 @@ public class PersonaWorkspaceTests
         var auth = new Auth();
         using var http = new HttpClient(new Handler(r => Task.FromResult(r.Method == HttpMethod.Put
             ? Json(new AppUserPersona { UserId = "local", PersonaCode = "ACCOUNTANT", ConcurrencyStamp = "new" })
-            : r.RequestUri!.AbsolutePath == "/api/personas" ? Json(Catalog()) : Json(new PersonaProfileResult(null))))) { BaseAddress = new("https://api.example") };
+            : r.RequestUri!.AbsolutePath == "/api/personas/workspaces/current" ? Json(Review()) : Json(new PersonaProfileResult(null))))) { BaseAddress = new("https://api.example") };
         using var context = Context(http, auth);
         await context.EnsureLoadedAsync();
         Assert.Single(context.Catalog);
@@ -59,7 +65,7 @@ public class PersonaWorkspaceTests
         var pending = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var http = new HttpClient(new Handler(r => {
-            if (r.RequestUri!.AbsolutePath == "/api/personas") return Task.FromResult(Json(Catalog()));
+            if (r.RequestUri!.AbsolutePath == "/api/personas/workspaces/current") return Task.FromResult(Json(Review()));
             entered.TrySetResult(); return pending.Task;
         })) { BaseAddress = new("https://api.example") };
         using var context = Context(http, auth);
@@ -76,7 +82,7 @@ public class PersonaWorkspaceTests
     {
         var fail = false;
         using var http = new HttpClient(new Handler(r => Task.FromResult(fail ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = new StringContent("") }
-            : r.RequestUri!.AbsolutePath == "/api/personas" ? Json(Catalog()) : Json(new PersonaProfileResult(new AppUserPersona { UserId = "local", PersonaCode = "ACCOUNTANT" }))))) { BaseAddress = new("https://api.example") };
+            : r.RequestUri!.AbsolutePath == "/api/personas/workspaces/current" ? Json(Review()) : Json(new PersonaProfileResult(new AppUserPersona { UserId = "local", PersonaCode = "ACCOUNTANT" }))))) { BaseAddress = new("https://api.example") };
         using var context = Context(http, new Auth());
         await context.EnsureLoadedAsync(); Assert.NotNull(context.CurrentPersona);
         fail = true;
@@ -94,4 +100,56 @@ public class PersonaWorkspaceTests
     [InlineData("/accounting/dashboard", "/accounting/dashboard")]
     public void WorkspaceNavigationStaysInsideTheApp(string? input, string expected)
         => Assert.Equal(expected, PersonaNavigation.HomeRoute(input));
+    [Fact]
+    public async Task CompanyChangeImmediatelyClearsWorkspaceAndReloadsCurrentCompanyData()
+    {
+        using var company = TestCompany.Selected("local"); var requests = 0;
+        using var http = new HttpClient(new Handler(r => {
+            requests++;
+            var code = r.Headers.GetValues(CompanyRequestHeaders.Company).Single() == "test-company" ? "ACCOUNTANT" : "ENGINEER";
+            return Task.FromResult(r.RequestUri!.AbsolutePath == "/api/personas/workspaces/current"
+                ? Json(Review(r.Headers.GetValues(CompanyRequestHeaders.Company).Single(), code, company.Selection!.Roles.ToArray()))
+                : Json(new PersonaProfileResult(new AppUserPersona { UserId = "local", PersonaCode = code })));
+        })) { BaseAddress = new("https://api.example") };
+        using var context = new PersonaContextService(new PersonaClient(new ApiClient(http, new RecordingFailureReporter(), company)), new Auth(), company, Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find);
+        await context.EnsureLoadedAsync(); Assert.Equal("ACCOUNTANT", context.CurrentPersona!.Code);
+        var version = company.Clear(); Assert.Null(context.CurrentProfile); Assert.Null(context.CurrentPersona); Assert.Empty(context.Catalog);
+        Assert.True(company.TrySelect(version, "local", new(new("test-tenant", "other-company"), ["Reader"], [])));
+        await context.EnsureLoadedAsync(); Assert.Equal("ENGINEER", context.CurrentPersona!.Code); Assert.Equal(4, requests);
+    }
+    [Fact]
+    public async Task LateWorkspaceCannotReappearAfterCompanySwitchAwayAndBack()
+    {
+        using var company = TestCompany.Selected("local");
+        var pending = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var http = new HttpClient(new Handler(r => { entered.TrySetResult(); return pending.Task; })) { BaseAddress = new("https://api.example") };
+        using var context = new PersonaContextService(new PersonaClient(new ApiClient(http, new RecordingFailureReporter(), company)), new Auth(), company, Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find);
+        var load = context.EnsureLoadedAsync(); await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var original = company.Selection!; var version = company.Clear();
+        Assert.True(company.TrySelect(version, "local", new(new("test-tenant", "other-company"), [], [])));
+        version = company.Clear(); Assert.True(company.TrySelect(version, "local", new(original.Scope, original.Roles.ToArray(), original.Permissions.ToArray())));
+        pending.SetResult(Json(new PersonaProfileResult(new AppUserPersona { UserId = "local", PersonaCode = "ACCOUNTANT" })));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => load);
+        Assert.Null(context.CurrentProfile); Assert.Null(context.CurrentPersona); Assert.Empty(context.Catalog);
+    }
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public async Task MissingOrDifferentAccountCompanyDoesNotLoadWorkspace(bool otherAccount)
+    {
+        using var company = new Beep.OilandGas.Client.App.CompanyClientContext();
+        if (otherAccount) Assert.True(company.TrySelect(company.Clear(), "different", new(new("tenant", "company"), [], [])));
+        using var http = new HttpClient(new Handler(_ => throw new InvalidOperationException("No API request is allowed."))) { BaseAddress = new("https://api.example") };
+        using var context = new PersonaContextService(new PersonaClient(new ApiClient(http, new RecordingFailureReporter(), company)), new Auth(), company, Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find);
+        await context.EnsureLoadedAsync(); Assert.Null(context.CurrentProfile); Assert.Empty(context.Catalog);
+    }
+    [Fact]
+    public async Task ForeignAccountProfileIsRejectedBeforePublication()
+    {
+        using var http = new HttpClient(new Handler(r => Task.FromResult(r.RequestUri!.AbsolutePath == "/api/personas/workspaces/current"
+            ? Json(Review()) : Json(new PersonaProfileResult(new AppUserPersona { UserId = "foreign", PersonaCode = "ACCOUNTANT" }))))) { BaseAddress = new("https://api.example") };
+        using var context = Context(http, new Auth());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => context.EnsureLoadedAsync());
+        Assert.Null(context.CurrentProfile); Assert.Empty(context.Catalog);
+    }
+
 }

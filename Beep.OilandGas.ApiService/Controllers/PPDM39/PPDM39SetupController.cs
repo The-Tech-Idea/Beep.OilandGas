@@ -25,14 +25,10 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData.Services;
-using Beep.OilandGas.DataManager.Core.Interfaces;
-using Beep.OilandGas.DataManager.Core.Models;
-using Beep.OilandGas.DataManager.Core.Registry;
 using Beep.OilandGas.UserManagement.Contracts.Services;
 using TheTechIdea.Beep;
 using Beep.OilandGas.Models.Core.Refusals;
 using TheTechIdeaWeb.Diagnostics;
-using ScriptExecutionResult = Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation.ScriptExecutionResult;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -43,14 +39,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     [Authorize(Roles = "Administrator")]
     [ApiController]
     [Route("api/ppdm39/setup")]
-    public class PPDM39SetupController : ControllerBase
+    public partial class PPDM39SetupController : ControllerBase
     {
         private readonly PPDM39SetupService _setupService;
         private readonly IPPDM39SchemaMigrationService _schemaMigrationService;
         private readonly IDMEEditor _editor;
         private readonly ILogger<PPDM39SetupController> _logger;
-        private readonly IProgressTrackingService? _progressTracking;
-        private readonly IDataManager? _dataManager;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
@@ -61,7 +55,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.IHSStandardValueImporter? _ihsStandardValueImporter;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.StandardValueMapper? _standardValueMapper;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder? _referenceDataSeeder;
-        private readonly IPPDMDatabaseCreatorService? _databaseCreatorService;
         private readonly SeedDataCatalogCompatibility _seedDataCatalog;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder? _wellStatusFacetSeeder;
         private readonly IFailureReporter _failures;
@@ -73,8 +66,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             ILogger<PPDM39SetupController> logger,
             IFailureReporter failures,
             IProgressTrackingService? progressTracking = null,
-            IPPDMDatabaseCreatorService? databaseCreatorService = null,
-            IDataManager? dataManager = null,
             ICommonColumnHandler? commonColumnHandler = null,
             IPPDM39DefaultsRepository? defaults = null,
             IPPDMMetadataRepository? metadata = null,
@@ -92,9 +83,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _failures = failures ?? throw new ArgumentNullException(nameof(failures));
-            _progressTracking = progressTracking;
-            _dataManager = dataManager;
-            _databaseCreatorService = databaseCreatorService;
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
@@ -123,18 +111,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             var types = _setupService.GetAvailableDatabaseTypes();
             return Ok(types);
-        }
-
-        /// <summary>
-        /// Get driver information for a database type
-        /// </summary>
-        [HttpGet("driver-info/{databaseType}")]
-        public ActionResult<DriverInfo> GetDriverInfo(string databaseType)
-        {
-            if (string.IsNullOrWhiteSpace(databaseType))
-                return BadRequest(new { error = "Database type is required." });
-            var driverInfo = _setupService.CheckDriver(databaseType);
-            return Ok(driverInfo);
         }
 
         // Helper: map ConnectionProperties (incoming) to ConnectionConfig used by services
@@ -168,79 +144,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             var mapped = MapToConnectionConfig(config);
 
             var result = await _setupService.TestConnectionAsync(mapped);
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Check if driver is available
-        /// </summary>
-        [HttpPost("check-driver")]
-        public ActionResult<DriverInfo> CheckDriver([FromBody] CheckDriverRequest request)
-        {
-            if (request == null || string.IsNullOrEmpty(request.DatabaseType))
-            {
-                    return BadRequest(new { error = "Database type is required." });
-            }
-
-            var driverInfo = _setupService.CheckDriver(request.DatabaseType);
-            return Ok(driverInfo);
-        }
-
-        /// <summary>
-        /// Get available scripts for a database type
-        /// </summary>
-        [HttpGet("scripts/{databaseType}")]
-        public ActionResult<List<ModuleScriptInfo>> GetAvailableScripts(string databaseType)
-        {
-            if (string.IsNullOrWhiteSpace(databaseType))
-                return BadRequest(new { error = "Database type is required." });
-            var scripts = _setupService.GetAvailableScripts(databaseType);
-            return Ok(scripts);
-        }
-
-        /// <summary>
-        /// Execute a single SQL script (accepts ConnectionProperties payload)
-        /// </summary>
-        [HttpPost("execute-script")]
-        public async Task<ActionResult<ScriptExecutionResult>> ExecuteScript([FromBody] ScriptExecPayload payload)
-        {
-            if (payload == null || payload.Connection == null || string.IsNullOrEmpty(payload.ScriptName))
-            {
-                    return BadRequest(new { error = "Connection and script name are required." });
-            }
-
-            var mapped = MapToConnectionConfig(payload.Connection);
-
-            var result = await _setupService.ExecuteScriptAsync(mapped, payload.ScriptName);
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Execute all scripts in order (accepts ConnectionProperties payload)
-        /// </summary>
-        [HttpPost("execute-all-scripts")]
-        public async Task<ActionResult<AllScriptsExecutionResult>> ExecuteAllScripts([FromBody] AllScriptsExecPayload request)
-        {
-            if (request == null || request.Connection == null)
-            {
-                    return BadRequest(new { error = "Connection configuration is required." });
-            }
-
-            var mapped = MapToConnectionConfig(request.Connection);
-
-            if (request.ExecuteAll)
-            {
-                // Get all available scripts
-                var scripts = _setupService.GetAvailableScripts(mapped.DatabaseType);
-                request.ScriptNames = scripts.OrderBy(s => s.ExecutionOrder).Select(s => s.FileName).ToList();
-            }
-
-            if (request.ScriptNames == null || !request.ScriptNames.Any())
-            {
-                return BadRequest(new { error = "No scripts to execute." });
-            }
-
-            var result = await _setupService.ExecuteAllScriptsAsync(mapped, request.ScriptNames);
             return Ok(result);
         }
 
@@ -332,66 +235,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             return Ok(result);
         }
 
-        /// <summary>
-        /// Check schema privileges and list existing schemas
-        /// </summary>
-        [HttpPost("check-schema-privileges")]
-        public async Task<ActionResult<SchemaPrivilegeCheckResult>> CheckSchemaPrivileges([FromBody] SchemaPrivilegeCheckRequest request)
-        {
-            if (request == null || request.Connection == null)
-            {
-                    return BadRequest(new { error = "Connection configuration is required." });
-            }
-
-            var result = await _setupService.CheckSchemaPrivilegesAsync(MapToConnectionConfig(request.Connection), request.SchemaName);
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Create a new schema
-        /// </summary>
-        [HttpPost("create-schema")]
-        public async Task<ActionResult<CreateSchemaResult>> CreateSchema([FromBody] CreateSchemaRequest request)
-        {
-            if (request == null || request.Connection == null || string.IsNullOrEmpty(request.SchemaName))
-            {
-                    return BadRequest(new { error = "Connection configuration and schema name are required." });
-            }
-
-            var result = await _setupService.CreateSchemaAsync(MapToConnectionConfig(request.Connection), request.SchemaName);
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Drop a database or schema
-        /// </summary>
-        [HttpPost("drop-database")]
-        public async Task<ActionResult<DropDatabaseResult>> DropDatabase([FromBody] DropDatabaseRequest request)
-        {
-            if (request == null || string.IsNullOrEmpty(request.ConnectionName))
-            {
-                    return BadRequest(new { error = "Connection name is required." });
-            }
-
-            var result = await _setupService.DropDatabaseAsync(request.ConnectionName, request.SchemaName, request.DropIfExists);
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Recreate a database or schema
-        /// </summary>
-        [HttpPost("recreate-database")]
-        public async Task<ActionResult<RecreateDatabaseResult>> RecreateDatabase([FromBody] RecreateDatabaseRequest request)
-        {
-            if (request == null || string.IsNullOrEmpty(request.ConnectionName))
-            {
-                    return BadRequest(new { error = "Connection name is required." });
-            }
-
-            var result = await _setupService.RecreateDatabaseAsync(request.ConnectionName, request.SchemaName, request.BackupFirst, request.BackupPath);
-            return Ok(result);
-        }
-
         /// <summary>Database copy is unavailable through the setup service.</summary>
         [HttpPost("copy-database")]
         public async Task<ActionResult<object>> CopyDatabase([FromBody] CopyDatabaseRequest request)
@@ -404,27 +247,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 Success = false,
                 Message = "Database copy is not implemented through the setup service."
             });
-        }
-
-        /// <summary>
-        /// Get progress for an operation
-        /// </summary>
-        [HttpGet("progress/{operationId}")]
-        public ActionResult<ProgressUpdate> GetProgress(string operationId)
-        {
-            if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
-            if (_progressTracking == null)
-            {
-                    return NotFound(new { error = "Progress tracking not available." });
-            }
-
-            var progress = _progressTracking.GetProgress(operationId);
-            if (progress == null)
-            {
-                    return NotFound(new { error = $"Progress for operation {operationId} not found." });
-            }
-
-            return Ok(progress);
         }
 
         /// <summary>
@@ -441,275 +263,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return BadRequest(result);
             }
             return Ok(result);
-        }
-
-        /// <summary>
-        /// Install driver (placeholder - actual NuGet installation would need to be implemented)
-        /// Note: This is a placeholder endpoint. Actual NuGet package installation
-        /// requires access to the assembly handler which may need to be handled differently
-        /// in a web API context vs. BeepShell console context.
-        /// </summary>
-        [HttpPost("install-driver")]
-        public ActionResult<InstallDriverResult> InstallDriver([FromBody] InstallDriverRequest request)
-        {
-            if (request == null || string.IsNullOrEmpty(request.DatabaseType))
-            {
-                    return BadRequest(new { error = "Database type is required." });
-            }
-
-            // Check driver status
-            var driverInfo = _setupService.CheckDriver(request.DatabaseType);
-            
-            if (driverInfo.IsInstalled)
-            {
-                return Ok(new InstallDriverResult
-                {
-                    Success = true,
-                    Message = $"Driver for {request.DatabaseType} is already installed"
-                });
-            }
-
-            // NuGet package installation requires assembly handler access which is not available in the API context
-            // Return instructions for manual installation
-            return Ok(new InstallDriverResult
-            {
-                Success = false,
-                Message = $"Driver installation requires manual setup. Please install the NuGet package '{driverInfo.NuGetPackage}' manually or use BeepShell.",
-                ErrorDetails = "Automatic NuGet package installation requires assembly handler access which is not available in the API context. Use BeepShell 'nuget install' command or install manually via Package Manager Console."
-            });
-        }
-
-        /// <summary>
-        /// Discover scripts for a database type
-        /// </summary>
-        [HttpGet("discover-scripts/{databaseType}")]
-        public async Task<ActionResult<List<ScriptInfo>>> DiscoverScripts(string databaseType)
-        {
-            if (string.IsNullOrWhiteSpace(databaseType))
-                return BadRequest(new { error = "Database type is required." });
-            // Get all modules from registry
-            var allModules = ModuleDataRegistry.GetAllModules();
-            var allScripts = new List<ModuleScriptInfo>();
-
-            // Get scripts from each module
-            foreach (var module in allModules)
-            {
-                var moduleScripts = await module.GetScriptsAsync(databaseType);
-                allScripts.AddRange(moduleScripts);
-            }
-
-            // Map to DTO
-            var result = allScripts.Select(s => new ScriptInfo
-            {
-                FileName = s.FileName,
-                FullPath = s.FullPath,
-                RelativePath = s.RelativePath ?? string.Empty,
-                ScriptType = s.ScriptType.ToString(),
-                TableName = s.TableName,
-                Module = s.ModuleName ?? string.Empty,
-                SubjectArea = null, // Not available in ModuleScriptInfo
-                IsConsolidated = s.IsConsolidated,
-                IsMandatory = s.IsRequired,
-                IsOptional = !s.IsRequired,
-                FileSize = s.FileSize,
-                LastModified = s.LastModified,
-                ExecutionOrder = s.ExecutionOrder,
-                Dependencies = s.Dependencies?.ToList() ?? new List<string>(),
-                Category = s.ModuleName
-            }).ToList();
-
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Create database by executing scripts using DataManager
-        /// </summary>
-        [HttpPost("create-database")]
-        public async Task<ActionResult<DatabaseCreationResult>> CreateDatabase([FromBody] CreateDatabaseRequest request)
-        {
-            if (request == null || request.Connection == null || request.Options == null)
-            {
-                    return BadRequest(new { error = "Connection and options are required." });
-            }
-
-            if (request.Options.SeedDefaultSecurityData)
-            {
-                return BadRequest(new { error = "Security is installed through repository EF migrations and account registration, not module database seeding." });
-            }
-
-            if (_dataManager == null)
-            {
-                // Fallback to old service if DataManager not available
-                if (_databaseCreatorService == null)
-                {
-                        return StatusCode(500, new { error = "DataManager and DatabaseCreatorService not available." });
-                }
-                return CreateDatabaseLegacy(request);
-            }
-
-            // Map ConnectionProperties to ConnectionConfig
-            var connectionConfig = MapToConnectionConfig(request.Connection);
-
-            // Get data source
-            var dataSource = GetDataSourceFromConnectionConfig(connectionConfig);
-            if (dataSource.Openconnection() != System.Data.ConnectionState.Open)
-            {
-                return StatusCode(500, new DatabaseCreationResult
-                {
-                    Success = false,
-                    ErrorMessage = "Failed to open database connection"
-                });
-            }
-
-            // Determine which modules to execute
-            var modulesToExecute = new List<IModuleData>();
-            
-            if (request.Options.Categories != null && request.Options.Categories.Any())
-            {
-                // Execute specific modules by category
-                var allModules = ModuleDataRegistry.GetAllModules();
-                foreach (var category in request.Options.Categories)
-                {
-                    var module = ModuleDataRegistry.GetModule(category);
-                    if (module != null)
-                    {
-                        modulesToExecute.Add(module);
-                    }
-                }
-            }
-            else
-            {
-                // Execute all required modules
-                modulesToExecute = ModuleDataRegistry.GetRequiredModules().ToList();
-            }
-
-            if (!modulesToExecute.Any())
-            {
-                return BadRequest(new { error = "No modules selected for execution." });
-            }
-
-            // Create execution options
-            var executionOptions = new ScriptExecutionOptions
-            {
-                ContinueOnError = request.Options.ContinueOnError,
-                EnableRollback = request.Options.EnableRollback,
-                ExecuteOptionalScripts = request.Options.ExecuteOptionalScripts,
-                ValidateDependencies = request.Options.ValidateDependencies,
-                EnableParallelExecution = request.Options.EnableParallelExecution,
-                MaxParallelTasks = request.Options.MaxParallelTasks,
-                EnableCheckpointing = !string.IsNullOrEmpty(request.Options.ExecutionId),
-                ExecutionId = request.Options.ExecutionId ?? Guid.NewGuid().ToString(),
-                ValidateBeforeExecution = true,
-                CheckErrorsAfterExecution = true,
-                VerifyObjectsCreated = true,
-                Logger = _logger
-            };
-
-            // Filter script types if specified
-            if (request.Options.ScriptTypes != null && request.Options.ScriptTypes.Any())
-            {
-                var scriptTypes = new List<ScriptType>();
-                foreach (var st in request.Options.ScriptTypes)
-                {
-                    if (Enum.TryParse<ScriptType>(st, true, out var scriptType))
-                    {
-                        scriptTypes.Add(scriptType);
-                    }
-                }
-                executionOptions.IncludedScriptTypes = scriptTypes;
-            }
-
-            // Execute modules
-            var moduleResults = await _dataManager.ExecuteModulesAsync(modulesToExecute, dataSource, executionOptions);
-
-            // Aggregate results
-            var totalScripts = moduleResults.Values.Sum(r => r.TotalScripts);
-            var successfulScripts = moduleResults.Values.Sum(r => r.SuccessfulScripts);
-            var failedScripts = moduleResults.Values.Sum(r => r.FailedScripts);
-            var allScriptResults = moduleResults.Values.SelectMany(r => r.ScriptResults).ToList();
-
-            var overallSuccess = moduleResults.Values.All(r => r.Success);
-            var startTime = moduleResults.Values.Min(r => r.StartTime);
-            var endTime = moduleResults.Values.Max(r => r.EndTime);
-
-            // Map to DTO
-            var resultDto = new DatabaseCreationResult
-            {
-                ExecutionId = executionOptions.ExecutionId ?? Guid.NewGuid().ToString(),
-                Success = overallSuccess,
-                ErrorMessage = overallSuccess ? null : $"Failed scripts: {failedScripts}",
-                StartTime = startTime,
-                EndTime = endTime,
-                TotalDuration = endTime - startTime,
-                TotalScripts = totalScripts,
-                SuccessfulScripts = successfulScripts,
-                FailedScripts = failedScripts,
-                SkippedScripts = totalScripts - successfulScripts - failedScripts,
-                ScriptResults = allScriptResults.Select(sr => new Beep.OilandGas.Models.Data.DataManagement.ScriptExecutionResult
-                {
-                    ScriptFileName = sr.ScriptFileName ?? string.Empty,
-                    Success = sr.Success,
-                    ErrorMessage = sr.ErrorMessage,
-                    StartTime = sr.StartTime,
-                    EndTime = sr.EndTime,
-                    RowsAffected = sr.RowsAffected,
-                    ExecutionLog = sr.ExecutionLog,
-                    Metadata = sr.Metadata ?? new Dictionary<string, object>()
-                }).ToList(),
-                Summary = new Dictionary<string, object>
-                {
-                    { "ModulesExecuted", modulesToExecute.Select(m => m.ModuleName).ToList() },
-                    { "TotalModules", modulesToExecute.Count },
-                    { "SuccessfulModules", moduleResults.Values.Count(r => r.Success) },
-                    { "FailedModules", moduleResults.Values.Count(r => !r.Success) }
-                },
-                LogFilePath = request.Options.LogFilePath
-            };
-
-            return Ok(resultDto);
-        }
-
-
-        /// <summary>
-        /// Get creation progress
-        /// </summary>
-        [HttpGet("creation-progress/{executionId}")]
-        public async Task<ActionResult<ScriptExecutionProgressInfo>> GetCreationProgress(string executionId)
-        {
-            if (string.IsNullOrWhiteSpace(executionId)) return BadRequest(new { error = "Execution ID is required." });
-            if (_dataManager == null)
-            {
-                    return StatusCode(500, new { error = "DataManager is not available." });
-            }
-
-            var executionState = await _dataManager.GetExecutionStateAsync(executionId);
-            if (executionState == null)
-            {
-                    return NotFound(new { error = $"Execution state not found for {executionId}." });
-            }
-
-            var totalScripts = executionState.CompletedScripts.Count + executionState.FailedScripts.Count + executionState.PendingScripts.Count;
-            var completedScripts = executionState.CompletedScripts.Count;
-            var failedScripts = executionState.FailedScripts.Count;
-            var skippedScripts = 0; // Not tracked in ExecutionState
-            var progressPercentage = totalScripts > 0 ? (decimal)completedScripts * 100 / totalScripts : 0;
-            var currentScript = executionState.PendingScripts.FirstOrDefault() ?? string.Empty;
-
-            var progressDto = new ScriptExecutionProgressInfo
-            {
-                ExecutionId = executionState.ExecutionId,
-                TotalScripts = totalScripts,
-                CompletedScripts = completedScripts,
-                FailedScripts = failedScripts,
-                SkippedScripts = skippedScripts,
-                ProgressPercentage = progressPercentage,
-                CurrentScript = currentScript,
-                StartTime = executionState.StartTime,
-                EstimatedCompletionTime = null, // Not available in ExecutionState
-                Status = executionState.IsCompleted ? "Completed" : "In Progress"
-            };
-
-            return Ok(progressDto);
         }
 
         /// <summary>
@@ -899,310 +452,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 userId);
 
             return Ok(result);
-        }
-
-        /// <summary>
-        /// Generate SQL scripts for entity classes
-        /// </summary>
-        [HttpPost("scripts/generate")]
-        public async Task<ActionResult<ScriptGenerationResponse>> GenerateScripts([FromBody] ScriptGenerationRequest request)
-        {
-            if (request == null)
-            {
-                    return BadRequest(new { error = "Request is required." });
-            }
-
-            var response = new ScriptGenerationResponse
-            {
-                Success = true,
-                Message = "Script generation completed",
-                EntityResults = new List<EntityScriptResult>()
-            };
-
-            // Determine output path
-            var outputPath = request.OutputPath;
-            if (string.IsNullOrEmpty(outputPath))
-            {
-                var basePath = AppContext.BaseDirectory;
-                var solutionRoot = Path.GetFullPath(Path.Combine(basePath, "..", "..", "..", "..", ".."));
-                outputPath = Path.Combine(solutionRoot, "Beep.OilandGas.Models", "Scripts");
-            }
-            outputPath = Path.GetFullPath(outputPath);
-            response.OutputPath = outputPath;
-
-            // Get entity types
-            var entityAssembly = typeof(AFE).Assembly;
-            var allEntityTypes = entityAssembly.GetTypes()
-                .Where(t =>
-                    t.Namespace == "Beep.OilandGas.Models.Data" &&
-                    t.IsClass &&
-                    !t.IsAbstract &&
-                    t.BaseType != null &&
-                    t.BaseType.Name == "Entity")
-                .OrderBy(t => t.Name)
-                .ToList();
-
-            // Filter by entity names if specified
-            var entityTypes = allEntityTypes;
-            if (request.EntityNames != null && request.EntityNames.Any())
-            {
-                entityTypes = allEntityTypes
-                    .Where(t => request.EntityNames.Contains(t.Name, StringComparer.OrdinalIgnoreCase))
-                    .ToList();
-            }
-
-            if (!entityTypes.Any())
-            {
-                response.Success = false;
-                response.Message = "No entity types found matching the criteria";
-                return Ok(response);
-            }
-
-            // Determine database types
-            var databaseTypes = new List<DatabaseTypeMapper.DatabaseType>();
-            if (request.DatabaseTypes != null && request.DatabaseTypes.Any())
-            {
-                foreach (var dbTypeStr in request.DatabaseTypes)
-                {
-                    if (Enum.TryParse<DatabaseTypeMapper.DatabaseType>(dbTypeStr, true, out var dbType))
-                    {
-                        databaseTypes.Add(dbType);
-                    }
-                }
-            }
-            else
-            {
-                // Default to all database types
-                databaseTypes = new List<DatabaseTypeMapper.DatabaseType>
-                {
-                    DatabaseTypeMapper.DatabaseType.SqlServer,
-                    DatabaseTypeMapper.DatabaseType.Oracle,
-                    DatabaseTypeMapper.DatabaseType.PostgreSQL,
-                    DatabaseTypeMapper.DatabaseType.MySQL,
-                    DatabaseTypeMapper.DatabaseType.MariaDB,
-                    DatabaseTypeMapper.DatabaseType.SQLite
-                };
-            }
-
-            // Determine script types
-            var scriptTypes = new List<ScriptType>();
-            if (request.ScriptTypes != null && request.ScriptTypes.Any())
-            {
-                foreach (var scriptTypeStr in request.ScriptTypes)
-                {
-                    if (Enum.TryParse<ScriptType>(scriptTypeStr, true, out var scriptType))
-                    {
-                        scriptTypes.Add(scriptType);
-                    }
-                }
-            }
-            else
-            {
-                // Default to TAB, PK, FK, IX
-                scriptTypes = new List<ScriptType> { ScriptType.TAB, ScriptType.PK, ScriptType.FK, ScriptType.IX };
-            }
-
-            // Create output directories
-            if (request.SaveToFile)
-            {
-                foreach (var dbType in databaseTypes)
-                {
-                    var dbTypeName = GetDatabaseTypeFolderName(dbType);
-                    var dbPath = Path.Combine(outputPath, dbTypeName);
-                    Directory.CreateDirectory(dbPath);
-                }
-            }
-
-            // Generate metadata repository if available
-            IPPDMMetadataRepository? metadata = _metadata;
-
-            // Generate scripts for each entity
-            foreach (var entityType in entityTypes)
-            {
-                var entityResult = new EntityScriptResult
-                {
-                    EntityName = entityType.Name,
-                    Success = true,
-                    Scripts = new List<ScriptResult>()
-                };
-
-                foreach (var dbType in databaseTypes)
-                {
-                    try
-                    {
-                        var generator = new PPDMScriptGenerator(dbType, metadata);
-                        var dbTypeName = GetDatabaseTypeFolderName(dbType);
-
-                        // Generate scripts based on requested types
-                        if (scriptTypes.Contains(ScriptType.TAB))
-                        {
-                            var tabScript = await generator.GenerateTableScriptAsync(entityType);
-                            if (!string.IsNullOrWhiteSpace(tabScript))
-                            {
-                                var scriptResult = await SaveScriptAsync(
-                                    tabScript, 
-                                    entityType.Name, 
-                                    "TAB", 
-                                    dbTypeName, 
-                                    outputPath, 
-                                    request.SaveToFile);
-                                entityResult.Scripts.Add(scriptResult);
-                                if (scriptResult.Success) response.ScriptsGenerated++;
-                            }
-                        }
-
-                        if (scriptTypes.Contains(ScriptType.PK))
-                        {
-                            var pkScript = await generator.GeneratePrimaryKeyScriptAsync(entityType);
-                            if (!string.IsNullOrWhiteSpace(pkScript))
-                            {
-                                var scriptResult = await SaveScriptAsync(
-                                    pkScript, 
-                                    entityType.Name, 
-                                    "PK", 
-                                    dbTypeName, 
-                                    outputPath, 
-                                    request.SaveToFile);
-                                entityResult.Scripts.Add(scriptResult);
-                                if (scriptResult.Success) response.ScriptsGenerated++;
-                            }
-                        }
-
-                        if (scriptTypes.Contains(ScriptType.FK))
-                        {
-                            var fkScript = await generator.GenerateForeignKeyScriptsAsync(entityType);
-                            if (!string.IsNullOrWhiteSpace(fkScript))
-                            {
-                                var scriptResult = await SaveScriptAsync(
-                                    fkScript, 
-                                    entityType.Name, 
-                                    "FK", 
-                                    dbTypeName, 
-                                    outputPath, 
-                                    request.SaveToFile);
-                                entityResult.Scripts.Add(scriptResult);
-                                if (scriptResult.Success) response.ScriptsGenerated++;
-                            }
-                        }
-
-                        if (scriptTypes.Contains(ScriptType.IX))
-                        {
-                            var ixScript = await generator.GenerateIndexScriptsAsync(entityType);
-                            if (!string.IsNullOrWhiteSpace(ixScript))
-                            {
-                                var scriptResult = await SaveScriptAsync(
-                                    ixScript, 
-                                    entityType.Name, 
-                                    "IX", 
-                                    dbTypeName, 
-                                    outputPath, 
-                                    request.SaveToFile);
-                                entityResult.Scripts.Add(scriptResult);
-                                if (scriptResult.Success) response.ScriptsGenerated++;
-                            }
-                        }
-                    }
-                    // Whatever stops one entity's scripts for one database, the others are still generated; this one is listed
-                    // as not generated, with the reference its failure is filed under. Cancellation ends the request.
-                    catch (Exception generationFailure) when (generationFailure is not OperationCanceledException)
-                    {
-                        var reference = _failures.ReportHandled(generationFailure,
-                            $"generating {dbType} scripts for {entityType.Name}",
-                            "these scripts are not generated; the answer lists them as failed with this reference");
-                        response.Errors++;
-                        entityResult.Scripts.Add(new ScriptResult
-                        {
-                            ScriptType = "ALL",
-                            DatabaseType = dbType.ToString(),
-                            Success = false,
-                            ErrorMessage = $"The scripts were not generated (reference {reference})."
-                        });
-                    }
-                }
-
-                entityResult.ScriptsGenerated = entityResult.Scripts.Count(s => s.Success);
-                response.EntitiesProcessed++;
-
-                response.EntityResults.Add(entityResult);
-            }
-
-            response.Message = $"Generated {response.ScriptsGenerated} script(s) for {response.EntitiesProcessed} entity/entities";
-            return Ok(response);
-        }
-
-        /// <summary>
-        /// Save or return a generated script
-        /// </summary>
-        private async Task<ScriptResult> SaveScriptAsync(string script, string entityName, string scriptType, string dbTypeName, string outputPath, bool saveToFile)
-        {
-            var result = new ScriptResult
-            {
-                ScriptType = scriptType,
-                DatabaseType = dbTypeName,
-                ScriptLength = script.Length,
-                Success = true
-            };
-
-            if (saveToFile)
-            {
-                try
-                {
-                    var fileName = $"{entityName}_{scriptType}.sql";
-                    var filePath = Path.Combine(outputPath, dbTypeName, fileName);
-                    await System.IO.File.WriteAllTextAsync(filePath, script);
-                    result.FilePath = filePath;
-                }
-                catch (Exception notWritten) when (notWritten is IOException or UnauthorizedAccessException)
-                {
-                    var reference = _failures.ReportHandled(notWritten, $"writing the {scriptType} script for {entityName} ({dbTypeName})",
-                        "the script is not saved; the answer lists it as failed with this reference");
-                    result.Success = false;
-                    result.ErrorMessage = $"The script was not saved (reference {reference}).";
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Get database type folder name
-        /// </summary>
-        private string GetDatabaseTypeFolderName(DatabaseTypeMapper.DatabaseType dbType)
-        {
-            return dbType switch
-            {
-                DatabaseTypeMapper.DatabaseType.SqlServer => "Sqlserver",
-                DatabaseTypeMapper.DatabaseType.Oracle => "Oracle",
-                DatabaseTypeMapper.DatabaseType.PostgreSQL => "PostgreSQL",
-                DatabaseTypeMapper.DatabaseType.MySQL => "MariaDB",
-                DatabaseTypeMapper.DatabaseType.MariaDB => "MariaDB",
-                DatabaseTypeMapper.DatabaseType.SQLite => "SQLite",
-            };
-        }
-
-        /// <summary>
-        /// Build connection string from ConnectionConfig
-        /// </summary>
-        private string BuildConnectionString(ConnectionConfig config)
-        {
-            return config.DatabaseType.ToLowerInvariant() switch
-            {
-                "sqlserver" => $"Server={config.Host};Database={config.Database};User Id={config.Username};Password={config.Password};TrustServerCertificate=true;",
-                "postgresql" => $"Host={config.Host};Port={config.Port};Database={config.Database};Username={config.Username};Password={config.Password};",
-                "mysql" or "mariadb" => $"Server={config.Host};Port={config.Port};Database={config.Database};User Id={config.Username};Password={config.Password};",
-                "oracle" => $"Data Source={config.Host}:{config.Port}/{config.Database};User Id={config.Username};Password={config.Password};",
-                "sqlite" => $"Data Source={config.Database};",
-                _ => config.ToConnectionProperties().ConnectionString ?? string.Empty
-            };
-        }
-
-        private ActionResult<DatabaseCreationResult> CreateDatabaseLegacy(CreateDatabaseRequest request)
-        {
-            return StatusCode(500, new DatabaseCreationResult
-            {
-                Success = false,
-                ErrorMessage = "Legacy database creation path is not available in the current API surface"
-            });
         }
 
         #region LOV Management Endpoints
@@ -1628,57 +877,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             return Ok(response);
         }
 
-        /// <summary>
-        /// Gets or creates IDataSource from ConnectionConfig (helper method)
-        /// </summary>
-        private IDataSource GetDataSourceFromConnectionConfig(ConnectionConfig config)
-        {
-            var driverInfo = _setupService.GetDriverInfo(config.DatabaseType);
-            if (driverInfo == null)
-            {
-                throw RefusalException.Invalid($"Unknown database type: {config.DatabaseType}.");
-            }
-
-            // Check if connection already exists
-            if (_editor.ConfigEditor.DataConnectionExist(config.ConnectionName))
-            {
-                var dataSource = _editor.GetDataSource(config.ConnectionName);
-                if (dataSource != null)
-                {
-                    return dataSource;
-                }
-            }
-
-            // Create new connection
-            var connectionProperties = new ConnectionProperties
-            {
-                ConnectionName = config.ConnectionName,
-                DatabaseType = ParseDataSourceType(driverInfo.DataSourceType),
-                DriverName = driverInfo.NuGetPackage,
-                Host = config.Host,
-                Port = config.Port > 0 ? config.Port : driverInfo.DefaultPort,
-                Database = config.Database,
-                UserID = config.Username ?? string.Empty,
-                Password = config.Password ?? string.Empty,
-                ConnectionString = config.ConnectionString ?? string.Empty,
-                GuidID = Guid.NewGuid().ToString()
-            };
-
-            if (!_editor.ConfigEditor.DataConnectionExist(config.ConnectionName))
-            {
-                _editor.ConfigEditor.AddDataConnection(connectionProperties);
-                _editor.ConfigEditor.SaveDataconnectionsValues();
-            }
-
-            var newDataSource = _editor.GetDataSource(config.ConnectionName);
-            if (newDataSource == null)
-            {
-                throw new InvalidOperationException($"Failed to create data source for connection: {config.ConnectionName}");
-            }
-
-            return newDataSource;
-        }
-
         private sealed class SeedDataCatalogCompatibility
         {
             public List<SeedDataCategory> GetSeedDataCategories()
@@ -1738,149 +936,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
         }
 
-        private sealed class PPDMScriptGenerator
-        {
-            private readonly DatabaseTypeMapper.DatabaseType _dbType;
-            private readonly IPPDMMetadataRepository? _metadata;
-
-            public PPDMScriptGenerator(object databaseType, object? metadata)
-            {
-                _dbType  = databaseType is DatabaseTypeMapper.DatabaseType dt ? dt : DatabaseTypeMapper.DatabaseType.SqlServer;
-                _metadata = metadata as IPPDMMetadataRepository;
-            }
-
-            public Task<string> GenerateTableScriptAsync(Type entityType)
-            {
-                var tableName = entityType.Name.ToUpperInvariant();
-                var props = entityType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-                    .Where(p => p.CanRead && p.CanWrite && p.Name != "Item" && !IsNavigationProp(p))
-                    .ToArray();
-
-                var sb = new System.Text.StringBuilder();
-                sb.AppendLine($"CREATE TABLE {QuoteId(tableName)} (");
-
-                var colDefs = props.Select(p => $"    {QuoteId(p.Name.ToUpperInvariant())} {MapType(p.PropertyType)}").ToList();
-                sb.AppendLine(string.Join($",{Environment.NewLine}", colDefs));
-                sb.AppendLine(");");
-
-                return Task.FromResult(sb.ToString());
-            }
-
-            public Task<string> GeneratePrimaryKeyScriptAsync(Type entityType)
-            {
-                var tableName = entityType.Name.ToUpperInvariant();
-                var pk = FindPrimaryKey(entityType);
-                if (string.IsNullOrEmpty(pk))
-                    return Task.FromResult(string.Empty);
-
-                var constraintName = $"PK_{tableName}";
-                // The same statement for every database type; only the identifiers' quoting differs, which QuoteId owns.
-                var sql = $"ALTER TABLE {QuoteId(tableName)} ADD CONSTRAINT {constraintName} PRIMARY KEY ({QuoteId(pk)});";
-                return Task.FromResult(sql + Environment.NewLine);
-            }
-
-            public Task<string> GenerateForeignKeyScriptsAsync(Type entityType)
-            {
-                var tableName = entityType.Name.ToUpperInvariant();
-                var props = entityType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-                    .Where(p => p.CanRead && p.CanWrite && p.PropertyType == typeof(string)
-                                && p.Name.EndsWith("_ID", StringComparison.OrdinalIgnoreCase)
-                                && !p.Name.Equals(FindPrimaryKey(entityType), StringComparison.OrdinalIgnoreCase))
-                    .ToArray();
-
-                if (props.Length == 0)
-                    return Task.FromResult(string.Empty);
-
-                var sb = new System.Text.StringBuilder();
-                int idx = 1;
-                foreach (var p in props)
-                {
-                    var fkCol = p.Name.ToUpperInvariant();
-                    // Derive referenced table: strip trailing _ID, e.g. FIELD_ID → FIELD
-                    var refTable = fkCol.Length > 3 ? fkCol[..^3] : fkCol;
-                    var constraintName = $"FK_{tableName}_{refTable}_{idx++}";
-                    sb.AppendLine($"ALTER TABLE {QuoteId(tableName)} ADD CONSTRAINT {constraintName}");
-                    sb.AppendLine($"    FOREIGN KEY ({QuoteId(fkCol)}) REFERENCES {QuoteId(refTable)} ({QuoteId(fkCol)});");
-                }
-                return Task.FromResult(sb.ToString());
-            }
-
-            public Task<string> GenerateIndexScriptsAsync(Type entityType)
-            {
-                var tableName = entityType.Name.ToUpperInvariant();
-                var pk = FindPrimaryKey(entityType);
-                if (string.IsNullOrEmpty(pk))
-                    return Task.FromResult(string.Empty);
-
-                // Index on PK column (unique) and ACTIVE_IND for soft-delete queries
-                var sb = new System.Text.StringBuilder();
-                sb.AppendLine($"CREATE UNIQUE INDEX IX_{tableName}_{pk} ON {QuoteId(tableName)} ({QuoteId(pk)});");
-
-                var hasActiveInd = entityType.GetProperty("ACTIVE_IND") != null;
-                if (hasActiveInd)
-                    sb.AppendLine($"CREATE INDEX IX_{tableName}_ACTIVE_IND ON {QuoteId(tableName)} ({QuoteId("ACTIVE_IND")});");
-
-                return Task.FromResult(sb.ToString());
-            }
-
-            // ── Helpers ────────────────────────────────────────────────────────
-
-            private static bool IsNavigationProp(System.Reflection.PropertyInfo p)
-            {
-                var t = p.PropertyType;
-                if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>)) return true;
-                if (typeof(System.ComponentModel.INotifyPropertyChanged).IsAssignableFrom(t) && t != typeof(string)) return true;
-                return false;
-            }
-
-            private string MapType(Type clrType)
-            {
-                var underlying = Nullable.GetUnderlyingType(clrType) ?? clrType;
-                bool nullable = Nullable.GetUnderlyingType(clrType) != null || clrType == typeof(string);
-
-                string sqlType = (_dbType, underlying) switch
-                {
-                    (_, _) when underlying == typeof(string)          => _dbType == DatabaseTypeMapper.DatabaseType.Oracle ? "VARCHAR2(240)" : "NVARCHAR(240)",
-                    (_, _) when underlying == typeof(decimal)         => "DECIMAL(20,6)",
-                    (_, _) when underlying == typeof(double)          => "FLOAT",
-                    (_, _) when underlying == typeof(float)           => "REAL",
-                    (_, _) when underlying == typeof(int)             => "INTEGER",
-                    (_, _) when underlying == typeof(long)            => "BIGINT",
-                    (_, _) when underlying == typeof(bool)            => _dbType == DatabaseTypeMapper.DatabaseType.Oracle ? "NUMBER(1)" : "BIT",
-                    (_, _) when underlying == typeof(DateTime)        => _dbType == DatabaseTypeMapper.DatabaseType.Oracle ? "DATE" : "DATETIME",
-                    (_, _) when underlying == typeof(DateTimeOffset)  => "DATETIMEOFFSET",
-                    _                                                  => "NVARCHAR(240)"
-                };
-
-                return nullable ? $"{sqlType} NULL" : $"{sqlType} NOT NULL";
-            }
-
-            private static string FindPrimaryKey(Type entityType)
-            {
-                var name = entityType.Name.ToUpperInvariant();
-                // Convention: {TABLENAME}_ID, or UWI for WELL
-                var candidates = new[] { $"{name}_ID", "UWI", "FACILITY_ID", "PDEN_ID", "PPDM_GUID" };
-                foreach (var candidate in candidates)
-                {
-                    if (entityType.GetProperty(candidate) != null)
-                        return candidate;
-                }
-                // Fall back to first property ending in _ID
-                var prop = entityType.GetProperties().FirstOrDefault(p => p.Name.EndsWith("_ID", StringComparison.OrdinalIgnoreCase));
-                return prop?.Name.ToUpperInvariant() ?? string.Empty;
-            }
-
-            private string QuoteId(string identifier) => _dbType switch
-            {
-                DatabaseTypeMapper.DatabaseType.Oracle     => $"\"{identifier}\"",
-                DatabaseTypeMapper.DatabaseType.PostgreSQL => $"\"{identifier}\"",
-                DatabaseTypeMapper.DatabaseType.MySQL      => $"`{identifier}`",
-                DatabaseTypeMapper.DatabaseType.MariaDB    => $"`{identifier}`",
-                DatabaseTypeMapper.DatabaseType.SqlServer  => $"[{identifier}]",
-                DatabaseTypeMapper.DatabaseType.SQLite     => $"[{identifier}]",
-            };
-        }
-
         private sealed class ExtractRATablesCompatibility
         {
             private readonly IPPDMMetadataRepository? _metadata;
@@ -1917,30 +972,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 await System.IO.File.WriteAllTextAsync(outputPath, json);
                 return json;
             }
-        }
-
-        /// <summary>
-        /// Helper method to convert string to DataSourceType enum
-        /// </summary>
-        private static TheTechIdea.Beep.Utilities.DataSourceType ParseDataSourceType(string dataSourceTypeString)
-        {
-            if (string.IsNullOrEmpty(dataSourceTypeString))
-                return TheTechIdea.Beep.Utilities.DataSourceType.SqlServer;
-
-            // Try parsing the enum directly
-            if (Enum.TryParse<TheTechIdea.Beep.Utilities.DataSourceType>(dataSourceTypeString, true, out var result))
-                return result;
-
-            // Map string values to enum values (case-insensitive)
-            return dataSourceTypeString.ToLowerInvariant() switch
-            {
-                "sqlserver" => TheTechIdea.Beep.Utilities.DataSourceType.SqlServer,
-                "postgre" or "postgresql" => TheTechIdea.Beep.Utilities.DataSourceType.Postgre,
-                "mysql" or "mariadb" => TheTechIdea.Beep.Utilities.DataSourceType.Mysql,
-                "oracle" => TheTechIdea.Beep.Utilities.DataSourceType.Oracle,
-                "sqlite" => TheTechIdea.Beep.Utilities.DataSourceType.SqlLite,
-                _ => TheTechIdea.Beep.Utilities.DataSourceType.SqlServer
-            };
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -2064,29 +1095,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         /// <summary>
-        /// POST /api/ppdm39/setup/schema/plan
-        /// Builds a MigrationManager plan and returns review artifacts without executing it.
-        /// </summary>
-        [HttpPost("schema/plan")]
-        public async Task<ActionResult<SchemaMigrationPlanResult>> PlanSchemaMigration([FromBody] SchemaMigrationPlanRequest request)
-        {
-            var result = await _schemaMigrationService.PlanSchemaMigrationAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
-        }
-
-        /// <summary>
-        /// POST /api/ppdm39/setup/schema/approve
-        /// Records approval metadata for a previously generated schema migration plan.
-        /// </summary>
-        [HttpPost("schema/approve")]
-        public async Task<ActionResult<SchemaMigrationApprovalResult>> ApproveSchemaMigration([FromBody] SchemaMigrationApprovalRequest request)
-        {
-            request.ApprovedBy = User.ActingUserId();
-            var result = await _schemaMigrationService.ApproveSchemaMigrationPlanAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
-        }
-
-        /// <summary>
         /// GET /api/ppdm39/setup/schema/ci-validate/{planId}
         /// Returns CI gate, policy, and preflight validation evidence for a generated migration plan.
         /// </summary>
@@ -2094,30 +1102,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<SchemaMigrationCiValidationResult>> ValidateSchemaMigrationForCi(string planId)
         {
             var result = await _schemaMigrationService.ValidateMigrationPlanForCiAsync(planId);
-            return result.Success ? Ok(result) : BadRequest(result);
-        }
-
-        /// <summary>
-        /// POST /api/ppdm39/setup/schema/execute
-        /// Executes an approved schema migration plan.
-        /// </summary>
-        [HttpPost("schema/execute")]
-        public async Task<ActionResult<SchemaMigrationExecuteResult>> ExecuteSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
-        {
-            request.ExecutedBy = User.ActingUserId();
-            var result = await _schemaMigrationService.ExecuteSchemaMigrationPlanAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
-        }
-
-        /// <summary>
-        /// POST /api/ppdm39/setup/schema/start
-        /// Starts an approved schema migration plan in the background and returns an execution token.
-        /// </summary>
-        [HttpPost("schema/start")]
-        public async Task<ActionResult<OperationStartResponse>> StartSchemaMigration([FromBody] SchemaMigrationExecuteRequest request)
-        {
-            request.ExecutedBy = User.ActingUserId();
-            var result = await _schemaMigrationService.StartSchemaMigrationExecutionAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -2141,31 +1125,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             var result = await _schemaMigrationService.GetSchemaMigrationArtifactsAsync(planId);
             return result.Success ? Ok(result) : NotFound(result);
-        }
-
-        /// <summary>
-        /// POST /api/ppdm39/setup/create-schema-from-migration
-        /// Uses BeepDM MigrationManager to create the PPDM39 schema tables in the target database.
-        /// </summary>
-        [HttpPost("create-schema-from-migration")]
-        public async Task<ActionResult<CreateSchemaResult>> CreateSchemaFromMigration([FromBody] CreateSchemaRequest request)
-        {
-            var connectionName = request?.ConnectionName ?? request?.Connection?.ConnectionName;
-            if (string.IsNullOrWhiteSpace(connectionName))
-            {
-                return BadRequest(new CreateSchemaResult
-                {
-                    Success = false,
-                    Message = "Connection name is required."
-                });
-            }
-
-            var result = await _setupService.CreateSchemaAsync(new ConnectionConfig
-            {
-                ConnectionName = connectionName
-            }, request?.SchemaName ?? string.Empty);
-
-            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         // ── Generate Demo Data ────────────────────────────────────────────────

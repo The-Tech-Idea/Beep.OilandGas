@@ -33,6 +33,21 @@ namespace Beep.OilandGas.ApiService.Tests;
 
 public class LocalDbDriverTests(ITestOutputHelper output)
 {
+    private static RepositoryTenantContext TenantScope()
+    {
+        var context = new RepositoryTenantContext();
+        context.SelectTenant("A");
+        return context;
+    }
+
+    private static void SetCaller(ControllerBase controller) => controller.ControllerContext = new()
+    {
+        HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "test-admin")], "test"))
+        }
+    };
+
     [LocalDbModuleFact]
     public async Task BeepMigrationAndWritesStayOnTheSelectedNamedDatabase()
     {
@@ -117,14 +132,18 @@ public class LocalDbDriverTests(ITestOutputHelper output)
                 new DbContextOptionsBuilder<SqlServerRepositoryDbContext>().UseSqlServer(repositoryConnection).Options);
             await repository.Database.MigrateAsync();
             Assert.Equal(repository.Database.GetMigrations(), await repository.Database.GetAppliedMigrationsAsync());
-            var resolver = new ModuleConnectionResolver(repository, editor.Object);
+            repository.Set<AppTenant>().Add(new() { TenantId = "A", Name = "Test tenant", IsActive = true });
+            await repository.SaveChangesAsync();
+            var tenant = TenantScope();
+            var resolver = new ModuleConnectionResolver(repository, editor.Object, tenant);
             var setup = new PPDM39SetupService(editor.Object, NullLogger<PPDM39SetupService>.Instance,
                 Mock.Of<Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler>(),
                 Mock.Of<Beep.OilandGas.PPDM39.Core.IPPDM39DefaultsRepository>(),
                 Mock.Of<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataRepository>(),
                 new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), moduleSetupOrchestrator: new ModuleSetupOrchestrator([module], NullLogger<ModuleSetupOrchestrator>.Instance),
                 migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync);
-            var controller = new ModuleRepositoryController(repository, editor.Object, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
+            var controller = new ModuleRepositoryController(repository, editor.Object, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new ModuleBindingService(repository, editor.Object), tenant);
+            SetCaller(controller);
             var bound = Assert.IsType<OkObjectResult>(await controller.Bind(module.ModuleId, new(database, null), default));
             var binding = Assert.IsType<ModuleDatabaseBinding>(bound.Value);
             Assert.Equal(database, await resolver.ResolveAsync(module.ModuleId));
@@ -272,7 +291,8 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         var setup = new PPDM39SetupService(editor, NullLogger<PPDM39SetupService>.Instance, common, defaults, metadata,
             new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), moduleSetupOrchestrator: new ModuleSetupOrchestrator([module], NullLogger<ModuleSetupOrchestrator>.Instance),
             migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync);
-        var controller = new ModuleRepositoryController(repository, editor, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
+        var controller = new ModuleRepositoryController(repository, editor, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new ModuleBindingService(repository, editor), TenantScope());
+        SetCaller(controller);
         var binding = Assert.IsType<ModuleDatabaseBinding>(Assert.IsType<OkObjectResult>(
             await controller.Bind(module.ModuleId, new(database, null), default)).Value);
         var plan = await PlanOverHttpAsync(controller, module.ModuleId, binding.ConcurrencyStamp);
@@ -335,7 +355,8 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         var setup = new PPDM39SetupService(editor, NullLogger<PPDM39SetupService>.Instance, common, defaults, metadata,
             new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), moduleSetupOrchestrator: new ModuleSetupOrchestrator([module], NullLogger<ModuleSetupOrchestrator>.Instance),
             migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync);
-        var controller = new ModuleRepositoryController(repository, editor, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
+        var controller = new ModuleRepositoryController(repository, editor, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new ModuleBindingService(repository, editor), TenantScope());
+        SetCaller(controller);
         var binding = Assert.IsType<ModuleDatabaseBinding>(Assert.IsType<OkObjectResult>(
             await controller.Bind(module.ModuleId, new(database, null), default)).Value);
         var plan = await PlanOverHttpAsync(controller, module.ModuleId, binding.ConcurrencyStamp);

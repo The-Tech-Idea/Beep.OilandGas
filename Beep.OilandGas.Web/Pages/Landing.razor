@@ -1,98 +1,201 @@
 @page "/landing"
 @page "/"
-@using TheTechIdea.Data.OilGas
-@using Beep.OilandGas.Web.Services
+@implements IDisposable
+@using Beep.OilandGas.Client.App
 @using Beep.Foundation.IdentityServer.Shared.Identity
-@inject PersonaClient IdentityClient
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@inject IPersonaContextService PersonaContext
+@inject CompanyClientContext Company
+@inject CompanySelectionService CompanySelection
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
-@inject ILogger<Landing> Logger
+@inject OilGasCallFailures Calls
+@inject ApiClient Api
 
-@if (_isLoading)
-{
-    <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="height: 100vh;">
-        <MudStack AlignItems="AlignItems.Center" Spacing="3">
-            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
-            <MudText Typo="Typo.h6">Loading personalized dashboard...</MudText>
-        </MudStack>
-    </MudContainer>
-}
-else if (_errorMessage != null)
-{
-    <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="height: 100vh;">
-        <MudStack AlignItems="AlignItems.Center" Spacing="3">
-            <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Large" Color="Color.Error" />
-            <MudText Typo="Typo.h6" Color="Color.Error">@_errorMessage</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Nav.NavigateTo("/dashboard"))">
-                Go to Dashboard
-            </MudButton>
-        </MudStack>
-    </MudContainer>
-}
-
-@code {
-    private bool _isLoading = true;
-    private string? _errorMessage;
-    private string? _userId;
-    private AppUserPersona? _currentProfile;
-    private AppPersona? _currentPersona;
-
-    protected override async Task OnInitializedAsync()
+<PageTitle>Company workspace</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-6">
+    <MudText Typo="Typo.h4" Class="mb-3">Your company workspace</MudText>
+    @if (_loading)
     {
-        try
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading company workspace" />
+        <MudText Class="my-3" role="status">Loading workspace settings…</MudText>
+    }
+    else if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-3">@_error</MudAlert>
+        <MudButton OnClick="Reload" StartIcon="@Icons.Material.Filled.Refresh">Retry workspace settings</MudButton>
+        <CompanySelector />
+        @if (Company.Selection is not null)
         {
-            // Get current user
-            var authState = await AuthProvider.GetAuthenticationStateAsync();
-
-            // Somebody signed out is sent to sign in and brought back here.
-            if (authState.User.Identity?.IsAuthenticated != true)
-            {
-                Nav.NavigateTo(BeepClientEndpoints.LoginWithReturn(new Uri(Nav.Uri).PathAndQuery), forceLoad: true);
-                return;
-            }
-
-            // Signed in, but the OilGas API did not resolve their account for this request (an outage: a refused account is
-            // signed out by the identity server's client library). Sending them to sign in would sign them straight back.
-            _userId = PartyIdClaims.Find(authState.User);
-            if (string.IsNullOrEmpty(_userId))
-            {
-                _errorMessage = "Your OilGas account could not be loaded just now. Try again shortly.";
-                return;
-            }
-
-            // Load user's profile and available personas
-            _currentProfile = await IdentityClient.GetAsync(_userId);
-            
-            if (_currentProfile == null)
-            {
-                Nav.NavigateTo("/dashboard");
-                return;
-            }
-
-            // Get the list of available personas to find the current one's definition
-            var allPersonas = await IdentityClient.CatalogAsync();
-            _currentPersona = allPersonas.FirstOrDefault(p => p.Code == _currentProfile.PersonaCode);
-
-            // Redirect to the persona's default landing route if defined
-            if (!string.IsNullOrEmpty(_currentPersona?.DefaultRoute))
-            {
-                Nav.NavigateTo(_currentPersona.DefaultRoute);
-            }
-            else
-            {
-                // Fallback to dashboard if no default landing route is set
-                Nav.NavigateTo("/dashboard");
-            }
-        }
-        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or InvalidOperationException)
-        {
-            // Handled: the persona settings could not be read from the API; the page says so and offers the dashboard.
-            Logger.LogWarning(exception, "The signed-in person's persona settings could not be loaded.");
-            _errorMessage = "Persona settings could not be loaded.";
-        }
-        finally
-        {
-            _isLoading = false;
+            <MudButton OnClick="RefreshCompanyAccess" Disabled="@_refreshingAccess" StartIcon="@Icons.Material.Filled.Refresh">Refresh company access</MudButton>
+            <PersonaSelector />
         }
     }
+    else if (Company.Selection is null)
+    {
+        <MudText Class="mb-4">Choose the company whose work and data you want to open.</MudText>
+        <CompanySelector />
+        @if (_isAdministrator)
+        {
+            @if (_setupWarning is not null) { <MudAlert Severity="Severity.Warning" Class="my-3">@_setupWarning</MudAlert> }
+            <MudAlert Severity="Severity.Info" Class="my-3">Setting up this installation? The first-time setup guide helps you configure the system repository, company access and country settings.</MudAlert>
+            <MudButton Href="/setup/repository" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Settings">Open first-time setup</MudButton>
+        }
+    }
+    else
+    {
+        <MudText Class="mb-3">Company: @Company.Selection.Scope.TenantId / @Company.Selection.Scope.BusinessAssociateId</MudText>
+        @if (_isAdministrator && _setupWarning is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Class="my-3">@_setupWarning</MudAlert>
+            <MudButton Href="/setup/repository" Variant="Variant.Outlined">Open first-time setup</MudButton>
+        }
+        <MudText Class="mb-3">Choose a workspace. Data and actions follow your current company roles and resource access.</MudText>
+        <MudButton OnClick="RefreshCompanyAccess" Disabled="@_refreshingAccess" StartIcon="@Icons.Material.Filled.Refresh">Refresh company access</MudButton>
+        <PersonaSelector />
+        @if (PersonaContext.Catalog.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">No workspace is assigned to your current company roles. Contact your administrator to review role and workspace assignments.</MudAlert>
+        }
+    }
+</MudContainer>
+
+@code {
+    private bool _loading, _disposed, _reloadRequested, _refreshingAccess, _isAdministrator;
+    private string? _error, _setupWarning;
+    private long _identityGeneration;
+    protected override async Task OnInitializedAsync()
+    {
+        Company.Changed += CompanyChanged;
+        AuthProvider.AuthenticationStateChanged += AuthenticationChanged;
+        await Reload();
+    }
+    private void CompanyChanged()
+    {
+        if (!_disposed) _ = InvokeAsync(async () => { await Reload(); StateHasChanged(); });
+    }
+    private void AuthenticationChanged(Task<AuthenticationState> state)
+    {
+        Interlocked.Increment(ref _identityGeneration);
+        _isAdministrator = false;
+        if (!_disposed) _ = InvokeAsync(async () => { await Reload(); if (!_disposed) StateHasChanged(); });
+    }
+    private async Task RefreshCompanyAccess()
+    {
+        var captured = Company.Snapshot; var identity = Interlocked.Read(ref _identityGeneration);
+        if (_disposed || _refreshingAccess || captured.Selection is null) return;
+        _refreshingAccess = true;
+        try
+        {
+            var user = (await AuthProvider.GetAuthenticationStateAsync()).User;
+            if (_disposed || identity != Interlocked.Read(ref _identityGeneration) || captured != Company.Snapshot) return;
+            if (user.Identity?.IsAuthenticated != true || PartyIdClaims.Find(user) != captured.Selection.UserId)
+                throw new InvalidOperationException("The account does not match the selected company.");
+            await CompanySelection.SelectAsync(captured.Selection.Scope);
+        }
+        catch (Exception error)
+        {
+            if (!_disposed && identity == Interlocked.Read(ref _identityGeneration) && (Company.Selection is null || captured == Company.Snapshot))
+                _error = Calls.Explain(error, "refreshing company access", "Company access could not be confirmed. Select a company again");
+        }
+        finally { if (!_disposed) _refreshingAccess = false; }
+    }
+    private async Task Reload()
+    {
+        if (_disposed) return;
+        if (_loading) { _reloadRequested = true; return; }
+        _loading = true;
+        try
+        {
+            do
+            {
+                _reloadRequested = false; _error = null; _setupWarning = null;
+                var captured = Company.Snapshot;
+                var identity = Interlocked.Read(ref _identityGeneration);
+                try
+                {
+                    var user = (await AuthProvider.GetAuthenticationStateAsync()).User;
+                    if (_disposed) return;
+                    if (captured != Company.Snapshot || identity != Interlocked.Read(ref _identityGeneration)) { _reloadRequested = true; continue; }
+                    if (user.Identity?.IsAuthenticated != true)
+                    {
+                        Nav.NavigateTo(BeepClientEndpoints.LoginWithReturn(new Uri(Nav.Uri).PathAndQuery), forceLoad: true);
+                        return;
+                    }
+                    var actor = PartyIdClaims.Find(user);
+                    if (string.IsNullOrEmpty(actor)) { _error = "Your account could not be loaded. Retry workspace settings."; return; }
+                    _isAdministrator = user.IsInRole("Administrator");
+                    if (captured.Selection is not null && captured.Selection.UserId != actor)
+                    { _error = "Choose a company for your current account."; return; }
+                    if (_isAdministrator)
+                    {
+                        var sharedReady = false;
+                        try
+                        {
+                            var status = await Api.GetAsync<SystemSetupRepositoryStatus>("/api/setup/system-repository/status");
+                            if (_disposed) return;
+                            if (captured != Company.Snapshot || identity != Interlocked.Read(ref _identityGeneration)) { _reloadRequested = true; continue; }
+                            var needsSetup = status?.Status is "Unconfigured" or "MigrationRequired";
+                            if (status?.Status == "SchemaReady")
+                            {
+                                needsSetup = !await SystemSetupReadinessReader.HasDefaultsAsync(Api);
+                                if (_disposed) return;
+                                if (captured != Company.Snapshot || identity != Interlocked.Read(ref _identityGeneration)) { _reloadRequested = true; continue; }
+                                sharedReady = !needsSetup;
+                            }
+                            var path = new Uri(Nav.Uri).AbsolutePath.TrimEnd('/');
+                            if (needsSetup && (path.Length == 0 || path.Equals("/landing", StringComparison.OrdinalIgnoreCase)))
+                            { Nav.NavigateTo("/setup/repository"); return; }
+                            if (status?.Status is not ("SchemaReady" or "Unconfigured" or "MigrationRequired"))
+                                _setupWarning = "System setup could not be confirmed. Open first-time setup to check the repository.";
+                        }
+                        catch (Exception error) when (error is not OperationCanceledException)
+                        {
+                            if (_disposed) return;
+                            if (captured != Company.Snapshot || identity != Interlocked.Read(ref _identityGeneration)) { _reloadRequested = true; continue; }
+                            _setupWarning = Calls.Explain(error, "checking first-time system setup", "System setup could not be confirmed. Open first-time setup to check the repository");
+                        }
+                        if (sharedReady && captured.Selection is { } selected && selected.Roles.Contains("Administrator", StringComparer.Ordinal))
+                        {
+                            try
+                            {
+                                var companySetup = await CompanyEnvironmentReadinessReader.ReadAsync(Api, selected.Scope);
+                                if (_disposed) return;
+                                if (captured != Company.Snapshot || identity != Interlocked.Read(ref _identityGeneration)) { _reloadRequested = true; continue; }
+                                var path = new Uri(Nav.Uri).AbsolutePath.TrimEnd('/');
+                                if (companySetup.Status != CompanyEnvironmentReadiness.Current && (path.Length == 0 || path.Equals("/landing", StringComparison.OrdinalIgnoreCase)))
+                                { Nav.NavigateTo("/setup/repository"); return; }
+                            }
+                            catch (Exception error) when (error is not OperationCanceledException)
+                            {
+                                if (_disposed) return;
+                                if (captured != Company.Snapshot || identity != Interlocked.Read(ref _identityGeneration)) { _reloadRequested = true; continue; }
+                                _setupWarning = Calls.Explain(error, "checking company environment setup", "Company setup could not be confirmed. Open first-time setup to check the selected company");
+                            }
+                        }
+                    }
+                    if (captured.Selection is null) return;
+                    await PersonaContext.ReloadAsync();
+                    if (_disposed) return;
+                    if (captured != Company.Snapshot || identity != Interlocked.Read(ref _identityGeneration)) { _reloadRequested = true; continue; }
+                    if (_setupWarning is null && PersonaContext.CurrentPersona is { } persona)
+                    {
+                        var route = PersonaNavigation.HomeRoute(persona.DefaultRoute);
+                        if (route == "/dashboard" && persona.DefaultRoute != "/dashboard")
+                            _error = "The saved workspace destination is unavailable. Choose another workspace from the workspace selector.";
+                        else if (route is "/" or "/landing")
+                            _error = "The saved workspace destination points back to this page. Choose another workspace.";
+                        else Nav.NavigateTo(route);
+                    }
+                }
+                catch (OperationCanceledException)
+                { if (!_disposed && !_reloadRequested) _error = "The account or company changed. Retry workspace settings."; }
+                catch (Exception ex)
+                { if (!_disposed && !_reloadRequested) _error = Calls.Explain(ex, "loading company workspace settings", "Workspace settings could not be loaded"); }
+            } while (!_disposed && _reloadRequested);
+        }
+        finally { _loading = false; }
+    }
+    public void Dispose() { _disposed = true; Interlocked.Increment(ref _identityGeneration); Company.Changed -= CompanyChanged; AuthProvider.AuthenticationStateChanged -= AuthenticationChanged; }
 }

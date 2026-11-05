@@ -1,0 +1,38 @@
+[
+  {
+    "path": "TheTechIdea.Data/OilGas/CompanyMaintenanceAssetReturn.cs",
+    "sha256": "935a515b0d757fb9b0bee1873709b3838128b751f7a699f0f6ef44fcb9582d33"
+  },
+  {
+    "path": "Beep.OilandGas.ApiService/Services/CompanyMaintenanceHandoffService.AssetReturn.cs",
+    "sha256": "0a68d57bde6f837854e099d5b2d9c754390f720ca7ba69cb1fa3d72e43fefeb1"
+  },
+  {
+    "path": "Beep.OilandGas.Web/Services/BusinessProcessServiceClient.AssetEvidence.cs",
+    "sha256": "34f7ef8b8fa992051544f3a415be81b0b1cdc9ef5e2c448c5ce10c51f331a713"
+  },
+  {
+    "path": "Beep.OilandGas.Web/Services/MaintenanceAssetReturnState.cs",
+    "sha256": "4942f741b49835ff42d0bd24f4a036fff0edac8a69b49cbfaa0019f5b84d987f"
+  },
+  {
+    "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceAssetReturnPanel.razor",
+    "sha256": "1631826d11e53bf94621f0bf55dee090ed35d9d592f536202fd55ff8ca438d3d"
+  },
+  {
+    "path": "Beep.OilandGas.Web/Components/BusinessProcess/MaintenanceClosurePanel.razor",
+    "sha256": "92473a0eef871009ec8877a06b21ee762e6d65c7748348a8ca6246fe26a606f8"
+  },
+  {
+    "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceAssetReturnStateTests.cs",
+    "sha256": "8bcac6a234fb282f93f28ec9a6edd9c5b7bb99b26debdfcd9845259e30b39ff4"
+  },
+  {
+    "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetTests.cs",
+    "sha256": "fc8c4e87016bb3bd7901919d921e6abff410f8c8c46f401cd2021768c2f9a6e7"
+  },
+  {
+    "path": "Beep.OilandGas.Repository.Tests/CompanyMaintenanceQualifiedAssetHttpTests.cs",
+    "sha256": "d03bd995bb79dca2df69cf7f67ee4284ed5a2695cbed0dc0622f3052897a9c23"
+  }
+]

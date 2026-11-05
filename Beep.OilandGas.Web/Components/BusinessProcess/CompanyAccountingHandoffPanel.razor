@@ -1,0 +1,86 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject CompanyAccountingHandoffState Handoff
+@inject IBusinessProcessServiceClient Processes
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 mt-4" Outlined="true">
+    <MudText Typo="Typo.h6">Hand off this source to a workflow</MudText>
+    <MudText>Choose a recorded workflow and review its initial assignment before submitting.</MudText>
+    @if(Handoff.HasUnconfirmedIntent)
+    {
+        <MudAlert Severity="Severity.Warning">The previous handoff outcome is unconfirmed. Return to the original account, company and source, reload choices, and confirm the same handoff. Keep this session open until it is reconciled.</MudAlert>
+    }
+    <MudButton OnClick="Load" Disabled="Handoff.Busy" Variant="Variant.Outlined">Review workflow choices</MudButton>
+    @if(Handoff.Busy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing or submitting company handoff" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(Handoff.Discovery?.Start is {} existing)
+    {
+        <MudAlert Severity="Severity.Success">An existing handoff for this exact original preparation is confirmed. Process status: @Handoff.Discovery.Status.</MudAlert>
+        <MudButton Href="@WorkflowTaskRoute.For("COMPANY_ACCOUNTING",existing.InstanceId(),existing.EntityType)" Variant="Variant.Outlined">Open original preparation process</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Open assigned work</MudButton>
+    }
+    @if(Handoff.Catalog is {} catalog)
+    {
+        @if(catalog.Choices.Count==0){<MudAlert Severity="Severity.Info">No active recorded workflow matches this source. Ask the company workflow administrator to review its definitions.</MudAlert>}
+        else
+        {
+            <MudSelect T="string" Label="Recorded workflow" Value="@(Handoff.Review?.ProcessId ?? string.Empty)" ValueChanged="Select" Disabled="Handoff.Busy">
+                @foreach(var choice in catalog.Choices){<MudSelectItem T="string" Value="@choice.ProcessId">@choice.ProcessName · @choice.ProcessVersion · @choice.InitialRole</MudSelectItem>}
+            </MudSelect>
+        }
+    }
+    @if(Handoff.Review is {} review)
+    {
+        <MudText>Workflow: @review.ProcessName · Version: @review.ProcessVersion</MudText>
+        <MudText>Initial assigned role: @review.InitialRole · Recorded source maker: @review.SourcePreparerUserId</MudText>
+        <MudText Typo="Typo.caption">This handoff records workflow assignments. Financial approval, matching, posting and payment remain separate actions.</MudText>
+        <MudButton OnClick="Submit" Disabled="@(Handoff.Busy || Handoff.Receipt is not null)" Color="Color.Primary" Variant="Variant.Filled">@(Handoff.HasUnconfirmedIntent?"Confirm original handoff":"Submit reviewed handoff")</MudButton>
+    }
+    @if(Handoff.Receipt is {} receipt)
+    {
+        <MudAlert Severity="Severity.Success">Recorded handoff confirmed. Assigned tasks: @receipt.TaskIds.Count.</MudAlert>
+        <MudButton Href="@WorkflowTaskRoute.For("COMPANY_ACCOUNTING",receipt.InstanceId,receipt.EntityType)" Variant="Variant.Outlined">Open recorded process</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Open assigned work</MudButton>
+    }
+</MudPaper>
+@code {
+    [Parameter] public string EntityType {get;set;}="";
+    [Parameter] public string? EntityId {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    private string? _error;
+    protected override void OnInitialized(){Handoff.Changed+=Changed;}
+    protected override void OnParametersSet(){Handoff.AttachSource(EntityType,EntityId,SourceRevision);_error=null;}
+    private void Changed()=>_ = InvokeAsync(StateHasChanged);
+    private async Task RequireAuthority()
+    {
+        var original=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(original!=Company.Snapshot || original.Selection is null || user.Identity?.IsAuthenticated!=true || !original.Selection.Roles.Any(user.IsInRole) ||
+            !original.Selection.Permissions.Contains("Workflow.Start",StringComparer.Ordinal) ||
+            !original.Selection.Permissions.Contains(CompanyAccountingSourceTypes.ReadPermission(EntityType),StringComparer.Ordinal))
+            throw new InvalidOperationException("Current company roles, source read access and workflow start permission are required.");
+    }
+    private async Task Run(Func<Task> operation,string activity,string message)
+    {
+        _error=null;var original=Company.Snapshot;var source=(EntityType,EntityId,SourceRevision);
+        try
+        {
+            await RequireAuthority();
+            if(original!=Company.Snapshot || source!=(EntityType,EntityId,SourceRevision))throw new OperationCanceledException("The displayed source changed.");
+            await operation();
+        }
+        catch(Exception failure)
+        {
+            var explanation=Calls.Explain(failure,activity,message);
+            if(original==Company.Snapshot && source==(EntityType,EntityId,SourceRevision))_error=explanation;
+        }
+    }
+    private Task Load()=>Run(()=>Handoff.LoadCatalogAsync(Processes),"reviewing workflow choices","Workflow choices could not be confirmed. Reload the company and original source.");
+    private void Select(string value){_error=null;try{Handoff.Select(value);}catch(Exception failure){_error=Calls.Explain(failure,"selecting the recorded workflow","This selection does not match the original handoff.");}}
+    private Task Submit()=>Run(()=>Handoff.SubmitAsync(Processes),"submitting the company handoff","The handoff outcome is unconfirmed. Retain this session and review the original company/source before retrying.");
+    public void Dispose(){Handoff.Changed-=Changed;}
+}

@@ -1,0 +1,122 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Recorded next maintenance duty</MudText>
+        <MudButton OnClick="ReviewAsync" Disabled="@(_busy || Task is null || Company.Selection is null)" Color="Color.Primary">Review current assigned role and receiving evidence</MudButton>
+        @if(_busy){<MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Reviewing current maintenance duty" />}
+        @if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+        @if(_review is { } review)
+        {
+            <MudText>Company: @review.Context.Company.TenantId / @review.Context.Company.BusinessAssociateId · FIELD @review.Task.FieldId</MudText>
+            <MudText>Assigned role: @review.AssignedRole · Recorded step: @review.StepName</MudText>
+            <MudText>Receiving accepted by: @review.ReceivingActor</MudText>
+            <MudText Typo="Typo.caption">Recorded receiving history: @review.ReceivingHistoryId · Approval: @review.ReceivingApprovalId</MudText>
+            <MudButton Href="@WorkOrderNavigation.Detail(review.Task.WorkOrderId)" Color="Color.Primary">Open original work order and recorded inspections</MudButton>
+            @if(Company.Selection?.Permissions.Contains("Maintenance.VerifyCompletion",StringComparer.Ordinal)==true)
+            {<WorkOrderCompletionReviewPanel WorkOrderId="@review.Task.WorkOrderId" FieldId="@review.Task.FieldId" OriginalTask="@review.Task" />}
+            @if(Company.Selection?.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal)==true)
+            {<WorkOrderReturnAcceptancePanel WorkOrderId="@review.Task.WorkOrderId" FieldId="@review.Task.FieldId" OriginalTask="@review.Task" />}
+            <MudButton OnClick="ReviewInspectionsAsync" Disabled="@_busy" Color="Color.Primary">Review recorded inspection prerequisites</MudButton>
+            @if(_inspections is { } inspections && _inspectionState is not null)
+            {
+                <MudText Typo="Typo.caption">Inspection review UTC: @inspections.ReviewedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") · Revision: @inspections.SnapshotRevision</MudText>
+                <WorkOrderInspectionPanel AssignedReview="inspections" Review="_inspectionState" ReadOnly="true" />
+            }
+        }
+        else if(!_busy && _error is null){<MudText>No current next-role evidence is confirmed. Review before continuing.</MudText>}
+        @if(Task is {} original && Company.Selection?.Permissions.Contains("Maintenance.ReturnToService",StringComparer.Ordinal)==true)
+        {<MaintenanceClosurePanel WorkOrderId="@original.WorkOrderId" FieldId="@original.FieldId" OriginalTask="@original" />}
+        <MudAlert Severity="Severity.Info">Receiving acceptance and a configured step name do not establish execution authorization. Permit/isolation, material and personnel prerequisites, completion and return to service require separate recorded evidence.</MudAlert>
+        @if(Company.Selection?.Permissions.Contains("HSE.IssuePermit",StringComparer.Ordinal)==true)
+        {
+            <WorkOrderExecutionPermitIssuer Task="Task" SourceRevision="@SourceRevision" OriginalReference="PermitIssueReference" />
+        }
+        @if(Company.Selection?.Permissions.Contains("HSE.ApprovePermit",StringComparer.Ordinal)==true)
+        {
+            <WorkOrderExecutionPermitApprovalReviewPanel Task="Task" SourceRevision="@SourceRevision" OriginalReference="PermitReviewReference" DecisionReference="PermitDecisionReference" MaterialAcceptanceReference="MaterialAcceptanceReference" MaterialAcceptanceInspection="@MaterialAcceptanceInspection" />
+        }
+        @if(Company.Selection is {} selected && (selected.Permissions.Contains("Maintenance.ViewApprovedPermit",StringComparer.Ordinal) || selected.Permissions.Contains("Maintenance.ExecuteWork",StringComparer.Ordinal)))
+        {
+            <WorkOrderRecordedApprovalPanel Task="Task" OriginalReference="@(PermitReviewReference ?? PermitIssueReference)" />
+        }
+        @if(Company.Selection?.Permissions.Contains("Inventory.View",StringComparer.Ordinal)==true)
+        {
+            <WorkOrderMaterialSourcePanel Task="Task" SourceRevision="@SourceRevision" />
+        }
+        @if(Company.Selection?.Permissions.Contains("Inventory.ReserveWorkOrderMaterial",StringComparer.Ordinal)==true)
+        {
+            <WorkOrderMaterialAllocationPanel Task="Task" SourceRevision="@SourceRevision" OriginalReference="MaterialAllocationReference" ReleaseReference="MaterialReleaseReference" />
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public CompanyMaintenanceReceivingQuery? Task {get;set;}
+    [Parameter] public string? SourceRevision {get;set;}
+    [Parameter] public Guid? MaterialReleaseReference {get;set;}
+    [Parameter] public Guid? MaterialAcceptanceReference {get;set;}
+    [Parameter] public string? MaterialAcceptanceInspection {get;set;}
+    [Parameter] public Guid? MaterialAllocationReference {get;set;}
+    [Parameter] public Guid? PermitIssueReference {get;set;}
+    [Parameter] public Guid? PermitReviewReference {get;set;}
+    [Parameter] public Guid? PermitDecisionReference {get;set;}
+    private CompanyMaintenanceAssignedStageReview? _review;
+    private CompanyMaintenanceInspectionReview? _inspections;
+    private WorkOrderInspectionState? _inspectionState;
+    private string? _error;
+    private string _key=string.Empty;
+    private bool _busy,_disposed;
+    private long _version;
+    protected override void OnInitialized(){_inspectionState=new(Company);Company.Changed+=Changed;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet(){var key=System.Text.Json.JsonSerializer.Serialize(new{Task,SourceRevision});if(key!=_key){_key=key;Clear();}}
+    private void Clear(){_version++;_review=null;_inspections=null;_inspectionState?.Clear();_error=null;}
+    private void Changed(){Clear();if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void FieldChanged(string _) => Changed();
+    private void AuthenticationChanged(System.Threading.Tasks.Task<AuthenticationState> _) => Changed();
+    private async System.Threading.Tasks.Task ReviewAsync()
+    {
+        if(_busy || _disposed || Task is null)return;Clear();_busy=true;var version=_version;var scope=Company.Snapshot;var task=Task;
+        try
+        {
+            task.Require();var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(scope.Selection is null || user.Identity?.IsAuthenticated!=true || !scope.Selection.Roles.Any(user.IsInRole) || await Fields.GetCurrentFieldIdAsync()!=task.FieldId)
+                throw new UnauthorizedAccessException("Current company roles and the original maintenance FIELD are required.");
+            if(_disposed || version!=_version || scope!=Company.Snapshot)return;
+            var review=await Workflows.ReviewMaintenanceAssignedStageAsync(task);review.Require(scope.Selection.Scope,scope.Selection.UserId,task);
+            var current=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || version!=_version || scope!=Company.Snapshot)return;
+            if(!current.IsInRole(review.AssignedRole) || !scope.Selection.Roles.Contains(review.AssignedRole,StringComparer.Ordinal) || await Fields.GetCurrentFieldIdAsync()!=task.FieldId)
+                throw new UnauthorizedAccessException("The configured next maintenance role/FIELD changed during review.");
+            if(!_disposed && version==_version && scope==Company.Snapshot)_review=review;
+        }
+        catch(Exception error){if(!_disposed && version==_version && scope==Company.Snapshot)_error=Calls.Explain(error,"reviewing the recorded next maintenance duty","The current assigned role and receiving evidence could not be confirmed");}
+        finally{_busy=false;}
+    }
+    private async System.Threading.Tasks.Task ReviewInspectionsAsync()
+    {
+        if(_busy || _disposed || _review is null || Task is null)return;_inspections=null;_inspectionState?.Clear();_error=null;_busy=true;
+        var version=_version;var scope=Company.Snapshot;var task=Task;var reviewedStage=_review;
+        try
+        {
+            var result=await Workflows.ReviewMaintenanceAssignedInspectionsAsync(task);
+            if(_disposed || version!=_version || scope!=Company.Snapshot)return;
+            result.Require(scope.Selection!.Scope,scope.Selection.UserId,task);
+            if(result.Stage!=reviewedStage)throw new InvalidOperationException("The assigned stage changed. Review the current role again before inspecting prerequisites.");
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || version!=_version || scope!=Company.Snapshot)return;
+            if(!user.IsInRole(result.Stage.AssignedRole) || await Fields.GetCurrentFieldIdAsync()!=task.FieldId)throw new UnauthorizedAccessException("The original maintenance role/FIELD changed during inspection review.");
+            if(!_disposed && version==_version && scope==Company.Snapshot)_inspections=result;
+        }
+        catch(Exception error){if(!_disposed && version==_version && scope==Company.Snapshot)_error=Calls.Explain(error,"reviewing recorded maintenance inspection prerequisites","Inspection prerequisites could not be confirmed. Review the current assigned role and source again");}
+        finally{_busy=false;}
+    }
+    public void Dispose(){if(_disposed)return;_disposed=true;Company.Changed-=Changed;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Clear();_inspectionState?.Dispose();}
+}

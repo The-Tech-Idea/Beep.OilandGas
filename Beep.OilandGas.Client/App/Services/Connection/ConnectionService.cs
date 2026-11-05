@@ -58,12 +58,5 @@ namespace Beep.OilandGas.Client.App.Services.Connection
             return new SetCurrentConnectionResult { Success = true, Message = $"Current connection set to '{connectionName}'" };
         }
 
-        public async Task<CreateConnectionResult> CreateConnectionAsync(string connectionName, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrEmpty(connectionName)) throw new ArgumentException("Connection name is required", nameof(connectionName));
-            if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, CreateConnectionResult>($"/api/connection/connections/{Uri.EscapeDataString(connectionName)}/create", null!, cancellationToken);
-            throw new InvalidOperationException("Local mode not supported for creating connections");
-        }
     }
 }

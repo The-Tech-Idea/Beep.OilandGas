@@ -1,0 +1,536 @@
+@page "/accounting/payables"
+@page "/accounting/payables/invoices/{Id}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@inject APInvoiceWorkspaceState Workspace
+@implements IDisposable
+<PageTitle>Company AP invoice sources</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4">Company AP invoice sources</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable")</MudText>
+    <MudAlert Severity="Severity.Info">Read access requires a current assigned company role and Accounting.View permission. Supplier identity does not establish the owning company. Unassigned legacy invoices require reviewed reconciliation.</MudAlert>
+    @if(string.IsNullOrWhiteSpace(Id))
+    {
+        <PersonaTaskInbox WorkspaceRoutes='@(new[]{"/accounting/payables"})' />
+        <MudTextField T="string" Value="_vendor" ValueChanged="VendorChanged" Immediate="true" Label="Optional recorded supplier business-associate ID" Disabled="_busy" />
+        <MudButton OnClick="Reload" Disabled="@(_busy || _state?.AllocationCommandBusy==true)">Reload company invoice queue</MudButton>
+    }
+    else
+    {
+        <MudButton Href="/accounting/payables">AP invoice source workbench</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_busy || _state?.AllocationCommandBusy==true)">Reload recorded invoice</MudButton>
+    }
+    @if(_busy){<MudProgressLinear Indeterminate="true" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(!_busy && _error is null){<APInvoiceSourcePanel Review="@_state" AllowPurchaseSource="_canPurchaseRead" PurchaseSourceLoading="_purchaseBusy" ReviewPurchaseSource="ReviewPurchase" AllocationLoading="_allocationBusy" ReviewReceiptAllocations="ReviewAllocations" AllowAllocationPreparation="_canPrepareAllocation" ProposalLoading="@(_proposalBusy || _state!.AllocationCommandBusy || _state.HasUnconfirmedAllocationIntent)" ReviewProposal="ReviewProposal" FinancialLoading="@(_financialBusy || _state?.VarianceCommandBusy==true)" ReviewFinancialEvidence="ReviewFinancial" PolicyLoading="_policyBusy" ReviewMatchingPolicies="ReviewPolicies" />}
+    @if(!_busy && _error is null){<APInvoiceCorrectionEditor Review="_state" /><APInvoiceCorrectionDecisionPanel Review="_state" />}
+    @if(!_busy && _error is null && _canPrepareVariance && _state?.FinancialReview is not null)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mt-3">
+            <MudText Typo="Typo.h6">Accountant invoice variance preparation</MudText>
+            <MudAlert Severity="Severity.Info">Explain every recorded difference. Unknown evidence remains unavailable. This preparation is not recorded and does not submit a controller task or approve matching, posting or payment.</MudAlert>
+            <MudSelect T="string" Value="_varianceDisposition" ValueChanged="VarianceDispositionChanged" Label="Proposed disposition" Required="true" Disabled="@(PolicyControlsDisabled || _varianceBusy)">
+                <MudSelectItem T="string" Value='@("REQUEST_VARIANCE_REVIEW")'>Request independent variance review</MudSelectItem>
+                <MudSelectItem T="string" Value='@("REQUEST_CORRECTION")'>Request source correction</MudSelectItem>
+            </MudSelect>
+            @foreach(var difference in _state.RecordedVariances)
+            {
+                <MudText>@difference.Label · @difference.OutcomeText</MudText><MudText>@difference.Evidence</MudText>
+                <MudTextField T="string" Value="@VarianceReason(difference.Code)" ValueChanged="@(value=>VarianceExplanationChanged(difference.Code,value))" Label="@("Explanation for "+difference.Label)" Required="true" MaxLength="1000" Disabled="@(PolicyControlsDisabled || _varianceBusy)" />
+            }
+            @if(_state.RecordedVariances.Count==0){<MudAlert Severity="Severity.Info">No confirmed recorded differences are available for a variance proposal.</MudAlert>}
+            <MudTextField T="string" Value="_varianceReason" ValueChanged="VarianceReasonChanged" Label="Overall preparation reason" Required="true" MaxLength="1000" Disabled="@(PolicyControlsDisabled || _varianceBusy)" />
+            <MudButton OnClick="ReviewVariance" Disabled="@(PolicyControlsDisabled || _varianceBusy || _state.RecordedVariances.Count==0)" Variant="Variant.Outlined">Review variance preparation</MudButton>
+            @if(_varianceBusy){<MudProgressLinear Indeterminate="true" />}
+            @if(_state.VarianceProposalReview is {} prepared)
+            {
+                <MudAlert Severity="Severity.Info">Fresh variance preparation reviewed. No durable proposal or controller decision has been recorded.</MudAlert>
+                <MudText>Disposition: @prepared.Proposal.Disposition · Reason: @prepared.Proposal.Reason · Prepared by account: @prepared.Financial.Invoice.ActorUserId</MudText>
+                <MudText>Financial evidence revision: @prepared.Financial.Revision · Preparation revision: @prepared.Revision · Production binding revision: @prepared.BindingRevision · Reviewed at UTC: @prepared.RetrievedAtUtc.ToString("O")</MudText>
+                @foreach(var explanation in prepared.Proposal.Explanations){<MudText>Check: @explanation.CheckCode · Explanation: @explanation.Reason</MudText>}
+                <MudText>Unavailable diagnostics requiring separate evidence: @prepared.Financial.Checks.Count(row=>row.Outcome==APSourceComparisonOutcome.Unavailable)</MudText>
+                @if(_canRecordVariance){<MudButton OnClick="RecordVariance" Disabled="@(PolicyControlsDisabled || _varianceBusy)" Variant="Variant.Filled" Color="Color.Primary">Record reviewed variance proposal</MudButton>}
+            }
+        </MudPaper>
+    }
+    @if(_varianceError is not null){<MudAlert Severity="Severity.Error">@_varianceError</MudAlert>}
+    @if(!_busy && _error is null && _canReviewVariance && _state?.HasRecordedVarianceSource==true && !_state.HasRecordedVarianceDecisionSource)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mt-3">
+            <MudText Typo="Typo.h6">Independent controller variance review</MudText>
+            <MudButton OnClick="ReviewVarianceDecision" Disabled="@(_varianceDecisionBusy || _varianceBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy) || _state.AllocationCommandBusy || _state.PolicyCommandBusy)" Variant="Variant.Outlined">Review recorded proposal and current evidence</MudButton>
+            @if(_varianceDecisionBusy){<MudProgressLinear Indeterminate="true" />}
+            @if(_state.VarianceDecisionReview is {} controller)
+            {
+                <MudAlert Severity="Severity.Info">This is an independent review. No durable controller disposition, task completion, financial matching, posting or payment is recorded by viewing this review.</MudAlert>
+                <MudText>Reviewer account: @controller.Current.Invoice.ActorUserId · Proposal preparer: @controller.RecordedProposal.Command.ActorUserId · Source creator: @controller.RecordedProposal.OriginalInvoice.ROW_CREATED_BY</MudText>
+                <MudText>Current reconstructed evidence matches the proposal: @controller.EvidenceMatchesProposal · Eligible variance dispositions: @string.Join(", ",controller.EligibleDispositions)</MudText>
+                <MudText>Current financial revision: @controller.Current.Revision · Reconstructed evidence revision: @controller.Evidence.Revision · Review revision: @controller.Revision · Reviewed at UTC: @controller.RetrievedAtUtc.ToString("O")</MudText>
+                <MudTable T="APSourceComparison" Items="controller.Evidence.Checks" Dense="true">
+                    <HeaderContent><MudTh>Current check</MudTh><MudTh>Recorded result</MudTh><MudTh>Evidence</MudTh></HeaderContent>
+                    <RowTemplate><MudTd DataLabel="Current check">@context.Label</MudTd><MudTd DataLabel="Recorded result">@context.OutcomeText</MudTd><MudTd DataLabel="Evidence">@context.Evidence</MudTd></RowTemplate>
+                    <PagerContent><MudTablePager /></PagerContent>
+                </MudTable>
+                @if(_canRecordVarianceDecision)
+                {
+                    <MudSelect T="string" Value="_controllerDisposition" ValueChanged="ControllerDispositionChanged" Label="Controller variance disposition" Required="true" Disabled="@PolicyControlsDisabled">
+                        @foreach(var choice in controller.EligibleDispositions){<MudSelectItem T="string" Value="@choice">@(choice=="REQUEST_CORRECTION"?"Request correction":"Accept variance within verified policy")</MudSelectItem>}
+                    </MudSelect>
+                    <MudTextField T="string" Value="_controllerReason" ValueChanged="ControllerReasonChanged" Label="Independent controller decision reason" Required="true" MaxLength="1000" Lines="3" Disabled="@PolicyControlsDisabled" />
+                    <MudButton OnClick="RecordVarianceDecision" Disabled="@PolicyControlsDisabled" Variant="Variant.Filled" Color="Color.Primary">Record reviewed controller disposition</MudButton>
+                }
+            }
+        </MudPaper>
+    }
+    @if(_varianceDecisionError is not null){<MudAlert Severity="Severity.Error">@_varianceDecisionError</MudAlert>}
+    @if(_state?.HasUnconfirmedVarianceDecisionIntent==true)
+    {
+        <MudAlert Severity="Severity.Warning">Original controller disposition outcome is unconfirmed. Retain this intent and return to its original company, account and invoice to reconcile.</MudAlert>
+        @if(_error is null && _state.CanViewVarianceDecisionIntent && _state.VarianceDecisionIntent is {} pendingController)
+        {
+            <MudText>Company: @pendingController.Command.Company.BusinessAssociateId · Controller: @pendingController.Command.ActorUserId · Invoice: @pendingController.Command.InvoiceId · Original intent: @pendingController.Command.IntentId</MudText>
+            <MudText>Disposition: @pendingController.Command.Disposition · Reason: @pendingController.Command.Reason · Proposal intent: @pendingController.Command.ProposalIntentId · Review revision: @pendingController.Command.ExpectedReviewRevision</MudText>
+            @if(_state.VarianceDecisionRecoveryRoute is {} recovery){<MudButton Href="@recovery" Variant="Variant.Outlined">Open original controller invoice</MudButton>}
+            <MudButton OnClick="RecordVarianceDecision" Disabled="@(!_state.CanReconcileVarianceDecision || !_canRecordVarianceDecision || Id!=pendingController.Command.InvoiceId || PolicyControlsBusy)" Variant="Variant.Outlined">Reconcile original controller intent</MudButton>
+        }
+    }
+    @if(_state?.VarianceDecisionCommandBusy==true){<MudProgressLinear Indeterminate="true" />}
+    @if(_state?.VarianceDecisionResult is not null){<MudAlert Severity="Severity.Success">Recorded controller disposition confirmed against current invoice source. Task handoff/completion, financial matching, posting and payment require separate evidence.</MudAlert>}
+    @if(_state?.HasUnconfirmedVarianceIntent==true)
+    {
+        <MudAlert Severity="Severity.Warning">Original variance proposal outcome is unconfirmed. Retain this intent; return to its original company, account and invoice to reconcile. Independent controller disposition remains unconfirmed.</MudAlert>
+        @if(_error is null && _state.CanViewVarianceIntent && _state.VarianceIntent is {} pendingVariance)
+        {
+        <MudText>Company: @pendingVariance.Command.Company.BusinessAssociateId · Account: @pendingVariance.Command.ActorUserId · Invoice: @pendingVariance.Command.InvoiceId · Intent: @pendingVariance.Command.IntentId · Reason: @pendingVariance.Command.Proposal.Reason</MudText>
+        <MudText>Original disposition: @pendingVariance.Command.Proposal.Disposition · Preparation revision: @pendingVariance.Command.ExpectedPreparationRevision</MudText>
+        @foreach(var explanation in pendingVariance.Command.Proposal.Explanations){<MudText>Original check: @explanation.CheckCode · Explanation: @explanation.Reason</MudText>}
+        @if(_state.VarianceRecoveryRoute is {} recovery){<MudButton Href="@recovery" Variant="Variant.Outlined">Open original variance invoice</MudButton>}
+        <MudButton OnClick="RecordVariance" Disabled="@(!_state.CanReconcileVariance || !_canRecordVariance || Id!=pendingVariance.Command.InvoiceId || _busy || _varianceBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))" Variant="Variant.Outlined">Reconcile original variance intent</MudButton>
+        }
+    }
+    @if(_state?.VarianceCommandBusy==true){<MudProgressLinear Indeterminate="true" />}
+    @if(_state?.VarianceResult is not null){<MudAlert Severity="Severity.Success">Recorded variance proposal confirmed against current invoice source. Independent controller disposition and task handoff remain unconfirmed.</MudAlert>}
+    @if(!_busy && _error is null && Company.Selection is not null)
+    {
+        <MudPaper Outlined="true" Class="pa-4 mt-3">
+            <MudText Typo="Typo.h6">Company matching-policy preparation and independent approval</MudText>
+            @if(_canPreparePolicy){<MudButton OnClick="ReviewPolicyDraft" Disabled="@PolicyControlsDisabled" Variant="Variant.Outlined">Review draft preparation authority</MudButton>}
+            @if(_canApprovePolicy){<MudButton OnClick="ReviewPolicyApproval" Disabled="@PolicyControlsDisabled" Variant="Variant.Outlined">Review independent policy approval authority</MudButton>}
+            @if(_state?.PolicyCommandReview is {} policyReview && !_state.HasUnconfirmedPolicyIntent)
+            {
+                <MudText>Reviewed action: @policyReview.Action · Company history revision: @policyReview.History.Revision</MudText>
+                @if(policyReview.Action=="DRAFT")
+                {
+                    <MudTextField T="string" @bind-Value="_policyId" Label="New policy identity" Required="true" Disabled="@PolicyControlsDisabled" />
+                    <MudTextField T="string" @bind-Value="_policyVersion" Label="Policy version" Required="true" Disabled="@PolicyControlsDisabled" />
+                    <MudTextField T="string" @bind-Value="_policyCurrency" Label="Recorded currency code" Required="true" Disabled="@PolicyControlsDisabled" />
+                    <MudNumericField T="decimal?" @bind-Value="_policyQuantityTolerance" Label="Quantity tolerance (%)" Required="true" Min="0" Max="100" Disabled="@PolicyControlsDisabled" />
+                    <MudNumericField T="decimal?" @bind-Value="_policyPriceTolerance" Label="Price tolerance (%)" Required="true" Min="0" Max="100" Disabled="@PolicyControlsDisabled" />
+                    <MudTextField T="string" @bind-Value="_policyEffectiveUtc" Label="Effective UTC instant (ISO 8601 ending in Z)" Required="true" Disabled="@PolicyControlsDisabled" />
+                    <MudTextField T="string" @bind-Value="_policyExpiryUtc" Label="Expiry UTC instant (optional, ISO 8601 ending in Z)" Disabled="@PolicyControlsDisabled" />
+                    <MudSelect T="string" @bind-Value="_policyUnitRule" Label="Unit rule" Required="true" Disabled="@PolicyControlsDisabled"><MudSelectItem T="string" Value='@("EXACT_RECORDED_UNITS")'>Exact recorded units</MudSelectItem></MudSelect>
+                    <MudSelect T="string" @bind-Value="_policyCurrencyRule" Label="Currency rule" Required="true" Disabled="@PolicyControlsDisabled"><MudSelectItem T="string" Value='@("EXACT_RECORDED_CURRENCY")'>Exact recorded currency</MudSelectItem></MudSelect>
+                    <MudSelect T="string" @bind-Value="_policyTaxRule" Label="Tax treatment" Required="true" Disabled="@PolicyControlsDisabled"><MudSelectItem T="string" Value='@("SEPARATE_REVIEW_REQUIRED")'>Separate review required</MudSelectItem></MudSelect>
+                    <MudSelect T="string" @bind-Value="_policyRoundingRule" Label="Rounding rule" Required="true" Disabled="@PolicyControlsDisabled"><MudSelectItem T="string" Value='@("EXACT_SOURCE_AMOUNTS")'>Exact source amounts</MudSelectItem></MudSelect>
+                    <MudSelect T="string" @bind-Value="_policyNonPoRule" Label="Non-PO invoices" Required="true" Disabled="@PolicyControlsDisabled"><MudSelectItem T="string" Value='@("SEPARATE_REVIEW_REQUIRED")'>Separate review required</MudSelectItem></MudSelect>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info">Review the exact prepared rules and dates in company history. Approval cannot change them and must use a different account from the preparer.</MudAlert>
+                    @if(_state.ReviewablePolicyDraftIds.Count==0){<MudAlert Severity="Severity.Info">No verified active draft prepared by another account is available for selection.</MudAlert>}
+                    else{<MudSelect T="string" Value="_state.SelectedPolicyDraftId" ValueChanged="_state.SelectPolicyDraft" Label="Verified draft for independent approval" Required="true" Disabled="@PolicyControlsDisabled">@foreach(var policyId in _state.ReviewablePolicyDraftIds){<MudSelectItem T="string" Value="@policyId">@policyId</MudSelectItem>}</MudSelect>}
+                }
+                <MudTextField T="string" @bind-Value="_policyReason" Label="Policy preparation or independent review reason" Required="true" Lines="3" Disabled="@PolicyControlsDisabled" />
+                <MudButton OnClick="RecordPolicy" Disabled="@(PolicyControlsDisabled || policyReview.Action=="APPROVE" && _state.SelectedPolicyDraftId is null)" Variant="Variant.Filled" Color="Color.Primary">@(policyReview.Action=="DRAFT"?"Record reviewed policy draft":"Approve exact draft independently")</MudButton>
+            }
+        </MudPaper>
+    }
+    @if(_state?.HasUnconfirmedPolicyIntent==true)
+    {
+        var originalPolicy=_state.PolicyIntent!.Command;
+        <MudAlert Severity="Severity.Warning" role="status">Policy outcome is unconfirmed. Its original intent is retained in this circuit. Return to the original company and account to reconcile before another policy action.</MudAlert>
+        <MudText>Original policy: @originalPolicy.PolicyId · Action: @originalPolicy.Action · Intent: @originalPolicy.IntentId · Reason: @originalPolicy.Reason</MudText>
+        @if(_state.CanReconcilePolicy && PolicyGrant(originalPolicy.Action)){<MudButton OnClick="RecordPolicy" Disabled="@(_policyWriteBusy || _state.PolicyCommandBusy)">Reconcile original policy intent</MudButton>}
+        @if(_state.PolicyRecoveryRoute is {} recovery && !string.IsNullOrWhiteSpace(Id)){<MudButton Href="@recovery" Disabled="_state.PolicyCommandBusy">Open original company policy workspace</MudButton>}
+    }
+    @if(_policyWriteBusy || _state?.PolicyCommandBusy==true){<MudProgressLinear Indeterminate="true" aria-label="Recording or reconciling the original policy intent" />}
+    @if(_policyWriteError is not null){<MudAlert Severity="Severity.Error" role="alert">@_policyWriteError</MudAlert>}
+    @if(_state?.PolicyResult is {} policyResult){<MudAlert Severity="Severity.Success" role="status">Original policy @policyResult.Command.PolicyId @policyResult.Command.Action outcome confirmed in complete company history. Policy approval does not authorize invoice matching, posting or payment.</MudAlert>}
+    @if(_state?.HasUnconfirmedAllocationIntent==true)
+    {
+        <MudAlert Severity="Severity.Warning" role="status">Allocation outcome is unconfirmed. The original intent is retained in this circuit. Return to its original company, account and invoice to reconcile before recording another allocation.</MudAlert>
+        @if(_state.AllocationRecoveryRoute is {} originalRoute && !_state.CanReconcileAllocation){<MudButton Href="@originalRoute" Disabled="_state.AllocationCommandBusy">Open original invoice</MudButton>}
+        @if(_state.CanReconcileAllocation && _canRecordAllocation)
+        {
+            var original=_state.AllocationIntent!.Command;
+            <MudText>Original intent: @original.IntentId · Receipt: @original.Proposal.ReceiptId · Quantity: @original.Proposal.Quantity · Unit: @original.Proposal.Unit · Reason: @original.Reason</MudText>
+            <MudButton OnClick="RecordAllocation" Disabled="_recordBusy">Reconcile original allocation</MudButton>
+        }
+    }
+    else if(!_busy && _error is null && _state?.CanRecordAllocation==true && _canRecordAllocation)
+    {
+        <MudText Typo="Typo.h6" Class="mt-4">Record reviewed receipt allocation</MudText>
+        <MudTextField T="string" @bind-Value="_allocationReason" Immediate="true" Required="true" MaxLength="512" Label="Allocation recording reason" Disabled="_recordBusy" Error="InvalidAllocationReason" ErrorText="Use a single-line reason up to 512 characters." />
+        <MudButton OnClick="RecordAllocation" Disabled="@(_recordBusy || string.IsNullOrWhiteSpace(_allocationReason) || InvalidAllocationReason)">Record allocation</MudButton>
+        <MudText>Recording does not approve receipt acceptance, invoice matching, posting or payment.</MudText>
+    }
+    @if(_state?.AllocationCommandBusy==true){<MudProgressLinear Indeterminate="true" aria-label="Recording or reconciling original allocation" />}
+    @if(_recordError is not null){<MudAlert Severity="Severity.Error" role="alert">@_recordError</MudAlert>}
+    @if(_state?.AllocationReceipt is {} allocationReceipt)
+    {
+        <MudAlert Severity="Severity.Success" role="status">Receipt allocation and refreshed source evidence confirmed. Financial approval, acceptance, posting and payment remain separate.</MudAlert>
+        <MudText>Allocation: @allocationReceipt.Allocation.AP_RECEIPT_ALLOCATION_ID · Receipt: @allocationReceipt.Allocation.PO_RECEIPT_ID · Quantity: @allocationReceipt.Allocation.ALLOCATED_QUANTITY · Unit: @allocationReceipt.Allocation.QUANTITY_UOM · Recorded by: @allocationReceipt.Allocation.ROW_CREATED_BY · @allocationReceipt.Allocation.ROW_CREATED_DATE?.ToString("O")</MudText>
+        @if(_state.RefreshedReceiptConsumption is {} consumption)
+        {
+            <MudText>Refreshed receipt contributors: @consumption.Contributors.Sum(item=>item.Allocations.Count) · Recorded active quantity: @consumption.RecordedActiveQuantity · Revision: @consumption.Revision · Retrieved: @consumption.RetrievedAtUtc.ToString("O")</MudText>
+            @foreach(var contributor in consumption.Contributors){<MudLink Href="@("/accounting/payables/invoices/"+Uri.EscapeDataString(contributor.Source.Invoice.Invoice.AP_INVOICE_ID))">Open contributing invoice @contributor.Source.Invoice.Invoice.AP_INVOICE_ID</MudLink>}
+        }
+    }
+    @if(_financialBusy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing whole invoice financial evidence" />}
+    @if(_policyError is not null){<MudAlert Severity="Severity.Error">@_policyError</MudAlert>}
+    @if(_financialError is not null){<MudAlert Severity="Severity.Error">@_financialError</MudAlert>}
+    @if(_purchaseBusy){<MudProgressLinear Indeterminate="true" aria-label="Loading owned purchase source" />}
+    @if(_purchaseError is not null){<MudAlert Severity="Severity.Error">@_purchaseError</MudAlert>}
+    @if(_allocationBusy){<MudProgressLinear Indeterminate="true" aria-label="Loading recorded receipt allocations" />}
+    @if(_allocationError is not null){<MudAlert Severity="Severity.Error">@_allocationError</MudAlert>}
+    @if(_proposalBusy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing receipt allocation proposal" />}
+    @if(_proposalError is not null){<MudAlert Severity="Severity.Error">@_proposalError</MudAlert>}
+    @if(!_busy && _error is null && _state?.CorrectionCommandUnsettled!=true && _state?.VarianceDecisionCommandBusy!=true && _state?.HasUnconfirmedVarianceDecisionIntent!=true && _state?.VarianceCommandBusy!=true && _state?.HasUnconfirmedVarianceIntent!=true && _state?.Detail is {} source && _state.SourceRevision is {} revision){<CompanyAccountingHandoffPanel EntityType="AP_INVOICE" EntityId="@source.Id" SourceRevision="@revision" />}
+    <MudButton Href="/tasks/inbox" Variant="Variant.Outlined" Class="mt-3">Open assigned workflow tasks</MudButton>
+</MudContainer>
+@code {
+    [Parameter] public string? Id {get;set;}
+    private APInvoiceWorkspaceState? _state;
+    private bool _busy,_disposed,_reloadRequested;
+    private string _vendor="";
+    private bool _varianceBusy,_canPrepareVariance,_canRecordVariance;
+    private bool _varianceDecisionBusy,_canReviewVariance;
+    private bool _canRecordVarianceDecision;
+    private string _controllerDisposition="",_controllerReason="";
+    private bool PolicyControlsBusy=>_state?.CorrectionCommandUnsettled==true || _disposed || _busy || _varianceDecisionBusy || _varianceBusy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _recordBusy || _state?.VarianceDecisionCommandBusy==true || _state?.VarianceCommandBusy==true || _state?.AllocationCommandBusy==true || _state?.PolicyCommandBusy==true;
+    private void ControllerDispositionChanged(string value){if(!PolicyControlsBusy && _state?.HasUnconfirmedVarianceDecisionIntent!=true)_controllerDisposition=value;}
+    private void ControllerReasonChanged(string value){if(!PolicyControlsBusy && _state?.HasUnconfirmedVarianceDecisionIntent!=true)_controllerReason=value;}
+    private void ResetControllerInputs(){_controllerDisposition="";_controllerReason="";}
+    private async Task RecordVarianceDecision()
+    {
+        if(PolicyControlsBusy || _state is null)return;
+        _varianceDecisionBusy=true;_varianceDecisionError=null;var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) ||
+                !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !original.Selection.Permissions.Contains("Accounting.ReviewInvoiceVariance",StringComparer.Ordinal) ||
+                !original.Selection.Permissions.Contains("Accounting.RecordInvoiceVarianceDecision",StringComparer.Ordinal))throw new UnauthorizedAccessException("Current original controller recording authority is required.");
+            if(_state.HasUnconfirmedVarianceDecisionIntent && Id!=_state.VarianceDecisionIntent!.Command.InvoiceId)throw new InvalidOperationException("Open the original controller invoice before reconciliation.");
+            await _state.RecordVarianceDecisionAsync(_controllerDisposition,_controllerReason,Accounting.RecordAPInvoiceVarianceDecisionAsync,Accounting.GetAPInvoiceAsync);
+        }
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"recording original controller variance disposition",_state.HasUnconfirmedVarianceDecisionIntent?"Controller outcome is unconfirmed. Retain and reconcile its original intent":"Controller submission could not start. Review current evidence and authority");
+            if(!_disposed && original==Company.Snapshot && version==_state.Version){_varianceDecisionError=message;if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canRecordVarianceDecision=false;_state.ClearFinancialReview();}}
+        }
+        finally{_varianceDecisionBusy=false;}
+    }
+    private string? _varianceDecisionError;
+    private async Task ReviewVarianceDecision()
+    {
+        if(_disposed || _busy || _varianceDecisionBusy || _varianceBusy || _state is null || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy) || _state.AllocationCommandBusy || _state.PolicyCommandBusy)return;
+        _varianceDecisionBusy=true;_varianceDecisionError=null;_state.ClearVarianceDecisionReview();var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) ||
+                !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !original.Selection.Permissions.Contains("Accounting.ReviewInvoiceVariance",StringComparer.Ordinal))throw new UnauthorizedAccessException("Current independent variance review authority is required.");
+            await _state.LoadVarianceDecisionReviewAsync(Accounting.GetAPInvoiceVarianceDecisionReviewAsync);if(!_disposed && original==Company.Snapshot && version==_state.Version)ResetControllerInputs();
+        }
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"reviewing independent invoice variance disposition","Independent variance review could not be confirmed. Reload recorded proposal and current evidence");
+            if(!_disposed && original==Company.Snapshot && version==_state.Version){_state.ClearVarianceDecisionReview();_varianceDecisionError=message;if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized})_canReviewVariance=false;}
+        }
+        finally{_varianceDecisionBusy=false;}
+    }
+    private string _varianceDisposition="",_varianceReason="";
+    private string? _varianceError;
+    private readonly Dictionary<string,string> _varianceReasons=new(StringComparer.Ordinal);
+    private string VarianceReason(string code)=>_varianceReasons.GetValueOrDefault(code,"");
+    private void VarianceExplanationChanged(string code,string value){_varianceReasons[code]=value;_state?.ClearVarianceProposal();_varianceError=null;}
+    private void VarianceDispositionChanged(string value){_varianceDisposition=value;_state?.ClearVarianceProposal();_varianceError=null;}
+    private void VarianceReasonChanged(string value){_varianceReason=value;_state?.ClearVarianceProposal();_varianceError=null;}
+    private void ResetVarianceInputs(){_varianceDisposition="";_varianceReason="";_varianceReasons.Clear();_varianceError=null;}
+    private async Task RecordVariance()
+    {
+        if(_disposed || _busy || _varianceBusy || _state is null || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy) || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        _varianceBusy=true;_varianceError=null;var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) ||
+                !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !original.Selection.Permissions.Contains("Accounting.PrepareInvoiceVariance",StringComparer.Ordinal) ||
+                !original.Selection.Permissions.Contains("Accounting.RecordInvoiceVariance",StringComparer.Ordinal))throw new UnauthorizedAccessException("Current original variance recording authority is required.");
+            if(_state.HasUnconfirmedVarianceIntent && Id!=_state.VarianceIntent!.Command.InvoiceId)throw new InvalidOperationException("Open the original variance invoice before reconciliation.");
+            await _state.RecordVarianceAsync(Accounting.RecordAPInvoiceVarianceAsync,Accounting.GetAPInvoiceAsync);
+        }
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"recording original invoice variance proposal",_state.HasUnconfirmedVarianceIntent?"Variance outcome is unconfirmed. Retain and reconcile the original intent":"Variance submission could not start. Review current preparation and authority");
+            if(!_disposed && original==Company.Snapshot && version==_state.Version){_varianceError=message;if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canRecordVariance=false;_state.ClearFinancialReview();}}
+        }
+        finally{_varianceBusy=false;}
+    }
+    private void VarianceStateChanged(){if(!_disposed)_=InvokeAsync(()=>{if(!_disposed)StateHasChanged();});}
+    private async Task ReviewVariance()
+    {
+        if(_disposed || PolicyControlsDisabled || _varianceBusy || _state is null)return;
+        _state.ClearVarianceProposal();_varianceBusy=true;_varianceError=null;var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) ||
+                !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !original.Selection.Permissions.Contains("Accounting.PrepareInvoiceVariance",StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current app-owned variance preparation authority is required.");
+            var explanations=_state.RecordedVariances.Select(row=>new APInvoiceVarianceExplanation(row.Code,VarianceReason(row.Code))).ToArray();
+            await _state.ReviewVarianceProposalAsync(_varianceDisposition,explanations,_varianceReason,Accounting.ReviewAPInvoiceVarianceAsync);
+        }
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"reviewing accountant variance preparation","Variance preparation could not be confirmed. Reload financial evidence and explain every recorded difference");
+            if(!_disposed && original==Company.Snapshot && version==_state.Version){_state.ClearVarianceProposal();_varianceError=message;if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canPrepareVariance=false;_canRecordVariance=false;_canReviewVariance=false;_canRecordVarianceDecision=false;ResetControllerInputs();_varianceDecisionError=null;_state.ClearFinancialReview();}}
+        }
+        finally{_varianceBusy=false;}
+    }
+    private string? _error,_purchaseError;
+    private bool _purchaseBusy,_canPurchaseRead,_allocationBusy;
+    private string? _allocationError,_proposalError;
+    private bool _proposalBusy,_canPrepareAllocation;
+    private bool _policyWriteBusy,_canPreparePolicy,_canApprovePolicy;
+    private string? _policyWriteError;
+    private string _policyId="",_policyVersion="",_policyCurrency="",_policyEffectiveUtc="",_policyExpiryUtc="",_policyUnitRule="",_policyCurrencyRule="",_policyTaxRule="",_policyRoundingRule="",_policyNonPoRule="",_policyReason="";
+    private decimal? _policyQuantityTolerance,_policyPriceTolerance;
+    private bool PolicyControlsDisabled=>_state?.VarianceDecisionCommandBusy==true || _state?.HasUnconfirmedVarianceDecisionIntent==true || _varianceDecisionBusy ||_state?.VarianceCommandBusy==true || _state?.HasUnconfirmedVarianceIntent==true || _varianceBusy || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _state?.AllocationCommandBusy==true || _state?.PolicyCommandBusy==true || _state?.HasUnconfirmedPolicyIntent==true;
+    private bool PolicyGrant(string action)=>action=="DRAFT"?_canPreparePolicy:action=="APPROVE" && _canApprovePolicy;
+    private void ResetPolicyInputs(){_policyId="";_policyVersion="";_policyCurrency="";_policyEffectiveUtc="";_policyExpiryUtc="";_policyUnitRule="";_policyCurrencyRule="";_policyTaxRule="";_policyRoundingRule="";_policyNonPoRule="";_policyReason="";_policyQuantityTolerance=null;_policyPriceTolerance=null;}
+    private static DateTime PolicyUtc(string value)
+    {
+        if(!DateTime.TryParseExact(value,new[]{"yyyy-MM-dd'T'HH:mm:ss'Z'","yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'"},System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal|System.Globalization.DateTimeStyles.AdjustToUniversal,out var utc) || utc.Kind!=DateTimeKind.Utc)
+            throw new InvalidOperationException("Enter an explicit ISO 8601 UTC instant ending in Z. No local timezone is inferred.");
+        return utc;
+    }
+    private async Task RequirePolicyAuthority(string action,(long Version,Beep.OilandGas.Client.App.CompanyClientSelection? Selection) original,int version)
+    {
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || original!=Company.Snapshot || _state is null || version!=_state.Version || original.Selection is null || user.Identity?.IsAuthenticated!=true || !original.Selection.Roles.Any(user.IsInRole) ||
+            !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !original.Selection.Permissions.Contains(action=="DRAFT"?"Accounting.PrepareMatchingPolicy":"Accounting.ApproveMatchingPolicy",StringComparer.Ordinal))
+            throw new UnauthorizedAccessException("Current original company policy action authority is required.");
+    }
+    private Task ReviewPolicyDraft()=>ReviewPolicyCommand("DRAFT");
+    private Task ReviewPolicyApproval()=>ReviewPolicyCommand("APPROVE");
+    private async Task ReviewPolicyCommand(string action)
+    {
+        if(_disposed || PolicyControlsDisabled || _state is null)return;
+        _policyWriteBusy=true;_policyWriteError=null;var original=Company.Snapshot;var version=_state.Version;
+        try{await RequirePolicyAuthority(action,original,version);await _state.LoadPolicyCommandReviewAsync(action,Accounting.GetCompanyMatchingPolicyCommandReviewAsync);if(!_disposed && original==Company.Snapshot && version==_state.Version){ResetPolicyInputs();ResetVarianceInputs();_state.ClearVarianceProposal();}}
+        catch(Exception failure){var message=Calls.Explain(failure,"reviewing company policy command authority","Policy command review could not be confirmed. Review original company access and policy history");if(!_disposed && original==Company.Snapshot && version==_state.Version){_state.ClearMatchingPolicies();_policyWriteError=message;}}
+        finally{_policyWriteBusy=false;}
+    }
+    private async Task RecordPolicy()
+    {
+        if(_disposed || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _state is null || _state.PolicyCommandBusy || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        var action=_state.PolicyIntent?.Command.Action ?? _state.PolicyCommandReview?.Action;if(action is null)return;
+        _policyWriteBusy=true;_policyWriteError=null;var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            await RequirePolicyAuthority(action,original,version);
+            CompanyMatchingPolicyRules? rules=null;DateTime? effective=null,expiry=null;
+            if(!_state.HasUnconfirmedPolicyIntent && action=="DRAFT")
+            {rules=new(_policyVersion,_policyCurrency,_policyQuantityTolerance,_policyPriceTolerance,_policyUnitRule,_policyCurrencyRule,_policyTaxRule,_policyRoundingRule,_policyNonPoRule);effective=PolicyUtc(_policyEffectiveUtc);expiry=string.IsNullOrWhiteSpace(_policyExpiryUtc)?null:PolicyUtc(_policyExpiryUtc);}
+            await _state.RecordMatchingPolicyAsync(_policyId,rules,effective,expiry,_policyReason,Accounting.RecordCompanyMatchingPolicyAsync,Accounting.GetCompanyMatchingPoliciesAsync);
+        }
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"recording or reconciling the original matching policy",_state.HasUnconfirmedPolicyIntent?"Policy outcome could not be confirmed. Reconcile the original retained intent before another policy action":"Policy submission could not start. Review the explicit fields, UTC instants, selected rules and reason");
+            if(!_disposed && original==Company.Snapshot && version==_state.Version)
+            {_policyWriteError=message;if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canPreparePolicy=false;_canApprovePolicy=false;_state.ClearMatchingPolicies();}}
+        }
+        finally{_policyWriteBusy=false;}
+    }
+    private void PolicyStateChanged(){if(!_disposed)_=InvokeAsync(()=>{if(!_disposed)StateHasChanged();});}
+    private bool _policyBusy;
+    private string? _policyError;
+    private bool _financialBusy;
+    private string? _financialError;
+    private bool _recordBusy,_canRecordAllocation;
+    private string _allocationReason="";
+    private string? _recordError;
+    private bool InvalidAllocationReason=>_allocationReason is {Length:>512} || _allocationReason?.Any(char.IsControl)==true;
+    private async Task RecordAllocation()
+    {
+        if(_disposed || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _recordBusy || _state is null || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        _recordBusy=true;_recordError=null;var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) ||
+                !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !original.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal) ||
+                !original.Selection.Permissions.Contains("Accounting.RecordReceiptAllocation",StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current company allocation recording authority is required.");
+            await _state.RecordAllocationAsync(Accounting.RecordAPReceiptAllocationAsync,Accounting.GetAPInvoiceAsync,Accounting.GetAPLinePurchaseSourceAsync,
+                Accounting.GetAPReceiptAllocationsAsync,Accounting.GetAPReceiptConsumptionAsync,Accounting.GetAPInvoiceFinancialReviewAsync,_allocationReason);
+            if(!_disposed && original==Company.Snapshot && version==_state.Version)_allocationReason="";
+        }
+        catch(Exception failure)
+        {
+            var guidance=_state.HasUnconfirmedAllocationIntent?"Allocation outcome could not be confirmed. Reconcile the retained original intent before recording another allocation":
+                "Allocation could not be started. Review the reason, current proposal and company recording authority";
+            var message=Calls.Explain(failure,"recording or reconciling receipt allocation",guidance);
+            if(!_disposed && original==Company.Snapshot && version==_state.Version)
+            {
+                _recordError=message;
+                if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized})
+                {_canRecordAllocation=false;_canPrepareAllocation=false;_canPurchaseRead=false;_state.Clear();}
+            }
+        }
+        finally{_recordBusy=false;}
+    }
+    private void AllocationStateChanged(){if(!_disposed)_=InvokeAsync(()=>{if(!_disposed)StateHasChanged();});}
+    private async Task ReviewPolicies()
+    {
+        if(_disposed || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _state is null || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        _policyBusy=true;_policyError=null;var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) || !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current company accounting read authority is required.");
+            await _state.LoadMatchingPoliciesAsync(Accounting.GetCompanyMatchingPoliciesAsync);
+        }
+        catch(Exception failure)
+        {
+            var message=Calls.Explain(failure,"reviewing company matching policies","Company matching-policy evidence could not be confirmed. Review company access, explicit rules and the PRODUCTION schema, then reload");
+            if(!_disposed && original==Company.Snapshot && version==_state.Version)
+            {
+                _state.ClearMatchingPolicies();_policyError=message;
+                if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized})
+                {_canPurchaseRead=false;_canPrepareAllocation=false;_canRecordAllocation=false;_state.Clear();}
+            }
+        }
+        finally{_policyBusy=false;}
+    }
+    private async Task ReviewFinancial()
+    {
+        if(_disposed || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _state is null || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        ResetVarianceInputs();_financialBusy=true;_financialError=null;var original=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || original!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || original.Selection is null || !original.Selection.Roles.Any(user.IsInRole) || !original.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current company accounting read authority is required.");
+            await _state.LoadFinancialReviewAsync(Accounting.GetAPInvoiceFinancialReviewAsync);
+        }
+        catch(Exception failure){var message=Calls.Explain(failure,"reviewing invoice financial evidence","Invoice financial sources could not be confirmed. Reload invoice, purchase/allocation evidence and company access");if(!_disposed && original==Company.Snapshot && version==_state.Version){_state.ClearFinancialReview();_financialError=message;if(failure is UnauthorizedAccessException || failure is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canPurchaseRead=false;_canPrepareAllocation=false;_canRecordAllocation=false;_state.Clear();}}}
+        finally{_financialBusy=false;}
+    }
+    public override Task SetParametersAsync(ParameterView parameters){if(!parameters.TryGetValue<string?>(nameof(Id),out _))Id=null;return base.SetParametersAsync(parameters);}
+    protected override void OnInitialized(){_state=Workspace;_state.AllocationChanged+=AllocationStateChanged;_state.PolicyCommandChanged+=PolicyStateChanged;_state.VarianceCommandChanged+=VarianceStateChanged;Company.Changed+=ContextChanged;}
+    protected override Task OnParametersSetAsync()
+    {
+        try{if(!string.IsNullOrWhiteSpace(Id))Id=TheTechIdea.Data.OilGas.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"accounting/payables/invoices/");}
+        catch(FormatException){_state?.Clear();_error="The recorded source address is invalid. Open it again from the company queue.";return Task.CompletedTask;}
+        return Reload();
+    }
+    private void VendorChanged(string value){_vendor=value;_state?.Clear();_error=null;}
+    private async Task Reload()
+    {
+        if(_disposed)return;
+        if(_busy){_state?.Clear();_reloadRequested=true;return;}_busy=true;
+        try{do{
+            _reloadRequested=false;_state!.Clear();_error=null;_purchaseError=null;_allocationError=null;_proposalError=null;_financialError=null;_policyError=null;_recordError=null;_allocationReason="";_canPurchaseRead=false;_canPrepareAllocation=false;_canRecordAllocation=false;_canPreparePolicy=false;_canApprovePolicy=false;_policyWriteError=null;ResetPolicyInputs();ResetVarianceInputs();_canPrepareVariance=false;_canRecordVariance=false;_canReviewVariance=false;_canRecordVarianceDecision=false;ResetControllerInputs();_varianceDecisionError=null;var scope=Company.Snapshot;var id=Id;var vendor=_vendor;
+            if(scope.Selection is null)continue;
+            var version=_state.Version;
+            try
+            {
+                var user=(await Authentication.GetAuthenticationStateAsync()).User;
+                if(_disposed || scope!=Company.Snapshot || version!=_state.Version)continue;
+                if(user.Identity?.IsAuthenticated!=true || !scope.Selection.Roles.Any(user.IsInRole) || !scope.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal))
+                    throw new InvalidOperationException("Current app-owned company roles and Accounting.View permission are required.");
+                _canRecordVarianceDecision=scope.Selection.Permissions.Contains("Accounting.RecordInvoiceVarianceDecision",StringComparer.Ordinal);_canReviewVariance=scope.Selection.Permissions.Contains("Accounting.ReviewInvoiceVariance",StringComparer.Ordinal);_canRecordVariance=scope.Selection.Permissions.Contains("Accounting.RecordInvoiceVariance",StringComparer.Ordinal);_canPrepareVariance=scope.Selection.Permissions.Contains("Accounting.PrepareInvoiceVariance",StringComparer.Ordinal);_canPreparePolicy=scope.Selection.Permissions.Contains("Accounting.PrepareMatchingPolicy",StringComparer.Ordinal);
+                _canApprovePolicy=scope.Selection.Permissions.Contains("Accounting.ApproveMatchingPolicy",StringComparer.Ordinal);
+                _canPurchaseRead=scope.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal);
+                _canPrepareAllocation=_canPurchaseRead && scope.Selection.Permissions.Contains("Accounting.PrepareReceiptAllocation",StringComparer.Ordinal);
+                _canRecordAllocation=_canPurchaseRead && scope.Selection.Permissions.Contains("Accounting.RecordReceiptAllocation",StringComparer.Ordinal);
+                version++;
+                if(string.IsNullOrWhiteSpace(id))await _state.LoadCompanyAsync(Accounting.GetCompanyAPInvoicesAsync,string.IsNullOrWhiteSpace(vendor)?null:vendor);
+                else await _state.LoadDetailAsync(id,Accounting.GetAPInvoiceAsync);
+            }
+            catch(Exception ex){var message=Calls.Explain(ex,"reading company-owned AP invoice sources","AP invoice sources could not be confirmed. Review company access, ownership, invoice provenance and the production migration");if(!_disposed && scope==Company.Snapshot && id==Id && vendor==_vendor && version==_state.Version)_error=message;}
+        }while(_reloadRequested && !_disposed);}finally{_busy=false;}
+    }
+    private async Task ReviewPurchase(string line)
+    {
+        if(_disposed || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _state is null || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        _state.ClearPurchaseSource();_purchaseBusy=true;_purchaseError=null;_allocationError=null;_proposalError=null;var scope=Company.Snapshot;var version=_state.Version;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || scope!=Company.Snapshot || version!=_state.Version)return;
+            if(user.Identity?.IsAuthenticated!=true || scope.Selection is null || !scope.Selection.Roles.Any(user.IsInRole) ||
+                !scope.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !scope.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current company roles, Accounting.View and Procurement.View are required.");
+            await _state.LoadPurchaseSourceAsync(line,Accounting.GetAPLinePurchaseSourceAsync);
+        }
+        catch(Exception ex)
+        {
+            var message=Calls.Explain(ex,"reviewing an invoice line's owned purchase source","Purchase source could not be confirmed. Reload invoice evidence and review company procurement access and references");
+            if(!_disposed && scope==Company.Snapshot && version==_state.Version){_purchaseError=message;if(ex is UnauthorizedAccessException || ex is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canPurchaseRead=false;_canPrepareAllocation=false;_canRecordAllocation=false;_state.ClearPurchaseSource();}}
+        }
+        finally{_purchaseBusy=false;}
+    }
+    private async Task ReviewAllocations()
+    {
+        if(_disposed || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _state is null || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        _state.ClearReceiptAllocations();_allocationBusy=true;_allocationError=null;_proposalError=null;var scope=Company.Snapshot;var version=_state.Version;var line=_state.SelectedPurchaseLineId;var order=_state.LinkedOrder.SourceRevision;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || scope!=Company.Snapshot || version!=_state.Version || line!=_state.SelectedPurchaseLineId || order!=_state.LinkedOrder.SourceRevision)return;
+            if(user.Identity?.IsAuthenticated!=true || scope.Selection is null || !scope.Selection.Roles.Any(user.IsInRole) ||
+                !scope.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !scope.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal))
+                throw new UnauthorizedAccessException("Current company accounting and procurement read authority is required.");
+            await _state.LoadReceiptAllocationsAsync(Accounting.GetAPReceiptAllocationsAsync);
+        }
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing recorded receipt allocations","Receipt allocations could not be confirmed. Reload invoice and order sources and review allocation references, schema and access");if(!_disposed && scope==Company.Snapshot && version==_state.Version && line==_state.SelectedPurchaseLineId && order==_state.LinkedOrder.SourceRevision){_allocationError=message;if(ex is UnauthorizedAccessException || ex is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canPurchaseRead=false;_canPrepareAllocation=false;_canRecordAllocation=false;_state.ClearPurchaseSource();}}}
+        finally{_allocationBusy=false;}
+    }
+    private async Task ReviewProposal()
+    {
+        if(_disposed || _busy || _purchaseBusy || _allocationBusy || _proposalBusy || _financialBusy || _policyBusy || _policyWriteBusy || _state is null || _state.AllocationCommandBusy || _state.PolicyCommandBusy || (_state.CorrectionCommandUnsettled || _state.VarianceCommandBusy || _state.VarianceDecisionCommandBusy))return;
+        _proposalBusy=true;_proposalError=null;var scope=Company.Snapshot;var version=_state.Version;var allocation=_state.AllocationRevision;
+        try
+        {
+            var user=(await Authentication.GetAuthenticationStateAsync()).User;
+            if(_disposed || scope!=Company.Snapshot || version!=_state.Version || allocation!=_state.AllocationRevision)return;
+            if(user.Identity?.IsAuthenticated!=true || scope.Selection is null || !scope.Selection.Roles.Any(user.IsInRole) ||
+                !scope.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || !scope.Selection.Permissions.Contains("Procurement.View",StringComparer.Ordinal) ||
+                !scope.Selection.Permissions.Contains("Accounting.PrepareReceiptAllocation",StringComparer.Ordinal))throw new UnauthorizedAccessException("Current company allocation preparation authority is required.");
+            await _state.ReviewAllocationProposalAsync(Accounting.ReviewAPReceiptAllocationAsync);
+        }
+        catch(Exception ex){var message=Calls.Explain(ex,"reviewing a receipt allocation proposal","Proposal sources could not be confirmed. Review receipt quantity/unit and reload current invoice/order/allocation evidence");if(!_disposed && scope==Company.Snapshot && version==_state.Version && allocation==_state.AllocationRevision){_proposalError=message;if(ex is UnauthorizedAccessException || ex is OilGasApiException {StatusCode:System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized}){_canPrepareAllocation=false;_state.ClearReceiptAllocations();}}}
+        finally{_proposalBusy=false;}
+    }
+    private void ContextChanged(){_state?.Clear();_vendor="";_error=null;_purchaseError=null;_allocationError=null;_proposalError=null;_financialError=null;_policyError=null;_recordError=null;_allocationReason="";_canPurchaseRead=false;_canPrepareAllocation=false;_canRecordAllocation=false;_canPreparePolicy=false;_canApprovePolicy=false;_policyWriteError=null;ResetPolicyInputs();ResetVarianceInputs();_canPrepareVariance=false;_canRecordVariance=false;_canReviewVariance=false;_canRecordVarianceDecision=false;ResetControllerInputs();_varianceDecisionError=null;if(!_disposed)_=InvokeAsync(async()=>{if(_disposed)return;if(!string.IsNullOrWhiteSpace(Id)){Navigation.NavigateTo("/accounting/payables");return;}await Reload();if(!_disposed)StateHasChanged();});}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;if(_state is not null){_state.AllocationChanged-=AllocationStateChanged;_state.PolicyCommandChanged-=PolicyStateChanged;_state.VarianceCommandChanged-=VarianceStateChanged;_state.Clear();}}
+}

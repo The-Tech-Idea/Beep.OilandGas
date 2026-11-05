@@ -1,0 +1,9 @@
+@namespace Beep.OilandGas.Web.Auth.Tests.Fixtures
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Authorization
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Beep.OilandGas.Web.Pages.PPDM39.BusinessProcess.ProcessInstanceDetail).Assembly">
+        <Found Context="route"><AuthorizeRouteView RouteData="route"><NotAuthorized>Current receiving account authorization is unavailable.</NotAuthorized></AuthorizeRouteView></Found>
+        <NotFound>The recorded receiving process route was not found.</NotFound>
+    </Router>
+</CascadingAuthenticationState>

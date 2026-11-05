@@ -1,0 +1,8 @@
+@namespace Beep.OilandGas.Web.Auth.Tests
+@using MudBlazor
+@using Microsoft.AspNetCore.Components
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.BusinessProcess
+<MudPopoverProvider />
+<WorkOrderQueuePanel Review="@Review" />
+@code { [Parameter] public WorkOrderListState? Review {get;set;} }

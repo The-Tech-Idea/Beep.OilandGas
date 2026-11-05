@@ -1,0 +1,108 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using System.Security.Claims
+@using Beep.OilandGas.Models.Data.Lease
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject TheTechIdea.Data.OilGas.IFieldSelectionContext Fields
+@inject ILeaseServiceClient Leases
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-4">
+    <MudText Typo="Typo.h5">Commercial and land records</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable") · FIELD: @(_portfolio?.FieldId is {Length:>0} field?field:"Unavailable")</MudText>
+    <MudText>Recorded lease status and interest are source facts. Legal rights, approved terms, billing readiness and settlement require their own reviewed evidence.</MudText>
+    <MudButton OnClick="Reload" Disabled="@(_busy || _portfolio?.Busy==true)">Reload selected FIELD lease records</MudButton>
+    <MudButton Href="/ppdm39/operations/leaseacquisition">Lease portfolio workflow</MudButton>
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Loading commercial land records" />}
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Select a company before opening commercial records.</MudAlert>}
+    else if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    else if(_portfolio?.NeedsField==true){<MudAlert Severity="Severity.Info">Choose an available FIELD using the existing field selector.</MudAlert>}
+    else if(_portfolio?.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    else if(_portfolio?.Current==true)
+    {
+        <MudText Typo="Typo.caption">Retrieved UTC: @_portfolio.RetrievedAtUtc?.ToString("O") · Source: selected FIELD lease API response</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton OnClick='@(()=>SelectStatus(null))' Variant="Variant.Outlined">All recorded leases (@_portfolio.Leases.Count)</MudButton>
+            @foreach(var status in _portfolio.Leases.Select(row=>row.Status).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
+            {<MudButton OnClick='@(()=>SelectStatus(status))' Variant="Variant.Outlined">@status (@_portfolio.Leases.Count(row=>row.Status==status))</MudButton>}
+        </MudStack>
+        @if(_portfolio.Leases.Count==0){<MudAlert Severity="Severity.Info">No recorded leases were returned for this selected FIELD.</MudAlert>}
+        else
+        {
+            <MudText>Showing @VisibleRows.Count records · Status: @(_status ?? "All recorded statuses")</MudText>
+            <MudTable T="LeaseSummary" Items="VisibleRows" Hover="true" Dense="true" aria-label="Recorded commercial land leases">
+                <HeaderContent><MudTh>Lease</MudTh><MudTh>Recorded status</MudTh><MudTh>Subtype</MudTh><MudTh>Recorded interest</MudTh><MudTh>Review</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Lease">@context.LeaseId · @context.LeaseNumber · @context.LeaseName</MudTd>
+                    <MudTd DataLabel="Recorded status">@context.Status</MudTd>
+                    <MudTd DataLabel="Subtype">@context.LandRightSubtype · Date zone @context.DateZoneId</MudTd>
+                    <MudTd DataLabel="Recorded interest">@context.CalculatedInterest.ToString(System.Globalization.CultureInfo.CurrentCulture)</MudTd>
+                    <MudTd DataLabel="Review"><MudButton OnClick='@(()=>Review(context))' Disabled="@_portfolio.Busy">Review recorded lease</MudButton></MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        @if(_portfolio.CommandError is {} reviewError){<MudAlert Severity="Severity.Error" role="alert">@reviewError</MudAlert>}
+        @if(_portfolio.Evaluation is {} record)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-3">
+                <MudText Typo="Typo.h6">Recorded lease review</MudText>
+                <MudText>Lease: @record.LeaseId · FIELD: @record.FieldId · Subtype: @record.LandRightSubtype · Date zone: @record.DateZoneId</MudText>
+                <MudText>Status: @record.Status · Recorded interest: @record.CalculatedInterest.ToString(System.Globalization.CultureInfo.CurrentCulture)</MudText>
+                <MudText>Effective: @(record.EffectiveDate?.ToString("yyyy-MM-dd") ?? "Unavailable") · Expiration: @(record.ExpirationDate?.ToString("yyyy-MM-dd") ?? "Unavailable")</MudText>
+            </MudPaper>
+        }
+    }
+</MudPaper>
+@code {
+    private LeasePortfolioState? _portfolio;
+    private bool _busy,_disposed,_reloadRequested;
+    private int _contextVersion;
+    private string? _status,_error;
+    private IReadOnlyList<LeaseSummary> VisibleRows=>_portfolio?.Current==true?_portfolio.Leases.Where(row=>_status is null || row.Status==_status).ToArray():[];
+    protected override async Task OnInitializedAsync()
+    {
+        _portfolio=new(Company,Leases,(_,_,sentence)=>sentence);_portfolio.Changed+=Changed;
+        Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;
+        await Reload();
+    }
+    private async Task RequireAuthority()
+    {
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;var selected=Company.Selection;
+        var subject=user.FindFirstValue("sub");var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ?? subject;
+        if(selected is null || user.Identity?.IsAuthenticated!=true || actor!=selected.UserId || subject is not null && subject!=selected.UserId || !selected.Roles.Any(user.IsInRole))
+            throw new UnauthorizedAccessException("Current company account and app roles could not be confirmed.");
+    }
+    private async Task Reload()
+    {
+        if(_disposed)return;if(_busy){_reloadRequested=true;return;}_busy=true;
+        try
+        {
+            do
+            {
+                _reloadRequested=false;_error=null;_status=null;_portfolio!.ClearSelection();var scope=Company.Snapshot;var version=_contextVersion;
+                if(scope.Selection is null)continue;
+                try
+                {
+                    await RequireAuthority();if(_disposed || scope!=Company.Snapshot || version!=_contextVersion)continue;
+                    await _portfolio.LoadAsync(Fields.GetCurrentFieldIdAsync);
+                }
+                catch{if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Commercial records could not be confirmed for the current company account and app roles.";}
+            }while(_reloadRequested && !_disposed);
+        }
+        finally{_busy=false;}
+    }
+    private void SelectStatus(string? status){if(_portfolio?.Current!=true || status is not null && !_portfolio.Leases.Any(row=>row.Status==status))return;_status=status;}
+    private async Task Review(LeaseSummary row)
+    {
+        var scope=Company.Snapshot;var version=_contextVersion;
+        try{await RequireAuthority();if(_disposed || scope!=Company.Snapshot || version!=_contextVersion)return;await _portfolio!.EvaluateAsync(row);}
+        catch{if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Recorded lease review could not be confirmed for the current company account and app roles.";}
+    }
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){++_contextVersion;_status=null;_error=null;_portfolio?.ClearSelection();if(!_disposed)_=InvokeAsync(async()=>{await Reload();if(!_disposed)StateHasChanged();});}
+    private void FieldChanged(string field)=>ContextChanged();
+    private void AuthenticationChanged(Task<AuthenticationState> state)=>ContextChanged();
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;if(_portfolio is not null){_portfolio.Changed-=Changed;_portfolio.Dispose();}}
+}

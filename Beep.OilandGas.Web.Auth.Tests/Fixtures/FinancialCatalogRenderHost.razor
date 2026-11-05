@@ -1,0 +1,8 @@
+@namespace Beep.OilandGas.Web.Auth.Tests
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.BusinessProcess
+<MudPopoverProvider />
+<FinancialProcessCatalogPanel Review="@Review" />
+@code{[Parameter] public FinancialProcessCatalogState? Review {get;set;}}

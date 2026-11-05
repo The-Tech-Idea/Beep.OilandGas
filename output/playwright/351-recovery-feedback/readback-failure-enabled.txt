@@ -1,0 +1,8 @@
+### Result
+{
+  "readbackFailureEnabled": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {window.__oilgasBlockReadback=true;return {readbackFailureEnabled:true};}');
+```

@@ -1,126 +1,158 @@
-﻿@page "/ppdm39/compliance/ghg"
-@using Beep.OilandGas.Models.Data.Compliance
-@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
-@inject ISnackbar Snackbar
+@page "/ppdm39/compliance/ghg"
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject ApiClient Api
+@inject ILogger<GHGReport> Logger
 
-<PageTitle>GHG Emission Report</PageTitle>
-
-<MudText Typo="Typo.h5" Class="mb-4">GHG Emission Report</MudText>
-
-<MudPaper Elevation="2" Class="pa-4 mb-4">
-    <MudGrid Spacing="2" AlignItems="AlignItems.End">
-        <MudItem xs="12" sm="4" md="2">
-            <MudNumericField T="int" @bind-Value="_year" Label="Report Year" Min="2000" Max="2100" />
-        </MudItem>
-        <MudItem xs="12" sm="5" md="3">
-            <MudSelect T="string" @bind-Value="_jurisdiction" Label="Jurisdiction">
-                <MudSelectItem Value='@("USA")'>USA (40 CFR 98)</MudSelectItem>
-                <MudSelectItem Value='@("CANADA")'>Canada (ECCC NIR)</MudSelectItem>
-                <MudSelectItem Value='@("INTERNATIONAL")'>International (IOGP)</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="3" md="2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.Refresh"
-                       Disabled="@_loading"
-                       OnClick="@GenerateAsync"
-                       FullWidth="true">Generate</MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
-
-@if (_loading)
-{
-    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
-}
-
-@if (_report is not null)
-{
-    <MudGrid Class="mb-4">
-        <MudItem xs="12" sm="4">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Outlined.Cloud" Color="Color.Warning" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_report.TotalCO2e.ToString("N1")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Total t CO₂e</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="4">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Outlined.Category" Color="Color.Info" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_report.Sources.Count</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Emission Sources</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="4">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Outlined.EventNote" Color="Color.Secondary" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_report.Year</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Report Year</MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-
-    <MudPaper Elevation="2" Class="pa-4 mb-4">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-            <MudText Typo="Typo.subtitle1"><b>Emission Source Lines</b></MudText>
-            <MudSpacer />
-            <MudText Typo="Typo.caption" Color="Color.Default">
-                Regulation: @_jurisdiction | Generated: @_report.GeneratedAt.ToString("yyyy-MM-dd HH:mm") UTC
-            </MudText>
-        </MudStack>
-
-        <MudDataGrid T="EmissionSourceLine" Items="@_report.Sources" Dense="true" Hover="true">
-            <Columns>
-                <PropertyColumn Property="x => x.SourceCategory" Title="Source" />
-                <PropertyColumn Property="x => x.Regulation"     Title="Regulation" />
-                <PropertyColumn Property="x => x.ActivityVolume" Title="Activity Volume" Format="N2" />
-                <PropertyColumn Property="x => x.VolumeUnit"     Title="Unit" />
-                <PropertyColumn Property="x => x.EmissionFactor" Title="EF" Format="N4" />
-                <PropertyColumn Property="x => x.FactorUnit"     Title="EF Unit" />
-                <PropertyColumn Property="x => x.EmissionsCO2e"  Title="t CO₂e" Format="N2" />
-            </Columns>
-        </MudDataGrid>
-    </MudPaper>
-
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudText Typo="Typo.caption" Color="Color.Default">
-            CSV export: copy the source data from the grid above. API endpoint available at
-            <code>/api/field/current/compliance/ghg/report?year=@_year&amp;jurisdiction=@_jurisdiction</code>
-        </MudText>
-    </MudPaper>
-}
-
-@if (!string.IsNullOrEmpty(_error))
-{
-    <MudAlert Severity="Severity.Error" Class="mt-2">@_error</MudAlert>
-}
-
-@code {
-    private bool              _loading      = false;
-    private string?           _error;
-    private int               _year         = DateTime.Now.Year;
-    private string            _jurisdiction = "USA";
-    private GHGEmissionReport? _report;
-
-    private async Task GenerateAsync()
+<PageTitle>GHG reporting</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">GHG reporting</MudText>
+    <MudAlert Severity="Severity.Info" Class="my-4">GHG reporting is unavailable until this company's activity data and applicable emission factors have been configured and verified.</MudAlert>
+    <MudText>Review recorded production entities for the selected FIELD as potential activity sources. These records do not establish emissions, activity volumes or reporting coverage.</MudText>
+    <MudButton OnClick="LoadSources" Disabled="@_busy" Variant="Variant.Outlined" Class="my-3">Review FIELD production sources</MudButton>
+    @if (_message is not null) { <MudAlert Severity="Severity.Warning" Class="my-3">@_message</MudAlert> }
+    @if (_review is not null)
     {
-        _loading = true;
-        _error   = null;
-        _report  = null;
-        try
+        <MudText Typo="Typo.h6" HtmlTag="h2">Recorded production entities for @_review.Field.FieldId</MudText>
+        @if (_review.Entities.Length == 0) { <MudText>No recorded production entities are visible for this FIELD.</MudText> }
+        @foreach (var item in _review.Entities)
         {
-            _report = await ComplianceClient.GenerateGhgReportAsync(_year, _jurisdiction);
-            if (_report is null)
-                _error = "No report data returned.";
-        }
-        catch (Exception)
-        {
-            _error = "Failed to generate GHG report.";
-            Snackbar.Add(_error, Severity.Error);
-        }
-        finally
-        {
-            _loading = false;
+            <MudText>@item.ProductionEntityId (@item.Subtype) — @(item.Name ?? "unnamed") · source @item.Source · product @(item.PrimaryProduct ?? "not recorded")</MudText>
+            <MudButton OnClick="@(() => LoadDispositions(item))" Disabled="@_busy" Variant="Variant.Text">Review recorded dispositions</MudButton>
         }
     }
+    @if (_dispositions is not null)
+    {
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-4">Recorded dispositions for @_dispositions.Query.ProductionEntityId</MudText>
+        <MudAlert Severity="Severity.Info">These are recorded volumes and units for the selected source, not classified emissions or complete reporting coverage.</MudAlert>
+        @if (_dispositions.Dispositions.Length == 0) { <MudText>No recorded dispositions are visible for this source.</MudText> }
+        @foreach (var row in _dispositions.Dispositions)
+        {
+            <MudText>@row.ActivityType · @row.ProductType · @row.Volume @row.Unit · @(row.StartDate?.ToString("yyyy-MM-dd") ?? "start not recorded") to @(row.EndDate?.ToString("yyyy-MM-dd") ?? "end not recorded") · observation @row.Observation, amendment @row.Amendment</MudText>
+            @if (_basis is not null)
+            {
+                @foreach (var factor in _basis.Catalog.Factors.Where(x => x.SourceCategory == row.ActivityType && x.InputUnit == row.Unit))
+                { <MudButton OnClick="@(() => CheckArithmetic(row, factor))" Disabled="@_busy" Variant="Variant.Text">Check with @factor.Id</MudButton> }
+            }
+        }
+        <MudButton OnClick="LoadBasis" Disabled="@_busy" Variant="Variant.Outlined" Class="my-3">Load company factor selection</MudButton>
+        @if (_basis is not null) { <MudText Typo="Typo.body2">Selected catalog: @_basis.Selection.Jurisdiction. Only factors with matching recorded activity code and input unit are offered.</MudText> }
+        @if (_check is not null)
+        {
+            <MudAlert Severity="Severity.Info">Arithmetic check only: @_check.Check.Disposition.Volume @_check.Check.Disposition.Unit × @_check.Check.Factor.Factor = @_check.Check.Result @_check.Check.OutputUnit. This is not an approved emissions report.</MudAlert>
+            <MudText Typo="Typo.body2">Factor @_check.Check.Factor.Id · source @_check.Check.Factor.SourceReference</MudText>
+        }
+    }
+</MudContainer>
+
+@code {
+    private FieldGhgProductionSources? _review;
+    private FieldGhgDispositions? _dispositions;
+    private GhgCalculationBasis? _basis;
+    private FieldGhgArithmeticCheck? _check;
+    private string? _message;
+    private bool _busy, _disposed;
+    private long _generation;
+    protected override void OnInitialized() { Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; }
+    private async Task LoadSources()
+    {
+        var snapshot = Company.Snapshot; var generation = ++_generation; _review = null; _dispositions = null; _basis = null; _check = null; _message = null;
+        if (snapshot.Selection is null) { _message = "Select a company and FIELD."; return; }
+        _busy = true;
+        bool Current() => !_disposed && generation == _generation && snapshot == Company.Snapshot;
+        try
+        {
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!before.SelectionAvailable || before.SelectionContext is null) throw new InvalidOperationException("The FIELD is unavailable.");
+            var result = await Api.GetAsync<FieldGhgProductionSources>("/api/field/current/compliance/ghg/production-sources"); if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext || result is null || result.Field != before.SelectionContext ||
+                result.Entities is null || result.Entities.Length > 256 || !CompanyEnvironmentIdentity.IsRevision(result.SourceRevision) ||
+                result.Entities.Any(x => x is null || string.IsNullOrWhiteSpace(x.Subtype) || string.IsNullOrWhiteSpace(x.ProductionEntityId) || string.IsNullOrWhiteSpace(x.Source)) ||
+                result.Entities.Select(x => (x.Subtype, x.ProductionEntityId, x.Source)).Distinct().Count() != result.Entities.Length)
+                throw new InvalidOperationException("The production source review is unconfirmed.");
+            _review = result;
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "FIELD production sources could not be confirmed"); _message = "Production sources could not be confirmed for the current company and FIELD."; } }
+        finally { if (Current()) _busy = false; }
+    }
+    private async Task LoadDispositions(GhgProductionEntity item)
+    {
+        var snapshot = Company.Snapshot; var generation = ++_generation; var parents = _review; _dispositions = null; _basis = null; _check = null; _message = null;
+        if (snapshot.Selection is null || parents is null || !parents.Entities.Contains(item)) return;
+        var query = new GhgDispositionQuery(item.Subtype, item.ProductionEntityId, item.Source, parents.SourceRevision); _busy = true;
+        bool Current() => !_disposed && generation == _generation && snapshot == Company.Snapshot && _review == parents;
+        try
+        {
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!before.SelectionAvailable || before.SelectionContext != parents.Field) throw new InvalidOperationException("The FIELD changed.");
+            var result = await Api.PostAsync<GhgDispositionQuery, FieldGhgDispositions>("/api/field/current/compliance/ghg/production-sources/dispositions", query); if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != parents.Field || result is null || result.Field != parents.Field || result.Query != query ||
+                !CompanyEnvironmentIdentity.IsRevision(result.SourceRevision) || result.Dispositions is null || result.Dispositions.Length > 256 ||
+                result.Dispositions.Any(x => x is null || string.IsNullOrWhiteSpace(x.Unit) || string.IsNullOrWhiteSpace(x.ActivityType) || string.IsNullOrWhiteSpace(x.ProductType)) ||
+                result.Dispositions.Select(x => (x.VolumeMethod, x.ActivityType, x.ProductType, x.PeriodType, x.Observation, x.Amendment)).Distinct().Count() != result.Dispositions.Length)
+                throw new InvalidOperationException("The recorded dispositions are unconfirmed.");
+            _dispositions = result;
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Recorded dispositions could not be confirmed"); _message = "Recorded dispositions could not be confirmed for this source and FIELD."; } }
+        finally { if (Current()) _busy = false; }
+    }
+    private async Task LoadBasis()
+    {
+        var snapshot = Company.Snapshot; var generation = ++_generation; var dispositions = _dispositions; _basis = null; _check = null; _message = null;
+        if (snapshot.Selection is null || dispositions is null) return;
+        _busy = true; bool Current() => !_disposed && generation == _generation && snapshot == Company.Snapshot && _dispositions == dispositions;
+        try
+        {
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!before.SelectionAvailable || before.SelectionContext != dispositions.Field) throw new InvalidOperationException("The FIELD changed.");
+            var basis = await Api.GetAsync<GhgCalculationBasis>("/api/field/current/compliance/ghg/production-sources/calculation-basis"); if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != dispositions.Field || basis is null || basis.Field != dispositions.Field || basis.Selection is null || basis.Catalog is null ||
+                basis.Catalog.Jurisdiction != basis.Selection.Jurisdiction || basis.Catalog.Factors is not { Count: > 0 and <= 256 }) throw new InvalidOperationException("The company factor selection is unconfirmed.");
+            CompanyGhgSelectionIdentity.RequireValid(basis.Selection, snapshot.Selection.Scope);
+            var validatedCatalog = GhgFactorCatalogValidation.Parse(basis.Selection.Jurisdiction, System.Text.Json.JsonSerializer.Serialize(basis.Catalog));
+            _basis = basis with { Catalog = validatedCatalog };
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Company factor selection could not be confirmed"); _message = "A current company factor selection could not be confirmed. Ask an administrator to review setup."; } }
+        finally { if (Current()) _busy = false; }
+    }
+    private async Task CheckArithmetic(GhgDispositionFact row, GhgFactorDefinition factor)
+    {
+        var snapshot = Company.Snapshot; var generation = ++_generation; var dispositions = _dispositions; var basis = _basis; _check = null; _message = null;
+        if (snapshot.Selection is null || dispositions is null || basis is null || !dispositions.Dispositions.Contains(row) || !basis.Catalog.Factors.Contains(factor)) return;
+        var request = new GhgArithmeticRequest(dispositions.Query, dispositions.SourceRevision, basis.Selection.Revision,
+            row.VolumeMethod, row.ActivityType, row.ProductType, row.PeriodType, row.Observation, row.Amendment, factor.Id);
+        _busy = true; bool Current() => !_disposed && generation == _generation && snapshot == Company.Snapshot && _dispositions == dispositions && _basis == basis;
+        try
+        {
+            _ = GhgArithmetic.Check(row, factor);
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!before.SelectionAvailable || before.SelectionContext != basis.Field) throw new InvalidOperationException("The FIELD changed.");
+            var result = await Api.PostAsync<GhgArithmeticRequest, FieldGhgArithmeticCheck>("/api/field/current/compliance/ghg/production-sources/calculation-check", request); if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != basis.Field || result is null || result.Field != basis.Field || result.Request != request ||
+                result.CatalogRevision != basis.Selection.CatalogRevision || result.Check != GhgArithmetic.Check(row, factor)) throw new InvalidOperationException("The arithmetic check is unconfirmed.");
+            _check = result;
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Arithmetic check could not be confirmed"); _message = "The recorded dates, units, factor or company evidence could not be confirmed."; } }
+        finally { if (Current()) _busy = false; }
+    }
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged() { ++_generation; _review = null; _dispositions = null; _basis = null; _check = null; _busy = false; _message = "Company or FIELD changed. Review the current selection."; if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }
 }

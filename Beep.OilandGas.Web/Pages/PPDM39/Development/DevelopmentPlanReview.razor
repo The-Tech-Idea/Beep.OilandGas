@@ -1,0 +1,160 @@
+@page "/development/fdp/review"
+@using System.Globalization
+@using MudBlazor
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Workflow
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IDevelopmentServiceClient Development
+@inject IDevelopmentDraftIntentStore Journal
+@inject OilGasCallFailures Calls
+
+<PageTitle>Review development draft</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Review development draft</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-4">
+        <MudButton Href="/development/fdp" Variant="Variant.Outlined">Company FIELD drafts</MudButton>
+        <MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Assigned review work</MudButton>
+        <MudButton OnClick="Reload" Disabled="@(_state?.Loading==true || PlanId is null)" StartIcon="@Icons.Material.Filled.Refresh">Reload recorded source</MudButton>
+    </MudStack>
+    @if (_state?.NeedsCompany!=false)
+    {
+        <MudAlert Severity="Severity.Info">Choose a company to inspect its development draft.</MudAlert>
+    }
+    else if (!_state.CanView)
+    {
+        <MudAlert Severity="Severity.Info">Development Planning View permission is required for this company draft.</MudAlert>
+    }
+    else if (string.IsNullOrWhiteSpace(PlanId))
+    {
+        <MudAlert Severity="Severity.Info">Choose a recorded draft from the company FIELD list.</MudAlert>
+    }
+    else if (_state.Loading)
+    {
+        <MudProgressLinear Indeterminate="true" aria-label="Loading recorded development draft" />
+    }
+    else if (_state.Error is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_state.Error</MudAlert>
+    }
+    else if (_state.NeedsField)
+    {
+        <MudAlert Severity="Severity.Info">Choose an available FIELD, then reload its recorded draft.</MudAlert>
+    }
+    else if (_state.SourceReview is {} source && _state.Loaded)
+    {
+        <MudPaper Class="pa-4 mb-4" Outlined="true">
+            <MudText>Company: @source.Context.Company.TenantId / @source.Context.Company.BusinessAssociateId</MudText>
+            <MudText>FIELD: @_state.FieldName (@source.Context.FieldId)</MudText>
+            <MudText Typo="Typo.caption">Source checked: @source.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture)</MudText>
+        </MudPaper>
+        @if (source.Plan is {} plan)
+        {
+            <DevelopmentDraftSourceCard Plan="plan" />
+            @if (_state.CanInspectWorkflows)
+            {
+                <MudButton OnClick="InspectStatus" Disabled="@_state.Busy" Variant="Variant.Outlined" Class="my-3">Inspect recorded review outcome</MudButton>
+                @if (_state.ReviewStatusError is {} statusError){<MudAlert Severity="Severity.Error">@statusError</MudAlert>}
+                @if (_state.ReviewStatus is {} status)
+                {
+                    @if(status.Review is {} progress){<DevelopmentReviewProgressPanel Review="progress" /><MudButton Href="@("/development/fdp/history?processId="+Uri.EscapeDataString(progress.InstanceId))" Variant="Variant.Outlined" Class="my-3">Open review and FDP baseline</MudButton>}
+                    else{<MudAlert Severity="Severity.Info">No review has been submitted for this recorded draft. Its absence was checked.</MudAlert>}
+                }
+            }
+            @if (_state.CanInspectWorkflows)
+            {
+                <MudPaper Class="pa-4 mb-4" Outlined="true">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Configured review stages</MudText>
+                    <MudButton OnClick="LoadWorkflows" Disabled="@_state.Busy" Variant="Variant.Outlined" Class="my-3">Inspect review workflows</MudButton>
+                    @if (_state.Busy){<MudProgressLinear Indeterminate="true" aria-label="Loading development review workflows" />}
+                    @if (_state.WorkflowError is not null){<MudAlert Severity="Severity.Error">@_state.WorkflowError</MudAlert>}
+                    @if (_state.Workflows is {} catalog)
+                    {
+                        @if (catalog.Choices.Count==0){<MudAlert Severity="Severity.Info">No development review workflow is configured for this draft source. Ask the company workflow administrator to configure its review roles.</MudAlert>}
+                        @foreach (var choice in catalog.Choices)
+                        {
+                            <MudText Typo="Typo.subtitle1" Class="mt-3">@choice.ProcessName · Version @choice.Version</MudText>
+                            @foreach (var step in choice.Steps)
+                            {
+                                <MudText>@step.StepName · Assigned role: @step.AssignedRole</MudText>
+                                <MudText Typo="Typo.caption">Company reviewer personas: @string.Join(", ",step.PersonaCodes)</MudText>
+                            }
+                            @if (_state.CanRequestReview)
+                            {
+                                <MudButton OnClick="@(()=>PrepareHandoff(choice.ProcessId))" Variant="Variant.Outlined" Class="my-3">Prepare review request</MudButton>
+                            }
+                        }
+                    }
+                </MudPaper>
+            }
+            @if (_state.HandoffError is not null){<MudAlert Severity="Severity.Error" Class="mb-3">@_state.HandoffError</MudAlert>}
+            @if (_state.RetainedReviewPlanId is {} retainedId)
+            {
+                <MudPaper Outlined="true" Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Recover original review request</MudText>
+                    <MudText>An earlier request has an unconfirmed outcome. Its original input is retained for this account and company.</MudText>
+                    @if (retainedId!=PlanId)
+                    {
+                        <MudButton Href="@("/development/fdp/review?planId="+Uri.EscapeDataString(retainedId))" Variant="Variant.Outlined">Open original draft</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton OnClick="RecoverHandoff" Disabled="@(!_state.CanRecoverHandoff)" Variant="Variant.Outlined" Class="mt-3">Recover original outcome</MudButton>
+                    }
+                </MudPaper>
+            }
+            @if (_state.PreparedHandoff is {} prepared)
+            {
+                <MudPaper Outlined="true" Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Confirm independent review request</MudText>
+                    <MudText>@prepared.Source.Plan!.FDP_NAME · @prepared.Workflow.ProcessName · Version @prepared.Workflow.Version</MudText>
+                    @foreach (var stage in prepared.Workflow.Steps)
+                    {
+                        <MudText>@stage.StepName · Role: @stage.AssignedRole · @prepared.ReceivingSteps.Single(step=>step.StepId==stage.StepId).Recipients.Count independent reviewer(s)</MudText>
+                    }
+                    <MudText Class="my-3">Submitting records the first review assignment. It does not approve the development plan, investment or operations handoff.</MudText>
+                    <MudStack Row="true" Wrap="Wrap.Wrap">
+                        <MudButton OnClick="SubmitHandoff" Disabled="@(!_state.CanRequestReview)" Color="Color.Primary" Variant="Variant.Filled">Submit review request</MudButton>
+                        <MudButton OnClick="CancelHandoff" Disabled="@_state.Busy" Variant="Variant.Outlined">Cancel preparation</MudButton>
+                    </MudStack>
+                </MudPaper>
+            }
+            @if (_state.HandoffConfirmation is not null){<MudAlert Severity="Severity.Success" Class="mb-3">@_state.HandoffConfirmation</MudAlert>}
+            @if (_state.HandoffReceipt is {Recorded:true} recorded)
+            {
+                <MudText Class="development-draft-identity">Recorded review: @recorded.InstanceId · Initial persona assignments: @recorded.TaskIds.Count</MudText>
+                <MudButton Href="@("/development/fdp/history?processId="+Uri.EscapeDataString(recorded.InstanceId))" Variant="Variant.Outlined" Class="my-3">Open recorded review history</MudButton>
+            }
+            <MudAlert Severity="Severity.Info">This is the recorded draft source. Technical review, investment approval and operations acceptance are separate decisions.</MudAlert>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No recorded draft with this identity was found for the current company FIELD.</MudAlert>
+        }
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">The company or FIELD changed. Reload to inspect its current recorded draft.</MudAlert>
+    }
+</MudContainer>
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name="planId")] public string? PlanId{get;set;}
+    private DevelopmentDraftWorkspaceState? _state;
+    private bool _disposed;
+    protected override void OnInitialized(){_state=new(Company,Fields,Development,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>Reload();
+    private Task InspectStatus()=>_state!.InspectReviewStatusAsync();
+    private Task Reload(){if(string.IsNullOrWhiteSpace(PlanId)){_state!.Clear();return Task.CompletedTask;}return _state!.LoadAsync(PlanId);}
+    private Task LoadWorkflows()=>_state!.LoadReviewWorkflowsAsync();
+    private Task PrepareHandoff(string id)=>_state!.PrepareHandoffAsync(id);
+    private Task SubmitHandoff()=>_state!.SubmitHandoffAsync();
+    private Task RecoverHandoff()=>_state!.RecoverHandoffAsync();
+    private void CancelHandoff()=>_state!.CancelPreparedHandoff();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){_disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

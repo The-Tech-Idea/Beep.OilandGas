@@ -1,0 +1,89 @@
+{
+  "plan": "Implementation-354-Permit-Application-Workflow.md",
+  "slice": "Reviewed draft editing",
+  "gates": [
+    {
+      "name": "contract",
+      "exact_methods": [
+        "ReviewedPermitDraftProposalPreservesLifecycleAndRejectsInvalidOrRewrittenEvidence",
+        "ReviewedPermitDraftRetainsExactProposalAndRecoversWithoutAnotherWrite",
+        "PermitWorkbenchRendersExactSourceAndOnlyEligiblePersonaControls",
+        "PermitRoutesExposeReviewedCommandsAndRetireDirectSubmissionDecision"
+      ],
+      "filter": "FullyQualifiedName~ReviewedPermitDraftProposalPreservesLifecycleAndRejectsInvalidOrRewrittenEvidence|FullyQualifiedName~ReviewedPermitDraftRetainsExactProposalAndRecoversWithoutAnotherWrite|FullyQualifiedName~PermitWorkbenchRendersExactSourceAndOnlyEligiblePersonaControls|FullyQualifiedName~PermitRoutesExposeReviewedCommandsAndRetireDirectSubmissionDecision",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "619 ms",
+      "terminal": "contract-terminal.txt",
+      "full_temporary_log": "oilgas-354-draft-edit-contract.log",
+      "full_log_sha256": "295b536317e0100c8732faf54e7b90731797021d55199cfe99d8b44df7cdad60"
+    },
+    {
+      "name": "native",
+      "exact_methods": [
+        "ReviewedPermitDraftNativeCommandChecksDependenciesAndPreservesAtomicOriginal"
+      ],
+      "filter": "FullyQualifiedName~ReviewedPermitDraftNativeCommandChecksDependenciesAndPreservesAtomicOriginal",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "4 m 13 s",
+      "terminal": "native-terminal.txt",
+      "full_temporary_log": "oilgas-354-draft-edit-native-gate.log",
+      "full_log_sha256": "af19efe64cdb1db280eb14a7c3f1010bc65881c7c0c8795b9b815b0c1197230f"
+    },
+    {
+      "name": "form",
+      "exact_methods": [
+        "PermitDraftFormRefusesSubmissionWhileProposedEditsAreUnsaved",
+        "PermitWorkbenchRendersExactSourceAndOnlyEligiblePersonaControls"
+      ],
+      "filter": "FullyQualifiedName~PermitDraftFormRefusesSubmissionWhileProposedEditsAreUnsaved|FullyQualifiedName~PermitWorkbenchRendersExactSourceAndOnlyEligiblePersonaControls",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "duration": "499 ms",
+      "terminal": "form-terminal.txt",
+      "full_temporary_log": "oilgas-354-draft-edit-form.log",
+      "full_log_sha256": "55afc3fe485d3ef4d46a1fcab1877dce7ffd4d4ea229ef0f1648dd0f8bc485cf"
+    }
+  ],
+  "distinct_observed_inputs": 24,
+  "passing_observations": 28,
+  "overlap": "Four render inputs repeat after the unsaved-edit form guard. Native and contract gates ran before that UI-only guard; final five inputs compile and exercise final Razor.",
+  "source_and_native_runtime_sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationDraftChanges.cs": "4d96680321459844144601b9638ff371bc9512d0fe6349740526708bdcd2c3f5",
+    "TheTechIdea.Data/OilGas/PermitApplicationSourceReview.cs": "68ffaa65a97399251ebd5c2a8fa0c7ef055668a1d086514cd6b321f084c21a1d",
+    "TheTechIdea.Data/OilGas/PermitApplicationCommandOutcome.cs": "aba33a19dab64218f815abe3cc504137c8b1a0568d149cb4ea17d7ff9e88b67a",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "0ac67dd11cc0d8b5737c21fe6e387a440525cbcdadb13031113c18f4e55c8a11",
+    "Beep.OilandGas.ApiService/Controllers/Permits/PermitsController.cs": "3813d641cbc425cf7aaf77c9c6f6d9b4a614093681c64af87e64c7193fb61ba5",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.Commands.cs": "15a2f3d5ff04e38ea1d7054f4166a9c2a3a49dc58d7b6e846d91b82978798034",
+    "Beep.OilandGas.PermitsAndApplications/Services/PermitApplicationLifecycleService.cs": "ada0cd30a45190146353387545277fc5c99b4e956b23070b252c2721f5f0695e",
+    "Beep.OilandGas.Web/Services/PermitApplicationCommandState.cs": "aa5899b9f78d8ca189e0cb72bcb7a8a458d4d0ef5527807227db5a216e8428b0",
+    "Beep.OilandGas.Web/Components/Workflow/PermitApplicationWorkflow.razor": "0ceb265a47af1d0670204a433f1c65b26c05253150fda76c538e418aff7326ae",
+    "Beep.OilandGas.Repository.Tests/PermitApplicationWorkflowStateTests.cs": "a4e90ca53319598aeea4c989915ac9e2c4f81efcb98e6d9b19e38f5ff652ba56",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "f9039fb6d57ea19b33deae6eed42f5a790ea02f53a9508712abaa81162cc788e",
+    "Beep.OilandGas.Repository.Tests/PermitReviewedCommandApiTests.cs": "93139bc509dd635b4c7381667aada4452f497ab73cb3fc1ac2e08a1318a58b37",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "a6fdc17ed1f537976555a7dd75788a53a771471b7cdc9a44fef384a55e8cb06e",
+    "Beep.OilandGas.PermitsAndApplications/bin/Debug/net10.0/Beep.OilandGas.PermitsAndApplications.dll": "a174bfb078c245695f1bef80314ecfbbb6ee8379efd252735a4da8c4a68bdaa6"
+  },
+  "criteria": {
+    "proposal": "Explicit six-field proposal, valid draft/correction stages, reject no-op/missing/invalid/misplaced proposal, preserve every other native field and reject rewritten outcomes.",
+    "state": "Retain exact proposal before transport, recover lost response read-only without another write, refuse read-only author.",
+    "native": "Actual command owner: header/classification save, supporting-record refusal, stale source, receipt-write rollback, lost acknowledgement and same-original replay, narrow physical applicant column refusal.",
+    "form": "Actual static Razor persona controls; simulated bound inputs refuse unsaved-edit submission.",
+    "retirement": "Reflection over actual controller/native interface/Web interface confirms direct update/submission/decision surfaces absent."
+  },
+  "limitations": [
+    "Mock native driver, physical connection and rollback ledger; no live provider/migration qualification.",
+    "Static Razor and bound-input simulation; no browser clicks, viewport, keyboard, RTL or accessibility acceptance.",
+    "Hosted HTTP/OIDC/multi-account/performance and explicit company jurisdiction compatibility remain open.",
+    "Reviewed creation, supporting-record amendments, role inbox/landing/correction and changed-binding reconciliation remain open.",
+    "No schema change, handwritten SQL or EF migration. Beep Migration remains sole schema owner.",
+    "Full goal remains active; no commit/push."
+  ]
+}

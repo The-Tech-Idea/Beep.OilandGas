@@ -65,26 +65,6 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         }
     }
 
-    public class InstallDriverRequest : ModelEntityBase
-    {
-        public string DriverName { get; set; } = string.Empty;
-        public string? Version { get; set; }
-
-        public string DatabaseType
-        {
-            get { return DriverName; }
-            set { DriverName = value; }
-        }
-    }
-
-    public class InstallDriverResult : ModelEntityBase
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-
-        public string? ErrorDetails { get; set; }
-    }
-
     public class ScriptExecutionRequest : ModelEntityBase
     {
         public ConnectionProperties? Connection { get; set; }

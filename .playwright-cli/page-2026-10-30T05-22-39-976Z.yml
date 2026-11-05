@@ -1,0 +1,16 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=e6]:
+      - link "Open assigned HSE process" [ref=e7] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=e9] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=e11] [cursor=pointer]
+      - button "Restore original company" [ref=e13] [cursor=pointer]
+  - region "My overdue corrective actions" [ref=e16]:
+    - heading "My overdue corrective actions" [level=2] [ref=e17]
+    - paragraph [ref=e18]: Open actions across all open incident stages, assigned to your current recorded company person. Due dates are compared in UTC.
+    - button "Review my overdue actions" [ref=e19] [cursor=pointer]
+    - status [ref=e21]: Review your current assignment evidence. Missing identity mapping or unavailable data does not mean zero actions.

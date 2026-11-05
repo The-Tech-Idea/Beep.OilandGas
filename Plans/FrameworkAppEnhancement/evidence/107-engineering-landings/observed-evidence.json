@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-25",
+  "status": "focused-passed",
+  "tests": {
+    "passed": 188,
+    "failed": 0,
+    "duration_seconds": 21.2497,
+    "filter": "EngineeringWorkspaceLandingTests|PersonaTaskInboxStateTests|MaintenanceRecordedWorkLandingTests|ExecutivePortfolioLandingTests|WorkflowInboxHttpTests",
+    "actual_engineering_parent_cases": 18
+  },
+  "observations": [
+    "Initial engineering/inbox run: 97 passed.",
+    "Source-filter update run: 136 passed, 3 failed because recorded-maintenance tests expected zero-count source buttons. Assertions now require the confirmed empty total and absence of unused source filters.",
+    "Final focused run: 188 passed, including actual engineering parents/shared inbox and affected HTTP/landing regressions.",
+    "All 22 engineering landing links resolve to declared page routes."
+  ],
+  "sources": [
+    {
+      "path": "Beep.OilandGas.Web/Pages/PPDM39/Drilling/DrillingEngineerWorkspace.razor",
+      "sha256": "f1ca12464197fffa07dd012f466ed8a70c9a0490673146c774db78b5bd55571c"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Pages/PPDM39/Reservoir/ReservoirEngineerWorkspace.razor",
+      "sha256": "fd53209914e2972cd5f18ed521ac56b056ef157ba0051962baf4c8d6b6ceb413"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Components/Workflow/PersonaAssignedWorkPanel.razor",
+      "sha256": "bcdcbab1040443f0f08e27027ce75ef345326c34ec4b244ca53e07c7d01c2800"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/PersonaTaskInboxState.cs",
+      "sha256": "d737e9f3729c79e0b583e5da2c1d7c9e0911be90a68a69239e592c630c10bc9a"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/EngineeringWorkspaceLandingTests.cs",
+      "sha256": "8cafb3c72e9640d02e8cf22275872c79bb925e81e860867d112c3aa6c280d2ac"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/PersonaTaskInboxStateTests.cs",
+      "sha256": "9c9a9913248e03384ab3aba395fc751721171fbd53dd94748ebf7a824456dfc5"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/MaintenanceRecordedWorkLandingTests.cs",
+      "sha256": "8c0f540b0955269a3473f6e04a07eca16b850809bcb0b430ae5dfc74a5d492e0"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService.Tests/WorkflowInboxHttpTests.cs",
+      "sha256": "6e6e934cb700fa540440fbcab0cc426cec5ef3e68206fcd6a503c52cbb4f0868"
+    },
+    {
+      "path": "Scripts/Test-PurchaseOrderOwnership.ps1",
+      "sha256": "e8c4371f7a4fbe0c6588be3d0c30f5aad6fac3eea310061e191843c1b9dea7c1"
+    }
+  ],
+  "runtime": [
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-4b81b3d03e344914bf5772c844d277dd\\bin\\Debug\\net10.0\\PurchaseOwnership.dll",
+      "sha256": "71211d40323cd79ec73e1d62092a0df9a0e7ac1eaa6b7e150e26ceb791bb0263"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+      "sha256": "1f0a5419ad0d98aaec486823583c2432f4c374738a16d3a163eb20e9d624f14d"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/107-engineering-landings/oilgas-engineering-landings.log",
+      "sha256": "061f3cb4dc3e8584d73b2ba260c3bec1e09ed53570356742ca9d37db42c3efea"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/107-engineering-landings/oilgas-engineering-landings-current.log",
+      "sha256": "6ee0546fd5863784b8221c67c87d0054264209df67d779c7a7d0048d41a66203"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/107-engineering-landings/oilgas-engineering-landings-verified.log",
+      "sha256": "c96b07a0f937a78456717ebdaa7b31ddf42f63996cfad5d80f64156e70496e7d"
+    }
+  ],
+  "limits": [
+    "Source-linked focused harness uses controlled auth, transport and native-provider fixtures; no full solution, live OIDC/company-role catalog, browser, keyboard, responsive or RTL execution.",
+    "Navigation to existing source screens does not qualify those screens or complete design/AFE/study/approval/execution/handover persistence.",
+    "Performance/financial/engineering KPIs remain unavailable pending scoped sources, periods, units, currency and approved definitions.",
+    "Whole plan and active goal remain open; no commit or push."
+  ]
+}

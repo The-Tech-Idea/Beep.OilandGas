@@ -58,6 +58,8 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
     private readonly AuthenticationStateProvider _authentication;
     private readonly IUserTokenManager _tokens;
     private readonly IFailureReporter _failures;
+    private readonly Beep.OilandGas.Client.App.CompanyClientContext _company;
+    private long _companyVersion = -1;
     private readonly Uri _hubUri;
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
     private readonly object _stateLock = new();
@@ -69,13 +71,15 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
     private volatile PersonaSubscription? _persona;
 
     public NotificationService(AuthenticationStateProvider authentication, IUserTokenManager tokens,
-        OilGasApiAddress api, IFailureReporter failures)
+        OilGasApiAddress api, IFailureReporter failures, Beep.OilandGas.Client.App.CompanyClientContext company)
     {
         _authentication = authentication;
         _tokens = tokens;
         _failures = failures ?? throw new ArgumentNullException(nameof(failures));
+        _company = company;
         _hubUri = api.For("hubs/workflow-notifications");
         _authentication.AuthenticationStateChanged += AuthenticationChanged;
+        _company.Changed += CompanyChanged;
     }
 
     public int UnreadCount { get { lock (_stateLock) return _recentNotifications.Count(n => !n.IsRead); } }
@@ -96,28 +100,34 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             // The OilGas account the API resolved for this person (party_id), which the hub groups by; without one the API
             // would refuse the connection. It used the identity server's sub.
             var userId = state.User.Identity?.IsAuthenticated == true ? PartyIdClaims.Find(state.User) : null;
-            if (string.IsNullOrWhiteSpace(userId))
+            var snapshot = _company.Snapshot;
+            if (string.IsNullOrWhiteSpace(userId) || snapshot.Selection?.UserId != userId)
             {
                 await StopCoreAsync();
                 return;
             }
-            if (_userId == userId && _connection?.State is HubConnectionState.Connected or HubConnectionState.Reconnecting)
+            if (_userId == userId && _companyVersion == snapshot.Version && _connection?.State is HubConnectionState.Connected or HubConnectionState.Reconnecting)
                 return;
 
             await StopCoreAsync();
             _userId = userId;
+            _companyVersion = snapshot.Version;
 
             var connection = new HubConnectionBuilder()
-                .WithUrl(_hubUri, options => options.AccessTokenProvider = async () =>
+                .WithUrl(_hubUri, options =>
                 {
-                    var current = await _authentication.GetAuthenticationStateAsync();
-                    if (current.User.Identity?.IsAuthenticated != true || PartyIdClaims.Find(current.User) != userId)
-                        throw new InvalidOperationException("The notification user has changed.");
-                    // The person's own token from the identity server's client library, refreshed when it is due.
-                    var token = await _tokens.GetAccessTokenAsync(current.User);
-                    return token.WasSuccessful(out var user)
-                        ? user.AccessToken.ToString()
-                        : throw new InvalidOperationException("The current user's access token is unavailable.");
+                    options.Headers[TheTechIdea.Data.OilGas.CompanyRequestHeaders.Tenant] = snapshot.Selection.Scope.TenantId;
+                    options.Headers[TheTechIdea.Data.OilGas.CompanyRequestHeaders.Company] = snapshot.Selection.Scope.BusinessAssociateId;
+                    options.AccessTokenProvider = async () =>
+                    {
+                        var current = await _authentication.GetAuthenticationStateAsync();
+                        if (_company.Version != snapshot.Version || current.User.Identity?.IsAuthenticated != true || PartyIdClaims.Find(current.User) != userId)
+                            throw new InvalidOperationException("The notification user or company has changed.");
+                        var token = await _tokens.GetAccessTokenAsync(current.User);
+                        return token.WasSuccessful(out var user)
+                            ? user.AccessToken.ToString()
+                            : throw new InvalidOperationException("The current user's access token is unavailable.");
+                    };
                 })
                 .WithAutomaticReconnect()
                 .Build();
@@ -134,11 +144,11 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             }));
             connection.On<InboxCounts>("TaskCountsUpdated", counts =>
             {
-                if (ReferenceEquals(_connection, connection)) OnTaskCountsUpdated?.Invoke(counts);
+                if (ReferenceEquals(_connection, connection) && _company.Version == snapshot.Version) OnTaskCountsUpdated?.Invoke(counts);
             });
             connection.Reconnecting += error =>
             {
-                if (ReferenceEquals(_connection, connection))
+                if (ReferenceEquals(_connection, connection) && _company.Version == snapshot.Version)
                 {
                     LastError = "Notifications disconnected. Reconnecting…";
                     OnStateChanged?.Invoke();
@@ -147,7 +157,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             };
             connection.Reconnected += async id =>
             {
-                if (ReferenceEquals(_connection, connection))
+                if (ReferenceEquals(_connection, connection) && _company.Version == snapshot.Version)
                 {
                     LastError = null;
                     if (_persona is { } persona)
@@ -172,7 +182,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             };
             connection.Closed += error =>
             {
-                if (ReferenceEquals(_connection, connection))
+                if (ReferenceEquals(_connection, connection) && _company.Version == snapshot.Version)
                 {
                     LastError = "Live notifications are unavailable. Retry to reconnect.";
                     OnStateChanged?.Invoke();
@@ -180,6 +190,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
                 return Task.CompletedTask;
             };
             await connection.StartAsync();
+            if (_company.Version != snapshot.Version) { await StopCoreAsync(); return; }
             LastError = null;
         }
         // Connecting fails in many ways (the hub unreachable, the token unavailable, the person changed); each leaves
@@ -208,6 +219,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
         {
             _persona = null;
             if (_disposed) return;
+            if (_companyVersion != _company.Version) return;
             if (_connection?.State == HubConnectionState.Reconnecting)
             {
                 _persona = new(personaCode, fieldId);
@@ -236,7 +248,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
     {
         lock (_stateLock)
         {
-            if (!ReferenceEquals(_connection, connection)) return;
+            if (!ReferenceEquals(_connection, connection) || _companyVersion != _company.Version) return;
             // Replayed notifications must not increase unread counts twice.
             if (_recentNotifications.Any(n => n.Id == notification.Id)) return;
             _recentNotifications.Insert(0, notification);
@@ -262,6 +274,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
             connection = _connection;
             _connection = null;
             _userId = null;
+            _companyVersion = -1;
             _persona = null;
             _recentNotifications.Clear();
         }
@@ -277,6 +290,13 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
     }
 
     private void AuthenticationChanged(Task<AuthenticationState> state) => _ = RestartForAuthenticationAsync(state);
+
+    private void CompanyChanged()
+    {
+        lock (_stateLock) { _companyVersion = -1; _recentNotifications.Clear(); _persona = null; }
+        OnStateChanged?.Invoke();
+        _ = RestartForAuthenticationAsync(_authentication.GetAuthenticationStateAsync());
+    }
 
     private async Task RestartForAuthenticationAsync(Task<AuthenticationState> state)
     {
@@ -301,6 +321,7 @@ public sealed class NotificationService : INotificationService, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _authentication.AuthenticationStateChanged -= AuthenticationChanged;
+        _company.Changed -= CompanyChanged;
         await _lifecycle.WaitAsync();
         try
         {

@@ -1,0 +1,51 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@if (Review?.Journal is { Lines: not null } journal)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6">Recorded journal source</MudText>
+        <MudText>Journal: @journal.JournalEntryId · Number: @(journal.EntryNumber ?? "Unavailable")</MudText>
+        <MudText>Status: @(journal.Status ?? "Unavailable") · Entry date: @(journal.EntryDate?.ToString("O") ?? "Unavailable")</MudText>
+        <MudText>@journal.Description</MudText>
+        <MudText>Preparer: @(string.IsNullOrWhiteSpace(journal.PreparerUserId) ? "Unavailable — independent approval is refused" : journal.PreparerUserId)</MudText>
+        <MudText>Created: @(journal.CreatedAt?.ToString("O") ?? "Unavailable")</MudText>
+        <MudText>Book: @(journal.BookId ?? "Unavailable") · Accounting period: unavailable · Header currency: unavailable; see recorded line currencies</MudText>
+        <MudText>Recorded debit: @(journal.TotalDebit?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable") · Recorded credit: @(journal.TotalCredit?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable")</MudText>
+        <MudText Typo="Typo.caption">Amounts are shown as recorded without a currency symbol. Confirm currency and period before financial posting.</MudText>
+        <MudText>Source module: @(journal.SourceModule ?? "Unavailable") · Reference: @(journal.ReferenceNumber ?? "Unavailable")</MudText>
+        <MudText Typo="Typo.caption">Retrieved: @journal.RetrievedAtUtc.ToString("O") · Action review: @Review!.Revision</MudText>
+        <MudText Typo="Typo.h6" Class="mt-3">Recorded journal lines</MudText>
+        @if (journal.Lines!.Count == 0)
+        {
+            <MudAlert Severity="Severity.Warning">No recorded journal lines were returned. Financial posting readiness is unconfirmed.</MudAlert>
+        }
+        else
+        {
+            <MudTable T="TheTechIdea.Data.OilGas.JournalSourceLineReview" Items="@journal.Lines" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Line</MudTh><MudTh>Account</MudTh><MudTh>Cost center</MudTh><MudTh>Currency</MudTh><MudTh>Exchange rate</MudTh><MudTh>Debit</MudTh><MudTh>Credit</MudTh><MudTh>Description</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Line">@context.LineId</MudTd>
+                    <MudTd DataLabel="Account">@context.AccountId</MudTd>
+                    <MudTd DataLabel="Cost center">@(string.IsNullOrWhiteSpace(context.CostCenterId) ? "Unavailable" : context.CostCenterId)</MudTd>
+                    <MudTd DataLabel="Currency">@(string.IsNullOrWhiteSpace(context.CurrencyCode) ? "Unavailable" : context.CurrencyCode)</MudTd>
+                    <MudTd DataLabel="Exchange rate">@(context.ExchangeRate?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable")</MudTd>
+                    <MudTd DataLabel="Debit">@(context.Debit?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable")</MudTd>
+                    <MudTd DataLabel="Credit">@(context.Credit?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable")</MudTd>
+                    <MudTd DataLabel="Description">@context.Description</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        <MudText Typo="Typo.caption">Line currencies and exchange rates are shown as recorded. No total across currencies or current exchange rate is inferred. Ledger posting and account validity remain unconfirmed.</MudText>
+    </MudPaper>
+}
+else
+{
+    <MudAlert Severity="Severity.Info" role="alert">Recorded journal details are unavailable. Review the source again before continuing.</MudAlert>
+}
+@code {
+    [Parameter, EditorRequired] public ProcessTransitionReview? Review { get; set; }
+}

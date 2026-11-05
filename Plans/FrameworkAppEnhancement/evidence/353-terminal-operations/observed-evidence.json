@@ -1,0 +1,59 @@
+{
+  "status": "verified-scoped-component",
+  "recorded_at": "2026-10-29T12:24:08.869672+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; existing ongoing goal changes preserved",
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md - Terminal incident operational controls; Feature-09 step 2",
+  "checks": [
+    {
+      "name": "oilgas-353-terminal-operations",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "3 seconds",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~CorrectiveActionEligibilityBlocksNewWorkAndDiscardsLateChoices|FullyQualifiedName~IncidentDetailOffersRecoveryEvenWhenWorkflowExists|FullyQualifiedName~WorkflowEligibilityRefusesNewReviewAndStart|FullyQualifiedName~ReviewedWorkflowRetainsOriginalAndReconcilesLostResponse|FullyQualifiedName~ChangedFieldAfterReviewDoesNotRetainOrSend|FullyQualifiedName~CorrectiveActionRetainsExactRequestAfterLostResponseAndDoesNotAdvanceWorkflow|FullyQualifiedName~CompletionRequiresEvidenceAndRetainsItAcrossLostResponse|FullyQualifiedName~VerificationScreenShowsRecordedEvidenceAndDoesNotAssertClosure|FullyQualifiedName~VerificationRecoveryAfterNewFieldReviewNeverReplaysOldDecision|FullyQualifiedName~IncidentListUsesReviewedWorkflowAndRetainsBeforeSending|FullyQualifiedName~CorrectiveActionScreenRejectsChoicesFromAnotherCompany|FullyQualifiedName~IncidentDetailReviewsRecordedCauseClassificationsAndClearsOnFieldChange\" --logger \"console;verbosity=minimal\"",
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\353-terminal-operations\\oilgas-353-terminal-operations.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-terminal-operations.log",
+      "original_sha256": "ef116d25c428f87dc79d84ec8964d1c28b6b6f2448521e226257ccdd34294daa"
+    },
+    {
+      "name": "oilgas-353-terminal-operations-final",
+      "status": "verified",
+      "exit_code": 0,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "850 ms",
+      "command": "dotnet test C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-0e5806b9ecb04b858bb7de3c1822bef5\\PurchaseOwnership.csproj --no-restore --filter \"FullyQualifiedName~WorkflowEligibilityRefusesNewReviewAndStart|FullyQualifiedName~ReviewedWorkflowRetainsOriginalAndReconcilesLostResponse|FullyQualifiedName~ChangedFieldAfterReviewDoesNotRetainOrSend|FullyQualifiedName~CompletionRequiresEvidenceAndRetainsItAcrossLostResponse|FullyQualifiedName~IncidentDetailOffersRecoveryEvenWhenWorkflowExists|FullyQualifiedName~IncidentReaderWithoutManagePermissionCannotStartCorrectiveAction\" --logger \"console;verbosity=minimal\"",
+      "output": "Plans\\FrameworkAppEnhancement\\evidence\\353-terminal-operations\\oilgas-353-terminal-operations-final.stdout.txt",
+      "original_output": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-terminal-operations-final.log",
+      "original_sha256": "a02ed0a7746326c110440ea13565db95c23814d2cb555d598b7f35cc815da501"
+    }
+  ],
+  "distinct_inputs": 20,
+  "overlap_inputs": 5,
+  "criterion_mapping": {
+    "terminal_detail": "IncidentDetailOffersRecoveryEvenWhenWorkflowExists (4 states): native state eligibility and preserved original workflow; no new action, verification, lifecycle or close-out entry.",
+    "action_eligibility": "CorrectiveActionEligibilityBlocksNewWorkAndDiscardsLateChoices (2 inputs): direct guarded handlers and late choice suppression.",
+    "workflow_eligibility": "WorkflowEligibilityRefusesNewReviewAndStart; ChangedFieldAfterReviewDoesNotRetainOrSend (field change and eligibility change).",
+    "retained_originals": "ReviewedWorkflowRetainsOriginalAndReconcilesLostResponse, CorrectiveActionRetainsExactRequestAfterLostResponseAndDoesNotAdvanceWorkflow, CompletionRequiresEvidenceAndRetainsItAcrossLostResponse: same original remains reconcilable when eligibility is false.",
+    "positive_and_current_authority": "Exact incident-list, verification, refreshed-field recovery, foreign-choice, recorded-cause and read-only persona methods in command filters."
+  },
+  "source_sha256": {
+    "Beep.OilandGas.Web/Components/Workflow/HseCorrectiveAction.razor": "58b42f40c60d29e1609754c18fdc14b774c6f8ee25bed307ddd7deaed2f5e403",
+    "Beep.OilandGas.Web/Components/Workflow/HseWorkflowStart.razor": "da2a3ab14d508f14dbc29bf949aebf6ae8cfc6e03b86229244cf4d98ea57f66a",
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidentDetail.razor": "e88b0379d8de561fef4e5ee07f1421d58c149e1efd4794e863a05f7c78c644b2",
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidents.razor": "086e91725cd4a9bfec550efe6453acd1cbe6c7f4763393675f729585fdbd115c",
+    "Beep.OilandGas.Web.Auth.Tests/HseIncidentScreenTests.cs": "845219c1dc2c6ae5c749d58d0b5482c3ab4c8184a7235c87febe8219a009ed60",
+    "Beep.OilandGas.Web.Auth.Tests/HseWorkflowStartTests.cs": "b589f562a23787d6d40f3e764a5859d7949d39928eebb78d91e9b9b553b4801b"
+  },
+  "harness_note": "Initial gate returned 14 because the temporary harness did not include HseWorkflowStartTests.cs. Added its actual source link and final gate passed all five workflow inputs plus six changed/affected completion/detail/read-only inputs. The initial output is not claimed as workflow-start test evidence. Between gates, separated native open state from management permission in detail and strengthened completion/workflow test assertions.",
+  "limitations": [
+    "Source-linked bUnit with controlled client/authority/storage boundaries; no hosted browser/OIDC/provider/RTL/accessibility acceptance.",
+    "No full class or full suite ran; existing dependency/source-link/analyzer warnings remain.",
+    "No data/schema, SQL, EF migration or compatibility change; Beep Migration remains sole schema path.",
+    "Full company plan/goal and commit/push remain pending."
+  ]
+}

@@ -1,0 +1,175 @@
+@page "/warehouse/receipt-stock/{OrderId}/{ReceiptId}"
+@page "/warehouse/stock-intents/{IntentId}"
+@namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@inject IAccountingServiceClient Accounting
+@inject InventoryWorkspaceState Workspace
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<PageTitle>Receipt stock and supplier returns</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4">Receipt stock and supplier returns</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable")</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        <MudButton Href="/warehouse">Warehouse landing</MudButton>
+        @if(!string.IsNullOrWhiteSpace(OrderId)){<MudButton Href='@("/procurement/orders/"+Uri.EscapeDataString(OrderId))'>Original purchase order</MudButton>}
+        <MudButton OnClick="Reload" Disabled="@(_busy || Workspace.StockBusy || Workspace.ProcurementWorkBlocked || IntentId is null && Workspace.StockBlocked)">@(IntentId is null?"Reload receipt stock review":"Reload saved stock intent")</MudButton>
+        @if(Workspace.SavedStockRecoveryRoute is {} savedRoute){<MudButton Href="@savedRoute">Open saved stock intent</MudButton>}
+    </MudStack>
+    @if(_busy || Workspace.StockBusy){<MudProgressLinear Indeterminate="true" />}
+    @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+    @if(Workspace.ProcurementWorkBlocked)
+    {
+        <MudAlert Severity="Severity.Warning">Procurement work is busy or unconfirmed. Reconcile its original intent before stock recording.</MudAlert>
+        @if(Workspace.ProcurementRecoveryRoute is {} procurementRecovery){<MudButton Href="@procurementRecovery">Return to original procurement intent</MudButton>}
+    }
+    @if(Workspace.HasUnconfirmedStockIntent)
+    {
+        <MudAlert Severity="Severity.Warning">Stock outcome is unconfirmed. Reconcile the original company, account and receipt intent before recording another movement.</MudAlert>
+        @if(Workspace.StockRecoveryRoute is {} recovery){<MudButton Href="@recovery">Return to original stock intent</MudButton>}
+        @if(IntentId is null){<MudButton OnClick="Save" Disabled="@(_busy || !Workspace.CanReconcileStock)">Reconcile original stock intent</MudButton>}
+    }
+    @if(!_busy && _error is null && IntentId is not null && Workspace.StockRecovery is {} saved)
+    {
+        var original=saved.OriginalSubmission();var item=saved.CurrentInventory?.Item;var originalItem=original.Review.Source.Inventory.Item;
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6">Saved physical stock intent verified</MudText>
+            <MudText>Intent: @original.Command.IntentId · Original account: @original.Command.ActorUserId · Recorded UTC: @saved.Entry.ROW_CREATED_DATE?.ToString("O")</MudText>
+            <MudText>Order: @original.Command.OrderId · Receipt: @original.Command.ReceiptId · Item: @originalItem.INVENTORY_ITEM_ID</MudText>
+            <MudText>Original movement: @original.Command.Kind · Quantity: @original.Command.Quantity @original.Command.QuantityUnit · Reason: @original.Command.Reason</MudText>
+            <MudText>Original warehouse: @original.Review.Source.Inventory.Item.WAREHOUSE_ID · Location: @original.Review.Source.Inventory.Item.LOCATION_ID · On hand before movement: @original.Review.Source.Inventory.Item.QUANTITY_ON_HAND</MudText>
+            @if(item is not null){<MudText>Current warehouse: @item.WAREHOUSE_ID · Location: @item.LOCATION_ID · Recorded on hand: @item.QUANTITY_ON_HAND @item.UNIT_OF_MEASURE</MudText>}
+            else{<MudAlert Severity="Severity.Warning">Current owned inventory item is unavailable. Original native movement evidence remains verified; current quantity is unavailable.</MudAlert>}
+            @if(!saved.CurrentPurchaseAvailable){<MudAlert Severity="Severity.Warning">Current owned purchase order is unavailable. The original recorded purchase snapshot is retained.</MudAlert>}
+            @if(saved.CurrentMatchesOriginalEffect()){<MudAlert Severity="Severity.Success">Current source matches the original recorded stock effect.</MudAlert>}
+            else{<MudAlert Severity="Severity.Warning">The original movement is recorded. Current source has changed since that movement; review current evidence before another action.</MudAlert>}
+            <MudText Typo="Typo.caption">Saved evidence: @saved.Entry.RECORDED_REVISION · Current source: @(saved.CurrentInventory?.Revision ?? "Unavailable")</MudText>
+            <MudButton Href="@InventoryWorkspaceState.StockRoute(original.Command.OrderId,original.Command.ReceiptId)">Review current receipt stock</MudButton>
+            <MudButton Href='@("/procurement/orders/"+Uri.EscapeDataString(original.Command.OrderId))'>Original purchase order</MudButton>
+            @if(item is not null){<MudButton Href='@("/warehouse/items/"+Uri.EscapeDataString(item.INVENTORY_ITEM_ID))'>Review current inventory item</MudButton>}
+        </MudPaper>
+    }
+    @if(!_busy && _error is null && IntentId is null && Workspace.StockReview is {} review)
+    {
+        var item=review.Source.Inventory.Item;
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6">Verified receipt stock capacity</MudText>
+            <MudText>Order: @OrderId · Receipt: @ReceiptId · Item: @item.INVENTORY_ITEM_ID</MudText>
+            @if(review.Source.UsesRecordedStockDestination)
+            {
+                <MudAlert Severity="Severity.Info">This receipt retains its recorded stock destination @item.INVENTORY_ITEM_ID. The purchase order line now links to @review.Source.CurrentLineInventoryItemId. Returns and remaining receipt capacity use the original physical history.</MudAlert>
+            }
+            <MudText>Accepted: @review.AcceptedQuantity · Gross received: @review.ReceivedQuantity · Returned: @review.ReturnedQuantity · Remaining receipt capacity: @review.RemainingReceiptQuantity</MudText>
+            <MudText>Unit: @item.UNIT_OF_MEASURE · Warehouse: @item.WAREHOUSE_ID · Location: @item.LOCATION_ID · Recorded on hand: @item.QUANTITY_ON_HAND</MudText>
+            <MudAlert Severity="Severity.Info">Returns do not replenish receipt capacity. This physical workflow does not confirm available stock, valuation or financial posting.</MudAlert>
+            <MudText Typo="Typo.caption">Stock review: @review.Revision · Purchase: @review.Source.Purchase.Revision · Inventory: @review.Source.Inventory.Revision · Retrieved UTC: @review.Source.Inventory.RetrievedAtUtc.ToString("O")</MudText>
+            @if(Workspace.StockResult is not null){<MudAlert Severity="Severity.Success">Physical stock movement confirmed by complete current read-back.</MudAlert>}
+            @if(Company.Selection?.Permissions.Any(value=>value is "Inventory.RecordReceiptStock" or "Inventory.RecordSupplierReturn")==true)
+            {
+            <MudSelect T="PurchaseReceiptStockMovementKind" Label="Choose physical movement" @bind-Value="_kind" Disabled="(Workspace.StockBlocked || Workspace.ProcurementWorkBlocked)">
+                <MudSelectItem Value="PurchaseReceiptStockMovementKind.Receive">Receive accepted stock</MudSelectItem>
+                <MudSelectItem Value="PurchaseReceiptStockMovementKind.Return">Return to supplier</MudSelectItem>
+            </MudSelect>
+            @if(_kind==PurchaseReceiptStockMovementKind.Return)
+            {
+                <MudSelect T="string" Label="Original physical receipt transaction" @bind-Value="_originalReceipt" Disabled="(Workspace.StockBlocked || Workspace.ProcurementWorkBlocked)">
+                    @foreach(var row in review.Source.Inventory.Transactions.Where(value=>value.PURCHASE_RECEIPT_STOCK_JSON is not null))
+                    {
+                        var proof=PurchaseReceiptStockMovement.Read(review.Source.Purchase.Company,row);
+                        @if(proof.Kind==PurchaseReceiptStockMovementKind.Receive && proof.OrderId==OrderId && proof.ReceiptId==ReceiptId)
+                        {<MudSelectItem Value="@row.INVENTORY_TRANSACTION_ID">@row.INVENTORY_TRANSACTION_ID · Received @proof.Quantity @proof.QuantityUnit · @proof.ActorUserId · @row.TRANSACTION_DATE?.ToString("O")</MudSelectItem>}
+                    }
+                </MudSelect>
+            }
+            <MudNumericField T="decimal?" Label="Explicit physical quantity in the recorded unit" @bind-Value="_quantity" Disabled="(Workspace.StockBlocked || Workspace.ProcurementWorkBlocked)" />
+            <MudTextField T="string" Label="Reason for this physical movement" @bind-Value="_reason" MaxLength="512" Disabled="(Workspace.StockBlocked || Workspace.ProcurementWorkBlocked)" />
+            <MudButton OnClick="Save" Disabled="@((Workspace.StockBlocked || Workspace.ProcurementWorkBlocked) || !Enum.IsDefined(_kind) || _quantity is null || !HasMovementGrant(_kind))">Record reviewed physical movement</MudButton>
+            }
+            else{<MudAlert Severity="Severity.Info">Read-only receipt stock review. A separate physical movement grant is required to record stock or returns.</MudAlert>}
+        </MudPaper>
+    }
+</MudContainer>
+@code {
+    [Parameter] public string OrderId {get;set;}="";
+    [Parameter] public string ReceiptId {get;set;}="";
+    [Parameter] public string? IntentId {get;set;}
+    public override Task SetParametersAsync(ParameterView parameters){if(!parameters.TryGetValue<string?>(nameof(IntentId),out _))IntentId=null;return base.SetParametersAsync(parameters);}
+    private bool _busy,_disposed,_reloadRequested;
+    private int _authenticationVersion;
+    private string? _error,_originalReceipt;
+    private string _reason="";
+    private decimal? _quantity;
+    private PurchaseReceiptStockMovementKind _kind;
+    protected override void OnInitialized(){Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;Workspace.StockChanged+=StockChanged;Workspace.ProcurementChanged+=StockChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        try{
+            if(IntentId is not null){IntentId=RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"warehouse/stock-intents/");if(!Guid.TryParseExact(IntentId,"N",out var key) || key==Guid.Empty || key.ToString("N")!=IntentId)throw new FormatException();OrderId="";ReceiptId="";}
+            else{var ids=RecordedSourceId.FromDetailSegments(Navigation.Uri,Navigation.BaseUri,"warehouse/receipt-stock/",2);OrderId=ids[0];ReceiptId=ids[1];}
+        }
+        catch(FormatException){Workspace.Clear();_error="The receipt stock address is invalid. Open the original verified receiving link.";return;}
+        await Reload();
+    }
+    private void ClearForm(){_kind=0;_quantity=null;_originalReceipt=null;_reason="";}
+    private bool HasMovementGrant(PurchaseReceiptStockMovementKind kind)=>Company.Selection?.Permissions.Contains(kind==PurchaseReceiptStockMovementKind.Receive?"Inventory.RecordReceiptStock":"Inventory.RecordSupplierReturn",StringComparer.Ordinal)==true;
+    private async Task RequireAuthority(PurchaseReceiptStockMovementKind? kind=null)
+    {
+        var original=Company.Snapshot;var authVersion=_authenticationVersion;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || original!=Company.Snapshot || authVersion!=_authenticationVersion || original.Selection is not {} selected || user.Identity?.IsAuthenticated!=true ||
+            (user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub"))!=selected.UserId || !selected.Roles.Any(user.IsInRole) ||
+            !selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) || !selected.Permissions.Contains("Procurement.View",StringComparer.Ordinal) ||
+            kind is not null && !selected.Permissions.Contains(kind==PurchaseReceiptStockMovementKind.Receive?"Inventory.RecordReceiptStock":"Inventory.RecordSupplierReturn",StringComparer.Ordinal))
+            throw new InvalidOperationException("The current company account, standard roles, both source grants and applicable physical movement grant are required.");
+    }
+    private async Task Reload()
+    {
+        if(_disposed)return;
+        if(_busy){Workspace.Clear();_reloadRequested=true;return;}
+        _busy=true;
+        try
+        {
+            do
+            {
+                _reloadRequested=false;ClearForm();_error=null;
+                if(Workspace.StockBusy || Workspace.ProcurementWorkBlocked || IntentId is null && Workspace.StockBlocked)break;
+                var original=Company.Snapshot;var authVersion=_authenticationVersion;var intent=IntentId;var order=OrderId;var receipt=ReceiptId;
+                try
+                {
+                    await RequireAuthority();
+                    if(_disposed || original!=Company.Snapshot || authVersion!=_authenticationVersion || intent!=IntentId || order!=OrderId || receipt!=ReceiptId)continue;
+                    Workspace.Clear();
+                    if(intent is not null)await Workspace.LoadStockRecoveryAsync(intent,Accounting.GetPurchaseReceiptStockRecoveryAsync);
+                    else await Workspace.LoadStockReviewAsync(order,receipt,Accounting.GetPurchaseReceiptStockReviewAsync);
+                }
+                catch(Exception error){if(!_disposed && original==Company.Snapshot && authVersion==_authenticationVersion && intent==IntentId && order==OrderId && receipt==ReceiptId)_error=Calls.Explain(error,"reviewing receipt stock","Receipt stock source could not be confirmed");}
+            }while(_reloadRequested && !_disposed);
+        }
+        finally{_busy=false;}
+    }
+    private async Task Save()
+    {
+        if(_disposed || _busy || IntentId is not null)return;_busy=true;_error=null;var original=Company.Snapshot;var authVersion=_authenticationVersion;
+        try
+        {
+            var pending=Workspace.HasUnconfirmedStockIntent?Workspace.StockIntent:null;
+            if(pending is not null && (pending.Command.OrderId!=OrderId || pending.Command.ReceiptId!=ReceiptId))throw new InvalidOperationException("Return to the original receipt stock address.");
+            var kind=pending?.Command.Kind ?? _kind;if(!Enum.IsDefined(kind))throw new InvalidOperationException("Choose an explicit physical movement.");
+            await RequireAuthority(kind);await Workspace.RecordStockAsync(kind,pending?.Command.Quantity ?? _quantity ??throw new InvalidOperationException("Enter an explicit physical quantity."),
+                kind==PurchaseReceiptStockMovementKind.Return?_originalReceipt:null,_reason,Accounting.RecordPurchaseReceiptStockAsync,
+                async(order,receipt)=>(await Accounting.GetPurchaseReceiptStockReviewAsync(order,receipt)).Source);
+            if(Workspace.StockResult is not null)ClearForm();
+        }
+        catch(Exception error){if(!_disposed && original==Company.Snapshot && authVersion==_authenticationVersion)_error=Calls.Explain(error,"recording receipt stock","Stock outcome is unconfirmed. Retain and reconcile the original intent");}
+        finally{_busy=false;}
+    }
+    private void StockChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void ContextChanged(){Workspace.Clear();ClearForm();_error=null;if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state){++_authenticationVersion;ContextChanged();}
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;Workspace.StockChanged-=StockChanged;Workspace.ProcurementChanged-=StockChanged;Workspace.Clear();}
+}

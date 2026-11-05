@@ -28,9 +28,12 @@
             }
         </MudStack>
     </MudCardContent>
+    @if(OnClick.HasDelegate){<MudCardActions><MudButton OnClick="OnClick" Color="Color.Primary">@ActionLabel</MudButton></MudCardActions>}
 </MudCard>
 
 @code {
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string ActionLabel { get; set; } = "View contributing records";
     [Parameter] public string Label { get; set; } = string.Empty;
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public string Unit { get; set; } = string.Empty;

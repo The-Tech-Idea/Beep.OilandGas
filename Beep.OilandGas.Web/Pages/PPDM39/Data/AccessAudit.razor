@@ -1,9 +1,16 @@
-﻿@page "/data/audit"
+@page "/data/audit"
+@using Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Web.Components.Shared
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IDataManagementService DataManagementService
 
 <PageTitle>Review Data Access History</PageTitle>
+
+<PersonaTaskInbox WorkspaceRoutes='@(new[]{"/data/audit"})' />
+
+
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 

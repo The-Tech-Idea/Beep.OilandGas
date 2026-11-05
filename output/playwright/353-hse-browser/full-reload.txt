@@ -1,0 +1,11 @@
+### Ran Playwright code
+```js
+await page.reload();
+```
+### Page
+- Page URL: http://127.0.0.1:60553/
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-hse-browser\artifacts\page-2026-10-29T09-34-26-412Z.yml)
+### Events
+- New console entries: output\playwright\353-hse-browser\artifacts\console-2026-10-29T09-31-30-416Z.log#L5-L7

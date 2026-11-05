@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-29",
+  "plan": "Implementation-354-Permit-Application-Workflow.md phase 2 native command authority boundary",
+  "result": {
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "13s",
+    "exit_code": 0,
+    "terminal": "Passed!  - Failed:     0, Passed:    11, Skipped:     0, Total:    11, Duration: 13 s - Beep.OilandGas.Repository.Tests.dll (net10.0)"
+  },
+  "methods": {
+    "PermitCommandAuthorityKeepsCoreReadsOutsideOwnedModuleTransaction": {
+      "inputs": 9,
+      "criteria": [
+        "Eligible original/current IssuePermit and inherited FIELD WRITE grant before callback",
+        "Actual owned serializable PERMITS transaction and native lifecycle reads",
+        "No PPDM core native queries inside callback",
+        "Late permission/grant/selection/module-binding changes roll back",
+        "Native FIELD retired during callback is detected after commit and confirmation refuses",
+        "Explicit cross-source repository read still refuses and rolls back"
+      ]
+    },
+    "NativePermitReadUsesBoundModuleAndRefusesIgnoredFieldFilters": {
+      "inputs": 2,
+      "criteria": [
+        "Non-command current native permit reads retain exact company/FIELD identity",
+        "Ignored native FIELD filters refuse"
+      ]
+    }
+  },
+  "command": "dotnet test Beep.OilandGas.Repository.Tests/Beep.OilandGas.Repository.Tests.csproj --no-restore -p:FocusedCompanyTests=true -p:FocusedObligationPolicyTests=true -p:FocusedDataAssemblyPath=<absolute current Data.dll> -p:BuildProjectReferences=false --filter \"FullyQualifiedName~PermitCommandAuthorityKeepsCoreReadsOutsideOwnedModuleTransaction|FullyQualifiedName~NativePermitReadUsesBoundModuleAndRefusesIgnoredFieldFilters\" --logger \"console;verbosity=minimal\"",
+  "previous_attempts": [
+    {
+      "passed": 2,
+      "failed": 6,
+      "duration": "1m39s",
+      "exit_code": 1,
+      "accepted": false,
+      "cause": "Authority fixture lacked applicant; original validation refused before transaction. Added explicit eligible original and pre-assertion so fixture refusal cannot satisfy negative authority case."
+    },
+    {
+      "passed": 8,
+      "failed": 0,
+      "duration": "10s",
+      "exit_code": 0,
+      "scope": "Corrected eight authority inputs; included in final gate, counts not added."
+    }
+  ],
+  "Data_build": "Passed 2.91s, zero errors; existing missing sibling analyzer warning.",
+  "sha256": {
+    "TheTechIdea.Data/OilGas/PermitApplicationDataAccess.cs": "a9a8881658579ca7b2272a42dd1dee1e18f9281912920c88c7e8f3b2b470bc0e",
+    "Beep.OilandGas.ApiService/Services/CompanyPermitApplicationDataAccess.cs": "39c10852b38344fb0458689009859a9da57db125140a5a44fb28755e66fc8cfe",
+    "Beep.OilandGas.Repository.Tests/CompanyPermitApplicationDataAccessTests.cs": "30bd6701a05c2264bfea59bc626ebd032960582402a5fec697fe339fe94e3f93",
+    "TheTechIdea.Data/bin/Debug/net10.0/TheTechIdea.Data.dll": "c28260944861e44cc3187f22b323188d03718d28d1401754696bd0975f970da8",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "a4558ce8b6a4b46eb104bc14f0755319acb838066919d0ba48ab4158250f4029"
+  },
+  "log": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-354-command-authority-final.log",
+  "log_sha256": "ba89bf1c076e2ef5417399b64eb13cc41a689884014bb47d29f6be1fff894098",
+  "scope": "Actual app registry, current roles/grants/profile/module owners, source-linked API access policy and PPDMDataSourceTransaction/native repository. Explicit mock native physical connection/serializable transaction; callback performs reads only. No persisted business mutation, receipt, rollback-of-business-writes, actual provider or full host proof.",
+  "design": "Native FIELD entitlement/evidence before/after; fresh app permission/inherited grant/stored selection and core/PERMITS module/runtime binding while callback runs. Does not weaken global transaction datasource fence or grant generic mutation permission.",
+  "open": [
+    "Persist reviewed originals/outcomes with native audit and exact readback in the existing lifecycle command owner",
+    "Business write rollback/lost-ack/replay and current-authority read-only recovery",
+    "Replace direct mutation API/client lanes and connect retained persona forms/inbox",
+    "Actual provider Beep Migration/HTTP/browser/regional qualification"
+  ],
+  "migration": "No schema change or migration in this boundary slice; Beep Migration remains sole schema owner. No SQL/EF migration/compatibility path.",
+  "goal": "active; phase 2 incomplete; no commit/push"
+}

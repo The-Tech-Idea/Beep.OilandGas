@@ -1,0 +1,87 @@
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using Beep.Foundation.IdentityServer.Shared.Identity
+@inject CompanyClientContext Company
+@inject ApiClient Api
+@inject CompanyEnvironmentChangeSignal EnvironmentChanges
+@inject CompanyEnvironmentPollClock PollClock
+@inject ILogger<CompanyEnvironmentIndicator> Logger
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+
+@if (_loading)
+{ <MudText Typo="Typo.caption" Class="mx-2">Loading company setup…</MudText> }
+else if (_review is not null && _review.ReviewStatus == "Current")
+{
+    <MudText Typo="Typo.caption" Class="mx-2">@_review.Settings.CountryName · @_review.Settings.Culture · Time zone: @(string.IsNullOrWhiteSpace(_review.Settings.TimeZoneId) ? "not configured" : _review.Settings.TimeZoneId) · Depth: @_review.Settings.DepthUnit · Pressure: @_review.Settings.PressureUnit · Diameter: @_review.Settings.DiameterUnit</MudText>
+}
+else
+{ <MudText Typo="Typo.caption" Class="mx-2">Company setup needs review</MudText> }
+<MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Color="Color.Inherit" OnClick="Refresh" Disabled="@_loading" aria-label="Refresh company setup" />
+
+@code {
+    [Parameter] public EventCallback<CompanyEnvironmentDisplayUpdate> OnEnvironmentChanged { get; set; }
+    private CompanyEnvironmentEffectiveReview? _review;
+    private bool _loading, _disposed;
+    private readonly CancellationTokenSource _stopping = new();
+    private long _generation;
+    protected override async Task OnInitializedAsync() { Company.Changed += Changed; EnvironmentChanges.Changed += Changed; Authentication.AuthenticationStateChanged += AuthenticationChanged; _ = PollAsync(); await Refresh(); }
+    private void Changed() => _ = InvokeAsync(Refresh);
+    private void AuthenticationChanged(Task<AuthenticationState> state)
+    {
+        Interlocked.Increment(ref _generation);
+        if (!_disposed) _ = InvokeAsync(Refresh);
+    }
+    private async Task PollAsync()
+    {
+        try
+        {
+            while (!_stopping.IsCancellationRequested)
+            {
+                await PollClock.WaitAsync(_stopping.Token);
+                if (_stopping.IsCancellationRequested) return;
+                await InvokeAsync(Refresh);
+            }
+        }
+        catch (OperationCanceledException) when (_stopping.IsCancellationRequested) { }
+        catch (Exception error) { if (!_disposed) Logger.LogWarning(error, "Automatic company setup refresh stopped"); }
+    }
+    private async Task Refresh()
+    {
+        if (_disposed) return;
+        var snapshot = Company.Snapshot; var generation = Interlocked.Increment(ref _generation);
+        bool Current() => !_disposed && generation == Interlocked.Read(ref _generation) && snapshot == Company.Snapshot;
+        _review = null;
+        await OnEnvironmentChanged.InvokeAsync(new CompanyEnvironmentDisplayUpdate(snapshot.Version, null));
+        if (!Current()) return;
+        if (snapshot.Selection is null) { _loading = false; StateHasChanged(); return; }
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var principal = (await Authentication.GetAuthenticationStateAsync()).User;
+            if (!Current()) return;
+            if (principal.Identity?.IsAuthenticated != true || PartyIdClaims.Find(principal) != snapshot.Selection.UserId)
+                throw new InvalidOperationException("The account does not match the selected company.");
+            var value = await Api.GetAsync<CompanyEnvironmentEffectiveReview>("/api/company-environment/effective");
+            if (!Current()) return;
+            if (value is null || value.Company != snapshot.Selection.Scope || value.Settings is null ||
+                value.Settings.Company != snapshot.Selection.Scope || value.Settings.Warnings is null ||
+                value.ReviewStatus == "Current" && value.Settings.Warnings.Length != 0 || !CompanyEnvironmentIdentity.IsRevision(value.CompanyRevision) ||
+                !CompanyEnvironmentIdentity.IsRevision(value.SystemRevision) || !CompanyEnvironmentIdentity.IsRevision(value.EffectiveRevision) ||
+                value.CountryRevision is not null && !CompanyEnvironmentIdentity.IsRevision(value.CountryRevision) ||
+                string.IsNullOrWhiteSpace(value.Settings.CountryName) || string.IsNullOrWhiteSpace(value.Settings.Culture) ||
+                string.IsNullOrWhiteSpace(value.Settings.DepthUnit) || string.IsNullOrWhiteSpace(value.Settings.PressureUnit) ||
+                string.IsNullOrWhiteSpace(value.Settings.DiameterUnit))
+                throw new InvalidOperationException("The effective company setup was not confirmed.");
+            _review = value;
+            if (value.ReviewStatus == "Current") await OnEnvironmentChanged.InvokeAsync(new CompanyEnvironmentDisplayUpdate(snapshot.Version, value));
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception error) { if (Current()) Logger.LogWarning(error, "Effective company setup is unavailable"); }
+        finally { if (Current()) { _loading = false; StateHasChanged(); } }
+    }
+    public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); _stopping.Cancel(); Company.Changed -= Changed; EnvironmentChanges.Changed -= Changed; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }
+}

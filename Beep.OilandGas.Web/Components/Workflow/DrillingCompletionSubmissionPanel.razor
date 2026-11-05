@@ -1,0 +1,63 @@
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@if(State.CompletionPending is {} pending)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">@State.CompletionPendingTitle</MudText>
+        <MudAlert Severity="@(State.CompletionTabCopyConfirmed?Severity.Info:Severity.Warning)" role="status">@State.CompletionPendingExplanation</MudAlert>
+        <MudText>Original @pending.InstanceId(); claim @pending.ClaimId; sender @pending.Scope().ActorUserId / @pending.SenderRole / @pending.SenderPersonaCode</MudText>
+        <MudText Class="development-draft-description">@pending.Reason</MudText>
+        <DrillingCompletionEvidenceView Report="pending.Source.ReportedCompletion!.Report" />
+        <MudButton OnClick="State.RecoverCompletionReviewAsync" Disabled="@(!State.CanRecoverCompletionReview)" Variant="Variant.Outlined">Recover original completion review</MudButton>
+    </MudPaper>
+}
+else if(State.RetainedCompletionReviewId is {} other)
+{
+    <MudAlert Severity="Severity.Warning">Recover the retained completion review before preparing another.</MudAlert>
+    <MudButton Href="@("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(other))">Open retained completion review</MudButton>
+}
+@if(State.CompletionReceipt is {} receipt)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Original completion review outcome</MudText>
+        <MudText>Original @receipt.InstanceId; checked @receipt.CheckedAtUtc.ToString("u") UTC</MudText>
+        @if(receipt.Recorded)
+        {
+            <MudText>Independent review recorded; first-stage approval tasks: @receipt.TaskIds.Count.</MudText>
+            <MudAlert Severity="Severity.Info">Completion and test evidence remain unaccepted. Ongoing reporting responsibility and production handover remain separate.</MudAlert>
+        }
+        else { <MudText>This exact intent was confirmed absent. Reload current claim/history and routing before preparing another.</MudText> }
+    </MudPaper>
+}
+@if(State.CompletionPrepared is {} prepared)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h2">Confirm original independent completion review</MudText>
+        <MudText>Claim @prepared.ClaimId; original @prepared.InstanceId(); sender role @prepared.SenderRole / @prepared.SenderPersonaCode</MudText>
+        <MudText Class="development-draft-description">@prepared.Reason</MudText>
+        <DrillingCompletionEvidenceView Report="prepared.Source.ReportedCompletion!.Report" />
+        @foreach(var stage in prepared.Workflow.Stages){<MudText>@stage.Definition.Sequence / @stage.Definition.StepName; role @stage.Definition.AssignedRole; workspaces @string.Join(", ",stage.Definition.PersonaCodes)</MudText>}
+        <MudButton OnClick="State.SubmitCompletionReviewAsync" Disabled="@(!State.CanSubmitCompletionReview)" Variant="Variant.Filled" Color="Color.Primary">Confirm and retain completion review</MudButton>
+        <MudButton OnClick="State.CancelCompletionReview" Disabled="@State.Busy">Cancel completion review preparation</MudButton>
+    </MudPaper>
+}
+else if(State.CanPrepareCompletionReview && State.CompletionRouting is {} routing)
+{
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6" HtmlTag="h3">Prepare independent completion review</MudText>
+        <MudSelect T="string" Label="Configured completion review workflow" @bind-Value="workflow" Required="true">
+            @foreach(var option in routing.Options){<MudSelectItem T="string" Value="@option.ProcessId" Disabled="@(!option.Ready)">@option.ProcessName / @option.Version</MudSelectItem>}
+        </MudSelect>
+        <MudSelect T="string" Label="Current completion review sender role" @bind-Value="role" Required="true">
+            @foreach(var value in routing.SenderRoles){<MudSelectItem T="string" Value="@value">@value</MudSelectItem>}
+        </MudSelect>
+        <MudTextField T="string" Label="Reason for independent completion review" @bind-Value="reason" Required="true" Lines="3" MaxLength="1600" />
+        <MudButton OnClick="Prepare" Variant="Variant.Outlined">Review original completion submission</MudButton>
+    </MudPaper>
+}
+@code {
+    [Parameter,EditorRequired]public DrillingDailyReportState State{get;set;}=default!;
+    private string? revision;private string workflow="",role="",reason="";
+    protected override void OnParametersSet(){var next=State.CompletionRouting?.Revision;if(next!=revision){revision=next;workflow=role=reason="";}}
+    private void Prepare()=>State.PrepareCompletionReview(workflow,role,reason);
+}

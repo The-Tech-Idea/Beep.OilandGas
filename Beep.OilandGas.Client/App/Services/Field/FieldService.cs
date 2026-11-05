@@ -1,3 +1,4 @@
+using TheTechIdea.Data.OilGas;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,19 @@ namespace Beep.OilandGas.Client.App.Services.Field
             : base(app, logger)
         {
         }
+
+        private HseIncidentClient Incidents => new(_app.GetApiTransport(), _app.GetCompanyContext());
+        public Task<InvestigatorAssignmentReview> ReviewInvestigatorAssignmentAsync(string incidentId, string expectedFieldId, CancellationToken cancellationToken = default) =>
+            Incidents.ReviewAsync(incidentId, expectedFieldId, cancellationToken);
+        public Task AssignInvestigatorAsync(InvestigatorAssignmentReview review, RecordedIncidentParticipant participant, CancellationToken cancellationToken = default) =>
+            Incidents.AssignAsync(review, participant, cancellationToken);
+
+        public Task<CAPlanResolution> CreateCorrectiveActionPlanAsync(string incidentId, CreateCAPlanSubmission submission, CancellationToken cancellationToken = default) =>
+            Incidents.CreatePlanAsync(incidentId, submission, cancellationToken);
+        public Task<CAPlanCreationReview> ReviewCorrectiveActionPlanCreationAsync(string incidentId, string expectedField, CancellationToken cancellationToken = default) =>
+            Incidents.ReviewPlanCreationAsync(incidentId, expectedField, cancellationToken);
+        public Task<CAPlanResolution> GetCorrectiveActionPlanAsync(string incidentId, FieldSelectionReview context, CancellationToken cancellationToken = default) =>
+            Incidents.GetPlanAsync(incidentId, context, cancellationToken);
 
         public async Task SetCurrentFieldAsync(string fieldId, CancellationToken cancellationToken = default)
         {

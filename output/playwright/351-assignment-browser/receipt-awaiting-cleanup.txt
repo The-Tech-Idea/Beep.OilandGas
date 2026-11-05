@@ -1,0 +1,44 @@
+### Page
+- Page URL: http://127.0.0.1:49208/
+### Snapshot
+```yaml
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e42]:
+    - heading "Isolated workflow browser controls" [level=2] [ref=f2e43]
+    - paragraph [ref=f2e44]: Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.
+    - group [ref=f2e45]:
+      - button "Use read-only unmapped profile" [ref=f2e46] [cursor=pointer]
+      - button "Use editable mapped profile" [ref=f2e48] [cursor=pointer]
+      - button "Switch other company" [ref=f2e50] [cursor=pointer]
+      - button "Switch other account" [ref=f2e52] [cursor=pointer]
+      - button "Restore original company/account" [ref=f2e54] [cursor=pointer]
+      - button "Retain original start alongside report" [ref=f2e56] [cursor=pointer]
+      - button "Show actual start recovery" [ref=f2e58] [cursor=pointer]
+      - button "Show actual report recorder" [ref=f2e60] [cursor=pointer]
+      - button "Show actual reporting assignment" [ref=f2e62] [cursor=pointer]
+      - button "Show actual receiving responsibility" [ref=f2e64] [cursor=pointer]
+  - generic [ref=f2e66]:
+    - heading "Execution reporting responsibility" [level=1] [ref=f2e67]
+    - group [ref=f2e68]:
+      - link "Drilling workspace" [ref=f2e69] [cursor=pointer]:
+        - /url: /drilling/workspace
+      - link "Company inbox" [ref=f2e71] [cursor=pointer]:
+        - /url: /tasks/inbox
+      - button "Reload source and recipients" [ref=f2e73] [cursor=pointer]
+    - generic [ref=f2e75]: Assign ongoing reporting responsibility for a recorded execution. Task counts do not establish a daily-report deadline, observed progress, completion or handover.
+    - alert [ref=f2e97]:
+      - generic [ref=f2e98]: The last validated receipt confirmed this original was recorded. Clearing the tab input is not confirmed. Keep this page open and recover again to finish.
+    - generic [ref=f2e82]:
+      - heading "Original reporting assignment awaiting input cleanup" [level=2] [ref=f2e104]
+      - status [ref=f2e84]:
+        - generic [ref=f2e85]: The last validated receipt confirmed this original was recorded. Clearing the tab input is not confirmed. Keep this page open and recover again to finish.
+      - paragraph [ref=f2e91]: Original drilling program · Operation drilling-execution-9737AF1F31A9E242AA0C9463B1C459E4A386DCFC74EFF0D8EA20924A5723E100 · FIELD original-field/واحد
+      - paragraph [ref=f2e92]: Original sender execution-recorder · Role ConfiguredExecutionAssigner · Workspace EXECUTION_COORDINATION
+      - paragraph [ref=f2e93]: Receiving role ConfiguredReportingRole · 1 configured persona destinations
+      - paragraph [ref=f2e94]: Frozen actual reporting destination 473
+      - button "Recover original reporting assignment" [ref=f2e95] [cursor=pointer]
+    - generic [ref=f2e107]:
+      - heading "Original reporting assignment outcome" [level=2] [ref=f2e108]
+      - paragraph [ref=f2e109]: Outcome checked 2026-10-26 16:16:32Z UTC
+      - paragraph [ref=f2e110]: Recorded responsibility drilling-execution-assignment-9590970229E2D42876754E7CE04BDEC3507488114CBD439CA62303AA8C1C07A2 · 1 configured persona tasks
+```

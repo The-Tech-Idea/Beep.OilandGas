@@ -48,6 +48,9 @@ public class RepositorySetupGateTests
     [InlineData("/health/repository")]
     [InlineData("/api/setup/repository/register")]
     [InlineData("/api/auth/repository/me")]
+    [InlineData("/api/setup/bootstrap/drivers")]
+    [InlineData("/api/setup/bootstrap/drivers/driver/install")]
+    [InlineData("/api/setup/bootstrap/repository/migration")]
     public async Task BootstrapAndAuthRemainReachableWithoutGateLookup(string path)
     {
         var next = false;

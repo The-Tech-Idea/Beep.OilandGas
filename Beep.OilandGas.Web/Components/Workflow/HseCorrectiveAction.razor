@@ -1,0 +1,337 @@
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Data.Security
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IHSEServiceClient Client
+@inject ICorrectiveActionIntentStore Intents
+@inject AuthenticationStateProvider Authentication
+@inject ILogger<HseCorrectiveAction> Logger
+
+@if (unavailable)
+{ <MudAlert Severity="Severity.Warning">Action recovery is unavailable. Reload before creating an action.</MudAlert> }
+else if (ready && original is not null)
+{
+    <MudAlert Severity="Severity.Warning">A previous action is awaiting confirmation. Retry the same request before creating another.</MudAlert>
+    <MudText Typo="Typo.body2">@original.Request.CADescription · @original.Request.ResponsibleBaId · @original.Request.DueDate.ToString("u")</MudText>
+    <MudButton OnClick="RetryAsync" Disabled="@(busy || !CanManage)" Variant="Variant.Outlined">Reconcile original action</MudButton>
+}
+else if (ready && CanRecord)
+{
+    <MudText Typo="Typo.body2">Add an action to the recorded corrective plan. The action does not complete the workflow step.</MudText>
+    <MudButton Href="@($"/hse/incidents/corrective-plan?incidentId={Uri.EscapeDataString(IncidentId)}")" Variant="Variant.Text">Review or create corrective plan</MudButton>
+    <MudButton OnClick="ReviewOptionsAsync" Disabled="@(busy || !CanManage)" Variant="Variant.Outlined">Review recorded action choices</MudButton>
+    @if (options is not null)
+    {
+        <MudText Typo="Typo.body2">Plan @options.PlanId · @options.ActionTypes.Count recorded types · @options.Participants.Count responsible participants</MudText>
+        @if (options.ActionTypes.Count == 0 || options.Participants.Count == 0)
+        { <MudAlert Severity="Severity.Info">The plan needs an active project step type and a recorded responsible participant before an action can be added.</MudAlert> }
+        <MudTextField T="string" @bind-Value="description" Label="Action description" MaxLength="128" Disabled="@busy" />
+        <MudSelect T="string" @bind-Value="type" Label="Recorded project step type" Disabled="@busy">
+            @foreach (var item in options.ActionTypes) { <MudSelectItem T="string" Value="@item">@item</MudSelectItem> }
+        </MudSelect>
+        <MudDatePicker @bind-Date="due" Label="Due date (00:00 UTC)" Disabled="@busy" />
+        <MudSelect T="string" @bind-Value="responsible" Label="Recorded responsible participant" Disabled="@busy">
+            @foreach (var item in options.Participants) { <MudSelectItem T="string" Value="@item">@item</MudSelectItem> }
+        </MudSelect>
+        <MudButton OnClick="SubmitAsync" Disabled="@(busy || !CanManage || options.ActionTypes.Count == 0 || options.Participants.Count == 0)" Variant="Variant.Filled" Color="Color.Primary">Record corrective action</MudButton>
+    }
+}
+@if (message is not null) { <MudText Typo="Typo.body2" role="status">@message</MudText> }
+@if (ready && !unavailable)
+{
+    <MudDivider Class="my-3" />
+    @if (pendingVerification is not null)
+    {
+        <MudAlert Severity="Severity.Warning">A verification decision awaits confirmation: @pendingVerification.Decision.</MudAlert>
+        <MudText Typo="Typo.body2">@pendingVerification.Reason</MudText>
+        <MudButton OnClick="RetryVerificationAsync" Disabled="@(busy || !CanManage)" Variant="Variant.Outlined">Reconcile verification</MudButton>
+    }
+    @if (CanRecord)
+    {
+    <MudButton OnClick="ReviewVerificationAsync" Disabled="@(busy || !CanManage || pendingVerification is not null)" Variant="Variant.Outlined">Review verification evidence</MudButton>
+    }
+    <MudButton OnClick="ReviewClosureAsync" Disabled="@(busy || !CanManage)" Variant="Variant.Outlined">Review incident closure prerequisites</MudButton>
+    @if (closure is not null)
+    {
+        <MudAlert Severity="@(closure.VerificationSatisfied ? Severity.Info : Severity.Warning)" Class="my-2">
+            @(closure.VerificationSatisfied ? "Independent verification is recorded for the current action evidence." : "Closure is blocked: every action needs completion and a recorded verified decision on the current evidence.")
+        </MudAlert>
+        @foreach (var decision in closure.Decisions)
+        {
+            <MudText Typo="Typo.body2">@decision.Decision by @decision.Review.Context.ActorUserId: @decision.Reason @(decision.Review.Revision == closure.Actions.Revision ? "(current evidence)" : "(earlier evidence)")</MudText>
+        }
+        <MudText Typo="Typo.body2">Lifecycle verification and incident closure approvals are separate recorded stages. This review does not close the incident.</MudText>
+    }
+    @if (verification is not null)
+    {
+        @if (verification.Actions.Count == 0)
+        { <MudAlert Severity="Severity.Info" Class="my-2">No corrective actions are recorded for this plan.</MudAlert> }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="my-2">@(verification.CanReviewIndependently ? "The recorded completions are available for independent review." : "Complete every action and use a reviewer who did not record its completion.")</MudText>
+            @foreach (var action in verification.Actions)
+            {
+                <MudText Typo="Typo.body2">Action @action.StepSequence: @action.Description · @action.Status · @action.ResponsiblePerson</MudText>
+                @if (action.CompletedAt is not null)
+                { <MudText Typo="Typo.body2">Completed @action.CompletedAt.Value.ToString("u") by @action.CompletedBy: @action.CompletionEvidence</MudText> }
+            }
+            @if (CanRecord && verification.CanReviewIndependently && pendingVerification is null)
+            {
+                <MudSelect T="string" @bind-Value="verificationDecision" Label="Independent decision" Disabled="@busy">
+                    <MudSelectItem T="string" Value='@("VERIFIED")'>Verified</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("REJECTED")'>Rejected</MudSelectItem>
+                </MudSelect>
+                <MudTextField T="string" @bind-Value="verificationReason" Label="Verification evidence and reason" Lines="3" MaxLength="2000" Disabled="@busy" />
+                <MudButton OnClick="RecordVerificationAsync" Disabled="@(busy || !CanManage)" Variant="Variant.Outlined">Record verification decision</MudButton>
+            }
+            <MudText Typo="Typo.caption">The decision records action evidence; the incident remains open until its separate closure workflow is completed.</MudText>
+        }
+    }
+    <MudDivider Class="my-3" />
+    @if (completion is not null)
+    {
+        <MudAlert Severity="Severity.Warning">Completion of action @completion.StepSequence awaits confirmation. Retry the original evidence.</MudAlert>
+        <MudText Typo="Typo.body2">@completion.Notes</MudText>
+        <MudButton OnClick="RetryCompletionAsync" Disabled="@(busy || !CanManage)" Variant="Variant.Outlined">Reconcile completion</MudButton>
+    }
+    else if (CanRecord && OpenSequences.Count > 0)
+    {
+        <MudText Typo="Typo.subtitle2">Record action completion</MudText>
+        <MudSelect T="int" Value="@completionSequence" ValueChanged="ChangeCompletionSequence" Label="Open action" Disabled="@busy">
+            @foreach (var sequence in OpenSequences) { <MudSelectItem T="int" Value="@sequence">Action @sequence</MudSelectItem> }
+        </MudSelect>
+        <MudButton OnClick="ReviewCompletionAsync" Disabled="@(busy || !CanManage || !OpenSequences.Contains(completionSequence))" Variant="Variant.Outlined">Review action for completion</MudButton>
+        @if (completionReview is not null)
+        {
+            <MudText Typo="Typo.body2">@completionReview.Description · @completionReview.ResponsiblePerson · due @completionReview.DueDate.ToString("u")</MudText>
+            <MudTextField T="string" @bind-Value="completionNotes" Label="Completion evidence" Lines="2" MaxLength="2000" Disabled="@busy" />
+            <MudButton OnClick="CompleteAsync" Disabled="@(busy || !CanManage)" Variant="Variant.Outlined">Record completion</MudButton>
+        }
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public FieldSelectionReview Context { get; set; } = null!;
+    [Parameter, EditorRequired] public string IncidentId { get; set; } = "";
+    [Parameter, EditorRequired] public bool CanRecord { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    [Parameter] public IReadOnlyList<int> OpenSequences { get; set; } = Array.Empty<int>();
+    private bool priorCanRecord;
+    private FieldSelectionReview? priorContext; private string? priorIncident, message;
+    private string description = "", type = "", responsible = ""; private DateTime? due;
+    private bool needsRead, ready, unavailable, busy, disposed; private long generation;
+    private CorrectiveActionOriginal? original; private CorrectiveActionOptions? options;
+    private CorrectiveActionCompletionOriginal? completion; private CACompletionReview? completionReview; private CAVerificationReview? verification; private CAVerificationDecision? pendingVerification;
+    private string verificationDecision = "", verificationReason = ""; private int completionSequence; private string completionNotes = "";
+    protected override void OnParametersSet()
+    {
+        if (priorContext == Context && priorIncident == IncidentId && priorCanRecord == CanRecord) return;
+        priorContext = Context; priorIncident = IncidentId; priorCanRecord = CanRecord; generation++; needsRead = true; ready = false; unavailable = false;
+        original = null; completion = null; completionReview = null; verification = null; closure = null; pendingVerification = null; options = null; message = null; description = type = responsible = completionNotes = verificationDecision = verificationReason = ""; completionSequence = 0; due = null;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!needsRead || disposed) return;
+        needsRead = false; var version = generation; var context = Context; var incident = IncidentId;
+        try { var saved = await Intents.ReadAsync(context, incident); var savedCompletion = await Intents.ReadCompletionAsync(context, incident); var savedVerification = await Intents.ReadVerificationAsync(context, incident); if (disposed || version != generation) return; original = saved; completion = savedCompletion; pendingVerification = savedVerification; ready = true; }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action recovery is unavailable"); if (disposed || version != generation) return; unavailable = true; }
+        await InvokeAsync(StateHasChanged);
+    }
+    private async Task RequireContextAsync(long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        void Current() { if (disposed || version != generation || snapshot != Company.Snapshot) throw new InvalidOperationException("The incident context changed."); }
+        Current(); var selected = snapshot.Selection ?? throw new UnauthorizedAccessException();
+        var user = (await Authentication.GetAuthenticationStateAsync()).User; Current();
+        if (!CanManage || user.Identity?.IsAuthenticated != true || user.FindFirst("party_id")?.Value != selected.UserId ||
+            selected.Scope != Context.Company || selected.UserId != Context.ActorUserId || !selected.Roles.Any(user.IsInRole) ||
+            !selected.Permissions.Contains(PermissionConstants.HSE.ManageIncidents, StringComparer.Ordinal)) throw new UnauthorizedAccessException();
+        var current = await Fields.GetCurrentFieldSelectionAsync(); Current();
+        FieldSelectionReviewValidator.RequireCurrent(current, selected.Scope, selected.UserId);
+        if (!current.SelectionAvailable || current.SelectionContext != Context) throw new InvalidOperationException("The selected FIELD changed.");
+    }
+    private async Task ReviewOptionsAsync()
+    {
+        if (!CanRecord || busy || !ready || original is not null) return;
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null; options = null; type = responsible = "";
+        try
+        {
+            await RequireContextAsync(version, snapshot);
+            var result = await Client.ReviewCorrectiveActionOptionsAsync(Context, IncidentId);
+            await RequireContextAsync(version, snapshot); result.Require();
+            if (result.Context != Context || result.IncidentId != IncidentId) throw new InvalidOperationException("The recorded choices belong to another incident or FIELD.");
+            options = result;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action choices could not be confirmed"); if (!disposed && version == generation) message = "Could not confirm a corrective plan and its recorded choices. Review the plan and try again."; }
+        finally { busy = false; }
+    }
+    private async Task SubmitAsync()
+    {
+        if (!CanRecord || busy || !ready || original is not null || options is null) return;
+        if (due is null || string.IsNullOrWhiteSpace(description) || description.Trim().Length > 128 || description.Any(char.IsControl) ||
+            !options.ActionTypes.Contains(type, StringComparer.Ordinal) || !options.Participants.Contains(responsible, StringComparer.Ordinal))
+        { message = "Enter an action description, recorded type, responsible participant and UTC due date."; return; }
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try
+        {
+            await RequireContextAsync(version, snapshot);
+            var request = new AddCARequest(Guid.NewGuid(), description.Trim(), type.Trim(), DateTime.SpecifyKind(due.Value.Date, DateTimeKind.Utc), responsible.Trim());
+            var pending = new CorrectiveActionOriginal(Context, IncidentId, request, options); pending.Require();
+            await Intents.RetainAsync(pending); await RequireContextAsync(version, snapshot);
+            original = pending; await SendAsync(pending, version, snapshot);
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "The action was not confirmed. Reload to reconcile the original request."; } }
+        finally { busy = false; }
+    }
+    private async Task RetryAsync()
+    {
+        if (busy || original is not { } pending) return;
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await SendAsync(pending, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action reconciliation failed"); if (!disposed && version == generation) message = "The original action could not be confirmed. Check the plan and retry."; }
+        finally { busy = false; }
+    }
+    private async Task SendAsync(CorrectiveActionOriginal pending, long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await RequireContextAsync(version, snapshot);
+        if (pending.Context.Company != Context.Company || pending.Context.ActorUserId != Context.ActorUserId || pending.Context.Database != Context.Database ||
+            pending.Context.FieldId != Context.FieldId || pending.IncidentId != IncidentId) throw new InvalidOperationException("The original action context changed.");
+        var id = await Client.AddCorrectiveActionAsync(Context, IncidentId, pending.Request, pending.Options.PlanId, pending.Options.Revision); await RequireContextAsync(version, snapshot);
+        if (id != pending.Request.ActionId.ToString("N")) throw new InvalidOperationException("The action result differs from the original.");
+        await Intents.ClearAsync(pending); await RequireContextAsync(version, snapshot);
+        original = null; options = null; verification = null; closure = null; description = type = responsible = ""; due = null; message = "Corrective action recorded. Review the plan and workflow separately.";
+        await OnConfirmed.InvokeAsync();
+    }
+    private void ChangeCompletionSequence(int value) { completionSequence = value; completionReview = null; completionNotes = ""; }
+    private async Task ReviewVerificationAsync()
+    {
+        if (!CanRecord || busy || !ready) return;
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null; verification = null;
+        try
+        {
+            await RequireContextAsync(version, snapshot);
+            var result = await Client.ReviewVerificationAsync(Context, IncidentId);
+            await RequireContextAsync(version, snapshot); result.Require();
+            if (result.Context != Context || result.IncidentId != IncidentId) throw new InvalidOperationException("The verification evidence belongs to another incident.");
+            verification = result;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action verification review failed"); if (!disposed && version == generation) message = "Verification evidence could not be confirmed. Reload and try again."; }
+        finally { busy = false; }
+    }
+    private async Task RecordVerificationAsync()
+    {
+        if (!CanRecord || busy || !ready || pendingVerification is not null || verification is null) return;
+        if (verificationDecision is not ("VERIFIED" or "REJECTED") || string.IsNullOrWhiteSpace(verificationReason) || verificationReason.Trim().Length is < 20 or > 2000)
+        { message = "Choose a decision and enter at least 20 characters of verification evidence."; return; }
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try
+        {
+            await RequireContextAsync(version, snapshot);
+            var pending = new CAVerificationDecision(Guid.NewGuid(), verification, verificationDecision, verificationReason.Trim()); pending.Require();
+            await Intents.RetainVerificationAsync(pending); await RequireContextAsync(version, snapshot); pendingVerification = pending;
+            await SendVerificationAsync(pending, version, snapshot);
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action verification could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "Verification was not confirmed. Reload to reconcile the original decision."; } }
+        finally { busy = false; }
+    }
+    private async Task RetryVerificationAsync()
+    {
+        if (busy || pendingVerification is not { } pending) return;
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await SendVerificationAsync(pending, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action verification reconciliation failed"); if (!disposed && version == generation) message = "The original verification could not be confirmed. Review the incident and retry."; }
+        finally { busy = false; }
+    }
+    private async Task SendVerificationAsync(CAVerificationDecision pending, long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await RequireContextAsync(version, snapshot);
+        var prior = pending.Review.Context;
+        if (prior.Company != Context.Company || prior.ActorUserId != Context.ActorUserId || prior.Database != Context.Database || prior.FieldId != Context.FieldId || pending.Review.IncidentId != IncidentId)
+            throw new InvalidOperationException("The original verification ownership changed.");
+        CAVerificationDecision result;
+        if (prior != Context)
+        {
+            var recovered = await Client.ReviewClosureAsync(Context, IncidentId); recovered.Require();
+            await RequireContextAsync(version, snapshot);
+            if (recovered.Actions.Context != Context || recovered.Actions.IncidentId != IncidentId || recovered.Actions.PlanId != pending.Review.PlanId)
+                throw new InvalidOperationException("The recorded verification recovery belongs to another incident or plan.");
+            result = recovered.Decisions.SingleOrDefault(item => item.IntentId == pending.IntentId)
+                ?? throw new InvalidOperationException("The original verification is not recorded. Retain it for reconciliation.");
+        }
+        else result = await Client.RecordVerificationAsync(pending);
+        await RequireContextAsync(version, snapshot);
+        if (System.Text.Json.JsonSerializer.Serialize(result) != System.Text.Json.JsonSerializer.Serialize(pending)) throw new InvalidOperationException("The verification differs from the original.");
+        await Intents.ClearVerificationAsync(pending); await RequireContextAsync(version, snapshot);
+        pendingVerification = null; verification = null; closure = null; verificationDecision = verificationReason = ""; message = "Verification decision recorded. Incident closure remains a separate step.";
+        await OnConfirmed.InvokeAsync();
+    }
+    private IncidentClosureReview? closure;
+    private async Task ReviewClosureAsync()
+    {
+        if (busy || !ready) return;
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null; closure = null;
+        try
+        {
+            await RequireContextAsync(version, snapshot);
+            var result = await Client.ReviewClosureAsync(Context, IncidentId); result.Require();
+            await RequireContextAsync(version, snapshot);
+            if (result.Actions.Context != Context || result.Actions.IncidentId != IncidentId) throw new InvalidOperationException("The closure review changed.");
+            closure = result;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Incident closure review failed"); if (!disposed && version == generation) message = "Closure evidence could not be confirmed. Reload and review the incident again."; }
+        finally { busy = false; }
+    }
+    private async Task ReviewCompletionAsync()
+    {
+        if (!CanRecord || busy || !ready || completion is not null || !OpenSequences.Contains(completionSequence)) return;
+        var version = generation; var snapshot = Company.Snapshot; var sequence = completionSequence; busy = true; message = null; completionReview = null;
+        try
+        {
+            await RequireContextAsync(version, snapshot);
+            var result = await Client.ReviewCompletionAsync(Context, IncidentId, sequence);
+            await RequireContextAsync(version, snapshot);
+            if (result.Context != Context || result.IncidentId != IncidentId || result.StepSequence != sequence || completionSequence != sequence)
+                throw new InvalidOperationException("The reviewed action changed.");
+            completionReview = result;
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action completion review failed"); if (!disposed && version == generation) message = "The action could not be reviewed. Reload and try again."; }
+        finally { busy = false; }
+    }
+    private async Task CompleteAsync()
+    {
+        if (!CanRecord || busy || !ready || completion is not null) return;
+        if (completionReview is null || completionReview.StepSequence != completionSequence || !OpenSequences.Contains(completionSequence) || string.IsNullOrWhiteSpace(completionNotes) || completionNotes.Trim().Length > 2000)
+        { message = "Select an open action and enter completion evidence."; return; }
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try
+        {
+            await RequireContextAsync(version, snapshot);
+            var pending = new CorrectiveActionCompletionOriginal(completionReview, completionNotes.Trim()); pending.Require();
+            await Intents.RetainCompletionAsync(pending); await RequireContextAsync(version, snapshot); completion = pending;
+            await SendCompletionAsync(pending, version, snapshot);
+        }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action completion could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "Completion was not confirmed. Reload to reconcile the original evidence."; } }
+        finally { busy = false; }
+    }
+    private async Task RetryCompletionAsync()
+    {
+        if (busy || completion is not { } pending) return;
+        var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
+        try { await SendCompletionAsync(pending, version, snapshot); }
+        catch (Exception error) { Logger.LogWarning(error, "Corrective action completion reconciliation failed"); if (!disposed && version == generation) message = "The original completion could not be confirmed. Review the action and retry."; }
+        finally { busy = false; }
+    }
+    private async Task SendCompletionAsync(CorrectiveActionCompletionOriginal pending, long version, (long Version, CompanyClientSelection? Selection) snapshot)
+    {
+        await RequireContextAsync(version, snapshot);
+        if (pending.Context.Company != Context.Company || pending.Context.ActorUserId != Context.ActorUserId || pending.Context.Database != Context.Database || pending.Context.FieldId != Context.FieldId || pending.IncidentId != IncidentId)
+            throw new InvalidOperationException("The original completion context changed.");
+        await Client.CompleteCorrectiveActionAsync(pending.Review with { Context = Context }, pending.Notes);
+        await RequireContextAsync(version, snapshot); await Intents.ClearCompletionAsync(pending); await RequireContextAsync(version, snapshot);
+        completion = null; completionReview = null; verification = null; closure = null; completionSequence = 0; completionNotes = ""; message = "Completion recorded. Review the incident workflow separately.";
+        await OnConfirmed.InvokeAsync();
+    }
+    public void Dispose() { disposed = true; generation++; }
+}

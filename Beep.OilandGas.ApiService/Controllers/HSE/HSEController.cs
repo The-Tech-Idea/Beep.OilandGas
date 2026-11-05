@@ -1,3 +1,5 @@
+using Beep.OilandGas.Models.Core.Refusals;
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.HSE;
 using Beep.OilandGas.ApiService.Attributes;
@@ -5,6 +7,7 @@ using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.Security;
 
 namespace Beep.OilandGas.ApiService.Controllers.HSE;
 
@@ -16,10 +19,12 @@ public class HSEController : ControllerBase
 {
     private readonly IFieldOrchestrator _fieldOrchestrator;
     private readonly ILogger<HSEController> _logger;
+    private readonly RepositoryRequestAccount _accounts;
 
-    public HSEController(IFieldOrchestrator fieldOrchestrator, ILogger<HSEController> logger)
+    public HSEController(IFieldOrchestrator fieldOrchestrator, RepositoryRequestAccount accounts, ILogger<HSEController> logger)
     {
         _fieldOrchestrator = fieldOrchestrator;
+        _accounts = accounts ?? throw new ArgumentNullException(nameof(accounts));
         _logger = logger;
     }
 
@@ -39,8 +44,8 @@ public class HSEController : ControllerBase
         return Ok(await Hse.GetIncidentsAsync(range));
     }
 
-    [HttpGet("incidents/{incidentId}")]
-    public async Task<ActionResult<HSEIncidentRecord>> GetIncidentAsync(string incidentId)
+    [HttpGet("incident")]
+    public async Task<ActionResult<HSEIncidentRecord>> GetIncidentAsync([FromQuery] string incidentId)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         var result = await Hse.GetIncidentAsync(incidentId);
@@ -48,21 +53,13 @@ public class HSEController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("incidents")]
-    public async Task<ActionResult<HSEIncidentRecord>> ReportAsync(
-        [FromBody] ReportIncidentRequest request)
-    {
-        var userId = User.ActingUserId();
-        if (request is null) return BadRequest(new { error = "Request body is required." });
-        var result = await Hse.ReportIncidentAsync(request, userId);
-        return CreatedAtAction(nameof(GetIncidentAsync), new { incidentId = result.IncidentId }, result);
-    }
-
     [HttpPost("incidents/{incidentId}/transition")]
     public async Task<ActionResult> TransitionAsync(
         string incidentId, [FromBody] TransitionIncidentRequest request)
     {
-        var userId = User.ActingUserId();
+        if (request?.Trigger is "close" or "ca_done")
+            throw RefusalException.Forbidden("Incident verification and closure require reviewed lifecycle commands.");
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         if (request is null) return BadRequest(new { error = "Request body is required." });
         var ok = await Hse.TransitionAsync(incidentId, request.Trigger, request.Reason, userId);
@@ -73,27 +70,35 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> UpdateTierAsync(
         string incidentId, [FromQuery] int tier)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         await Hse.UpdateTierAsync(incidentId, tier, userId);
         return NoContent();
     }
 
-    [HttpPut("incidents/{incidentId}/investigator")]
-    public async Task<ActionResult> AssignInvestigatorAsync(
-        string incidentId, [FromQuery] string baId)
+    [HttpGet("incident/investigator-review")]
+    public async Task<ActionResult<InvestigatorAssignmentReview>> ReviewInvestigatorAssignmentAsync([FromQuery] string incidentId)
     {
-        var userId = User.ActingUserId();
+        _ = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        if (string.IsNullOrWhiteSpace(baId)) return BadRequest(new { error = "Business associate ID is required." });
-        await Hse.AssignInvestigatorAsync(incidentId, baId, userId);
+        return Ok(await Hse.ReviewInvestigatorAssignmentAsync(incidentId));
+    }
+
+    [HttpPut("incident/investigator")]
+    public async Task<ActionResult> AssignInvestigatorAsync(
+        [FromQuery] string incidentId, [FromBody] AssignIncidentInvestigatorRequest request)
+    {
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        if (request is null) return BadRequest(new { error = "A reviewed assignment body is required." });
+        await Hse.AssignInvestigatorAsync(incidentId, request, userId);
         return NoContent();
     }
 
     // ── RCA ────────────────────────────────────────────────────────────────────
 
-    [HttpGet("incidents/{incidentId}/causes")]
-    public async Task<ActionResult<List<CauseFinding>>> GetCausesAsync(string incidentId)
+    [HttpGet("incident/causes")]
+    public async Task<ActionResult<List<CauseFinding>>> GetCausesAsync([FromQuery] string incidentId)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         return Ok(await Hse.GetCausesAsync(incidentId));
@@ -103,7 +108,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> AddCauseAsync(
         string incidentId, [FromBody] AddCauseRequest request)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         await Hse.AddCauseAsync(incidentId, request, userId);
         return NoContent();
@@ -129,7 +134,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> AddBarrierAsync(
         string incidentId, [FromBody] AddBarrierRequest request)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         await Hse.AddBarrierAsync(incidentId, request, userId);
         return NoContent();
@@ -139,7 +144,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> SetBarrierStatusAsync(
         string incidentId, string equipId, [FromQuery] string status)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         if (string.IsNullOrWhiteSpace(equipId)) return BadRequest(new { error = "Equipment ID is required." });
         if (string.IsNullOrWhiteSpace(status)) return BadRequest(new { error = "Status is required." });
@@ -156,40 +161,252 @@ public class HSEController : ControllerBase
 
     // ── Corrective Actions ─────────────────────────────────────────────────────
 
-    [HttpGet("incidents/{incidentId}/cas")]
-    public async Task<ActionResult<List<CAStatus>>> GetCAsAsync(string incidentId)
+    [HttpGet("incident/cas")]
+    public async Task<ActionResult<List<CAStatus>>> GetCAsAsync([FromQuery] string incidentId)
     {
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
         return Ok(await Hse.GetCorrectiveActionsAsync(incidentId));
     }
 
-    [HttpPost("incidents/{incidentId}/ca-plan")]
-    public async Task<ActionResult<string>> CreateCAPlanAsync(string incidentId)
+    [HttpGet("incident/ca-plan-review")]
+    public async Task<ActionResult<CAPlanCreationReview>> ReviewCaPlanCreationAsync([FromQuery] string incidentId)
     {
-        var userId = User.ActingUserId();
+        await _accounts.RequireAsync();
+        if (string.IsNullOrWhiteSpace(incidentId)) throw RefusalException.Invalid("incidentId is required.");
+        return Ok(await Hse.ReviewCaPlanCreationAsync(incidentId));
+    }
+
+    [HttpGet("incident/ca-plan")]
+    public async Task<ActionResult<CAPlanResolution>> GetCAPlanAsync([FromQuery] string incidentId)
+    {
+        await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var id = await Hse.CreateCaPlanAsync(incidentId, userId);
-        return Ok(id);
+        return Ok(await Hse.GetCaPlanAsync(incidentId));
+    }
+
+    [HttpPost("incident/ca-plan")]
+    public async Task<ActionResult<CAPlanResolution>> CreateCAPlanAsync([FromQuery] string incidentId, [FromBody] CreateCAPlanSubmission submission)
+    {
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        return Ok(await Hse.CreateCaPlanAsync(incidentId, submission, userId));
+    }
+
+    [HttpGet("incidents/{incidentId}/restrictions/review")]
+    public async Task<ActionResult<HseRestrictionReview>> ReviewRestrictionsAsync(string incidentId)
+    {
+        await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
+        return Ok(await Hse.ReviewIncidentRestrictionsAsync(incidentId));
     }
 
     [HttpPost("incidents/{incidentId}/cas")]
-    public async Task<ActionResult<string>> AddCAAsync(
-        string incidentId, [FromBody] AddCARequest request)
+    [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
+    public async Task<ActionResult<AddCAReceipt>> AddCAAsync(
+        string incidentId, [FromBody] AddCASubmission submission, [FromServices] ICompanyFieldSelectionService selections,
+        [FromServices] ICompanyCorrectiveActionCommands commands)
     {
-        var userId = User.ActingUserId();
-        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        var id = await Hse.AddCorrectiveActionAsync(incidentId, request, userId);
-        return Ok(id);
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (string.IsNullOrWhiteSpace(incidentId) || submission?.Context is null || submission.Request is null ||
+            !LeaseSummaryValidator.Identifier(submission.PlanId) || !ProcessDefinitionRevision.IsValid(submission.OptionsRevision)) return BadRequest(new { error = "Incident, plan and reviewed action choices are required." });
+        async Task RequireSelection()
+        {
+            var current = await selections.GetCurrentFieldSelectionAsync();
+            FieldSelectionReviewValidator.RequireCurrent(current, submission.Context.Company, userId);
+            if (!current.SelectionAvailable || current.SelectionContext != submission.Context || _fieldOrchestrator.CurrentFieldId != submission.Context.FieldId)
+                throw new UnauthorizedAccessException("The original company or FIELD selection changed.");
+        }
+        await RequireSelection();
+        var plan = await Hse.GetCaPlanAsync(incidentId);
+        if (plan.Context != submission.Context || plan.IncidentId != incidentId || plan.PlanId != submission.PlanId)
+            throw new InvalidOperationException("The reviewed corrective plan changed.");
+        var recorded = await commands.FindRecordedActionAsync(submission.Context, incidentId, plan.PlanId, submission.Request, userId);
+        if (recorded is not null)
+        {
+            await RequireSelection();
+            if (await Hse.GetCaPlanAsync(incidentId) != plan || recorded != submission.Request.ActionId.ToString("N"))
+                throw new InvalidOperationException("The recorded corrective action could not be confirmed.");
+            return Ok(new AddCAReceipt(submission.Context, incidentId, submission.Request.ActionId, recorded));
+        }
+        var options = await commands.ReviewActionOptionsAsync(submission.Context, incidentId, plan.PlanId, userId);
+        options.Require();
+        if (options.Context != submission.Context || options.IncidentId != incidentId || options.PlanId != plan.PlanId || options.Revision != submission.OptionsRevision ||
+            !options.ActionTypes.Contains(submission.Request.CAType, StringComparer.Ordinal) || !options.Participants.Contains(submission.Request.ResponsibleBaId, StringComparer.Ordinal))
+            throw new InvalidOperationException("The reviewed corrective-action choices changed.");
+        await RequireSelection();
+        var id = await commands.AddCorrectiveActionAsync(submission.Context, incidentId, plan.PlanId, submission.Request, userId);
+        await RequireSelection();
+        if (await Hse.GetCaPlanAsync(incidentId) != plan) throw new InvalidOperationException("The corrective plan changed while the action was recorded.");
+        if (id != submission.Request.ActionId.ToString("N")) throw new InvalidOperationException("The recorded action does not match the original request.");
+        return Ok(new AddCAReceipt(submission.Context, incidentId, submission.Request.ActionId, id));
+    }
+
+    [HttpGet("incidents/{incidentId}/cas/options")]
+    [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
+    public async Task<ActionResult<CorrectiveActionOptions>> ReviewCAOptionsAsync(string incidentId,
+        [FromServices] ICompanyFieldSelectionService selections, [FromServices] ICompanyCorrectiveActionCommands commands)
+    {
+        var actor = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (!LeaseSummaryValidator.Identifier(incidentId)) return BadRequest(new { error = "An exact incident is required." });
+        var current = await selections.GetCurrentFieldSelectionAsync();
+        var context = current.SelectionContext ?? throw new InvalidOperationException("The company FIELD selection is unavailable.");
+        FieldSelectionReviewValidator.RequireCurrent(current, context.Company, actor);
+        if (!current.SelectionAvailable || _fieldOrchestrator.CurrentFieldId != context.FieldId) throw new UnauthorizedAccessException("The selected FIELD changed.");
+        var plan = await Hse.GetCaPlanAsync(incidentId);
+        if (plan.Context != context || plan.IncidentId != incidentId || !LeaseSummaryValidator.Identifier(plan.PlanId))
+            throw new InvalidOperationException("The incident corrective plan could not be confirmed.");
+        var result = await commands.ReviewActionOptionsAsync(context, incidentId, plan.PlanId, actor);
+        result.Require();
+        var confirmedPlan = await Hse.GetCaPlanAsync(incidentId);
+        var closing = await selections.GetCurrentFieldSelectionAsync();
+        FieldSelectionReviewValidator.RequireCurrent(closing, context.Company, actor);
+        if (!closing.SelectionAvailable || closing.SelectionContext != context || _fieldOrchestrator.CurrentFieldId != context.FieldId ||
+            result.Context != context || result.IncidentId != incidentId || result.PlanId != plan.PlanId || confirmedPlan != plan)
+            throw new InvalidOperationException("The corrective-action choices changed during review.");
+        return Ok(result);
+    }
+
+    [HttpPut("incidents/{incidentId}/cas/{stepSeq}/responsible")]
+    public async Task<ActionResult> AssignCAResponsibleAsync(
+        string incidentId, int stepSeq, [FromBody] AssignCorrectiveActionResponsibleRequest request)
+    {
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (string.IsNullOrWhiteSpace(incidentId) || stepSeq <= 0)
+            return BadRequest(new { error = "An incident ID and positive action sequence are required." });
+        if (request is null || string.IsNullOrWhiteSpace(request.BusinessAssociateId))
+            return BadRequest(new { error = "A recorded business-associate ID is required." });
+        await Hse.AssignCorrectiveActionResponsibleAsync(incidentId, stepSeq, request.BusinessAssociateId, userId);
+        return NoContent();
+    }
+
+    [HttpGet("incidents/{incidentId}/cas/verification-review")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
+    public async Task<ActionResult<CAVerificationReview>> ReviewVerificationAsync(string incidentId,
+        [FromServices] ICompanyFieldSelectionService selections, [FromServices] ICompanyCorrectiveActionCommands commands)
+    {
+        var actor = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (!LeaseSummaryValidator.Identifier(incidentId)) return BadRequest();
+        var current = await selections.GetCurrentFieldSelectionAsync();
+        var context = current.SelectionContext ?? throw new UnauthorizedAccessException("A FIELD selection is required.");
+        FieldSelectionReviewValidator.RequireCurrent(current, context.Company, actor);
+        if (!current.SelectionAvailable || _fieldOrchestrator.CurrentFieldId != context.FieldId) throw new UnauthorizedAccessException();
+        var plan = await Hse.GetCaPlanAsync(incidentId);
+        if (plan.Context != context || plan.IncidentId != incidentId || !LeaseSummaryValidator.Identifier(plan.PlanId)) throw new InvalidOperationException("The corrective plan changed.");
+        var result = await commands.ReviewVerificationAsync(context, incidentId, plan.PlanId, actor); result.Require();
+        var closing = await selections.GetCurrentFieldSelectionAsync();
+        FieldSelectionReviewValidator.RequireCurrent(closing, context.Company, actor);
+        if (!closing.SelectionAvailable || closing.SelectionContext != context || _fieldOrchestrator.CurrentFieldId != context.FieldId ||
+            result.Context != context || result.IncidentId != incidentId || result.PlanId != plan.PlanId || await Hse.GetCaPlanAsync(incidentId) != plan)
+            throw new InvalidOperationException("The verification review changed.");
+        return Ok(result);
+    }
+
+    [HttpPost("incidents/{incidentId}/cas/verification-decision")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
+    public async Task<ActionResult<CAVerificationDecision>> RecordVerificationAsync(string incidentId, [FromBody] CAVerificationDecision original,
+        [FromServices] ICompanyFieldSelectionService selections, [FromServices] ICompanyCorrectiveActionCommands commands)
+    {
+        var actor = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (original?.Review?.Context is null || original.Review.IncidentId != incidentId) return BadRequest();
+        original.Require(); var context = original.Review.Context;
+        async Task Guard()
+        {
+            var current = await selections.GetCurrentFieldSelectionAsync();
+            FieldSelectionReviewValidator.RequireCurrent(current, context.Company, actor);
+            if (!current.SelectionAvailable || current.SelectionContext != context || _fieldOrchestrator.CurrentFieldId != context.FieldId)
+                throw new UnauthorizedAccessException("The company or FIELD selection changed.");
+        }
+        await Guard(); var plan = await Hse.GetCaPlanAsync(incidentId);
+        if (plan.Context != context || plan.IncidentId != incidentId || plan.PlanId != original.Review.PlanId) throw new InvalidOperationException("The corrective plan changed.");
+        var result = await commands.RecordVerificationAsync(original);
+        await Guard();
+        if (await Hse.GetCaPlanAsync(incidentId) != plan || System.Text.Json.JsonSerializer.Serialize(result) != System.Text.Json.JsonSerializer.Serialize(original))
+            throw new InvalidOperationException("The recorded verification could not be confirmed.");
+        return Ok(result);
+    }
+
+    [HttpGet("incidents/{incidentId}/closure-review")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
+    public async Task<ActionResult<IncidentClosureReview>> ReviewClosureAsync(string incidentId,
+        [FromServices] ICompanyFieldSelectionService selections, [FromServices] ICompanyCorrectiveActionCommands commands)
+    {
+        var actor = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (!LeaseSummaryValidator.Identifier(incidentId)) return BadRequest();
+        var current = await selections.GetCurrentFieldSelectionAsync();
+        var context = current.SelectionContext ?? throw new UnauthorizedAccessException("A FIELD selection is required.");
+        FieldSelectionReviewValidator.RequireCurrent(current, context.Company, actor);
+        if (!current.SelectionAvailable || _fieldOrchestrator.CurrentFieldId != context.FieldId) throw new UnauthorizedAccessException();
+        var plan = await Hse.GetCaPlanAsync(incidentId);
+        if (plan.Context != context || plan.IncidentId != incidentId || !LeaseSummaryValidator.Identifier(plan.PlanId)) throw new InvalidOperationException("The corrective plan changed.");
+        var result = await commands.ReviewClosureAsync(context, incidentId, plan.PlanId, actor); result.Require();
+        var closing = await selections.GetCurrentFieldSelectionAsync();
+        FieldSelectionReviewValidator.RequireCurrent(closing, context.Company, actor);
+        if (!closing.SelectionAvailable || closing.SelectionContext != context || _fieldOrchestrator.CurrentFieldId != context.FieldId ||
+            result.Actions.Context != context || result.Actions.IncidentId != incidentId || result.Actions.PlanId != plan.PlanId || await Hse.GetCaPlanAsync(incidentId) != plan)
+            throw new InvalidOperationException("The incident closure review changed.");
+        return Ok(result);
+    }
+
+    [HttpGet("incidents/{incidentId}/cas/{stepSeq}/completion-review")]
+    [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
+    public async Task<ActionResult<CACompletionReview>> ReviewCompletionAsync(string incidentId, int stepSeq,
+        [FromServices] ICompanyFieldSelectionService selections, [FromServices] ICompanyCorrectiveActionCommands commands)
+    {
+        var actor = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (!LeaseSummaryValidator.Identifier(incidentId) || stepSeq <= 0) return BadRequest();
+        var current = await selections.GetCurrentFieldSelectionAsync();
+        var context = current.SelectionContext ?? throw new UnauthorizedAccessException("A FIELD selection is required.");
+        FieldSelectionReviewValidator.RequireCurrent(current, context.Company, actor);
+        if (!current.SelectionAvailable || _fieldOrchestrator.CurrentFieldId != context.FieldId) throw new UnauthorizedAccessException();
+        var plan = await Hse.GetCaPlanAsync(incidentId);
+        if (plan.Context != context || plan.IncidentId != incidentId || !LeaseSummaryValidator.Identifier(plan.PlanId)) throw new InvalidOperationException("The corrective plan changed.");
+        var result = await commands.ReviewCompletionAsync(context, incidentId, plan.PlanId, stepSeq, actor);
+        var closing = await selections.GetCurrentFieldSelectionAsync();
+        FieldSelectionReviewValidator.RequireCurrent(closing, context.Company, actor);
+        if (!closing.SelectionAvailable || closing.SelectionContext != context || _fieldOrchestrator.CurrentFieldId != context.FieldId ||
+            result.Context != context || result.IncidentId != incidentId || result.PlanId != plan.PlanId || result.StepSequence != stepSeq ||
+            !LeaseSummaryValidator.Identifier(result.StepId) || !ProcessDefinitionRevision.IsValid(result.Revision) || await Hse.GetCaPlanAsync(incidentId) != plan)
+            throw new InvalidOperationException("The action review changed.");
+        return Ok(result);
     }
 
     [HttpPost("incidents/{incidentId}/cas/{stepSeq}/complete")]
-    public async Task<ActionResult> CompleteCAAsync(
-        string incidentId, int stepSeq, [FromQuery] string notes = "")
+    [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
+    [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
+    public async Task<ActionResult<CompleteCAReceipt>> CompleteCAAsync(
+        string incidentId, int stepSeq, [FromBody] CompleteCASubmission submission,
+        [FromServices] ICompanyFieldSelectionService selections, [FromServices] ICompanyCorrectiveActionCommands commands)
     {
-        var userId = User.ActingUserId();
-        if (string.IsNullOrWhiteSpace(incidentId)) return BadRequest(new { error = "Incident ID is required." });
-        await Hse.RecordCompletionAsync(incidentId, stepSeq, notes, userId);
-        return NoContent();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
+        if (!LeaseSummaryValidator.Identifier(incidentId) || stepSeq <= 0 || submission?.Review?.Context is null ||
+            submission.Review.IncidentId != incidentId || submission.Review.StepSequence != stepSeq || !LeaseSummaryValidator.Identifier(submission.Review.PlanId) ||
+            !LeaseSummaryValidator.Identifier(submission.Review.StepId) || !ProcessDefinitionRevision.IsValid(submission.Review.Revision) || string.IsNullOrWhiteSpace(submission.Notes) ||
+            submission.Notes.Length > 2000 || submission.Notes.Any(c => char.IsControl(c) && c is not '\r' and not '\n' and not '\t'))
+            return BadRequest(new { error = "An incident, action, plan and completion evidence are required." });
+        async Task RequireSelection()
+        {
+            var current = await selections.GetCurrentFieldSelectionAsync();
+            FieldSelectionReviewValidator.RequireCurrent(current, submission.Review.Context.Company, userId);
+            if (!current.SelectionAvailable || current.SelectionContext != submission.Review.Context || _fieldOrchestrator.CurrentFieldId != submission.Review.Context.FieldId)
+                throw new UnauthorizedAccessException("The company or FIELD selection changed.");
+        }
+        await RequireSelection();
+        var plan = await Hse.GetCaPlanAsync(incidentId);
+        if (plan.Context != submission.Review.Context || plan.IncidentId != incidentId || plan.PlanId != submission.Review.PlanId)
+            throw new InvalidOperationException("The corrective plan changed.");
+        await commands.RecordReviewedCompletionAsync(submission.Review, submission.Notes, userId);
+        await RequireSelection();
+        if (await Hse.GetCaPlanAsync(incidentId) != plan) throw new InvalidOperationException("The corrective plan changed during completion.");
+        return Ok(new CompleteCAReceipt(submission.Review.Context, incidentId, plan.PlanId, stepSeq, submission.Review.StepId, submission.Notes));
     }
 
     // ── HAZOP ──────────────────────────────────────────────────────────────────
@@ -205,7 +422,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> CreateStudyAsync(
         [FromBody] CreateHAZOPStudyRequest request)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         var id = await Hse.CreateStudyAsync(request, userId);
         return CreatedAtAction(nameof(GetStudySummaryAsync), new { studyId = id }, id);
     }
@@ -228,7 +445,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> AddNodeAsync(
         string studyId, [FromBody] AddNodeRequest request)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
         var id = await Hse.AddNodeAsync(studyId, request, userId);
         return Ok(id);
@@ -238,7 +455,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult<string>> AddDeviationAsync(
         string studyId, int nodeSeq, [FromBody] AddDeviationRequest request)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
         var id = await Hse.AddDeviationAsync(studyId, nodeSeq, request, userId);
         return Ok(id);
@@ -248,7 +465,7 @@ public class HSEController : ControllerBase
     public async Task<ActionResult> UpdateDeviationStatusAsync(
         string studyId, int nodeSeq, int condSeq, [FromQuery] string status)
     {
-        var userId = User.ActingUserId();
+        var userId = await _accounts.RequireAsync(HttpContext.RequestAborted);
         if (string.IsNullOrWhiteSpace(studyId)) return BadRequest(new { error = "Study ID is required." });
         if (string.IsNullOrWhiteSpace(status)) return BadRequest(new { error = "Status is required." });
         await Hse.UpdateDeviationStatusAsync(studyId, nodeSeq, condSeq, status, userId);

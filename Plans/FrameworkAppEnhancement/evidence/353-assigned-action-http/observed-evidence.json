@@ -1,0 +1,36 @@
+{
+  "plan": "Plan353 assigned overdue-action API boundary",
+  "date": "2026-10-30",
+  "result": { "passed": 1, "failed": 0, "skipped": 0, "duration": "15 seconds" },
+  "method": "CurrentFieldLifecycleGateTests.AssignedActionsHttpEnforcesCurrentCompanyFieldAndAppAuthorityBeforePrivateRead",
+  "build": "38.62 seconds; 668 existing/support/nullable warnings; zero errors; project-reference builds disabled",
+  "sha256": {
+    "Beep.OilandGas.ApiService/Controllers/HSE/HseAssignedActionsController.cs": "5B66A8872C6B11FAC683EA8EF573E43CB73EC4C798225D4574424EC359B54F47",
+    "Beep.OilandGas.ApiService/Services/CompanyHseAssignedActionReader.cs": "83CBE002F90FBFA942699B31EC99DEF6C2047C8DD8AF7587E89F63C32B8203A6",
+    "Beep.OilandGas.Repository.Tests/HseAssignedActionsHttpTests.cs": "775CCCC0AEEA628E88B30D826796C9ABE508716F6CDF508D668893BDE0F1004A",
+    "Beep.OilandGas.Repository.Tests.dll": "934AC7EAC10114C33677CCA0A85C08BB5403957A7EF3F10CE08225092E8B0346"
+  },
+  "executed": [
+    "Real local HTTP request, actual controller, CompanyRequestMiddleware, RequireCurrentFieldAccess filter, RepositoryUserProfileService, CompanyModuleConnection and company/access registry.",
+    "Standard role claims from the selected app-role data through the existing fixture bridge; actual UserAssetAccessService and RepositoryAssetAccessStore.",
+    "Actual assigned-action reader with controlled personnel identity/HSE facts."
+  ],
+  "observations": [
+    "Missing company selectors:400; unavailable company:403; no HSE.View permission:403. No private identity or incident reads in those phases.",
+    "Authorized200 response has no-store, exact company/account/FIELD and one current person's overdue OPEN action.",
+    "Other person's action, future action, completed action, private person name and identity source reference are absent from the response.",
+    "Asserted other FIELD:409 before identity read; missing mapping:409 before incident read.",
+    "HSE.View revoked while reading incidents:403 before any action read or partial private response.",
+    "FIELD grant revoked:400 before identity read. Restoring current grants permits a fresh successful200 response.",
+    "Separate anonymous HTTP host returns401 before private identity read.",
+    "No native writes. Both owned HTTP hosts dispose through awaited fixture lifetimes."
+  ],
+  "limits": [
+    "Authentication and standard-role transformation are explicit fixture seams; this does not qualify production OIDC or the full ApiService startup.",
+    "Personnel mapping/person and incident/action facts are controlled. Existing registry/identity fixture is not a new domain EF migration lane.",
+    "No actual driver/provider, concurrency, browser, large FIELD latency or production deployment claim.",
+    "Only this exact fact ran. No permit, class/full, provider, closure or previous native/browser sweep.",
+    "Restriction-safe provider paging/counts and the64-incident/4096-action queue bounds remain open.",
+    "No production schema/SQL/EF/legacy owner change. Overall approved goal remains active; commit/push pending."
+  ]
+}

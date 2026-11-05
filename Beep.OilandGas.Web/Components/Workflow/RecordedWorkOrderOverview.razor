@@ -1,0 +1,86 @@
+@namespace Beep.OilandGas.Web.Components.Workflow
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using TheTechIdea.Data.OilGas
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IWorkOrderServiceClient WorkOrders
+@inject ILogger<RecordedWorkOrderOverview> Logger
+@implements IDisposable
+
+<MudPaper Outlined="true" Class="pa-4 my-3">
+    <MudText Typo="Typo.h6" HtmlTag="h2">Recorded work orders</MudText>
+    <MudText Typo="Typo.body2">Review a sample of up to 20 work-order headers visible to you in the selected company and FIELD. Header records do not establish workflow completion or operational performance.</MudText>
+    <MudButton OnClick="Load" Disabled="@(_busy || Company.Selection is null)" Variant="Variant.Outlined" Class="my-2">Load visible work-order sample</MudButton>
+    <MudTextField T="string" @bind-Value="_exactId" Label="Exact work-order identifier" MaxLength="128" Disabled="@(_busy || Company.Selection is null)" HelperText="Use the recorded identifier to review an order outside the sample." />
+    <MudButton Href="@(ValidExactId ? OrderRoute(_exactId) : null)" Disabled="@(_busy || Company.Selection is null || !ValidExactId)" Variant="Variant.Outlined" Class="my-2">Open exact recorded order</MudButton>
+    @if (_busy) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading visible work orders" /> }
+    @if (_message is not null) { <MudAlert Severity="Severity.Info" Class="my-2">@_message</MudAlert> }
+    @if (_rows is not null)
+    {
+        <MudText>@_rows.Length visible recorded work orders returned in the sample for FIELD @_fieldId.</MudText>
+        <MudText Typo="Typo.body2">This bounded sample is not a complete FIELD or company-wide population or a completion rate.</MudText>
+        @if (_rows.Length > 0)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mt-3">Recorded types in this sample</MudText>
+            @foreach (var group in _rows.GroupBy(row => string.IsNullOrWhiteSpace(row.WoSubType) ? null : row.WoSubType, StringComparer.Ordinal).OrderBy(group => group.Key, StringComparer.Ordinal))
+            {
+                <MudText>@(group.Key is null ? "Type not recorded" : group.Key): @group.Count()</MudText>
+            }
+        }
+        @foreach (var row in _rows)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-2">
+                <MudText>@row.InstanceName (@row.InstanceId) — @(string.IsNullOrWhiteSpace(row.WoSubType) ? "type not recorded" : row.WoSubType)</MudText>
+                <MudButton Href="@OrderRoute(row.InstanceId)" Variant="Variant.Text">Review recorded order</MudButton>
+            </MudPaper>
+        }
+    }
+</MudPaper>
+
+@code {
+    private WorkOrderSummary[]? _rows;
+    private string? _fieldId, _message;
+    private string _exactId = "";
+    private bool _busy, _disposed;
+    private long _generation;
+    private bool ValidExactId => !string.IsNullOrWhiteSpace(_exactId) && _exactId.Length <= 128 && _exactId == _exactId.Trim() && !_exactId.Any(char.IsControl);
+    private static string OrderRoute(string id) => $"/ppdm39/workorder/detail?workOrderId={Uri.EscapeDataString(id)}";
+    protected override void OnInitialized() { Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; }
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged()
+    {
+        Interlocked.Increment(ref _generation);
+        _ = InvokeAsync(() => { if (!_disposed) { _rows = null; _fieldId = null; _message = null; _exactId = ""; _busy = false; StateHasChanged(); } });
+    }
+    private async Task Load()
+    {
+        var snapshot = Company.Snapshot;
+        if (_busy || snapshot.Selection is null) return;
+        var generation = Interlocked.Increment(ref _generation);
+        bool Current() => !_disposed && generation == Interlocked.Read(ref _generation) && snapshot == Company.Snapshot;
+        _busy = true; _rows = null; _fieldId = null; _message = null;
+        try
+        {
+            var before = await Fields.GetCurrentFieldSelectionAsync();
+            if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!before.SelectionAvailable) { _message = "Choose an available FIELD before loading work orders."; return; }
+            var reviewed = before.SelectionContext; var fieldId = before.FieldId;
+            var rows = await WorkOrders.GetWorkOrderSampleAsync();
+            if (!Current()) return;
+            if (rows is null || rows.Count > 20 || rows.Any(row => row is null || row.FieldId != fieldId || row.Source != "WORK_ORDER" ||
+                string.IsNullOrWhiteSpace(row.InstanceId) || row.InstanceId.Length > 128 || row.InstanceId.Any(char.IsControl)) ||
+                rows.Select(row => row.InstanceId).Distinct(StringComparer.Ordinal).Count() != rows.Count)
+                throw new InvalidOperationException("The returned work-order identities are inconsistent.");
+            var after = await Fields.GetCurrentFieldSelectionAsync();
+            if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != reviewed || after.FieldId != fieldId)
+                throw new InvalidOperationException("The FIELD selection changed during the work-order review.");
+            _rows = rows.OrderBy(row => row.InstanceId, StringComparer.Ordinal).ToArray(); _fieldId = fieldId;
+        }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Visible work-order overview could not be confirmed"); _message = "Visible work orders could not be confirmed. Check company and FIELD access, then reload."; } }
+        finally { if (Current()) _busy = false; }
+    }
+    public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }
+}

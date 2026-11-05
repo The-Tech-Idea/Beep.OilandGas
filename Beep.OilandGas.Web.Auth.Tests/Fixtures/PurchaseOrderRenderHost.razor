@@ -1,0 +1,7 @@
+@namespace Beep.OilandGas.Web.Auth.Tests.Fixtures
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.BusinessProcess
+<MudPopoverProvider />
+<PurchaseOrderSourcePanel Review="Review" />
+@code { [Microsoft.AspNetCore.Components.Parameter] public PurchaseOrderWorkspaceState? Review {get;set;} }

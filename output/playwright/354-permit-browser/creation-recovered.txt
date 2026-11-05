@@ -1,0 +1,31 @@
+### Page
+- Page URL: http://127.0.0.1:55005/ppdm39/permits/new
+### Snapshot
+```yaml
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - generic [ref=f4e3]: "Qualification fixture: actual current UI with controlled identity and data services."
+    - group [ref=f4e10]:
+      - button "Fixture author" [ref=f4e11] [cursor=pointer]
+      - button "Fixture reviewer" [ref=f4e13] [cursor=pointer]
+      - button "Fixture read only" [ref=f4e15] [cursor=pointer]
+      - button "Fixture other FIELD" [ref=f4e17] [cursor=pointer]
+      - button "Fixture original FIELD" [ref=f4e19] [cursor=pointer]
+      - button "Fixture lose next acknowledgement" [ref=f4e21] [cursor=pointer]
+      - link "HSE landing" [ref=f4e23] [cursor=pointer]:
+        - /url: /ppdm39/hse
+      - link "Permit dashboard" [ref=f4e25] [cursor=pointer]:
+        - /url: /ppdm39/permits
+  - generic [ref=f4e27]:
+    - heading "New permit application" [level=1] [ref=f4e28]
+    - paragraph [ref=f4e29]: Review the explicit draft and linked company resources before retaining one creation original.
+    - button "Read retained creation original" [ref=f4e30] [cursor=pointer]
+    - generic [ref=f4e49]: Recorded draft creation · original 08d6e6b2-acc0-43f9-8705-ff9df2028556
+    - paragraph [ref=f4e55]: Application PA-08d6e6b2acc043f98705ff9df2028556 · recorded status Draft · recorded UTC 2026-10-29 15:12:15Z
+    - link "Open created application" [ref=f4e56] [cursor=pointer]:
+      - /url: /ppdm39/permits/detail?applicationId=PA-08d6e6b2acc043f98705ff9df2028556
+    - paragraph [ref=f4e58]: This confirms that original creation. Application details show its current state separately.
+    - text: A draft or internal decision does not establish regulator clearance, jurisdiction applicability or permission to operate.
+    - link "Back to permits" [ref=f4e47] [cursor=pointer]:
+      - /url: /ppdm39/permits
+```

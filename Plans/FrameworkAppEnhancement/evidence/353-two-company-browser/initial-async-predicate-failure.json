@@ -1,0 +1,826 @@
+{
+  "status": "failed",
+  "error": "Error: A original replaced or fresh approval reviewed",
+  "observations": [
+    {
+      "name": "A approval persisted; acknowledgement held",
+      "url": "http://127.0.0.1:52068/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "keys": [],
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 PRIVATE COMPANY A INCIDENT\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 04:58 \u00b7 FIELD company \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 04:58\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nFIELD company\n\n\nReported jurisdiction\t\n\nRecorded company\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\n\nReview and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.\n\nREVIEW ASSIGNED CLOSURE STAGE\n \nREVIEW REJECTED VERIFICATION FOR CORRECTION\n\nfinal incident closure approval \u00b7 assigned role Safety \u00b7 1 completed actions\n\nA verified independent decision matches the current action evidence.\n\nStage approval evidence and reason\nAPPROVE FINAL CLOSURE AND RECORD CLOSED STATUS\nRECOVER RECORDED CLOSURE APPROVAL\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nCompleted repair for company\tworker-company\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 4,
+          "reviewReads": 1,
+          "approvedIntent": null
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 0,
+          "reviewReads": 0,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 0,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B own incident and closure review with colliding local IDs",
+      "url": "http://127.0.0.1:52068/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "keys": [
+        "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+      ],
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 PRIVATE COMPANY B INCIDENT\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 04:58 \u00b7 FIELD other \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 04:58\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nFIELD other\n\n\nReported jurisdiction\t\n\nRecorded other\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\n\nReview and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.\n\nREVIEW ASSIGNED CLOSURE STAGE\n \nREVIEW REJECTED VERIFICATION FOR CORRECTION\n\nfinal incident closure approval \u00b7 assigned role Safety \u00b7 1 completed actions\n\nA verified independent decision matches the current action evidence.\n\nStage approval evidence and reason\nAPPROVE FINAL CLOSURE AND RECORD CLOSED STATUS\nRECOVER RECORDED CLOSURE APPROVAL\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nCompleted repair for other\tworker-other\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 1,
+          "approvals": 1,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 4,
+          "reviewReads": 1,
+          "approvedIntent": "8fa2ee41-be7e-4622-8cf5-9aef913a1eb1"
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 1,
+          "reviewReads": 1,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 0,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/complete-stage",
+            "method": "POST"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Late A acknowledgement settled while B selected",
+      "url": "http://127.0.0.1:52068/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "keys": [
+        "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+      ],
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 PRIVATE COMPANY B INCIDENT\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 04:58 \u00b7 FIELD other \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 04:58\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nFIELD other\n\n\nReported jurisdiction\t\n\nRecorded other\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\n\nReview and approve one assigned stage at a time. Final closure is confirmed after both lifecycle approval and the incident CLOSED status are recorded.\n\nREVIEW ASSIGNED CLOSURE STAGE\n \nREVIEW REJECTED VERIFICATION FOR CORRECTION\n\nfinal incident closure approval \u00b7 assigned role Safety \u00b7 1 completed actions\n\nA verified independent decision matches the current action evidence.\n\nStage approval evidence and reason\nAPPROVE FINAL CLOSURE AND RECORD CLOSED STATUS\nRECOVER RECORDED CLOSURE APPROVAL\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nCompleted repair for other\tworker-other\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 1,
+          "approvals": 1,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 4,
+          "reviewReads": 1,
+          "approvedIntent": "8fa2ee41-be7e-4622-8cf5-9aef913a1eb1"
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 1,
+          "reviewReads": 1,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 1,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/complete-stage",
+            "method": "POST"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          }
+        ]
+      }
+    },
+    {
+      "name": "A exact protected original restored",
+      "url": "http://127.0.0.1:52068/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "keys": [
+        "oilgas.hse.corrective-action.5D738DA8B412AC60C446CD4FF4EE620D48B9464E946341D77565F16456D5FB5B.closure"
+      ],
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 PRIVATE COMPANY A INCIDENT\nTier 4\nPENDING_CLOSE_OUT\n29-Oct-2026 04:58 \u00b7 FIELD company \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 04:58\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nFIELD company\n\n\nReported jurisdiction\t\n\nRecorded company\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nAdd an action to the recorded corrective plan. The action does not complete the workflow step.\n\nREVIEW OR CREATE CORRECTIVE PLAN\n \nREVIEW RECORDED ACTION CHOICES\nREVIEW VERIFICATION EVIDENCE\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nThe original final incident closure approval request is available for confirmation or saved-request cleanup.\n\nPRIVATE_A_APPROVAL_REASON \u2014 reviewed only for company A.\n\nRECONCILE ORIGINAL CLOSURE STAGE\nREVIEW CHANGED NATIVE INCIDENT HISTORY\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nCompleted repair for company\tworker-company\t31-Oct-26\t\nCOMPLETED\n\n\n\nIncident close-out\n\nRecorded corrective actions: 1; not completed: 0.\n\nIndependent verification and reviewed closure are required before this incident can be closed.",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 1,
+          "approvals": 1,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 5,
+          "reviewReads": 1,
+          "approvedIntent": "8fa2ee41-be7e-4622-8cf5-9aef913a1eb1"
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 1,
+          "reviewReads": 1,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 1,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/complete-stage",
+            "method": "POST"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Explicit A reconciliation closed A only and cleared original",
+      "url": "http://127.0.0.1:52068/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "keys": [],
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 PRIVATE COMPANY A INCIDENT\nTier 4\nCLOSED\n29-Oct-2026 04:58 \u00b7 FIELD company \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 04:58\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nFIELD company\n\n\nReported jurisdiction\t\n\nRecorded company\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nNew lifecycle approvals and correction returns are unavailable for a closed, cancelled or unconfirmed incident state. Recover recorded approval evidence to confirm an earlier outcome.\nRECOVER RECORDED CLOSURE APPROVAL\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nCompleted repair for company\tworker-company\t31-Oct-26\t\nCOMPLETED\n\n",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "CLOSED",
+          "approvalAttempts": 2,
+          "approvals": 1,
+          "nativeAttempts": 1,
+          "nativeWrites": 1,
+          "incidentReads": 6,
+          "reviewReads": 1,
+          "approvedIntent": "8fa2ee41-be7e-4622-8cf5-9aef913a1eb1"
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 1,
+          "reviewReads": 1,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 2,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/complete-stage",
+            "method": "POST"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/complete-stage",
+            "method": "POST"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/record-native",
+            "method": "POST"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Failure state",
+      "url": "http://127.0.0.1:52068/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=hse-process-assigned-original",
+      "keys": [],
+      "body": "Isolated assigned HSE navigation\n\nActual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.\n\nOPEN ASSIGNED HSE PROCESS\nFIXTURE HOME\nSWITCH OTHER COMPANY\nRESTORE ORIGINAL COMPANY\nINJURY \u2014 PRIVATE COMPANY A INCIDENT\nTier 4\nCLOSED\n29-Oct-2026 04:58 \u00b7 FIELD company \u00b7 originator\n\nIncident Details\n\nDate/Time\t\n\n29-Oct-2026 04:58\n\n\nType\t\n\nINJURY\n\n\nTier\t\nTier 4\n\nLocation\t\n\nFIELD company\n\n\nReported jurisdiction\t\n\nRecorded company\n\n\nReported By\t\n\noriginator\n\nRoot Cause Analysis\n\nREVIEW RECORDED CAUSES AND CLASSIFICATIONS\nFIND MY RECORDED CAUSES\n \nVIEW SHARED RECORDED CAUSES\n \nFIND MY RECORDED RCA HANDOFF\n\nNo root cause is displayed in the incident detail.\n\nCorrective Actions\n\nREVIEW INCIDENT CLOSURE PREREQUISITES\nLifecycle approval and incident closure\nNew lifecycle approvals and correction returns are unavailable for a closed, cancelled or unconfirmed incident state. Recover recorded approval evidence to confirm an earlier outcome.\nRECOVER RECORDED CLOSURE APPROVAL\nAction\n\t\nAssigned To\n\t\nDue\n\t\nStatus\n\nCompleted repair for company\tworker-company\t31-Oct-26\t\nCOMPLETED\n\n",
+      "metadata": {
+        "a": {
+          "code": "company",
+          "state": "CLOSED",
+          "approvalAttempts": 2,
+          "approvals": 1,
+          "nativeAttempts": 1,
+          "nativeWrites": 1,
+          "incidentReads": 6,
+          "reviewReads": 1,
+          "approvedIntent": "8fa2ee41-be7e-4622-8cf5-9aef913a1eb1"
+        },
+        "b": {
+          "code": "other",
+          "state": "PENDING_CLOSE_OUT",
+          "approvalAttempts": 0,
+          "approvals": 0,
+          "nativeAttempts": 0,
+          "nativeWrites": 0,
+          "incidentReads": 1,
+          "reviewReads": 1,
+          "approvedIntent": null
+        },
+        "genericActionReads": 0,
+        "completedCalls": 2,
+        "requests": [
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/complete-stage",
+            "method": "POST"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "other",
+            "path": "/api/field/current/hse/workflow/closure/review",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/complete-stage",
+            "method": "POST"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/workflow/closure/record-native",
+            "method": "POST"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/causes",
+            "method": "GET"
+          },
+          {
+            "company": "company",
+            "path": "/api/field/current/hse/incident/cas",
+            "method": "GET"
+          }
+        ]
+      }
+    }
+  ]
+}

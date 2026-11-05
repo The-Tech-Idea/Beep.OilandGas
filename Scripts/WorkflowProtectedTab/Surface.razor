@@ -1,0 +1,69 @@
+@page "/"
+@inject Scope Scope
+@inject Backend Backend
+@inject IDevelopmentDraftIntentStore Journal
+<MudThemeProvider /><MudPopoverProvider /><MudDialogProvider /><MudSnackbarProvider />
+<MudPaper Class="pa-4 ma-4" Outlined="true">
+    <MudText Typo="Typo.h6" HtmlTag="h2">Isolated workflow browser controls</MudText>
+    <MudText>Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap">
+        <MudButton OnClick="Scope.ReadOnly">Use read-only unmapped profile</MudButton>
+        <MudButton OnClick="Scope.Editable">Use editable mapped profile</MudButton>
+        <MudButton OnClick="Scope.OtherCompany">Switch other company</MudButton>
+        <MudButton OnClick="Scope.OtherAccount">Switch other account</MudButton>
+        <MudButton OnClick="Scope.OriginalCompany">Restore original company/account</MudButton>
+        <MudButton OnClick="RetainStart">Retain original start alongside report</MudButton>
+        <MudButton OnClick="RetainCompetingAssignment" Disabled="@(Backend.RecordedAssignment is null)">Retain a different unrecorded reporting assignment</MudButton>
+        <MudButton OnClick="RetainCompetingStart">Retain an unrecorded competing start</MudButton>
+        <MudButton OnClick="RetainCompetingReport" Disabled="@(Backend.Rows.Count==0)">Retain a different unrecorded report</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("start"))'>Show actual start recovery</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("report"))'>Show actual report recorder</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("assignment"))'>Show actual reporting assignment</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("closure"))'>Show actual reporting closure</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("transfer"))'>Show actual reporting transfer</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("assigned"))' Disabled="@(Backend.RecordedAssignment is null)">Show actual receiving responsibility</MudButton>
+    </MudStack>
+    @if(message is not null){<MudText role="status">@message</MudText>}
+</MudPaper>
+@if(Backend.Mode=="start"){<DrillingExecution ReviewId="@Backend.Original.Basis.Execution.Basis.ReviewInstanceId" />}
+else if(Backend.Mode=="assignment"){<DrillingExecutionAssignment ReviewId="@Backend.Assignment.Source.Basis.ReviewInstanceId" />}
+else if(Backend.Mode=="assigned" && Backend.RecordedAssignment is {} saved){<DrillingExecutionAssigned ProcessId="@saved.InstanceId()" />}
+else if(Backend.Mode=="closure"){<DrillingReportingResponsibility AssignmentId="@Backend.ReportingClosure.Review.Responsibility.Root.InstanceId()" CompletionId="@Backend.ReportingClosure.Review.Evidence.Acceptance.InstanceId" />}
+else if(Backend.Mode=="transfer"){<DrillingReportingTransfer AssignmentId="@Backend.ReportingTransfer.Review.Responsibility.Root.InstanceId()" />}
+else{<DrillingDailyReports ReviewId="@Backend.Original.Basis.Execution.Basis.ReviewInstanceId" />}
+@code {
+    private string? message;
+    private async Task RetainStart()
+    {
+        try { await Journal.RetainExecutionAsync(DrillingExecutionStart.FromRecord(Backend.Original.Basis.Execution.Recorded!)); message="Exact original start retained in its own protected tab key."; }
+        catch(Exception error){message="Retaining original start failed: "+error.GetType().Name;}
+    }
+    private async Task RetainCompetingAssignment()
+    {
+        try
+        {
+            var original=Backend.Copy(Backend.RecordedAssignment??throw new InvalidOperationException("Record controlled responsibility first.")) with{IntentId=Guid.NewGuid(),Reason="Different unrecorded browser reporting original"};
+            await Journal.RetainExecutionAssignmentAsync(original);message="Different reporting original retained in its exact encrypted key.";
+        }
+        catch(Exception error){message="Retaining different reporting original failed: "+error.GetType().Name;}
+    }
+    private async Task RetainCompetingStart()
+    {
+        try
+        {
+            var original=DrillingExecutionStart.FromRecord(Backend.Original.Basis.Execution.Recorded!) with{IntentId=Guid.NewGuid(),Rationale="Controlled retained start that was never recorded"};
+            await Journal.RetainExecutionAsync(original);message="Different unrecorded start retained in its existing protected tab key.";
+        }
+        catch(Exception error){message="Retaining competing start failed: "+error.GetType().Name;}
+    }
+    private async Task RetainCompetingReport()
+    {
+        try
+        {
+            var row=Backend.Rows.FirstOrDefault()??throw new InvalidOperationException("Record a controlled report first.");
+            var original=DrillingDailyReportInput.FromRecord(row) with{IntentId=Guid.NewGuid(),Provenance="Different unrecorded browser site log 471",Summary="My different retained observations",DepthEndMd=120};
+            await Journal.RetainDailyReportAsync(original);message="Different report original retained in its exact encrypted key.";
+        }
+        catch(Exception error){message="Retaining different report original failed: "+error.GetType().Name;}
+    }
+}

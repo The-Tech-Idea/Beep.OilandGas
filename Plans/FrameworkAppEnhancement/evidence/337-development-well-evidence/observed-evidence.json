@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-25",
+  "status": "focused-passed",
+  "tests": {
+    "passed": 223,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 26.9394,
+    "new_development_cases": 35,
+    "actual_parent_cases": 8,
+    "filter": "DevelopmentWellEvidenceTests|EngineeringWorkspaceLandingTests|PersonaTaskInboxStateTests|MaintenanceRecordedWorkLandingTests|ExecutivePortfolioLandingTests|WorkflowInboxHttpTests"
+  },
+  "sources": [
+    {
+      "path": "Beep.OilandGas.Web/Pages/PPDM39/Development/WellDesign.razor",
+      "sha256": "174569f113611afcc076a6aa1f3f6f4cedfefbbebeb60b08468706722826f3b1"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/IDevelopmentServiceClient.cs",
+      "sha256": "551cbc3b2f27aa08f5e3149f5197e6df9fc8f0fa0f5b9c94b24193b28f3716b2"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/DevelopmentServiceClient.cs",
+      "sha256": "2a66d5b42cf9045cef5f02cae7ef4320b3e7cc4e9429639ec715114cefe8e051"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/DevelopmentWellEvidenceState.cs",
+      "sha256": "50b862ead533461ae88992ffd6f985d7e2156fbeddbf1b4a191b33b22ac15b1a"
+    },
+    {
+      "path": "Beep.OilandGas.Web.Auth.Tests/DevelopmentWellEvidenceTests.cs",
+      "sha256": "ed3646496379492469b7e5d5c8bcb4266eaf12c4b8c8a7f12f9e559b982a27ce"
+    },
+    {
+      "path": "Scripts/Test-PurchaseOrderOwnership.ps1",
+      "sha256": "8ba737060cdc0717bf78821dfe19b16744430d0d2797227fe418bba441a5c605"
+    }
+  ],
+  "inspected_unchanged_owners_not_compiled_in_this_run": [
+    {
+      "path": "Beep.OilandGas.ApiService/Attributes/RequireCurrentFieldAccessAttribute.cs",
+      "sha256": "4776cfb9a593566a50336d3ee7e334adea4d56166ebbcfee946424e5bd57110b"
+    },
+    {
+      "path": "Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs",
+      "sha256": "5341df4bfd34e76f2e8ee3db6d122f3bdf5e6111e637862cc2885f3b5366d6a6"
+    },
+    {
+      "path": "Beep.OilandGas.LifeCycle/Services/Development/PPDMDevelopmentService.cs",
+      "sha256": "152d486f0cf579e5ad033c0aee63d79ec20ab089ed5f868c90dd060683cd09e4"
+    },
+    {
+      "path": "Beep.OilandGas.Web/Services/CompanyAuthenticationStateProvider.cs",
+      "sha256": "26bc72812f57f1132c017f8da48136a934cf0f71730b40b39bdfd55294129535"
+    }
+  ],
+  "runtime": [
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-purchase-ownership-5093ac7a070e43a799cf59091356eca9\\bin\\Debug\\net10.0\\PurchaseOwnership.dll",
+      "sha256": "ec93f2a3927ade2241dfbf5d4011fe91c52a5f26719b7e61bc15b3f933418b47"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-317-financial-contracts-8da77a8185094b2294aab446bbb175e8\\bin\\Debug\\net10.0\\TheTechIdea.Data.dll",
+      "sha256": "1f0a5419ad0d98aaec486823583c2432f4c374738a16d3a163eb20e9d624f14d"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/337-development-well-evidence/oilgas-development-well-evidence.log",
+      "sha256": "4de1f65500f4af30fd3d59c66ccdaee9d03100afd856b3c94526771b2af47127"
+    },
+    {
+      "path": "Plans/FrameworkAppEnhancement/evidence/337-development-well-evidence/oilgas-development-well-evidence-verified.log",
+      "sha256": "482180ed5643c9e8f946b21d1d6747dd6389d2edf8dd9462d414d8bc01209862"
+    }
+  ],
+  "observations": [
+    "Initial current-source client/state/parent gate: 27 passed in 3.5703 seconds.",
+    "Final gate: all 35 new development cases plus the 188 engineering/inbox/landing/HTTP regressions passed.",
+    "Actual typed client carries the reviewed FIELD query assertion for both list and encoded UWI detail, and refuses null list transport.",
+    "Actual page list-to-detail links use encoded UWI query values, preserving legacy detail routes and avoiding the reserved new route. Conflicting links refuse before reading a well.",
+    "Read-only evidence snapshots preserve source depth precision/units and dates; no approval/spud/TD/completion or rig writes are issued."
+  ],
+  "limits": [
+    "Source-linked focused harness with controlled field-selection, auth, transport and native fixtures. No full solution, registered development controller/native-service HTTP, browser, keyboard/RTL/responsive, live OIDC/catalog or real-provider execution in this checkpoint.",
+    "Existing native development list/field-filter authority is inspected here; its earlier focused provider evidence remains with owner 60, not reasserted as current execution.",
+    "The page is a working recorded well evidence stage. Canonical design authoring/versioning, technical approval, rig allocation, approved AFE, drilling/construction and operations handover remain open.",
+    "No SQL, business EF/schema change, live business mutation, commit, push, phase or goal closure."
+  ]
+}

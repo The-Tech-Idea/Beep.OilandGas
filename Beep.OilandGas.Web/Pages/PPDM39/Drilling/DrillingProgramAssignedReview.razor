@@ -1,0 +1,71 @@
+@page "/drilling/program-review/assigned"
+@using System.Globalization
+@using Beep.OilandGas.Client.App
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject CompanyClientContext Company
+@inject IPersonaContextService Personas
+@inject IDrillingServiceClient Drilling
+@inject OilGasCallFailures Calls
+@inject IDevelopmentDraftIntentStore Journal
+<PageTitle>Drilling program review</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Drilling program review</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3"><MudButton Href="/tasks/inbox" Variant="Variant.Outlined">Company assigned work</MudButton><MudButton Href="/drilling/workspace" Variant="Variant.Outlined">Drilling workspace</MudButton><MudButton OnClick="Reload" Disabled="@(_state?.Loading==true || _state?.Busy==true)" Variant="Variant.Outlined">Reload complete review history</MudButton></MudStack>
+    @if(_state?.Loading==true){<MudProgressLinear Indeterminate="true" aria-label="Loading assigned program evidence" />}
+    @if(_state?.Error is {} error){<MudAlert Severity="Severity.Error">@error</MudAlert>}
+    @if(_state?.DecisionError is {} decisionError){<MudAlert Severity="Severity.Error" role="alert">@decisionError</MudAlert>}
+    @if(_state?.DecisionConfirmation is {} confirmation){<MudAlert Severity="Severity.Success" role="status">@confirmation</MudAlert>}
+    @if(_state?.Busy==true){<MudProgressLinear Indeterminate="true" aria-label="Confirming original program decision" />}
+    @if(_state?.PreparedDecision is {} prepared)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Confirm independent program decision</MudText><MudText>@prepared.Decision · @prepared.Review.Source.Program.PROGRAM_NAME · Version @prepared.Review.Source.Program.PROGRAM_VERSION · Stage @prepared.Review.StageNumber · @prepared.Review.AssignedRole</MudText><MudText Class="development-draft-description">@prepared.Rationale</MudText><MudText>Company @prepared.Scope().Company.BusinessAssociateId · Reviewer @prepared.Scope().ActorUserId · Workspace @prepared.Review.PersonaCode</MudText><MudButton OnClick="_state.SubmitDecisionAsync" Disabled="@_state.Busy" Color="Color.Primary" Variant="Variant.Filled">Confirm program decision</MudButton><MudButton OnClick="_state.CancelDecision" Disabled="@_state.Busy">Cancel decision</MudButton></MudPaper>
+    }
+    @if(_state?.PendingDecision is {} pending)
+    {
+        <MudAlert Severity="Severity.Warning">The original @pending.Decision decision is retained. Recover its recorded outcome before another decision.</MudAlert><MudButton OnClick="_state.RecoverDecisionAsync" Disabled="@(!_state.CanRecoverDecision)" Variant="Variant.Outlined">Recover original program decision</MudButton>
+    }
+    else if(_state?.RetainedDecisionProcessId is {} other){<MudAlert Severity="Severity.Warning">Another program decision needs recovery first.</MudAlert><MudButton Href="@("/drilling/program-review/assigned?processId="+Uri.EscapeDataString(other))">Open retained program decision</MudButton>}
+    @if(_state?.DecisionReceipt is {} receipt){<MudPaper Outlined="true" Class="pa-4 my-3"><MudText>Recorded outcome: @receipt.WorkflowState · Original review @receipt.InstanceId</MudText>@if(receipt.Recorded){<MudText>Approval @receipt.ApprovalId · History @receipt.HistoryId</MudText>@if(receipt.NextStepInstanceId is {} next){<MudText>Next configured assignment @next</MudText>}}else{<MudText>The original decision was confirmed absent.</MudText>}</MudPaper>}
+    @if(_state?.Progress is {} outcome)
+    {
+        var row=outcome.Source.Program;var scope=outcome.Source.Basis.Scope();
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Program review: @Outcome(outcome.State)</MudText><MudText>@outcome.Original.Workflow.ProcessName · Version @outcome.Original.Workflow.Version · Original review @outcome.InstanceId</MudText><MudText>Company @scope.Company.TenantId / @scope.Company.BusinessAssociateId · Reader @scope.ActorUserId · Original FIELD @scope.FieldId</MudText><MudText>Pending receiving tasks: @outcome.PendingTasks</MudText></MudPaper>
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Exact saved program version</MudText><MudText>@row.PROGRAM_NAME · Version @row.PROGRAM_VERSION · Source status @row.PROGRAM_STATUS</MudText><MudText>Program @row.PROGRAM_ID · Original maker @row.ROW_CREATED_BY · @row.ROW_CREATED_DATE?.ToString("u",CultureInfo.InvariantCulture) UTC</MudText><MudText>Submitted by @outcome.Original.Scope().ActorUserId</MudText><MudText Class="development-draft-description">@row.DESCRIPTION_OBJECTIVE</MudText><MudText>@row.WELL_TYPE · @row.WELL_PROFILE · Planned MD @row.PLANNED_MEASURED_DEPTH @row.DEPTH_OUOM · TVD @row.PLANNED_TRUE_VERTICAL_DEPTH @row.DEPTH_OUOM</MudText><MudText>Planned calendar dates @row.PLANNED_SPUD_DATE?.ToString("yyyy-MM-dd") to @row.PLANNED_COMPLETION_DATE?.ToString("yyyy-MM-dd") · @row.PLANNED_DURATION_DAYS days</MudText></MudPaper>
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Approved investment basis</MudText><MudText>AFE @row.AFE_NUMBER · @row.AFE_COST?.ToString(CultureInfo.InvariantCulture) @row.AFE_CURRENCY · FDP @row.FDP_BASELINE_ID</MudText><MudText>Financial reviewer @outcome.Source.Basis.Funding.Source.Recorded!.Reviewer · @outcome.Source.Basis.Funding.Source.Recorded.AtUtc.ToString("u",CultureInfo.InvariantCulture) UTC</MudText><MudText>Investment @outcome.Source.Basis.Funding.HandoffId · Book @outcome.Source.Basis.Funding.Source.Afe().BookId</MudText></MudPaper>
+        <MudSimpleTable Dense="true" Hover="true" Outlined="true" Class="my-3">
+            <caption>Recorded ordered program review stages</caption>
+            <thead><tr><th scope="col">Stage</th><th scope="col">Role and workspaces</th><th scope="col">Outcome</th><th scope="col">Reviewer</th><th scope="col">Rationale</th><th scope="col">Decision UTC</th><th scope="col">Audit</th></tr></thead>
+            <tbody>@foreach(var stage in outcome.Stages){<tr><td>@stage.Number · @stage.Name</td><td>@stage.AssignedRole<br />@string.Join(", ",stage.PersonaCodes)</td><td>@Outcome(stage.State)</td><td>@(stage.Reviewer??"No recorded reviewer")<br />@stage.ReviewerPersona</td><td>@(stage.Rationale??"No recorded decision")</td><td>@(stage.AtUtc?.ToString("u",CultureInfo.InvariantCulture)??"Not recorded")</td><td>@stage.ApprovalId<br />@stage.HistoryId</td></tr>}</tbody>
+        </MudSimpleTable>
+        @if(outcome.State=="APPROVED"){<MudButton Href="@("/drilling/program-execution?reviewId="+Uri.EscapeDataString(outcome.InstanceId))" Variant="Variant.Outlined">Open approved program execution</MudButton>}
+        <MudAlert Severity="Severity.Info">This history records independent program review. The saved source version remains DRAFT. Program approval does not record drilling execution, financial actuals or production handover.</MudAlert>
+        <MudText Typo="Typo.caption">Outcome checked @outcome.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC · Native revision @outcome.NativeRevision</MudText>
+    }
+    @if(_state?.Current is {} review)
+    {
+        var row=review.Source.Program;var stage=review.Stage().Definition;var scope=review.Source.Basis.Scope();
+        <MudPaper Outlined="true" Class="pa-4 my-3"><MudText Typo="Typo.h6" HtmlTag="h2">Pending independent program review</MudText><MudText>Company: @scope.Company.TenantId / @scope.Company.BusinessAssociateId · Reviewer @scope.ActorUserId</MudText><MudText>@review.Original.Workflow.ProcessName · @review.Original.Workflow.Version · @stage.StepName · Stage @review.StageNumber / @review.Original.Workflow.Stages.Count</MudText><MudText>Assigned role @review.AssignedRole · Workspace @review.PersonaCode · Task @review.TaskId</MudText><MudText>Original program review @review.InstanceId · FIELD @scope.FieldId · Well @review.Source.Basis.Well.Uwi</MudText></MudPaper>
+        <MudPaper Outlined="true" Class="pa-4 my-3">
+            <MudText Typo="Typo.h6" HtmlTag="h2">Independent program stage decision</MudText>
+            <MudTextField T="string" Label="Review rationale" @bind-Value="rationale" Lines="3" MaxLength="1600" Required="true" Disabled="@(!_state.CanPrepareDecision)" HelperText="Record the design, source and funding evidence supporting your decision." />
+            <MudStack Row="true" Class="my-3"><MudButton OnClick="PrepareApproval" Disabled="@(!_state.CanPrepareDecision)" Color="Color.Primary" Variant="Variant.Filled">Review approval</MudButton><MudButton OnClick="PrepareRejection" Disabled="@(!_state.CanPrepareDecision)" Color="Color.Error" Variant="Variant.Outlined">Review rejection</MudButton></MudStack>
+        </MudPaper>
+        <MudAlert Severity="Severity.Info">A stage approval routes the next configured independent review. Only the final approved stage approves this program. Drilling execution is separate.</MudAlert>
+        <MudText Typo="Typo.caption">Source checked @review.CheckedAtUtc.ToString("u",CultureInfo.InvariantCulture) UTC · Program revision @row.PROGRAM_DRAFT_REVISION</MudText>
+    }
+    else if(_state?.Loading!=true && _state?.Busy!=true && _state?.Error is null && _state?.DecisionReceipt is null && _state?.RetainedDecisionProcessId is null && _state?.Progress is null){<MudAlert Severity="Severity.Info">Choose a company and your assigned workspace with drilling, workflow and financial-view access, then open the exact program task from the inbox.</MudAlert>}
+</MudContainer>
+@code{
+    [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
+    private DrillingProgramAssignedReviewState? _state;private bool disposed,interactiveLoaded;private string rationale="";
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override Task OnParametersSetAsync()=>interactiveLoaded?Reload():Task.CompletedTask;
+    protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactiveLoaded=true;return Reload();}private Task Reload()=>_state!.LoadAsync(ProcessId);
+    private static string Outcome(string state)=>state switch{"IN_REVIEW"=>"In review","APPROVED"=>"Approved","REJECTED"=>"Rejected","PENDING"=>"Pending","WAITING"=>"Waiting for earlier stages","NOT_REACHED"=>"Not reached after rejection",_=>throw new InvalidOperationException("The recorded program stage outcome is unavailable.")};
+    private void PrepareApproval()=>_state!.PrepareDecision("APPROVE",rationale);
+    private void PrepareRejection()=>_state!.PrepareDecision("REJECT",rationale);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}
+}

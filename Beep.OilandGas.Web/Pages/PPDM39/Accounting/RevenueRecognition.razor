@@ -1,151 +1,171 @@
 @page "/ppdm39/accounting/revenue-recognition"
+@namespace Beep.OilandGas.Web.Pages.PPDM39.Accounting
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Models.Data.ProductionAccounting
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
-@inject ISnackbar Snackbar
-@inject HttpClient Http
-
-<PageTitle>Track Revenue Recognition</PageTitle>
-
+@using Beep.OilandGas.Web.Components.Workflow
+@inject IAccountingServiceClient Accounting
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject AuthenticationStateProvider Authentication
+@implements IDisposable
+<PageTitle>Recorded revenue source review</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-
-    @* ─── Header *@
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Track Revenue Recognition</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Monitor revenue recognition by well, product, and period under ASC 606 / IFRS 15</MudText>
-                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.TrendingUp">Revenue</MudChip>
-            </MudStack>
-        </MudStack>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
-                   OnClick="RecalculateRevenue">
-            Recalculate
-        </MudButton>
+    <MudText Typo="Typo.h4">Recorded revenue source review</MudText>
+    <MudText>Company: @(Company.Selection?.Scope.BusinessAssociateId ?? "Unavailable") · FIELD: @(_source?.FieldId ?? "Unavailable")</MudText>
+    <MudText>Review recorded transactions before commercial terms, invoicing or recognition approval. These rows do not establish recognized revenue, approved terms or a posted ledger.</MudText>
+    <MudButton Href="/accounting/revenue-workbench">Commercial and revenue landing</MudButton>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+        <MudDatePicker Label="From stored calendar date" @bind-Date="_from" />
+        <MudDatePicker Label="Through stored calendar date" @bind-Date="_through" />
+        <MudButton OnClick="Reload" Disabled="@_busy">Review selected FIELD and dates</MudButton>
     </MudStack>
-
-    @* ─── Summary Cards *@
-    <MudGrid Class="mb-4" Spacing="3">
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_totalRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Total Revenue (YTD)</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Primary" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_oilRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Oil Revenue</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Air" Color="Color.Info" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_gasRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Gas Revenue</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Assessment" Color="Color.Warning" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_unrecognizedRevenue.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Unrecognized (Deferred)</MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-
-    @* ─── Revenue by Well *@
-    <MudPaper Elevation="2" Class="pa-4 mb-4">
-        <MudText Typo="Typo.h6" Class="mb-3">Revenue by Well</MudText>
-        <MudDataGrid T="WellRevenueDto" Items="@_wellRevenues" Filterable="true" Sortable="true"
-                     Hover="true" Dense="true">
-            <Columns>
-                <PropertyColumn Property="x => x.WellName" Title="Well" />
-                <PropertyColumn Property="x => x.OilVolume" Title="Oil (bbl)" Format="N0" />
-                <PropertyColumn Property="x => x.GasVolume" Title="Gas (Mcf)" Format="N0" />
-                <PropertyColumn Property="x => x.OilPrice" Title="Oil Price" Format="C2" />
-                <PropertyColumn Property="x => x.GasPrice" Title="Gas Price" Format="C2" />
-                <PropertyColumn Property="x => x.TotalRevenue" Title="Total Revenue" Format="C2" />
-                <PropertyColumn Property="x => x.RecognizedPct" Title="Recognized %" Format="P1" />
-            </Columns>
-        </MudDataGrid>
-    </MudPaper>
-
-    @* ─── Revenue by Month *@
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudText Typo="Typo.h6" Class="mb-3">Monthly Revenue Trend</MudText>
-        <MudChart T="double" ChartType="ChartType.Line"
-                  @* TODO: Wire to actual chart data when MudBlazor chart data binding is available *@
-                  InputData="@_monthlyRevenueData"
-                  XAxisLabels="@_monthLabels"
-                  Width="100%" Height="300px" />
-    </MudPaper>
-</MudContainer>
-
-@code {
-    private bool _isLoading = true;
-    private decimal _totalRevenue;
-    private decimal _oilRevenue;
-    private decimal _gasRevenue;
-    private decimal _unrecognizedRevenue;
-    private List<WellRevenueDto> _wellRevenues = new();
-    private List<decimal> _monthlyRevenueData = new();
-    private string[] _monthLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-
-    protected override async Task OnInitializedAsync()
+    @if(_busy){<MudProgressLinear Indeterminate="true" aria-label="Loading recorded revenue source" />}
+    else if(Company.Selection is null){<MudAlert Severity="Severity.Info">Select a company before reading revenue records.</MudAlert>}
+    else if(_error is not null){<MudAlert Severity="Severity.Error" role="alert">@_error</MudAlert>}
+    else if(_needsField){<MudAlert Severity="Severity.Info">Choose an available FIELD using the existing field selector.</MudAlert>}
+    else if(_source is {} source)
     {
-        await LoadRevenueDataAsync();
-    }
-
-    private async Task LoadRevenueDataAsync()
-    {
-        _isLoading = true;
-        try
+        <MudText Typo="Typo.caption">Source: recorded FIELD revenue transactions · Window: @source.From.ToString("yyyy-MM-dd") through @source.Through.ToString("yyyy-MM-dd") · Retrieved UTC: @_retrieved?.ToString("O") · Revision: @source.Revision</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Class="my-3">
+            <MudButton OnClick='@(()=>SelectCurrency(null,false))' Variant="Variant.Outlined">All recorded transactions (@source.Rows.Count)</MudButton>
+            @foreach(var currency in source.Rows.Select(Currency).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
+            {<MudButton OnClick='@(()=>SelectCurrency(currency,true))' Variant="Variant.Outlined">@(currency ?? "Currency unavailable") (@source.Rows.Count(row=>Currency(row)==currency))</MudButton>}
+        </MudStack>
+        @if(source.Rows.Count==0){<MudAlert Severity="Severity.Info">No recorded revenue transactions were returned for this FIELD and date window.</MudAlert>}
+        else
         {
-            var summary = await Http.GetFromJsonAsync<RevenueSummaryDto>("/api/accounting/revenue/summary");
-            if (summary is not null)
+            <MudText>Showing @VisibleRows.Count records · Currency: @(!_currencySelected?"All recorded currencies":_currency ?? "Unavailable")</MudText>
+            <MudTable T="REVENUE_TRANSACTION" Items="VisibleRows" Hover="true" Dense="true">
+                <HeaderContent><MudTh>Transaction / stored date</MudTh><MudTh>Recorded source</MudTh><MudTh>Currency</MudTh><MudTh>Gross / net</MudTh><MudTh>Recorded volumes</MudTh><MudTh>Recorded prices</MudTh></HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Transaction / stored date">@context.REVENUE_TRANSACTION_ID · @context.TRANSACTION_DATE?.ToString("O")</MudTd>
+                    <MudTd DataLabel="Recorded source">@Text(context.REVENUE_TYPE) · @Text(context.DESCRIPTION)<br />Contract: @Text(context.CONTRACT_ID) · Allocation: @Text(context.ALLOCATION_RESULT_ID) · Well: @Text(context.WELL_ID)
+                        <MudButton Disabled="@(_contractBusy || string.IsNullOrWhiteSpace(context.CONTRACT_ID))" OnClick="@(()=>ReviewContract(context.REVENUE_TRANSACTION_ID))">Review recorded sales contract</MudButton>
+                        <MudButton Disabled="@(string.IsNullOrWhiteSpace(context.CONTRACT_ID))" OnClick="@(()=>SelectTerms(context.REVENUE_TRANSACTION_ID))">Prepare or review commercial terms</MudButton>
+                        <MudButton Disabled="@(_deliveryBusy || string.IsNullOrWhiteSpace(context.CONTRACT_ID) || string.IsNullOrWhiteSpace(context.ALLOCATION_RESULT_ID))" OnClick="@(()=>ReviewDelivery(context.REVENUE_TRANSACTION_ID))">Review allocation and measured ticket</MudButton>
+                        <MudButton Disabled="@(string.IsNullOrWhiteSpace(context.CONTRACT_ID) || string.IsNullOrWhiteSpace(context.ALLOCATION_RESULT_ID))" OnClick="@(()=>SelectAcceptance(context.REVENUE_TRANSACTION_ID))">Prepare or review delivery acceptance</MudButton>
+                    </MudTd>
+                    <MudTd DataLabel="Currency">@(Currency(context) ?? "Unavailable")</MudTd>
+                    <MudTd DataLabel="Gross / net">@Number(context.GROSS_REVENUE) / @Number(context.NET_REVENUE)</MudTd>
+                    <MudTd DataLabel="Recorded volumes">Oil: @Number(context.OIL_VOLUME) · Gas: @Number(context.GAS_VOLUME) · Units not recorded in this source</MudTd>
+                    <MudTd DataLabel="Recorded prices">Oil: @Number(context.OIL_PRICE) · Gas: @Number(context.GAS_PRICE) · Pricing unit/basis unavailable</MudTd>
+                </RowTemplate>
+            </MudTable>
+            @if(_termsTransaction is {} transaction){<CommercialTermsWorkbench FieldId="@source.FieldId" From="@source.From" Through="@source.Through" TransactionId="@transaction" />}
+            @if(_acceptanceTransaction is {} acceptanceTransaction){<DeliveryAcceptanceWorkbench FieldId="@source.FieldId" From="@source.From" Through="@source.Through" TransactionId="@acceptanceTransaction" />}
+            @if(_deliveryBusy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing allocation and measured ticket" />}
+            @if(_deliveryError is not null){<MudAlert Severity="Severity.Error" role="alert">@_deliveryError</MudAlert>}
+            @if(_delivery is {} delivery)
             {
-                _totalRevenue = summary.TotalRevenue;
-                _oilRevenue = summary.OilRevenue;
-                _gasRevenue = summary.GasRevenue;
-                _unrecognizedRevenue = summary.DeferredRevenue;
-                _wellRevenues = summary.WellDetails ?? new();
-                _monthlyRevenueData = summary.MonthlyData ?? new();
+                <MudPaper Class="pa-3 mt-3" Outlined="true">
+                    <MudText Typo="Typo.h6">Recorded allocation and measured ticket</MudText>
+                    <MudText>Transaction: @delivery.Source.TransactionId · Ticket: @delivery.TicketId · FIELD: @delivery.Source.Source.FieldId</MudText>
+                    <MudText>Recorded ticket date: @(delivery.TicketDate?.ToString("O") ?? "Unavailable") · Status: @Text(delivery.TicketStatus)</MudText>
+                    <MudText>Net measured quantity: @Number(delivery.NetVolume) · Recorded unit: @Text(delivery.VolumeUnit)</MudText>
+                    <MudAlert Severity="Severity.Info">@(delivery.HasCertifiedMeasuredQuantity?"The recorded ticket is certified and supplies a positive net quantity and explicit unit.":"Certified positive net quantity and an explicit unit are not all available. Review the measurement record before billing.")</MudAlert>
+                    <MudText>Delivery acceptance, independent approval, term price/unit compatibility, invoicing and recognition remain separate reviews.</MudText>
+                    <MudText Typo="Typo.caption">Source revision: @delivery.Source.Revision · Delivery revision: @delivery.Revision</MudText>
+                </MudPaper>
+            }
+            @if(_contractBusy){<MudProgressLinear Indeterminate="true" aria-label="Reviewing recorded sales contract" />}
+            @if(_contractError is not null){<MudAlert Severity="Severity.Error" role="alert">@_contractError</MudAlert>}
+            @if(_contract is {} review)
+            {
+                <MudPaper Class="pa-3 mt-3">
+                    <MudText Typo="Typo.h6">Recorded sales contract @review.Contract.SALES_CONTRACT_ID</MudText>
+                    <MudText>Revenue transaction: @review.TransactionId · Contract number: @Text(review.Contract.CONTRACT_NUMBER) · Revision: @review.Revision</MudText>
+                    <MudText>Seller: @Text(review.Contract.SELLER_BA_ID) · Buyer: @Text(review.Contract.BUYER_BA_ID)</MudText>
+                    <MudText>Recorded effective date: @(review.Contract.EFFECTIVE_DATE?.ToString("O") ?? "Unavailable") · Recorded expiry date: @(review.Contract.EXPIRY_DATE?.ToString("O") ?? "Unavailable")</MudText>
+                    <MudText>Commodity: @Text(review.Contract.COMMODITY_TYPE) · Currency: @Text(review.Contract.CURRENCY_CODE) · Base price: @Number(review.Contract.BASE_PRICE) · Pricing method: @Text(review.Contract.PRICING_METHOD)</MudText>
+                    <MudText>@Text(review.Contract.DESCRIPTION)</MudText>
+                    <MudAlert Severity="Severity.Info">This is an exact recorded sales-contract match for the selected seller company. Approval, price units, effective-term authorization and recognition are not established by this record.</MudAlert>
+                </MudPaper>
             }
         }
-        catch
+    }
+</MudContainer>
+@code {
+    private string? _acceptanceTransaction;
+    private void SelectAcceptance(string transaction){if(_source?.Rows.Any(row=>row.REVENUE_TRANSACTION_ID==transaction && !string.IsNullOrWhiteSpace(row.CONTRACT_ID) && !string.IsNullOrWhiteSpace(row.ALLOCATION_RESULT_ID))==true)_acceptanceTransaction=transaction;}
+    private RevenueDeliverySourceReview? _delivery;
+    private bool _deliveryBusy;
+    private string? _deliveryError;
+    private async Task ReviewDelivery(string transaction)
+    {
+        if(_deliveryBusy || _source is not {} source || _disposed)return;
+        var scope=Company.Snapshot;var version=_contextVersion;_deliveryBusy=true;_delivery=null;_deliveryError=null;
+        try
         {
-            Snackbar.Add("Could not load revenue data. Using defaults.", Severity.Warning);
+            var result=await Accounting.GetRevenueDeliveryAsync(source,transaction);
+            if(_disposed || version!=_contextVersion || scope!=Company.Snapshot || !ReferenceEquals(source,_source))return;
+            result.Source.Require(source.Company,source.ActorUserId,source.FieldId,source.From,source.Through,transaction,source.Revision);result.Require(result.Source);_delivery=CompanyInventorySourceReview.Copy(result);
         }
-        finally { _isLoading = false; }
+        catch{if(!_disposed && version==_contextVersion && scope==Company.Snapshot)_deliveryError="Recorded allocation and measured ticket could not be confirmed. Check original company, FIELD, source and provisioning, then reload.";}
+        finally{_deliveryBusy=false;}
     }
-
-    private async Task RecalculateRevenue()
+    private FieldRevenueSourceReview? _source;
+    private RevenueSalesContractReview? _contract;
+    private bool _contractBusy;
+    private string? _contractError;
+    private string? _termsTransaction;
+    private void SelectTerms(string transaction){if(_source?.Rows.Any(row=>row.REVENUE_TRANSACTION_ID==transaction && !string.IsNullOrWhiteSpace(row.CONTRACT_ID))==true)_termsTransaction=transaction;}
+    private DateTime? _from=DateTime.UtcNow.Date.AddMonths(-1),_through=DateTime.UtcNow.Date,_retrieved;
+    private bool _busy,_disposed,_reloadRequested,_needsField,_currencySelected;
+    private int _contextVersion;
+    private string? _error,_currency;
+    private static string? Currency(REVENUE_TRANSACTION row)=>string.IsNullOrWhiteSpace(row.CURRENCY_CODE)?null:row.CURRENCY_CODE;
+    private static string Text(string? value)=>string.IsNullOrWhiteSpace(value)?"Unavailable":value;
+    private static string Number(decimal? value)=>value?.ToString(CultureInfo.CurrentCulture) ?? "Unavailable";
+    private IReadOnlyList<REVENUE_TRANSACTION> VisibleRows=>_source?.Rows.Where(row=>!_currencySelected || Currency(row)==_currency).ToArray() ?? [];
+    private void SelectCurrency(string? value,bool selected){if(_source is null || selected && !_source.Rows.Any(row=>Currency(row)==value))return;_currency=value;_currencySelected=selected;}
+    private async Task ReviewContract(string transaction)
     {
-        Snackbar.Add("Revenue recalculation initiated...", Severity.Info);
-        await LoadRevenueDataAsync();
-        Snackbar.Add("Revenue data refreshed.", Severity.Success);
+        if(_contractBusy || _source is not {} source || _disposed)return;
+        var scope=Company.Snapshot;var version=_contextVersion;_contractBusy=true;_contract=null;_contractError=null;
+        try
+        {
+            var result=await Accounting.GetRevenueSalesContractAsync(source,transaction);
+            if(_disposed || version!=_contextVersion || scope!=Company.Snapshot || !ReferenceEquals(source,_source))return;
+            result.Require(source.Company,source.ActorUserId,source.FieldId,source.From,source.Through,transaction,source.Revision);_contract=CompanyInventorySourceReview.Copy(result);
+        }
+        catch{if(!_disposed && version==_contextVersion && scope==Company.Snapshot && ReferenceEquals(source,_source))_contractError="The original revenue transaction and company-owned sales contract could not be confirmed. Reload source evidence and check current access.";}
+        finally{_contractBusy=false;}
     }
-
-    public class RevenueSummaryDto
+    protected override async Task OnInitializedAsync(){Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;await Reload();}
+    private async Task Reload()
     {
-        public decimal TotalRevenue { get; set; }
-        public decimal OilRevenue { get; set; }
-        public decimal GasRevenue { get; set; }
-        public decimal DeferredRevenue { get; set; }
-        public List<WellRevenueDto>? WellDetails { get; set; }
-        public List<decimal>? MonthlyData { get; set; }
+        if(_disposed)return;if(_busy){_reloadRequested=true;return;}_busy=true;
+        try
+        {
+            do
+            {
+                _reloadRequested=false;_source=null;_retrieved=null;_error=null;_needsField=false;_currencySelected=false;_currency=null;_contract=null;_contractError=null;_delivery=null;_deliveryError=null;_termsTransaction=null;_acceptanceTransaction=null;
+                var scope=Company.Snapshot;var version=_contextVersion;var from=_from;var through=_through;
+                if(scope.Selection is null)continue;
+                try
+                {
+                    var user=(await Authentication.GetAuthenticationStateAsync()).User;var subject=user.FindFirstValue("sub");var actor=user.FindFirstValue(ClaimTypes.NameIdentifier) ?? subject;
+                    if(user.Identity?.IsAuthenticated!=true || actor!=scope.Selection.UserId || subject is not null && subject!=actor || !scope.Selection.Roles.Any(user.IsInRole) || !scope.Selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal))throw new UnauthorizedAccessException();
+                    if(_disposed || scope!=Company.Snapshot || version!=_contextVersion)continue;
+                    var field=await Fields.GetCurrentFieldIdAsync();if(_disposed || scope!=Company.Snapshot || version!=_contextVersion)continue;
+                    if(string.IsNullOrWhiteSpace(field)){_needsField=true;continue;}
+                    if(from is null || through is null)throw new ArgumentException();FieldRevenueSourceReview.RequireWindow(field,from.Value,through.Value);
+                    var source=await Accounting.GetFieldRevenueSourceAsync(field,from.Value,through.Value);
+                    if(_disposed || scope!=Company.Snapshot || version!=_contextVersion || from!=_from || through!=_through)continue;
+                    source.Require(scope.Selection.Scope,scope.Selection.UserId,field,from.Value,through.Value);_source=CompanyInventorySourceReview.Copy(source);_retrieved=DateTime.UtcNow;
+                }
+                catch{if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Recorded revenue could not be confirmed for this company, account, FIELD and date window. Check current access and reload.";}
+            }while(_reloadRequested && !_disposed);
+        }
+        finally{_busy=false;}
     }
-
-    public class WellRevenueDto
-    {
-        public string WellName { get; set; } = string.Empty;
-        public decimal OilVolume { get; set; }
-        public decimal GasVolume { get; set; }
-        public decimal OilPrice { get; set; }
-        public decimal GasPrice { get; set; }
-        public decimal TotalRevenue { get; set; }
-        public decimal RecognizedPct { get; set; }
-    }
+    private void ContextChanged(){++_contextVersion;_source=null;_retrieved=null;_error=null;_contract=null;_contractError=null;_delivery=null;_deliveryError=null;_termsTransaction=null;_acceptanceTransaction=null;if(!_disposed)_=InvokeAsync(async()=>{await Reload();if(!_disposed)StateHasChanged();});}
+    private void FieldChanged(string field)=>ContextChanged();
+    private void AuthenticationChanged(Task<AuthenticationState> state)=>ContextChanged();
+    public void Dispose(){_disposed=true;Company.Changed-=ContextChanged;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
 }

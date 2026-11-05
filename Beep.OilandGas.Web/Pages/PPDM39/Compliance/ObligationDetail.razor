@@ -1,198 +1,80 @@
-﻿@page "/ppdm39/compliance/obligation/{ObligationId}"
+@page "/ppdm39/compliance/obligation/{ObligationId}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Models.Data.Compliance
-@inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
-@inject NavigationManager NavigationManager
-@inject IDialogService DialogService
-@inject ISnackbar Snackbar
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@implements IDisposable
+@inject CompanyClientContext Company
+@inject IFieldSelectionContext Fields
+@inject IComplianceServiceClient ComplianceClient
+@inject ILogger<ObligationDetail> Logger
 
-<PageTitle>Obligation Detail</PageTitle>
-
-@if (_loading)
-{
-    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
-}
-else if (_detail is null)
-{
-    <MudAlert Severity="Severity.Warning">Obligation not found.</MudAlert>
-}
-else
-{
-    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       Href="@GetBackHref()" />
-        <MudText Typo="Typo.h5">Obligation: @_detail.ObligationId</MudText>
-        <MudSpacer />
-        <MudChip T="string" Color="@StatusColor(_detail.ObligStatus)" Size="Size.Medium">
-            @_detail.ObligStatus
-        </MudChip>
-    </MudStack>
-
-    <MudGrid Class="mb-4">
-        <MudItem xs="12" md="6">
-            <MudPaper Elevation="2" Class="pa-4">
-                <MudText Typo="Typo.subtitle1" Class="mb-2"><b>Details</b></MudText>
-                <MudSimpleTable Dense="true" Hover="true">
-                    <tbody>
-                        <tr><td><b>Type</b></td><td>@_detail.ObligType</td></tr>
-                        <tr><td><b>Jurisdiction</b></td><td>@_detail.JurisdictionCode</td></tr>
-                        <tr><td><b>Due Date</b></td><td>@_detail.DueDate.ToString("yyyy-MM-dd")</td></tr>
-                        <tr><td><b>Fulfilled</b></td><td>@(_detail.FulfillDate?.ToString("yyyy-MM-dd") ?? "—")</td></tr>
-                        <tr><td><b>Reporting Period</b></td>
-                            <td>@(_detail.ReportingPeriodStart?.ToString("yyyy-MM-dd") ?? "—") → @(_detail.ReportingPeriodEnd?.ToString("yyyy-MM-dd") ?? "—")</td></tr>
-                        <tr><td><b>Created By</b></td><td>@(_detail.CreatedByProcess ?? "manual")</td></tr>
-                        <tr><td><b>Description</b></td><td>@_detail.Description</td></tr>
-                    </tbody>
-                </MudSimpleTable>
-            </MudPaper>
-        </MudItem>
-
-        <MudItem xs="12" md="6">
-            <MudPaper Elevation="2" Class="pa-4">
-                <MudText Typo="Typo.subtitle1" Class="mb-3"><b>Actions</b></MudText>
-                <MudStack Spacing="2">
-                    @if (!string.IsNullOrWhiteSpace(ContinueTo))
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.ArrowForward"
-                                   Href="@ContinueTo">
-                            Continue to Development Plan
-                        </MudButton>
-                    }
-                    @if (_detail.ObligStatus == ObligationStatus.Pending)
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Success"
-                                   StartIcon="@Icons.Material.Filled.CheckCircle"
-                                   OnClick="@OnSubmit">Mark Submitted</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
-                                   StartIcon="@Icons.Material.Filled.RemoveCircle"
-                                   OnClick="@OnWaive">Waive Obligation</MudButton>
-                    }
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Payment"
-                               OnClick="@OnRecordPayment">Record Payment</MudButton>
-                </MudStack>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudText Typo="Typo.subtitle1" Class="mb-2"><b>Payment History</b></MudText>
-        @if (!_detail.Payments.Any())
-        {
-            <MudText Color="Color.Default">No payments recorded.</MudText>
-        }
-        else
-        {
-            <MudDataGrid T="ObligationPayment" Items="@_detail.Payments" Dense="true">
-                <Columns>
-                    <PropertyColumn Property="x => x.PaymentDate"    Title="Date" Format="yyyy-MM-dd" />
-                    <PropertyColumn Property="x => x.PaymentType"    Title="Type" />
-                    <PropertyColumn Property="x => x.PaymentCurrency" Title="Currency" />
-                    <PropertyColumn Property="x => x.GrossAmt"       Title="Gross" />
-                    <PropertyColumn Property="x => x.ActualAmt"      Title="Actual" />
-                    <PropertyColumn Property="x => x.VarianceAmt"    Title="Variance" />
-                    <PropertyColumn Property="x => x.PaymentNotes"   Title="Notes" />
-                </Columns>
-            </MudDataGrid>
-        }
-    </MudPaper>
-}
-
-@if (!string.IsNullOrEmpty(_error))
-{
-    <MudAlert Severity="Severity.Error" Class="mt-2">@_error</MudAlert>
-}
-
+<PageTitle>Compliance obligation</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudButton Href="/ppdm39/compliance/obligations" Variant="Variant.Text">Back to obligations</MudButton>
+    <MudText Typo="Typo.h5" HtmlTag="h1">Obligation detail</MudText>
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else if (_detail is null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">@_message</MudAlert>
+        <MudButton OnClick="LoadAsync" Variant="Variant.Outlined">Reload obligation</MudButton>
+    }
+    else
+    {
+        <MudText Class="my-3">@_fieldName · @_detail.ObligationId</MudText>
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="6"><MudCard Outlined="true"><MudCardContent>
+                <MudText Typo="Typo.h6" HtmlTag="h2">Recorded details</MudText>
+                <MudSimpleTable Dense="true"><tbody>
+                    <tr><td>Type</td><td>@_detail.ObligType</td></tr>
+                    <tr><td>Jurisdiction</td><td>@_detail.JurisdictionCode</td></tr>
+                    <tr><td>Status</td><td>@_detail.ObligStatus</td></tr>
+                    <tr><td>Due date</td><td>@_detail.DueDate.ToString("yyyy-MM-dd")</td></tr>
+                    <tr><td>Fulfilled</td><td>@(_detail.FulfillDate?.ToString("yyyy-MM-dd") ?? "Not recorded")</td></tr>
+                    <tr><td>Period</td><td>@(_detail.ReportingPeriodStart?.ToString("yyyy-MM-dd") ?? "Not recorded") – @(_detail.ReportingPeriodEnd?.ToString("yyyy-MM-dd") ?? "Not recorded")</td></tr>
+                    <tr><td>Description</td><td>@_detail.Description</td></tr>
+                </tbody></MudSimpleTable>
+            </MudCardContent></MudCard></MudItem>
+            <MudItem xs="12" md="6"><MudCard Outlined="true"><MudCardContent>
+                <MudText Typo="Typo.h6" HtmlTag="h2">Recorded payments</MudText>
+                @if (_detail.Payments.Count == 0) { <MudText>No payments returned for this obligation.</MudText> }
+                else { <MudTable T="ObligationPayment" Items="@_detail.Payments" Dense="true"><HeaderContent><MudTh>Date</MudTh><MudTh>Type</MudTh><MudTh>Currency</MudTh><MudTh>Amount</MudTh></HeaderContent><RowTemplate><MudTd>@context.PaymentDate.ToString("yyyy-MM-dd")</MudTd><MudTd>@context.PaymentType</MudTd><MudTd>@context.PaymentCurrency</MudTd><MudTd>@context.ActualAmt</MudTd></RowTemplate></MudTable> }
+            </MudCardContent></MudCard></MudItem>
+        </MudGrid>
+        <MudAlert Severity="Severity.Info" Class="mt-3">Submission, waiver and payment changes require a reviewed obligation workflow.</MudAlert>
+    }
+</MudContainer>
 @code {
     [Parameter] public string ObligationId { get; set; } = string.Empty;
-
-    [SupplyParameterFromQuery(Name = "returnTo")]
-    public string? ReturnTo { get; set; }
-
-    [SupplyParameterFromQuery(Name = "continueTo")]
-    public string? ContinueTo { get; set; }
-
-    private string           _loadedId = string.Empty;
-    private bool             _loading = true;
-    private string?          _error;
+    private string _loadedId = "", _fieldName = "", _message = "Select an obligation.";
     private ObligationDetailModel? _detail;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _loadedId = ObligationId;
-        await LoadAsync();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (ObligationId == _loadedId) return;
-        _loadedId = ObligationId;
-        await LoadAsync();
-    }
-
+    private bool _loading, _disposed;
+    private long _generation;
+    protected override void OnInitialized() { Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; }
+    protected override async Task OnParametersSetAsync() { if (ObligationId != _loadedId) { _loadedId = ObligationId; await LoadAsync(); } }
     private async Task LoadAsync()
     {
-        _loading = true;
-        _error   = null;
+        _detail = null; _fieldName = ""; _loading = true; var generation = ++_generation; var selected = Company.Snapshot; var id = ObligationId;
+        bool Current() => !_disposed && generation == _generation && selected == Company.Snapshot && ObligationId == id;
         try
         {
-            _detail = await ComplianceClient.GetObligationAsync(ObligationId);
+            if (selected.Selection is null || !LeaseSummaryValidator.Identifier(id)) { _message = "Choose a company, FIELD and exact obligation."; return; }
+            var before = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(before, selected.Selection.Scope, selected.Selection.UserId);
+            if (!before.SelectionAvailable) { _message = "Choose an available FIELD."; return; }
+            var detail = await ComplianceClient.GetObligationAsync(id); if (!Current()) return;
+            var after = await Fields.GetCurrentFieldSelectionAsync(); if (!Current()) return;
+            FieldSelectionReviewValidator.RequireCurrent(after, selected.Selection.Scope, selected.Selection.UserId);
+            if (!after.SelectionAvailable || after.SelectionContext != before.SelectionContext || detail is not null && (detail.ObligationId != id || detail.FieldId != before.FieldId || detail.Payments is null || detail.Payments.Any(payment => payment.ObligationId != id)))
+                throw new InvalidOperationException("The obligation, payment or selected FIELD could not be confirmed.");
+            if (detail is null) { _message = "The obligation is unavailable in the current FIELD."; return; }
+            _detail = detail; _fieldName = string.IsNullOrWhiteSpace(before.FieldName) ? before.FieldId : before.FieldName;
         }
-        catch (Exception)
-        {
-            _error = "Failed to load obligation.";
-        }
-        finally { _loading = false; }
+        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Could not confirm obligation detail"); _message = "The obligation detail could not be confirmed for the current company and FIELD."; } }
+        finally { if (Current()) _loading = false; }
     }
-
-    private async Task OnSubmit()
-    {
-        try
-        {
-            await ComplianceClient.SubmitObligationAsync(ObligationId, DateTime.UtcNow);
-            Snackbar.Add("Obligation marked as submitted.", Severity.Success);
-            await LoadAsync();
-        }
-        catch (Exception) { _error = "Submit failed."; Snackbar.Add(_error, Severity.Error); }
-    }
-
-    private async Task OnWaive()
-    {
-        var result = await DialogService.ShowMessageBoxAsync(
-            "Waive Obligation",
-            "Enter reason (this cannot be undone).",
-            "Waive", cancelText: "Cancel");
-        if (result != true) return;
-
-        try
-        {
-            await ComplianceClient.WaiveObligationAsync(ObligationId, "User waived");
-            Snackbar.Add("Obligation waived.", Severity.Info);
-            await LoadAsync();
-        }
-        catch (Exception) { _error = "Waive failed."; Snackbar.Add(_error, Severity.Error); }
-    }
-
-    private async Task OnRecordPayment()
-    {
-        var parameters = new DialogParameters<PaymentDialog>
-        {
-            { x => x.ObligationId, ObligationId }
-        };
-        var dialog = await DialogService.ShowAsync<PaymentDialog>("Record Payment", parameters);
-        var dr     = await dialog.Result;
-        if (!dr!.Canceled) await LoadAsync();
-    }
-
-    private static Color StatusColor(string status) => status switch
-    {
-        ObligationStatus.Submitted       => Color.Success,
-        ObligationStatus.Overdue         => Color.Error,
-        ObligationStatus.VarianceFlagged => Color.Warning,
-        ObligationStatus.Waived          => Color.Default,
-        _                                => Color.Info,
-    };
-
-    private string GetBackHref()
-        => string.IsNullOrWhiteSpace(ReturnTo) ? "/ppdm39/compliance" : ReturnTo;
+    private void FieldChanged(string _) => ContextChanged();
+    private void ContextChanged() { ++_generation; _detail = null; _fieldName = ""; _loading = false; _message = "Company or FIELD changed. Reload the obligation for the current selection."; if (!_disposed) _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }
 }

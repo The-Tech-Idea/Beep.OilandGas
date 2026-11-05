@@ -1,0 +1,10 @@
+{
+  "attempts": 1,
+  "effects": 1,
+  "role": "readonly",
+  "field": "A",
+  "rows": 5,
+  "intents": [
+    "08d6e6b2-acc0-43f9-8705-ff9df2028556"
+  ]
+}

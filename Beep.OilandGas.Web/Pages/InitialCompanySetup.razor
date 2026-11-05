@@ -1,0 +1,181 @@
+@page "/setup/initial-company"
+@using TheTechIdea.Data.OilGas
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject ApiClient Api
+@inject IInitialCompanyIntentStore Intents
+@inject CompanySelectionService CompanySelection
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+@inject ILogger<InitialCompanySetup> Logger
+@implements IDisposable
+
+<PageTitle>Set up a company</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Set up a company</MudText>
+    <MudAlert Severity="Severity.Info" Class="my-3">Create company access under a new or existing tenant and your initial company administrator membership. For an existing tenant, enter its exact ID and name. Enter the intended PPDM business associate ID; this step does not create or verify the PPDM organization or its data connection.</MudAlert>
+    @if (_message is not null) { <MudAlert Severity="Severity.Warning" Class="my-3" role="status">@_message</MudAlert> }
+    @if (_created is not null)
+    {
+        <MudButton OnClick="ContinueToEnvironment" Disabled="@_busy" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">Select company and configure environment</MudButton>
+    }
+    @if (_pending is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-3">An earlier request awaits confirmation. Retry the same request. Reference: @_pending.IntentId</MudAlert>
+        <MudButton OnClick="Review" Disabled="@(_busy || !_ready)" Variant="Variant.Outlined">Check original request</MudButton>
+        <MudText Typo="Typo.body2">If the request cannot be resolved, review the tenant and company first. Clearing this browser's retained request does not undo a server-side change; a previous request may still complete.</MudText>
+        <MudCheckBox T="bool" @bind-Value="_clearAcknowledged" Disabled="@_busy" Label="I reviewed the request and understand that clearing it does not undo changes" />
+        <MudButton OnClick="ClearRetained" Disabled="@(_busy || !_ready || !_clearAcknowledged)" Variant="Variant.Outlined">Clear retained request</MudButton>
+    }
+    <MudTextField T="string" @bind-Value="_tenantId" Label="Tenant ID" Disabled="@(_busy || !_ready || _pending is not null)" Required="true" />
+    <MudTextField T="string" @bind-Value="_tenantName" Label="Tenant name (exact existing name if applicable)" Disabled="@(_busy || !_ready || _pending is not null)" Required="true" />
+    <MudTextField T="string" @bind-Value="_companyId" Label="PPDM business associate ID" Disabled="@(_busy || !_ready || _pending is not null)" Required="true" />
+    <MudTextField T="string" @bind-Value="_reason" Label="Reason for setup" Disabled="@(_busy || !_ready || _pending is not null)" Required="true" Lines="2" />
+    <MudButton OnClick="Save" Disabled="@(_busy || !_ready)" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">@(_pending is null ? "Create company access" : "Retry the same request")</MudButton>
+    <MudButton Href="/setup/repository" Variant="Variant.Text" Class="mt-4">Back to setup</MudButton>
+</MudContainer>
+
+@code {
+    private string _tenantId = "", _tenantName = "", _companyId = "", _reason = "";
+    private string? _actor, _message;
+    private InitialCompanyProvisionRequest? _pending;
+    private CompanyScope? _created;
+    private bool _ready, _busy, _disposed, _interactive, _clearAcknowledged;
+    private long _generation;
+    protected override void OnInitialized() => Authentication.AuthenticationStateChanged += AuthenticationChanged;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    { if (firstRender) { _interactive = true; await Restore(Interlocked.Read(ref _generation)); } }
+    private void AuthenticationChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> state)
+    {
+        var generation = Interlocked.Increment(ref _generation);
+        _ = InvokeAsync(async () =>
+        {
+            _actor = null; _ready = false; _busy = false; _pending = null; _created = null; _message = null; _clearAcknowledged = false;
+            _tenantId = _tenantName = _companyId = _reason = ""; StateHasChanged();
+            if (_interactive) await Restore(generation);
+        });
+    }
+    private bool Current(long generation, string? actor) => !_disposed && generation == Interlocked.Read(ref _generation) && actor is not null && actor == _actor;
+    private async Task Restore(long generation)
+    {
+        try
+        {
+            var user = (await Authentication.GetAuthenticationStateAsync()).User;
+            var actor = user.Identity?.IsAuthenticated == true && user.IsInRole("Administrator") ? Beep.Foundation.IdentityServer.Shared.Identity.PartyIdClaims.Find(user) : null;
+            if (_disposed || generation != Interlocked.Read(ref _generation)) return;
+            if (string.IsNullOrWhiteSpace(actor)) throw new InvalidOperationException("Administrator identity is unavailable.");
+            _actor = actor; var original = await Intents.ReadInitialCompanyAsync(actor);
+            if (!Current(generation, actor)) return;
+            if (original is not null)
+            {
+                _pending = original.Request; _tenantId = _pending.TenantId; _tenantName = _pending.TenantName;
+                _companyId = _pending.BusinessAssociateId; _reason = _pending.Reason;
+            }
+            _ready = true;
+        }
+        catch (Exception error)
+        {
+            if (_disposed || generation != Interlocked.Read(ref _generation)) return;
+            Logger.LogWarning(error, "Initial company recovery is unavailable");
+            _message = "Company setup recovery is unavailable. Reload this page before creating a company.";
+        }
+        if (!_disposed) await InvokeAsync(StateHasChanged);
+    }
+    private async Task Save()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor;
+        if (_busy || !_ready || !Current(generation, actor)) return;
+        var request = _pending ?? new InitialCompanyProvisionRequest(_tenantId, _tenantName, _companyId, _reason, Guid.NewGuid().ToString("N"));
+        try { request.Require(); }
+        catch (ArgumentException) { _message = "Enter valid tenant, company and reason details before continuing."; return; }
+        var original = new InitialCompanyIntent(actor!, request); _busy = true; _message = null; _created = null;
+        try
+        {
+            await Intents.RetainInitialCompanyAsync(original);
+            if (!Current(generation, actor)) return;
+            _pending = request;
+        }
+        catch (Exception error)
+        {
+            if (Current(generation, actor)) { Logger.LogWarning(error, "Initial company request could not be retained"); _message = "The request could not be retained; no request was sent. Reload to recover it."; _ready = false; _busy = false; }
+            return;
+        }
+        try
+        {
+            var result = await Api.PostAsync<InitialCompanyProvisionRequest, CompanyScope>("/api/setup/companies/initial", request);
+            if (!Current(generation, actor)) return;
+            if (result != new CompanyScope(request.TenantId, request.BusinessAssociateId)) throw new InvalidOperationException("The company response is unconfirmed.");
+            await Intents.ClearInitialCompanyAsync(original);
+            if (!Current(generation, actor)) return;
+            _pending = null; _created = result; _clearAcknowledged = false; _tenantId = _tenantName = _companyId = _reason = "";
+            _message = "Company access was created. Select the company to configure its environment, then verify its PPDM organization and connection.";
+        }
+        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Initial company setup is unconfirmed"); _message = "Company setup is unconfirmed. Retry the same request or review the existing tenant before proceeding."; } }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    private async Task Review()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var request = _pending;
+        if (_busy || !_ready || request is null || !Current(generation, actor)) return;
+        _busy = true; _message = null;
+        try
+        {
+            var review = await Api.PostAsync<InitialCompanyProvisionRequest, InitialCompanyProvisionReview>("/api/setup/companies/initial/review", request);
+            if (!Current(generation, actor)) return;
+            if (review is null || review.IntentId != request.IntentId || review.Status is not ("Recorded" or "NotRecorded") ||
+                (review.Status == "Recorded" ? review.Company != new CompanyScope(request.TenantId, request.BusinessAssociateId) : review.Company is not null))
+                throw new InvalidOperationException("The original request review is unconfirmed.");
+            if (review.Status == "Recorded")
+            {
+                await Intents.ClearInitialCompanyAsync(new(actor!, request));
+                if (!Current(generation, actor)) return;
+                _pending = null; _created = review.Company; _clearAcknowledged = false;
+                _message = "The original company access creation was recorded. Select the company to verify current access and configure its environment.";
+            }
+            else _message = "The request was not found at the time of this check. An earlier request may still finish; retry the original request or review the tenant before clearing it.";
+        }
+        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Original company request could not be reviewed"); _message = "The original request could not be confirmed. Retry or review the tenant before clearing it."; } }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    private async Task ContinueToEnvironment()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var scope = _created;
+        if (_busy || !_ready || !Current(generation, actor) || scope is null) return;
+        _busy = true; _message = null;
+        try
+        {
+            await CompanySelection.SelectAsync(scope);
+            if (!Current(generation, actor) || Company.Selection is not { } selection || selection.UserId != actor || selection.Scope != scope) return;
+            if (!selection.Roles.Contains("Administrator", StringComparer.Ordinal))
+            {
+                _message = "The company is selected, but its current membership does not include the administrator role required for environment setup.";
+                return;
+            }
+            Navigation.NavigateTo("/setup/company-environment");
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        { if (Current(generation, actor)) { Logger.LogWarning(error, "Created company access could not be selected"); _message = "Company access was recorded, but current access could not be confirmed. Refresh the company selector and try again."; } }
+        catch (OperationCanceledException)
+        { if (Current(generation, actor)) _message = "The account or company selection changed. Select the company again before continuing."; }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    private async Task ClearRetained()
+    {
+        var generation = Interlocked.Read(ref _generation); var actor = _actor; var request = _pending;
+        if (_busy || !_ready || !_clearAcknowledged || request is null || !Current(generation, actor)) return;
+        _busy = true;
+        try
+        {
+            await Intents.ClearInitialCompanyAsync(new(actor!, request));
+            if (!Current(generation, actor)) return;
+            _pending = null; _clearAcknowledged = false;
+            _message = "The retained request was cleared. Any server-side changes remain; review the tenant and company before submitting another request.";
+        }
+        catch (Exception error)
+        {
+            if (Current(generation, actor)) { Logger.LogWarning(error, "Retained company setup request could not be cleared"); _message = "The retained request could not be cleared. Reload this page to recover it."; }
+        }
+        finally { if (Current(generation, actor)) _busy = false; }
+    }
+    public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); Authentication.AuthenticationStateChanged -= AuthenticationChanged; }
+}

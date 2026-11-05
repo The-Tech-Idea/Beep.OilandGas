@@ -1,0 +1,159 @@
+{
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md",
+  "status": "selected real-provider protected HTTP acknowledgement-loss/retry plus fresh-owner reopen verified",
+  "test": {
+    "method": "CurrentFieldLifecycleGateTests.InstalledSqliteClosureRecoversLostHttpAcknowledgementAndReopens",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "minutes": 12.6355,
+    "terminal_exit": 0
+  },
+  "build": {
+    "seconds": 21.1,
+    "errors": 0,
+    "warnings": 649,
+    "scope": "Focused company/obligation source-linked target; no project-reference builds"
+  },
+  "changes": [
+    "Extended the same provider journey in the existing CurrentFieldLifecycleGateTests shared HTTP fixture owner.",
+    "Existing HttpHost accepts an optional test-only pipeline hook; no production fault endpoint/hook or parallel host owner added.",
+    "Actual scoped app HSEOfficer role/Workflow.Approve permission and registry-derived LIFECYCLE binding replace controlled role/binding placeholders for HTTP composition.",
+    "First native CLOSED write runs through actual IncidentWorkflowController, current FIELD filter, app role bridge, company coordinator and purpose-bound native/lifecycle owners.",
+    "Middleware holds a validated successful closure response in memory, then aborts the connection. The first client attempt receives no confirmed outcome.",
+    "The same original is retried through the same protected endpoint; success is no-store and both physical database hashes remain unchanged.",
+    "Fresh editor/datasources/command owners subsequently recover original from stored lifecycle proof; original/native receipt and database hashes remain exact.",
+    "Explicit caller-side authenticated fixture context is restored after hosted AsyncLocal request cleanup. Removed redundant direct-backend retry already covered more strongly by HTTP retry and file hashes."
+  ],
+  "http": {
+    "Dropped": 1,
+    "BufferedAcknowledgementBytes": 8012,
+    "Failure": "HttpRequestException",
+    "calls": [
+      {
+        "stage": "acknowledgement-dropped",
+        "status": 200,
+        "milliseconds": 246514.6489,
+        "bufferedBytes": 8012
+      },
+      {
+        "stage": "retry",
+        "status": 200,
+        "milliseconds": 229048.0779
+      }
+    ],
+    "NativeHashBeforeRetry": "638801C25EDB2C180ED6801CE7F504962BD107ECCA59200F6EC417F4BDB4AB88",
+    "NativeHashAfterRetry": "638801C25EDB2C180ED6801CE7F504962BD107ECCA59200F6EC417F4BDB4AB88",
+    "LifecycleHashBeforeRetry": "2DB5A1B830947A2621BAD5343729E27399A737E6EB02B715338130115B71FB38",
+    "LifecycleHashAfterRetry": "2DB5A1B830947A2621BAD5343729E27399A737E6EB02B715338130115B71FB38"
+  },
+  "reopen": {
+    "FreshEditor": true,
+    "FreshNativeSource": true,
+    "FreshLifecycleSource": true,
+    "OriginalRecoveredFromDatabase": true,
+    "NativeHashBefore": "638801C25EDB2C180ED6801CE7F504962BD107ECCA59200F6EC417F4BDB4AB88",
+    "NativeHashAfter": "638801C25EDB2C180ED6801CE7F504962BD107ECCA59200F6EC417F4BDB4AB88",
+    "LifecycleHashBefore": "2DB5A1B830947A2621BAD5343729E27399A737E6EB02B715338130115B71FB38",
+    "LifecycleHashAfter": "2DB5A1B830947A2621BAD5343729E27399A737E6EB02B715338130115B71FB38",
+    "FoundationRegistry": "Retained controlled fixture; not a whole application process restart"
+  },
+  "observed_invariants": [
+    "One acknowledgement drop with nonempty validated payload and HttpRequestException uncertainty.",
+    "One native closure receipt and CLOSED status, two approvals, one RCA cause/intent and one verification row; all persona tasks complete.",
+    "Byte-identical native and lifecycle files across HTTP retry and across fresh-owner reopen.",
+    "Fresh HSE permission revocation/refusal before native write remains in the selected journey."
+  ],
+  "construction": [
+    "Run01 reached confirmed native closure and dropped acknowledgement; failed because ReadAllBytes sharing conflicted with open SQLite file. Hash reader now requires both sources idle and uses shared-read-compatible FileStream.",
+    "Run02 passed both HTTP acknowledgement-loss/retry/hash checks but failed a later direct fixture assertion because the hosted AsyncLocal context had been cleared. Added explicit caller context restoration and removed redundant backend retry.",
+    "Run03 passes fully under unchanged five-minute per-request HSE fixture limit. Earlier failed runs are not promoted as passing."
+  ],
+  "performance_gate": {
+    "qualified": false,
+    "request_limit_seconds": 300,
+    "observed_request_milliseconds": [
+      246514.6489,
+      229048.0779
+    ],
+    "normal_client_acceptance": "Web AddHttpClient<ApiClient> does not set a timeout override and closure transport uses that client; SDK AppOptions default is30 seconds. Global/deployment overrides remain unverified. The300s fixture gate is not normal-client acceptance.",
+    "profiles": "Three managed stack samples captured repeated ModuleConnectionResolver/CompanyModuleConnection resolution; one sampled FileSystemInfo.LinkTarget under ModuleDatabaseTarget.Sqlite, two EF query evaluation/compilation. Samples guide investigation, not a causal cost or speedup proof. Sampling can add diagnostic overhead.",
+    "next": "Repair and measure repeated binding/evidence evaluation under normal client deadlines, preserving fresh authority, link/target identity and transaction/source checks. No timeout increase or skipped invariants."
+  },
+  "limits": [
+    "Authentication is a fixture scheme; app roles/permissions/memberships are real current repository rows. Company selection is an explicit retained fixture; production OIDC/company-header startup is not qualified.",
+    "Earlier reporting/investigation/task progression and completion/operator/reference inputs remain fixture-composed.",
+    "Connection/editor/service reopen occurs in one process with retained company registry/identity/metadata context; full application restart/durable production registry reload remains open.",
+    "Manual HTTP retains original in this test; earlier browser protected-session recovery evidence retains its separate controlled-source scope.",
+    "Fault is loss of transport acknowledgement after a confirmed native commit, not a driver commit-acknowledgement exception. Concurrent writers, other providers/public feed and regional/legal acceptance remain open.",
+    "No application source/schema change, handwritten SQL, EF migration, compatibility owner, unrelated HTTP/class/full/permit tests, commit or push. Overall goal remains active."
+  ],
+  "logs": [
+    {
+      "file": "oilgas-353-http-loss-build.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-build.log",
+      "sha256": "214c6aac7074585d96028117dc7e7554b6703bb6ae82929de65bb69a1b091da5"
+    },
+    {
+      "file": "oilgas-353-http-loss-build-04.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-build-04.log",
+      "sha256": "79090055d52cdf5f9f201934724ba0f47c1de3fe11f6391213a3e5c9f130ba68"
+    },
+    {
+      "file": "oilgas-353-http-loss-01.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-01.log",
+      "sha256": "310fe2b79862eef3f562c938282c555bdc7462893aadff865c9391a8ed2e16b7"
+    },
+    {
+      "file": "oilgas-353-http-loss-02.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-02.log",
+      "sha256": "35380634775b42d32cb2e2d5d43b74667be9ee86827d50c0b6be3140ed6ec097"
+    },
+    {
+      "file": "oilgas-353-http-loss-03.log",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-03.log",
+      "sha256": "0cc2539fc21b9385d1fc1867152c2008d431072cc3f662d165f80e24fa1af304"
+    },
+    {
+      "file": "oilgas-353-http-loss-stack-01.txt",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-stack-01.txt",
+      "sha256": "9ec284a9c23c551dce85e526e285cc6490a01215b7e978db8db391b18909ee03"
+    },
+    {
+      "file": "oilgas-353-http-loss-stack-02.txt",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-stack-02.txt",
+      "sha256": "ef8c1562499daeefd3fc8a1601f92b202194d9f11c116096351d1fa918ad841d"
+    },
+    {
+      "file": "oilgas-353-http-loss-stack-03.txt",
+      "original": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-http-loss-stack-03.txt",
+      "sha256": "d962d69d982c3a8f820ea83dcac0919cb7e6b482b1e6f803c8933f14de46aaae"
+    }
+  ],
+  "sha256": {
+    "Beep.OilandGas.Repository.Tests/HseClosureProviderQualificationTests.cs": "4874388d623b1938457295ade4dcff2c3d74a75c410d249a0a347867393ad5f2",
+    "Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.cs": "6829c3242a19a56c6a3c4fec49a3327357b39c65860954dc302a84aaac2e983d",
+    "Beep.OilandGas.Repository.Tests/PermitProviderQualificationTests.cs": "d107d79418f01ee7845861b5c4424a3e9f5a06f04a5e6884b07461b6af633746",
+    "Beep.OilandGas.ApiService/Controllers/HSE/IncidentWorkflowController.cs": "184beab7d4d162c04f8158daee0e5ebe835f936a383b2a2438f7703aa85d4a28",
+    "Beep.OilandGas.ApiService/Services/CompanyHseWorkflowService.Closure.cs": "b9fddac35ccfc42d9b5cef3816714608ef409075826b009ea68b0e89df240717",
+    "Beep.OilandGas.ApiService/Services/PPDMCompanyCorrectiveActionCommands.Closure.cs": "504ae5e673c3ef4b96c25c82f43f25c165d193e6368ae03f5e491acff884473a",
+    "Beep.OilandGas.ApiService/Services/ModuleDatabaseTarget.cs": "ad1869ee0a75ead90a01b360764ab61a24b1081c8d516888715faeeedfe93aa7",
+    "Beep.OilandGas.ApiService/Services/ModuleConnectionResolver.cs": "08626cd25080df40745064b9634b1fbb9d65dff36302b8e0272c5d168dedbb18",
+    "Beep.OilandGas.Web/Program.cs": "3c0e27c4aa988ad53abe78e205a83e5b1097e78614dcce83f1fb2e532075a866",
+    "Beep.OilandGas.Web/Services/HSEServiceClient.Closure.cs": "d38b4491738872f290931540368521973016e8c54daea67b715396b37d59075e",
+    "Beep.OilandGas.Client/App/AppOptions.cs": "d97e402c466d12d4634a04871037819028f9d8ecb28297dad0a5e601663b266e",
+    "Beep.OilandGas.Repository.Tests/bin/company-focused/Debug/net10.0/Beep.OilandGas.Repository.Tests.dll": "716d9bf1c7452f71fc0442d3545d8e76c1d8f586ef8271855977360b315e8c80"
+  },
+  "physical_files": [
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-26eda025b8254d388fe88ba9bd11c8b3\\permits.db",
+      "bytes": 348160,
+      "sha256": "638801c25edb2c180ed6801ce7f504962bd107ecca59200f6ec417f4bdb4ab88"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-permit-provider-26eda025b8254d388fe88ba9bd11c8b3\\lifecycle.db",
+      "bytes": 258048,
+      "sha256": "2db5a1b830947a2621bad5343729e27399a737e6eb02b715338130115b71fb38"
+    }
+  ]
+}

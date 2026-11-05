@@ -1,3 +1,4 @@
+using TheTechIdea.Data.OilGas;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -136,13 +137,18 @@ public sealed class ProductionServiceClient : IProductionServiceClient
 
     public async Task<List<ProductionInterventionCandidateDto>> GetInterventionCandidatesAsync(CancellationToken cancellationToken = default)
     {
+        var snapshot=_apiClient.CompanySnapshot;
+        if(snapshot.Selection is null)throw new InvalidOperationException("Select the original company before reading recorded interventions.");
         try
         {
             var result = await _apiClient.GetAsync<List<ProductionInterventionCandidateDto>>(
                 "/api/field/current/production/intervention-candidates",
                 cancellationToken);
 
-            return result ?? new List<ProductionInterventionCandidateDto>();
+            if(snapshot!=_apiClient.CompanySnapshot)throw new OperationCanceledException("The intervention company context changed.");
+            if(result is null)throw new InvalidOperationException("Recorded intervention candidates were not returned.");
+            if(result.Count>0){var field=result[0]?.FieldId;if(string.IsNullOrWhiteSpace(field))throw new InvalidOperationException("The recorded intervention FIELD is unavailable.");ProductionInterventionCandidateChecks.Require(result,snapshot.Selection.Scope,snapshot.Selection.UserId,field);}
+            return result;
         }
         catch (Exception ex)
         {
@@ -157,19 +163,58 @@ public sealed class ProductionServiceClient : IProductionServiceClient
             throw new ArgumentException("Well ID is required.", nameof(wellId));
 
         ArgumentNullException.ThrowIfNull(request);
+        var snapshot = _apiClient.CompanySnapshot;
+        if (request.IntentId != Guid.Empty && (snapshot.Selection is null || request.Context is null ||
+            request.Context.Company != snapshot.Selection.Scope || request.Context.ActorUserId != snapshot.Selection.UserId || request.Context.FieldId != request.FieldId))
+            throw new InvalidOperationException("The original native decision must match the selected company/account/FIELD review.");
 
         try
         {
-            return await _apiClient.PostAsync<ProductionInterventionDecisionRequest, ProductionInterventionDecisionResult>(
-                $"/api/field/current/production/intervention-candidates/{Uri.EscapeDataString(wellId)}/decision",
+            var result = await _apiClient.PostAsync<ProductionInterventionDecisionRequest, ProductionInterventionDecisionResult>(
+                request.IntentId == Guid.Empty
+                    ? $"/api/field/current/production/intervention-candidates/{Uri.EscapeDataString(wellId)}/decision"
+                    : $"/api/field/current/production/intervention-decisions?wellId={Uri.EscapeDataString(wellId)}",
                 request,
-                cancellationToken) ?? new ProductionInterventionDecisionResult();
+                cancellationToken) ?? throw new InvalidOperationException("The recorded intervention decision was not returned.");
+            if (request.IntentId != Guid.Empty)
+            {
+                if (snapshot != _apiClient.CompanySnapshot) throw new OperationCanceledException("The original native decision company context changed.");
+                ProductionInterventionDecisionChecks.RequireAcknowledgement(request, result, wellId);
+            }
+            return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error recording intervention decision for well {WellId}.", wellId);
             throw;
         }
+    }
+
+    public async Task<ProductionInterventionNativeRecovery> RecoverInterventionDecisionAsync(string wellId, Guid intentId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(wellId);
+        if (intentId == Guid.Empty) throw new ArgumentException("The original decision identity is required.", nameof(intentId));
+        var snapshot = _apiClient.CompanySnapshot;
+        if (snapshot.Selection is null) throw new InvalidOperationException("Select the original company before recovering a private decision.");
+        var value = await _apiClient.GetAsync<ProductionInterventionNativeRecovery>($"/api/field/current/production/intervention-decisions/{intentId:D}?wellId={Uri.EscapeDataString(wellId)}", cancellationToken)
+            ?? throw new InvalidOperationException("The original native recovery was not returned.");
+        if (snapshot != _apiClient.CompanySnapshot) throw new OperationCanceledException("The original decision recovery company context changed.");
+        value.Require();
+        if (value.Company != snapshot.Selection.Scope || value.Actor != snapshot.Selection.UserId || value.IntentId != intentId || value.Intent?.Restore().Review.Well.UWI is { } originalWell && originalWell != wellId)
+            throw new InvalidOperationException("The private native recovery belongs to another company/account/WELL/identity.");
+        return value;
+    }
+    public async Task<ProductionInterventionMaintenanceLink> GetInterventionMaintenanceLinkAsync(string wellId,Guid decisionId,string workOrderId,CancellationToken cancellationToken=default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(wellId);ArgumentException.ThrowIfNullOrWhiteSpace(workOrderId);
+        if(decisionId==Guid.Empty)throw new ArgumentException("The original decision reference is required.",nameof(decisionId));
+        var snapshot=_apiClient.CompanySnapshot;
+        if(snapshot.Selection is null)throw new InvalidOperationException("Select the receiving company before reading recorded intervention source.");
+        var value=await _apiClient.GetAsync<ProductionInterventionMaintenanceLink>($"/api/field/current/production/intervention-decisions/{decisionId:D}/maintenance-link?wellId={Uri.EscapeDataString(wellId)}&workOrderId={Uri.EscapeDataString(workOrderId)}",cancellationToken)
+            ??throw new InvalidOperationException("The original receiving source was not returned.");
+        if(snapshot!=_apiClient.CompanySnapshot)throw new OperationCanceledException("The receiving source company changed.");
+        value.Require(snapshot.Selection.Scope,snapshot.Selection.UserId,value.FieldId,workOrderId,wellId,decisionId);
+        return value;
     }
 
     public async Task<ProductionDecommissioningTriggerResult> TransitionToDecommissioningAsync(string wellId, ProductionDecommissioningTriggerRequest request, CancellationToken cancellationToken = default)
@@ -193,25 +238,14 @@ public sealed class ProductionServiceClient : IProductionServiceClient
         }
     }
 
-    public async Task<List<WellTestResponse>> GetWellTestsAsync(string wellId, CancellationToken cancellationToken = default)
+    public async Task<WellTestReview> GetWellTestReviewAsync(string wellId,CancellationToken cancellationToken=default)
     {
-        if (string.IsNullOrWhiteSpace(wellId))
-            throw new ArgumentException("Well ID is required.", nameof(wellId));
-
-        try
-        {
-            var result = await _apiClient.GetAsync<List<WellTestResponse>>(
-                $"/api/field/current/production/wells/{Uri.EscapeDataString(wellId)}/tests",
-                cancellationToken);
-
-            return result ?? new List<WellTestResponse>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting well tests for well {WellId}.", wellId);
-            throw;
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(wellId);
+        return await _apiClient.GetAsync<WellTestReview>($"/api/field/current/production/wells/{Uri.EscapeDataString(wellId)}/tests/review",cancellationToken)
+            ?? throw new InvalidOperationException("Recorded well-test review was not returned.");
     }
+    public async Task<List<WellTestResponse>> GetWellTestsAsync(string wellId,CancellationToken cancellationToken=default)
+        => (await GetWellTestReviewAsync(wellId,cancellationToken)).Rows.ToList();
 
     public async Task PatchAllocationAsync(string period, string wellId, ProductionAllocationPatchRequest request, CancellationToken cancellationToken = default)
     {

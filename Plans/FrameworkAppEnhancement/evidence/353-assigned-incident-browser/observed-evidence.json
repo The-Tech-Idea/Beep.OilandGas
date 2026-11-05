@@ -1,0 +1,211 @@
+{
+  "status": "verified-selected-browser",
+  "recorded_at": "2026-10-29T13:11:13.436883+03:00",
+  "revision": "6e32d2665f5f2d330b0bb19539f2bebf3c2be6b7",
+  "worktree": "dirty; source unchanged during browser qualification",
+  "plan": "Implementation-353-HSE-Verification-and-Closure.md - Assigned HSE route Chromium qualification; persona next-role task to exact source/detail",
+  "observations": [
+    {
+      "name": "real-field-selector",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\source-snapshot.txt",
+      "observation": "Actual FIELD selector loads North FIELD through the controlled IFieldSelectionContext; no selector stub."
+    },
+    {
+      "name": "reviewed-source-destination",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\incident-snapshot.txt",
+      "observation": "Browser follows actual source-panel link with encoded incident identity and expected workflow instance to actual incident detail."
+    },
+    {
+      "name": "generic-action-refusal",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\metadata-source.json",
+      "observation": "Generic HSE action controls absent and generic action transport count stays zero."
+    },
+    {
+      "name": "wrong-workflow",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\wrong-workflow-snapshot.txt",
+      "observation": "Full browser navigation with a mismatched expected workflow withholds incident content."
+    },
+    {
+      "name": "company-clearing",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\company-switch-snapshot.txt",
+      "observation": "Current company switch removes previous incident details and approval controls."
+    },
+    {
+      "name": "foreign-reload",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\metadata-after-other-company-reload.json",
+      "observation": "Reload in other company fails current FIELD/context validation before another incident read."
+    },
+    {
+      "name": "explicit-return-reload",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\valid-reload-snapshot.txt",
+      "observation": "Restore original company and explicitly reload the recorded incident."
+    },
+    {
+      "name": "lost-ack-original",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\lost-ack-snapshot.txt",
+      "observation": "One controlled effect followed by lost acknowledgement remains unconfirmed and retains the exact protected original."
+    },
+    {
+      "name": "protected-full-reload",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\reload-snapshot.txt",
+      "observation": "Exact URL and original survive full reload under native CLOSED state; new operational controls withheld."
+    },
+    {
+      "name": "confirmed-reconciliation",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\metadata-final.json",
+      "observation": "Second exact submission confirms the same one controlled effect, with zero generic action lookups and cleared session original."
+    },
+    {
+      "name": "terminal-controls",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\reconciled-snapshot.txt",
+      "observation": "Confirmed closure message, recorded recovery and terminal-state notice remain; new stage review is absent."
+    },
+    {
+      "name": "narrow-real-css",
+      "status": "observed-pass",
+      "artifact": "output\\playwright\\353-assigned-incident-browser\\narrow-dimensions.txt",
+      "observation": "390px viewport equals document width and real app CSS loaded; screenshots visually inspected."
+    }
+  ],
+  "controlled_backend": {
+    "state": "CLOSED",
+    "attempts": 2,
+    "writes": 1,
+    "sourceReads": 2,
+    "incidentReads": 4,
+    "genericActionReads": 0,
+    "recorded": true
+  },
+  "source_sha256": {
+    "Beep.OilandGas.Web/Services/ProcessInstanceDetailState.cs": "fd22f18679cc487bff4b7d299bea40b2d917ea2d488dc12e38a3eb3ca86e4198",
+    "Beep.OilandGas.Web/Components/BusinessProcess/RecordedProcessSourcePanel.razor": "3e1a4085972f7cb9c650967617903ec0df73bdc39d9bfcbdd7b9989d007748ed",
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/ProcessInstanceDetail.razor": "1a10f830d1836aba2dc68ee6eb2a8e0952cfb01afabd1fdee7d337045f1513d4",
+    "Beep.OilandGas.Web/Pages/PPDM39/BusinessProcess/HSEIncidentDetail.razor": "7c0fd6d7eeb2af68ef7ab671dbc72a37b70a2a72ec90f8dc4bd995337f62087c",
+    "Beep.OilandGas.Web/Services/FieldSelectionState.cs": "90846f1f6a820de31fbb2b3e6ce0235e1394ff0cb019e892b4442ea97983680b",
+    "Beep.OilandGas.Web/Components/FieldSelector.razor": "ce56184e21b127daf8e70a9c1b5a46ff4a9856fe4ad1dde23fb639de082161dc",
+    "Beep.OilandGas.Web/wwwroot/css/app.css": "84947bb5ac366ef510127da6d541b74b0d78cb2a85017403c3eb07e87055719a"
+  },
+  "runtime_sha256": {
+    "component": "f0f6bdaefcaa1131d0799583b590fc6cef5c08418552090d29d1de3a11ec7344",
+    "host_final": "6f1b7374d8ff9cb820166af0254d4b354ddbb39601c4405f255613f89274cfc0"
+  },
+  "artifact_sha256": {
+    "output\\playwright\\353-assigned-incident-browser\\browser-close.txt": "12f01f62d41bafbd502b8b7f082b03c6313b2c7d45556ce940fd6cd115a9d49d",
+    "output\\playwright\\353-assigned-incident-browser\\cli.config.json": "78a8660bf65d4a6fe340f762bb22861712e55f117a2ca2caaa02312257ad0b5c",
+    "output\\playwright\\353-assigned-incident-browser\\company-restored-snapshot.txt": "270d9750862f5f597a88669b9f4a9276dbdc3350b317c9715990c022ed084baf",
+    "output\\playwright\\353-assigned-incident-browser\\company-restored.txt": "aef0aca3f86fd3c5c72ede005567ddaf7106c65e14227207980af782209ca5a6",
+    "output\\playwright\\353-assigned-incident-browser\\company-switch-snapshot.txt": "dd2bb36263b077a7585e4aa7092cad9fcc20d9d6e9d66dd6b6fb2d177b009102",
+    "output\\playwright\\353-assigned-incident-browser\\company-switch.txt": "5fee37a7f4356aaa9bba639685aabfdb6cc66bda8a3a50eade62c6b1c03fc7bc",
+    "output\\playwright\\353-assigned-incident-browser\\confirmation-screenshot.txt": "b109a236b5c6794c96d7944c290723774ea61f235d342af822443bcff525b0fa",
+    "output\\playwright\\353-assigned-incident-browser\\confirmation-scroll.txt": "115a4ce40fd367b32c9b4ea4aadc2d1bd73fec97aa7fa91d4ffc671e4a3fbf77",
+    "output\\playwright\\353-assigned-incident-browser\\console-errors.txt": "bd97be5c2ad83024485e38ed8161c8216137a54c905224bf656bc3cf2eaba3b4",
+    "output\\playwright\\353-assigned-incident-browser\\final-incident-open.txt": "b4496320e8915ac7b29f56e87ec04c086b43c30467d284c7e3609297b78292aa",
+    "output\\playwright\\353-assigned-incident-browser\\final-incident-snapshot.txt": "dbc0938f5e910a1fbf3281f0fc791d19ac7abf3d40f08816c53277108531fc08",
+    "output\\playwright\\353-assigned-incident-browser\\final-review-snapshot.txt": "2466e4441a2871ad9cb0c150c7592e61c39d43a2a342beebffffd6beea6d7596",
+    "output\\playwright\\353-assigned-incident-browser\\final-review.txt": "396988d62dd97c53998f656e3dba1be20c5fc1f07d9181d19e73204c3245a0e6",
+    "output\\playwright\\353-assigned-incident-browser\\final-source-open.txt": "ca962bc59c6ab80d4ab5f9be36d224629f4a4c099494337c59e2b9889d9bac64",
+    "output\\playwright\\353-assigned-incident-browser\\final-source-snapshot.txt": "8cf65557451e515d46f10110c9138f07abea4fb387f001cc44edd542051288cd",
+    "output\\playwright\\353-assigned-incident-browser\\home-snapshot.txt": "b396bb21ea45aecdccd524fbe3df01e165cec621287c17ad9eca675e283b96e2",
+    "output\\playwright\\353-assigned-incident-browser\\incident-back-snapshot.txt": "cd35adf44cac9817d14ba5c205a6f8291db286a311af13022c75cd25aaa70f15",
+    "output\\playwright\\353-assigned-incident-browser\\incident-back.txt": "c098d40088f05bb93174de5fa97d6e518fafaa09a0260c0573612c02597705e8",
+    "output\\playwright\\353-assigned-incident-browser\\incident-open.txt": "455cd7eb2123e87239d143d6ce3b6a615cb618f2b5e7f233ebe3742275c53bcb",
+    "output\\playwright\\353-assigned-incident-browser\\incident-snapshot.txt": "39297f440231dce9bcd6711211be36b50c0c3941f73611ad10c6e7c402469ec2",
+    "output\\playwright\\353-assigned-incident-browser\\keyboard-top.txt": "5ae6d8ab28691d9e30cc07b7c1e4021d05ba3a316312b936ef80c6d240e07477",
+    "output\\playwright\\353-assigned-incident-browser\\lost-ack-snapshot.txt": "8a352542556d35599e5fa4237010d02e3f3351efb2e6adbde511d538e507605f",
+    "output\\playwright\\353-assigned-incident-browser\\lost-ack.txt": "5cb0464aceca35aee513edb4b41a79e0a3b9418fa83c3f7c316363b3d778dbc9",
+    "output\\playwright\\353-assigned-incident-browser\\metadata-after-other-company-reload.json": "1601b7b129bb3930bb5f52b266174cae8f886bb8730cc64f89dd159ff84f582b",
+    "output\\playwright\\353-assigned-incident-browser\\metadata-before-other-company-reload.json": "1601b7b129bb3930bb5f52b266174cae8f886bb8730cc64f89dd159ff84f582b",
+    "output\\playwright\\353-assigned-incident-browser\\metadata-final.json": "f8e6c10e698d90f45c8b33833006b5b030bbade8862387b34696bfe9e219734f",
+    "output\\playwright\\353-assigned-incident-browser\\metadata-lost-ack.json": "29c9e23ebd3bae42a689c20a9cc76535273fa830fcc154184d5a4cabc1bbcbce",
+    "output\\playwright\\353-assigned-incident-browser\\metadata-reconciled.json": "f8e6c10e698d90f45c8b33833006b5b030bbade8862387b34696bfe9e219734f",
+    "output\\playwright\\353-assigned-incident-browser\\metadata-source.json": "f44f8df1c4374f35e38c969bbc91fd990408fd3a8ee77ac2df2367e4e2605313",
+    "output\\playwright\\353-assigned-incident-browser\\narrow-dimensions.txt": "d05076d047babc46bf7a255bc95361209ab920e89f47cd22befe68997116bfc9",
+    "output\\playwright\\353-assigned-incident-browser\\narrow-screenshot.txt": "8d8c693971829ec7f7246ab1b532688ab40aff819df13439cd6a39ae34532f27",
+    "output\\playwright\\353-assigned-incident-browser\\narrow-snapshot.txt": "3fffcf3a28fda9203a65849db67b50ac1a5f631f46175582dfececc877fc92c6",
+    "output\\playwright\\353-assigned-incident-browser\\open.txt": "c1fed7a0a973ce38384674864608b0dc9dc333dbf11b19fbb2cb80f0e5b2aba3",
+    "output\\playwright\\353-assigned-incident-browser\\other-company-reload-snapshot.txt": "7d574bdf938eb1e9d57e333713e12ff7a5787206d107d2486c39d0b75c57e7c3",
+    "output\\playwright\\353-assigned-incident-browser\\other-company-reload.txt": "5d5d17bf7a95a5922d8fc8270ec82e1120b508ab2baa329dde8ebbe836668f55",
+    "output\\playwright\\353-assigned-incident-browser\\owned-host-initial.json": "91900bb534899bdbd51b8c6d00791b8de018a99f976e21a4bbcb49d9aadf8763",
+    "output\\playwright\\353-assigned-incident-browser\\owned-host.json": "a4105acba8cde193fc8d79b9659ae73b1752d77ac1363767126e279c0a9d9953",
+    "output\\playwright\\353-assigned-incident-browser\\reason-filled-snapshot.txt": "a229f8d90891f2eda296b2225bacf8962c28252f217f3f029067547f31597494",
+    "output\\playwright\\353-assigned-incident-browser\\reason-filled.txt": "8a97a735f23cbf7597678b8b70a2985a60b78d2492e317e5f64f4e4ece0f4bb6",
+    "output\\playwright\\353-assigned-incident-browser\\reconciled-snapshot.txt": "ac25e027a06a78788ec16bcd1742362c8a9a4ffafb742bdcffd1e6ce0a648a6c",
+    "output\\playwright\\353-assigned-incident-browser\\reconciled.txt": "ea6831497b7483dc5b60a6dad845d813703376dc3c83b14fca6735d174638209",
+    "output\\playwright\\353-assigned-incident-browser\\reload-snapshot.txt": "9dec4195525c72d0aa1b98def55e1e93cf006ce44066fdcf0ab9654c7c2cf8d5",
+    "output\\playwright\\353-assigned-incident-browser\\reload.txt": "f06b71b1453bd1cac24e081bf8e54675cc11bc4bac9a24712de79abe00d7f028",
+    "output\\playwright\\353-assigned-incident-browser\\source-open.txt": "dde5a3c9b89d17cf10910769296b8d9f3829672c30a89872dbd691a8ea2d3166",
+    "output\\playwright\\353-assigned-incident-browser\\source-snapshot.txt": "a5b438e628664db67c6f0da4c93f1ea9cedfcbc21f859c34acb7542886b7bb93",
+    "output\\playwright\\353-assigned-incident-browser\\storage-lost-ack.txt": "29eac85e768a67c4dc3e23b9350094ed276d149721c096181141a677ad734a56",
+    "output\\playwright\\353-assigned-incident-browser\\storage-reconciled.txt": "e3243811b82ae82ba81bb228154f60a7482d2865f228dcde0d34d292467c66e8",
+    "output\\playwright\\353-assigned-incident-browser\\teardown.json": "c808575d9608bda1efba712d54e83a7026fdc58a75be1fba70fcac345c47e641",
+    "output\\playwright\\353-assigned-incident-browser\\valid-reload-snapshot.txt": "2d4d3217091edd27b7955518930a31971189bcb29742669ef097b0df85a75f31",
+    "output\\playwright\\353-assigned-incident-browser\\valid-reload.txt": "e11a68b4e81d21fb11cd10bcde8f49076b05d1a5a7bd3efe0c73ee0e66f85b26",
+    "output\\playwright\\353-assigned-incident-browser\\viewport.txt": "c61589d0b69462244c05c73f556597354af3f577dcf69215474f45c45bfd304b",
+    "output\\playwright\\353-assigned-incident-browser\\wrong-workflow-open.txt": "fded951c2efae3cfbeefb29f3ac612af94da8d968998ad950e05b6dd7f0c49fd",
+    "output\\playwright\\353-assigned-incident-browser\\wrong-workflow-snapshot.txt": "414420abe3f7ed9f150be901cfc599c287fb4eab8fa03da5b3cee73a5a3be6f3",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\console-2026-10-29T10-00-14-171Z.log": "02d4542269da9a30c6284f8da89f278b58132fcdf20371760fab7eda94a01acf",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\console-2026-10-29T10-01-26-951Z.log": "eced4260e3e2b479f628736fb090dafd4eec8402bc644d39d4bb1bfed9ea3ee4",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\console-2026-10-29T10-03-47-636Z.log": "b3196c068d181b23dc5e8664ffb06b796e676534df6b5d2df2202e13a780554b",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-00-14-669Z.yml": "1db64afbbabc8af6f334d558bd870ae107e05652cd6650951e6b6fdc9b6562f9",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-00-25-645Z.yml": "b51e02b62796b23de47df229b4ee91408198a71d0267bd470e3091a74350ca50",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-00-38-027Z.yml": "d58e2ee847e2942d90e668b560ffa8cd1a81b98b94bd3e55dd1bfd53b5541690",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-01-27-084Z.yml": "db73a3e9a44a230b4091e9eb18c467031f4c5ab738239b0b36fc2750aa75f037",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-01-39-181Z.yml": "b8ca64061a5acf750bf445131f0e4e2c50435ac1336c38f0b0295feeb60600a8",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-01-47-859Z.yml": "077da409d86a7fb0b9e4aa1389eddc9231503a25f76ac83fdca6b6e756811772",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-02-04-140Z.yml": "e050f213d2923fd5801e62f00b2bde3b0a2c9716535de8d99f8f2eccb72019f5",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-02-18-469Z.yml": "b31ea37aa58ed466ba806c46cf24d8296e87d52479657ca44d0533fb2e4087e2",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-02-27-958Z.yml": "304ed07baf9312c24e00755508672d19f71f08b200e2f24b5e6173fed4d09420",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-03-48-344Z.yml": "fe45c6f52afbf28ca765a3d500219b218e70d9c008cdb65d8bfd969809585985",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-04-00-206Z.yml": "1cab96c437a5ca0e982667ac4cf61e94e61b73f49262f8fe4bfd964f229f90ed",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-04-11-724Z.yml": "8b29ef38798e328cf78f2b81960cad9d314fb8175a70c69f92093211768a4742",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-04-36-031Z.yml": "5ddc03627e4a71ad65ef6c5dcc8565dbab4770c9c70f8cf2d8fc928ca0162a9d",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-04-58-286Z.yml": "6816fef853a69da87848b76917779d3053d4303b208f0f463320007e641364d8",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-06-47-931Z.yml": "80c10ec2cba88a65a6ef2bc06629314c4467d516aeca94a8028331b53c8511c7",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-08-00-983Z.png": "8e0441b502be68896cab314af43c318aca4f30045f66b5d4a72e2542903da96d",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-08-50-513Z.yml": "47e25d55631284e1c7a82bcc3c05545e6fc62a4e5971f05f9df9c191a739faaf",
+    "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-08-53-035Z.png": "26ae6654cfcbcde6241d955e3fab1a6f1aba854fc3fe757655f44e887a609485"
+  },
+  "screenshots": [
+    {
+      "path": "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-08-00-983Z.png",
+      "visually_inspected": true,
+      "scope": "narrow incident page header/details"
+    },
+    {
+      "path": "output\\playwright\\353-assigned-incident-browser\\artifacts\\page-2026-10-29T10-08-53-035Z.png",
+      "visually_inspected": true,
+      "scope": "narrow terminal confirmation and recovery"
+    }
+  ],
+  "construction": [
+    "Initial fixture-generation Python command had a string-literal syntax error and performed no writes; corrected before host build.",
+    "Initial route host qualified navigation/refusal with empty action rows; it was stopped while attempts/writes remained zero. The same owned fixture was updated with one completed action matching review inputs and rebuilt before testing closure recovery.",
+    "Both route-host builds passed with zero errors and two existing dependency-conflict warnings.",
+    "The actual app CSS is copied into the isolated host and loaded; initial host favicon 404 is not an app/circuit exception. Current final-circuit console reports zero errors/warnings."
+  ],
+  "limitations": [
+    "Host route wrappers embed actual process/incident components; a diagnostic Router/RouteView is used. Production RouteView/auth middleware/OIDC/startup are not qualified.",
+    "Authentication, FIELD service, typed recorded/incident clients, native source evidence and one-effect outcome persistence are controlled fixtures. No actual domain database write or provider/transaction qualification is inferred.",
+    "Shared StatusBadge and unrelated maintenance/journal/work-order/transition components are not source-linked in this component runtime. Their visuals and branches are not qualified; the terminal confirmation text and relevant HSE controls were observed.",
+    "The browser mismatch check uses full navigation. Same-page query-change handling remains covered by the recorded focused component gate, not a new browser observation.",
+    "Selected navigation/recovery/narrow viewport only; no full accessibility/screen-reader/keyboard/RTL/browser matrix or production branding acceptance.",
+    "No SQL, EF, schema, task persistence or application source change in this qualification turn. Overall plan/goal and commit/push remain pending."
+  ],
+  "teardown": {
+    "browser_closed": "Browser 'hse353route' closed\r\n\r\n",
+    "host_pid": 28892,
+    "browser": "hse353route",
+    "host_running": false
+  }
+}

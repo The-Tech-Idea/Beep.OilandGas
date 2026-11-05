@@ -1,0 +1,8 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Independent review (1)' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:51176/ppdm39/hse
+### Snapshot
+- [Snapshot](output\playwright\354-permit-browser\artifacts\page-2026-10-29T14-55-06-488Z.yml)

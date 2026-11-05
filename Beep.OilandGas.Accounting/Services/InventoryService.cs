@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.PPDM39.Core;
-using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -21,38 +20,8 @@ namespace Beep.OilandGas.Accounting.Services
     /// GL Posting: Debit Inventory (1300), Credit AP (2000) on receipt
     ///            Debit COGS (5000), Credit Inventory (1300) on sale/use
     /// </summary>
-    public class InventoryService
+    public partial class InventoryService
     {
-        private readonly IDMEEditor _editor;
-        private readonly ICommonColumnHandler _commonColumnHandler;
-        private readonly IPPDM39DefaultsRepository _defaults;
-        private readonly IPPDMMetadataRepository _metadata;
-        private readonly AccountingBasisPostingService _basisPosting;
-        private readonly IAccountMappingService? _accountMapping;
-        private readonly ILogger<InventoryService> _logger;
-        private readonly Func<Task<string>>? _resolveConnection;
-        private const string ConnectionName = "PPDM39";
-
-        public InventoryService(
-            IDMEEditor editor,
-            ICommonColumnHandler commonColumnHandler,
-            IPPDM39DefaultsRepository defaults,
-            IPPDMMetadataRepository metadata,
-            AccountingBasisPostingService basisPosting,
-            ILogger<InventoryService> logger,
-            IAccountMappingService? accountMapping = null,
-            Func<Task<string>>? resolveConnection = null)
-        {
-            _editor = editor ?? throw new ArgumentNullException(nameof(editor));
-            _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
-            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
-            _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _accountMapping = accountMapping;
-            _resolveConnection = resolveConnection;
-        }
-
         /// <summary>
         /// Create a new inventory item
         /// </summary>
@@ -400,17 +369,6 @@ namespace Beep.OilandGas.Accounting.Services
             // Default: Weighted Average Cost
             decimal avgCost = item.UNIT_COST ?? 0m;
             return quantityUsed * avgCost;
-        }
-
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
-        {
-            var connection = _resolveConnection == null ? ConnectionName : await _resolveConnection();
-            if (string.IsNullOrWhiteSpace(connection))
-                throw new InvalidOperationException("A PRODUCTION database binding is required.");
-            
-            return new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(T), connection, tableName);
         }
 
         private string GetAccountId(string key, string fallback)

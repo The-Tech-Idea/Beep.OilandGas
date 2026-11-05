@@ -1,0 +1,11 @@
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:52246/ppdm39/process/instances/hse-process-assigned-original');
+```
+### Page
+- Page URL: http://127.0.0.1:52246/ppdm39/process/instances/hse-process-assigned-original
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-assigned-incident-browser\artifacts\page-2026-10-29T10-03-48-344Z.yml)
+### Events
+- New console entries: output\playwright\353-assigned-incident-browser\artifacts\console-2026-10-29T10-03-47-636Z.log#L1-L8

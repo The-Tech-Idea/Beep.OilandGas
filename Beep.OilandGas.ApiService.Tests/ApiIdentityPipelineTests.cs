@@ -1,3 +1,4 @@
+using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -56,6 +57,8 @@ public sealed class ApiIdentityPipelineTests : IAsyncLifetime
         builder.Services.AddScoped<RepositoryDbContext>(sp => sp.GetRequiredService<SqliteRepository>());
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<RepositoryRoleAssignmentService>();
+        builder.Services.AddScoped<RepositoryRequestAccount>();
+        builder.Services.AddSingleton<Func<System.Security.Claims.ClaimsPrincipal, string?>>(_ => principal => principal.FindActingUserId());
         builder.Services.AddScoped<RepositoryUserService>();
         builder.AddApiIdentity();
         builder.Services.AddControllers().AddApplicationPart(typeof(RepositoryAccountController).Assembly)

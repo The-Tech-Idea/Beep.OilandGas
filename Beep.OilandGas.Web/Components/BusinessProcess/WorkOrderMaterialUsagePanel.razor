@@ -1,0 +1,87 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderMaterialUsageState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+
+<MudPaper Class="pa-4 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Record actual reserved material use</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        <MudButton OnClick="ReviewAsync" Disabled="@(!_authorized || !State.CanReview)">Review original reservation and remaining stock</MudButton>
+        @if(_authorized && State.Review is {} review)
+        {
+            <MudText>Item @review.Reservation.ItemId · warehouse @review.Reservation.Warehouse · location @review.Reservation.Location</MudText>
+            <MudText>Original reservation @review.Reservation.AllocationId · remaining @review.RemainingQuantity() @review.Reservation.Unit</MudText>
+            <MudText>Current on-hand @review.Material.Source.Inventory.Item.QUANTITY_ON_HAND · other available stock @review.Material.AvailableQuantity @review.Reservation.Unit</MudText>
+            <MudNumericField T="decimal?" @bind-Value="_quantity" Label="Actual quantity used" Required="true" Disabled="@State.Busy" />
+            <MudTextField Value="@review.Reservation.Unit" Label="Recorded quantity unit" ReadOnly="true" />
+            <MudTextField @bind-Value="_used" Label="Actual use UTC (ISO timestamp ending Z)" Required="true" Disabled="@State.Busy" />
+            <MudTextField @bind-Value="_reason" Label="Material use rationale" Required="true" Disabled="@State.Busy" />
+            <MudCheckBox @bind-Value="_confirm" Label="I confirm this quantity was physically used for the original work order" Disabled="@State.Busy" />
+            <MudButton OnClick="RecordAsync" Disabled="@(!State.CanRecord || !_confirm)" Color="Color.Primary">Retain original reference and record physical use</MudButton>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original material-use intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@(!_authorized || State.Busy)">Read original material issue without replay</MudButton>
+        @if(_authorized && State.VisibleReference is {} saved){<MudText>Retained original material-use reference @saved</MudText>}
+        @if(_authorized && State.Receipt is {} receipt)
+        {
+            <MudAlert Severity="Severity.Success">Recorded physical use @receipt.Recorded.USAGE_ID · quantity @receipt.Command.Quantity @receipt.Command.Unit · actual UTC @receipt.Recorded.USED_AT_UTC.ToString("O").</MudAlert>
+        }
+        <MudAlert Severity="Severity.Info">Physical use reduces on-hand stock and the remaining reservation together. Valuation, financial posting, independent verification and return acceptance require their own confirmed outcomes. An uncertain issue must use its retained original reference.</MudAlert>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public CompanyWorkOrderExecutionStartReference? Start{get;set;}
+    private CompanyWorkOrderExecutionStartReference? _attached;
+    private decimal? _quantity;
+    private string _used="",_reason="",_reference="";
+    private string? _error;
+    private bool _confirm,_authorized,_disposed;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=CompanyChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override async Task OnParametersSetAsync()
+    {
+        if(_attached!=Start){_attached=Start;CompanyChanged();_reference="";}
+        State.Attach(Start);var query=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
+        if(query.TryGetValue("materialUsage",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+    }
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        if(_disposed || Start is null || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true ||
+            user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) ||
+            !selected.Permissions.Contains("Maintenance.ExecuteWork",StringComparer.Ordinal) || !selected.Permissions.Contains("Inventory.View",StringComparer.Ordinal) ||
+            await Fields.GetCurrentFieldIdAsync()!=Start.Permit.Task.FieldId || snapshot!=Company.Snapshot)
+            throw new UnauthorizedAccessException("Current standard execution/inventory authority, company/account and original FIELD/start are required.");
+        if(State.Review is {} review && (!selected.Roles.Contains(review.Start.AssignedRole,StringComparer.Ordinal) || !user.IsInRole(review.Start.AssignedRole)))
+            throw new UnauthorizedAccessException("The original configured execution role is required.");
+    }
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    private void CompanyChanged(){_authorized=false;_quantity=null;_used="";_reason="";_reference="";_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _){State.Attach(null);CompanyChanged();}
+    private void AuthenticationChanged(Task<AuthenticationState> _){State.Attach(null);CompanyChanged();}
+    private Task Retain(Guid id){_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("materialUsage",_reference),replace:true);return Task.CompletedTask;}
+    private Task ReviewAsync()=>RunAsync(async()=>{await Authority();await State.ReviewAsync(Workflows);_quantity=null;_used="";_reason="";_confirm=false;},"reviewing original material-use capacity");
+    private Task RecordAsync()=>RunAsync(async()=>
+    {
+        await Authority();if(!_confirm || _quantity is not {} quantity || State.Review is not {} review)throw new ArgumentException("Confirm actual positive material quantity and the original reservation.");
+        if(!DateTime.TryParseExact(_used,new[]{"yyyy-MM-dd'T'HH:mm:ss'Z'","yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'"},System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal|System.Globalization.DateTimeStyles.AdjustToUniversal,out var utc))throw new ArgumentException("Enter an explicit ISO UTC use time ending in Z.");
+        await State.RecordAsync(Workflows,quantity,review.Reservation.Unit,utc,_reason,Retain);
+    },"recording original physical material use");
+    private Task RecoverAsync()=>RunAsync(async()=>{await Authority();if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Enter the original material-use intent reference.");await State.RecoverAsync(Workflows,id,Retain);},"reading original material-use history");
+    private async Task RunAsync(Func<Task> action,string operation)
+    {
+        if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;
+        try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original physical material use is unconfirmed");}
+        finally{if(!_disposed)await InvokeAsync(StateHasChanged);}
+    }
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=CompanyChanged;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

@@ -1,0 +1,57 @@
+@page "/hse/incidents/investigator"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Beep.OilandGas.Web.Services
+@using TheTechIdea.Data.OilGas
+@inject InvestigatorAssignmentState State
+@implements IDisposable
+
+<PageTitle>Incident investigator</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Incident investigator</MudText>
+    <MudText Class="my-3">Review the recorded participant roles for incident @IncidentId before selecting its investigator.</MudText>
+    <MudButton Href="/ppdm39/hse/incidents" Variant="Variant.Outlined">Incident records</MudButton>
+    <MudButton OnClick="Reload" Disabled="@(State.Loading || State.Saving)" Variant="Variant.Outlined">Review recorded investigator</MudButton>
+    @if(State.Loading || State.Saving){<MudProgressLinear Indeterminate="true" aria-label="Reviewing investigator records" />}
+    @if(State.Error is {} error){<MudAlert Severity="Severity.Error" role="alert">@error</MudAlert>}
+    @if(State.Message is {} message){<MudAlert Severity="Severity.Info" role="status">@message</MudAlert>}
+    @if(State.NeedsCompany){<MudAlert Severity="Severity.Info">Choose a company, then review this incident.</MudAlert>}
+    else if(State.NeedsField){<MudAlert Severity="Severity.Info">Choose an available FIELD, then review this incident.</MudAlert>}
+    else if(State.Loaded)
+    {
+        <MudPaper Outlined="true" Class="pa-4 my-4">
+            <MudText>FIELD @State.FieldId · Incident @State.IncidentId</MudText>
+            <MudText Class="my-2">Current investigator: @(State.CurrentInvestigator?.BusinessAssociateId ?? "Not recorded")</MudText>
+            <MudText>Choose an existing recorded participant role. This does not create a participant or establish investigation completion.</MudText>
+            @if(State.Participants.Count==0){<MudAlert Severity="Severity.Info">No eligible recorded participant roles were returned.</MudAlert>}
+            else
+            {
+                <MudTable Items="@State.Participants" Dense="true" aria-label="Recorded incident participant roles">
+                    <HeaderContent><MudTh>Business associate</MudTh><MudTh>Recorded role</MudTh><MudTh>Party observation</MudTh><MudTh>Role observation</MudTh><MudTh>Choose</MudTh></HeaderContent>
+                    <RowTemplate><MudTd DataLabel="Business associate">@context.BusinessAssociateId</MudTd><MudTd DataLabel="Recorded role">@context.Role</MudTd><MudTd DataLabel="Party observation">@context.PartyObservation</MudTd><MudTd DataLabel="Role observation">@context.RoleObservation</MudTd><MudTd DataLabel="Choose"><MudButton Variant="Variant.Outlined" Disabled="@(State.Saving || State.OutcomeReviewRequired)" OnClick="@(() => State.Select(context))" aria-pressed="@(ReferenceEquals(State.Selected,context) ? "true" : "false")">Select participant</MudButton></MudTd></RowTemplate>
+                </MudTable>
+            }
+            @if(State.Selected is {} selected){<MudText Class="my-2">Selected: @selected.BusinessAssociateId · @selected.Role · @selected.PartyObservation / @selected.RoleObservation</MudText>}
+            @if(State.OutcomeReviewRequired){<MudAlert Severity="Severity.Warning">The previous submission is not yet confirmed. Review the recorded outcome before another assignment.</MudAlert>}
+            else if(State.Selected is not null && !State.CanAssign && !State.Saving){<MudAlert Severity="Severity.Info">Your current company permissions do not permit this investigator assignment.</MudAlert>}
+            <MudButton OnClick="State.AssignAsync" Disabled="@(!State.CanAssign)" Color="Color.Primary" Variant="Variant.Filled">Assign selected investigator</MudButton>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name="incidentId")] public string IncidentId { get; set; } = string.Empty;
+    private string? loadedIncident;
+    private bool disposed, interactive;
+    protected override async Task OnParametersSetAsync()
+    {
+        State.Changed-=Changed;State.Changed+=Changed;
+        if(interactive && loadedIncident!=IncidentId){loadedIncident=IncidentId;await State.LoadAsync(IncidentId);}
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender){interactive=true;loadedIncident=IncidentId;await State.LoadAsync(IncidentId);}
+    }
+    private Task Reload()=>State.LoadAsync(IncidentId);
+    private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){disposed=true;State.Changed-=Changed;State.Dispose();}
+}

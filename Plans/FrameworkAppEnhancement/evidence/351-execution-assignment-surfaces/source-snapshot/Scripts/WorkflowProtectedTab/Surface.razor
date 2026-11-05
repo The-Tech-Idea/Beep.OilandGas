@@ -1,0 +1,34 @@
+@page "/"
+@inject Scope Scope
+@inject Backend Backend
+@inject IDevelopmentDraftIntentStore Journal
+<MudThemeProvider /><MudPopoverProvider /><MudDialogProvider /><MudSnackbarProvider />
+<MudPaper Class="pa-4 ma-4" Outlined="true">
+    <MudText Typo="Typo.h6" HtmlTag="h2">Isolated workflow browser controls</MudText>
+    <MudText>Controlled native-approved fixture and typed-client outcomes. Actual recorder components, state, protected tab storage and component connection. Full app authorization and provider qualification are separate.</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap">
+        <MudButton OnClick="Scope.ReadOnly">Use read-only unmapped profile</MudButton>
+        <MudButton OnClick="Scope.Editable">Use editable mapped profile</MudButton>
+        <MudButton OnClick="Scope.OtherCompany">Switch other company</MudButton>
+        <MudButton OnClick="Scope.OtherAccount">Switch other account</MudButton>
+        <MudButton OnClick="Scope.OriginalCompany">Restore original company/account</MudButton>
+        <MudButton OnClick="RetainStart">Retain original start alongside report</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("start"))'>Show actual start recovery</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("report"))'>Show actual report recorder</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("assignment"))'>Show actual reporting assignment</MudButton>
+        <MudButton OnClick='@(()=>Scope.Mode("assigned"))' Disabled="@(Backend.RecordedAssignment is null)">Show actual receiving responsibility</MudButton>
+    </MudStack>
+    @if(message is not null){<MudText role="status">@message</MudText>}
+</MudPaper>
+@if(Backend.Mode=="start"){<DrillingExecution ReviewId="@Backend.Original.Basis.Execution.Basis.ReviewInstanceId" />}
+else if(Backend.Mode=="assignment"){<DrillingExecutionAssignment ReviewId="@Backend.Assignment.Source.Basis.ReviewInstanceId" />}
+else if(Backend.Mode=="assigned" && Backend.RecordedAssignment is {} saved){<DrillingExecutionAssigned ProcessId="@saved.InstanceId()" />}
+else{<DrillingDailyReports ReviewId="@Backend.Original.Basis.Execution.Basis.ReviewInstanceId" />}
+@code {
+    private string? message;
+    private async Task RetainStart()
+    {
+        try { await Journal.RetainExecutionAsync(DrillingExecutionStart.FromRecord(Backend.Original.Basis.Execution.Recorded!)); message="Exact original start retained in its own protected tab key."; }
+        catch(Exception error){message="Retaining original start failed: "+error.GetType().Name;}
+    }
+}

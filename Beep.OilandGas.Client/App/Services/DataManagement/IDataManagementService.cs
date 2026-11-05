@@ -16,11 +16,11 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
     {
         #region CRUD Operations
 
-        Task<List<T>> GetEntitiesAsync<T>(string tableName, object request, CancellationToken cancellationToken = default);
-        Task<T> GetEntityAsync<T>(string tableName, string id, CancellationToken cancellationToken = default);
-        Task<T> InsertEntityAsync<T>(string tableName, T request, CancellationToken cancellationToken = default);
-        Task<T> UpdateEntityAsync<T>(string tableName, string id, T request, CancellationToken cancellationToken = default);
-        Task<bool> DeleteEntityAsync(string tableName, string id, CancellationToken cancellationToken = default);
+        Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, GetEntitiesRequest request, CancellationToken cancellationToken = default);
+        Task<GenericEntityResponse> GetEntityAsync(string tableName, string id, CancellationToken cancellationToken = default);
+        Task<GenericEntityResponse> InsertEntityAsync(string tableName, Dictionary<string, object> request, CancellationToken cancellationToken = default);
+        Task<GenericEntityResponse> UpdateEntityAsync(string tableName, string id, Dictionary<string, object> request, CancellationToken cancellationToken = default);
+        Task<GenericEntityResponse> DeleteEntityAsync(string tableName, string id, CancellationToken cancellationToken = default);
 
         #endregion
 
@@ -30,16 +30,6 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         Task<List<ValidationResult>> ValidateBatchAsync(string tableName, List<object> entities, CancellationToken cancellationToken = default);
         Task<List<ValidationRule>> GetValidationRulesAsync(string tableName, CancellationToken cancellationToken = default);
         Task<ValidationRule> SaveValidationRuleAsync(string tableName, ValidationRule rule, CancellationToken cancellationToken = default);
-
-        #endregion
-
-        #region Data Quality
-
-        Task<object> CalculateQualityScoreAsync(string tableName, object entity, CancellationToken cancellationToken = default);
-        Task<object> CalculateTableQualityMetricsAsync(string tableName, CancellationToken cancellationToken = default);
-        Task<List<object>> FindQualityIssuesAsync(string tableName, List<string>? fieldNames = null, CancellationToken cancellationToken = default);
-        Task<object> GetQualityDashboardAsync(string? tableName = null, CancellationToken cancellationToken = default);
-        Task<List<object>> GetQualityTrendsAsync(string tableName, int days = 30, CancellationToken cancellationToken = default);
 
         #endregion
 

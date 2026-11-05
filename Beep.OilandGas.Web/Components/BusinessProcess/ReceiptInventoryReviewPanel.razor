@@ -1,0 +1,24 @@
+@namespace Beep.OilandGas.Web.Components.BusinessProcess
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using TheTechIdea.Data.OilGas
+@if(Review is {} review)
+{
+    var item=review.Inventory.Item;
+    var receipt=review.Purchase.Receipts.Single(row=>row.PO_RECEIPT_ID==review.ReceiptId);
+    var decision=PurchaseReceiptDecisionProof.Require(review.Purchase.Company,receipt).Command;
+    <MudPaper Outlined="true" Class="pa-4 my-3">
+        <MudText Typo="Typo.h6">Verified receipt inventory source</MudText>
+        <MudText>Receipt: @review.ReceiptId · PO line: @receipt.PO_LINE_ITEM_ID</MudText>
+        <MudLink Href='@("/warehouse/items/"+Uri.EscapeDataString(item.INVENTORY_ITEM_ID))'>Open recorded inventory item @item.INVENTORY_ITEM_ID</MudLink>
+        <MudLink Href="@Beep.OilandGas.Web.Services.InventoryWorkspaceState.StockRoute(review.Purchase.Header.PURCHASE_ORDER_ID,review.ReceiptId)">Review physical receipt stock and supplier returns</MudLink>
+        <MudText>Warehouse: @item.WAREHOUSE_ID · Location: @item.LOCATION_ID · Unit: @item.UNIT_OF_MEASURE</MudText>
+        <MudText>Verified accepted: @decision.AcceptedQuantity · Rejected: @decision.RejectedQuantity · Unit: @decision.QuantityUnit</MudText>
+        <MudText>Receiver: @decision.ActorUserId · Decision UTC: @receipt.ROW_CHANGED_DATE?.ToString("O") · @decision.Reason</MudText>
+        <MudText>Recorded on-hand quantity: @(item.QUANTITY_ON_HAND?.ToString("G",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable")</MudText>
+        <MudAlert Severity="Severity.Info">This confirms recorded source linkage. Stock movement, available stock, supplier return execution and financial posting remain unconfirmed.</MudAlert>
+        <MudText Typo="Typo.caption">Linked source review: @review.Revision · PO: @review.Purchase.Revision · Inventory: @review.Inventory.Revision</MudText>
+        <MudText Typo="Typo.caption">Inventory retrieved UTC: @review.Inventory.RetrievedAtUtc.ToString("O")</MudText>
+    </MudPaper>
+}
+@code { [Parameter] public PurchaseReceiptInventoryReview? Review {get;set;} }

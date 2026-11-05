@@ -616,31 +616,12 @@ namespace Beep.OilandGas.ProductionOperations.Services
             }).ToList();
         }
 
-        public async Task UpdateFacilityStatusAsync(string facilityId, FacilityStatus status, string userId)
+        public Task UpdateFacilityStatusAsync(string facilityId, FacilityStatus status, string userId)
         {
             if (string.IsNullOrWhiteSpace(facilityId)) throw RefusalException.Invalid("A facility ID is required.");
             if (status == null) throw new ArgumentNullException(nameof(status));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
-            _logger?.LogInformation("Updating facility status for {FacilityId}", facilityId);
-
-            var facility = await _facilityManagement.GetFacilityAsync(facilityId, null, default).ConfigureAwait(false);
-            if (facility == null)
-                throw RefusalException.NotFound($"Facility {facilityId} was not found.");
-
-            var statusRow = new FACILITY_STATUS
-            {
-                FACILITY_ID = facility.FACILITY_ID,
-                FACILITY_TYPE = facility.FACILITY_TYPE,
-                STATUS = string.IsNullOrWhiteSpace(status.OperationalStatus) ? "UNKNOWN" : status.OperationalStatus.Trim(),
-                STATUS_TYPE = "OPERATIONAL",
-                EFFECTIVE_DATE = status.StatusDate == default ? DateTime.UtcNow : status.StatusDate,
-                PERCENT_CAPABILITY = status.CapacityUtilization,
-                ACTIVE_IND = "Y"
-            };
-
-            await _facilityManagement.AddFacilityStatusAsync(statusRow, userId, enforceActiveLicenseForOperationalStatus: true, default)
-                .ConfigureAwait(false);
-            _logger?.LogInformation("Recorded FACILITY_STATUS for {FacilityId}", facilityId);
+            throw RefusalException.Forbidden("Facility status changes require the reviewed company maintenance return command with original closure, policy and native state evidence.");
         }
 
         public async Task<FacilityStatus> GetFacilityStatusAsync(string facilityId)

@@ -24,7 +24,7 @@ This project was extracted from `Beep.OilandGas.PPDM39.DataManagement` to separa
 ### Supporting Services
 - **Calculation Service** (`PPDMCalculationService`) - Performs DCA, physics-based forecasting, economic analysis, nodal analysis, well test analysis, and flash calculations
 - **Accounting Service** (`PPDMAccountingService`) - Production accounting operations (volume reconciliation, royalty calculations, Successful Efforts/Full Cost accounting, amortization, BOE conversions)
-- **Permit Management Service** (`PermitManagementService`) - Manages permit applications (drilling, environmental, injection) across multiple jurisdictions
+- **Permit application workflows** - Owned by `Beep.OilandGas.PermitsAndApplications` reviewed lifecycle commands and typed API clients; see [Plan 354](../Plans/FrameworkAppEnhancement/Implementation-354-Permit-Application-Workflow.md).
 - **Well Comparison Service** (`WellComparisonService`) - Compares wells side-by-side
 
 ## Dependencies

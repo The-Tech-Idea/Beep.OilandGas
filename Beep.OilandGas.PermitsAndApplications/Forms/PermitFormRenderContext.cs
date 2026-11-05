@@ -12,7 +12,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Forms
             ENVIRONMENTAL_PERMIT_APPLICATION? environmentalApplication,
             INJECTION_PERMIT_APPLICATION? injectionApplication)
         {
-            Application = application ?? throw new ArgumentNullException(nameof(application));
+            TheTechIdea.Data.OilGas.PermitApplicationSupportingRecords.RequireParent(application, drillingApplication, environmentalApplication, injectionApplication);
+            Application = application;
             DrillingApplication = drillingApplication;
             EnvironmentalApplication = environmentalApplication;
             InjectionApplication = injectionApplication;

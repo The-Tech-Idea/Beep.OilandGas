@@ -78,8 +78,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// </summary>
         public async Task<ConnectionTestResult> TestConnectionAsync(string connectionName)
         {
-            var connectionConfig = _setupService.GetConnectionByName(connectionName);
-            if (connectionConfig == null)
+            var matches = (_editor.ConfigEditor?.DataConnections ?? new List<ConnectionProperties>())
+                .Where(x => string.Equals(x.ConnectionName, connectionName, StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (matches.Length != 1)
             {
                 return new ConnectionTestResult
                 {
@@ -88,6 +89,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 };
             }
 
+            var stored = matches[0];
+            var connectionConfig = new ConnectionConfig
+            {
+                ConnectionName = stored.ConnectionName, DatabaseType = stored.DatabaseType.ToString(),
+                Host = stored.Host, Port = stored.Port, Database = stored.Database, Username = stored.UserID,
+                Password = stored.Password, ConnectionString = stored.ConnectionString
+            };
             var testResult = await _setupService.TestConnectionAsync(connectionConfig);
             return new ConnectionTestResult
             {

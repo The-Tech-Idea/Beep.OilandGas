@@ -1,15 +1,9 @@
+using TheTechIdea.Data.OilGas;
 using System;
 using System.Collections.Generic;
 
 namespace Beep.OilandGas.Models.Data.Process
 {
-    public class ProcessInstanceRequest
-    {
-        public string ProcessId { get; set; } = string.Empty;
-        public string EntityId { get; set; } = string.Empty;
-        public string? EntityType { get; set; }
-    }
-
     public class ProcessInstanceSummary
     {
         public string InstanceId { get; set; } = string.Empty;
@@ -26,13 +20,6 @@ namespace Beep.OilandGas.Models.Data.Process
         public DateTime? CompletedAt { get; set; }
         public DateTime DueDate { get; set; }
         public int DaysUntilDue { get; set; }
-    }
-
-    public class ProcessTransitionRequest
-    {
-        public string Trigger { get; set; } = string.Empty;
-        public string ToStateId { get; set; } = string.Empty;
-        public string FromStateId { get; set; } = string.Empty;
     }
 
     public class ProcessTransitionResult
@@ -94,34 +81,5 @@ namespace Beep.OilandGas.Models.Data.Process
         public List<string> RequiredDocuments { get; set; } = new();
     }
 
-    public class HSEIncidentReportRequest
-    {
-        public string IncidentType { get; set; } = string.Empty;
-        public string Severity { get; set; } = string.Empty;
-        public DateTime IncidentDateTime { get; set; }
-        public string LocationDescription { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string InjuredPartyId { get; set; } = string.Empty;
-    }
 
-    public class HSEIncidentUpdateRequest
-    {
-        public string RcaSummary { get; set; } = string.Empty;
-        public string RcaCauseCategory { get; set; } = string.Empty;
-        public List<string>? CorrectiveActions { get; set; }
-        public string CorrectiveActionType { get; set; } = string.Empty;
-        public DateTime? CorrectiveActionDueDate { get; set; }
-        // Names the subject (who the corrective actions are assigned to), not the actor.
-        public string? AssignedToUserId { get; set; }
-    }
-
-    public class CorrectiveActionCloseRequest
-    {
-        public string Notes { get; set; } = string.Empty;
-    }
-
-    public class IncidentCloseRequest
-    {
-        public string Reason { get; set; } = string.Empty;
-    }
 }

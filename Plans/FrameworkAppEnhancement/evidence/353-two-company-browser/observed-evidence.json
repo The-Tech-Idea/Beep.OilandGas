@@ -1,0 +1,217 @@
+{
+  "plan": "Plan353 HSE final lifecycle approval and incident closure",
+  "gate": "Two-company browser isolation with colliding local IDs and delayed original approval acknowledgement",
+  "date": "2026-10-30",
+  "result": "pass",
+  "states": 5,
+  "resultArtifact": "browser-result.json",
+  "currentSourceChecks": [
+    {
+      "source": "Beep.OilandGas.Web/Components/Workflow/HseClosureWorkflow.razor",
+      "sha256": "c05168b5b5d2cfb06bdfb7e1be3146aec5cb68da75abb9c8deb230c702c635dd",
+      "fixture": "CurrentClosure/HseClosureWorkflow.razor",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web/Components/Workflow/HseCorrectiveAction.razor",
+      "sha256": "58b42f40c60d29e1609754c18fdc14b774c6f8ee25bed307ddd7deaed2f5e403",
+      "fixture": "CurrentClosure/HseCorrectiveAction.razor",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web/wwwroot/css/app.css",
+      "sha256": "36874e26ec8899e883a5dc2924ad357b1a3fafc356f0a40d36e0e59d0f96870f",
+      "fixture": "wwwroot/css/app.css",
+      "byteIdentical": true
+    },
+    {
+      "source": "Beep.OilandGas.Web\\Pages\\PPDM39\\BusinessProcess\\HSEIncidentDetail.razor",
+      "sha256": "10a33577a694fffb7313117e5babb17863fc63cf573f6daebed2b035ad31c04b",
+      "fixture": "CurrentIncident/HSEIncidentDetail.razor",
+      "onlyDifferences": "two component namespace qualifications and line ending normalization"
+    }
+  ],
+  "linkedSources": [
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\HSEServiceClient.cs",
+      "sha256": "439d6fe08c5fb173130ee500331286daddb79b66119c6b4ceaff8fcfaf13c46b"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\HSEServiceClient.Closure.cs",
+      "sha256": "48360a8480010949b5d94aa28a0353d41f3b36c688d73cc0d2a2b971c4a46e61"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Client\\App\\Services\\Field\\IFieldService.cs",
+      "sha256": "108aa664e900f9313201d1839908b187223ac7cfdf508763906b3fbdc06efd3b"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\ApiClient.cs",
+      "sha256": "7a434bd3a27e29b377156fbdfaa544f42d6df0c3487afce3d10f9664bb8f8125"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Models\\Data\\Security\\PermissionConstants.cs",
+      "sha256": "0750b42a4005fcb779c1804d37aa88dd92850f37b6f7d72ce627b98591c40064"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\CorrectiveActionIntentStore.cs",
+      "sha256": "e8ed11fddeb6a62cea1edf158065159e023d717aff49a95caeac6c7a920f8123"
+    },
+    {
+      "path": "C:\\Users\\f_ald\\source\\repos\\The-Tech-Idea\\Beep.OilandGas\\Beep.OilandGas.Web\\Services\\CorrectiveActionIntentStore.Closure.cs",
+      "sha256": "3c316324b7addeced88111986bcbed7051ca7839e71dc04bdf3e0be4c0eabbb6"
+    }
+  ],
+  "runtime": {
+    "path": "C:\\Users\\f_ald\\AppData\\Local\\Temp\\oilgas-353-company-browser-1a75e6c28f0349c8858a15453a3b0fab\\bin\\Debug\\net10.0\\HseBrowser.dll",
+    "sha256": "5724228653541de4e0f34a3a58569aa160faa18a8132175a3730a8fb0511c9df"
+  },
+  "finalCounters": {
+    "a": {
+      "code": "company",
+      "state": "CLOSED",
+      "approvalAttempts": 2,
+      "approvals": 1,
+      "nativeAttempts": 1,
+      "nativeWrites": 1,
+      "incidentReads": 4,
+      "reviewReads": 1,
+      "approvedIntent": "a56a0e9b-8d4b-4a29-b455-c108f9364232"
+    },
+    "b": {
+      "code": "other",
+      "state": "PENDING_CLOSE_OUT",
+      "approvalAttempts": 0,
+      "approvals": 0,
+      "nativeAttempts": 0,
+      "nativeWrites": 0,
+      "incidentReads": 1,
+      "reviewReads": 1,
+      "approvedIntent": null
+    },
+    "genericActionReads": 0,
+    "completedCalls": 2,
+    "requests": [
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/causes",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/cas",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/causes",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/cas",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/workflow/closure/review",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/workflow/closure/complete-stage",
+        "method": "POST"
+      },
+      {
+        "company": "other",
+        "path": "/api/field/current/hse/incident",
+        "method": "GET"
+      },
+      {
+        "company": "other",
+        "path": "/api/field/current/hse/incident/causes",
+        "method": "GET"
+      },
+      {
+        "company": "other",
+        "path": "/api/field/current/hse/incident/cas",
+        "method": "GET"
+      },
+      {
+        "company": "other",
+        "path": "/api/field/current/hse/workflow/closure/review",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/causes",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/cas",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/workflow/closure/complete-stage",
+        "method": "POST"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/workflow/closure/record-native",
+        "method": "POST"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/causes",
+        "method": "GET"
+      },
+      {
+        "company": "company",
+        "path": "/api/field/current/hse/incident/cas",
+        "method": "GET"
+      }
+    ]
+  },
+  "screenshotsVisuallyReviewed": [
+    "company-b.png",
+    "company-a-closed.png"
+  ],
+  "failuresRetained": [
+    "initial-selector-failure.log",
+    "initial-async-predicate-failure.json",
+    "oilgas-353-company-browser-compile-failed.log"
+  ],
+  "fixtureCorrections": [
+    "Initial exact-text selector corrected to include incident type before any mutation.",
+    "Async wait predicate captured null original before server acknowledgement; replaced with explicit condition polling and reran same exact journey on fresh owned host.",
+    "Fixture compilation wiring corrected before browser execution; no production code changed by this gate."
+  ],
+  "limits": [
+    "Current incident parent, corrective/closure components, both protected store partials and typed HSE client are exercised.",
+    "Ancillary widgets from existing support assembly; authentication, FIELD/workflow reads and company-header-scoped in-process HTTP backend are controlled.",
+    "Different company/tenant/core/lifecycle bindings; colliding local incident/workflow/FIELD IDs. No native provider or production API/OIDC acceptance.",
+    "One selected browser journey; no xUnit, permit, class, full suite or unrelated dependency build selected."
+  ],
+  "cleanup": "Owned hse353companies browser closed; exact fixture HseBrowser executable process absent after stop/recheck."
+}

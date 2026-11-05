@@ -1,0 +1,803 @@
+@page "/setup/company-environment"
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Client.App
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
+@inject ApiClient Api
+@inject CompanyClientContext Company
+@inject ILogger<CompanyEnvironmentSetup> Logger
+@inject IGhgSelectionIntentStore GhgIntents
+@inject ICompanyEnvironmentIntentStore EnvironmentIntents
+@inject CompanyEnvironmentChangeSignal EnvironmentChanges
+@implements IDisposable
+
+<PageTitle>Company environment setup</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Company environment setup</MudText>
+    <MudText Class="my-3">Review an OilandGasTools country preset and optional company overrides. Country suggestions require your own operational review.</MudText>
+    <MudAlert Severity="Severity.Info" Class="mb-3">The preview includes shared defaults, country settings and company overrides. Shared settings can change after review; check effective settings again after saving. Saving does not activate the configuration. Do not enter credentials or server file paths.</MudAlert>
+    <MudText Typo="Typo.body2" Class="mb-2">Shared OilandGasTools defaults must be saved in the system setup repository before a company environment can be previewed.</MudText>
+    <MudButton Href="/setup/system-repository" Variant="Variant.Outlined" Class="mb-3">Open shared system setup</MudButton>
+    @if (_message is not null) { <MudAlert Severity="Severity.Warning" Class="mb-3">@_message</MudAlert> }
+    @if (Company.Selection is null)
+    { <MudText>Select a company in the top bar to continue.</MudText> }
+    else
+    {
+        <MudText Class="mb-2">Company: @Company.Selection.Scope.BusinessAssociateId</MudText>
+        @if (!_settingsLoaded && _pending is null && _countries is null)
+        {
+            <MudButton OnClick="BeginCompanySetup" Disabled="@(_busy || !_environmentRecoveryReady)" Variant="Variant.Filled" Color="Color.Primary">Start company environment setup</MudButton>
+            <MudText Typo="Typo.body2" Class="my-2">Load this company's saved settings and the available country presets, then choose and preview the settings for review.</MudText>
+        }
+        <MudButton OnClick="ReviewOrganization" Disabled="@_busy" Variant="Variant.Outlined">Check company PPDM organization</MudButton>
+        @if (_organization is not null) { <MudAlert Severity="Severity.Info" Class="my-2">At the last check: @(_organization.Status switch { "Active" => "The selected company has an active PPDM business-associate record.", "Inactive" => "The selected company business-associate record is inactive.", "NotFound" => "No business-associate record was found for the selected company.", _ => "The company business-associate status is unconfirmed." }) This does not verify source coverage or activate the environment.</MudAlert> }
+        <MudButton OnClick="LoadSaved" Disabled="@(_busy || !_environmentRecoveryReady)" Variant="Variant.Outlined">Load saved settings</MudButton>
+        @if (_pending is not null) { <MudAlert Severity="Severity.Warning" Class="my-2">A previous environment save is awaiting confirmation. Load the saved settings or retry the same save.</MudAlert> }
+        <MudButton OnClick="LoadCountries" Disabled="@_busy" Variant="Variant.Outlined">Load available country presets</MudButton>
+        <MudButton OnClick="Verify" Disabled="@(_busy || !_settingsLoaded || _pending is not null || string.IsNullOrEmpty(_revision))" Variant="Variant.Outlined">Verify saved revision</MudButton>
+        <MudButton OnClick="ReviewEffective" Disabled="@(_busy || !_settingsLoaded || _pending is not null || string.IsNullOrEmpty(_revision))" Variant="Variant.Outlined">Review effective settings</MudButton>
+        <MudButton OnClick="ReviewSources" Disabled="@(_busy || !_settingsLoaded || _pending is not null || string.IsNullOrEmpty(_revision))" Variant="Variant.Outlined">Review source bindings</MudButton>
+        <MudTextField T="string" Value="@_ghgJurisdiction" ValueChanged="GhgJurisdictionChanged" Label="GHG jurisdiction key" Disabled="@(_busy || _pending is not null || _ghgPending is not null)" HelperText="Choose the catalog explicitly; a country preset does not select a regulator." />
+        <MudButton OnClick="ReviewGhgCatalog" Disabled="@(_busy || !_settingsLoaded || _pending is not null || _ghgPending is not null || string.IsNullOrEmpty(_revision) || string.IsNullOrWhiteSpace(_ghgJurisdiction))" Variant="Variant.Outlined">Review GHG factor catalog</MudButton>
+        <MudButton OnClick="LoadGhgSelection" Disabled="@_busy" Variant="Variant.Outlined">Load company catalog selection</MudButton>
+        @if (_ghgPending is not null) { <MudAlert Severity="Severity.Warning" Class="my-2">A previous selection is awaiting confirmation. Load the saved selection or retry the same intent.</MudAlert> }
+        @if (_ghgSelection is not null)
+        {
+            <MudText Typo="Typo.body2">Saved selection: @_ghgSelection.Jurisdiction, selected by @_ghgSelection.SelectedBy. This is not approval for reporting.</MudText>
+            <MudText Typo="Typo.body2">@(_ghgSelectionStatus switch { "Current" => "The saved selection matches the current catalog and company environment.", "ReviewRequired" => "The catalog or company environment changed. Review the selection again.", _ => "The current catalog or company environment could not be confirmed." })</MudText>
+        }
+        @if (_ghgReview is not null && _ghgFactors is not null)
+        {
+            <MudAlert Severity="Severity.Info" Class="my-3">Catalog reviewed for this company. Applicability and approval have not been established; reporting remains unavailable.</MudAlert>
+            <MudText>Jurisdiction @_ghgFactors.Jurisdiction; catalog version @_ghgReview.Catalog.Version.</MudText>
+            @foreach (var factor in _ghgFactors.Factors)
+            { <MudText Typo="Typo.body2">@factor.Id — @factor.SourceCategory: @factor.Factor @factor.OutputUnit / @factor.InputUnit; @factor.EffectiveFrom.ToString("yyyy-MM-dd") to @factor.EffectiveThrough.ToString("yyyy-MM-dd"); @factor.SourceReference</MudText> }
+            <MudTextField T="string" @bind-Value="_ghgRationale" Label="Reason for selecting this catalog" Lines="3" Disabled="@(_busy || _ghgPending is not null)" />
+        }
+        @if (_ghgReview is not null || _ghgPending is not null)
+        { <MudButton OnClick="SaveGhgSelection" Disabled="@(_busy || !_ghgSelectionLoaded || !_ghgRecoveryReady)" Variant="Variant.Filled" Color="Color.Primary">@(_ghgPending is null ? "Save company selection" : "Retry the same selection")</MudButton> }
+        @if (_saved is not null)
+        {
+            <MudText Typo="Typo.body2" Class="my-2">Saved review: system @_saved.ReviewedSystemRevision; country @(_saved.ReviewedCountryRevision ?? "no country override"); tool build @_saved.ToolsVersion.</MudText>
+        }
+        @if (_countries is not null)
+        {
+            <MudSelect T="string" Value="@_country" ValueChanged="CountryChanged" Label="Country preset" Disabled="@(_busy || _pending is not null)" Class="my-3">
+                @foreach (var country in _countries) { <MudSelectItem T="string" Value="@country.Code">@country.Name (@country.Code)</MudSelectItem> }
+            </MudSelect>
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-3">Common company overrides</MudText>
+            <MudText Typo="Typo.body2">Enter only values you want to change. Existing explicit units take precedence over a unit system; review the resolved values in the preview before saving.</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editCulture" Label="Culture, for example ar-KW" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editTimeZone" Label="Time zone, for example Asia/Kuwait" Disabled="@(_busy || _pending is not null)" HelperText="An IANA or Windows time zone available on the API host." /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editUnitSystem" Label="Unit system, for example oilfield" Disabled="@(_busy || _pending is not null)" HelperText="A unit system defined in the tool settings." /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editDepth" Label="Depth unit" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editPressure" Label="Pressure unit" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editDiameter" Label="Diameter unit" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editWeight" Label="Linear weight unit, for example kg/m" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editForce" Label="Force unit, for example kN" Disabled="@(_busy || _pending is not null)" /></MudItem>
+            </MudGrid>
+            <MudButton OnClick="UseInheritedCommonSettings" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Use inherited culture, time zone and units</MudButton>
+            <MudText Typo="Typo.body2">This removes explicit company culture, time zone and unit choices from the draft. Preview the inherited settings before saving.</MudText>
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-3">Display locale</MudText>
+            <MudText Typo="Typo.body2">Display culture is separate from the environment culture. Enter .NET date patterns; an inherited or empty tool value can use the tool's default formatting.</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editDisplayCulture" Label="Display culture, for example ar-KW" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudSelect T="string" @bind-Value="_editCalendar" Label="Display calendar" Disabled="@(_busy || _pending is not null)">
+                    <MudSelectItem T="string" Value="@string.Empty">Leave unchanged</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Gregorian")">Gregorian</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Culture")">Culture calendar</MudSelectItem>
+                </MudSelect></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editDateFormat" Label="Display date pattern" Disabled="@(_busy || _pending is not null)" HelperText="For example dd/MM/yyyy" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editDateTimeFormat" Label="Display date and time pattern" Disabled="@(_busy || _pending is not null)" HelperText="For example dd/MM/yyyy HH:mm" /></MudItem>
+            </MudGrid>
+            <MudButton OnClick="ApplyCommonOverrides" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Apply entered locale and unit overrides</MudButton>
+            <MudButton OnClick="UseInheritedDisplayFormats" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Use inherited display formats</MudButton>
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-3">Regional reference lists</MudText>
+            <MudText Typo="Typo.body2">Enter one coordinate system or regulator per line. Each entered list replaces its inherited list for this company. These references are informational; confirm them with the responsible survey or regulatory team.</MudText>
+            <MudTextField T="string" @bind-Value="_editCoordinateSystems" Label="Company coordinate systems" Lines="3" Disabled="@(_busy || _pending is not null)" />
+            <MudTextField T="string" @bind-Value="_editRegulators" Label="Company regulators" Lines="3" Disabled="@(_busy || _pending is not null)" />
+            <MudButton OnClick="ApplyRegionLists" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Apply entered regional lists</MudButton>
+            <MudButton OnClick="UseInheritedCoordinateSystems" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Use inherited coordinate systems</MudButton>
+            <MudButton OnClick="UseInheritedRegulators" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Use inherited regulators</MudButton>
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-3">Add a company data source</MudText>
+            <MudText Typo="Typo.body2">Choose a source name and an existing Beep module. The PPDM mapping profile is used. A matching name in shared defaults can be overridden; review it before saving. Adding a source does not test the connection.</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editSourceName" Label="Source name" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editSourceModule" Label="Beep module, for example PPDM_CORE" Disabled="@(_busy || _pending is not null)" /></MudItem>
+            </MudGrid>
+            <MudButton OnClick="AddCompanySource" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Add source to draft</MudButton>
+            <MudButton OnClick="ChangeCompanySource" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Change module for existing draft source</MudButton>
+            <MudButton OnClick="RemoveCompanySource" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Remove company source override</MudButton>
+            <MudText Typo="Typo.body2">Changing or removing a source applies only to an explicit company override. Removing it restores the shared or country source if one exists. Preview the effective settings before saving.</MudText>
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-3">Company source code mapping</MudText>
+            <MudText Typo="Typo.body2">Enter a source name, a PPDM profile entity and field, the source value and its canonical value. An inherited source can be customized without copying its module. The preview checks the resolved source and profile; your data steward must confirm the code meanings. Removing an override restores an inherited mapping when available.</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editMappingEntity" Label="PPDM profile entity" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editMappingField" Label="PPDM profile field" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editMappingSourceCode" Label="Source code" Disabled="@(_busy || _pending is not null)" /></MudItem>
+                <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="_editMappingCanonicalCode" Label="Canonical code" Disabled="@(_busy || _pending is not null)" /></MudItem>
+            </MudGrid>
+            <MudButton OnClick="SetSourceMapping" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Set code mapping</MudButton>
+            <MudButton OnClick="RemoveSourceMapping" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" Class="my-2">Remove company code mapping</MudButton>
+            <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="mt-3">Explicit company mappings in this draft</MudText>
+            @if (!_mappingRowsValid)
+            { <MudAlert Severity="Severity.Warning" Class="my-2">Company mappings cannot be listed until the override JSON is valid. Review the draft before continuing.</MudAlert> }
+            else if (_mappingRows.Count == 0)
+            { <MudText Typo="Typo.body2">No explicit company mappings are in this draft. Inherited mappings are not listed here.</MudText> }
+            else
+            {
+                @foreach (var mapping in _mappingRows)
+                {
+                    <MudPaper Outlined="true" Class="pa-2 my-2">
+                        <MudText>@mapping.Source · @mapping.Entity.@mapping.Field: @mapping.SourceCode → @mapping.CanonicalCode</MudText>
+                        <MudButton OnClick="@(() => SelectMapping(mapping))" Disabled="@(_busy || _pending is not null)" Variant="Variant.Outlined" aria-label="@($"Edit mapping {mapping.Source}, {mapping.Entity}.{mapping.Field}, {mapping.SourceCode}")">Edit mapping</MudButton>
+                    </MudPaper>
+                }
+            }
+            <MudTextField T="string" Value="@_overrides" ValueChanged="OverridesChanged" Label="Optional OilandGasTools overrides (JSON)" Lines="6" Disabled="@(_busy || _pending is not null)" />
+            <MudText Typo="Typo.body2">For a named source use kind "beep", an uppercase Beep module in its path, and profile "ppdm39". Configure module bindings in database setup; never enter connection strings here.</MudText>
+            <MudButton OnClick="Preview" Disabled="@(_busy || _pending is not null || string.IsNullOrWhiteSpace(_country))" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">Preview settings</MudButton>
+        }
+        @if (_preview is not null)
+        {
+            <MudText Typo="Typo.h6" HtmlTag="h2">@_preview.CountryName (@_preview.CountryCode)</MudText>
+            <MudText>Culture: @_preview.Culture; time zone: @(_preview.TimeZoneId ?? "not configured"); unit system: @(_preview.UnitSystem ?? "not specified")</MudText>
+            <MudText>Depth: @_preview.DepthUnit; pressure: @_preview.PressureUnit; diameter: @_preview.DiameterUnit</MudText>
+            <MudText>Linear weight: @(_preview.WeightUnit ?? "not confirmed"); force: @(_preview.ForceUnit ?? "not confirmed")</MudText>
+            <MudText>Display culture: @(_preview.DisplayCulture is null ? "not confirmed" : _preview.DisplayCulture.Length == 0 ? "tool default" : _preview.DisplayCulture); calendar: @(_preview.Calendar ?? "not confirmed"); date: @(_preview.DateFormat ?? "not confirmed"); date and time: @(_preview.DateTimeFormat ?? "not confirmed")</MudText>
+            <MudText>Regional coordinate systems (informational): @string.Join(", ", _preview.CoordinateSystems)</MudText>
+            <MudText>Regional regulators (informational): @string.Join(", ", _preview.Regulators)</MudText>
+            @foreach (var warning in _preview.Warnings) { <MudAlert Severity="Severity.Warning" Class="my-2">@warning</MudAlert> }
+        }
+        @if (_settingsLoaded && (_preview is not null && _preview.Warnings.Length == 0 || _pending is not null))
+        { <MudButton OnClick="Save" Disabled="@(_busy || !_environmentRecoveryReady)" Variant="Variant.Filled" Color="Color.Primary">@(_pending is null ? "Save reviewed settings" : "Retry the same save")</MudButton> }
+        @if (_verification is not null)
+        {
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-4">Saved revision verification</MudText>
+            <MudText Typo="Typo.body2">Effective system, country and company revision: @_verification.EffectiveRevision</MudText>
+            <MudAlert Severity="Severity.Info">Data source connections and coverage were not verified by these checks. The environment is not activated.</MudAlert>
+            @foreach (var issue in _verification.ValidationIssues) { <MudAlert Severity="Severity.Warning" Class="my-2">@issue</MudAlert> }
+            @foreach (var check in _verification.ReferenceCases) { <MudText>@check.Name (@check.Kind): @check.Status @check.Detail</MudText> }
+        }
+        @if (_effective is not null)
+        {
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-4">Effective saved settings</MudText>
+            @if (_effective.ReviewStatus != "Current") { <MudAlert Severity="Severity.Warning">Settings need company review because of validation issues or changes to shared or country settings. Re-preview and save before relying on them.</MudAlert> }
+            <MudText>@_effective.Settings.CountryName — @_effective.Settings.Culture; depth @_effective.Settings.DepthUnit; pressure @_effective.Settings.PressureUnit; diameter @_effective.Settings.DiameterUnit.</MudText>
+            <MudText>Regional coordinate systems (informational): @string.Join(", ", _effective.Settings.CoordinateSystems)</MudText>
+            <MudText>Regional regulators (informational): @string.Join(", ", _effective.Settings.Regulators)</MudText>
+            <MudText>Time zone: @(_effective.Settings.TimeZoneId ?? "not configured"); unit system: @(_effective.Settings.UnitSystem ?? "not specified"); linear weight: @(_effective.Settings.WeightUnit ?? "not confirmed"); force: @(_effective.Settings.ForceUnit ?? "not confirmed").</MudText>
+            <MudText>Display culture: @(_effective.Settings.DisplayCulture is null ? "not confirmed" : _effective.Settings.DisplayCulture.Length == 0 ? "tool default" : _effective.Settings.DisplayCulture); calendar: @(_effective.Settings.Calendar ?? "not confirmed"); date: @(_effective.Settings.DateFormat ?? "not confirmed"); date and time: @(_effective.Settings.DateTimeFormat ?? "not confirmed").</MudText>
+            @foreach (var warning in _effective.Settings.Warnings) { <MudAlert Severity="Severity.Warning" Class="my-2">@warning</MudAlert> }
+            <MudText Typo="Typo.body2">These combine the system default, country preset, optional country record and saved company overrides. Review revision: @_effective.EffectiveRevision</MudText>
+        }
+        @if (_sources is not null)
+        {
+            <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-4">Saved source bindings</MudText>
+            <MudAlert Severity="Severity.Info">A bound module has an identified tenant-owned connection. The listed mappings are effective configured overrides; built-in profile mappings are not listed. Source data, connectivity and mapping coverage have not been tested.</MudAlert>
+            @if (_sources.Sources.Length == 0) { <MudText>No source definitions are saved.</MudText> }
+            @foreach (var source in _sources.Sources)
+            {
+                <MudText>@source.Name — @source.Module (@source.Profile): @source.BindingStatus; @source.MappedCodeValues mapped codes, @source.RowFilters filters; mapping: @source.MappingStatus</MudText>
+                @foreach (var issue in source.MappingIssues) { <MudAlert Severity="Severity.Warning" Class="my-2">@issue</MudAlert> }
+                @if (source.CodeMappings.Length > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-2">Effective configured code overrides for @source.Name</MudText>
+                    @foreach (var mapping in source.CodeMappings.Take(MappingDisplayCount(source)))
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                            <MudText Typo="Typo.body2">@mapping.Entity.@mapping.Field: @mapping.SourceCode → @mapping.CanonicalCode (@MappingOriginLabel(mapping.Origin))</MudText>
+                            <MudButton OnClick="@(() => SelectEffectiveMapping(source, mapping))" Disabled="@(_busy || _pending is not null || !_settingsLoaded)" Variant="Variant.Text">Edit in company draft</MudButton>
+                        </MudStack>
+                    }
+                    @if (source.MappedCodeValues > MappingDisplayCount(source))
+                    {
+                        <MudText Typo="Typo.body2">Showing @MappingDisplayCount(source) of @source.MappedCodeValues mappings.</MudText>
+                        <MudButton OnClick="@(() => ShowMoreMappings(source))" Disabled="@_busy" Variant="Variant.Outlined">Show more mappings</MudButton>
+                    }
+                }
+            }
+            <MudText Typo="Typo.body2">Profile checks do not verify database columns, company code meanings or source coverage.</MudText>
+            @if (_sources.Sources.Any(x => x.Module == "PPDM_CORE" && x.BindingStatus == "Bound" && x.MappingStatus == "ProfileChecked"))
+            {
+                <MudSelect T="string" Value="@_testSource" ValueChanged="TestSourceChanged" Label="Source to test" Disabled="@_busy">
+                    @foreach (var source in _sources.Sources.Where(x => x.Module == "PPDM_CORE" && x.BindingStatus == "Bound" && x.MappingStatus == "ProfileChecked"))
+                    { <MudSelectItem T="string" Value="@source.Name">@source.Name</MudSelectItem> }
+                </MudSelect>
+                <MudTextField T="string" Value="@_testWell" ValueChanged="TestWellChanged" Label="Exact well identifier (UWI)" Disabled="@_busy" />
+                <MudButton OnClick="TestWell" Disabled="@(_busy || string.IsNullOrWhiteSpace(_testSource) || string.IsNullOrWhiteSpace(_testWell))" Variant="Variant.Outlined" Class="my-3">Test selected well header</MudButton>
+            }
+            @if (_wellTest is not null)
+            {
+                <MudAlert Severity="Severity.Info">@(_wellTest.Status == "Found" ? $"Authorized well header found: {_wellTest.WellName} ({_wellTest.WellId})." : "No well header is visible for this identifier and access.") Related equipment, surveys, source coverage and connectivity beyond this read were not tested.</MudAlert>
+            }
+        }
+    }
+    <MudButton Href="/setup/repository" Variant="Variant.Text" Class="mt-4">Back to setup</MudButton>
+</MudContainer>
+
+@code {
+    private CompanyOrganizationReview? _organization;
+    private CompanyEnvironmentCountry[]? _countries;
+    private CompanyEnvironmentPreview? _preview;
+    private CompanyEnvironmentConfiguration? _saved;
+    private CompanyEnvironmentDraftReview? _draftReview;
+    private CompanyEnvironmentVerification? _verification;
+    private CompanyEnvironmentEffectiveReview? _effective;
+    private CompanyEnvironmentSourceReview? _sources;
+    private CompanyGhgCatalogReview? _ghgReview;
+    private GhgFactorCatalog? _ghgFactors;
+    private string _ghgJurisdiction = "";
+    private string _ghgRationale = "";
+    private CompanyGhgSelection? _ghgSelection;
+    private string _ghgSelectionStatus = "NotSelected";
+    private CompanyGhgSelectionRequest? _ghgPending;
+    private bool _ghgSelectionLoaded;
+    private bool _ghgRecoveryReady, _environmentRecoveryReady, _interactive;
+    private CompanyEnvironmentWellTest? _wellTest;
+    private string _testSource = "", _testWell = "";
+    private string _country = "", _overrides = "{}";
+    private string _editCulture = "", _editTimeZone = "", _editDepth = "", _editPressure = "", _editDiameter = "", _editUnitSystem = "", _editWeight = "", _editForce = "", _editDisplayCulture = "", _editDateFormat = "", _editDateTimeFormat = "", _editCalendar = "", _editSourceName = "", _editSourceModule = "";
+    private string _editCoordinateSystems = "", _editRegulators = "";
+    private string _editMappingEntity = "", _editMappingField = "", _editMappingSourceCode = "", _editMappingCanonicalCode = "";
+    private IReadOnlyList<CompanySourceCodeMapping> _mappingRows = [];
+    private bool _mappingRowsValid = true;
+    private readonly Dictionary<string, int> _mappingDisplayCounts = new(StringComparer.Ordinal);
+    private string? _message;
+    private string _revision = "";
+    private string _toolsVersion = "";
+    private CompanyEnvironmentReviewedSaveRequest? _pending;
+    private bool _busy, _disposed, _settingsLoaded;
+    private long _generation, _ghgRecoveryGeneration, _environmentRecoveryGeneration;
+
+    protected override void OnInitialized() => Company.Changed += CompanyChanged;
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { _interactive = true; await Task.WhenAll(RestoreGhgIntent(), RestoreEnvironmentIntent()); } }
+    private void CompanyChanged() => _ = InvokeAsync(async () => { ++_generation; _organization = null; _countries = null; _preview = null; _draftReview = null; _saved = null; _verification = null; _effective = null; _sources = null; _ghgReview = null; _ghgFactors = null; _ghgSelection = null; _ghgSelectionStatus = "NotSelected"; _ghgPending = null; _ghgSelectionLoaded = false; _ghgRecoveryReady = false; _environmentRecoveryReady = false; _ghgRationale = ""; _ghgJurisdiction = ""; _wellTest = null; _testSource = ""; _testWell = ""; _country = ""; _overrides = "{}"; _editCulture = ""; _editTimeZone = ""; _editDepth = ""; _editPressure = ""; _editDiameter = ""; _editUnitSystem = ""; _editWeight = ""; _editForce = ""; _editDisplayCulture = ""; _editDateFormat = ""; _editDateTimeFormat = ""; _editCalendar = ""; _editSourceName = ""; _editSourceModule = ""; _editCoordinateSystems = ""; _editRegulators = ""; _editMappingEntity = ""; _editMappingField = ""; _editMappingSourceCode = ""; _editMappingCanonicalCode = ""; _mappingRows = []; _mappingRowsValid = true; _mappingDisplayCounts.Clear(); _revision = ""; _toolsVersion = ""; _pending = null; _settingsLoaded = false; _busy = false; _message = null; if (_interactive) await Task.WhenAll(RestoreGhgIntent(), RestoreEnvironmentIntent()); if (!_disposed) StateHasChanged(); });
+    private async Task RestoreGhgIntent()
+    {
+        var snapshot = Company.Snapshot; var recoveryGeneration = ++_ghgRecoveryGeneration; _ghgRecoveryReady = false;
+        if (snapshot.Selection is null) return;
+        try
+        {
+            var original = await GhgIntents.ReadAsync(snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!CurrentRecovery(snapshot, recoveryGeneration)) return;
+            if (original is not null) { original.Require(); if (original.Company != snapshot.Selection.Scope || original.Actor != snapshot.Selection.UserId) throw new InvalidOperationException("The retained selection belongs to another company or actor."); }
+            _ghgPending = original?.Request; if (original is not null) _ghgSelectionLoaded = true;
+            _ghgRecoveryReady = true;
+            if (original is not null) _message = "A previous catalog selection is awaiting confirmation.";
+        }
+        catch (Exception error) { if (CurrentRecovery(snapshot, recoveryGeneration)) { Logger.LogWarning(error, "Catalog selection recovery is unavailable"); _message = "Selection recovery is unavailable. Check browser storage before saving."; } }
+        finally { if (CurrentRecovery(snapshot, recoveryGeneration)) StateHasChanged(); }
+    }
+    private async Task RestoreEnvironmentIntent()
+    {
+        var snapshot = Company.Snapshot; var generation = ++_environmentRecoveryGeneration; _environmentRecoveryReady = false;
+        if (snapshot.Selection is null) return;
+        try
+        {
+            var original = await EnvironmentIntents.ReadEnvironmentAsync(snapshot.Selection.Scope, snapshot.Selection.UserId);
+            if (!CurrentEnvironmentRecovery(snapshot, generation)) return;
+            if (original is not null)
+            {
+                original.Require();
+                if (original.Company != snapshot.Selection.Scope || original.Actor != snapshot.Selection.UserId) throw new InvalidOperationException("The retained environment belongs to another company or actor.");
+                _pending = original.Request; _settingsLoaded = true;
+                _message = "A previous environment save is awaiting confirmation.";
+            }
+            _environmentRecoveryReady = true;
+        }
+        catch (Exception error) { if (CurrentEnvironmentRecovery(snapshot, generation)) { Logger.LogWarning(error, "Environment recovery is unavailable"); _message = "Environment recovery is unavailable. Check browser storage before saving."; } }
+        finally { if (CurrentEnvironmentRecovery(snapshot, generation)) StateHasChanged(); }
+    }
+    private void CountryChanged(string value) { _country = value; _preview = null; _draftReview = null; _verification = null; _effective = null; _sources = null; _wellTest = null; }
+    private void OverridesChanged(string value) { _overrides = value; RefreshMappingRows(); _preview = null; _draftReview = null; _verification = null; _effective = null; _sources = null; _wellTest = null; }
+    private void RefreshMappingRows()
+    {
+        try { _mappingRows = CompanyEnvironmentOverrideEditor.ReadCompanyCodeMappings(_overrides); _mappingRowsValid = true; }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { _mappingRows = []; _mappingRowsValid = false; }
+    }
+    private void SelectMapping(CompanySourceCodeMapping mapping)
+    {
+        if (_busy || _pending is not null || !_mappingRowsValid || !_mappingRows.Contains(mapping)) return;
+        _editSourceName = mapping.Source; _editMappingEntity = mapping.Entity; _editMappingField = mapping.Field;
+        _editMappingSourceCode = mapping.SourceCode; _editMappingCanonicalCode = mapping.CanonicalCode;
+        _message = "Mapping selected. Change its canonical value or remove this company override.";
+    }
+    private void SelectEffectiveMapping(CompanyEnvironmentSource source, CompanyEnvironmentCodeMapping mapping)
+    {
+        if (_busy || _pending is not null || !_settingsLoaded || Company.Selection is not { } selected ||
+            _sources is null || _sources.Company != selected.Scope || _sources.Revision != _revision ||
+            _effective is not null && _sources.EffectiveRevision != _effective.EffectiveRevision ||
+            !_sources.Sources.Contains(source) || !source.CodeMappings.Contains(mapping)) return;
+        try
+        {
+            // Check editability without modifying the draft or copying the inherited source identity.
+            _ = CompanyEnvironmentOverrideEditor.SetSourceCodeMapping(_overrides, source.Name, mapping.Entity, mapping.Field, mapping.SourceCode, mapping.CanonicalCode);
+            _editSourceName = source.Name; _editMappingEntity = mapping.Entity; _editMappingField = mapping.Field;
+            _editMappingSourceCode = mapping.SourceCode; _editMappingCanonicalCode = mapping.CanonicalCode;
+            _message = "Effective mapping selected. Change its value, then apply it to the company draft.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Effective source mapping could not be selected for editing"); _message = "The mapping cannot be edited in this draft. Check the source and mapping values."; }
+    }
+    private void ApplyCommonOverrides()
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            var updated = CompanyEnvironmentOverrideEditor.Apply(_overrides, _editCulture, _editDepth, _editPressure, _editDiameter, _editTimeZone, _editUnitSystem, _editWeight, _editForce, _editDisplayCulture, _editDateFormat, _editDateTimeFormat, _editCalendar);
+            OverridesChanged(updated); _editCulture = _editTimeZone = _editDepth = _editPressure = _editDiameter = _editUnitSystem = _editWeight = _editForce = _editDisplayCulture = _editDateFormat = _editDateTimeFormat = _editCalendar = "";
+            _message = "Overrides updated. Preview the settings before saving.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Company environment overrides could not be edited"); _message = "The overrides could not be updated. Check the existing JSON and entered values."; }
+    }
+    private void UseInheritedDisplayFormats()
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            OverridesChanged(CompanyEnvironmentOverrideEditor.UseInheritedDisplayFormats(_overrides));
+            _editDisplayCulture = _editDateFormat = _editDateTimeFormat = _editCalendar = "";
+            _message = "Display format overrides removed. Preview the inherited settings before saving.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Company display formats could not be inherited"); _message = "Inherited display formats could not be selected. Check the existing overrides."; }
+    }
+    private void UseInheritedCommonSettings()
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            OverridesChanged(CompanyEnvironmentOverrideEditor.UseInheritedCommonSettings(_overrides));
+            _editCulture = _editTimeZone = _editDepth = _editPressure = _editDiameter = _editUnitSystem = _editWeight = _editForce = "";
+            _message = "Common company overrides removed. Preview the inherited settings before saving.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Company environment defaults could not be restored"); _message = "Inherited settings could not be selected. Check the existing overrides."; }
+    }
+    private void ApplyRegionLists()
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            OverridesChanged(CompanyEnvironmentOverrideEditor.ApplyRegionLists(_overrides, _editCoordinateSystems, _editRegulators));
+            _editCoordinateSystems = _editRegulators = "";
+            _message = "Regional references updated. Preview the settings before saving.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Regional references could not be updated"); _message = "Enter up to 32 distinct entries of at most 128 characters per list, one per line, and check the existing overrides."; }
+    }
+    private void UseInheritedCoordinateSystems() => UseInheritedRegionList(true);
+    private void UseInheritedRegulators() => UseInheritedRegionList(false);
+    private void UseInheritedRegionList(bool coordinates)
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            OverridesChanged(CompanyEnvironmentOverrideEditor.UseInheritedRegionList(_overrides, coordinates));
+            if (coordinates) _editCoordinateSystems = ""; else _editRegulators = "";
+            _message = "Regional override removed. Preview the inherited settings before saving.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Regional defaults could not be inherited"); _message = "Inherited regional settings could not be selected. Check the existing overrides."; }
+    }
+    private void AddCompanySource()
+        => EditCompanySource(change: false);
+    private void SetSourceMapping() => EditSourceMapping(false);
+    private void RemoveSourceMapping() => EditSourceMapping(true);
+    private void EditSourceMapping(bool remove)
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            var updated = remove
+                ? CompanyEnvironmentOverrideEditor.RemoveSourceCodeMapping(_overrides, _editSourceName, _editMappingEntity, _editMappingField, _editMappingSourceCode)
+                : CompanyEnvironmentOverrideEditor.SetSourceCodeMapping(_overrides, _editSourceName, _editMappingEntity, _editMappingField, _editMappingSourceCode, _editMappingCanonicalCode);
+            OverridesChanged(updated);
+            _editMappingEntity = _editMappingField = _editMappingSourceCode = _editMappingCanonicalCode = "";
+            _message = "Company mapping draft updated. Preview the settings and review code meanings before saving.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Company source mapping could not be edited"); _message = "The mapping could not be updated. Check the source name, profile entity, field and code values."; }
+    }
+    private void ChangeCompanySource()
+        => EditCompanySource(change: true);
+    private void RemoveCompanySource()
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            OverridesChanged(CompanyEnvironmentOverrideEditor.RemoveSourceOverride(_overrides, _editSourceName));
+            _editSourceName = _editSourceModule = "";
+            _message = "Company source override removed. Preview the effective settings before saving.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Company source override could not be removed"); _message = "The source could not be removed. Check that it is defined in this company draft."; }
+    }
+    private void EditCompanySource(bool change)
+    {
+        if (_busy || _pending is not null) return;
+        try
+        {
+            var updated = change ? CompanyEnvironmentOverrideEditor.ChangeBeepSourceModule(_overrides, _editSourceName, _editSourceModule)
+                : CompanyEnvironmentOverrideEditor.AddBeepSource(_overrides, _editSourceName, _editSourceModule);
+            OverridesChanged(updated); _editSourceName = _editSourceModule = "";
+            _message = "Source draft updated. Preview and save it, then review its binding and test the source.";
+        }
+        catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+        { Logger.LogWarning(error, "Company source could not be edited in the environment draft"); _message = "The source could not be updated. Check the name, uppercase module and existing overrides."; }
+    }
+    private void TestSourceChanged(string value) { _testSource = value; _wellTest = null; }
+    private void TestWellChanged(string value) { _testWell = value; _wellTest = null; }
+    private void GhgJurisdictionChanged(string value) { _ghgJurisdiction = value; _ghgReview = null; _ghgFactors = null; }
+
+    private async Task LoadGhgSelection()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation;
+        if (snapshot.Selection is null || _busy) return;
+        _busy = true; _message = null;
+        try
+        {
+            var result = await Api.GetAsync<CompanyGhgSelectionReadResult>("/api/company-environment/ghg-selection");
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Company != snapshot.Selection.Scope ||
+                (result.Selection is null ? result.Status != "NotSelected" : result.Status is not ("Current" or "ReviewRequired" or "Unconfirmed")))
+                throw new InvalidOperationException("The company selection is unconfirmed.");
+            if (result.Selection is { } value) CompanyGhgSelectionIdentity.RequireValid(value, result.Company);
+            if (_ghgPending is not null)
+            {
+                if (result.Selection is { } saved && MatchesGhg(saved, _ghgPending, result.Company, snapshot.Selection.UserId))
+                { await GhgIntents.ClearAsync(new(result.Company, snapshot.Selection.UserId, _ghgPending)); if (!Current(snapshot, generation)) return; _ghgSelection = saved; _ghgSelectionStatus = result.Status; _ghgPending = null; _ghgSelectionLoaded = true; _message = "The original company selection was confirmed."; }
+                else _message = "The selection outcome is unconfirmed. Retry the same selection or review the saved record.";
+                return;
+            }
+            _ghgSelection = result.Selection; _ghgSelectionStatus = result.Status; _ghgSelectionLoaded = true;
+            _message = result.Selection is null ? "No company catalog selection is saved." : "Company catalog selection loaded.";
+        }
+        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company catalog selection could not be loaded"); _ghgSelectionLoaded = false; _message = "The company catalog selection could not be confirmed."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task SaveGhgSelection()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation;
+        if (snapshot.Selection is null || _busy || !_ghgSelectionLoaded || !_ghgRecoveryReady || (_ghgPending is null && _ghgReview is null)) return;
+        if (_ghgPending is null)
+        {
+            try
+            {
+                _ghgPending = new(_ghgReview!.Catalog.Key, _ghgReview.Catalog.Revision, _ghgReview.EffectiveRevision, _ghgRationale, _ghgSelection?.Revision ?? "", Guid.NewGuid().ToString("N"));
+                _ = CompanyGhgSelectionIdentity.Prepare(snapshot.Selection.Scope, snapshot.Selection.UserId, _ghgPending, _ghgSelection);
+            }
+            catch (ArgumentException) { _ghgPending = null; _message = "Enter a reason for selecting this catalog."; return; }
+        }
+        var request = _ghgPending; var original = new GhgSelectionIntent(snapshot.Selection.Scope, snapshot.Selection.UserId, request); _busy = true; _message = null; var attempted = false;
+        try
+        {
+            await GhgIntents.RetainAsync(original); if (!Current(snapshot, generation)) return;
+            attempted = true;
+            var saved = await Api.PutAsync<CompanyGhgSelectionRequest, CompanyGhgSelection>("/api/company-environment/ghg-selection", request);
+            if (!Current(snapshot, generation)) return;
+            if (saved is null || !MatchesGhg(saved, request, snapshot.Selection.Scope, snapshot.Selection.UserId)) throw new InvalidOperationException("The selection response is unconfirmed.");
+            await GhgIntents.ClearAsync(original); if (!Current(snapshot, generation)) return;
+            _ghgSelection = saved; _ghgSelectionStatus = "Unconfirmed"; _ghgPending = null; _message = "Company selection saved. Reload it to check whether the reviewed setup is current. Reporting approval is still required.";
+        }
+        catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        { if (Current(snapshot, generation)) { try { await GhgIntents.ClearAsync(original); _ghgPending = null; _message = "The selection was refused. Review the reason and catalog."; } catch (Exception clearError) { Logger.LogWarning(clearError, "Refused selection recovery could not be cleared"); _message = "The selection was refused, but its recovery input could not be cleared."; } } }
+        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company catalog selection was not confirmed"); _message = attempted ? "The selection outcome is unconfirmed. Retry the same selection or load the saved record." : "The original selection could not be retained; no save was sent."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private static bool MatchesGhg(CompanyGhgSelection saved, CompanyGhgSelectionRequest request, CompanyScope company, string actor)
+    {
+        CompanyGhgSelectionIdentity.RequireValid(saved, company);
+        return saved == CompanyGhgSelectionIdentity.Prepare(company, actor, request, saved);
+    }
+
+    private async Task ReviewGhgCatalog()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation; var key = _ghgJurisdiction; var revision = _revision;
+        _ghgReview = null; _ghgFactors = null;
+        if (snapshot.Selection is null || !_settingsLoaded || _pending is not null || string.IsNullOrWhiteSpace(revision)) return;
+        _busy = true; _message = null; _ghgReview = null; _ghgFactors = null;
+        try
+        {
+            _ = SystemSetupIdentity.ForKey("GHG_FACTORS", key);
+            var result = await Api.GetAsync<CompanyGhgCatalogReview>($"/api/company-environment/ghg-catalog/{Uri.EscapeDataString(key)}");
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Company != snapshot.Selection.Scope || result.CompanyRevision != revision || !CompanyEnvironmentIdentity.IsRevision(result.EffectiveRevision) || result.Catalog is null)
+                throw new InvalidOperationException("The company factor review is unconfirmed.");
+            SystemSetupIdentity.RequireValid(result.Catalog, "GHG_FACTORS", key);
+            var parsed = GhgFactorCatalogValidation.Parse(key, result.Catalog.SettingsJson);
+            if (_effective is not null && _effective.EffectiveRevision != result.EffectiveRevision)
+                throw new InvalidOperationException("The company environment changed; review it again.");
+            RetainEvidenceFor(result!.EffectiveRevision);
+            _ghgReview = result; _ghgFactors = parsed;
+        }
+        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company factor catalog could not be reviewed"); _message = "The factor catalog or company environment could not be confirmed."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task ReviewOrganization()
+    {
+        if (_busy || Company.Selection is null) return;
+        var snapshot = Company.Snapshot; var generation = _generation; _busy = true; _organization = null; _message = null;
+        try
+        {
+            var result = await Api.GetAsync<CompanyOrganizationReview>("/api/company-environment/organization");
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Company != snapshot.Selection!.Scope || !CompanyEnvironmentIdentity.IsRevision(result.BindingRevision) ||
+                result.Status is not ("Active" or "Inactive" or "NotFound" or "Unconfirmed")) throw new InvalidOperationException("The organization response is unconfirmed.");
+            _organization = result;
+        }
+        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company PPDM organization could not be confirmed"); _message = "The company organization could not be confirmed. Check its PPDM binding and access."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task LoadSaved()
+    {
+        if (_busy || !_environmentRecoveryReady) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation;
+        if (snapshot.Selection is null) return;
+        _busy = true; _message = null; _ghgReview = null; _ghgFactors = null; if (_ghgSelection is not null) _ghgSelectionStatus = "Unconfirmed";
+        try
+        {
+            var result = await Api.GetAsync<CompanyEnvironmentReadResult>("/api/company-environment");
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Company != snapshot.Selection.Scope) throw new InvalidOperationException("The saved company is unconfirmed.");
+            if (result.Configuration is { } value) CompanyEnvironmentIdentity.RequireValid(value, result.Company);
+            if (_pending is not null)
+            {
+                if (result.Configuration is { } saved && Matches(saved, _pending, result.Company))
+                { EnvironmentChanges.Notify(); await EnvironmentIntents.ClearEnvironmentAsync(new(result.Company, snapshot.Selection.UserId, _pending)); if (!Current(snapshot, generation)) return; _pending = null; AdoptSaved(saved); _message = "The original save was confirmed. Settings are recorded but not activated."; }
+                else _message = "The previous save outcome is unconfirmed. Retry the same save or review the server record before changing settings.";
+                return;
+            }
+            _revision = result.Configuration?.Revision ?? "";
+            _saved = result.Configuration;
+            _toolsVersion = result.Configuration?.ToolsVersion ?? "";
+            _country = result.Configuration?.CountryCode ?? "";
+            _overrides = result.Configuration?.OverridesJson ?? "{}";
+            ClearDraftInputs();
+            RefreshMappingRows();
+            _preview = null; _draftReview = null; _verification = null; _effective = null; _sources = null; _wellTest = null; _settingsLoaded = true;
+            _message = result.Configuration is null ? "No company environment is saved yet." : "Saved settings loaded. Preview them before making changes.";
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The settings request was cancelled. Try again."; }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Saved company environment could not be loaded"); _saved = null; _settingsLoaded = false; _message = "Saved settings could not be confirmed. Check company access and the system setup migration."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task Save()
+    {
+        if (_busy || !_environmentRecoveryReady) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation;
+        if (snapshot.Selection is null || !_settingsLoaded || (_pending is null && (_preview is null || _draftReview is null || _preview.Warnings.Length != 0 ||
+            _draftReview.DraftRevision != CompanyEnvironmentDraftIdentity.ForReview(snapshot.Selection.Scope, new(_country, _overrides), _draftReview.SystemRevision, _draftReview.CountryRevision, _draftReview.ToolsVersion)))) return;
+        _pending ??= new(new(_country, _overrides, _revision, Guid.NewGuid().ToString("N")), _draftReview!);
+        var request = _pending; var original = new CompanyEnvironmentIntent(snapshot.Selection.Scope, snapshot.Selection.UserId, request); var attempted = false; _busy = true; _message = null; _ghgReview = null; _ghgFactors = null;
+        try
+        {
+            await EnvironmentIntents.RetainEnvironmentAsync(original); if (!Current(snapshot, generation)) return;
+            attempted = true;
+            var result = await Api.PutAsync<CompanyEnvironmentReviewedSaveRequest, CompanyEnvironmentConfiguration>("/api/company-environment", request);
+            if (!Current(snapshot, generation)) return;
+            if (result is null || !Matches(result, request, snapshot.Selection.Scope)) throw new InvalidOperationException("The original save response is unconfirmed.");
+            EnvironmentChanges.Notify();
+            await EnvironmentIntents.ClearEnvironmentAsync(original); if (!Current(snapshot, generation)) return;
+            _pending = null; AdoptSaved(result);
+            _message = "Settings saved. Operational verification and activation are still required.";
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = attempted ? "The save outcome is unconfirmed. Retry the same save or load saved settings." : "The original environment request could not be retained; no save was sent."; }
+        catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        { if (Current(snapshot, generation)) { try { await EnvironmentIntents.ClearEnvironmentAsync(original); _pending = null; _message = "The settings were refused. Review the JSON and preview again."; } catch (Exception clearError) { Logger.LogWarning(clearError, "Refused environment recovery could not be cleared"); _message = "The settings were refused, but recovery input could not be cleared."; } } }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment save could not be confirmed"); _message = attempted ? "The save outcome is unconfirmed. Retry the same save or load saved settings." : "The original environment request could not be retained; no save was sent."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private void AdoptSaved(CompanyEnvironmentConfiguration saved)
+    {
+        _saved = saved; _revision = saved.Revision; _toolsVersion = saved.ToolsVersion;
+        _country = saved.CountryCode; _overrides = saved.OverridesJson;
+        ClearDraftInputs();
+        RefreshMappingRows();
+        _preview = null; _draftReview = null; _verification = null; _effective = null; _sources = null; _wellTest = null;
+        _settingsLoaded = true;
+    }
+
+    private void ClearDraftInputs()
+    {
+        _editCulture = _editTimeZone = _editDepth = _editPressure = _editDiameter = _editUnitSystem = _editWeight = _editForce = "";
+        _editDisplayCulture = _editDateFormat = _editDateTimeFormat = _editCalendar = "";
+        _editCoordinateSystems = _editRegulators = _editSourceName = _editSourceModule = "";
+        _editMappingEntity = _editMappingField = _editMappingSourceCode = _editMappingCanonicalCode = "";
+        _mappingDisplayCounts.Clear();
+    }
+
+    private static bool Matches(CompanyEnvironmentConfiguration value, CompanyEnvironmentReviewedSaveRequest command, CompanyScope company)
+    {
+        var request = command.Change;
+        CompanyEnvironmentIdentity.RequireValid(value, company);
+        return value.IntentId == request.IntentId && value.CountryCode == request.CountryCode && value.OverridesJson == request.OverridesJson && value.PreviousRevision == request.ExpectedRevision && value.ReviewedDraftRevision == command.Review.DraftRevision && value.ReviewedSystemRevision == command.Review.SystemRevision && value.ReviewedCountryRevision == command.Review.CountryRevision;
+    }
+
+    private async Task Verify()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation; var revision = _revision; var version = _toolsVersion;
+        if (snapshot.Selection is null || !_settingsLoaded || _pending is not null || string.IsNullOrEmpty(revision)) return;
+        _busy = true; _message = null; _verification = null;
+        try
+        {
+            var result = await Api.PostAsync<object, CompanyEnvironmentVerification>("/api/company-environment/verify", new { });
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Company != snapshot.Selection.Scope || result.Revision != revision || result.ToolsVersion != version ||
+                result.ValidationIssues is null || result.ReferenceCases is null || result.SourcesVerified || !CompanyEnvironmentIdentity.IsRevision(result.EffectiveRevision) ||
+                _effective is not null && result.EffectiveRevision != _effective.EffectiveRevision ||
+                result.ReferenceCases.Any(x => x is null || string.IsNullOrWhiteSpace(x.Name) || x.Status is not ("Passed" or "Failed" or "Unavailable")))
+                throw new InvalidOperationException("The saved verification revision was not confirmed.");
+            RetainEvidenceFor(result.EffectiveRevision);
+            _verification = result;
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "Verification was cancelled. Try again."; }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment verification failed"); _message = "The saved revision could not be verified. Reload and review its settings."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task ReviewEffective()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation; var revision = _revision;
+        if (snapshot.Selection is null || !_settingsLoaded || _pending is not null || string.IsNullOrEmpty(revision)) return;
+        _busy = true; _message = null; _effective = null; _verification = null; _sources = null; _wellTest = null; _testSource = "";
+        _ghgReview = null; _ghgFactors = null; if (_ghgSelection is not null) _ghgSelectionStatus = "Unconfirmed";
+        try
+        {
+            var result = await Api.GetAsync<CompanyEnvironmentEffectiveReview>("/api/company-environment/effective");
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Company != snapshot.Selection.Scope || result.CompanyRevision != revision || result.Settings is null ||
+                result.Settings.Company != snapshot.Selection.Scope || result.Settings.CountryCode != _saved?.CountryCode || result.Settings.Warnings is null ||
+                result.ReviewStatus == "Current" && result.Settings.Warnings.Length != 0 ||
+                result.ReviewStatus is not ("Current" or "ReviewRequired") || !CompanyEnvironmentIdentity.IsRevision(result.SystemRevision) ||
+                !CompanyEnvironmentIdentity.IsRevision(result.EffectiveRevision) || result.CountryRevision is not null && !CompanyEnvironmentIdentity.IsRevision(result.CountryRevision))
+                throw new InvalidOperationException("The effective setup does not match the selected company and saved revision.");
+            _effective = result;
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The effective settings request was cancelled. Try again."; }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Effective company environment could not be confirmed"); _message = "Effective settings could not be confirmed. Review shared TOOLS / DEFAULT and company setup."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task ReviewSources()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation; var revision = _revision;
+        if (snapshot.Selection is null || !_settingsLoaded || _pending is not null || string.IsNullOrEmpty(revision)) return;
+        _busy = true; _message = null; _sources = null; _wellTest = null; _testSource = ""; _mappingDisplayCounts.Clear();
+        try
+        {
+            var result = await Api.GetAsync<CompanyEnvironmentSourceReview>("/api/company-environment/sources");
+            if (!Current(snapshot, generation)) return;
+            CompanyEnvironmentSourceReviewValidator.RequireValid(result, snapshot.Selection.Scope, revision, _effective?.EffectiveRevision);
+            RetainEvidenceFor(result!.EffectiveRevision);
+            _sources = result;
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The source review was cancelled. Try again."; }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment source review failed"); _message = "The saved source bindings could not be reviewed. Reload the company settings."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+    private static string MappingOriginLabel(string origin) => origin switch { "System" => "shared defaults", "CountryPreset" => "country preset", "Country" => "country settings", "Company" => "company override", _ => "unconfirmed" };
+    private int MappingDisplayCount(CompanyEnvironmentSource source) => Math.Min(source.CodeMappings.Length, _mappingDisplayCounts.GetValueOrDefault(source.Name, 25));
+    private void ShowMoreMappings(CompanyEnvironmentSource source)
+    {
+        if (_busy || _sources?.Sources.Contains(source) != true) return;
+        _mappingDisplayCounts[source.Name] = Math.Min(source.CodeMappings.Length, MappingDisplayCount(source) + 25);
+    }
+
+    private void RetainEvidenceFor(string effectiveRevision)
+    {
+        if (_verification is not null && _verification.EffectiveRevision != effectiveRevision) _verification = null;
+        if (_sources is not null && _sources.EffectiveRevision != effectiveRevision)
+        { _sources = null; _wellTest = null; _testSource = ""; }
+        if (_ghgReview is not null && _ghgReview.EffectiveRevision != effectiveRevision)
+        { _ghgReview = null; _ghgFactors = null; }
+        if (_ghgSelection is not null && _ghgSelection.EnvironmentRevision != effectiveRevision)
+            _ghgSelectionStatus = "ReviewRequired";
+    }
+
+    private async Task TestWell()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation; var revision = _revision; var source = _testSource; var well = _testWell;
+        if (snapshot.Selection is null || _pending is not null || _sources?.Sources.Any(x => x.Name == source && x.Module == "PPDM_CORE" && x.BindingStatus == "Bound" && x.MappingStatus == "ProfileChecked") != true || string.IsNullOrWhiteSpace(well)) return;
+        _busy = true; _message = null; _wellTest = null;
+        try
+        {
+            var result = await Api.PostAsync<CompanyEnvironmentWellTestRequest, CompanyEnvironmentWellTest>("/api/company-environment/sources/test-well", new(source, well, revision, _sources!.EffectiveRevision));
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Company != snapshot.Selection.Scope || result.Revision != revision || result.SourceName != source || result.WellId != well ||
+                result.RelatedTablesTested || result.EffectiveRevision != _sources.EffectiveRevision || string.IsNullOrWhiteSpace(result.LoaderVersion) || result.Status is not ("Found" or "NotVisible"))
+                throw new InvalidOperationException("The well check did not match its original company, source and well.");
+            _wellTest = result;
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The well check was cancelled. Try again."; }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment well check failed"); _message = "The selected well header could not be checked. Review source binding and well access."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task BeginCompanySetup()
+    {
+        var snapshot = Company.Snapshot;
+        if (_busy || !_environmentRecoveryReady || snapshot.Selection is null || _settingsLoaded || _pending is not null || _countries is not null) return;
+        await LoadSaved();
+        if (_disposed || snapshot != Company.Snapshot || !_settingsLoaded || _pending is not null) return;
+        await LoadCountries();
+        if (!_disposed && snapshot == Company.Snapshot && _countries is not null)
+            _message = _saved is null ? "Choose a country and preview the company settings." : "Saved settings loaded. Review the country and preview changes before saving.";
+    }
+
+    private async Task LoadCountries()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation;
+        if (snapshot.Selection is null) return;
+        _busy = true; _message = null; _countries = null; _preview = null;
+        try
+        {
+            var result = await Api.GetAsync<CompanyEnvironmentCountry[]>("/api/company-environment/countries");
+            if (!Current(snapshot, generation)) return;
+            if (result is null || result.Length == 0 || result.Any(c => string.IsNullOrWhiteSpace(c.Code) || string.IsNullOrWhiteSpace(c.Name)) || result.Select(c => c.Code).Distinct(StringComparer.Ordinal).Count() != result.Length)
+                throw new InvalidOperationException("The country catalog was not confirmed.");
+            _countries = result;
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The country request was cancelled. Try again."; }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Country presets could not be loaded"); _message = "Country presets could not be loaded. Check company access and try again."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+
+    private async Task Preview()
+    {
+        if (_busy) return;
+        var snapshot = Company.Snapshot; var generation = ++_generation; var country = _country;
+        if (snapshot.Selection is null || _countries?.Any(c => c.Code == country) != true) return;
+        _busy = true; _message = null; _preview = null; _draftReview = null;
+        try
+        {
+            var draft = new CompanyEnvironmentPreviewRequest(country, _overrides);
+            var review = await Api.PostAsync<CompanyEnvironmentPreviewRequest, CompanyEnvironmentDraftReview>("/api/company-environment/preview", draft);
+            if (!Current(snapshot, generation)) return;
+            if (review is null || review.DraftRevision != CompanyEnvironmentDraftIdentity.ForReview(snapshot.Selection.Scope, draft, review.SystemRevision, review.CountryRevision, review.ToolsVersion))
+                throw new InvalidOperationException("The reviewed setup layers do not match the company draft.");
+            var result = review.Settings;
+            if (result is null || result.Company != snapshot.Selection.Scope || result.CountryCode != country ||
+                string.IsNullOrWhiteSpace(result.CountryName) || string.IsNullOrWhiteSpace(result.Culture) ||
+                string.IsNullOrWhiteSpace(result.DepthUnit) || string.IsNullOrWhiteSpace(result.PressureUnit) ||
+                string.IsNullOrWhiteSpace(result.DiameterUnit) || result.CoordinateSystems is null ||
+                result.Regulators is null || result.Warnings is null)
+                throw new InvalidOperationException("The preview does not match the selected company and country.");
+            _draftReview = review; _preview = result;
+        }
+        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The preview request was cancelled. Try again."; }
+        catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.Conflict)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Combined setup could not be confirmed for company preview"); _message = "The combined settings could not be confirmed. Check shared system and country settings, then review the company draft again."; } }
+        catch (Exception error)
+        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment preview failed"); _message = "The environment could not be previewed. Review the JSON, selected country and company access."; } }
+        finally { if (Current(snapshot, generation)) _busy = false; }
+    }
+    private bool CurrentEnvironmentRecovery((long Version, CompanyClientSelection? Selection) snapshot, long generation) => !_disposed && generation == _environmentRecoveryGeneration && snapshot == Company.Snapshot;
+    private bool CurrentRecovery((long Version, CompanyClientSelection? Selection) snapshot, long generation) => !_disposed && generation == _ghgRecoveryGeneration && snapshot == Company.Snapshot;
+    private bool Current((long Version, CompanyClientSelection? Selection) snapshot, long generation) => !_disposed && generation == _generation && snapshot == Company.Snapshot;
+    public void Dispose() { _disposed = true; ++_generation; Company.Changed -= CompanyChanged; }
+}

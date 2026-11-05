@@ -8,6 +8,7 @@ public sealed class AppUserAssetAccess
     public string DatabaseScope { get; set; } = "";
     public string AssetType { get; set; } = "";
     public string AssetId { get; set; } = "";
+    public string? FacilityType { get; set; }
     public string? OrganizationId { get; set; }
     public string AccessLevel { get; set; } = "READ";
     public bool Inherit { get; set; }

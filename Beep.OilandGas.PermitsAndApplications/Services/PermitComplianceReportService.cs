@@ -1,3 +1,4 @@
+using TheTechIdea.Data.OilGas;
 using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
@@ -27,9 +28,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<PermitComplianceReportService>? logger = null,
-            string connectionName = "PPDM39")
-            : base(editor, commonColumnHandler, defaults, metadata, logger, connectionName)
+            ICompanyPermitApplicationDataAccess dataAccess,
+            ILogger<PermitComplianceReportService>? logger = null)
+            : base(editor, commonColumnHandler, defaults, metadata, dataAccess, logger)
         {
             _logger = logger;
         }

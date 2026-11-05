@@ -1,0 +1,12 @@
+### Browser `hse353route` opened with pid 36832.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:60559');
+```
+### Page
+- Page URL: http://127.0.0.1:60559/
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](output\playwright\353-assigned-incident-browser\artifacts\page-2026-10-29T10-00-14-669Z.yml)
+### Events
+- New console entries: output\playwright\353-assigned-incident-browser\artifacts\console-2026-10-29T10-00-14-171Z.log#L1-L3

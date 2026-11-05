@@ -1,0 +1,81 @@
+@using TheTechIdea.Data.OilGas
+@using Beep.OilandGas.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject WorkOrderReturnHandoffState State
+@inject ICompanyMaintenanceHandoffClient Workflows
+@inject IFieldSelectionContext Fields
+@inject Beep.OilandGas.Client.App.CompanyClientContext Company
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+@inject OilGasCallFailures Calls
+@implements IDisposable
+<MudPaper Class="pa-3 my-3" Outlined="true">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Hand verified work to the configured return approver</MudText>
+        @if(_error is not null){<MudAlert Severity="Severity.Error">@_error</MudAlert>}
+        @if(Query is null)
+        {
+            <MudTextField @bind-Value="_process" @bind-Value:after="InputsChanged" Label="Original maintenance process identity" Disabled="@State.Busy" Required="true" />
+            <MudTextField @bind-Value="_submission" @bind-Value:after="InputsChanged" Label="Original recorded work report identity" Disabled="@State.Busy" Required="true" />
+        }
+        <MudButton OnClick="ReviewAsync" Disabled="@(!State.CanReview)">Review verified work and next configured return role</MudButton>
+        @if(State.Review is {} review)
+        {
+            <MudText>Original report @review.Completion.Report.Query.SubmissionId · completed UTC @review.Completion.Report.CompletedAtUtc.ToString("O")</MudText>
+            <MudText>@review.Completion.Report.WorkPerformed</MudText>
+            <MudText>Verified by @review.Decision.ReviewerUserId · native person @review.Decision.ReviewerPersonBaId · recorded UTC @review.Decision.RecordedAtUtc.ToString("O")</MudText>
+            <MudText Typo="Typo.caption">Recorded verification @review.Decision.ApprovalId · work evidence @review.Decision.WorkSubjectRevision</MudText>
+            <MudText>Current reviewer role @review.Stage.AssignedRole · responsible return role @review.NextRole · step @review.NextStepId</MudText>
+            <MudTextField @bind-Value="_reason" Label="Explicit return handoff reason" Lines="3" Required="true" Disabled="@State.Busy" />
+            <MudCheckBox @bind-Value="_confirm" Label="I confirm the recorded verification, unchanged work evidence and displayed return approval role" Disabled="@State.Busy" />
+            <MudButton OnClick="RecordAsync" Disabled="@(!State.CanRecord || !_confirm)" Color="Color.Primary">Retain reference and open return approval assignment</MudButton>
+        }
+        <MudTextField @bind-Value="_reference" Label="Original return handoff intent reference" Disabled="@State.Busy" />
+        <MudButton OnClick="RecoverAsync" Disabled="@State.Busy">Read original handoff without closing tasks again</MudButton>
+        @if(State.VisibleReference is {} id){<MudText>Retained original return handoff @id</MudText>}
+        @if(State.Receipt is {} saved)
+        {
+            <MudAlert Severity="Severity.Success">Recorded verified-work handoff · return role @saved.Receipt.ReturnRole · tasks @saved.Receipt.ReturnTaskIds.Count</MudAlert>
+            <MudText>Reviewer @saved.Receipt.ReviewerUserId · recorded UTC @saved.Receipt.RecordedAtUtc.ToString("O") · history @saved.Receipt.HistoryId</MudText>
+            <MudButton Href="@("/ppdm39/process/instances/"+Uri.EscapeDataString(saved.Receipt.InstanceId))">Open recorded process and role handoff</MudButton>
+            <MudButton Href="/tasks/inbox">Open current assigned work</MudButton>
+        }
+        <MudText>This closes the independent review assignment and opens the configured return role. Physical return acceptance and lifecycle advancement require their own recorded evidence.</MudText>
+    </MudStack>
+</MudPaper>
+@code {
+    [Parameter] public CompanyWorkOrderCompletionQuery? Query{get;set;}
+    [Parameter] public string WorkOrderId{get;set;}="";
+    [Parameter] public string FieldId{get;set;}="";
+    private CompanyWorkOrderCompletionQuery? _attached;
+    private string _resource="",_reason="",_reference="",_process="",_submission="";
+    private bool _confirm,_disposed;
+    private string? _error;
+    protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Invalidate;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}
+    protected override void OnParametersSet()
+    {
+        var resource=WorkOrderId+"\n"+FieldId;if(_attached!=Query || _resource!=resource){Invalidate();_attached=Query;_resource=resource;}if(Query is not null)State.Attach(Query);
+        var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);if(values.TryGetValue("returnHandoff",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
+        if(values.TryGetValue("returnProcess",out var process) && process.Count==1)_process=process[0]??"";if(values.TryGetValue("returnSubmission",out var submission) && submission.Count==1)_submission=submission[0]??"";
+    }
+    private CompanyWorkOrderCompletionQuery CurrentQuery()=>Query??new(new(_process,FieldId,WorkOrderId),_submission);
+    private void InputsChanged(){State.Attach(null);_confirm=false;_error=null;}
+    private async Task Authority()
+    {
+        var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        var query=CurrentQuery();query.Require();
+        if(_disposed || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || user.FindFirst("party_id")?.Value!=selected.UserId || !selected.Roles.Any(user.IsInRole) ||
+            !selected.Permissions.Contains("Maintenance.VerifyCompletion",StringComparer.Ordinal) || !selected.Permissions.Contains("Workflow.Approve",StringComparer.Ordinal) ||
+            query.Task.WorkOrderId!=WorkOrderId || query.Task.FieldId!=FieldId || State.Review is {} review && !user.IsInRole(review.Stage.AssignedRole) || await Fields.GetCurrentFieldIdAsync()!=query.Task.FieldId || snapshot!=Company.Snapshot)throw new UnauthorizedAccessException("Original standard reviewer role/company/account/FIELD and completion/approval capabilities are required.");
+    }
+    private Task Retain(Guid id){var query=State.VisibleCommand?.Review.Completion.Report.Query??CurrentQuery();_reference=id.ToString("D");Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{{"returnHandoff",_reference},{"returnProcess",query.Task.InstanceId},{"returnSubmission",query.SubmissionId}}),replace:true);return Task.CompletedTask;}
+    private Task ReviewAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());await State.ReviewAsync(Workflows);_reason="";_confirm=false;},"reviewing the original return handoff");
+    private Task RecordAsync()=>Run(async()=>{await Authority();if(!_confirm || State.Review?.Completion.Report.Query!=CurrentQuery())throw new ArgumentException("Confirm the exact reviewed report and configured reviewer role; reload changed source identities.");await State.RecordAsync(Workflows,_reason,Retain);},"recording the original return handoff");
+    private Task RecoverAsync()=>Run(async()=>{await Authority();State.Attach(CurrentQuery());if(!Guid.TryParse(_reference,out var id) || id==Guid.Empty)throw new ArgumentException("Use the original return handoff intent reference.");await State.RecoverAsync(Workflows,id,Retain);},"reading the original return handoff");
+    private async Task Run(Func<Task> action,string operation){if(State.Busy || _disposed)return;_error=null;var snapshot=Company.Snapshot;try{await action();}catch(Exception error){if(!_disposed && snapshot==Company.Snapshot)_error=Calls.Explain(error,operation,"Original return handoff is unconfirmed");}finally{if(!_disposed)await InvokeAsync(StateHasChanged);}}
+    private void Invalidate(){State.Attach(null);_process="";_submission="";_reason="";_reference="";_confirm=false;_error=null;Changed();}
+    private void FieldChanged(string _) => Invalidate();
+    private void AuthenticationChanged(Task<AuthenticationState> _) => Invalidate();
+    private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
+    public void Dispose(){if(_disposed)return;_disposed=true;State.Changed-=Changed;Company.Changed-=Invalidate;Fields.CurrentFieldChanged-=FieldChanged;Authentication.AuthenticationStateChanged-=AuthenticationChanged;}
+}

@@ -15,44 +15,8 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
     /// Comprehensive lease acquisition service implementation - Main file
     /// Handles lease acquisition, negotiation, rights management, and lifecycle operations
     /// </summary>
-    public partial class LeaseAcquisitionService : ILeaseAcquisitionAdvancedService, Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService
+    public partial class LeaseAcquisitionService : ILeaseAcquisitionAdvancedService
     {
-        private readonly IDMEEditor _editor;
-        private readonly ICommonColumnHandler _commonColumnHandler;
-        private readonly IPPDM39DefaultsRepository _defaults;
-        private readonly IPPDMMetadataRepository _metadata;
-        private readonly string _connectionName;
-        private readonly Func<Task<string>>? _resolveConnection;
-        private readonly ILogger<LeaseAcquisitionService>? _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the LeaseAcquisitionService
-        /// </summary>
-        public LeaseAcquisitionService(
-            IDMEEditor editor,
-            ICommonColumnHandler commonColumnHandler,
-            IPPDM39DefaultsRepository defaults,
-            IPPDMMetadataRepository metadata,
-            string connectionName = "DefaultConnection",
-            ILogger<LeaseAcquisitionService>? logger = null,
-            Func<Task<string>>? resolveConnection = null)
-        {
-            _editor = editor ?? throw new ArgumentNullException(nameof(editor));
-            _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
-            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
-            _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
-            _logger = logger;
-            _resolveConnection = resolveConnection;
-        }
-
-        private async Task<string> ResolveConnectionAsync()
-        {
-            var connection = _resolveConnection is null ? _connectionName : await _resolveConnection();
-            if (string.IsNullOrWhiteSpace(connection)) throw new InvalidOperationException("A PPDM_CORE database binding is required.");
-            return connection;
-        }
-
         /// <summary>
         /// Method 1: Initiates new lease acquisition process
         /// </summary>

@@ -1,0 +1,19 @@
+### Page
+- Page URL: http://127.0.0.1:60559/ppdm39/hse/incident-detail?incidentId=case%2F%D8%B4%D8%B1%D9%83%D8%A9%3Fone%232&workflowInstanceId=wrong-workflow
+### Snapshot
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e24]:
+    - heading "Isolated assigned HSE navigation" [level=1] [ref=f1e25]
+    - paragraph [ref=f1e26]: Actual source/incident components and query binding. Controlled clients and authentication; this does not qualify production API or provider authority.
+    - group [ref=f1e27]:
+      - link "Open assigned HSE process" [ref=f1e28] [cursor=pointer]:
+        - /url: /ppdm39/process/instances/hse-process-assigned-original
+      - link "Fixture home" [ref=f1e30] [cursor=pointer]:
+        - /url: /
+      - button "Switch other company" [ref=f1e32] [cursor=pointer]
+      - button "Restore original company" [ref=f1e34] [cursor=pointer]
+  - generic [ref=f1e36]:
+    - generic [ref=f1e37]: Could not confirm incident detail for the current company and FIELD.
+    - button "Reload incident" [ref=f1e44] [cursor=pointer]
+```
