@@ -197,6 +197,12 @@ public record HSEKPISet(
     double ExposureHours,
     DateRangeFilter Period);
 
+/// <summary>
+/// Counts of active HSE incidents (<c>IHSEKPIService.CountIncidentsAsync</c>): all of them, those whose current state is
+/// neither closed nor cancelled, and those in each tier on the incident's primary detail (tier 4 when none is recorded).
+/// </summary>
+public record IncidentCounts(int Total, int Open, int Tier1, int Tier2, int Tier3, int Tier4);
+
 public record TierRateTrend(
     string Month,
     double Tier1Rate,

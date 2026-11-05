@@ -6,6 +6,9 @@ namespace Beep.OilandGas.ProductionAccounting.Constants
         public const string CloseRevenue = "Close revenue";
         public const string CloseRoyaltyExpense = "Close royalty expense";
         public const string CloseNetIncomeToRetainedEarnings = "Close net income to retained earnings";
+
+        /// <summary>The one zero line of the closing journal of a period with no revenue or royalty.</summary>
+        public const string NoActivityToClose = "No revenue or royalty activity to close";
     }
 
     /// <summary><c>REVENUE_ALLOCATION.DESCRIPTION</c> / <c>REVENUE_TRANSACTION.DESCRIPTION</c> for take-or-pay flows.</summary>

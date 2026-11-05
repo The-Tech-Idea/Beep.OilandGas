@@ -44,6 +44,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="rankingCriteria">Ranking criteria</param>
         /// <returns>Ranked list of prospects</returns>
         Task<List<ProspectRanking>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria);
+
+        /// <summary>
+        /// Gets the volume estimates recorded for a prospect (its PROSPECT_VOLUME_ESTIMATE rows), newest first.
+        /// </summary>
+        /// <param name="prospectId">Prospect identifier</param>
+        /// <returns>The recorded estimates; empty when none is recorded</returns>
+        Task<List<PROSPECT_VOLUME_ESTIMATE>> GetVolumeEstimatesAsync(string prospectId);
     }
 }
 

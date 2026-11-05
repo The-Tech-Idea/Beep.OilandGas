@@ -4,6 +4,7 @@
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject IProductionServiceClient ProductionService
 
 <PageTitle>Compile Production Volume Reports</PageTitle>
@@ -64,6 +65,10 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
+            }
             else if (!_isLoading)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
@@ -81,6 +86,7 @@
     private string _fieldName = string.Empty;
     private List<PDEN_VOL_SUMMARY>? _reporting;
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,7 +96,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the list still loads; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the production reporting page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         await LoadReporting();
     }
@@ -98,13 +109,17 @@
     private async Task LoadReporting()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _reporting = await ProductionService.GetReportingAsync();
         }
-        catch (Exception)
+        // A failed call is said in place of the list, rather than as an empty one; anything else reaches the page's error
+        // boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading production reporting.", Severity.Error);
+            _reporting = null;
+            _loadError = Calls.Explain(failure, "loading the production volume reports", "Error loading production reporting");
         }
         finally
         {

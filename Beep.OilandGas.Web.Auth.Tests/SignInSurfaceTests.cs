@@ -139,6 +139,20 @@ public sealed class SignInSurfaceTests
         Assert.DoesNotContain("processPath", webConfig, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// CWF-06. The Web is a confidential client, so its client secret is named as required: the library takes an absent
+    /// secret for a public client, so a server whose settings omitted it started with sign-in on and every code exchange was
+    /// refused (<c>invalid_client</c>). Read from source, as this class's other arms are; that the library then switches
+    /// sign-in off is its own tests'.
+    /// </summary>
+    [Fact]
+    public void The_client_secret_is_a_required_setting()
+    {
+        var program = File.ReadAllText(Path.Combine(WebRoot, "Program.cs"));
+
+        Assert.Matches(@"RequiredConfigurationKeys\s*=\s*\[[^\]]*""IdentityServer:ClientSecret""", program);
+    }
+
     private static IEnumerable<string> Routes() =>
         typeof(RepositoryAccountClient).Assembly.GetTypes()
             .SelectMany(type => type.GetCustomAttributes(typeof(RouteAttribute), true).Cast<RouteAttribute>())

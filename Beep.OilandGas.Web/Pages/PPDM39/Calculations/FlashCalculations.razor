@@ -9,6 +9,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Run Flash Calculations</PageTitle>
 
@@ -393,9 +394,15 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch
+        // The field summary is non-critical for flash calculations: the page goes on without it, and says so.
+        catch (OilGasApiException answer)
         {
-            // Field summary is non-critical for flash calculations.
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for flash calculations", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for flash calculations", "The field name could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -444,9 +451,14 @@
             _currentResult = result;
             Snackbar.Add("Isothermal flash calculation completed.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error running isothermal flash calculation.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "running an isothermal flash calculation", "The isothermal flash calculation did not run"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "running an isothermal flash calculation", "The isothermal flash calculation did not run");
         }
         finally
         {
@@ -475,9 +487,14 @@
             _currentResult = results.FirstOrDefault();
             Snackbar.Add("Multi-stage flash calculation completed.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error running multi-stage flash calculation.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "running a multi-stage flash calculation", "The multi-stage flash calculation did not run"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "running a multi-stage flash calculation", "The multi-stage flash calculation did not run");
         }
         finally
         {
@@ -497,16 +514,37 @@
         try
         {
             await CalculationService.SaveFlashResultAsync(_currentResult);
-            await ReloadHistoryAsync();
             Snackbar.Add("Flash result saved.", Severity.Success);
         }
         catch (OilGasApiException answer)
         {
             Snackbar.Add(Answers.Explain(answer, "saving the flash calculation result", "The flash result was not saved"), Severity.Error);
+            return;
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "saving the flash calculation result", "The flash result was not saved");
+            return;
         }
         finally
         {
             _isSaving = false;
+        }
+
+        // The result is saved; the history beside it is refreshed apart, so a failure here is not mistaken for the save's.
+        try
+        {
+            await ReloadHistoryAsync();
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "refreshing the flash calculation history", "The flash history could not be refreshed"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "refreshing the flash calculation history", "The flash history could not be refreshed", FailureSeverity.Degraded);
         }
     }
 

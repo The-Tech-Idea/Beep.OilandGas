@@ -7,6 +7,8 @@
 @inject ICalculationServiceClient CalculationService
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Analyze Gas Properties</PageTitle>
 
@@ -183,8 +185,14 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch
+        catch (OilGasApiException answer)
         {
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for gas properties", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for gas properties", "The field name could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -201,9 +209,14 @@
             _gasProperties = await CalculationService.AnalyzeGasPropertiesAsync(_composition, _pressure, _temperature);
             Snackbar.Add("Gas properties calculated.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error calculating gas properties.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "calculating gas properties", "The gas properties were not calculated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "calculating gas properties", "The gas properties were not calculated");
         }
         finally
         {
@@ -230,9 +243,14 @@
 
             Snackbar.Add(response?.Message ?? "Gas composition saved.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error saving gas composition.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "saving a gas composition", "The gas composition was not saved"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "saving a gas composition", "The gas composition was not saved");
         }
         finally
         {
@@ -262,9 +280,14 @@
             _compositionLookupId = loadedComposition.CompositionId ?? string.Empty;
             Snackbar.Add("Gas composition loaded.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading gas composition.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "loading a gas composition", "The gas composition could not be loaded"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading a gas composition", "The gas composition could not be loaded");
         }
         finally
         {

@@ -14,6 +14,8 @@
 @inject IProductionServiceClient ProductionClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Run Well Test Analysis</PageTitle>
 
@@ -457,8 +459,15 @@
                 _fieldId = string.IsNullOrWhiteSpace(summary.FieldId) ? null : summary.FieldId.Trim();
             }
         }
-        catch
+        // The field is non-critical: history and saving fall back to the selected well's field, and the person is told.
+        catch (OilGasApiException answer)
         {
+            Snackbar.Add(Answers.Explain(answer, "loading the field for well test analysis", "The field could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field for well test analysis", "The field could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -474,9 +483,14 @@
                 await LoadAvailableTestsAsync();
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load wells for Well Test Analysis.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the wells for well test analysis", "The wells for Well Test Analysis could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the wells for well test analysis", "The wells for Well Test Analysis could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -499,11 +513,18 @@
             _selectedTestId = _availableTests.FirstOrDefault()?.TestId;
             ApplySelectedTestDefaults();
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
             _availableTests = new List<WellTestResponse>();
             _selectedTestId = null;
-            Snackbar.Add("Failed to load well tests for the selected well.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, $"loading the well tests for well {_selectedWellId}", "The well tests for the selected well could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _availableTests = new List<WellTestResponse>();
+            _selectedTestId = null;
+            Notifier.Failure(ex, $"loading the well tests for well {_selectedWellId}", "The well tests for the selected well could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -600,28 +621,39 @@
         {
             var request = BuildRequest();
             _currentResult = await CalculationService.PerformWellTestAnalysisAsync(request);
-            await ReloadHistoryAsync();
             Snackbar.Add("Well test analysis completed.", Severity.Success);
         }
-        catch (ArgumentException ex)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add(ex.Message, Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"running well test analysis for well {_selectedWellId}", "The well test analysis did not run"), Severity.Error);
+            return;
         }
-        catch (InvalidOperationException ex)
+        // A page answers every failure it meets with a sentence; the store keeps the exception — the client's own
+        // "no answer" (InvalidOperationException) and a request that did not complete included: failures, not refusals.
+        catch (Exception ex)
         {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-        catch (HttpRequestException ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Error running well test analysis.", Severity.Error);
+            Notifier.Failure(ex, $"running well test analysis for well {_selectedWellId}", "The well test analysis did not run");
+            return;
         }
         finally
         {
             _isRunning = false;
+        }
+
+        // The analysis has run and its result is shown; the history beside it is refreshed apart, so a failure here is
+        // not mistaken for the run's.
+        try
+        {
+            await ReloadHistoryAsync();
+        }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, $"refreshing the well test analysis history for well {_selectedWellId}", "The well test analysis history could not be refreshed"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"refreshing the well test analysis history for well {_selectedWellId}", "The well test analysis history could not be refreshed", FailureSeverity.Degraded);
         }
     }
 

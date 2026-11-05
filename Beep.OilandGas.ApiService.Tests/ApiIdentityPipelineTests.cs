@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using Beep.Foundation.IdentityServer.Shared.Identity;
 using Beep.OilandGas.ApiService.Controllers;
+using Beep.OilandGas.ApiService.Middleware;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ApiService.Tests.Infrastructure;
 using Beep.OilandGas.Repository;
@@ -60,11 +61,14 @@ public sealed class ApiIdentityPipelineTests : IAsyncLifetime
         builder.Services.AddScoped<RepositoryRequestAccount>();
         builder.Services.AddSingleton<Func<System.Security.Claims.ClaimsPrincipal, string?>>(_ => principal => principal.FindActingUserId());
         builder.Services.AddScoped<RepositoryUserService>();
+        // The API's own answer to a refusal (Program.cs): without it a refusal the service throws is a 500 here.
+        builder.Services.AddRefusalAnswers();
         builder.AddApiIdentity();
         builder.Services.AddControllers().AddApplicationPart(typeof(RepositoryAccountController).Assembly)
             .ConfigureApplicationPartManager(parts => parts.FeatureProviders.Add(new OnlyAccountController()));
 
         _app = builder.Build();
+        _app.UseExceptionHandler();
         _app.UseAuthentication();
         _app.UseAuthorization();
         _app.MapControllers();
@@ -124,18 +128,20 @@ public sealed class ApiIdentityPipelineTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_re_minted_subject_with_the_verified_address_of_one_account_is_that_account()
+    public async Task A_new_subject_with_the_verified_address_of_an_account_is_a_new_person()
     {
+        // Account isolation (2026-10-03): only iss + sub identify somebody (OIDC Core §5.7). An address, even a verified
+        // one, never moves an existing binding or its roles; the shared SDK does not relink on it.
         var before = await MeAsync(SignedTokens.Person("first", "first@example.test"));
 
         var after = await MeAsync(SignedTokens.Person("first-reseeded", "first@example.test"));
 
-        Assert.Equal(before.UserId, after.UserId);
-        Assert.Equal(["Administrator"], after.Roles);
+        Assert.NotEqual(before.UserId, after.UserId);
+        Assert.Empty(after.Roles);
         await using var scope = _app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<RepositoryDbContext>();
         var login = await db.UserLogins.SingleAsync(row => row.UserId == before.UserId);
-        Assert.Equal("first-reseeded", login.ProviderKey);
+        Assert.Equal("first", login.ProviderKey);
     }
 
     [Fact]

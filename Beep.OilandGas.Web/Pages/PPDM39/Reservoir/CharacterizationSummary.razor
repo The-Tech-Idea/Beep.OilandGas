@@ -2,6 +2,7 @@
 @page "/reservoir/characterization"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject ApiClient ApiClient
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
@@ -232,7 +233,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the reservoir characterization page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         _loading = true;
         try
@@ -247,9 +251,9 @@
                     "Oil",
                     w.ACTIVE_IND == "Y" ? "COMPLETE" : "IN PROGRESS")).ToList();
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to load well data.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading wells for the reservoir characterization", "The well data could not be loaded"), Severity.Warning);
         }
         finally { _loading = false; }
     }

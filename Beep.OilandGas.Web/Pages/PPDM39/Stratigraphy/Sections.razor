@@ -4,6 +4,7 @@
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Map Well Stratigraphic Sections</PageTitle>
 
@@ -81,6 +82,10 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
+            }
             else if (!_isLoading)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
@@ -100,6 +105,7 @@
     private List<STRAT_WELL_SECTION>? _sections;
     private Dictionary<string, string> _stratUnitNames = new();
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,7 +115,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the stratigraphic sections page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         await LoadStratUnits();
         await LoadSections();
@@ -121,29 +130,39 @@
         {
             var units = await ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units") ?? new();            if (units != null)
             {
-                _stratUnitNames = units.ToDictionary(
-                    u => u.STRAT_UNIT_ID ?? string.Empty,
-                    u => !string.IsNullOrWhiteSpace(u.SHORT_NAME) ? u.SHORT_NAME : 
-                         !string.IsNullOrWhiteSpace(u.LONG_NAME) ? u.LONG_NAME : 
-                         u.STRAT_UNIT_ID ?? "N/A"
-                );
+                // PPDM keys a unit by its name set and its id, so one id can repeat across name sets: the first name shown
+                // for an id wins, where ToDictionary would throw on the repeat.
+                _stratUnitNames = new Dictionary<string, string>();
+                foreach (var u in units)
+                {
+                    _stratUnitNames.TryAdd(
+                        u.STRAT_UNIT_ID ?? string.Empty,
+                        !string.IsNullOrWhiteSpace(u.SHORT_NAME) ? u.SHORT_NAME :
+                        !string.IsNullOrWhiteSpace(u.LONG_NAME) ? u.LONG_NAME :
+                        u.STRAT_UNIT_ID ?? "N/A");
+                }
             }
         }
-        catch
+        // The names only label the units; without them the sections show unit IDs, and the person is told why.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            // Silently fail - we'll just show IDs if lookup fails
+            Snackbar.Add(Calls.Explain(failure, "loading stratigraphic unit names", "The unit names could not be loaded, so sections show unit IDs"), Severity.Warning);
         }
     }
 
     private async Task LoadSections()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>("/api/stratigraphy/well-sections") ?? new();        }
-        catch (Exception)
+        // A list that did not load is not shown as "no records": the page says it did not load.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading sections.", Severity.Error);
+            _sections = null;
+            _loadError = Calls.Explain(failure, "loading stratigraphic well sections", "The stratigraphic sections could not be loaded");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {
@@ -160,12 +179,15 @@
         }
 
         _isLoading = true;
+        _loadError = null;
         try
         {
             _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>($"/api/stratigraphy/well-sections/well/{Uri.EscapeDataString(_searchUwi)}") ?? new();        }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error searching sections.", Severity.Error);
+            _sections = null;
+            _loadError = Calls.Explain(failure, "searching stratigraphic well sections by UWI", "The section search did not complete");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {

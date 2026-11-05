@@ -10,6 +10,8 @@
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Analyse Gas Lift Performance</PageTitle>
 
@@ -132,7 +134,16 @@
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
-            catch { /* field name is non-critical */ }
+            // The field name is non-critical: the page goes on without it, and says so.
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "loading the field name for gas lift analysis", "The field name could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "loading the field name for gas lift analysis", "The field name could not be loaded", FailureSeverity.Degraded);
+            }
 
             try
             {
@@ -149,9 +160,14 @@
                     _designWellUWI = selectedWell.UWI;
                 }
             }
-            catch (Exception)
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add("Error loading wells.", Severity.Warning);
+                Snackbar.Add(Answers.Explain(answer, "loading the wells for gas lift analysis", "The wells could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "loading the wells for gas lift analysis", "The wells could not be loaded", FailureSeverity.Degraded);
             }
         }
         finally
@@ -188,13 +204,22 @@
 
     private async Task<GAS_LIFT_WELL_PROPERTIES> LoadWellPropertiesAsync(string uwi)
     {
+        // The well's depth refines the screening payload; without it the screening depth is used, and the person is told.
+        const string screeningDepthUsed = " The screening depth of 5,000 ft is used instead.";
         try
         {
             var well = MapWell(await DevelopmentClient.GetWellAsync(uwi));
             return CreateScreeningWellProperties(uwi, well.FINAL_TD);
         }
-        catch
+        catch (OilGasApiException answer)
         {
+            Snackbar.Add(Answers.Explain(answer, $"loading well {uwi} for gas lift analysis", "The well's depth could not be loaded") + screeningDepthUsed, Severity.Warning);
+            return CreateScreeningWellProperties(uwi, null);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Snackbar.Add(Notifier.FailureText(ex, $"loading well {uwi} for gas lift analysis", "The well's depth could not be loaded", FailureSeverity.Degraded) + screeningDepthUsed, Severity.Warning);
             return CreateScreeningWellProperties(uwi, null);
         }
     }
@@ -254,13 +279,14 @@
             _designWellUWI = _wellUWI;
             Snackbar.Add("Gas lift potential analysis completed", Severity.Success);
         }
-        catch (HttpRequestException ex)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add(string.IsNullOrWhiteSpace(ex.Message) ? "Error analyzing gas lift potential." : ex.Message, Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"analyzing gas lift potential for well {_wellUWI}", "The gas lift potential was not analyzed"), Severity.Error);
         }
-        catch (Exception)
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("Error analyzing gas lift potential.", Severity.Error);
+            Notifier.Failure(ex, $"analyzing gas lift potential for well {_wellUWI}", "The gas lift potential was not analyzed");
         }
         finally
         {
@@ -290,13 +316,14 @@
                 wellProperties, _gasInjectionPressure, _numberOfValves, _useSIUnits);
             Snackbar.Add("Gas lift valve design completed", Severity.Success);
         }
-        catch (HttpRequestException ex)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add(string.IsNullOrWhiteSpace(ex.Message) ? "Error designing gas lift valves." : ex.Message, Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"designing gas lift valves for well {_designWellUWI}", "The gas lift valves were not designed"), Severity.Error);
         }
-        catch (Exception)
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
         {
-            Snackbar.Add("Error designing gas lift valves.", Severity.Error);
+            Notifier.Failure(ex, $"designing gas lift valves for well {_designWellUWI}", "The gas lift valves were not designed");
         }
         finally
         {

@@ -2,6 +2,7 @@
 @using Beep.OilandGas.Models.Data.Compliance
 @inject Beep.OilandGas.Web.Services.IComplianceServiceClient ComplianceClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <MudDialog>
     <TitleContent>
@@ -74,9 +75,9 @@
             Snackbar.Add("Payment recorded.", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            _error = "Payment failed.";
+            _error = Calls.Explain(failure, "recording a compliance payment", "The payment was not recorded");
             Snackbar.Add(_error, Severity.Error);
         }
     }

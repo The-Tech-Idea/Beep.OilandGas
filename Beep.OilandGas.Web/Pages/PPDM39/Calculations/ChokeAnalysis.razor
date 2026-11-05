@@ -11,6 +11,8 @@
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Run Choke Analysis</PageTitle>
 
@@ -228,8 +230,14 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch
+        catch (OilGasApiException answer)
         {
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for choke analysis", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for choke analysis", "The field name could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -245,9 +253,14 @@
                 await LoadSelectedWellContextAsync();
             }
         }
-        catch
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load wells for Choke Analysis.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the wells for choke analysis", "The wells for Choke Analysis could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the wells for choke analysis", "The wells for Choke Analysis could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -281,9 +294,14 @@
             _selectedWell = MapWell(well);
             ApplyWellDefaults(_selectedWell);
         }
-        catch
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load the selected well context for Choke Analysis.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the selected well for choke analysis", "The selected well's context for Choke Analysis could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the selected well for choke analysis", "The selected well's context for Choke Analysis could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -346,9 +364,14 @@
 
             Snackbar.Add("Choke Analysis completed successfully.", Severity.Success);
         }
-        catch
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to run Choke Analysis.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"running choke analysis for well {_selectedWellId}", "Choke Analysis did not run"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"running choke analysis for well {_selectedWellId}", "Choke Analysis did not run");
         }
         finally
         {

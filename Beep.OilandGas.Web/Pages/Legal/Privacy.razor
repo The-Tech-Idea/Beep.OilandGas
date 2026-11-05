@@ -1,0 +1,273 @@
+@attribute [Route(LegalPages.Privacy)]
+@attribute [AllowAnonymous]
+
+@* The privacy policy the identity server's sign-in page for Beep Oil & Gas links (LegalPages). Public: a person reads it
+   before creating an account, so it carries no authorization requirement and the layout's setup gate lets it through.
+   Every statement describes what this application and its API actually do — the account the API provisions
+   (RepositoryBootstrapService, RepositoryCanonicalUserStore), the access decisions it records
+   (AuthorizationObservabilityService), the failure store and its 90-day window (TheTechIdeaWeb.Diagnostics), the
+   identity client library's cookies and session token store, the theme choice in local storage (ThemeState), Google Fonts
+   (App.razor), and deletion switching the account off (OilGasAccountDeactivation). When one of those changes, this page
+   changes with it. English only, as the application is. *@
+
+<PageTitle>Privacy policy - Beep Oil &amp; Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-6">
+    <MudPaper Outlined="true" Class="pa-6">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Privacy policy</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+            Effective @LegalPages.EffectiveDateText
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            This policy explains what personal data Beep Oil &amp; Gas holds when you use it, why it holds it, who else
+            receives it, how long it is kept, and how to get a copy or have it removed. Every statement describes what the
+            application actually does.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Who is responsible</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            Beep Oil &amp; Gas is provided by @LegalPages.Operator, which runs this site, the API service behind it and their
+            databases, and is responsible for the personal data described here. Privacy questions and requests:
+            <MudLink Href="@LegalPages.ContactHref">@LegalPages.ContactEmail</MudLink>.
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            Beep Oil &amp; Gas is a business application. The operational, engineering and financial records in it belong to
+            the organization they are entered for, and that organization decides what goes into them — including any personal
+            data they contain, such as the name of a lessor, a royalty owner, a contractor or a person involved in an
+            incident. We hold and process those records so the application can work.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">What we hold, and why</MudText>
+
+        <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="mt-4 mb-1">Your sign-in</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            Signing in and creating an account happen at @LegalPages.Operator's identity service,
+            <MudLink Href="@LegalPages.IdentityService" Target="_blank">@LegalPages.IdentityServiceName</MudLink>, which holds
+            your email address, your password or the external provider you sign in with, and your two-factor and passkey
+            settings. Beep Oil &amp; Gas never sees your password. When you sign in, the identity service gives this site your
+            account identifier there, your name, your email address and whether it has been verified, and issues the tokens
+            this site uses to call its API service as you.
+        </MudText>
+
+        <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="mt-4 mb-1">Your Beep Oil &amp; Gas account</MudText>
+        <MudText Typo="Typo.body1" Class="mb-1">The first time you sign in, the API service creates an account for you. It holds:</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.Badge" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">Your account identifier, and the identity service's identifier for you, which links the two.</MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    Your name, and your email address once the identity service has verified it — both kept up to date from the
+                    identity service as you use the site.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.ToggleOn" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">Whether the account is active, and when you last signed in.</MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.AdminPanelSettings" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    The roles an administrator gives you, with who granted each, why and from when, and the fields, wells and
+                    other assets you may reach.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Tune" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    Your workspace settings: the persona you chose, your default field, locale, time zone, unit system, layout
+                    and saved view preferences, with a history of persona changes.
+                </MudText>
+            </MudListItem>
+        </MudList>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            We hold this to sign you in, to give you exactly the access your administrators assign, and to keep a record of
+            who was given what access.
+        </MudText>
+
+        <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="mt-4 mb-1">The records you work with</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            The fields, wells, wellbores, production volumes, facilities, prospects, seismic surveys, leases, permits, work
+            orders, HSE incidents, approvals, accounting and royalty records and the calculations you save are stored by the
+            API service, together with the files you import into them. Each record notes who created it, who last changed it
+            and when. Workflow tasks assigned to you, the approvals you give and the notifications the application shows you
+            are kept with your account identifier. These records name people whenever you or your colleagues enter people's
+            names in them.
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            We hold this because it is what the application is for, and the record of who changed what is what makes
+            engineering and financial records trustworthy.
+        </MudText>
+
+        <MudText Typo="Typo.subtitle1" HtmlTag="h3" Class="mt-4 mb-1">Security and fault records</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    When the API service decides whether a request may reach a protected record, it records the decision: your
+                    account identifier, the record, the permission asked for, the outcome, the time and the network address the
+                    request came from.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.ReportProblem" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    When something goes wrong, the site and the API service record what was being attempted, the technical
+                    detail of the error, the address of the request and the reference you are shown, so an administrator can
+                    find and fix the problem.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Article" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    Both keep server logs of requests and events for troubleshooting. These can include your account
+                    identifier, for example where a request was refused.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Logout" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    When you sign out at the identity service, it tells this site, which keeps your identity-service identifier
+                    and the time, so that a sign-in cookie issued before then cannot be used again.
+                </MudText>
+            </MudListItem>
+        </MudList>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Who else receives it</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.VpnKey" IconColor="Color.Secondary">
+                <MudText Typo="Typo.body1">
+                    <b>The identity service.</b> Run by @LegalPages.Operator at @LegalPages.IdentityServiceName; it holds your
+                    sign-in and confirms who you are each time you sign in. If you sign in there with an external provider, that
+                    provider takes part in signing you in.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Groups" IconColor="Color.Secondary">
+                <MudText Typo="Typo.body1">
+                    <b>Your colleagues and administrators.</b> People using Beep Oil &amp; Gas see records according to the
+                    roles and asset access administrators give them. Administrators also see accounts, roles, access decisions
+                    and fault records.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.FontDownload" IconColor="Color.Secondary">
+                <MudText Typo="Typo.body1">
+                    <b>Google Fonts.</b> Pages load their typeface from Google's font service, so your browser sends Google
+                    its network address and browser details when a page loads. Apart from the identity service while you sign
+                    in, it is the only outside service your browser contacts from these pages.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Dns" IconColor="Color.Secondary">
+                <MudText Typo="Typo.body1">
+                    <b>Our hosting provider.</b> The site, the API service and their databases run on servers our hosting
+                    provider operates for us, which store this data on our behalf.
+                </MudText>
+            </MudListItem>
+        </MudList>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            Beep Oil &amp; Gas sends no email or text messages of its own: messages about your account — confirming your
+            address, resetting your password, security notices — come from the identity service. We do not sell personal
+            data, and we do not share it with advertisers or data brokers.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Cookies and browser storage</MudText>
+        <MudText Typo="Typo.body1" Class="mb-1">This site sets only the cookies it needs to work, so there is nothing to opt in to:</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.Lock" IconColor="Color.Secondary">
+                <MudText Typo="Typo.body1">
+                    <b>A sign-in cookie</b>, which keeps you signed in. It lapses after 14 days without use, never outlasts
+                    your sign-in at the identity service, and ends when you sign out.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.VerifiedUser" IconColor="Color.Secondary">
+                <MudText Typo="Typo.body1">
+                    <b>Sign-in check cookies</b>, set only while a sign-in is under way, so this site can tell that the
+                    answer coming back from the identity service is the one your browser asked for.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Shield" IconColor="Color.Secondary">
+                <MudText Typo="Typo.body1">
+                    <b>An anti-forgery cookie</b>, which stops another site submitting forms — signing out, for example — as you.
+                </MudText>
+            </MudListItem>
+        </MudList>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            The tokens the identity service issues for your session are kept on this site's server, not in your browser,
+            encrypted, and for no more than 14 days after they were last used. Your choice of light or dark appearance is kept
+            in your browser's local storage and is never sent to us. There are no analytics, advertising or tracking cookies.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">How long we keep it</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.Badge" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>Your Beep Oil &amp; Gas account</b> is kept for as long as the service runs. Deleting your account
+                    switches it off rather than erasing it, because the records you created, changed or approved refer to it
+                    and must stay attributable.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Inventory" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>Business records</b> are kept until someone with permission deletes them. Some kinds of record are only
+                    marked inactive when deleted, so that the history they belong to stays intact.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>Access decisions</b> are kept as the security history of the records they protect; they are not
+                    removed automatically.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.ReportProblem" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1"><b>Fault records</b> are kept for 90 days.</MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Timer" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>Sign-out records</b> are kept for 14 days, and session tokens for no more than 14 days after they were
+                    last used.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Article" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1"><b>Server logs</b> are kept on the server for troubleshooting.</MudText>
+            </MudListItem>
+        </MudList>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Your rights, and how to use them</MudText>
+        <MudList T="string" Dense="true" ReadOnly="true" Class="mb-2">
+            <MudListItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>See and correct your details.</b> Your name and email address come from your identity-service account.
+                    Change them on the Profile tab of <MudLink Href="@BeepClientEndpoints.Manage">your account page</MudLink>,
+                    and this site picks up the change the next time you use it.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.Download" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>Get a copy.</b> The Personal Data tab of your account page downloads what the identity service holds
+                    about you. It does not include what Beep Oil &amp; Gas holds: for a copy of your account record, roles and
+                    settings, and of the records that name you, write to <MudLink Href="@LegalPages.ContactHref">@LegalPages.ContactEmail</MudLink>.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.PersonRemove" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>Delete your account.</b> The same tab deletes your sign-in account at the identity service, switches your
+                    Beep Oil &amp; Gas account off, and then asks you to sign out to finish. If you are the only active
+                    administrator, you are asked to make someone else an administrator first. Your Beep Oil &amp; Gas account
+                    record — including your name and email address — and the records you created stay, as part of your
+                    organization's engineering and financial history. To ask what remains, or to ask for your name and email
+                    address to be removed from it, write to us.
+                </MudText>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.ContactSupport" IconColor="Color.Primary">
+                <MudText Typo="Typo.body1">
+                    <b>Anything else</b> — including objecting to how we use your data, or asking about records someone else
+                    entered that name you — write to <MudLink Href="@LegalPages.ContactHref">@LegalPages.ContactEmail</MudLink>.
+                </MudText>
+            </MudListItem>
+        </MudList>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Changes to this policy</MudText>
+        <MudText Typo="Typo.body1" Class="mb-2">
+            The date at the top is when this version took effect. If the policy changes, that date changes with it, and
+            continuing to use Beep Oil &amp; Gas after a change means the updated policy applies. How the service itself may be
+            used is set out in our <MudLink Href="@LegalPages.Terms">terms of service</MudLink>.
+        </MudText>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2" Class="mt-6 mb-2">Contact</MudText>
+        <MudText Typo="Typo.body1">
+            Questions about this policy or your data: <MudLink Href="@LegalPages.ContactHref">@LegalPages.ContactEmail</MudLink>.
+        </MudText>
+    </MudPaper>
+</MudContainer>

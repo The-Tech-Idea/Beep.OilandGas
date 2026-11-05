@@ -7,10 +7,12 @@
                 <MudText Typo="Typo.h6">@Title</MudText>
                 @if (ShowRefresh)
                 {
-                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
-                                  Size="Size.Small"
-                                  OnClick="@RefreshAlerts"
-                                  Title="Refresh alerts" />
+                    <MudTooltip Text="Refresh alerts">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                      Size="Size.Small"
+                                      OnClick="@RefreshAlerts"
+                                      aria-label="Refresh alerts" />
+                    </MudTooltip>
                 }
             </MudStack>
             

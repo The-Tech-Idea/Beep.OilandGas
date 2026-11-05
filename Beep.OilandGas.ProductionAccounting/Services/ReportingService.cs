@@ -232,11 +232,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException(ReportingServiceExceptionMessages.LeaseIdRequired);
 
             await _jibService.GenerateStatementAsync(request.LeaseId, request.PeriodEnd, userId, connectionName ?? ConnectionName);
-            var statement = await GetJointInterestStatementAsync(request.LeaseId, request.PeriodStart, request.PeriodEnd, connectionName);
+            // The statement just written: the lease's newest for this period end. The lookup used to ask for one starting on
+            // or after the request's period start, while the billing service starts a statement at the lease's earliest
+            // allocation, so it seldom found the statement it had written and answered a made-up report id in its place.
+            var statement = await GetJointInterestStatementAsync(request.LeaseId, request.PeriodEnd, connectionName)
+                ?? throw new InvalidOperationException(
+                    $"The JIB statement for lease {request.LeaseId} and period end {request.PeriodEnd:yyyy-MM-dd} was not found after it was generated.");
 
             return new ReportResult
             {
-                ReportId = statement?.JOINT_INTEREST_STATEMENT_ID ?? Guid.NewGuid().ToString(),
+                ReportId = statement.JOINT_INTEREST_STATEMENT_ID,
                 ReportType = GeneratedReportTypeCodes.JibStatement,
                 GeneratedBy = userId,
                 ReportData = statement
@@ -419,9 +424,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return results?.Cast<ROYALTY_CALCULATION>().ToList() ?? new List<ROYALTY_CALCULATION>();
         }
 
+        /// <summary>
+        /// The lease's newest statement for the period ending <paramref name="periodEnd"/> — matched on what the billing
+        /// service writes (<c>JIB_ID</c> = the lease, <c>REPORT_PERIOD_END</c> = the period end).
+        /// </summary>
         private async Task<JOINT_INTEREST_STATEMENT?> GetJointInterestStatementAsync(
             string leaseId,
-            DateTime periodStart,
             DateTime periodEnd,
             string? connectionName)
         {
@@ -429,13 +437,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "JIB_ID", Operator = "=", FilterValue = leaseId },
-                new AppFilter { FieldName = "REPORT_PERIOD_START", Operator = ">=", FilterValue = periodStart.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "REPORT_PERIOD_END", Operator = "<=", FilterValue = periodEnd.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
             };
 
             var results = await repo.GetAsync(filters);
-            return results?.Cast<JOINT_INTEREST_STATEMENT>().OrderByDescending(s => s.GENERATION_DATE).FirstOrDefault();
+            return results?.Cast<JOINT_INTEREST_STATEMENT>()
+                .Where(s => s.REPORT_PERIOD_END?.Date == periodEnd.Date)
+                .OrderByDescending(s => s.GENERATION_DATE)
+                .FirstOrDefault();
         }
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)

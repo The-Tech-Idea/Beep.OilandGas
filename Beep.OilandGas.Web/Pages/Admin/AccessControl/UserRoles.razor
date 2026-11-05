@@ -10,6 +10,7 @@
 @inject UserAdministrationClient Users
 @inject ISnackbar Snackbar
 @inject OilGasApiFailures Answers
+@inject OilGasCallFailures Calls
 
 <PageTitle>Assign User Roles</PageTitle>
 
@@ -76,12 +77,14 @@
                     </TemplateColumn>
                     <TemplateColumn Title="" Sortable="false">
                         <CellTemplate>
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                          Title="Remove role"
-                                          Color="Color.Error"
-                                          Size="Size.Small"
-                                          Disabled="_busy"
-                                          OnClick="@(() => RemoveRole(context.Item))" />
+                            <MudTooltip Text="Remove role">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               aria-label="Remove role"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               Disabled="_busy"
+                                               OnClick="@(() => RemoveRole(context.Item))" />
+                            </MudTooltip>
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
@@ -179,7 +182,10 @@
         {
             Snackbar.Add(Answers.Explain(answer, "creating a role", "The role was not created"), Severity.Error);
         }
-        catch { Snackbar.Add("Role creation could not be verified. Reload before retrying.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "creating a role", "Role creation could not be verified; reload before retrying"), Severity.Error);
+        }
         finally { _busy = false; }
     }
 
@@ -200,7 +206,10 @@
             _roleCatalog = await Users.GetRolesAsync();
             _availableRoles = _roleCatalog.Select(role => role.RoleName).ToList();
         }
-        catch { Snackbar.Add("Could not load user administration.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading users and roles", "User administration could not be loaded"), Severity.Error);
+        }
         finally { _busy = false; }
     }
 
@@ -225,9 +234,9 @@
             _userRoles = await Users.GetUserRolesAsync(_selectedUserId);
             _rolesLoaded = true;
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading user roles.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading a user's roles", "The user's roles could not be loaded"), Severity.Error);
         }
     }
 
@@ -251,9 +260,9 @@
         {
             Snackbar.Add(Answers.Explain(answer, "assigning a role to a user", "The role was not assigned"), Severity.Error);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error assigning role.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "assigning a role to a user", "The role assignment could not be verified; reload the user's roles before retrying"), Severity.Error);
         }
         finally { _busy = false; }
     }
@@ -272,9 +281,9 @@
         {
             Snackbar.Add(Answers.Explain(answer, "removing a role from a user", "The role was not removed"), Severity.Error);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error removing role.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "removing a role from a user", "The role removal could not be verified; reload the user's roles before retrying"), Severity.Error);
         }
         finally { _busy = false; }
     }

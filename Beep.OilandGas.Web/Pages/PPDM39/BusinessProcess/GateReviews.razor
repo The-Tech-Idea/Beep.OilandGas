@@ -6,6 +6,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Gate Reviews</PageTitle>
 
@@ -43,7 +44,7 @@
                  Dense="true"
                  Hover="true"
                  Striped="true"
-                 Sortable="true"
+                 SortMode="SortMode.Multiple"
                  RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/gates/{Uri.EscapeDataString(e.Item.GateId)}"))">
         <ToolBarContent>
             <MudText Typo="Typo.subtitle2">@FilteredGates.Count() gate reviews</MudText>
@@ -112,7 +113,12 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // The field name is non-critical: a failed call is said as a warning and the gates still load; anything else
+        // reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the gate reviews page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         try
         {
@@ -136,9 +142,9 @@
                 _gates = new();
             }
         }
-        catch
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load gate reviews.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the gate reviews", "Could not load gate reviews"), Severity.Warning);
         }
     }
 

@@ -2,6 +2,7 @@
 @page "/reservoir/eor"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject ILifeCycleService LifeCycleService
 @inject IProductionServiceClient ProductionServiceClient
 @using Beep.OilandGas.Models.Data.Production
@@ -198,7 +199,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the EOR screening page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         _loading = true;
         try
@@ -210,9 +214,9 @@
                 _currentRF = summary.RecoveryFactorPct;
             }
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to load reservoir data.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the reservoir summary for EOR screening", "The reservoir data could not be loaded"), Severity.Warning);
         }
         finally { _loading = false; }
     }

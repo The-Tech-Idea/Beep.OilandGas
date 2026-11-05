@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using SkiaSharp;
+using TheTechIdeaWeb.Diagnostics.Notifications;
 
 namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
 {
@@ -40,6 +41,7 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
         private readonly List<SKPoint> _draftScreenPoints = new();
 
         [Inject] private IClientFileExportService ClientFileExportService { get; set; } = default!;
+        [Inject] private FailureNotifier Notifier { get; set; } = default!;
 
         private DrawingSampleScene? CurrentSample => _sampleScenes.FirstOrDefault(scene => string.Equals(scene.Name, _selectedSampleName, StringComparison.OrdinalIgnoreCase));
         private IReadOnlyList<DrawingSampleExportAction> CurrentSampleSupplementalExports => CurrentSample?.SupplementalExports ?? Array.Empty<DrawingSampleExportAction>();
@@ -442,9 +444,11 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
                 await ClientFileExportService.DownloadBytesAsync(fileName, exportAction.Export(_engine), exportAction.ContentType);
                 SetStatus($"Exported {fileName} from the current drawing workflow.", Severity.Success);
             }
+            // The export is the drawing library's and the download the browser's: whatever either throws, no file was
+            // produced. The person is told so with the reference, and the drawing is left as it was.
             catch (Exception ex)
             {
-                SetStatus($"Failed to export {exportAction.Label}: {ex.Message}", Severity.Error);
+                SetStatus(Notifier.FailureText(ex, "exporting a drawing sample's supplemental artifact", $"The {exportAction.Label} export was not produced"), Severity.Error);
             }
             finally
             {
@@ -480,9 +484,11 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
                 await ClientFileExportService.DownloadBytesAsync(fileName, bytes, contentType);
                 SetStatus($"Exported {fileName} from the current drawing workflow.", Severity.Success);
             }
+            // The export is the drawing library's and the download the browser's: whatever either throws, no file was
+            // produced. The person is told so with the reference, and the drawing is left as it was.
             catch (Exception ex)
             {
-                SetStatus($"Failed to export {extension.ToUpperInvariant()}: {ex.Message}", Severity.Error);
+                SetStatus(Notifier.FailureText(ex, "exporting a drawing sample", $"The {extension.ToUpperInvariant()} export was not produced"), Severity.Error);
             }
             finally
             {
@@ -518,7 +524,7 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
                 DrawingSampleExportPresentationKind.MapExchange => Icons.Material.Filled.Map,
                 DrawingSampleExportPresentationKind.RasterBundle => Icons.Material.Filled.Public,
                 DrawingSampleExportPresentationKind.EngineeringData => Icons.Material.Filled.Code,
-                _ => Icons.Material.Filled.Attachment
+                DrawingSampleExportPresentationKind.Default => Icons.Material.Filled.Attachment
             };
         }
 
@@ -532,7 +538,7 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
                 DrawingSampleExportPresentationKind.MapExchange => Color.Secondary,
                 DrawingSampleExportPresentationKind.RasterBundle => Color.Primary,
                 DrawingSampleExportPresentationKind.EngineeringData => Color.Default,
-                _ => Color.Secondary
+                DrawingSampleExportPresentationKind.Default => Color.Secondary
             };
         }
 
@@ -664,8 +670,7 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
             {
                 SampleInteractionMode.Inspect => _mode == mode ? Color.Secondary : Color.Default,
                 SampleInteractionMode.Distance => _mode == mode ? Color.Info : Color.Default,
-                SampleInteractionMode.Area => _mode == mode ? Color.Warning : Color.Default,
-                _ => Color.Default
+                SampleInteractionMode.Area => _mode == mode ? Color.Warning : Color.Default
             };
         }
 
@@ -678,8 +683,7 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
                 AnnotationStylePreset.Map => "Map",
                 AnnotationStylePreset.Log => "Log",
                 AnnotationStylePreset.Schematic => "Schematic",
-                AnnotationStylePreset.Hidden => "Hidden",
-                _ => preset.ToString()
+                AnnotationStylePreset.Hidden => "Hidden"
             };
         }
 
@@ -692,8 +696,7 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
                 AnnotationStylePreset.Map => Color.Success,
                 AnnotationStylePreset.Log => Color.Primary,
                 AnnotationStylePreset.Schematic => Color.Warning,
-                AnnotationStylePreset.Hidden => Color.Dark,
-                _ => Color.Default
+                AnnotationStylePreset.Hidden => Color.Dark
             };
         }
 
@@ -703,8 +706,7 @@ namespace Beep.OilandGas.Web.Pages.PPDM39.DataManagement
             {
                 SampleInteractionMode.Inspect => "Inspect",
                 SampleInteractionMode.Distance => "Measure Distance",
-                SampleInteractionMode.Area => "Measure Area",
-                _ => mode.ToString()
+                SampleInteractionMode.Area => "Measure Area"
             };
         }
 

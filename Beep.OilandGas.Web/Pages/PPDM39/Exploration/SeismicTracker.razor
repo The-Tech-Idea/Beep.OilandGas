@@ -5,6 +5,8 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Track Seismic Survey Progress</PageTitle>
 
@@ -23,6 +25,11 @@
                    StartIcon="@Icons.Material.Filled.Add"
                    OnClick='() => NavigationManager.NavigateTo("/ppdm39/exploration/seismic-surveys")'>Add Survey</MudButton>
     </MudStack>
+
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+    }
 
     @* ── KPI Row ─────────────────────────────────────────────────────────── *@
     <MudGrid Spacing="3" Class="mb-4">
@@ -82,7 +89,7 @@
                 <CellTemplate>
                     <MudTooltip Text="View details">
                         <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
-                                       Title="View details"
+                                       aria-label="View details"
                                        Size="Size.Small"
                                        Color="Color.Primary"
                                        OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/exploration/seismic-surveys/{Uri.EscapeDataString(context.Item.Id)}/lines"))' />
@@ -117,6 +124,7 @@
 
 @code {
     private string _fieldName = string.Empty;
+    private string? _loadError;
     private List<SeismicSurveyRow> _surveys = new();
 
     protected override async Task OnInitializedAsync()
@@ -127,7 +135,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for the seismic tracker", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for the seismic tracker", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         try
         {
@@ -150,9 +167,15 @@
                     .ToList();
             }
         }
-        catch (Exception)
+        // The page says the surveys did not load, rather than showing an empty tracker.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load seismic surveys.", Severity.Warning);
+            _loadError = Answers.Explain(answer, "loading the seismic surveys for the tracker", "The seismic surveys could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _loadError = Notifier.FailureText(ex, "loading the seismic surveys for the tracker", "The seismic surveys could not be loaded");
         }
     }
 

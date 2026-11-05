@@ -8,6 +8,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
@@ -27,6 +28,7 @@ namespace Beep.OilandGas.ApiService.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
         private readonly ILogger<AccountingAggregationService> _logger;
+        private readonly IPeriodClosingService _periodClosing;
 
         /// <summary>
         /// Initializes the accounting aggregation service with BeepDM dependencies.
@@ -36,6 +38,7 @@ namespace Beep.OilandGas.ApiService.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            IPeriodClosingService periodClosing,
             string connectionName = "PPDM39",
             ILogger<AccountingAggregationService>? logger = null)
         {
@@ -43,6 +46,7 @@ namespace Beep.OilandGas.ApiService.Services
             _commonColumnHandler = commonColumnHandler;
             _defaults = defaults;
             _metadata = metadata;
+            _periodClosing = periodClosing ?? throw new ArgumentNullException(nameof(periodClosing));
             _connectionName = connectionName;
             _logger = logger;
         }
@@ -119,17 +123,24 @@ namespace Beep.OilandGas.ApiService.Services
             return r.OrderByDescending(a=>a.Budget).ToList();
         }
 
+        /// <summary>
+        /// The field's periods standing closed (every field's when <paramref name="fieldId"/> is null), as the period close
+        /// recognizes them. It looked for journals typed PERIOD_CLOSE, which no close writes, ignored the field it was
+        /// given, answered 365 days since the last close when there was none, and counted unposted journals as open periods
+        /// (a period never closed has no journal to count, so open periods are not answered).
+        /// </summary>
         public async Task<PeriodCloseStatus> GetPeriodCloseStatusAsync(string? fieldId=null)
         {
-            var r=new PeriodCloseStatus();
-            var repo=GetRepo<JOURNAL_ENTRY>("JOURNAL_ENTRY");
-            var f=new List<AppFilter>{new(){FieldName="ACTIVE_IND",Operator="=",FilterValue="Y"},new(){FieldName="ENTRY_TYPE",Operator="=",FilterValue="PERIOD_CLOSE"}};
-            var entries=(await repo.GetAsync(f)).OfType<JOURNAL_ENTRY>().OrderByDescending(e=>e.ENTRY_DATE).ToList();
-            r.LastCloseDate=entries.FirstOrDefault()?.ENTRY_DATE;
-            r.DaysSinceLastClose=r.LastCloseDate.HasValue?(int)(DateTime.UtcNow-r.LastCloseDate.Value).TotalDays:365;
-            r.ClosedPeriods=entries.Count(e=>string.Equals(e.STATUS,"POSTED",StringComparison.OrdinalIgnoreCase));
-            r.OpenPeriods=entries.Count(e=>string.Equals(e.STATUS,"OPEN",StringComparison.OrdinalIgnoreCase)||string.Equals(e.STATUS,"DRAFT",StringComparison.OrdinalIgnoreCase));
-            return r;
+            var closed = (await _periodClosing.GetPeriodClosesAsync(fieldId ?? string.Empty))
+                .Where(close => close.Status == PeriodCloseStatusCodes.Closed)
+                .ToList();
+            var lastClose = closed.Count == 0 ? (DateTime?)null : closed.Max(close => close.PeriodEnd);
+            return new PeriodCloseStatus
+            {
+                LastCloseDate = lastClose,
+                DaysSinceLastClose = lastClose.HasValue ? (int)(DateTime.UtcNow.Date - lastClose.Value.Date).TotalDays : null,
+                ClosedPeriods = closed.Count
+            };
         }
     }
 
@@ -137,5 +148,6 @@ namespace Beep.OilandGas.ApiService.Services
     public class CostSummary{public decimal TotalCost{get;set;}public decimal LOE{get;set;}public decimal CAPEX{get;set;}public Dictionary<string,decimal> ByCostCenter{get;set;}=new();public int TransactionCount{get;set;}}
     public class RoyaltySummary{public decimal TotalRoyalties{get;set;}public int CalculationCount{get;set;}public int PendingPayments{get;set;}}
     public class AfeSummary{public string AfeId{get;set;}="";public string Description{get;set;}="";public decimal Budget{get;set;}public decimal Spent{get;set;}public decimal Remaining{get;set;}public string Status{get;set;}="";public DateTime? ApprovedDate{get;set;}}
-    public class PeriodCloseStatus{public DateTime? LastCloseDate{get;set;}public int DaysSinceLastClose{get;set;}public int OpenPeriods{get;set;}public int ClosedPeriods{get;set;}}
+    /// <summary>The periods standing closed: the latest one's end, the days since it, none when no period was closed.</summary>
+    public class PeriodCloseStatus{public DateTime? LastCloseDate{get;set;}public int? DaysSinceLastClose{get;set;}public int ClosedPeriods{get;set;}}
 }

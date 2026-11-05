@@ -1,6 +1,6 @@
 # Beep.OilandGas — Deployment & Environment Configuration Guide
 
-> **Last Updated**: 2026-04-25  
+> **Last Updated**: 2026-10-07 (identity settings, registration and start order)  
 > **Scope**: Production deployment, environment configuration, monitoring setup  
 > **Applies To**: `Beep.OilandGas.Web`, `Beep.OilandGas.ApiService`, and all domain projects
 
@@ -33,18 +33,26 @@
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
 | `ApiService:BaseUrl` | Yes | Base URL of the API service | `https://localhost:7001` |
-| `IdentityServer:Authority` | Yes | OIDC authority URL | `https://localhost:7062/` |
-| `IdentityServer:Audience` | Yes | JWT audience identifier | `beep-api` |
-| `Authentication:Schemes:OpenIdConnect:ClientSecret` | Yes | OIDC client secret (from user-secrets or vault) | — |
+| `IdentityServer:Authority` | Yes | The identity server | — |
+| `IdentityServer:ClientId` | Yes | The client id the identity server's console generated for the Web | — |
+| `IdentityServer:ClientSecret` | Yes | Its client secret (user-secrets in development; the server's own settings file in production) | — |
+| `IdentityServer:ApiScopes` | Yes | The OilGas API's identifier, as registered under Admin > APIs | — |
+| `IdentityServer:AccountScopes` | Yes | The account scopes the console permitted (`/account/manage` uses them) | — |
+| `Diagnostics:Provider`, `Diagnostics:ConnectionString` | Yes | The failure store, the same as the API's | — |
 | `ASPNETCORE_ENVIRONMENT` | No | Environment name (`Development`, `Staging`, `Production`) | `Development` |
 | `ASPNETCORE_URLS` | No | Kestrel listen URLs | `https://localhost:5001` |
+
+A missing `IdentityServer` value, or one still `REPLACE_ME`, does not stop the Web: sign-in is switched off, the setting
+is named in the log, and the public pages stay up until it is set and the Web restarted (the client secret is required
+because the Web is a confidential client).
 
 ### API Service (`Beep.OilandGas.ApiService`)
 
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
-| `IdentityServer:Authority` | Yes | OIDC authority URL for token validation | `https://localhost:7062/` |
-| `IdentityServer:Audience` | Yes | JWT audience identifier | `beep-api` |
+| `IdentityServer:Authority` | Yes | The identity server whose tokens are validated | — |
+| `IdentityServer:Audience` | Yes | This API's identifier, as registered under Admin > APIs; a token for any other API is refused | — |
+| `IdentityServer:AllowedClients` | Yes | The client ids whose people's tokens are accepted: the Web's console-generated id | — |
 | `ConnectionStrings:PPDM39` | Yes | PPDM39 database connection string | — |
 | `Beep:ConfigPath` | No | Path to Beep configuration directory | `./Beep` |
 | `ASPNETCORE_ENVIRONMENT` | No | Environment name | `Development` |
@@ -69,6 +77,28 @@
 - Identity Server instance running and accessible
 - PPDM39 database schema created and seeded
 
+### 1a. Register at the identity server
+
+In the identity server's console:
+
+- **The Web**, as a web application, with these addresses (`<web>` is the Web's public address):
+
+  | Setting | Value |
+  |---|---|
+  | Redirect URI | `https://<web>/signin-oidc` |
+  | Post-logout redirect URI | `https://<web>/signout-callback-oidc` |
+  | Back-channel logout URI | `https://<web>/account/backchannel-logout` |
+  | Account Access | `account.read`, `account.manage`, `account.security`, `account.export`, `account.delete` |
+
+  The console generates the client id and secret (`IdentityServer:ClientId`, `IdentityServer:ClientSecret`).
+- **The API**, under Admin > APIs; its identifier is the API's `IdentityServer:Audience` and the Web's
+  `IdentityServer:ApiScopes`. Permit the Web to call it.
+
+### 1b. Start order on a new database
+
+Start the API first. It applies the failure store's schema, the back-channel logout table among it
+(`Diagnostics:MigrateOnStartup`); the Web reads that table at startup and stops, naming it, until it exists.
+
 ### 2. Build
 
 ```bash
@@ -84,7 +114,8 @@ dotnet publish Beep.OilandGas.ApiService/Beep.OilandGas.ApiService.csproj -c Rel
 
 ### 3. Configure
 
-Create `appsettings.Production.json` for each service:
+Create `appsettings.Production.json` for each service, on the server, from the project's
+`appsettings.Production.template.json` (the template lists every key; the real file is never published):
 
 **Web (`appsettings.Production.json`):**
 ```json
@@ -94,7 +125,10 @@ Create `appsettings.Production.json` for each service:
   },
   "IdentityServer": {
     "Authority": "https://identity.beep-oilgas.example.com",
-    "Audience": "beep-api"
+    "ClientId": "<console-generated id>",
+    "ClientSecret": "<console-generated secret>",
+    "ApiScopes": [ "<the OilGas API's identifier>" ],
+    "AccountScopes": [ "account.read", "account.manage", "account.security", "account.export", "account.delete" ]
   },
   "Logging": {
     "LogLevel": {
@@ -110,7 +144,8 @@ Create `appsettings.Production.json` for each service:
 {
   "IdentityServer": {
     "Authority": "https://identity.beep-oilgas.example.com",
-    "Audience": "beep-api"
+    "Audience": "<the OilGas API's identifier>",
+    "AllowedClients": [ "<the Web's console-generated id>" ]
   },
   "ConnectionStrings": {
     "PPDM39": "Server=sql.beep-oilgas.example.com;Database=PPDM39;User Id=beep;Password=***;TrustServerCertificate=true"

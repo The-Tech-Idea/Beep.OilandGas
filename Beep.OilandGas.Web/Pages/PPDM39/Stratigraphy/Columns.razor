@@ -4,6 +4,7 @@
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Inspect Regional Stratigraphic Columns</PageTitle>
 
@@ -64,9 +65,15 @@
                                 </MudChip>
                             </CellTemplate>
                         </TemplateColumn>
+                        @* The stratigraphy API only reads; a column is edited through Data Management's STRAT_COLUMN table
+                           (the generic PPDM39 data API), opened at this row. The button had no handler. *@
                         <TemplateColumn Title="" Sortable="false">
                             <CellTemplate>
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" Title="Edit column" />
+                                <MudTooltip Text="Edit column in Data Management">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                                   Href="@EditAddress(context.Item)"
+                                                   aria-label="@($"Edit column {context.Item.STRAT_COLUMN_ID} in Data Management")" />
+                                </MudTooltip>
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -77,6 +84,10 @@
                         </MudStack>
                     </NoRecordsContent>
                 </MudDataGrid>
+            }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
             }
             else if (!_isLoading)
             {
@@ -96,6 +107,7 @@
     private string _searchColumnId = string.Empty;
     private List<STRAT_COLUMN>? _columns;
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,7 +117,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the stratigraphic columns page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         await LoadColumns();
     }
@@ -113,12 +128,16 @@
     private async Task LoadColumns()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>("/api/stratigraphy/columns") ?? new();        }
-        catch (Exception)
+        // A list that did not load is not shown as "no records": the page says it did not load.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading columns.", Severity.Error);
+            _columns = null;
+            _loadError = Calls.Explain(failure, "loading stratigraphic columns", "The stratigraphic columns could not be loaded");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {
@@ -126,20 +145,40 @@
         }
     }
 
+    /// <summary>
+    /// Data Management's STRAT_COLUMN table narrowed to this column, where the generic PPDM39 data API edits the row.
+    /// </summary>
+    private static string EditAddress(STRAT_COLUMN column) =>
+        "/ppdm39/data-management/table/STRAT_COLUMN?parentKeyCol=STRAT_COLUMN_ID&parentKeyVal="
+        + Uri.EscapeDataString(column.STRAT_COLUMN_ID ?? string.Empty);
+
     private async Task SearchColumns()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             var url = "/api/stratigraphy/columns";
             if (!string.IsNullOrWhiteSpace(_searchColumnId))
             {
-                url += $"?filters[0].FieldName=STRAT_COLUMN_ID&filters[0].Operator==&filters[0].FilterValue={_searchColumnId}";
+                var columnId = _searchColumnId.Trim();
+                // The API reads its filters as comma-separated COLUMN=VALUE pairs, so a comma would end the identifier early.
+                if (columnId.Contains(','))
+                {
+                    _loadError = "A column ID cannot contain a comma.";
+                    _columns = null;
+                    return;
+                }
+                // The API's own filter form (?filters=COLUMN=VALUE). The indexed AppFilter form this sent was never bound by
+                // the API, so every search answered with every column.
+                url += "?filters=" + Uri.EscapeDataString($"STRAT_COLUMN_ID={columnId}");
             }
             _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>(url) ?? new();        }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error searching columns.", Severity.Error);
+            _columns = null;
+            _loadError = Calls.Explain(failure, "searching stratigraphic columns", "The column search did not complete");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {

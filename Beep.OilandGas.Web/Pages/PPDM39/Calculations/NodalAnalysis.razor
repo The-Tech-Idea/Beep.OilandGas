@@ -3,13 +3,12 @@
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.NodalAnalysis
 @using Beep.OilandGas.PPDM39.Models
-@using Microsoft.Extensions.Logging
 @inject ISnackbar Snackbar
-@inject ILogger<NodalAnalysis> Logger
 @inject ICalculationServiceClient CalculationService
 @inject IDevelopmentServiceClient DevelopmentClient
 @inject ILifeCycleService LifeCycleService
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Perform Nodal Analysis</PageTitle>
 
@@ -155,13 +154,16 @@
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
-            catch (OperationCanceledException)
+            // The field name is non-critical: the page goes on without it, and says so. Nothing here cancels the call, so a
+            // cancellation is a timeout, and a failure like any other.
+            catch (OilGasApiException answer)
             {
-                // Navigation or token cancellation during header load.
+                Snackbar.Add(Answers.Explain(answer, "loading the field name for nodal analysis", "The field name could not be loaded"), Severity.Warning);
             }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
             catch (Exception ex)
             {
-                Logger.LogDebug(ex, "Field lifecycle summary unavailable for nodal analysis header");
+                Notifier.Failure(ex, "loading the field name for nodal analysis", "The field name could not be loaded", FailureSeverity.Degraded);
             }
 
             try
@@ -172,14 +174,14 @@
                 _selectedWellUWI = _wells.FirstOrDefault()?.UWI;
                 await ReloadHistoryForSelectedWellAsync();
             }
-            catch (OperationCanceledException)
+            catch (OilGasApiException answer)
             {
-                // Navigation or token cancellation during well/history load.
+                Snackbar.Add(Answers.Explain(answer, "loading the wells for nodal analysis", "The wells could not be loaded"), Severity.Warning);
             }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
             catch (Exception ex)
             {
-                Logger.LogDebug(ex, "Failed to load wells for nodal analysis page");
-                Snackbar.Add("Failed to load wells.", Severity.Warning);
+                Notifier.Failure(ex, "loading the wells for nodal analysis", "The wells could not be loaded", FailureSeverity.Degraded);
             }
         }
         finally
@@ -212,20 +214,15 @@
         {
             _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);
         }
-        catch (ArgumentException ex)
+        catch (OilGasApiException answer)
         {
-            Logger.LogWarning(ex, "Invalid request loading nodal history for well {WellUWI}", _selectedWellUWI);
-            Snackbar.Add(ex.Message, Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, $"loading the nodal analysis history for well {_selectedWellUWI}", "The analysis history could not be loaded"), Severity.Warning);
             _analysisHistory = null;
         }
-        catch (OperationCanceledException)
-        {
-            // Navigation or token cancellation; avoid misleading warning snackbars.
-        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load nodal analysis history for well {WellUWI}", _selectedWellUWI);
-            Snackbar.Add("Failed to load analysis history.", Severity.Warning);
+            Notifier.Failure(ex, $"loading the nodal analysis history for well {_selectedWellUWI}", "The analysis history could not be loaded", FailureSeverity.Degraded);
             _analysisHistory = null;
         }
         finally
@@ -258,27 +255,23 @@
             {
                 Snackbar.Add(Answers.Explain(answer, "saving the nodal analysis result", "The nodal analysis finished but its results were not saved"), Severity.Warning);
             }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "saving the nodal analysis result", "The nodal analysis finished but its results were not saved", FailureSeverity.Degraded);
+            }
 
             await ReloadHistoryForSelectedWellAsync();
         }
-        catch (ArgumentException ex)
+        catch (OilGasApiException answer)
         {
-            Logger.LogWarning(ex, "Nodal analysis request invalid for well {WellUWI}", _selectedWellUWI);
-            Snackbar.Add(ex.Message, Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, $"performing nodal analysis for well {_selectedWellUWI}", "The nodal analysis was not performed"), Severity.Error);
         }
-        catch (InvalidOperationException ex)
-        {
-            Logger.LogWarning(ex, "Nodal analysis operation failed for well {WellUWI}", _selectedWellUWI);
-            Snackbar.Add(ex.Message, Severity.Warning);
-        }
-        catch (OperationCanceledException)
-        {
-            // Navigation or token cancellation; avoid error snackbars.
-        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception — the client's own
+        // "no answer" (InvalidOperationException) and a timeout included, which are failures, not refusals.
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Nodal analysis or save failed for well {WellUWI}", _selectedWellUWI);
-            Snackbar.Add("Error performing nodal analysis.", Severity.Error);
+            Notifier.Failure(ex, $"performing nodal analysis for well {_selectedWellUWI}", "The nodal analysis was not performed");
         }
         finally
         {

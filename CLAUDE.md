@@ -10,6 +10,18 @@
 > to protect its own cookies and stored secrets. Check deployed builds and log timestamps.
 <!-- /smarterasp-pem-rule -->
 
+## Web key ring (2026-10-10)
+
+`Beep.OilandGas.Web` had no key ring of its own: the framework's default store, which a shared host's app pool without a
+profile keeps in memory, so every recycle signed everybody out. Outside Development it now persists under `App_Data/keys`
+(`DataProtection:KeysPath` to move it) and is encrypted at rest with the PEM RSA key in `DataProtection:Key`, through the
+shared SDK's `ProtectKeysWithPemKey`. **Set `DataProtection:Key` in the Web's server `appsettings.Production.json` before
+the next deployment: without it the Web still starts but keeps its keys unencrypted**, and its startup warning names
+the setting. Generate the key once for this
+site and keep it only on the server. Never replace it, never reuse IdentityServer's, and never change the `KeyRingIdentity`
+subject or serial in `Program.cs`. The first deployment with this change signs everybody out once, because the old keys
+lived in memory. Guard: `Beep.OilandGas.Web.Auth.Tests/KeyRingProtectionSourceTests`.
+
 # Beep.OilandGas - Agent Assistance Guidelines
 
 This guide helps agents make safe, well-scoped edits that align with Beep.OilandGas architecture and patterns.

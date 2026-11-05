@@ -4,6 +4,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject IDataManagementService DataManagementService
 
 <PageTitle>Review Data Access History</PageTitle>
@@ -187,9 +188,9 @@
                 )).ToList();
             }
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading audit data.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "loading the data access audit", "The audit data could not be loaded"), Severity.Error);
         }
         finally
         {

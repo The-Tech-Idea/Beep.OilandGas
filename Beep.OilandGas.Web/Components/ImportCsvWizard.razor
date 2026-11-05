@@ -8,16 +8,20 @@
 @inject OilGasApiFailures Answers
 @inject FailureNotifier Notifier
 
-<MudDialog MaxWidth="MaxWidth.Large" FullWidth="true">
+<MudDialog Options="DialogLayout">
     <DialogContent>
         <MudText Typo="Typo.h6" Class="mb-4">Import CSV Wizard</MudText>
         <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
             Follow the steps below to import your CSV file into @TableName
         </MudText>
 
-        <MudStepper @bind-ActiveStep="@_activeStep" Variant="Variant.Outlined" Color="Color.Primary">
+        @* The dialog's own buttons move between the steps: they check each step, and leaving the preview validates the
+           data. The stepper's would skip both, so it draws none of its own. *@
+        <MudStepper @bind-ActiveIndex="@_activeStep">
+            <ActionContent />
+            <ChildContent>
             <!-- Step 1: File Selection -->
-            <MudStep Title="Select File" Icon="@Icons.Material.Filled.Upload">
+            <MudStep Title="Select File">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 1: Select CSV File</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -64,7 +68,7 @@
             </MudStep>
 
             <!-- Step 2: Column Mapping -->
-            <MudStep Title="Map Columns" Icon="@Icons.Material.Filled.Map" Disabled="@(_selectedFile == null || !_headers.Any())">
+            <MudStep Title="Map Columns" Disabled="@(_selectedFile == null || !_headers.Any())">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 2: Map CSV Columns to Table Fields</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -120,7 +124,7 @@
             </MudStep>
 
             <!-- Step 3: Preview & Validation -->
-            <MudStep Title="Preview & Validate" Icon="@Icons.Material.Filled.Preview" Disabled="@(!_columnMappings.Any(m => !string.IsNullOrEmpty(m.EntityProperty)))">
+            <MudStep Title="Preview & Validate" Disabled="@(!_columnMappings.Any(m => !string.IsNullOrEmpty(m.EntityProperty)))">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 3: Preview Data & Validate</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -181,7 +185,7 @@
                             <MudExpansionPanels Class="mt-4">
                                 <MudExpansionPanel Text="@($"Validation Errors ({_importErrors.Count})")" 
                                                  Icon="@Icons.Material.Filled.Error"
-                                                 IsExpanded="true">
+                                                 Expanded="true">
                                     <MudList T="ImportError" Dense="true">
                                         @foreach (var error in _importErrors.OrderBy(e => e.RowNumber))
                                         {
@@ -200,7 +204,7 @@
             </MudStep>
 
             <!-- Step 4: Import Options -->
-            <MudStep Title="Import Options" Icon="@Icons.Material.Filled.Settings" Disabled="@(_hasErrors || _previewData == null || !_previewData.Any())">
+            <MudStep Title="Import Options" Disabled="@(_hasErrors || _previewData == null || !_previewData.Any())">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 4: Import Options</MudText>
                     <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
@@ -267,7 +271,7 @@
             </MudStep>
 
             <!-- Step 5: Import Results -->
-            <MudStep Title="Results" Icon="@Icons.Material.Filled.CheckCircle" Disabled="@(_hasErrors || _previewData == null || !_previewData.Any())">
+            <MudStep Title="Results" Disabled="@(_hasErrors || _previewData == null || !_previewData.Any())">
                 <MudPaper Class="pa-4" Elevation="1">
                     @if (_isImporting)
                     {
@@ -292,7 +296,7 @@
                             <MudExpansionPanels Class="mt-4">
                                 <MudExpansionPanel Text="@($"Import Errors ({_importResult.Errors.Count})")" 
                                                  Icon="@Icons.Material.Filled.Error"
-                                                 IsExpanded="true">
+                                                 Expanded="true">
                                     <MudList T="FileImportError" Dense="true" Class="og-scrollable-list">
                                         @foreach (var error in _importResult.Errors.OrderBy(e => e.RowNumber))
                                         {
@@ -315,6 +319,7 @@
                     }
                 </MudPaper>
             </MudStep>
+            </ChildContent>
         </MudStepper>
     </DialogContent>
     <DialogActions>
@@ -357,6 +362,8 @@
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public string? TableName { get; set; }
     [Parameter] public PPDMTableMetadata? TableMetadata { get; set; }
+
+    private static readonly DialogOptions DialogLayout = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
 
     private int _activeStep = 0;
     private IBrowserFile? _selectedFile;

@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Refusals;
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.ApiService.Controllers.Operations;
@@ -153,8 +154,10 @@ public class ProspectIdentificationControllerWorkflowTests
         technical.Verify(t => t.AnalyzeSeismicInterpretationAsync("P-050", "SEIS-42", horizons, faults), Times.Once);
     }
 
+    // OILGAS-CATCH-01: the service refuses what the caller sent with a RefusalException, which the controller leaves to
+    // RefusalExceptionHandler (a 400 problem with the sentence); it no longer catches ArgumentException, a framework type.
     [Fact]
-    public async Task AnalyzeSeismicInterpretation_WhenServiceThrowsArgumentException_ReturnsBadRequest()
+    public async Task AnalyzeSeismicInterpretation_LeavesTheServicesRefusalToTheRefusalHandler()
     {
         var sut = CreateSut(out _, out var technical, out _, out _);
         technical.Setup(t => t.AnalyzeSeismicInterpretationAsync(
@@ -162,34 +165,34 @@ public class ProspectIdentificationControllerWorkflowTests
                 It.IsAny<string>(),
                 It.IsAny<List<Horizon>>(),
                 It.IsAny<List<Fault>>()))
-            .ThrowsAsync(new ArgumentException("Prospect ID cannot be null or empty"));
+            .ThrowsAsync(RefusalException.Invalid("The prospect ID is required."));
 
-        var actionResult = await sut.AnalyzeSeismicInterpretation(new SeismicInterpretationAnalysisRequest
+        var refusal = await Assert.ThrowsAsync<RefusalException>(() => sut.AnalyzeSeismicInterpretation(new SeismicInterpretationAnalysisRequest
         {
             ProspectId = string.Empty,
             SurveyId = "SEIS-001",
             Horizons = new(),
             Faults = new()
-        });
+        }));
 
-        Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
     }
 
     [Fact]
-    public async Task PerformRiskAssessment_WhenServiceThrowsArgumentException_ReturnsBadRequest()
+    public async Task PerformRiskAssessment_LeavesTheServicesRefusalToTheRefusalHandler()
     {
         var sut = CreateSut(out _, out _, out var riskEconomic, out _);
         riskEconomic.Setup(r => r.PerformRiskAssessmentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, decimal>>()))
-            .ThrowsAsync(new ArgumentException("Assessed by cannot be null or empty"));
+            .ThrowsAsync(RefusalException.Invalid("Say who made the risk assessment."));
 
-        var actionResult = await sut.PerformRiskAssessment(new WorkflowRiskAssessmentRequest
+        var refusal = await Assert.ThrowsAsync<RefusalException>(() => sut.PerformRiskAssessment(new WorkflowRiskAssessmentRequest
         {
             ProspectId = "P-099",
             AssessedBy = string.Empty,
             RiskScores = new Dictionary<string, decimal> { ["Trap"] = 0.5m }
-        });
+        }));
 
-        Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
     }
 
     [Fact]

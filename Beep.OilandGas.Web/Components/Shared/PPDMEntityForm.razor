@@ -230,11 +230,11 @@
     {
         builder.OpenComponent<MudSwitch<bool?>>(0);
         builder.AddAttribute(1, "Label", label);
-        builder.AddAttribute(2, "Checked", currentValue as bool?);
-        builder.AddAttribute(3, "CheckedChanged", EventCallback.Factory.Create<bool?>(this, value => SetPropertyValue(Entity!, fieldName, value)));
+        builder.AddAttribute(2, "Value", currentValue as bool?);
+        builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<bool?>(this, value => SetPropertyValue(Entity!, fieldName, value)));
         builder.AddAttribute(4, "Disabled", isReadOnly);
-        builder.AddAttribute(5, "HelperText", helpText);
         builder.CloseComponent();
+        RenderSwitchHelpText(builder, 5, helpText);
     }
     
     private void RenderActiveIndicatorField(RenderTreeBuilder builder, string fieldName, string label, string? helpText, bool isReadOnly, object? currentValue)
@@ -242,10 +242,23 @@
         var isActive = currentValue?.ToString()?.Equals("Y", StringComparison.OrdinalIgnoreCase) ?? true;
         builder.OpenComponent<MudSwitch<bool>>(0);
         builder.AddAttribute(1, "Label", label);
-        builder.AddAttribute(2, "Checked", isActive);
-        builder.AddAttribute(3, "CheckedChanged", EventCallback.Factory.Create<bool>(this, value => SetPropertyValue(Entity!, fieldName, value ? "Y" : "N")));
+        builder.AddAttribute(2, "Value", isActive);
+        builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<bool>(this, value => SetPropertyValue(Entity!, fieldName, value ? "Y" : "N")));
         builder.AddAttribute(4, "Disabled", isReadOnly);
-        builder.AddAttribute(5, "HelperText", helpText);
+        builder.CloseComponent();
+        RenderSwitchHelpText(builder, 5, helpText);
+    }
+
+    /// <summary>A switch has no helper text of its own, so a field's help is written beneath it as the others show theirs.</summary>
+    private static void RenderSwitchHelpText(RenderTreeBuilder builder, int sequence, string? helpText)
+    {
+        if (string.IsNullOrWhiteSpace(helpText))
+            return;
+
+        builder.OpenComponent<MudText>(sequence);
+        builder.AddAttribute(sequence + 1, "Typo", Typo.caption);
+        builder.AddAttribute(sequence + 2, "Color", Color.Secondary);
+        builder.AddAttribute(sequence + 3, "ChildContent", (RenderFragment)(text => text.AddContent(0, helpText)));
         builder.CloseComponent();
     }
     

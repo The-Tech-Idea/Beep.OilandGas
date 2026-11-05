@@ -18,10 +18,10 @@
         }
         else if (_connections.Any())
         {
-            <MudRadioGroup T="string" @bind-SelectedOption="@SelectedConnection">
+            <MudRadioGroup T="string" @bind-Value="@SelectedConnection">
                 @foreach (var connection in _connections)
                 {
-                    <MudRadio T="string" Option="@connection.ConnectionName" Color="Color.Primary" Class="mb-2">
+                    <MudRadio T="string" Value="@connection.ConnectionName" Color="Color.Primary" Class="mb-2">
                         <MudCard Elevation="1" Class="pa-3 og-full-width">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                                 <MudStack>
@@ -78,8 +78,8 @@
             {
                 <MudAlert Severity="@(_testResult.Success ? Severity.Success : Severity.Error)" 
                          Class="mt-4"
-                         Dismissible="true"
-                         OnClose="@(() => _testResult = null)">
+                         ShowCloseIcon="true"
+                         CloseIconClicked="@(() => _testResult = null)">
                     @_testResult.Message
                 </MudAlert>
             }

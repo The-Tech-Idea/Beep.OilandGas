@@ -9,6 +9,7 @@ using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.Accounting.Cost;
 using Beep.OilandGas.Models.Data.Accounting.Royalty;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Reporting;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Web.Services;
@@ -385,5 +386,49 @@ public sealed partial class AccountingServiceClient : IAccountingServiceClient
             _logger.LogError(ex, "Error closing accounting period ending {PeriodEnd}.", request.PeriodEnd);
             throw;
         }
+    }
+
+    public async Task<PeriodCloseReadinessResult> GetCloseReadinessAsync(DateTime periodEnd, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var endpoint = "/api/field/current/accounting/close-readiness?periodEnd="
+                + Uri.EscapeDataString(periodEnd.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            return await _apiClient.GetAsync<PeriodCloseReadinessResult>(endpoint, cancellationToken)
+                ?? throw new InvalidOperationException("The period close readiness response was empty.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking whether the accounting period ending {PeriodEnd} may be closed.", periodEnd);
+            throw;
+        }
+    }
+
+    public async Task<JOINT_INTEREST_STATEMENT> GenerateJibStatementAsync(GenerateJIBStatementRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            var report = await _apiClient.PostAsync<GenerateJIBStatementRequest, JibStatementReport>(
+                "/api/accounting/reporting/jib-statement",
+                request,
+                cancellationToken);
+            return report?.ReportData ?? throw new InvalidOperationException("The JIB statement response carried no statement.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating the JIB statement for lease {LeaseId}.", request.LeaseId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// The reporting endpoint's <c>ReportResult</c>, read with the statement it carries as a statement: its
+    /// <c>ReportData</c> is declared <see cref="object"/>, which would arrive as raw JSON.
+    /// </summary>
+    private sealed class JibStatementReport
+    {
+        public JOINT_INTEREST_STATEMENT? ReportData { get; set; }
     }
 }

@@ -12,6 +12,8 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Run Pump Performance Analysis</PageTitle>
 
@@ -281,8 +283,14 @@
                 _fieldName = summary.FieldName ?? _fieldName;
             }
         }
-        catch
+        catch (OilGasApiException answer)
         {
+            Snackbar.Add(Answers.Explain(answer, "loading the field name for pump performance", "The field name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the field name for pump performance", "The field name could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -300,9 +308,14 @@
                 await LoadSelectedWellContextAsync();
             }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load wells for Pump Performance.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the wells for pump performance", "The wells for Pump Performance could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the wells for pump performance", "The wells for Pump Performance could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -337,9 +350,14 @@
             _selectedWell = MapWell(well);
             ApplyWellDefaults(_selectedWell);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load the selected well context for Pump Performance.", Severity.Warning);
+            Snackbar.Add(Answers.Explain(answer, "loading the selected well for pump performance", "The selected well's context for Pump Performance could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the selected well for pump performance", "The selected well's context for Pump Performance could not be loaded", FailureSeverity.Degraded);
         }
     }
 
@@ -388,9 +406,14 @@
             _resultMode = "Baseline ESP design";
             Snackbar.Add("Pump performance design completed.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error running pump performance design.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"running a pump performance design for well {_selectedWellId}", "The pump performance design did not run"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"running a pump performance design for well {_selectedWellId}", "The pump performance design did not run");
         }
         finally
         {
@@ -411,9 +434,14 @@
             _resultMode = "Optimized ESP design";
             Snackbar.Add("Pump performance optimization completed.", Severity.Success);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error optimizing pump performance.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, $"optimizing pump performance for well {_selectedWellId}", "The pump performance was not optimized"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, $"optimizing pump performance for well {_selectedWellId}", "The pump performance was not optimized");
         }
         finally
         {

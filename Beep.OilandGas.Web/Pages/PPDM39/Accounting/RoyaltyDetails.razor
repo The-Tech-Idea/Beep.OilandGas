@@ -19,7 +19,7 @@
     @if (_state?.Loading == true)
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="Loading royalty details" />
-        <MudText Class="my-3">Loading royalty and payment records�</MudText>
+        <MudText Class="my-3">Loading royalty and payment records…</MudText>
     }
     @if (_state?.Error is not null)
     {
@@ -90,7 +90,7 @@
                 <MudTable T="RoyaltyPostingReview" Items="@_state.Review" Breakpoint="Breakpoint.Sm" Hover="true">
                     <HeaderContent><MudTh>Record</MudTh><MudTh>Amount</MudTh><MudTh>Finding</MudTh><MudTh>Next step</MudTh></HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="Record"><MudText>@context.RecordKind � @context.RecordedStatus</MudText><MudText Typo="Typo.caption">@context.RecordId</MudText></MudTd>
+                        <MudTd DataLabel="Record"><MudText>@context.RecordKind — @context.RecordedStatus</MudText><MudText Typo="Typo.caption">@context.RecordId</MudText></MudTd>
                         <MudTd DataLabel="Amount">@Amount(context.Amount)</MudTd>
                         <MudTd DataLabel="Finding">@Finding(context.Finding)</MudTd>
                         <MudTd DataLabel="Next step">@NextStep(context.Finding)</MudTd>
@@ -114,25 +114,44 @@
     protected override Task OnParametersSetAsync() => Reload();
     private Task Reload() => _state!.LoadAsync(CalculationId);
     private Task Review() => _state!.LoadReviewAsync();
-    private void FieldChanged(string fieldId) => _ = InvokeAsync(() => {
-        if (_disposed) return;
-        _state?.Dispose();
-        Navigation.NavigateTo("/ppdm39/accounting/royalties");
-    });
-    private static string Date(DateTime? value) => value?.ToString("dd MMM yyyy") ?? "�";
-    private static string Amount(decimal? value) => value?.ToString("N2") ?? "�";
+    // The field service raises a plain event outside every lifecycle method; the discarded InvokeAsync task let a fault
+    // reach nothing. The work runs on the renderer, and a fault is handed to the error boundary.
+    private void FieldChanged(string fieldId) => _ = LeaveForFieldAsync();
+    private async Task LeaveForFieldAsync()
+    {
+        try
+        {
+            await InvokeAsync(() => {
+                if (_disposed) return;
+                _state?.Dispose();
+                Navigation.NavigateTo("/ppdm39/accounting/royalties");
+            });
+        }
+        catch (Exception failure)
+        {
+            // Deliberately broad: this runs outside every lifecycle method, so a fault reaches no error boundary unless it is
+            // handed over. DispatchExceptionAsync is the framework's route there, and the boundary reports it.
+            await DispatchExceptionAsync(failure);
+        }
+    }
+    private static string Date(DateTime? value) => value?.ToString("dd MMM yyyy") ?? "—";
+    private static string Amount(decimal? value) => value?.ToString("N2") ?? "—";
     private static string Finding(RoyaltyPostingFinding value) => value switch {
         RoyaltyPostingFinding.MatchingPostedEvidence => "Posted evidence matches",
         RoyaltyPostingFinding.NoJournalRequired => "No journal required",
         RoyaltyPostingFinding.MissingJournal => "Journal not found",
         RoyaltyPostingFinding.AmbiguousJournals => "Multiple journals found",
         RoyaltyPostingFinding.IncompletePosting => "Posting incomplete",
-        _ => "Journal does not match"
+        RoyaltyPostingFinding.JournalMismatch => "Journal does not match"
     };
+    private const string ReconcileFirst = "Ask your accounting administrator to reconcile this record before attempting another posting.";
     private static string NextStep(RoyaltyPostingFinding value) => value switch {
         RoyaltyPostingFinding.MatchingPostedEvidence => "Compare the recorded status with the matching evidence before taking further action.",
         RoyaltyPostingFinding.NoJournalRequired => "The recorded amount is zero.",
-        _ => "Ask your accounting administrator to reconcile this record before attempting another posting."
+        RoyaltyPostingFinding.MissingJournal => ReconcileFirst,
+        RoyaltyPostingFinding.AmbiguousJournals => ReconcileFirst,
+        RoyaltyPostingFinding.JournalMismatch => ReconcileFirst,
+        RoyaltyPostingFinding.IncompletePosting => ReconcileFirst
     };
     public void Dispose()
     {

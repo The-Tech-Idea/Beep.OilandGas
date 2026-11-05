@@ -6,7 +6,10 @@
 
 <MudDialog>
     <DialogContent>
-        <MudStepper @bind-ActiveStep="@_activeStep" Color="Color.Primary" Variant="Variant.Filled">
+        @* The dialog's own buttons move between the steps and check each one, so the stepper draws none of its own. *@
+        <MudStepper @bind-ActiveIndex="@_activeStep">
+            <ActionContent />
+            <ChildContent>
             <!-- Step 1: Welcome -->
             <MudStep Title="Welcome">
                 <MudContainer Class="pa-4">
@@ -41,10 +44,10 @@
                     else if (_connections.Any())
                     {
                         <MudText Typo="Typo.h6" Class="mb-4">Available Database Connections</MudText>
-                        <MudRadioGroup T="string" @bind-SelectedOption="@_selectedConnectionName">
+                        <MudRadioGroup T="string" @bind-Value="@_selectedConnectionName">
                             @foreach (var connection in _connections)
                             {
-                                <MudRadio T="string" Option="@connection.ConnectionName" Color="Color.Primary">
+                                <MudRadio T="string" Value="@connection.ConnectionName" Color="Color.Primary">
                                     <div class="d-flex align-center">
                                         <MudIcon Icon="@Icons.Material.Filled.Storage" Class="mr-2" />
                                         <div>
@@ -168,6 +171,7 @@
                     }
                 </MudContainer>
             </MudStep>
+            </ChildContent>
         </MudStepper>
     </DialogContent>
     <DialogActions>

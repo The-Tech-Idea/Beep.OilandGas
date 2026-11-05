@@ -55,6 +55,21 @@ public class DecommissioningControllerTests
         orchestrator.VerifyAll();
     }
 
+    [Fact]
+    public void ApprovePA_AnswersNotAvailable_AndRecordsNothing()
+    {
+        // Nothing records a P&A programme's approval, so the endpoint says so rather than answering 204 for an approval
+        // it did not keep. A strict orchestrator with no setups fails the test if the action reads or writes anything.
+        var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
+        var controller = CreateController(orchestrator.Object, CreateNoopProcessService().Object, "claim-user");
+
+        var result = controller.ApprovePAAsync("ABAN-1");
+
+        var problem = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status501NotImplemented, problem.StatusCode);
+        orchestrator.VerifyNoOtherCalls();
+    }
+
     private static DecommissioningController CreateController(
         IFieldOrchestrator fieldOrchestrator,
         DecommissioningProcessService processService,
@@ -62,8 +77,7 @@ public class DecommissioningControllerTests
     {
         var controller = new DecommissioningController(
             fieldOrchestrator,
-            processService,
-            NullLogger<DecommissioningController>.Instance);
+            processService);
 
         controller.ControllerContext = new ControllerContext
         {

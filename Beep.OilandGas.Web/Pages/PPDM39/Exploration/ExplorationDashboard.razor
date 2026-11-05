@@ -5,6 +5,8 @@
 @inject ILifeCycleService LifeCycleService
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Exploration — @_fieldName</PageTitle>
 
@@ -26,6 +28,11 @@
             New Well Program
         </MudButton>
     </MudStack>
+
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_loadError</MudAlert>
+    }
 
     @* ── Prospect Funnel KPIs ─────────────────────────────────────────────── *@
     <MudGrid Spacing="3" Class="mb-6">
@@ -79,7 +86,7 @@
                 <MudCardContent>
                     @if (_pendingDecisions.Count == 0)
                     {
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">No pending decisions</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@(_loadError is null ? "No pending decisions" : "Pending decisions could not be loaded")</MudText>
                     }
                     else
                     {
@@ -116,7 +123,7 @@
                 <MudCardContent>
                     @if (_upcomingPrograms.Count == 0)
                     {
-                        <MudText Typo="Typo.body2" Color="Color.Secondary">No upcoming well programs</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@(_loadError is null ? "No upcoming well programs" : "Well programs could not be loaded")</MudText>
                     }
                     else
                     {
@@ -160,6 +167,7 @@
 
 @code {
     private string _fieldName = string.Empty;
+    private string? _loadError;
     private int _leads;
     private int _prospects;
     private int _drillCandidates;
@@ -177,7 +185,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for the exploration dashboard", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for the exploration dashboard", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         try
         {
@@ -197,9 +214,15 @@
                     .ToList();
             }
         }
-        catch (Exception)
+        // The page says the summary did not load, rather than that the portfolio is empty.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Failed to load exploration summary.", Severity.Warning);
+            _loadError = Answers.Explain(answer, "loading the exploration dashboard summary", "The exploration summary could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _loadError = Notifier.FailureText(ex, "loading the exploration dashboard summary", "The exploration summary could not be loaded");
         }
     }
 

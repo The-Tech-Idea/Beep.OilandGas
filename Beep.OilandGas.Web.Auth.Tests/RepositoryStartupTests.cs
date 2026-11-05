@@ -40,7 +40,7 @@ public class RepositoryStartupTests
 
     // Readiness is asked before anybody signs in, so it never asks for a token: a manager that answers is a failure here.
     private static RepositoryAccountClient Client(HttpClient http) =>
-        new(http, new NoTokens(), NullLogger<RepositoryAccountClient>.Instance);
+        new(http, new NoTokens(), NullLogger<RepositoryAccountClient>.Instance, new RecordingFailureReporter());
 
     private sealed class NoTokens : IUserTokenManager
     {

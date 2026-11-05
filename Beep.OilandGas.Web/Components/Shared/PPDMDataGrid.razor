@@ -2,17 +2,18 @@
 @using System.Reflection
 @using System.Collections.Generic
 @using System.Linq
+@using System.Text.Json
 @using MudBlazor
 @using Beep.OilandGas.PPDM39.Core.Metadata
 
-<MudDataGrid T="object" Items="@Items" 
-             Hover="@Hover" 
+@* Read-only. A record is edited in its owner's form — GenericCrudPage's PPDMEntityForm, reached through OnEdit — which saves
+   through the API. The grid offered cell editing as well (MudDataGrid's default edit mode, with ReadOnly off), and its cell
+   editors had no ValueChanged and nothing committed them, so whatever a person typed in a cell was dropped without a word. *@
+<MudDataGrid T="object" Items="@Items"
+             Hover="@Hover"
              Dense="@Dense"
-             FilterMode="@FilterMode"
-             ReadOnly="@ReadOnly"
-             CanCancelEdit="@CanCancelEdit"
-             EditMode="@EditMode"
-             QuickFilter="@QuickFilter"
+             ReadOnly="true"
+             QuickFilter="@_searchFilter"
              Loading="@IsLoading"
              LoadingProgressColor="@LoadingColor">
     <ToolBarContent>
@@ -23,57 +24,63 @@
         }
         @if (ShowSearch)
         {
-            <MudTextField @bind-Value="_searchString" 
-                         Placeholder="Search..." 
-                         Adornment="Adornment.Start" 
+            @* The search narrows the rows to those whose shown columns contain the text; it was bound to a field nothing
+               read, so it filtered nothing. *@
+            <MudTextField @bind-Value="_searchString"
+                         @bind-Value:after="SearchChanged"
+                         Placeholder="Search..."
+                         Adornment="Adornment.Start"
                          AdornmentIcon="@Icons.Material.Filled.Search"
-                         Immediate="true" 
+                         Immediate="true"
                          Variant="Variant.Outlined"
                          Class="mr-2" />
         }
         @ToolbarActions
-        @if (ShowExport && Items != null && Items.Any())
+        @if (ShowExport && OnExport.HasDelegate && Items != null && Items.Any())
         {
-            <MudButton Variant="Variant.Text" 
-                       Size="Size.Small"
-                       StartIcon="@Icons.Material.Filled.FileDownload"
-                       OnClick="OnExport"
-                       Title="Export to CSV">
-                Export
-            </MudButton>
+            <MudTooltip Text="Export to CSV">
+                <MudButton Variant="Variant.Text"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.FileDownload"
+                           OnClick="OnExport"
+                           aria-label="Export to CSV">
+                    Export
+                </MudButton>
+            </MudTooltip>
         }
     </ToolBarContent>
     <Columns>
-        @foreach (var column in GetColumns())
+        @foreach (var column in _columns)
         {
-            <TemplateColumn Title="@GetColumnDisplayName(column)" 
-                          Sortable="@IsColumnSortable(column)" 
-                          Filterable="@IsColumnFilterable(column)">
+            @* A template column has no property for MudBlazor to sort by, so its sort arrows did nothing until it was given
+               the cell's value; it has none to filter by either, so the search above is the grid's filter. *@
+            <TemplateColumn T="object"
+                            Title="@GetColumnDisplayName(column)"
+                            Sortable="true"
+                            SortBy="@(row => SortKey(row, column))">
                 <CellTemplate>
-                    @RenderCellContent(context, column)
+                    @FormatValue(CellValue(context.Item, column))
                 </CellTemplate>
-                <EditTemplate>
-                    @if (EditMode == DataGridEditMode.Cell && IsColumnEditable(column))
-                    {
-                        @RenderEditCell(context, column)
-                    }
-                </EditTemplate>
             </TemplateColumn>
         }
         @if (ShowActions)
         {
-            <TemplateColumn Title="Actions" Sortable="false" Filterable="false" FixedRight="true">
+            <TemplateColumn T="object" Title="Actions" Sortable="false" Filterable="false" StickyRight="true">
                 <CellTemplate>
-                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" 
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert"
                              Size="Size.Small"
                              Dense="true"
                              Color="Color.Inherit">
+                        @* A MudBlazor 9 activator opens its menu itself; without the toggle the row's actions never showed. *@
                         <ActivatorContent Context="menuActivator">
-                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert" 
-                                         Size="Size.Small" 
-                                         Color="Color.Default"
-                                         Variant="Variant.Text"
-                                         Title="Row actions" />
+                            <MudTooltip Text="Row actions">
+                                <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                                             Size="Size.Small"
+                                             Color="Color.Default"
+                                             Variant="Variant.Text"
+                                             OnClick="@menuActivator.ToggleAsync"
+                                             aria-label="Row actions" />
+                            </MudTooltip>
                         </ActivatorContent>
                         <ChildContent>
                             @if (OnEdit.HasDelegate)
@@ -96,12 +103,15 @@
                             }
                             @if (OnDelete.HasDelegate)
                             {
-                                <MudMenuItem OnClick="@(() => OnDelete.InvokeAsync(context.Item))" Color="Color.Error">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Class="mr-2" />
+                                <MudMenuItem OnClick="@(() => OnDelete.InvokeAsync(context.Item))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
                                     Delete
                                 </MudMenuItem>
                             }
-                            @ActionMenuItems
+                            @if (ActionMenuItems is not null)
+                            {
+                                @ActionMenuItems(context.Item)
+                            }
                         </ChildContent>
                     </MudMenu>
                 </CellTemplate>
@@ -122,14 +132,14 @@
 </MudDataGrid>
 
 @code {
+    /// <summary>
+    /// The rows: typed objects, dictionaries, or the JSON objects the API answers with (<see cref="ApiClient"/> reads a
+    /// <c>List&lt;object&gt;</c> as <see cref="JsonElement"/>s). Their columns and values are read from what each row is.
+    /// </summary>
     [Parameter] public IEnumerable<object>? Items { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public bool Hover { get; set; } = true;
     [Parameter] public bool Dense { get; set; } = true;
-    [Parameter] public DataGridFilterMode FilterMode { get; set; } = DataGridFilterMode.ColumnFilterRow;
-    [Parameter] public bool ReadOnly { get; set; } = false;
-    [Parameter] public bool CanCancelEdit { get; set; } = true;
-    [Parameter] public DataGridEditMode EditMode { get; set; } = DataGridEditMode.Cell;
     [Parameter] public bool ShowSearch { get; set; } = true;
     [Parameter] public bool ShowExport { get; set; } = true;
     [Parameter] public bool ShowPagination { get; set; } = true;
@@ -137,72 +147,107 @@
     [Parameter] public string? EmptyMessage { get; set; }
     [Parameter] public bool IsLoading { get; set; } = false;
     [Parameter] public Color LoadingColor { get; set; } = Color.Primary;
-    [Parameter] public Func<string, bool>? QuickFilter { get; set; }
-    
+
     // Column configuration
     [Parameter] public List<string>? Columns { get; set; }
     [Parameter] public List<string>? ExcludeColumns { get; set; }
     [Parameter] public int MaxDisplayColumns { get; set; } = 20;
     [Parameter] public Dictionary<string, string>? ColumnDisplayNames { get; set; }
-    [Parameter] public List<string>? ReadOnlyColumns { get; set; }
+
+    /// <summary>
+    /// The table's metadata. Its primary key columns are shown first and are never cut by <see cref="MaxDisplayColumns"/>,
+    /// so every row stays identifiable. It used to decide which cells were editable, for the editing the grid no longer offers.
+    /// </summary>
     [Parameter] public PPDMTableMetadata? TableMetadata { get; set; }
-    
+
     // Event callbacks
     [Parameter] public EventCallback<object> OnEdit { get; set; }
     [Parameter] public EventCallback<object> OnView { get; set; }
     [Parameter] public EventCallback<object> OnDelete { get; set; }
     [Parameter] public EventCallback OnExport { get; set; }
-    
+
     // Render fragments for customization
     [Parameter] public RenderFragment? ToolbarActions { get; set; }
     [Parameter] public RenderFragment<object>? ActionMenuItems { get; set; }
     [Parameter] public RenderFragment<CellContext<object>>? CustomCellTemplate { get; set; }
-    
+
     private string _searchString = string.Empty;
-    
+    private Func<object, bool>? _searchFilter;
+    private List<string> _columns = new();
+
     protected override void OnParametersSet()
     {
-        base.OnParametersSet();
+        _columns = GetColumns();
     }
-    
+
+    private void SearchChanged()
+    {
+        var text = _searchString.Trim();
+        _searchFilter = text.Length == 0
+            ? null
+            : row => _columns.Any(column => FormatValue(CellValue(row, column)).Contains(text, StringComparison.OrdinalIgnoreCase));
+    }
+
     private List<string> GetColumns()
     {
-        if (Items == null || !Items.Any())
+        var firstItem = Items?.FirstOrDefault();
+        if (firstItem is null)
             return new List<string>();
-        
-        var firstItem = Items.First();
-        var properties = firstItem.GetType()
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead && !IsSystemProperty(p.Name))
-            .Select(p => p.Name)
+
+        var properties = ColumnNamesOf(firstItem)
+            .Where(name => !IsSystemProperty(name))
             .ToList();
-        
+
         // Apply column filters
         if (Columns != null && Columns.Any())
         {
             properties = properties.Where(p => Columns.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
         }
-        
+
         if (ExcludeColumns != null && ExcludeColumns.Any())
         {
             properties = properties.Where(p => !ExcludeColumns.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
         }
-        
+
+        // The primary key first, so the columns the limit keeps always include what identifies the row.
+        var keys = PrimaryKeyColumns();
+        properties = properties.Where(p => keys.Contains(p, StringComparer.OrdinalIgnoreCase))
+            .Concat(properties.Where(p => !keys.Contains(p, StringComparer.OrdinalIgnoreCase)))
+            .ToList();
+
         // Limit display columns
         if (MaxDisplayColumns > 0 && properties.Count > MaxDisplayColumns)
         {
             properties = properties.Take(MaxDisplayColumns).ToList();
         }
-        
+
         return properties;
     }
-    
+
+    private string[] PrimaryKeyColumns() =>
+        string.IsNullOrWhiteSpace(TableMetadata?.PrimaryKeyColumn)
+            ? Array.Empty<string>()
+            : TableMetadata.PrimaryKeyColumn.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>A row's column names: a JSON object's members, a dictionary's keys, or a typed row's readable properties.</summary>
+    private static IEnumerable<string> ColumnNamesOf(object row) => row switch
+    {
+        JsonElement json => json.ValueKind == JsonValueKind.Object
+            ? json.EnumerateObject().Select(member => member.Name).ToList()
+            : new List<string>(),
+        IDictionary<string, object> dictionary => dictionary.Keys,
+        _ => row.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead && p.GetIndexParameters().Length == 0)
+            .Select(p => p.Name)
+    };
+
     private bool IsSystemProperty(string propertyName)
     {
         var systemProps = new[] { "PPDM_GUID", "ROW_CREATED_BY", "ROW_CREATED_DATE", "ROW_CHANGED_BY", "ROW_CHANGED_DATE" };
         return systemProps.Contains(propertyName, StringComparer.OrdinalIgnoreCase);
     }
-    
+
     private string GetColumnDisplayName(string columnName)
     {
         if (ColumnDisplayNames != null && ColumnDisplayNames.ContainsKey(columnName))
@@ -211,132 +256,88 @@
         }
         return columnName.Replace("_", " ");
     }
-    
-    private bool IsColumnSortable(string columnName)
+
+    /// <summary>
+    /// The value a row holds in a column. The cells were handed the cell's context rather than its row, so every value was
+    /// read from MudBlazor's <see cref="CellContext{T}"/> and the grid showed nothing of the record.
+    /// </summary>
+    private static object? CellValue(object row, string column) => row switch
     {
-        return true;
-    }
-    
-    private bool IsColumnFilterable(string columnName)
+        JsonElement json => json.ValueKind == JsonValueKind.Object && json.TryGetProperty(column, out var member)
+            ? ValueOf(member)
+            : null,
+        IDictionary<string, object> dictionary => dictionary.TryGetValue(column, out var value) ? value : null,
+        _ => row.GetType().GetProperty(column, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)?.GetValue(row)
+    };
+
+    /// <summary>A JSON value as the type a typed row would carry: a date written as text is a date, a number a number.</summary>
+    private static object? ValueOf(JsonElement value) => value.ValueKind switch
     {
-        return true;
-    }
-    
-    private bool IsColumnEditable(string columnName)
+        JsonValueKind.String => value.TryGetDateTime(out var date) ? date : value.GetString(),
+        JsonValueKind.Number => value.TryGetInt64(out var whole) ? whole
+            : value.TryGetDecimal(out var exact) ? exact
+            : value.GetDouble(),
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
+        JsonValueKind.Null => null,
+        JsonValueKind.Undefined => null,
+        JsonValueKind.Object => value.GetRawText(),
+        JsonValueKind.Array => value.GetRawText()
+    };
+
+    /// <summary>
+    /// What a column sorts by. A JSON column's values are of one kind, so it sorts by that kind — text as written (an ISO date
+    /// orders as its text), any number as a number — and never compares a date with text or a whole number with a fraction.
+    /// </summary>
+    private static object? SortKey(object row, string column)
     {
-        if (ReadOnlyColumns != null && ReadOnlyColumns.Contains(columnName, StringComparer.OrdinalIgnoreCase))
-            return false;
-            
-        // Primary key columns are read-only when editing existing records
-        if (TableMetadata != null && 
-            !string.IsNullOrWhiteSpace(TableMetadata.PrimaryKeyColumn) &&
-            TableMetadata.PrimaryKeyColumn.Equals(columnName, StringComparison.OrdinalIgnoreCase))
+        if (row is not JsonElement json)
+            return CellValue(row, column);
+
+        if (json.ValueKind != JsonValueKind.Object || !json.TryGetProperty(column, out var member))
+            return null;
+
+        return member.ValueKind switch
         {
-            return false;
-        }
-        
-        return true;
-    }
-    
-    private object? GetPropertyValue(object obj, string propertyName)
-    {
-        if (obj == null) return null;
-        
-        // Handle dictionary objects
-        if (obj is Dictionary<string, object> dict)
-        {
-            return dict.TryGetValue(propertyName, out var value) ? value : null;
-        }
-        
-        // Handle typed objects
-        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-        return prop?.GetValue(obj);
-    }
-    
-    private RenderFragment RenderCellContent(object item, string columnName)
-    {
-        return builder =>
-        {
-            var value = GetPropertyValue(item, columnName);
-            var displayValue = FormatValue(value, columnName);
-            
-            builder.AddContent(0, displayValue);
+            JsonValueKind.String => member.GetString(),
+            JsonValueKind.Number => member.GetDouble(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            JsonValueKind.Undefined => null,
+            JsonValueKind.Object => member.GetRawText(),
+            JsonValueKind.Array => member.GetRawText()
         };
     }
-    
-    private string FormatValue(object? value, string columnName)
+
+    private static string FormatValue(object? value)
     {
         if (value == null)
             return string.Empty;
-        
+
         // Format dates
         if (value is DateTime dateTime)
         {
             return dateTime.ToString("yyyy-MM-dd");
         }
-        
+
         if (value is DateTimeOffset dateTimeOffset)
         {
             return dateTimeOffset.ToString("yyyy-MM-dd");
         }
-        
+
         // Format decimals/numbers with appropriate precision
         if (value is decimal dec)
         {
             return dec.ToString("N2");
         }
-        
+
         if (value is double dbl)
         {
             return dbl.ToString("N2");
         }
-        
+
         return value.ToString() ?? string.Empty;
-    }
-    
-    private RenderFragment RenderEditCell(object item, string columnName)
-    {
-        return builder =>
-        {
-            var value = GetPropertyValue(item, columnName);
-            var propType = GetPropertyType(item, columnName);
-            
-            if (propType == typeof(DateTime) || propType == typeof(DateTime?))
-            {
-                builder.OpenComponent<MudDatePicker>(0);
-                builder.AddAttribute(1, "Date", value as DateTime?);
-                builder.AddAttribute(2, "Variant", Variant.Outlined);
-                builder.CloseComponent();
-            }
-            else if (propType == typeof(bool) || propType == typeof(bool?))
-            {
-                builder.OpenComponent<MudSwitch<bool?>>(3);
-                builder.AddAttribute(4, "T", typeof(bool?));
-                builder.AddAttribute(5, "Checked", value as bool?);
-                builder.AddAttribute(6, "Variant", Variant.Outlined);
-                builder.CloseComponent();
-            }
-            else
-            {
-                builder.OpenComponent<MudTextField<string>>(7);
-                builder.AddAttribute(8, "T", typeof(string));
-                builder.AddAttribute(9, "Value", value?.ToString() ?? string.Empty);
-                builder.AddAttribute(10, "Variant", Variant.Outlined);
-                builder.CloseComponent();
-            }
-        };
-    }
-    
-    private Type GetPropertyType(object obj, string propertyName)
-    {
-        if (obj is Dictionary<string, object> dict)
-        {
-            if (dict.TryGetValue(propertyName, out var value))
-                return value?.GetType() ?? typeof(string);
-        }
-        
-        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-        return prop?.PropertyType ?? typeof(string);
     }
 }
 

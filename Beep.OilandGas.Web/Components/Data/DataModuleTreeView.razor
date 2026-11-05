@@ -39,8 +39,7 @@
             <MudTreeViewItem Value="@($"MODULE:{mod.ModuleName}")"
                              Text="@mod.DisplayName"
                              Icon="@mod.Icon"
-                             @bind-Expanded="@_expanded[mod.ModuleName]"
-                             OnExpandedChanged="@((bool expanded) => OnModuleExpandedChanged(mod, expanded))">
+                             @bind-Expanded="@_expanded[mod.ModuleName]">
                 @foreach (var tbl in GetTables(mod))
                 {
                     <MudTreeViewItem Value="@($"TABLE:{tbl}")"
@@ -128,12 +127,6 @@
             all = all.Where(t => t.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
 
         return all.OrderBy(t => t);
-    }
-
-    // ---- Expand state -------------------------------------------------------
-    private void OnModuleExpandedChanged(ModuleDef mod, bool expanded)
-    {
-        _expanded[mod.ModuleName] = expanded;
     }
 
     // ---- Lazy-load extra tables from API ------------------------------------

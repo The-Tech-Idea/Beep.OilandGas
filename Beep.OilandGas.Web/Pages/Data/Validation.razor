@@ -2,6 +2,7 @@
 @page "/data/validation"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 @inject NavigationManager NavigationManager
 
 <PageTitle>Validate PPDM39 Data</PageTitle>
@@ -137,9 +138,11 @@
                 .Select(i => new ValidationIssue(i.Rule ?? "General", i.Column ?? string.Empty, i.Message ?? i.Rule ?? string.Empty, i.Severity ?? "Warning", i.RowCount))
                 .ToList() ?? new();
         }
-        catch (Exception)
+        // A validation that did not run found nothing: the page says it failed, never that every row passed.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Validation failed.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "validating a PPDM39 table", $"{_lastTable} was not validated"), Severity.Error);
+            return;
         }
         finally { _running = false; }
         if (_results.Count == 0)

@@ -1,10 +1,12 @@
 @using Beep.OilandGas.Models.Data.Company
 @page "/ppdm39/accounting/joint-interest-billing"
 @using Beep.OilandGas.Web.Services
-@inject ApiClient ApiClient
+@using Beep.OilandGas.Models.Data.ProductionAccounting
+@using Beep.OilandGas.Models.Data.Reporting
+@inject IAccountingServiceClient AccountingClient
 @inject ISnackbar Snackbar
-@inject NavigationManager NavigationManager
-@inject HttpClient Http
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Manage Joint Interest Billing</PageTitle>
 
@@ -15,175 +17,129 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Manage Joint Interest Billing</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Track and manage JIB invoices for working interest partners</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Generate joint interest billing statements for working interest partners, by lease</MudText>
                 <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.AccountBalanceWallet">JIB</MudChip>
             </MudStack>
         </MudStack>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ReceiptLong"
-                   OnClick="GenerateJibRun">
-            Generate JIB Run
-        </MudButton>
     </MudStack>
 
-    @* ─── Summary Cards *@
-    <MudGrid Class="mb-4" Spacing="3">
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_totalInvoices</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Open Invoices</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Success" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_totalPaid.ToString("C0")</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Total Paid (YTD)</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_overdueCount</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Overdue Invoices</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="2" Class="pa-4 text-center">
-                <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Secondary" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_partnerCount</MudText>
-                <MudText Typo="Typo.body2" Color="Color.Default">Active Partners</MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    @* ─── Generate a JIB statement (POST api/accounting/reporting/jib-statement). The button announced "JIB run generation
+       initiated" and called nothing. *@
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">Generate JIB Statement</MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="string" @bind-Value="_leaseId" Immediate="true" Label="Lease ID" Variant="Variant.Outlined"
+                              HelperText="The lease the run tickets, costs and revenue are recorded against" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="_periodEnd" Label="Period End Date" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex align-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                           OnClick="GenerateStatementAsync"
+                           Disabled="@(_generating || string.IsNullOrWhiteSpace(_leaseId) || !_periodEnd.HasValue)"
+                           StartIcon="@Icons.Material.Filled.ReceiptLong">
+                    @(_generating ? "Generating..." : "Generate JIB Statement")
+                </MudButton>
+            </MudItem>
+        </MudGrid>
 
-    @* ─── JIB Invoice Table *@
+        @if (_statement is not null)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mt-4">
+                Statement for lease @_statement.JIB_ID, @PeriodText(_statement)
+            </MudText>
+            <MudGrid Class="mt-1" Spacing="3">
+                <MudItem xs="12" sm="4">
+                    <MudPaper Elevation="1" Class="pa-4 text-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Warning" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@_statement.TOTAL_CHARGES.ToString("C2")</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Charges (costs and overhead)</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudPaper Elevation="1" Class="pa-4 text-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Success" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@_statement.TOTAL_CREDITS.ToString("C2")</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Credits (revenue)</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudPaper Elevation="1" Class="pa-4 text-center">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Primary" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@_statement.NET_AMOUNT.ToString("C2")</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Default">Net</MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+            @if (_statement.GENERATION_DATE.HasValue)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                    Generated @_statement.GENERATION_DATE.Value.ToString("yyyy-MM-dd HH:mm") UTC
+                </MudText>
+            }
+        }
+    </MudPaper>
+
+    @* ─── JIB invoices. No JIB invoice endpoint in the API: nothing writes JOINT_INTEREST_BILL, and nothing records a
+       partner's payment, due date, overdue state or dispute. The invoice table (which loaded /api/accounting/jib/invoices, a
+       route the API does not have), its status filter and search (never sent), its row link (to a page that does not
+       exist) and the open/paid/overdue/partner counts drawn from it were removed. *@
     <MudPaper Elevation="2" Class="pa-4">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
-            <MudText Typo="Typo.h6">JIB Invoices</MudText>
-            <MudSpacer />
-            <MudSelect T="string" Value="@_selectedStatus" Label="Status" Dense="true" Style="width: 150px;"
-                       ValueChanged="@(async (string s) => { _selectedStatus = s; await LoadAsync(); })">
-                <MudSelectItem Value="@string.Empty">All</MudSelectItem>
-                <MudSelectItem Value="@("Open")">Open</MudSelectItem>
-                <MudSelectItem Value="@("Paid")">Paid</MudSelectItem>
-                <MudSelectItem Value="@("Overdue")">Overdue</MudSelectItem>
-                <MudSelectItem Value="@("Disputed")">Disputed</MudSelectItem>
-            </MudSelect>
-            <MudTextField T="string" @bind-Value="_searchTerm" Label="Search" Dense="true" Style="width: 200px;"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          OnInput="@(async (ChangeEventArgs e) => { _searchTerm = e.Value?.ToString() ?? string.Empty; await LoadAsync(); })" />
-        </MudStack>
-
-        @if (_loading)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
-        }
-        else
-        {
-            <MudDataGrid T="JibInvoiceDto" Items="@_invoices" Filterable="true" Sortable="true"
-                         Hover="true" Dense="true" RowClick="OnRowClick">
-                <Columns>
-                    <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice #" />
-                    <PropertyColumn Property="x => x.PartnerName" Title="Partner" />
-                    <PropertyColumn Property="x => x.WellName" Title="Well" />
-                    <PropertyColumn Property="x => x.InvoiceDate" Title="Date" Format="yyyy-MM-dd" />
-                    <PropertyColumn Property="x => x.DueDate" Title="Due Date" Format="yyyy-MM-dd" />
-                    <PropertyColumn Property="x => x.TotalAmount" Title="Amount" Format="C2" />
-                    <PropertyColumn Property="x => x.PaidAmount" Title="Paid" Format="C2" />
-                    <TemplateColumn Title="Status">
-                        <CellTemplate>
-                            <MudChip T="string" Color="@StatusColor(context.Item.Status)" Size="Size.Small">
-                                @context.Item.Status
-                            </MudChip>
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-            </MudDataGrid>
-        }
+        <MudText Typo="Typo.h6" Class="mb-3">JIB Invoices</MudText>
+        <MudAlert Severity="Severity.Info">
+            Listing JIB invoices and tracking partner payments, overdue invoices and disputes is not available yet.
+        </MudAlert>
     </MudPaper>
 </MudContainer>
 
 @code {
-    private bool _loading;
-    private List<JibInvoiceDto> _invoices = new();
-    private string _selectedStatus = "";
-    private string _searchTerm = "";
-    private int _totalInvoices;
-    private decimal _totalPaid;
-    private int _overdueCount;
-    private int _partnerCount;
+    private string _leaseId = "";
+    private DateTime? _periodEnd = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1).AddDays(-1);
+    private bool _generating;
+    private JOINT_INTEREST_STATEMENT? _statement;
 
-    protected override async Task OnInitializedAsync()
+    private async Task GenerateStatementAsync()
     {
-        await LoadAsync();
-    }
+        if (string.IsNullOrWhiteSpace(_leaseId) || !_periodEnd.HasValue) return;
 
-    private async Task LoadAsync()
-    {
-        _loading = true;
+        var leaseId = _leaseId.Trim();
+        var periodEnd = _periodEnd.Value.Date;
+        _generating = true;
+        _statement = null;
         try
         {
-            // Fetch JIB data from API, fall back to defaults if unavailable
-            try
+            // The request names the period end alone: the billing service states the lease from its earliest allocation to
+            // it, and the statement says which period it covers (shown below). A month start was sent and read by nothing.
+            _statement = await AccountingClient.GenerateJibStatementAsync(new GenerateJIBStatementRequest
             {
-                _invoices = await Http.GetFromJsonAsync<List<JibInvoiceDto>>("/api/accounting/jib/invoices")
-                    ?? GetDefaultInvoices();
-            }
-            catch
-            {
-                _invoices = GetDefaultInvoices();
-            }
-            _totalInvoices = _invoices.Count(i => i.Status == "Open");
-            _totalPaid = _invoices.Sum(i => i.PaidAmount);
-            _overdueCount = _invoices.Count(i => i.Status == "Overdue");
-            _partnerCount = _invoices.Select(i => i.PartnerName).Distinct().Count();
+                LeaseId = leaseId,
+                PeriodEnd = periodEnd
+            });
+            Snackbar.Add($"JIB statement generated for lease {leaseId}, period ending {periodEnd:yyyy-MM-dd}.", Severity.Success);
         }
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "generating a JIB statement", "The JIB statement was not generated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
         catch (Exception ex)
         {
-            Snackbar.Add($"Failed to load JIB data: {ex.Message}", Severity.Error);
+            Notifier.Failure(ex, "generating a JIB statement", "The JIB statement was not generated");
         }
         finally
         {
-            _loading = false;
+            _generating = false;
         }
     }
 
-    private void OnRowClick(DataGridRowClickEventArgs<JibInvoiceDto> args)
-    {
-        NavigationManager.NavigateTo($"/ppdm39/accounting/jib/{args.Item.InvoiceNumber}");
-    }
-
-    private void GenerateJibRun()
-    {
-        Snackbar.Add("JIB run generation initiated. Check progress for status.", Severity.Info);
-    }
-
-    private static Color StatusColor(string status) => status switch
-    {
-        "Open" => Color.Info,
-        "Paid" => Color.Success,
-        "Overdue" => Color.Error,
-        "Disputed" => Color.Warning,
-        _ => Color.Default
-    };
-
-    public class JibInvoiceDto
-    {
-        public string InvoiceNumber { get; set; } = string.Empty;
-        public string PartnerName { get; set; } = string.Empty;
-        public string WellName { get; set; } = string.Empty;
-        public DateTime InvoiceDate { get; set; }
-        public DateTime DueDate { get; set; }
-        public decimal TotalAmount { get; set; }
-        public decimal PaidAmount { get; set; }
-        public string Status { get; set; } = string.Empty;
-    }
-
-    private static List<JibInvoiceDto> GetDefaultInvoices() => new()
-    {
-        new() { InvoiceNumber = "JIB-2026-001", PartnerName = "Partner A LLC", WellName = "Well #1", InvoiceDate = new DateTime(2026, 3, 15), DueDate = new DateTime(2026, 4, 15), TotalAmount = 125000m, PaidAmount = 125000m, Status = "Paid" },
-        new() { InvoiceNumber = "JIB-2026-002", PartnerName = "Partner B Corp", WellName = "Well #2", InvoiceDate = new DateTime(2026, 3, 20), DueDate = new DateTime(2026, 4, 20), TotalAmount = 89000m, PaidAmount = 0m, Status = "Open" },
-        new() { InvoiceNumber = "JIB-2026-003", PartnerName = "Partner C Inc", WellName = "Well #3", InvoiceDate = new DateTime(2026, 2, 10), DueDate = new DateTime(2026, 3, 10), TotalAmount = 210000m, PaidAmount = 0m, Status = "Overdue" },
-    };
+    /// <summary>The period the statement covers, as the billing service recorded it.</summary>
+    private static string PeriodText(JOINT_INTEREST_STATEMENT statement) =>
+        (statement.REPORT_PERIOD_START, statement.REPORT_PERIOD_END) switch
+        {
+            ({ } start, { } end) => $"{start:yyyy-MM-dd} to {end:yyyy-MM-dd}",
+            (null, { } end) => $"period ending {end:yyyy-MM-dd}",
+            _ => "period not recorded"
+        };
 }

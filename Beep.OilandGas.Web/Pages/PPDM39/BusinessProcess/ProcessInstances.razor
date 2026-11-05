@@ -3,6 +3,7 @@
 @inject Beep.OilandGas.Web.Services.IBusinessProcessServiceClient BusinessProcessClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Process Instances</PageTitle>
 
@@ -54,7 +55,7 @@
                  Dense="true"
                  Hover="true"
                  Striped="true"
-                 Sortable="true"
+                 SortMode="SortMode.Multiple"
                  RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(e.Item.InstanceId)}"))">
         <Columns>
             <PropertyColumn Property="r => r.ProcessName"    Title="Process" />
@@ -124,9 +125,10 @@
                 _instances = new();
             }
         }
-        catch
+        // A failed call says the instances did not load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Could not load process instances.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the process instances", "Could not load process instances"), Severity.Warning);
         }
     }
 

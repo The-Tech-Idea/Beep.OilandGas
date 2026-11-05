@@ -62,7 +62,7 @@
                            Variant="Variant.Outlined"
                            OnClick="OpenImportDialog"
                            Disabled="@(_metaLoading || string.IsNullOrWhiteSpace(TableName))"
-                           Title="Import CSV" />
+                           aria-label="Import CSV file into this table" />
         </MudTooltip>
 
         @* ── Export button ──────────────────────────────────────────────── *@
@@ -73,7 +73,7 @@
                            Variant="Variant.Outlined"
                            OnClick="ExportCsv"
                            Disabled="@(_metaLoading || string.IsNullOrWhiteSpace(TableName))"
-                           Title="Export CSV" />
+                           aria-label="Export this table to CSV" />
         </MudTooltip>
 
         <MudButton Variant="Variant.Filled"
@@ -89,7 +89,7 @@
 @* ─── Import dialog ───────────────────────────────────────────────────────── *@
 @if (_showImportDialog)
 {
-    <MudDialog @bind-IsVisible="_showImportDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <MudDialog @bind-Visible="_showImportDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
         <TitleContent>
             <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />Import CSV — @TableName</MudText>
         </TitleContent>
@@ -160,7 +160,7 @@
                              Dense="true"
                              Hover="true"
                              Filterable="false"
-                             Sortable="true"
+                             SortMode="SortMode.Multiple"
                              FixedHeader="true"
                              Height="500px"
                              RowClick="@OnRowClick"
@@ -191,16 +191,20 @@
                         <TemplateColumn Title="" Sortable="false" Filterable="false">
                             <CellTemplate>
                                 <MudStack Row="true" Spacing="0">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                   Size="Size.Small"
-                                                   Color="Color.Primary"
-                                                   OnClick="@(() => EditRow(context.Item))"
-                                                   Title="Edit" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                   Size="Size.Small"
-                                                   Color="Color.Error"
-                                                   OnClick="@(() => ConfirmDelete(context.Item))"
-                                                   Title="Delete" />
+                                    <MudTooltip Text="Edit">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Size="Size.Small"
+                                                       Color="Color.Primary"
+                                                       OnClick="@(() => EditRow(context.Item))"
+                                                       aria-label="Edit" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Delete">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Size="Size.Small"
+                                                       Color="Color.Error"
+                                                       OnClick="@(() => ConfirmDelete(context.Item))"
+                                                       aria-label="Delete" />
+                                    </MudTooltip>
                                 </MudStack>
                             </CellTemplate>
                         </TemplateColumn>
@@ -266,7 +270,7 @@
             <MudText Typo="Typo.caption" Class="mud-text-secondary">Child tables</MudText>
         </MudStack>
 
-        <MudTabs Elevation="0" ApplyEffectsToContainer="true" PanelClass="pa-0">
+        <MudTabs Elevation="0" ApplyEffectsToContainer="true" TabPanelsClass="pa-0">
             @foreach (var rel in _childRelations)
             {
                 var capturedRel = rel;

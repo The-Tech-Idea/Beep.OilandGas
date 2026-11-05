@@ -10,7 +10,7 @@
 @inject IDevelopmentServiceClient DevelopmentService
 @inject IProductionServiceClient ProductionService
 @inject ILifeCycleService LifeCycleService
-@inject OilGasApiFailures Answers
+@inject OilGasCallFailures Calls
 
 <PageTitle>Production Forecasting</PageTitle>
 
@@ -37,7 +37,7 @@
 
     @* ── Scenario selector + DCA parameters ─────────────────────────────── *@
     <MudPaper Elevation="1" Class="pa-3 mb-4">
-        <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+        <MudGrid Spacing="2" Class="align-center">
             <MudItem xs="12" sm="6" md="3">
                 <MudSelect T="string" Label="Active Scenario" @bind-Value="_activeScenario"
                            Variant="Variant.Outlined">
@@ -103,9 +103,9 @@
 
                 <MudTabPanel Text="Field Rate Forecast">
                     <MudPaper Elevation="0" Class="pa-3">
-                        <MudChart ChartType="ChartType.Line"
+                        <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_rateForecastSeries"
-                                  XAxisLabels="@_forecastLabels"
+                                  ChartLabels="@_forecastLabels"
                                   Width="100%"
                                   Height="280px" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
@@ -116,9 +116,9 @@
 
                 <MudTabPanel Text="Cumulative Production">
                     <MudPaper Elevation="0" Class="pa-3">
-                        <MudChart ChartType="ChartType.Line"
+                        <MudChart T="double" ChartType="ChartType.Line"
                                   ChartSeries="@_cumProductionSeries"
-                                  XAxisLabels="@_forecastLabels"
+                                  ChartLabels="@_forecastLabels"
                                   Width="100%"
                                   Height="280px" />
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
@@ -270,7 +270,12 @@
                 _fieldName = fieldInfo.FieldName ?? _fieldName;
             }
         }
-        catch { /* field name is non-critical */ }
+        // The current field is non-critical here (a forecast runs without it): a failed call is said as a warning and the
+        // wells still load; anything else reaches the page's error boundary.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the current field for the production forecasting page", "The current field could not be loaded"), Severity.Warning);
+        }
 
         _loading = true;
         try
@@ -301,9 +306,9 @@
                 })
                 .ToList();
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Failed to load wells.", Severity.Warning);
+            Snackbar.Add(Calls.Explain(failure, "loading the wells for production forecasting", "Failed to load wells"), Severity.Warning);
         }
         finally { _loading = false; }
     }
@@ -356,12 +361,17 @@
             }
             Snackbar.Add($"Forecast updated — {_declineType} decline, Di={_di}%/yr, b={_bFactor}", Severity.Success);
         }
-        catch (Exception) { Snackbar.Add("Forecast failed.", Severity.Error); }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "running a production forecast", "Forecast failed"), Severity.Error);
+        }
         finally { _running = false; }
     }
 
-    private void RunForecast()  => _ = RunForecastAsync();
-    private void SaveForecast() => _ = SaveForecastAsync();
+    // Awaited by the buttons, so a failure the forecast does not answer reaches the page's error boundary rather than an
+    // unobserved task.
+    private Task RunForecast()  => RunForecastAsync();
+    private Task SaveForecast() => SaveForecastAsync();
 
     private async Task ExportForecast()
     {
@@ -437,11 +447,10 @@
             await CalculationService.SaveForecastAsync(payload);
             Snackbar.Add("Forecast revision saved.", Severity.Success);
         }
-        catch (OilGasApiException answer)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add(Answers.Explain(answer, "saving a forecast revision", "The forecast revision was not saved"), Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "saving a forecast revision", "The forecast revision was not saved"), Severity.Error);
         }
-        catch (Exception) { Snackbar.Add("Save failed.", Severity.Error); }
     }
 
     private void UpdateScenarioRows(ProductionForecastResult result, double[] baseRates, double[] highRates, double[] lowRates)

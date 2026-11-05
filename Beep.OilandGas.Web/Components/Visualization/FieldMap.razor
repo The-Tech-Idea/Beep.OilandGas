@@ -17,14 +17,18 @@
                             <MudSelectItem Value="@("terrain")">Terrain</MudSelectItem>
                             <MudSelectItem Value="@("roadmap")">Roadmap</MudSelectItem>
                         </MudSelect>
-                        <MudIconButton Icon="@Icons.Material.Filled.Layers" 
-                                      Size="Size.Small"
-                                      OnClick="@ToggleLayers"
-                                      Title="Toggle layers" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" 
-                                      Size="Size.Small"
-                                      OnClick="@ToggleFullscreen"
-                                      Title="Toggle fullscreen" />
+                        <MudTooltip Text="Toggle layers">
+                            <MudIconButton Icon="@Icons.Material.Filled.Layers" 
+                                          Size="Size.Small"
+                                          OnClick="@ToggleLayers"
+                                          aria-label="Toggle layers" />
+                        </MudTooltip>
+                        <MudTooltip Text="Toggle fullscreen">
+                            <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" 
+                                          Size="Size.Small"
+                                          OnClick="@ToggleFullscreen"
+                                          aria-label="Toggle fullscreen" />
+                        </MudTooltip>
                     </MudStack>
                 }
             </MudStack>

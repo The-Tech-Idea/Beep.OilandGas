@@ -22,25 +22,6 @@ namespace Beep.OilandGas.Diagnostics.Migrations.SqlServer
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Beep.Foundation.IdentityServer.Shared.Authentication.BackchannelLogoutRevocation", b =>
-                {
-                    b.Property<string>("Subject")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("ExpiresAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("RevokedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Subject");
-
-                    b.HasIndex("ExpiresAtUtc");
-
-                    b.ToTable("BackchannelLogoutRevocations", (string)null);
-                });
-
             modelBuilder.Entity("TheTechIdeaWeb.Diagnostics.Records.FailureRecord", b =>
                 {
                     b.Property<long>("Id")

@@ -1,5 +1,6 @@
 using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data.Compliance;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -108,15 +109,15 @@ public class ComplianceService : IComplianceService
         try
         {
             var repo   = await MakeRepoAsync("OBLIGATION");
-            var entity = await repo.GetByIdAsync(obligationId);
-            if (entity is null) return;
+            var entity = await repo.GetByIdAsync(obligationId)
+                ?? throw RefusalException.NotFound($"Obligation {obligationId} was not found.");
 
             SetProperty(entity, "OBLIG_STATUS", ObligationStatus.Submitted);
             SetProperty(entity, "FULFILL_DATE", submitDate);
             await repo.UpdateAsync(entity, userId);
             _logger.LogInformation("Marked obligation {Id} as submitted", obligationId);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not RefusalException)
         {
             _logger.LogError(ex, "Failed to mark obligation {Id} submitted", obligationId);
             throw;
@@ -125,17 +126,22 @@ public class ComplianceService : IComplianceService
 
     public async Task WaiveObligationAsync(string obligationId, string reason, string userId)
     {
+        // The reason is the waiver's record, so one is required; it is kept in PPDM's REMARK. It was written over the
+        // obligation's DESCRIPTION, which lost what the obligation was, and a missing obligation answered as waived.
+        if (string.IsNullOrWhiteSpace(reason))
+            throw RefusalException.Invalid("Give a reason for waiving the obligation.");
+
         try
         {
             var repo   = await MakeRepoAsync("OBLIGATION");
-            var entity = await repo.GetByIdAsync(obligationId);
-            if (entity is null) return;
+            var entity = await repo.GetByIdAsync(obligationId)
+                ?? throw RefusalException.NotFound($"Obligation {obligationId} was not found.");
 
             SetProperty(entity, "OBLIG_STATUS", ObligationStatus.Waived);
-            SetProperty(entity, "DESCRIPTION", reason);
+            SetProperty(entity, "REMARK", reason.Trim());
             await repo.UpdateAsync(entity, userId);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not RefusalException)
         {
             _logger.LogError(ex, "Failed to waive obligation {Id}", obligationId);
             throw;
@@ -309,6 +315,7 @@ public class ComplianceService : IComplianceService
         ReportingPeriodEnd   = GetNullableDate(entity, "REPORTING_PERIOD_END"),
         RegulatorBaId        = GetStr(entity, "REGULATOR_BA_ID"),
         CreatedByProcess     = GetStr(entity, "CREATED_BY_PROCESS"),
+        Remark               = GetStr(entity, "REMARK"),
     };
 
     private static ObligationPayment MapToPayment(object entity) => new(

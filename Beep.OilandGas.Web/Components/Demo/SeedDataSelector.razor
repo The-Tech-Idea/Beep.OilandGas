@@ -8,8 +8,8 @@
         Choose which data to seed into your database. This will populate reference tables and optionally add sample data for testing.
     </MudText>
 
-    <MudRadioGroup T="SeedDataOption" @bind-SelectedOption="@SelectedOption">
-        <MudRadio T="SeedDataOption" Option="@SeedDataOption.None" Color="Color.Primary" Class="mb-3">
+    <MudRadioGroup T="SeedDataOption" Value="@SelectedOption" ValueChanged="@ChooseAsync">
+        <MudRadio T="SeedDataOption" Value="@SeedDataOption.None" Color="Color.Primary" Class="mb-3">
             <MudStack>
                 <MudText Typo="Typo.body1" Class="og-text-semibold">Skip Seeding</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -18,7 +18,7 @@
             </MudStack>
         </MudRadio>
 
-        <MudRadio T="SeedDataOption" Option="@SeedDataOption.ReferenceOnly" Color="Color.Primary" Class="mb-3">
+        <MudRadio T="SeedDataOption" Value="@SeedDataOption.ReferenceOnly" Color="Color.Primary" Class="mb-3">
             <MudStack>
                 <MudText Typo="Typo.body1" Class="og-text-semibold">Reference Data Only</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -27,7 +27,7 @@
             </MudStack>
         </MudRadio>
 
-        <MudRadio T="SeedDataOption" Option="@SeedDataOption.ReferenceAndSample" Color="Color.Primary" Class="mb-3">
+        <MudRadio T="SeedDataOption" Value="@SeedDataOption.ReferenceAndSample" Color="Color.Primary" Class="mb-3">
             <MudStack>
                 <MudText Typo="Typo.body1" Class="og-text-semibold">Reference Data + Sample Entities</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -36,7 +36,7 @@
             </MudStack>
         </MudRadio>
 
-        <MudRadio T="SeedDataOption" Option="@SeedDataOption.FullDemo" Color="Color.Primary" Class="mb-3">
+        <MudRadio T="SeedDataOption" Value="@SeedDataOption.FullDemo" Color="Color.Primary" Class="mb-3">
             <MudStack>
                 <MudText Typo="Typo.body1" Class="og-text-semibold">Full Demo Dataset</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -60,12 +60,14 @@
     [Parameter] public SeedDataOption SelectedOption { get; set; } = SeedDataOption.None;
     [Parameter] public EventCallback<SeedDataOption> SelectedOptionChanged { get; set; }
 
-    protected override void OnParametersSet()
+    /// <summary>
+    /// The person's choice, shown here and told to the parent. The parent was told only by echoing its own value back
+    /// on each render, unawaited, so a choice never reached it.
+    /// </summary>
+    private async Task ChooseAsync(SeedDataOption option)
     {
-        if (SelectedOptionChanged.HasDelegate)
-        {
-            SelectedOptionChanged.InvokeAsync(SelectedOption);
-        }
+        SelectedOption = option;
+        await SelectedOptionChanged.InvokeAsync(option);
     }
 }
 

@@ -8,6 +8,8 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
+@inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Plan Seismic Acquisition Surveys</PageTitle>
 
@@ -130,6 +132,10 @@
                     </NoRecordsContent>
                 </MudDataGrid>
             }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
+            }
             else if (!_isLoading)
             {
                 <MudStack AlignItems="AlignItems.Center" Class="pa-8">
@@ -155,6 +161,7 @@
     private string _fieldName = string.Empty;
     private List<SEIS_ACQTN_SURVEY>? _surveys;
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -164,7 +171,16 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        // Only the field's name in the header depends on it; the person is told it could not be read.
+        catch (OilGasApiException answer)
+        {
+            Snackbar.Add(Answers.Explain(answer, "loading the active field's name for the seismic survey register", "The field's name could not be loaded"), Severity.Warning);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "loading the active field's name for the seismic survey register", "The field's name could not be loaded", FailureSeverity.Degraded);
+        }
 
         await LoadSurveys();
     }
@@ -172,14 +188,22 @@
     private async Task LoadSurveys()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _surveys = await ExplorationService.GetSeismicSurveysAsync();
         }
-        catch (Exception)
+        // The page says the surveys did not load, rather than that there are none yet.
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error loading seismic surveys.", Severity.Error);
-            _surveys = new List<SEIS_ACQTN_SURVEY>();
+            _surveys = null;
+            _loadError = Answers.Explain(answer, "loading the field's seismic surveys", "The seismic surveys could not be loaded");
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            _surveys = null;
+            _loadError = Notifier.FailureText(ex, "loading the field's seismic surveys", "The seismic surveys could not be loaded");
         }
         finally
         {
@@ -203,9 +227,14 @@
                 Snackbar.Add("Seismic survey created successfully", Severity.Success);
                 await LoadSurveys();
             }
-            catch (Exception)
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add("Error creating seismic survey.", Severity.Error);
+                Snackbar.Add(Answers.Explain(answer, "creating a seismic acquisition survey", "The seismic survey was not created"), Severity.Error);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "creating a seismic acquisition survey", "The seismic survey was not created");
             }
         }
     }

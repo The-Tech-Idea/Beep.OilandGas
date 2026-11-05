@@ -6,6 +6,7 @@
 @inject ILifeCycleService LifeCycleService
 @inject IWellLookupServiceClient WellLookupClient
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Search Wells</PageTitle>
 
@@ -74,7 +75,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the well search page", "The field name could not be loaded"), Severity.Warning);
+        }
     }
 
     private async Task SearchWells()
@@ -94,9 +98,11 @@
                 Snackbar.Add($"Well with UWI '{_searchUwi}' not found", Severity.Info);
             }
         }
-        catch (Exception)
+        // A search that did not complete shows no well, never the previous search's.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error searching well.", Severity.Error);
+            _well = null;
+            Snackbar.Add(Calls.Explain(failure, "looking up a well by UWI", $"The well {_searchUwi} could not be looked up"), Severity.Error);
         }
         finally
         {

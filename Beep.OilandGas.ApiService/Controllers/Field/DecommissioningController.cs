@@ -11,7 +11,6 @@ using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.ApiService.Attributes;
 using Beep.OilandGas.ApiService.Services;
-using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
@@ -29,16 +28,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
         private readonly Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService _decommissioningProcessService;
-        private readonly ILogger<DecommissioningController> _logger;
 
         public DecommissioningController(
             IFieldOrchestrator fieldOrchestrator,
-            Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService decommissioningProcessService,
-            ILogger<DecommissioningController> logger)
+            Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService decommissioningProcessService)
         {
             _fieldOrchestrator = fieldOrchestrator ?? throw new ArgumentNullException(nameof(fieldOrchestrator));
             _decommissioningProcessService = decommissioningProcessService ?? throw new ArgumentNullException(nameof(decommissioningProcessService));
-            _logger = logger;
         }
 
         /// <summary>
@@ -491,20 +487,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         // ── P&A Programme Approval ─────────────────────────────────────────────────────
 
-        /// <summary>PATCH wells-abandoned/{id}/approve — mark a P&A programme approved.</summary>
+        /// <summary>PATCH wells-abandoned/{id}/approve — approving a P&A programme, which is not available yet.</summary>
         [HttpPatch("wells-abandoned/{id}/approve")]
-        public async Task<ActionResult> ApprovePAAsync(string id)
+        public IActionResult ApprovePAAsync(string id)
         {
-            var userId = User.ActingUserId();
             if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
-            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
-                if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field selected." });
-            var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
-            var abandonment = await decommissioningService.GetWellAbandonmentForFieldAsync(fieldId, id);
-                if (abandonment == null) return NotFound(new { error = $"P&A record {id} not found." });
-
-            _logger.LogInformation("P&A programme {Id} approved by {UserId}", id, userId);
-            return NoContent();
+            // Not yet recorded: nothing records a P&A programme's approval — the decommissioning services have no approval
+            // or status change for a WELL_ABANDONMENT row, the workflow's regulatory-approval step stores only "PENDING" on a
+            // process instance the record does not name, and no approval chain is linked to it. It answered 204 and logged
+            // "approved", recording nothing, while the page said the programme was approved (2026-10-10).
+            return Problem(
+                statusCode: StatusCodes.Status501NotImplemented,
+                title: "Not available",
+                detail: "Approving a P&A programme is not available yet.");
         }
     }
 }

@@ -66,9 +66,9 @@
                 <!-- Connection Only Mode -->
                 @if (_currentMode == SetupMode.ConnectionOnly)
                 {
-                    <MudStepper @bind-ActiveStep="@_activeStep" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">
+                    <MudStepper @bind-ActiveIndex="@_activeStep" Class="mb-4">
                         <!-- Step 1: Database Type -->
-                        <MudStep Title="Database Type" Icon="@Icons.Material.Filled.Storage">
+                        <MudStep Title="Database Type">
                             <MudPaper Class="pa-4" Elevation="1">
                                 <MudText Typo="Typo.h6" Class="mb-3">Select Database Type</MudText>
                                 <MudSelect T="string" 
@@ -85,7 +85,7 @@
                         </MudStep>
 
                         <!-- Step 2: Connection Details -->
-                        <MudStep Title="Connection Details" Icon="@Icons.Material.Filled.Settings" Disabled="@(string.IsNullOrEmpty(_selectedDatabaseType))">
+                        <MudStep Title="Connection Details" Disabled="@(string.IsNullOrEmpty(_selectedDatabaseType))">
                             <MudPaper Class="pa-4" Elevation="1">
                                 <MudText Typo="Typo.h6" Class="mb-3">Enter Connection Details</MudText>
                                 <MudGrid>
@@ -166,7 +166,7 @@
                         </MudStep>
 
                         <!-- Step 3: Save Connection -->
-                        <MudStep Title="Save Connection" Icon="@Icons.Material.Filled.Save" Disabled="@(_connectionTestResult == null || !_connectionTestResult.Success)">
+                        <MudStep Title="Save Connection" Disabled="@(_connectionTestResult == null || !_connectionTestResult.Success)">
                             <MudPaper Class="pa-4" Elevation="1">
                                 <MudText Typo="Typo.h6" Class="mb-3">Save Connection</MudText>
                                 <MudCheckBox T="bool" @bind-Value="@_setAsCurrent" Label="Set as current connection" Class="mb-4" />

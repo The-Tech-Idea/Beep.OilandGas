@@ -4,6 +4,7 @@
 @inject IDecommissioningServiceClient DecommissioningClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Estimate Decommissioning Costs</PageTitle>
 
@@ -93,7 +94,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the decommissioning cost estimation page", "The field name could not be loaded"), Severity.Warning);
+        }
     }
 
     private async Task EstimateCosts()
@@ -104,9 +108,9 @@
             _costEstimate = await DecommissioningClient.EstimateCostsAsync();
             Snackbar.Add("Cost estimation completed successfully", Severity.Success);
         }
-        catch (Exception)
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error estimating costs.", Severity.Error);
+            Snackbar.Add(Calls.Explain(failure, "estimating decommissioning costs", "The cost estimation was not produced"), Severity.Error);
         }
         finally
         {

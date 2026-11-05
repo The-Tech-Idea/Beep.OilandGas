@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Beep.OilandGas.ApiService.Controllers.Field;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Refusals;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.ProductionAccounting.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -67,6 +69,8 @@ public class AccountingControllerTests
                 new REVENUE_TRANSACTION
                 {
                     REVENUE_TRANSACTION_ID = "REV-1",
+                    WELL_ID = "WELL-7",
+                    TRANSACTION_DATE = new DateTime(2026, 2, 14),
                     DESCRIPTION = "Oil sale",
                     REVENUE_TYPE = "OIL",
                     OIL_VOLUME = 10m,
@@ -81,9 +85,152 @@ public class AccountingControllerTests
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var lines = Assert.IsType<List<RevenueLine>>(ok.Value);
-        Assert.Single(lines);
+        var line = Assert.Single(lines);
+        // The revenue recognition page groups the year by month and lists each line's well from these.
+        Assert.Equal(new DateTime(2026, 2, 14), line.TransactionDate);
+        Assert.Equal("WELL-7", line.WellId);
         productionAccounting.VerifyAll();
         orchestrator.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetCloseReadinessAsync_AnswersReady_WithNothingOutstanding_WhenTheChecksPass()
+    {
+        const string fieldId = "FIELD-PA-5";
+
+        var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
+        orchestrator.SetupGet(x => x.CurrentFieldId).Returns(fieldId);
+        var periodClosing = new Mock<IPeriodClosingService>(MockBehavior.Strict);
+        periodClosing
+            .Setup(x => x.ValidateReadinessAsync(fieldId, new DateTime(2026, 3, 31), "PPDM39"))
+            .ReturnsAsync(true);
+        periodClosing
+            .Setup(x => x.GetPeriodStatusAsync(fieldId, new DateTime(2026, 3, 31)))
+            .ReturnsAsync(PeriodCloseStatusCodes.Open);
+
+        var controller = CreateController(
+            orchestrator.Object, new Mock<IAccountingService>().Object, new Mock<IProductionAccountingService>(MockBehavior.Strict).Object, "user-5");
+
+        var result = await controller.GetCloseReadinessAsync(new DateTime(2026, 3, 31, 15, 0, 0), periodClosing.Object);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var readiness = Assert.IsType<PeriodCloseReadinessResult>(ok.Value);
+        Assert.True(readiness.Ready);
+        Assert.Empty(readiness.OutstandingItems);
+        Assert.Equal(new DateTime(2026, 3, 31), readiness.PeriodEnd);
+        Assert.Equal(PeriodCloseStatusCodes.Open, readiness.PeriodStatus);
+        periodClosing.VerifyAll();
+        periodClosing.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task GetCloseReadinessAsync_SaysTheStatusTheCloseRecognizes_WhenThePeriodIsClosed()
+    {
+        const string fieldId = "FIELD-PA-8";
+        var periodEnd = new DateTime(2026, 5, 31);
+
+        var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
+        orchestrator.SetupGet(x => x.CurrentFieldId).Returns(fieldId);
+        var periodClosing = new Mock<IPeriodClosingService>(MockBehavior.Strict);
+        periodClosing.Setup(x => x.ValidateReadinessAsync(fieldId, periodEnd, "PPDM39")).ReturnsAsync(false);
+        periodClosing.Setup(x => x.GetPeriodStatusAsync(fieldId, periodEnd)).ReturnsAsync(PeriodCloseStatusCodes.Closed);
+        periodClosing
+            .Setup(x => x.GetUnreconciledItemsAsync(fieldId, periodEnd, "PPDM39"))
+            .ReturnsAsync(["PERIOD: the period ending 2026-05-31 is already closed"]);
+
+        var controller = CreateController(
+            orchestrator.Object, new Mock<IAccountingService>().Object, new Mock<IProductionAccountingService>(MockBehavior.Strict).Object, "user-8");
+
+        var result = await controller.GetCloseReadinessAsync(periodEnd, periodClosing.Object);
+
+        var readiness = Assert.IsType<PeriodCloseReadinessResult>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.False(readiness.Ready);
+        Assert.Equal(PeriodCloseStatusCodes.Closed, readiness.PeriodStatus);
+        periodClosing.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetPeriodClosesAsync_AnswersTheCurrentFieldsCloses()
+    {
+        const string fieldId = "FIELD-PA-9";
+        var closes = new List<PeriodCloseSummary>
+        {
+            new() { FieldId = fieldId, PeriodEnd = new DateTime(2026, 4, 30), Status = PeriodCloseStatusCodes.Closed, JournalEntryNumber = "JE-2" },
+            new() { FieldId = fieldId, PeriodEnd = new DateTime(2026, 3, 31), Status = PeriodCloseStatusCodes.Reopened, JournalEntryNumber = "JE-1" }
+        };
+
+        var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
+        orchestrator.SetupGet(x => x.CurrentFieldId).Returns(fieldId);
+        var periodClosing = new Mock<IPeriodClosingService>(MockBehavior.Strict);
+        periodClosing.Setup(x => x.GetPeriodClosesAsync(fieldId)).ReturnsAsync(closes);
+
+        var controller = CreateController(
+            orchestrator.Object, new Mock<IAccountingService>().Object, new Mock<IProductionAccountingService>(MockBehavior.Strict).Object, "user-9");
+
+        var result = await controller.GetPeriodClosesAsync(periodClosing.Object);
+
+        Assert.Same(closes, Assert.IsType<OkObjectResult>(result.Result).Value);
+        periodClosing.VerifyAll();
+        periodClosing.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task GetPeriodClosesAsync_Refuses_WhenNoFieldIsSelected()
+    {
+        var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
+        orchestrator.SetupGet(x => x.CurrentFieldId).Returns((string?)null);
+        var periodClosing = new Mock<IPeriodClosingService>(MockBehavior.Strict);
+
+        var controller = CreateController(
+            orchestrator.Object, new Mock<IAccountingService>().Object, new Mock<IProductionAccountingService>(MockBehavior.Strict).Object, "user-10");
+
+        var refusal = await Assert.ThrowsAsync<RefusalException>(() => controller.GetPeriodClosesAsync(periodClosing.Object));
+
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
+        periodClosing.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task GetCloseReadinessAsync_AnswersWhatIsOutstanding_WhenACheckFails()
+    {
+        const string fieldId = "FIELD-PA-6";
+        var periodEnd = new DateTime(2026, 4, 30);
+
+        var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
+        orchestrator.SetupGet(x => x.CurrentFieldId).Returns(fieldId);
+        var periodClosing = new Mock<IPeriodClosingService>(MockBehavior.Strict);
+        periodClosing.Setup(x => x.ValidateReadinessAsync(fieldId, periodEnd, "PPDM39")).ReturnsAsync(false);
+        periodClosing.Setup(x => x.GetPeriodStatusAsync(fieldId, periodEnd)).ReturnsAsync(PeriodCloseStatusCodes.Open);
+        periodClosing
+            .Setup(x => x.GetUnreconciledItemsAsync(fieldId, periodEnd, "PPDM39"))
+            .ReturnsAsync(["ROYALTIES: 1 unreconciled items", "  - Royalty RC-9"]);
+
+        var controller = CreateController(
+            orchestrator.Object, new Mock<IAccountingService>().Object, new Mock<IProductionAccountingService>(MockBehavior.Strict).Object, "user-6");
+
+        var result = await controller.GetCloseReadinessAsync(periodEnd, periodClosing.Object);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var readiness = Assert.IsType<PeriodCloseReadinessResult>(ok.Value);
+        Assert.False(readiness.Ready);
+        Assert.Equal(new[] { "ROYALTIES: 1 unreconciled items", "  - Royalty RC-9" }, readiness.OutstandingItems);
+        periodClosing.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetCloseReadinessAsync_Refuses_WhenPeriodEndMissing()
+    {
+        var orchestrator = new Mock<IFieldOrchestrator>(MockBehavior.Strict);
+        orchestrator.SetupGet(x => x.CurrentFieldId).Returns("FIELD-PA-7");
+        var periodClosing = new Mock<IPeriodClosingService>(MockBehavior.Strict);
+
+        var controller = CreateController(
+            orchestrator.Object, new Mock<IAccountingService>().Object, new Mock<IProductionAccountingService>(MockBehavior.Strict).Object, "user-7");
+
+        var refusal = await Assert.ThrowsAsync<RefusalException>(() => controller.GetCloseReadinessAsync(default, periodClosing.Object));
+
+        Assert.Equal(RefusalKind.Invalid, refusal.Kind);
+        periodClosing.VerifyNoOtherCalls();
     }
 
     [Fact]

@@ -4,6 +4,7 @@
 @inject ApiClient ApiClient
 @inject ILifeCycleService LifeCycleService
 @inject ISnackbar Snackbar
+@inject OilGasCallFailures Calls
 
 <PageTitle>Browse Stratigraphic Formation Units</PageTitle>
 
@@ -19,8 +20,13 @@
                          Icon="@Icons.Material.Filled.Layers">Geology</MudChip>
             </MudStack>
         </MudStack>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.Add">Add Unit</MudButton>
+        @* The stratigraphy API only reads; a unit is added through Data Management's STRAT_UNIT table (the generic
+           PPDM39 data API). The button had no handler. *@
+        <MudTooltip Text="Add a unit in Data Management">
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Href="/ppdm39/data-management/table/STRAT_UNIT">Add Unit</MudButton>
+        </MudTooltip>
     </MudStack>
 
     @if (_isLoading)
@@ -74,9 +80,15 @@
                                 </MudChip>
                             </CellTemplate>
                         </TemplateColumn>
+                        @* The stratigraphy API only reads; a unit is edited through Data Management's STRAT_UNIT table (the
+                           generic PPDM39 data API), opened at this unit's rows. The button had no handler. *@
                         <TemplateColumn Title="" Sortable="false">
                             <CellTemplate>
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" Title="Edit unit" />
+                                <MudTooltip Text="Edit unit in Data Management">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                                   Href="@EditAddress(context.Item)"
+                                                   aria-label="@($"Edit unit {context.Item.STRAT_UNIT_ID} in Data Management")" />
+                                </MudTooltip>
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -87,6 +99,10 @@
                         </MudStack>
                     </NoRecordsContent>
                 </MudDataGrid>
+            }
+            else if (_loadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="ma-4">@_loadError</MudAlert>
             }
             else if (!_isLoading)
             {
@@ -105,6 +121,7 @@
     private string _fieldName = string.Empty;
     private List<STRAT_UNIT>? _units;
     private bool _isLoading = false;
+    private string? _loadError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,7 +131,10 @@
             if (summary != null)
                 _fieldName = summary.FieldName ?? _fieldName;
         }
-        catch { /* field name is non-critical */ }
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
+        {
+            Snackbar.Add(Calls.Explain(failure, "loading the field name for the stratigraphic units page", "The field name could not be loaded"), Severity.Warning);
+        }
 
         await LoadUnits();
     }
@@ -122,18 +142,30 @@
     private async Task LoadUnits()
     {
         _isLoading = true;
+        _loadError = null;
         try
         {
             _units = await ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units") ?? new();        }
-        catch (Exception)
+        // A list that did not load is not shown as "no records": the page says it did not load.
+        catch (Exception failure) when (OilGasCallFailures.IsCallFailure(failure))
         {
-            Snackbar.Add("Error loading units.", Severity.Error);
+            _units = null;
+            _loadError = Calls.Explain(failure, "loading stratigraphic units", "The stratigraphic units could not be loaded");
+            Snackbar.Add(_loadError, Severity.Error);
         }
         finally
         {
             _isLoading = false;
         }
     }
+
+    /// <summary>
+    /// Data Management's STRAT_UNIT table narrowed to this unit identifier (one row per name set that uses it), where the
+    /// generic PPDM39 data API edits the row.
+    /// </summary>
+    private static string EditAddress(STRAT_UNIT unit) =>
+        "/ppdm39/data-management/table/STRAT_UNIT?parentKeyCol=STRAT_UNIT_ID&parentKeyVal="
+        + Uri.EscapeDataString(unit.STRAT_UNIT_ID ?? string.Empty);
 
     private string GetPropertyValue(STRAT_UNIT unit, string propertyName)
     {

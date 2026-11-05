@@ -8,6 +8,7 @@
 @inject IAccountingServiceClient AccountingClient
 @inject ILifeCycleService LifeCycleService
 @inject OilGasApiFailures Answers
+@inject FailureNotifier Notifier
 
 <PageTitle>Run Economic Analysis</PageTitle>
 
@@ -103,7 +104,16 @@
                 if (summary != null)
                     _fieldName = summary.FieldName ?? _fieldName;
             }
-            catch { /* field name is non-critical */ }
+            // The field name is non-critical: the page goes on without it, and says so.
+            catch (OilGasApiException answer)
+            {
+                Snackbar.Add(Answers.Explain(answer, "loading the field name for economic analysis", "The field name could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "loading the field name for economic analysis", "The field name could not be loaded", FailureSeverity.Degraded);
+            }
 
             try
             {
@@ -127,9 +137,14 @@
                     };
                 }
             }
-            catch (Exception)
+            catch (OilGasApiException answer)
             {
-                Snackbar.Add("Error loading production data.", Severity.Warning);
+                Snackbar.Add(Answers.Explain(answer, "loading the production summary for economic analysis", "The production data could not be loaded"), Severity.Warning);
+            }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "loading the production summary for economic analysis", "The production data could not be loaded", FailureSeverity.Degraded);
             }
         }
         finally
@@ -151,9 +166,14 @@
         {
             _npv = await CalculationServiceClient.CalculateNPVAsync(_cashFlows, _discountRate);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error calculating NPV.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "calculating the net present value", "The NPV was not calculated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "calculating the net present value", "The NPV was not calculated");
         }
         finally
         {
@@ -174,9 +194,14 @@
         {
             _irr = await CalculationServiceClient.CalculateIRRAsync(_cashFlows, _initialGuess);
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error calculating IRR.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "calculating the internal rate of return", "The IRR was not calculated"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "calculating the internal rate of return", "The IRR was not calculated");
         }
         finally
         {
@@ -207,10 +232,20 @@
             {
                 Snackbar.Add(Answers.Explain(answer, "saving the economic analysis result", "The economic analysis was completed but not saved"), Severity.Warning);
             }
+            // A page answers every failure it meets with a sentence; the store keeps the exception.
+            catch (Exception ex)
+            {
+                Notifier.Failure(ex, "saving the economic analysis result", "The economic analysis was completed but not saved", FailureSeverity.Degraded);
+            }
         }
-        catch (Exception)
+        catch (OilGasApiException answer)
         {
-            Snackbar.Add("Error performing economic analysis.", Severity.Error);
+            Snackbar.Add(Answers.Explain(answer, "performing the economic analysis", "The economic analysis was not performed"), Severity.Error);
+        }
+        // A page answers every failure it meets with a sentence; the store keeps the exception.
+        catch (Exception ex)
+        {
+            Notifier.Failure(ex, "performing the economic analysis", "The economic analysis was not performed");
         }
         finally
         {
