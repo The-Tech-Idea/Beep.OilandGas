@@ -116,3 +116,41 @@ dotnet run --project TheTechIdeaWeb.AppHost
 - IdentityServer: `Beep.Foundation.IdentityServer/docs/`
 - Data architecture rules: `docs/data/ARCHITECTURE_RULES.md`
 - Identity and web architecture: `docs/identity-and-web/01-ARCHITECTURE.md
+
+<!-- local-identityserver-dev-env:2026-11-07 -->
+## Local IdentityServer (MyGamePC Dev Env)
+
+**Start IdentityServer first** at `https://localhost:7062/` using the **https** launch profile.
+
+| Item | Value |
+|---|---|
+| IdentityServer worktree (preferred on MyGamePC) | `C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.IdentityServer-local-dev` |
+| After PR merge | main `Beep.IdentityServer` checkout + `scripts/setup-local-dev.ps1` |
+| Siblings required to build IdentityServer | `Beep.Web` and `Beep.Message` beside the IdentityServer repo |
+| LocalDB | `MSSQLLocalDB` / database `identityserver` |
+| Authority | `https://localhost:7062/` |
+
+`Beep.OilandGas` is registered as a local OAuth client in that IdentityServer LocalDB. **Do not commit or push `ClientSecret` values.** Development configs on this machine hold real ids/secrets for local use only.
+
+**Local constraints:** IdentityServer refuses localhost back-channel logout URIs and localhost webhook destinations (SSRF guard). Omit those URIs / leave webhook secrets null unless the product requires placeholder secrets for `Configured` (Quiz).
+
+### Re-register after LocalDB wipe
+
+```powershell
+cd C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.IdentityServer-local-dev
+dotnet run --project .\tools\LocalDevWireClients -- $env:TEMP\local-dev-clients.json
+# additive example: --only=quiz,football
+```
+
+Copy the new `ClientId` / `ClientSecret` (and native id if any) into this app's Development config, then restart the app with `ASPNETCORE_ENVIRONMENT=Development`.
+### This app (OilGas Web + ApiService)
+
+| Item | Value |
+|---|---|
+| Web HTTPS | `https://localhost:7066` |
+| Redirects | `…/signin-oidc`, `…/signout-callback-oidc` |
+| API audience | `https://localhost:7001/api` (register under Admin → APIs) |
+| Web Development | `Beep.OilandGas.Web/appsettings.Development.json` |
+| ApiService Development | `Beep.OilandGas.ApiService/appsettings.Development.json` (Authority + Audience) |
+
+CLAUDE.md owns shared project rules; keep this Local Dev Env section in sync with README.md.
