@@ -6,6 +6,7 @@ using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.Models.Constants;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DrillingAndConstruction;
+using DRILLING_DAILY_REPORT = Beep.OilandGas.DrillingAndConstruction.Models.DRILLING_DAILY_REPORT;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
