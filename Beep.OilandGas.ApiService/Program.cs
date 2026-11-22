@@ -58,6 +58,8 @@ using Beep.OilandGas.ApiService.Middleware;
 using Beep.OilandGas.UserManagement.Services;
 using Beep.OilandGas.DevelopmentPlanning.Services;
 using Beep.OilandGas.Diagnostics;
+using Beep.OilandGas.ApiService.Hubs;
+using TheTechIdeaWeb.Diagnostics;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
