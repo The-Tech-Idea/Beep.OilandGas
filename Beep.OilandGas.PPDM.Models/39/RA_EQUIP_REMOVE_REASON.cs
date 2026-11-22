@@ -9,6 +9,7 @@ public partial class RA_EQUIP_REMOVE_REASON: Entity,IPPDMEntity
 {
 
 private  System.String REMOVE_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMOVE_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REMOVE_REASONValue;
           set { SetProperty(ref  REMOVE_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

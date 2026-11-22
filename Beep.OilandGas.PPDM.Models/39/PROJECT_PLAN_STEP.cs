@@ -9,6 +9,7 @@ public partial class PROJECT_PLAN_STEP: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_PLAN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_PLAN_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROJECT_PLAN_IDValue;
           set { SetProperty(ref  PROJECT_PLAN_IDValue, value); }
         } 
 private  System.String PLAN_STEP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLAN_STEP_ID
         {  
             get  

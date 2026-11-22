@@ -9,6 +9,7 @@ public partial class RA_VELOCITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VELOCITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VELOCITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VELOCITY_TYPEValue;
           set { SetProperty(ref  VELOCITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

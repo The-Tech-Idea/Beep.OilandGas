@@ -9,6 +9,7 @@ public partial class R_EQUIP_SPEC_SET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SPEC_SET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_SET_TYPE
         {  
             get  

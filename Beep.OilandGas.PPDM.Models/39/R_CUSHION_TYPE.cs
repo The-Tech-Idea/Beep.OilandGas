@@ -9,6 +9,7 @@ public partial class R_CUSHION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CUSHION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUSHION_TYPE
         {  
             get  

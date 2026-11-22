@@ -9,6 +9,7 @@ public partial class RA_BA_PREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PREFERENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PREFERENCE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PREFERENCE_TYPEValue;
           set { SetProperty(ref  PREFERENCE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

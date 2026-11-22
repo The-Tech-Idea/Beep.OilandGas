@@ -9,6 +9,7 @@ public partial class R_COUPLING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COUPLING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COUPLING_TYPE
         {  
             get  

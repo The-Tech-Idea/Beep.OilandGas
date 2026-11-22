@@ -9,6 +9,7 @@ public partial class RA_CORE_HANDLING: Entity,IPPDMEntity
 {
 
 private  System.String CORE_HANDLINGValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_HANDLING
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CORE_HANDLINGValue;
           set { SetProperty(ref  CORE_HANDLINGValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

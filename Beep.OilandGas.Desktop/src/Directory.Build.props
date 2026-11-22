@@ -1,0 +1,34 @@
+<Project>
+
+  <!-- Keep the repository-wide analyzer and warning rules (BEEP0001..BEEP0004, CS8509 as error). -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <OgProductVersion>0.1.0</OgProductVersion>
+    <Version>$(OgProductVersion)</Version>
+    <AssemblyVersion>$(OgProductVersion).0</AssemblyVersion>
+    <FileVersion>$(OgProductVersion).0</FileVersion>
+    <InformationalVersion>$(OgProductVersion)</InformationalVersion>
+    <Product>Beep Oil &amp; Gas Desktop</Product>
+    <Company>TheTechIdea</Company>
+    <Authors>TheTechIdea</Authors>
+    <Copyright>Copyright © TheTechIdea</Copyright>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <NeutralLanguage>en</NeutralLanguage>
+
+  </PropertyGroup>
+
+  <!--
+    ADR-008 (accepted 2026-11-05): the 13 TheTechIdea.OilGas.* projects are not published to
+    nuget.org and are not in any local feed, so the desktop references the sibling checkout.
+    Override OilGasToolsRoot when the checkout lives elsewhere; a missing checkout fails the build
+    with a message rather than a confusing restore error.
+  -->
+  <PropertyGroup>
+    <OilGasToolsRoot Condition="'$(OilGasToolsRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\OilandGasTools</OilGasToolsRoot>
+  </PropertyGroup>
+
+</Project>

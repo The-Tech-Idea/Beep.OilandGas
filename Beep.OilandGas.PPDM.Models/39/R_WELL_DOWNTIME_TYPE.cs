@@ -9,6 +9,7 @@ public partial class R_WELL_DOWNTIME_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DOWNTIME_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DOWNTIME_TYPE
         {  
             get  

@@ -1,0 +1,85 @@
+{
+  "id": "STG-18/RPT-01",
+  "title": "Report catalogue and document templates",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: five reports run over their own tables and preview with pagination; a document is rendered from {{Token}} markers and an unknown token fails the render naming it; an empty result prints an explicit no-data sentence for the parameters asked; each report declares the area's read permission and an unreadable permission source refuses rather than grants; the PDF is the pages the preview shows, one PDF page each; and a template saved twice is two versions with exactly one default and the default chosen explicitly.",
+  "dataModel": {
+    "read": "WELL, WELLBORE, STRAT_WELL_SECTION, STRAT_UNIT, WELL_DIR_SRVY_STATION and DEVELOPMENT_DAILY_REPORT - each read through its entity model with LINQ filtering, so the desktop assembly still contains no statement text.",
+    "written": "The report file (PDF, HTML, CSV or XLSX) and the templates: <data root>/Reporting/Templates/<name>.template.json, written through a temporary file and moved into place.",
+    "noTable": "RPT-01 introduces no table. A template is customer data under the data root and a report is a query over tables that already exist.",
+    "substitution": "The plan names the ERP's ErpDocumentTemplateService and InvoiceDocumentRenderer for template storage and rendering, and those projects are not in this repository - the Web has no unified report catalogue either, which the feature's own open question says. So the catalogue, the token rendering and the template store are implemented in the desktop, and that substitution is stated rather than implied."
+  },
+  "rules": {
+    "catalogue": "The feature's open question asks for the report list to be recorded, and it is: the catalogue holds the wells register (exploration, wells.read), the wellbores of a well (drilling, drilling.read), formation picks (stratigraphy, stratigraphy.read), survey stations (stratigraphy, stratigraphy.read) and daily drilling reports (drilling, drilling.read, with an optional period). Each definition carries its parameters, so the page's form is generated from the definition rather than typed per report.",
+    "tokens": "AC-2: a body is text with {{Token}} markers; the report offers Name, Key, Area, Generated, Parameters, Count and Table, plus one token per parameter supplied. An unknown token - including an unclosed marker - fails the render and every offending name is listed; nothing partial is shown, because a document that silently drops a token is quietly wrong.",
+    "pagination": "AC-1: the document is rendered once and paginated once into fixed windows of 48 lines, and the preview, the HTML and the PDF are all that same list of pages. The gateway test checks that no line is lost at a boundary and that a 63-row register spans more than one page.",
+    "noData": "AC-3: an empty table is replaced by 'No data for these parameters: <parameters>.' in the place the rows would go, so a reader sees what was asked and that there is nothing - never a blank page that could be a failure.",
+    "permission": "AC-4: every definition declares the area's read permission. An administrator always may; otherwise the permission is required, and OgPermissions' own distinction is used - a source that could not be read is a refusal with its own sentence, not an empty grant.",
+    "templates": "AC-6: a save writes the same template name as a new version (1, 2, 3...), and making one the default clears the flag on the others, so exactly one default can exist. With no template at all - or none made default - the report renders the generated layout, which says '(generated layout)' in its title so a reader knows nothing was chosen.",
+    "pdf": "AC-5: the PDF is drawn from the same paginated lines the preview shows, one PDF page per preview page, by a small Skia text writer; the gateway test asserts the PDF's page objects equal the preview's page count, and the HTML carries the preview's text verbatim."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reporting/OgReports.cs (OgReportParameter, OgReportDefinition, OgReportColumn, OgReportTable, OgReportPage, OgReportResult, OgReportTemplate, OgReportExport, OgReportRules, IOgReports, OgReportsService with CatalogueAsync/TemplatesAsync/RunAsync/SaveTemplateAsync/ExportAsync)",
+    "pdf": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgReportPdf.cs implementing IOgTextPdf from Core, so the reporting service hands over pages and the drawing layer draws them without either owning the other",
+    "page": "src/Beep.OilandGas.Desktop/Views/ReportsPageView.cs (route 'reports': the catalogue grid, the generated parameter form, the paginated monospaced preview with a page count, the token list, the template editor with the default choice, and the export bar)",
+    "wiring": "OgBootstrapper (IOgReports with the connection, the templates folder and the PDF writer), OgApplication.Reports, catalog 'reports' (OgModuleKeys.Reporting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ReportsTests.cs (8, no database) + ReportsGatewayTests.cs (1 opt-in over six tables and all four export formats)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1483, "passed": 1483, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 99, "passed": 99, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 122, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL, WELLBORE, WELL_DIR_SRVY_STATION, STRAT_WELL_SECTION, STRAT_UNIT and DEVELOPMENT_DAILY_REPORT: three wells in two fields, two bores, two picks, two survey stations and three daily reports.",
+    "ac1_pagination": "the wells register reports all three wells in the preview text; with 60 extra wells inserted the same report produces 63 rows over more than one page, and every line of the last extra well is present somewhere in the pages",
+    "ac2_tokens": "a template of '{{Name}} / {{Table}} / {{Count}} row(s) - {{Generated}}' renders with three rows counted; a template containing {{Nonsense}} is refused with the unknown-token code and the token's name in the sentence, and no document is produced",
+    "ac3_noData": "a field nothing is in is reported as empty and the preview prints 'No data for these parameters: field=Nowhere.' rather than a blank table",
+    "ac4_permission": "a person with only stratigraphy.read is refused the wells register by area; a permission source that could not be read is refused with its own sentence; an administrator and a person holding the permission both run it",
+    "ac5_pdf": "the PDF starts with %PDF and its page objects equal the preview's page count; the HTML export carries the preview's own text; the CSV has a header and one line per row; the XLSX is a zip (PK)",
+    "ac6_versions": "the first save is version 1 and default; a second save is version 2 and not default; a different template made default leaves exactly one default; an unnamed run then uses that default, and its title no longer says 'generated layout'",
+    "parameters": "the field parameter filters the register to the two wells in North and the parameter appears in the page text; the daily report's date parameter excludes the earlier report",
+    "refusals": "an unknown report key, a missing required parameter, a blank or unusable template name, an empty body, no actor, an export with no path and an unknown format are each refused with their own sentence; a PDF with no drawing layer is refused for that reason",
+    "failure": "dropping WELLBORE fails the wellbores report with no result rather than an empty one"
+  },
+  "gates": {
+    "AC-1 A report runs with parameters and previews with pagination": "pass - five reports over their own tables with generated parameters, and a 63-row register paged with every line accounted for.",
+    "AC-2 An unknown token fails rendering with the token named": "pass - refused with the token in the sentence, and nothing partial rendered.",
+    "AC-3 An empty result renders an explicit 'no data' statement": "pass - the sentence replaces the table and names the parameters.",
+    "AC-4 Report access requires the source area's read permission": "pass - per-area permission on every definition, administrator allowed, unreadable permission source refused.",
+    "AC-5 Exported PDF matches the preview": "pass - one PDF page per preview page from the same lines, asserted on the PDF's page objects, with the HTML carrying the preview text.",
+    "AC-6 Templates are versioned and default selection is explicit": "pass - version increments per save, exactly one default, and the generated layout is labelled when no default exists."
+  },
+  "engineFindings": {
+    "thereIsNoOwnerTemplateServiceInThisRepository": {
+      "where": "The plan names Beep.DoitAll.Erp.Wpf (ErpDocumentTemplateService, InvoiceDocumentRenderer)",
+      "finding": "Neither project is present in this repository, and the feature's own open question records that the Web has no unified report catalogue. So there was nothing to reuse for template storage or token rendering.",
+      "handling": "The catalogue, the token renderer and the template store are implemented in the desktop Data layer, with templates as files under the data root. Stated as a substitution rather than presented as reuse."
+    },
+    "noTextPdfExists": {
+      "where": "TheTechIdea.OilGas.Wellbore (WellboreExport), Beep.OilandGas.Drawing (PdfExporter), TheTechIdea.OilGas.Mapping (MapExport)",
+      "finding": "Each PDF writer in the referenced projects draws something specific - a well document, a DrawingEngine, a map - and none turns pages of text into a PDF.",
+      "handling": "A small Skia text writer (OgReportPdf) implements IOgTextPdf, declared in Core so the reporting service and the drawing layer meet without referencing each other. The PDF is therefore the preview's pages by construction rather than a second rendering."
+    },
+    "apermissionSourceCanBeUnknown": {
+      "finding": "OgPermissions distinguishes 'the grant lookup failed' (PermissionSourceAvailable false) from 'granted nothing', which is the right distinction and the opposite of what a naive check would do.",
+      "handling": "The gate refuses when the source is unavailable and says so in the sentence, so a broken lookup cannot silently become access. A report is read-only, which makes the fail-closed choice cheap."
+    },
+    "thePdfPageTreeContainsThePageMarker": {
+      "finding": "A PDF's page tree node is '/Type /Pages', which contains the page's own '/Type /Page' - so counting the marker overcounts by one per document.",
+      "handling": "The test counts pages as the difference between the two markers, which is exact for the writer's output; recorded because a first count asserted one page for a one-page report and read two."
+    }
+  },
+  "limits": [
+    "Templates are global rather than per report: one document is used by whichever report is run, and the page offers the choice explicitly. The feature's screens describe one template tab, which is what this build has.",
+    "Parameters are entered as 'key = value' lines generated from the definition, not as a control per parameter; a required key that is missing is named and the run is refused.",
+    "Template versions are numbers, not history: the latest body is stored with its version count, and earlier bodies are not kept.",
+    "The PDF's text layer is not asserted - the test proves the page count and the file's validity, and the HTML carries the preview's text verbatim, but the glyphs inside the PDF's compressed streams are not searched.",
+    "The catalogue is the five reports listed; adding one is a change to the definition list and its source, not something the page can do.",
+    "The permission strings (wells.read, drilling.read, stratigraphy.read) are defined here; where the application's RBAC does not carry them, a non-administrator is refused - which is the intended fail-closed behaviour.",
+    "The preview is fixed-width text, so a report is a table and a heading rather than a laid-out document with columns of prose.",
+    "An export writes to the path given with no overwrite confirmation, and the page does not remember the last path per format.",
+    "No scheduled output: 'run now' only, as the feature scopes it."
+  ]
+}

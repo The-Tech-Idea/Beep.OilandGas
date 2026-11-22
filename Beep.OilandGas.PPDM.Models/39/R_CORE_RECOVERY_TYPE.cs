@@ -9,6 +9,7 @@ public partial class R_CORE_RECOVERY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CORE_RECOVERY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_RECOVERY_TYPE
         {  
             get  

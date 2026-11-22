@@ -9,6 +9,7 @@ public partial class RA_ANALYSIS_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String ANALYSIS_PROPERTYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANALYSIS_PROPERTY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANALYSIS_PROPERTYValue;
           set { SetProperty(ref  ANALYSIS_PROPERTYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

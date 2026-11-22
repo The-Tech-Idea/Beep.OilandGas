@@ -9,6 +9,7 @@ public partial class WELL_MUD_RESISTIVITY: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String SAMPLE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SAMPLE_IDValue;
           set { SetProperty(ref  SAMPLE_IDValue, value); }
         } 
 private  System.Decimal RESISTIVITY_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal RESISTIVITY_OBS_NO
         {  
             get  

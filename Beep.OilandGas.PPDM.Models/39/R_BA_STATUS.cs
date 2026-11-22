@@ -9,6 +9,7 @@ public partial class R_BA_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String BA_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_STATUS
         {  
             get  

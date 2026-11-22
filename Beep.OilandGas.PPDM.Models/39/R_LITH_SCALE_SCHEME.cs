@@ -9,6 +9,7 @@ public partial class R_LITH_SCALE_SCHEME: Entity,IPPDMEntity
 {
 
 private  System.String SCALE_SCHEMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCALE_SCHEME
         {  
             get  

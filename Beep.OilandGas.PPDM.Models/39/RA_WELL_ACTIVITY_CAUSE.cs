@@ -9,6 +9,7 @@ public partial class RA_WELL_ACTIVITY_CAUSE: Entity,IPPDMEntity
 {
 
 private  System.String CAUSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAUSE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CAUSE_TYPEValue;
           set { SetProperty(ref  CAUSE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

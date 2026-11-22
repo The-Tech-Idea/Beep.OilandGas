@@ -1,0 +1,87 @@
+{
+  "id": "STG-14/WFL-06",
+  "title": "Workflow administration",
+  "date": "2026-11-08",
+  "gateMet": true,
+  "acSummary": "AC-1..AC-6 met",
+  "acceptanceCriteria": {
+    "AC-1": "A dependency that would close a cycle is refused before anything is written, and the refusal names the path; a self-dependency is refused as a cycle of one.",
+    "AC-2": "Every configuration change records its actor, its reason, the confirmation naming the affected definitions, and the value it replaced, in a durable WORKFLOW_CONFIGURATION_CHANGE row.",
+    "AC-3": "A delegation outside its window is inactive and marked with the window it missed; a withdrawn one says so; a row with no window is reported as exactly that rather than as expired.",
+    "AC-4": "The segregation tester answers pass or fail, names the blocking rule, and reports an advisory match as advisory rather than as a silent pass.",
+    "AC-5": "Orphaned instances, instances without steps and broken handoffs are listed with their cause.",
+    "AC-6": "The page is gated on SystemAdmin and TenantAdmin in the module catalogue, not on everyone."
+  },
+  "dataModel": {
+    "addedTable": "WORKFLOW_CONFIGURATION_CHANGE (Beep.OilandGas.LifeCycle, registered in LifeCycleModule): area, target, actor, reason, previous value, new value and timestamp. The owner's configuration tables keep no history of their own - a version describes its own creation, but switching a rule or adding a dependency left no trace of what it replaced.",
+    "addedColumns": "DELEGATION_OF_AUTHORITY gained DELEGATOR_USER_ID, DELEGATE_USER_ID, VALID_FROM_UTC, VALID_TO_UTC and IS_ACTIVE on its partial class. The owner models the authority ladder (entity type, threshold, role), not one named person acting for another, so the person delegation the feature's OgDelegation describes had nowhere to live.",
+    "untouched": "WORKFLOW_VERSION, WORKFLOW_DEPENDENCY, BUSINESS_EVENT_TRIGGER, SOD_RULE and COMPENSATING_CONTROL were read and written through their existing columns; only DELEGATION_OF_AUTHORITY's class gained the partial keyword and the five columns."
+  },
+  "work": {
+    "versions": "ActivateVersionAsync points a definition at one of its recorded versions by copying that version's PROCESS_CONFIG_SNAPSHOT into PROCESS_CONFIG_JSON and setting VERSION; a version with no snapshot is refused. Retiring is expressed by the definition's IS_ACTIVE, which the catalogue already exposes.",
+    "dependencies": "AddDependencyAsync validates the cycle first - reusing the same dependency-cycle walk WFL-02 uses - then writes the row.",
+    "triggers": "SetTriggerActiveAsync flips IS_ACTIVE, refusing a no-op and recording the previous and new flags.",
+    "sodRules": "SetSodRuleBlockingAsync flips IS_BLOCKING, refusing a no-op, and the tester reads the same rules so the decision and the test cannot disagree.",
+    "delegations": "AddDelegationAsync writes a DELEGATION_OF_AUTHORITY row carrying both people, the window and the limit, with the owner's threshold columns recording that this is a person delegation rather than being left blank.",
+    "diagnostics": "Orphaned instances (no definition row), instances with no step instance, and handoffs naming a step the instance does not record, each with its cause."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.LifeCycle/Data/Tables/WORKFLOW_CONFIGURATION_CHANGE.cs, DELEGATION_OF_AUTHORITY.Delegation.cs, DELEGATION_OF_AUTHORITY.cs (made partial), Modules/LifeCycleModule.cs (table registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Workflow/OgWorkflowAdmin.cs (OgConfigChange, OgVersionRow, OgDependencyRow, OgTriggerRow, OgSodRuleRow, OgSodTest, OgDelegationRow, OgCompensatingControlRow, OgAdminDiagnostic, OgAdminWorkspace, WorkflowAdminRules, IOgWorkflowAdmin, OgWorkflowAdminService)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WorkflowAdminPageView.cs (route 'workflowadmin': the reason and confirmation bar, the versions, dependencies, triggers, segregation, delegations and control grids, the tester and the recorded-changes grid)",
+    "wiring": "OgBootstrapper (IOgWorkflowAdmin), OgApplication.WorkflowAdmin, catalogue entry 'workflowadmin' gated on the two administrator roles, OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WorkflowAdminTests.cs (7, no database) + WorkflowAdminGatewayTests.cs (1 opt-in, real SQLite over eleven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1302, "passed": 1302, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 80, "passed": 80, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 104, "modulesetup-summary": "33 module(s) - 436 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WORKFLOW_VERSION, PROCESS_DEFINITION, WORKFLOW_DEPENDENCY, BUSINESS_EVENT_TRIGGER, SOD_RULE, DELEGATION_OF_AUTHORITY, COMPENSATING_CONTROL, WORKFLOW_CONFIGURATION_CHANGE, PROCESS_INSTANCE, PROCESS_STEP_INSTANCE and ROLE_HANDOFF_CONTRACT. Two versions of one definition, a dependency PD-1 -> PD-2, one enabled trigger, a blocking and an advisory segregation rule, a closed 2025 delegation and a current one, one healthy instance and one whose definition does not exist.",
+    "ac1_cycle": "adding PD-2 -> PD-1 closes the loop against the recorded PD-1 -> PD-2 and is refused with the cycle named; one dependency and zero change records remain",
+    "ac2_reason": "a change with a blank reason and one with a blank confirmation are both refused, and nothing is written",
+    "ac2_record": "a valid dependency writes one DEPENDENCY change row with actor sara and the stated reason; disabling the trigger writes PREVIOUS_VALUE active:true and NEW_VALUE active:false; making the rule advisory writes PREVIOUS_VALUE blocking:true",
+    "ac3_delegation": "the 2025 delegation reads inactive with the window it missed, the 2026 one is active, a newly added delegation is active inside its window, and the tally of inactive delegations is 1",
+    "ac4_tester": "the tester fails on reserves.create + reserves.approve naming 'Creator cannot approve'; it passes on reserves.view + reserves.approve as advisory rather than blocking; after the rule is made advisory the same pair passes",
+    "ac5_diagnostics": "the instance whose definition PD-GONE does not exist is listed as an orphaned instance with that cause, and the healthy instance is not",
+    "noop": "disabling an already disabled trigger and re-setting an unchanged rule are refused rather than recorded twice",
+    "version": "activating V-2 copies its snapshot into the definition (VERSION 2, JSON containing S-2) and records the previous version; a version with no snapshot is refused",
+    "failure": "dropping WORKFLOW_CONFIGURATION_CHANGE fails the read with no workspace"
+  },
+  "engineFindings": {
+    "noConfigurationHistory": {
+      "finding": "None of the owner's configuration tables records a change history: WORKFLOW_VERSION describes its own creation, but a flipped IS_BLOCKING or a new dependency leaves no actor, reason or previous value anywhere.",
+      "handling": "WORKFLOW_CONFIGURATION_CHANGE was added in the owning module and registered, which is what AC-2 needs to be true rather than asserted."
+    },
+    "delegationIsAThresholdLadder": {
+      "finding": "DELEGATION_OF_AUTHORITY models 'this entity type and amount may be approved by this role at this level'. It has no delegator, no delegate and no window, so the feature's OgDelegation could not be stored.",
+      "handling": "Five additive columns carry the person delegation and its window; the threshold columns record that the row is a person delegation (ENTITY_TYPE USER, APPROVAL_LEVEL DELEGATE) rather than being left blank, and that choice is recorded as a limit."
+    },
+    "cycleTestWasNotACycle": {
+      "finding": "The first gateway scenario tried to close a cycle with PD-3 -> PD-1 against a recorded PD-1 -> PD-2, which is a chain, not a loop - so the validator correctly accepted it and the test was wrong.",
+      "handling": "The scenario now adds PD-2 -> PD-1, which genuinely closes the recorded pair, and the refusal names the path."
+    },
+    "noOpChangesAreRefused": {
+      "finding": "A first pass let a trigger be 'disabled' twice, which would have written an empty change record claiming work that did not happen.",
+      "handling": "A change that leaves the value identical is refused with workflow-admin-already-in-that-state, and the gateway asserts the count stays at one record."
+    },
+    "pageGateWasEveryone": {
+      "finding": "The catalogue entry was first added with the Everyone role list, which would have let any signed-in person reach a page the feature restricts to administrators.",
+      "handling": "The entry is gated on SystemAdmin and TenantAdmin, and a unit test reads the catalogue to assert it - the page's own guard is the shell's, so the assertion is on the shell's data."
+    }
+  },
+  "limits": [
+    "Definitions themselves are not edited here: their steps and transitions remain code and configuration, which WFL-02 states; this screen administers the records around them.",
+    "Retiring a version is expressed through the definition's IS_ACTIVE, because WORKFLOW_VERSION has no active flag; a per-version retirement would need a column the owner does not have.",
+    "The delegation's authority limit is recorded but not enforced: WFL-04 does not evaluate DELEGATION_OF_AUTHORITY thresholds, so a limit here documents the intent rather than gating an approval.",
+    "Compensating controls are listed and read from COMPENSATING_CONTROL; creating or reviewing one is not offered, because the table's approval fields expect a process instance this screen does not start.",
+    "The diagnostics are read-only: repairing an orphaned instance is an explicit act the feature calls for, and it is not implemented here - the finding names the cause but offers no repair command.",
+    "A broken handoff is only detected when the handoff's definition has a live instance whose recorded steps can be compared; a definition with no instance is not checked.",
+    "The segregation tester compares the owner's conflicting permission pair, not role names: SOD_RULE stores permissions, so a role-pair test uses the permissions those roles carry.",
+    "Change records are not transactional with the change: the row is committed first and the audit second, so a failed audit is reported as degraded while the change stands.",
+    "No paging: each read loads eleven tables whole and filters in memory.",
+    "No per-command permission enforcement beyond the page gate: workflow.admin is not checked per command."
+  ]
+}

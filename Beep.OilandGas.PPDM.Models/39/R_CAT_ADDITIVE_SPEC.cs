@@ -9,6 +9,7 @@ public partial class R_CAT_ADDITIVE_SPEC: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_SPEC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_SPEC_TYPE
         {  
             get  

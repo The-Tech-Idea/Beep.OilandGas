@@ -9,6 +9,7 @@ public partial class R_INSTRUMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LAND_INSTRUMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_INSTRUMENT_TYPE
         {  
             get  

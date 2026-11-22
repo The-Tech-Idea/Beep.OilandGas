@@ -9,6 +9,7 @@ public partial class RA_RIG_HOOKBLOCK_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String HOOKBLOCK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HOOKBLOCK_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HOOKBLOCK_TYPEValue;
           set { SetProperty(ref  HOOKBLOCK_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

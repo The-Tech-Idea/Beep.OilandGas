@@ -9,6 +9,7 @@ public partial class RA_WASTE_HAZARD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_HAZARDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_HAZARD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WASTE_HAZARDValue;
           set { SetProperty(ref  WASTE_HAZARDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_ANL_METHOD_EQUIV_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_EQUIV_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_EQUIV_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METHOD_EQUIV_TYPEValue;
           set { SetProperty(ref  METHOD_EQUIV_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

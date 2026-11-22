@@ -9,6 +9,7 @@ public partial class RA_TEST_EQUIPMENT: Entity,IPPDMEntity
 {
 
 private  System.String EQUIP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIP_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EQUIP_TYPEValue;
           set { SetProperty(ref  EQUIP_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

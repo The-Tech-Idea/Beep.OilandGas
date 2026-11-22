@@ -9,6 +9,7 @@ public partial class RA_HOLE_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String HOLE_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HOLE_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HOLE_CONDITIONValue;
           set { SetProperty(ref  HOLE_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -1,0 +1,82 @@
+{
+  "id": "STG-14/WFL-02",
+  "title": "Process definitions",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the steps are listed in their recorded sequence and each names its required role; a cycle in the steps and a cycle between definitions are both displayed with their path; versions are shown with the steps their own snapshots added and removed; the catalogue writes nothing and says so; its instance counts equal WFL-01's for the same field; and the graph is derived from the step list, so it cannot show an edge the steps do not record.",
+  "dataModel": {
+    "decision": "Nothing was created. The steps are not a table: PROCESS_DEFINITION.PROCESS_CONFIG_JSON holds the definition, so the catalogue parses it with the owner's own Beep.OilandGas.Models.Processes.ProcessDefinition contract - the same type the engine writes - and reads WORKFLOW_VERSION, WORKFLOW_DEPENDENCY and PROCESS_INSTANCE.",
+    "openQuestionAnswered": "The feature's open question - 'users will ask to edit definitions; a definition editor is out of scope and must be stated in the UI' - is answered by a constant on the catalogue record that the page prints: definitions are code and configuration, so this screen is read-only and no definition is written from here.",
+    "steps": "A definition with no configuration, or one whose configuration does not parse, is shown as invalid with its reason rather than being dropped - the state a person needs when a document is stuck."
+  },
+  "rules": {
+    "ordering": "Steps are ordered by their recorded SequenceNumber then by StepId, so the list is the definition's own order rather than the JSON's. Each step's required roles are joined, and a step with none says 'no role recorded'.",
+    "decisions": "A step's decisions are its recorded StepType, APPROVE/RETURN when it requires an approval, and a NEXT entry per outgoing transition. Its next step keys are the next step plus the conditional next steps, deduplicated.",
+    "cycles": "Step cycles are found by a depth-first walk of the next-step graph and reported as the path that closes, e.g. S-3 → S-4 → S-3. Dependency cycles are found the same way over WORKFLOW_DEPENDENCY (dependent → prerequisite) and reported separately, so the two kinds are never confused.",
+    "versions": "A version's difference is computed from its own PROCESS_CONFIG_SNAPSHOT against the snapshot of the version it names as its predecessor: the step ids present in one and not the other. A version with no snapshot says so instead of claiming no change.",
+    "scope": "Dependencies and versions are read for the opened definition by identity, not by position, and the instance counts use the same field scope WFL-01 applies so the two screens agree.",
+    "readOnly": "The service opens no unit of work at all, and the page prints the notice - the guard test asserts both."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Workflow/OgDefinitionCatalogue.cs (OgProcessStep, OgWorkflowDependency, OgWorkflowVersion, OgProcessDefinitionView, OgDefinitionCycle, OgDefinitionCatalogue, DefinitionCatalogueRules, IOgDefinitionCatalogue, OgDefinitionCatalogueService)",
+    "page": "src/Beep.OilandGas.Desktop/Views/DefinitionsPageView.cs (route 'definitions': the field bar, the counts, the read-only notice, the definition grid, the ordered step grid, the graph, the cycles, the version grid and the dependency grid)",
+    "wiring": "OgBootstrapper (IOgDefinitionCatalogue), OgApplication.DefinitionCatalogue, catalog 'definitions' (OgModuleKeys.Workflow), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DefinitionCatalogueTests.cs (7, no database) + DefinitionCatalogueGatewayTests.cs (1 opt-in, real SQLite over six tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1278, "passed": 1278, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 77, "passed": 77, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 101, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PROCESS_DEFINITION, WORKFLOW_VERSION, WORKFLOW_DEPENDENCY, PROCESS_INSTANCE, PROCESS_STEP_INSTANCE and PROCESS_HISTORY. Three definitions: one four-step approval flow whose step 3 points at step 4 and step 4 back at step 3, one three-step flow on another field, and one with no configuration at all; two versions of the first, with snapshots; a two-way dependency between two definitions; three instances.",
+    "ac1_steps": "the drilling definition lists 4 steps in sequence with 'DrillingEngineer' and 'PeerReviewer, TeamLead' as their roles, an approval step with a 72 hour SLA, and its decisions as ['APPROVAL','APPROVE','RETURN','NEXT:S-3']",
+    "sg14_1": "the list row reads 'Drilling approval · APPROVAL · version 2.1 · 4 step(s) · 2 instance(s) · active'",
+    "ac2_cycles": "the opened definition reports the step cycle S-3 → S-4 → S-3, and the definitions that record the dependency report PD-2 → PD-3 → PD-2; the definition with no dependency reports neither",
+    "ac3_versions": "version 2 reads 'Added the approval step' with added S-4 and no removal, marked superseded; version 1 is its predecessor and the difference comes from the two snapshots",
+    "ac4_readonly": "PROCESS_DEFINITION and WORKFLOW_VERSION counts are unchanged after the read, and the guard test asserts the service opens no unit of work",
+    "ac5_counts": "every definition's instance count equals the count WFL-01 reports for the same field, and the catalogue total equals WFL-01's instances in scope",
+    "ac6_graph": "the graph's nodes are exactly the four step keys and its edges are exactly the four recorded transitions, including S-3 → S-4 and S-4 → S-3",
+    "invalid": "the definition with no configuration is listed as invalid with 'the definition records no configuration, so it has no steps', and the catalogue counts one invalid",
+    "identity": "opening PD-2 reads its own (empty) version list rather than the previously selected definition's",
+    "failure": "dropping WORKFLOW_VERSION fails the read with no catalogue"
+  },
+  "gates": {
+    "AC-1 The step list is ordered and names its required role": "pass - ordered by SequenceNumber then StepId, roles joined, and a role-less step says so.",
+    "AC-2 A cycle in dependencies is displayed": "pass - step cycles and dependency cycles are both found and printed with their closing path.",
+    "AC-3 Versions are shown with their differences": "pass - added and removed steps computed from consecutive snapshots; a version with no snapshot says so.",
+    "AC-4 Definitions are read-only in the desktop": "pass - no unit of work is opened (guard test), the row counts are unchanged, and the page prints the notice.",
+    "AC-5 Counts of instances using a definition match WFL-01": "pass - the gateway compares every definition's count and the total against WFL-01's dashboard for the same field.",
+    "AC-6 The graph matches the step list exactly": "pass - nodes and edges are projected from the step list itself, so a graph edge cannot exist without a recorded transition."
+  },
+  "engineFindings": {
+    "stepsAreConfigNotATable": {
+      "where": "Beep.OilandGas.LifeCycle/Data/Tables/PROCESS_DEFINITION.cs",
+      "finding": "There is no PROCESS_DEFINITION_STEP table: the definition's steps live in PROCESS_CONFIG_JSON. The owner already models them as Beep.OilandGas.Models.Processes.ProcessDefinition with ProcessStepDefinition rows.",
+      "handling": "The catalogue deserializes PROCESS_CONFIG_JSON into that same owner contract, so the viewer and the engine cannot disagree about what a step is. A configuration that does not parse is reported through the failure reporter and shown as the definition's invalid reason."
+    },
+    "guardCaughtAListAdd": {
+      "finding": "The first read-only guard asserted no '.Add(new' in the service and flagged cycles.Add(new OgDefinitionCycle(...)) - a list append, not a database write.",
+      "handling": "The guard now asserts the write surface that matters: no unit of work is opened, and there is no Update, Commit or Delete call."
+    },
+    "liveConfigVersusSnapshot": {
+      "finding": "The gateway first expected the live definition to hold three steps while the schema seeded it with the four-step version, so the diff assertion and the step count disagreed.",
+      "handling": "The scenario now states it plainly: the live configuration is the four-step version and version 1 is the three-step snapshot the difference is measured against."
+    },
+    "selectionWasByPosition": {
+      "finding": "The first gateway scenario assumed the first listed definition was the drilling one; the list is ordered by name, so the first row is 'Completion sign-off'.",
+      "handling": "The detail is opened by identity (LoadAsync with the definition id) - which is also the rule the stage states: never pick 'the latest' or the positional one, always the exact record."
+    }
+  },
+  "limits": [
+    "Definitions cannot be edited: they are code and configuration in the owning project, and the feature explicitly excludes an editor. WFL-06 owns workflow administration.",
+    "The dependency cycle is computed over WORKFLOW_DEPENDENCY rows as a directed graph; it does not evaluate CONDITION_EXPRESSION, so a dependency that is conditional is treated as present.",
+    "A version's difference compares step ids only: a changed role, SLA or decision on the same step id is not shown as a difference, only an added or removed step.",
+    "ROLE_HANDOFF_CONTRACT is not displayed: the handoff rules (required data, documents, approval context) belong to the handoff panels the feature lists for WFL-06.",
+    "The graph is a node and edge list rather than a drawn diagram; the stage's shared StepGraph control is not built, and the substitution is stated rather than presented as the control.",
+    "The step list is read from the definition's current configuration, so a historical step that a version has since removed is visible only in the version's diff, not in the step grid.",
+    "Uses of a definition ('where is this used') are shown as instance counts only; documents that reference a definition are not enumerated, because no table links a document to a definition.",
+    "No paging: each read loads the four tables whole and filters in memory.",
+    "No per-command permission enforcement beyond the page gate: workflow.read is not checked per read."
+  ]
+}

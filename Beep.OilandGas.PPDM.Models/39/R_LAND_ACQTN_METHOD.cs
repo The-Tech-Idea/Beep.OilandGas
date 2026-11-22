@@ -9,6 +9,7 @@ public partial class R_LAND_ACQTN_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String LAND_ACQTN_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_ACQTN_METHOD
         {  
             get  

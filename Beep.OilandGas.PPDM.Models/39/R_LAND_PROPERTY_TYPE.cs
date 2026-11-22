@@ -9,6 +9,7 @@ public partial class R_LAND_PROPERTY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LAND_PROPERTY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_PROPERTY_TYPE
         {  
             get  

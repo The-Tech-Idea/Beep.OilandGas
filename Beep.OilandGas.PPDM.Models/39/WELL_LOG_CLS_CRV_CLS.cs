@@ -9,6 +9,7 @@ public partial class WELL_LOG_CLS_CRV_CLS: Entity,IPPDMEntity
 {
 
 private  System.String WELL_LOG_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_LOG_CLASS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WELL_LOG_CLASS_IDValue;
           set { SetProperty(ref  WELL_LOG_CLASS_IDValue, value); }
         } 
 private  System.String CURVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_CLASS_ID
         {  
             get  

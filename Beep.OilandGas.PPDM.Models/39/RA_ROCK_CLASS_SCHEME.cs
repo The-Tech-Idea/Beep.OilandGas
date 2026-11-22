@@ -9,6 +9,7 @@ public partial class RA_ROCK_CLASS_SCHEME: Entity,IPPDMEntity
 {
 
 private  System.String ROCK_CLASS_SCHEMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_CLASS_SCHEME
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ROCK_CLASS_SCHEMEValue;
           set { SetProperty(ref  ROCK_CLASS_SCHEMEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

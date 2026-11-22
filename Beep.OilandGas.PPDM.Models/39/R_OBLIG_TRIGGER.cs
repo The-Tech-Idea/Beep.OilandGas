@@ -9,6 +9,7 @@ public partial class R_OBLIG_TRIGGER: Entity,IPPDMEntity
 {
 
 private  System.String TRIGGER_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRIGGER_METHOD
         {  
             get  

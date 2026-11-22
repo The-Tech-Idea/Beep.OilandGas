@@ -9,6 +9,7 @@ public partial class RA_COUPLING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COUPLING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COUPLING_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COUPLING_TYPEValue;
           set { SetProperty(ref  COUPLING_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SEIS_FLOW_DESC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FLOW_DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FLOW_DESC_TYPE
         {  
             get  

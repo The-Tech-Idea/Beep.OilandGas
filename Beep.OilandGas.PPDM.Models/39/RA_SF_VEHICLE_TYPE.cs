@@ -9,6 +9,7 @@ public partial class RA_SF_VEHICLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VEHICLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VEHICLE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VEHICLE_TYPEValue;
           set { SetProperty(ref  VEHICLE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_OFFSHORE_AREA_CODE: Entity,IPPDMEntity
 {
 
 private  System.String OFFSHORE_AREA_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OFFSHORE_AREA_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OFFSHORE_AREA_CODEValue;
           set { SetProperty(ref  OFFSHORE_AREA_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

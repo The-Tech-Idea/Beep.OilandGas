@@ -9,6 +9,7 @@ public partial class CAT_ADDITIVE_GROUP_PART: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_GROUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_GROUP_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ADDITIVE_GROUP_IDValue;
           set { SetProperty(ref  ADDITIVE_GROUP_IDValue, value); }
         } 
 private  System.String ADDITIVE_TYPE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_TYPE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ADDITIVE_TYPE_IDValue;
           set { SetProperty(ref  ADDITIVE_TYPE_IDValue, value); }
         } 
 private  System.Decimal ADDITIVE_PART_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ADDITIVE_PART_OBS_NO
         {  
             get  

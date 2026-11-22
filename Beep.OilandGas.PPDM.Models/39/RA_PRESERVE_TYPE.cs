@@ -9,6 +9,7 @@ public partial class RA_PRESERVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PRESERVATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRESERVATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PRESERVATION_TYPEValue;
           set { SetProperty(ref  PRESERVATION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

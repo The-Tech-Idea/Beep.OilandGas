@@ -9,6 +9,7 @@ public partial class PPDM_UNIT_CONVERSION: Entity,IPPDMEntity
 {
 
 private  System.String FROM_UOM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FROM_UOM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FROM_UOM_IDValue;
           set { SetProperty(ref  FROM_UOM_IDValue, value); }
         } 
 private  System.String TO_UOM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TO_UOM_ID
         {  
             get  

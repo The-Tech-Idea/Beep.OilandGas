@@ -9,6 +9,7 @@ public partial class RA_LR_TERMIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TERMINATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TERMINATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TERMINATION_TYPEValue;
           set { SetProperty(ref  TERMINATION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

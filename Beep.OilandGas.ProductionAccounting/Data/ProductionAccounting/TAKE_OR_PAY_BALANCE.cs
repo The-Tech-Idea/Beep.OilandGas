@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class TAKE_OR_PAY_BALANCE : ModelEntityBase {
         private string TAKE_OR_PAY_BALANCE_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string TAKE_OR_PAY_BALANCE_ID
         {
             get { return this.TAKE_OR_PAY_BALANCE_IDValue; }

@@ -9,6 +9,7 @@ public partial class RA_LINER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LINER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LINER_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LINER_TYPEValue;
           set { SetProperty(ref  LINER_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

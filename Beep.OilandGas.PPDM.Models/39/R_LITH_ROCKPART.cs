@@ -9,6 +9,7 @@ public partial class R_LITH_ROCKPART: Entity,IPPDMEntity
 {
 
 private  System.String ROCKPART_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCKPART_TYPE
         {  
             get  

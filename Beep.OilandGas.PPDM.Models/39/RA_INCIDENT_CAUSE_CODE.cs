@@ -9,6 +9,7 @@ public partial class RA_INCIDENT_CAUSE_CODE: Entity,IPPDMEntity
 {
 
 private  System.String CAUSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAUSE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CAUSE_TYPEValue;
           set { SetProperty(ref  CAUSE_TYPEValue, value); }
         } 
 private  System.String CAUSE_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAUSE_CODE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CAUSE_CODEValue;
           set { SetProperty(ref  CAUSE_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

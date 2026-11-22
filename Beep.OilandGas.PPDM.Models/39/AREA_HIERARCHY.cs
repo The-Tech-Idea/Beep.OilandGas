@@ -9,6 +9,7 @@ public partial class AREA_HIERARCHY: Entity,IPPDMEntity
 {
 
 private  System.String AREA_HIERARCHY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_HIERARCHY_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class CONT_ALLOW_EXPENSE: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_IDValue;
           set { SetProperty(ref  CONTRACT_IDValue, value); }
         } 
 private  System.String ALLOW_EXPENSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALLOW_EXPENSE_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ALLOW_EXPENSE_TYPEValue;
           set { SetProperty(ref  ALLOW_EXPENSE_TYPEValue, value); }
         } 
 private  System.Decimal ALLOW_EXPENSE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ALLOW_EXPENSE_OBS_NO
         {  
             get  

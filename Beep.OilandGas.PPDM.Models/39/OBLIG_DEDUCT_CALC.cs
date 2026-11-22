@@ -9,6 +9,7 @@ public partial class OBLIG_DEDUCT_CALC: Entity,IPPDMEntity
 {
 
 private  System.String OBLIGATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBLIGATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OBLIGATION_IDValue;
           set { SetProperty(ref  OBLIGATION_IDValue, value); }
         } 
 private  System.Decimal OBLIGATION_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal OBLIGATION_SEQ_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal OBLIGATION_SEQ_NOValue;
           set { SetProperty(ref  OBLIGATION_SEQ_NOValue, value); }
         } 
 private  System.String DEDUCTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEDUCTION_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String DEDUCTION_IDValue;
           set { SetProperty(ref  DEDUCTION_IDValue, value); }
         } 
 private  System.String CALCULATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATION_ID
         {  
             get  

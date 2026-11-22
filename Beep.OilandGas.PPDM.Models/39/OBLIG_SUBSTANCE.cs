@@ -9,6 +9,7 @@ public partial class OBLIG_SUBSTANCE: Entity,IPPDMEntity
 {
 
 private  System.String OBLIGATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBLIGATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OBLIGATION_IDValue;
           set { SetProperty(ref  OBLIGATION_IDValue, value); }
         } 
 private  System.Decimal OBLIGATION_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal OBLIGATION_SEQ_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal OBLIGATION_SEQ_NOValue;
           set { SetProperty(ref  OBLIGATION_SEQ_NOValue, value); }
         } 
 private  System.String SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SUBSTANCE_IDValue;
           set { SetProperty(ref  SUBSTANCE_IDValue, value); }
         } 
 private  System.Decimal SUBSTANCE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SUBSTANCE_SEQ_NO
         {  
             get  

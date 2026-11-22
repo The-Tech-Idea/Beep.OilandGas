@@ -9,6 +9,7 @@ public partial class R_CONSULT_DISC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DISCUSSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISCUSSION_TYPE
         {  
             get  

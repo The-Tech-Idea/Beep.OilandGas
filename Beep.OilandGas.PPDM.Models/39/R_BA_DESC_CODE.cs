@@ -9,6 +9,7 @@ public partial class R_BA_DESC_CODE: Entity,IPPDMEntity
 {
 
 private  System.String BA_DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_DESC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BA_DESC_TYPEValue;
           set { SetProperty(ref  BA_DESC_TYPEValue, value); }
         } 
 private  System.String BA_DESC_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_DESC_CODE
         {  
             get  

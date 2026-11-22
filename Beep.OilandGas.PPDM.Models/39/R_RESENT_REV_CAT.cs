@@ -9,6 +9,7 @@ public partial class R_RESENT_REV_CAT: Entity,IPPDMEntity
 {
 
 private  System.String CATEGORY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATEGORY_TYPE
         {  
             get  

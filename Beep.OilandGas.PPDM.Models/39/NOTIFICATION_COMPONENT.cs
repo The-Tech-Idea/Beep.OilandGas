@@ -9,6 +9,7 @@ public partial class NOTIFICATION_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String NOTIFICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NOTIFICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String NOTIFICATION_IDValue;
           set { SetProperty(ref  NOTIFICATION_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class ANL_REPORT_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String ANALYSIS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANALYSIS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANALYSIS_IDValue;
           set { SetProperty(ref  ANALYSIS_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

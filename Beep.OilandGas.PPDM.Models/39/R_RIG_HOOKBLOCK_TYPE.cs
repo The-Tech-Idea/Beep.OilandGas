@@ -9,6 +9,7 @@ public partial class R_RIG_HOOKBLOCK_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String HOOKBLOCK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HOOKBLOCK_TYPE
         {  
             get  

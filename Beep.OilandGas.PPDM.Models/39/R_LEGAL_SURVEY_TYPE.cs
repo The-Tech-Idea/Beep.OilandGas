@@ -9,6 +9,7 @@ public partial class R_LEGAL_SURVEY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LEGAL_SURVEY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEGAL_SURVEY_TYPE
         {  
             get  

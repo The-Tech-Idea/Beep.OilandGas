@@ -9,6 +9,7 @@ public partial class R_OBLIG_PARTY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PARTY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARTY_TYPE
         {  
             get  

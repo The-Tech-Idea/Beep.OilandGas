@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class ROYALTY_PAYMENT_DETAIL : ModelEntityBase {
         private System.String ROYALTY_PAYMENT_DETAIL_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String ROYALTY_PAYMENT_DETAIL_ID
         {
             get { return this.ROYALTY_PAYMENT_DETAIL_IDValue; }

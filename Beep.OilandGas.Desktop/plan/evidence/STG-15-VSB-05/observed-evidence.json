@@ -1,0 +1,42 @@
+{
+  "id": "STG-15/VSB-05",
+  "title": "Well schematic view",
+  "date": "2026-11-05",
+  "status": "gate met - every criterion, including a desktop overlay that hatches unverified barriers because the tools draw nothing for them",
+  "implementation": {
+    "mapper": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgSchematicMapper.cs",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellSchematicPageView.cs (route 'schematic')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'schematic')",
+    "tools": "TheTechIdea.OilGas.WellSchematic — WellSchematicTemplates, BarrierTemplates, SchematicAnnuli, WellSchematicValidator, TallyBuilder, SchematicTrack/BarrierOverlay"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~WellSchematicViewTests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test (all)", "exit": 0, "run": 246, "passed": 246, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 11,
+    "schematic-strings": 7,
+    "schematic-annuli": 4,
+    "schematic-barriers": 12,
+    "schematic-unverified-hatched": 1,
+    "schematic-findings": 0,
+    "schematic-tally-rows": 6
+  },
+  "gates": {
+    "AC-1 a well with casing and completion renders both, with correct depths": "pass — the tools' gas-lift producer document has 7 strings whose Top/Bottom are ordered, including a casing string and a tubing/completion string; the schematic track is built from it and rendered by the smoke run",
+    "AC-2 annuli show MAASP when the inputs exist, and 'not computed' when not": "pass — OgSchematicMapper.Annuli reports the MAASP with its unit or the exact phrase 'not computed' (never a blank), plus the screening result from SchematicAnnuli.Screen",
+    "AC-3 an unverified barrier is visually distinct from a verified one": "pass - the tools draw nothing for Unverified, so OgSchematicBarrierOverlay adds a hatched amber band over each unverified interval, drawn by the host over the finished surface through ViewSurfaceRenderer.Overlay. Proven with ONE renderer instance: a no-op overlay leaves the frame byte-identical, the hatch changes it, and giving every barrier evidence yields no marks. Scope: only elements with a resolvable interval are hatched (1 of the demo's 12; the others carry no interval and target nothing that has geometry), and every unverified barrier is still named in the panel and counted in the summary.",
+    "AC-4 an unknown component type produces a warning, not a blank": "pass — an equipment row with ComponentType 'NOT_A_REAL_COMPONENT' and no symbol id produces a warning naming the type, and the well still renders with non-empty pixels",
+    "AC-5 validation findings are listed with the offending element": "pass — a string whose bottom is above its top produces a finding whose ItemId is that string's id",
+    "AC-6 the tally matches the casing record lengths": "pass — the tally has one row per included string, RowIds are those strings' ids, and the top/bottom cells equal the strings' own depths"
+  },
+  "limits": [
+    "The demo document is the tools' gas-lift producer with the production barrier template attached; no PPDM tubular record was read (DAT-02, G-08).",
+    "The production barrier template ships without verification evidence, so every demo barrier reads 'no evidence recorded' — realistic, but a verified example is unverified.",
+    "The hatch is a depth-aligned margin band, not a box over the casing column: the committed SchematicRenderPlan exposes no usable column or depth mapping after the draw (its depth area collapses to 1 px), so the band uses the canvas bounds and the document's own top and bottom.",
+    "The page was constructed by the smoke run and its panels read real rows; it was not clicked through in a shown window.",
+    "Tally column keys come from the environment's program-columns configuration; the test resolves 'top'/'bottom' by key rather than by position."
+  ]
+}

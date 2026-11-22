@@ -9,6 +9,7 @@ public partial class WELL_LOG_CURVE: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String CURVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_ID
         {  
             get  

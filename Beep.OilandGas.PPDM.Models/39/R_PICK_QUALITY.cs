@@ -9,6 +9,7 @@ public partial class R_PICK_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String PICK_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_QUALITY
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_WATER_BOTTOM_ZONE: Entity,IPPDMEntity
 {
 
 private  System.String WATER_BOTTOM_ZONEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_BOTTOM_ZONE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WATER_BOTTOM_ZONEValue;
           set { SetProperty(ref  WATER_BOTTOM_ZONEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

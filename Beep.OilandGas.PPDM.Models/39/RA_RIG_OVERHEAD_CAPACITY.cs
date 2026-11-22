@@ -9,6 +9,7 @@ public partial class RA_RIG_OVERHEAD_CAPACITY: Entity,IPPDMEntity
 {
 
 private  System.String CAPACITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAPACITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CAPACITY_TYPEValue;
           set { SetProperty(ref  CAPACITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

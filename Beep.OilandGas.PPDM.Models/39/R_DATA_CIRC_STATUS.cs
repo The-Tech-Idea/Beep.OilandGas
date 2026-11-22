@@ -9,6 +9,7 @@ public partial class R_DATA_CIRC_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String DATA_CIRC_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATA_CIRC_STATUS
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_HSE_COMP_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String COMPONENT_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_ROLE
         {  
             get  

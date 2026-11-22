@@ -9,6 +9,7 @@ public partial class R_RMII_DEFICIENCY: Entity,IPPDMEntity
 {
 
 private  System.String DEFICIENCY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEFICIENCY_TYPE
         {  
             get  

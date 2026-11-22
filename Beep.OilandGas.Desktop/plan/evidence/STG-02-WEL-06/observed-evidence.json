@@ -1,0 +1,55 @@
+{
+  "id": "STG-02/WEL-06",
+  "title": "Well comparison",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: a unit mismatch suppresses the delta and shows each cell's own unit, a missing value is '-' and never zero, the export is built from the displayed matrix, the overlay refuses wells without geometry and names them, and a new selection cancels the load in flight",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellCompare.cs (OgCompareWell, OgCompareCell, OgComparisonRow, OgComparisonMatrix.ToCsv, IOgWellComparison, OgWellComparison, BuildRows, OverlayDecision)",
+    "gate": "src/Beep.OilandGas.Desktop.Core/OgCompareGate.cs (BeginLoad cancels the previous load and gives each a version; IsCurrent; SelectionChanged)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellComparePageView.cs (route 'compare': multi-select well picker, dynamic matrix columns, overlay sentence, CSV export)",
+    "navigation": "the well index has a Compare wells action",
+    "wiring": "OgBootstrapper (IOgWellComparison), OgApplication.WellComparison, catalog 'compare' (en + ar)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellCompareTests.cs (5, no database) + WellCompareGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~WellCompare", "exit": 0, "run": 6, "passed": 6, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 573, "passed": 573, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "wells": "UWI-A (TD 3000 m, KB 110 m, coordinates), UWI-B (TD 10000 ft, KB 120 m, coordinates), UWI-C (no TD, KB 0, no coordinates)",
+    "unit_mismatch": "the total-depth row is marked unit-mismatched, each cell shows its own unit (3000 m / 10000 ft) and the difference column is empty",
+    "missing_vs_zero": "UWI-C total depth is '-' with no value; its KB is '0' with a real value, and the KB deltas are +10 m and -110 m against UWI-A",
+    "picks": "the pick-count row reads 2 / 1 / 0 from STRAT_WELL_SECTION",
+    "overlay": "refused for A+B+C naming 'UWI-C (surface coordinates)'; offered for A+B",
+    "export": "the CSV header is Property,Category,Unit,UWI-A,UWI-B,UWI-C,Difference and it has one line per matrix row; the rows carry the same cell text as the grid",
+    "selection": "two BeginLoad calls leave the first token cancelled and its version stale; SelectionChanged leaves the second stale too"
+  },
+  "smoke": {
+    "pages-declared": 34,
+    "well-compare-route": "compare",
+    "well-compare-offers-wells": 0,
+    "well-compare-refuses-one": true,
+    "well-compare-overlay": "No overlay: there is no comparison.",
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 A unit mismatch prevents a numeric delta": "pass - a row whose wells disagree on the unit (or have a unit on one well and none on another) is marked UnitMismatch, every cell carries the flag, and Deltas stay empty; each cell shows its own unit so the mismatch is visible. The SQLite test compares 3000 m against 10000 ft and gets no difference text.",
+    "AC-2 A missing value is distinct from zero": "pass - a missing value becomes '-' with Value null and Missing true, while a real zero renders '0' with Value 0; the test checks both on the same well (TD missing, KB zero).",
+    "AC-3 The matrix is exportable with the same rows and columns as displayed": "pass - ToCsv is built from the same OgComparisonMatrix the grid binds to: one header with the well columns and one line per row; the SQLite test asserts the row count, header and cell text.",
+    "AC-4 The overlay refuses wells without the required geometry and says why": "pass - OverlayDecision requires a total depth with its unit and surface coordinates on every selected well and names each well and the missing part; A+B is offered while A+B+C is refused with 'UWI-C (surface coordinates)'.",
+    "AC-5 Selection changes cancel pending loads": "pass - OgCompareGate.BeginLoad cancels the previous token and gives each load a version; CompareAsync discards a result whose version is no longer current and the page calls SelectionChanged on every picker change. Unit tests cover both."
+  },
+  "limits": [
+    "The schematic overlay is gated, not drawn: the tools' WellComparison/ChangeOverlay is not referenced from the desktop, so the panel states availability and the drawing remains with the tools.",
+    "The export is CSV only; the plan's XLSX is not built.",
+    "Properties come from WELL (identity, status, geometry, dates) plus the count of stratigraphic picks; completion geometry and per-wellbore properties are not compared.",
+    "Deltas are against the first selected well and only for numeric rows; text and date rows have no delta by design.",
+    "The picker is limited to six wells and the well list to the first 250 wells (no search inside the picker).",
+    "The page is exercised by construction and by unit/integration tests; no automated click drives the picker or the grid."
+  ]
+}

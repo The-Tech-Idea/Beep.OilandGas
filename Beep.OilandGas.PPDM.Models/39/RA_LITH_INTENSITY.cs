@@ -9,6 +9,7 @@ public partial class RA_LITH_INTENSITY: Entity,IPPDMEntity
 {
 
 private  System.String INTENSITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTENSITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INTENSITYValue;
           set { SetProperty(ref  INTENSITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

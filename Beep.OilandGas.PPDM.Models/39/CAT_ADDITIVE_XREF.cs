@@ -9,6 +9,7 @@ public partial class CAT_ADDITIVE_XREF: Entity,IPPDMEntity
 {
 
 private  System.String CATALOGUE_ADDITIVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATALOGUE_ADDITIVE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CATALOGUE_ADDITIVE_IDValue;
           set { SetProperty(ref  CATALOGUE_ADDITIVE_IDValue, value); }
         } 
 private  System.String CATALOGUE_ADDITIVE_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATALOGUE_ADDITIVE_ID2
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CATALOGUE_ADDITIVE_ID2Value;
           set { SetProperty(ref  CATALOGUE_ADDITIVE_ID2Value, value); }
         } 
 private  System.Decimal XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_OBS_NO
         {  
             get  

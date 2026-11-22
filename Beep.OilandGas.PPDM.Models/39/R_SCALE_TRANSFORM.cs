@@ -9,6 +9,7 @@ public partial class R_SCALE_TRANSFORM: Entity,IPPDMEntity
 {
 
 private  System.String SCALE_TRANSFORMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCALE_TRANSFORM
         {  
             get  

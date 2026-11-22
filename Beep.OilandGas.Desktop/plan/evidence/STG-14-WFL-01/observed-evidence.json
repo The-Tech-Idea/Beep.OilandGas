@@ -1,0 +1,85 @@
+{
+  "id": "STG-14/WFL-01",
+  "title": "Process dashboard and analytics",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: throughput is counted from PROCESS_HISTORY rather than from a status column; 'no SLA' is its own state and never 'met'; at risk and breached follow the configured SLA with an unscheduled state for a step that has not started; the bottleneck names the step and its median dwell; a failed read carries no dashboard at all; and the per-definition counts reconcile to the instances in scope.",
+  "dataModel": {
+    "decision": "Nothing was created and no owner service was duplicated. The dashboard reads PROCESS_DEFINITION, PROCESS_INSTANCE, PROCESS_STEP_INSTANCE and PROCESS_HISTORY through the same unit of work every desktop screen uses.",
+    "openQuestionAnswered": "The feature's open question - 'PPDMProcessService has 30 partials; enumerate its public surface first' - is answered: the owner exposes 119 public methods across 45 partials, and the reads this feature needs are GetProcessDefinitionsByTypeAsync, GetProcessInstancesForFieldAsync, GetProcessInstanceAsync and GetProcessHistoryAsync. Their table contracts are what the dashboard reads.",
+    "sla": "PROCESS_STEP_INSTANCE carries SLA_HOURS and its start, so the SLA arithmetic needs no new column. PROCESS_INSTANCE.STARTED_DATE and COMPLETED_DATE give the cycle time; PROCESS_HISTORY.EVENT_DATE gives throughput."
+  },
+  "rules": {
+    "throughput": "Throughput per definition counts the distinct instances that recorded a PROCESS_HISTORY event inside the period, joined to the definition through the instance. A definition whose only event falls outside the period has zero throughput, which the gateway asserts.",
+    "sla": "A step with no SLA_HOURS (or zero) is 'no SLA' and is never counted as met. A step that has not started is 'unscheduled'. Otherwise the state follows the owner's own breach rule - elapsed at or past SLA_HOURS is 'breached' - and, because the owner configures no separate at-risk threshold, a step past half of its own configured window is 'at risk'. Only the configured number is used and the page states the rule.",
+    "bottleneck": "The median of each step's recorded dwell in days, taken over the completed step instances in the period; the bottleneck is the step with the highest median, and its count is shown so a median over one record is not read as a trend.",
+    "cycle": "The average of (COMPLETED_DATE - STARTED_DATE) over the instances completed in the period that record both dates; it is null when none does, never zero.",
+    "period": "A period that ends before it begins is refused before anything is read.",
+    "failure": "A failed read returns no dashboard, and the page's failed branch clears every figure, so a zero always means the records say zero."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Workflow/OgProcessDashboard.cs (OgProcessKpis, OgDefinitionThroughput, OgStepDwell, OgAgeingRow, OgProcessDashboard, ProcessDashboardRules, IOgProcessDashboard, OgProcessDashboardService)",
+    "page": "src/Beep.OilandGas.Desktop/Views/ProcessDashboardPageView.cs (route 'processes': the field and period bar, the KPI line, the SLA states, the throughput grid, the ageing grid, the bottleneck, the stated SLA rule and the failure panel)",
+    "wiring": "OgBootstrapper (IOgProcessDashboard), OgApplication.ProcessDashboard, catalog 'processes' (OgModuleKeys.Workflow), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ProcessDashboardTests.cs (7, no database) + ProcessDashboardGatewayTests.cs (1 opt-in, real SQLite over four tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1270, "passed": 1270, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 76, "passed": 76, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 100, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PROCESS_DEFINITION, PROCESS_INSTANCE, PROCESS_STEP_INSTANCE and PROCESS_HISTORY. Two definitions: one on F-1 with four instances (three running, one completed in the period) and one on F-2 whose only instance recorded its event outside the period; step instances with 72, 48 and 168 hour SLAs, one with no start, one with no SLA, and three completed peer reviews of 4, 2 and 10 days.",
+    "ac1_throughput": "the F-1 definition reports 3 instances moved in the period (two state changes and one completion) while the F-2 definition reports 0 although it has an instance",
+    "ac2_noSla": "clearing SLA_HOURS on a running step reports 'no SLA' for it, which is a different answer from the 'within SLA' step beside it",
+    "ac3_states": "the step started 27 days ago against a 72 hour SLA is 'breached', the step with no start is 'unscheduled' with 'no start recorded', and the 168 hour step started two days ago is 'within SLA'; the KPI line counts one breached and one unscheduled",
+    "ac4_bottleneck": "the bottleneck is 'Peer review' with a median of 4.0 days over 3 recorded steps - a median, so the single 10 day instance does not decide it",
+    "ac5_failure": "dropping PROCESS_HISTORY fails the read with no dashboard, and the page's failed branch clears the KPIs and both grids",
+    "ac6_reconcile": "the F-1 view holds 4 instances across its definitions and 4 running rows; the unfiltered view holds 5 and includes the F-2 definition",
+    "cycle": "the completed instance started 2026-10-20 and finished 2026-10-30, so the average cycle time reads 10 days",
+    "period": "a period that ends before it begins is refused with process-period-invalid before any read"
+  },
+  "gates": {
+    "AC-1 Throughput comes from PROCESS_HISTORY": "pass - the count is distinct instances with a history event in the period, and a definition whose event is outside it reports zero.",
+    "AC-2 'No SLA' is distinct from 'SLA met'": "pass - a step with no SLA_HOURS is 'no SLA' and is never counted as met.",
+    "AC-3 At-risk and breached follow the configured SLA": "pass - breached reproduces the owner's own rule (elapsed >= SLA_HOURS), at risk derives from the same configured window (half of it), and an unstarted step is 'unscheduled'.",
+    "AC-4 Bottleneck names the step and median dwell": "pass - a median over the recorded dwells with its count, asserted against a deliberately skewed set.",
+    "AC-5 A failed read is never zero": "pass - a failed read returns no dashboard and the page clears every figure.",
+    "AC-6 Counts per definition reconcile to the instance list": "pass - the per-definition instance counts sum to the instances in scope, which the gateway asserts in both the filtered and unfiltered views."
+  },
+  "engineFindings": {
+    "atRiskHasNoConfiguredThreshold": {
+      "where": "Beep.OilandGas.LifeCycle/Services/Processes/SlaMonitorService.cs",
+      "finding": "The owner's monitor detects one thing only: a step whose elapsed time exceeds SLA_HOURS is a breach and is escalated. No at-risk threshold is configured anywhere in the repository, so 'at risk' had no recorded rule.",
+      "handling": "At risk is derived from the same configured SLA - a step past half of its own window - and the page states the rule in words, so the derived rule is never presented as a configured one. Recorded as the feature's main limit."
+    },
+    "serviceSurfaceIsLarge": {
+      "where": "Beep.OilandGas.PPDM39.DataManagement and Beep.OilandGas.LifeCycle process services",
+      "finding": "PPDMProcessService is 45 partials with 119 public methods; most are command-side (approve, complete, hand off) and are not reads the dashboard needs.",
+      "handling": "The dashboard reads the four table contracts directly and reuses the owner's breach rule; no command-side method is reimplemented."
+    },
+    "medianNotAverage": {
+      "finding": "A first draft compared the bottleneck by mean dwell, which let one very long instance name a step that is normally quick.",
+      "handling": "The bottleneck is a median - the middle value, or the mean of the two middle ones - with the count shown beside it, and the unit test asserts a deliberately skewed set where the mean and the median disagree."
+    },
+    "formatAssumptionCaught": {
+      "finding": "The gateway's text assertion expected 'median 4 day(s)' while the figure formats as '4.0' - the '0.0#' pattern always shows one decimal.",
+      "handling": "The assertion now matches the format, and the numeric value is asserted separately so the two cannot hide a real difference."
+    },
+    "fieldFilterIsReal": {
+      "finding": "The first gateway scenario expected the second definition in a field-filtered view; its only instance belongs to another field and is correctly absent.",
+      "handling": "The filtered and unfiltered views are now asserted separately, which also proves the field filter works."
+    }
+  },
+  "limits": [
+    "At risk is derived from half of each step's configured SLA because the owner configures no at-risk threshold. If the organisation adopts one, this rule must be replaced rather than tuned.",
+    "Throughput counts instances that recorded any history event in the period, not completions alone; completions are counted separately from COMPLETED_DATE, and the two are never added together.",
+    "'At risk' and 'breached' cover the running steps whose current step can be identified; an instance with no open step instance is reported as 'no SLA' rather than guessed at.",
+    "The ageing row's current step is the open step instance with the highest sequence; an instance whose step rows are all completed but which is not completed falls back to its CURRENT_STATE with no dwell.",
+    "The reserves maturation report the feature lists for the reserves definition is not built: it needs the reserves definition's own configuration and is not part of the six KPIs; recorded as a gap.",
+    "The dashboard is read-only: opening an instance, the timeline and gate reviews are WFL-03 and WFL-04.",
+    "The SLA states are computed at read time from UTC; a step's timestamps are used as recorded, so a row written in local time would be read as UTC - the stage's 'unconfirmed zone' rule belongs to the inbox (WFL-05), which already implements it.",
+    "Each read loads the four tables whole and filters in memory; there is no paging.",
+    "No per-command permission enforcement beyond the page gate: workflow.read is not checked per read."
+  ]
+}

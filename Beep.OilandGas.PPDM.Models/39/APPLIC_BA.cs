@@ -9,6 +9,7 @@ public partial class APPLIC_BA: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String APPLICATION_IDValue;
           set { SetProperty(ref  APPLICATION_IDValue, value); }
         } 
 private  System.String APPLICATION_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_BA_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String APPLICATION_BA_IDValue;
           set { SetProperty(ref  APPLICATION_BA_IDValue, value); }
         } 
 private  System.Decimal APPLICATION_BA_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal APPLICATION_BA_OBS_NO
         {  
             get  

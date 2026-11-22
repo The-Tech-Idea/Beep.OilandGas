@@ -9,6 +9,7 @@ public partial class RA_FOS_LIFE_HABIT: Entity,IPPDMEntity
 {
 
 private  System.String LIFE_HABITValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LIFE_HABIT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LIFE_HABITValue;
           set { SetProperty(ref  LIFE_HABITValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

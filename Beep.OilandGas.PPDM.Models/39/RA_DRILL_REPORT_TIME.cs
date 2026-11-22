@@ -9,6 +9,7 @@ public partial class RA_DRILL_REPORT_TIME: Entity,IPPDMEntity
 {
 
 private  System.String REPORT_TIME_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPORT_TIME_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REPORT_TIME_TYPEValue;
           set { SetProperty(ref  REPORT_TIME_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

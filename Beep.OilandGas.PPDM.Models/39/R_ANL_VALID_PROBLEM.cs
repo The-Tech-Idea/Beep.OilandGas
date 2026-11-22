@@ -9,6 +9,7 @@ public partial class R_ANL_VALID_PROBLEM: Entity,IPPDMEntity
 {
 
 private  System.String PROBLEM_RESULT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROBLEM_RESULT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_CAT_ADDITIVE_XREF: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_XREF_TYPE
         {  
             get  

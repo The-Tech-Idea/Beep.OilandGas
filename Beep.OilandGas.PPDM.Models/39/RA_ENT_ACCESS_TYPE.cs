@@ -9,6 +9,7 @@ public partial class RA_ENT_ACCESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACCESS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCESS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACCESS_TYPEValue;
           set { SetProperty(ref  ACCESS_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

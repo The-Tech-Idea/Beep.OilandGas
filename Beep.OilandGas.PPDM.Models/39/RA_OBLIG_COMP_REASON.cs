@@ -9,6 +9,7 @@ public partial class RA_OBLIG_COMP_REASON: Entity,IPPDMEntity
 {
 
 private  System.String COMPONENT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COMPONENT_REASONValue;
           set { SetProperty(ref  COMPONENT_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

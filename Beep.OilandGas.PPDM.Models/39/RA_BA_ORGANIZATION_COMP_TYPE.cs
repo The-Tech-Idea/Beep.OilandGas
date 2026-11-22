@@ -9,6 +9,7 @@ public partial class RA_BA_ORGANIZATION_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BA_ORGANIZATION_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_ORGANIZATION_COMPONENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BA_ORGANIZATION_COMPONENT_TYPEValue;
           set { SetProperty(ref  BA_ORGANIZATION_COMPONENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

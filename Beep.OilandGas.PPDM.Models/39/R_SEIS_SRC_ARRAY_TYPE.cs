@@ -9,6 +9,7 @@ public partial class R_SEIS_SRC_ARRAY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SRC_ARRAY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SRC_ARRAY_TYPE
         {  
             get  

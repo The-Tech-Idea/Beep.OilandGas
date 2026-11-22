@@ -9,6 +9,7 @@ public partial class RA_SAMPLE_SHAPE: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_SHAPE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_SHAPE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SAMPLE_SHAPE_TYPEValue;
           set { SetProperty(ref  SAMPLE_SHAPE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

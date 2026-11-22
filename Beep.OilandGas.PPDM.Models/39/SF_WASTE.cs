@@ -9,6 +9,7 @@ public partial class SF_WASTE: Entity,IPPDMEntity
 {
 
 private  System.String SF_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SF_SUBTYPEValue;
           set { SetProperty(ref  SF_SUBTYPEValue, value); }
         } 
 private  System.String WASTE_FACILITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_FACILITY_ID
         {  
             get  

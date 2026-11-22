@@ -9,6 +9,7 @@ public partial class R_PERFORATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PERF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERF_TYPE
         {  
             get  

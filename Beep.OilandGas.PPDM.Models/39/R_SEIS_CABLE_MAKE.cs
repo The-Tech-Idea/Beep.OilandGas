@@ -9,6 +9,7 @@ public partial class R_SEIS_CABLE_MAKE: Entity,IPPDMEntity
 {
 
 private  System.String CABLE_MAKEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CABLE_MAKE
         {  
             get  

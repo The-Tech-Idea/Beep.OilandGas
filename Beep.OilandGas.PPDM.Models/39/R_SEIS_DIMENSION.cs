@@ -9,6 +9,7 @@ public partial class R_SEIS_DIMENSION: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_DIMENSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_DIMENSION
         {  
             get  

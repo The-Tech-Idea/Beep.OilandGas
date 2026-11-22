@@ -9,6 +9,7 @@ public partial class RA_TRACE_HEADER_WORD: Entity,IPPDMEntity
 {
 
 private  System.String HEADER_WORDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HEADER_WORD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HEADER_WORDValue;
           set { SetProperty(ref  HEADER_WORDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

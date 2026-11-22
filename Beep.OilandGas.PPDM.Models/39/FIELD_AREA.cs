@@ -9,6 +9,7 @@ public partial class FIELD_AREA: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FIELD_IDValue;
           set { SetProperty(ref  FIELD_IDValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String AREA_TYPEValue;
           set { SetProperty(ref  AREA_TYPEValue, value); }
         } 
 private  System.Decimal AREA_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal AREA_OBS_NO
         {  
             get  

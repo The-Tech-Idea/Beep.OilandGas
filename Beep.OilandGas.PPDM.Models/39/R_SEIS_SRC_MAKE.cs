@@ -9,6 +9,7 @@ public partial class R_SEIS_SRC_MAKE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SRC_MAKEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SRC_MAKE
         {  
             get  

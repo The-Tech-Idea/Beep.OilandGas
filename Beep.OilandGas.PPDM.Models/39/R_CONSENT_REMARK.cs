@@ -9,6 +9,7 @@ public partial class R_CONSENT_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String REMARK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_TYPE
         {  
             get  

@@ -1,0 +1,47 @@
+{
+  "id": "STG-15/VSB-06",
+  "title": "Correlation and cross-section",
+  "date": "2026-11-05",
+  "status": "gate met - three-well correlation, datum flattening, missing-datum and pinch-out checks, a cross-section from real coordinates, paginated PDF export, and a render that is cancelled between wells when the well set changes",
+  "implementation": {
+    "bridge": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgCorrelation.cs",
+    "page": "src/Beep.OilandGas.Desktop/Views/CorrelationPageView.cs (route 'correlation')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'correlation')",
+    "tools": "TheTechIdea.OilGas.Wellbore — CorrelationPanel, CorrelationLayout.Build, CorrelationRenderer.Draw, MarkerMatching, PanelExport.CorrelationPages / ToPdf"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~CorrelationViewTests", "exit": 0, "run": 9, "passed": 9, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~CorrelationSectionTests", "exit": 0, "run": 5, "passed": 5, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 411, "passed": 411, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 22,
+    "correlation-wells": 3,
+    "correlation-issues": 4,
+    "correlation-missing-datum": 1,
+    "correlation-exported": true,
+    "correlation-section-wells": 3,
+    "correlation-section-pinchouts": 3,
+    "correlation-section-frame": true,
+    "correlation-section-x": "0,1500,3200",
+    "correlation-render-superseded": true,
+    "correlation-render-cancelled-flag": true,
+    "correlation-render-latest-wells": 3
+  },
+  "gates": {
+    "AC-1 three wells align on a chosen marker": "pass — three deterministic demo wells; two carry 'Top B' at different depths and, after the tools' flattening, each lands at the same axis position (asserted to 1 decimal). Their offsets differ because the marker is at a different depth in each well, which is exactly the shift flattening applies.",
+    "AC-2 a well missing the datum is marked and offset, not silently aligned": "pass — DEMO-3 carries tops but not the datum: the checks list 'correlation-datum-missing' naming it, its column reports HasDatum=false with an offset of exactly 0, and its datum position is not computable (NaN) rather than invented",
+    "AC-3 pinch-outs and missing tops appear in the checks panel": "pass - a well with no tops is reported as correlation-no-tops, and pinch-outs are read from the tools' CrossSectionLayout.Horizons terminations: 3 pinch-outs on the demo set, each message naming the horizon and both wells (e.g. Top B between DEMO-2 and DEMO-3). A negative control (every well carries every top) produces none, so the check is not always-true. The section checks are merged into the page's checks grid.",
+    "AC-4 a cross-section uses the real well positions when coordinates exist": "pass - OgCorrelation.BuildSection places each well at its X/Y, draws the line through the outermost two, and CrossSectionLayout.Paths projects the wells onto it at true distance (0 / ~1516 / ~3245 ft for the demo positions). A well without a position is refused with correlation-no-coordinates instead of being drawn at zero. The page shows the section in its own tab, rendered from the same CrossSectionRenderer the tools use.",
+    "AC-5 PDF export paginates correctly for the panel width": "pass — PanelExport.CorrelationPages gives the page count and ToPdf writes exactly that many pages; the file starts with %PDF-",
+    "AC-6 changing the well set cancels any pending render": "pass - OgCorrelation.RenderChunked checks the token between wells, before the frame and after it, so a cancel is observed at the next well boundary and a cancel during the draw discards the frame. The page holds a CTS, cancels it when a new render starts, and returns nothing for a superseded render, so no stale frame can be applied. Tests: a cancel after the first well is observed (progress stops at 1); a pre-cancelled token does no work and produces no frame; and a page render of 120 wells superseded by a 3-well render returns null for the first and the 3-well panel for the second."
+  },
+  "limits": [
+    "Wells are the deterministic demo set (three documents built from the triple-combo template with markers); no PPDM tops were read (DAT-02, G-08).",
+    "The datum choice is a combo box of the shared tops plus '(none)'; there is no well picker for 2-20 wells and no map inset.",
+    "The cross-section view, real coordinates, pinch-out detection and the per-well shift editor are not built.",
+    "The correlation PDF is written by the smoke run and by tests under the data root; the header/legend text is not read back."
+  ]
+}

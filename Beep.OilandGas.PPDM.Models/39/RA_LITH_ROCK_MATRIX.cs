@@ -9,6 +9,7 @@ public partial class RA_LITH_ROCK_MATRIX: Entity,IPPDMEntity
 {
 
 private  System.String ROCK_MATRIXValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_MATRIX
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ROCK_MATRIXValue;
           set { SetProperty(ref  ROCK_MATRIXValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

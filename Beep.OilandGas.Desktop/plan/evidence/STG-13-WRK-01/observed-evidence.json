@@ -1,0 +1,80 @@
+{
+  "id": "STG-13/WRK-01",
+  "title": "Work order dashboard and calendar",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: every queue is a filter over the orders the grid lists so its count is that grid's total; two overlapping planned spans of one assignee are shown as a conflict naming both orders; overdue is computed from the owner's due date and only for open work; the calendar holds the same orders as the grid and the page states both totals; a failed read leaves no queue at all; and unassigned work is its own queue rather than being merged with assigned work.",
+  "dataModel": {
+    "decision": "Nothing was created. The dashboard reads the owner's WORK_ORDER header, WORK_ORDER_COMPONENT (field, well, facility, equipment, the assigned employee or business associate, and the linked PROJECT_ID), R_WO_TYPE (the type's recorded long name) and PROJECT_STATUS (the order's state). The work-order tables are already declared by the owner's module, so the smoke entity-type count is unchanged.",
+    "state": "The header does not establish operational state - the owner's own WorkOrderService refuses a header transition with exactly that sentence - so the state is the latest PROJECT_STATUS of the project the component links through PROJECT_ID, which is the controlled execution workflow. An order with no such row reads 'no recorded state' rather than being assumed to be a draft.",
+    "whatIsNotRecorded": "The work-order tables carry no priority scale, no assignee column on the header and no cost. Urgency is the owner's RUSH_IND (shown as RUSH or NORMAL), the assignee is the component's EMPLOYEE_BA_ID or BUSINESS_ASSOCIATE_ID, and cost is reported as 'not recorded' because WRK-02 rolls it up from labour and material lines."
+  },
+  "rules": {
+    "queues": "Mine, Unassigned, Overdue, Awaiting approval and All are each a predicate over the same order list the grid binds - the workspace's In(key) applies the predicate and the queue's count is computed from it, so AC-1 holds by construction and the gateway asserts it for every queue.",
+    "overdue": "IsOverdue(plannedEnd, isComplete, asOf) is true only when a planned end is recorded, it is before the as-of date, and the order is not completed or cancelled. Nothing is stored.",
+    "conflict": "Two orders of the same assignee conflict when their planned spans (request date to due date) overlap; a completed order is not a resource demand and an unassigned one has no resource. The conflict names both orders, the person and the overlapping interval.",
+    "calendar": "The calendar groups orders by each day of their planned span, and the workspace's calendar total counts distinct orders rather than order-days so it is comparable with the grid; an order with no planned start appears on the grid only and the page says so.",
+    "stateVocabulary": "The state filter and the labels come from the owner's WorkOrderState constants and WorkOrderWorkflow, not from a second list."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Work/OgWorkOrders.cs (OgWorkOrderSummary, OgWorkQueue, OgWorkConflict, OgWorkDay, OgWorkOrderWorkspace, WorkRules, WorkState, IOgWorkOrders, OgWorkOrders)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WorkOrderDashboardPageView.cs (route 'work': the field/state/type filters, the queue counts line, the refresh stamp, the order grid, the resource-conflict panel, the calendar text and the grid/calendar total notice)",
+    "wiring": "OgBootstrapper (IOgWorkOrders), OgApplication.WorkOrders, catalog 'work' (OgModuleKeys.Work), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WorkOrderDashboardTests.cs (7, no database) + WorkOrderDashboardGatewayTests.cs (1 opt-in, real SQLite over four tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1239, "passed": 1239, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 72, "passed": 72, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 96, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WORK_ORDER, WORK_ORDER_COMPONENT, R_WO_TYPE and PROJECT_STATUS. Four orders: a rush corrective order due 2026-11-05 with omar and state IN_PROGRESS; a preventive order due 2026-11-20 with no assignee and no state row; a corrective order 2026-11-03 to 11-10 with omar and state UNDER_REVIEW; and a completed order on another field.",
+    "ac1_queues": "the F-1 view has three orders; every queue's count equals In(key).Count (mine 2, unassigned 1, overdue 1, awaiting approval 1, all 3)",
+    "ac2_conflict": "one conflict is found for omar between WO-0001 (11-01 to 11-05) and WO-0003 (11-03 to 11-10), overlapping 11-03 to 11-05, and the page prints 'omar is planned on ...'",
+    "ac3_overdue": "the order due 2026-11-05 is overdue against 2026-11-08 and says '(overdue)'; the completed order on another field is listed when the field filter is removed and is not overdue",
+    "ac4_calendar": "the grid lists three orders and the calendar holds the same three; 2026-11-03 carries both WO-0001 and WO-0003",
+    "ac5_failure": "dropping WORK_ORDER_COMPONENT fails the load with no workspace, and the page's failed branch clears the counts and the grid",
+    "ac6_assignee": "the preventive order is unassigned and appears only in the Unassigned queue, while omar's orders appear in Mine",
+    "state": "WO-0001 reads IN_PROGRESS from its linked project's status row and WO-0002 reads 'no recorded state' because its project has none",
+    "filters": "a state filter of UNDER_REVIEW returns exactly WO-0003"
+  },
+  "gates": {
+    "AC-1 Queue counts equal the filtered grid totals": "pass - the queues are computed from the same predicate the workspace exposes, and the gateway and unit tests assert the equality for every queue.",
+    "AC-2 A resource conflict is displayed explicitly": "pass - overlapping spans of one assignee produce a conflict naming both orders and the interval (SG-13-5).",
+    "AC-3 Overdue is computed from planned end": "pass - computed at read time, only for open work, and not stored.",
+    "AC-4 Calendar and grid agree on the selected work": "pass - the calendar total counts the same distinct orders the grid lists, and the page states both totals.",
+    "AC-5 A failed read is not an empty queue": "pass - a failed read returns no workspace and the failed branch clears every figure.",
+    "AC-6 Unassigned and assigned work are distinguishable": "pass - unassigned work is its own queue and is named as unassigned in the row."
+  },
+  "engineFindings": {
+    "headerHasNoOperationalState": {
+      "where": "Beep.OilandGas.PPDM39.DataManagement/Services/WorkOrder/WorkOrderService.cs",
+      "finding": "The owner's own TransitionStateAsync refuses with 'A native work-order header does not establish operational state. Use the controlled execution, verification and return workflow with its original approved evidence.' The WORK_ORDER table also carries no status, priority, assignee or cost column.",
+      "handling": "The dashboard never reads a state from the header: it takes the latest PROJECT_STATUS of the project the component links through PROJECT_ID, and shows 'no recorded state' when there is none. Priority is the RUSH_IND marker, the assignee is the component's employee/business associate, and cost is not shown at all."
+    },
+    "legacyDynamicMappingReadsColumnsThatDoNotExist": {
+      "where": "The same service's MapDynamicToSummary",
+      "finding": "It maps WO_SUBTYPE, PROJECT_STATUS, EQUIPMENT_ID, PLAN_START_DATE and PLAN_END_DATE from a dynamic row, none of which are columns on the WORK_ORDER table; those reads yield empty values.",
+      "handling": "The desktop reads the columns that exist (WORK_ORDER_TYPE plus R_WO_TYPE for the name, REQUEST_DATE and DUE_DATE for the planned span) and derives the rest from the component and the linked project, rather than repeating the mapping."
+    },
+    "calendarDoubleCounted": {
+      "finding": "A first version summed the per-day lists, so an order spanning three days counted three times and the calendar total could not be compared with the grid.",
+      "handling": "The calendar total counts distinct orders; the per-day counts remain the day view. The unit test asserts both figures separately."
+    },
+    "editableComboBoxOutsideTheTabOrder": {
+      "finding": "An editable combo box on the new page introduced two focusable controls outside the tab order, which the accessibility guard caught.",
+      "handling": "The type filter is a text box and the state picker is not editable, so the guard passes with no unnamed or untabbable controls."
+    }
+  },
+  "limits": [
+    "There is no priority scale in the owner's tables, so 'priority' is the recorded RUSH_IND marker shown as RUSH or NORMAL; a graded priority does not exist and is not invented.",
+    "There is no assignee on the header: assignment is read from the component's EMPLOYEE_BA_ID or BUSINESS_ASSOCIATE_ID, so an order whose people are recorded elsewhere (for example on the execution workflow) appears unassigned here.",
+    "There is no 'at risk' queue: the owner records no risk indicator and no threshold is published, so inventing one was refused and the state is recorded as not implemented.",
+    "The planned span is the request date to the due date, because the tables record no separate planned start and end; a conflict is an overlap of those spans, not of a detailed schedule.",
+    "Cost is not shown ('not recorded'): the work-order tables carry none, and WRK-02 rolls it up from labour and material lines.",
+    "The state is the latest PROJECT_STATUS of the linked project regardless of its STATUS_TYPE, so a project with several status types could report a non-workflow status.",
+    "The dashboard is read-only: no assign or reschedule command, which WRK-02 owns, and no export.",
+    "The calendar is a text list of days rather than a graphical board; the stage's shared CalendarBoard control is not built, and the substitution is stated rather than presented as the control.",
+    "Queues are not permission-gated individually: the page is gated and every queue is shown to anyone who can open it."
+  ]
+}

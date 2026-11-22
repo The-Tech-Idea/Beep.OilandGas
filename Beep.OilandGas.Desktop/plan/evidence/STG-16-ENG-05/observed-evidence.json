@@ -1,0 +1,83 @@
+{
+  "id": "STG-16/ENG-05",
+  "title": "Integrity status board",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: an unassessed well is labelled as such and never reads as green; the order is the owner's worst-first rule with a documented tie-break; the counts are the owner's over the field and add up; every finding names the input that produced it; the CSV is the owner's over the same wells in the same order; and a failed read returns no board at all, so nothing is painted green from a failure.",
+  "dataModel": {
+    "read": "WELL for the field and name, WELL_TUBULAR for the strings the barrier elements target and the model the assessment reads, plus the records the other engineering features write: WELL_ANNULUS and CASING_PRESSURE_TEST (ENG-04) and MFC_RESULT/MFC_JOINT (ENG-03).",
+    "addedTables": "WELL_BARRIER (one row per barrier element: phase, set status, revision and date, envelope role, WBE type and name, target kind and id, interval, element status, verification) and INTEGRITY_ASSESSMENT (category, compliance, reasons, findings with their inputs, envelope states, the input counts, actor and time) in LifeCycle, registered in LifeCycleModule. The tools model the barrier set and read the category from it, but neither repository records a barrier set or an assessment - without them every well would be judged 'no barrier set with two envelopes' and the board would be one colour.",
+    "openQuestionAnswered": "The feature's open question - 'IntegrityBoardView is a ViewSurface; reuse it inside SkiaViewSurfaceHost rather than re-drawing cells in WPF' - is followed: the page puts the owner's IntegrityBoardView in the shared SkiaViewSurfaceHost and fills its Wells with the owner's WellIntegrity objects, so the tiles, their colours and their order are the tools'."
+  },
+  "rules": {
+    "category": "Always IntegrityStatus.Assess. The desktop supplies the barrier set, the annulus findings and the failing joints and never decides a colour; the gateway asserts the categories the owner's rule produces (Green for a two-envelope set with no other input, Orange for a pressure above the MAWOP, Red for no barrier set, Yellow for a corroded tubing string).",
+    "unassessed": "A well with no recorded assessment is labelled 'unassessed' before its category, so the two are never read as one (AC-1). The category is still shown, because it is what the owner says right now; the label says it has not been signed off.",
+    "ordering": "FieldIntegrity.WorstFirst - category descending, then the well id in ordinal order - so the same field always lists the same way. The tie-break and the reason are printed on the page (AC-2).",
+    "counts": "FieldIntegrity.Counts over the wells in scope, i.e. the field before the list filters, and they add up to the scoped count (AC-3). The page states that the counts describe the field while the list may be filtered.",
+    "findings": "Each finding carries its source - barrier set, casing pressure, metal loss or leak - and names the element, the annulus or the joint that produced it (AC-4). The assessment's own reasons are shown beside them, unchanged.",
+    "inputs": "The annulus inputs are rebuilt from the recorded tests: the same classifier, the stored readings and the MAWOP the test was judged against. The joint inputs are the latest caliper run's rows. A series that no longer parses is reported and left out rather than judged partially.",
+    "stale": "No staleness rule is configured, so the board shows the age in days on every assessed well and marks a well stale only when an age filter is applied - the threshold is the filter's, not an invented constant.",
+    "failedRead": "A failed read returns no board, and the page empties the owner's view and the grid, so a failure can never leave an all-green board on screen (AC-6).",
+    "export": "FieldIntegrity.ToCsv over the same WellIntegrity list the board draws, so the CSV order and categories are the board's (AC-5)."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.LifeCycle/Data/Tables/WELL_BARRIER.cs, INTEGRITY_ASSESSMENT.cs and Modules/LifeCycleModule.cs (both registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgIntegrityBoard.cs (OgIntegrityFinding, OgWellIntegrity, OgCategoryCount, OgIntegrityBoard, IntegrityBoardRules, IOgIntegrityBoard, OgIntegrityBoardService with LoadAsync/RecordAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/IntegrityBoardPageView.cs (route 'integrityboard': the field/category/age filter, the counts, the ordering note, the owner's board in the Skia host, the wells grid, the selected well's findings and reasons, the export)",
+    "wiring": "OgBootstrapper (IOgIntegrityBoard), OgApplication.IntegrityBoard, catalog 'integrityboard' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/IntegrityBoardTests.cs (8, no database) + IntegrityBoardGatewayTests.cs (1 opt-in, real SQLite over eight tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1364, "passed": 1364, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 86, "passed": 86, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 109, "modulesetup-summary": "33 module(s) - 445 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL, WELL_TUBULAR, WELL_BARRIER, WELL_ANNULUS, CASING_PRESSURE_TEST, MFC_RESULT, MFC_JOINT and INTEGRITY_ASSESSMENT. Three wells in field North and one in South: W-1 has an intact two-envelope set and no other input; W-2 has the same and one annulus test at 2 500 psi against a 2 061 psi MAWOP; W-3 has no barrier set at all; W-4 in South has an intact set but a joint that fails its design factors on the tubing.",
+    "ac1_unassessed": "before anything is recorded every well is unassessed and its state starts with 'unassessed' while still showing its own category - Green for W-1, Orange for W-2, Red for W-3; after recording, none is unassessed and each state reads its category and the age",
+    "ac2_order": "the field lists W-3 (Red), W-2 (Orange), W-1 (Green) - the owner's worst-first rule - and the tie-break by well id is documented on the page",
+    "ac3_counts": "Green 1, Yellow 0, Orange 1, Red 1, adding up to the three wells in scope, while a Red filter still reports the field's three",
+    "ac4_findings": "W-3's finding comes from 'barrier set', W-2's from 'casing pressure' naming annulus A, W-4's from 'metal loss' naming the TUBING string and the wall used",
+    "ac5_csv": "the export is 'well,category,compliant,reasons' with four lines in board order - W-3 Red, W-2 Orange, W-1 Green - and the same number of rows as the board",
+    "ac6_failed": "dropping WELL_BARRIER fails the read and returns no board, so the page has nothing green to show",
+    "age": "back-dating W-1's assessment forty days and filtering at thirty lists only W-1, marked stale, with its age between 39 and 42 days",
+    "states": "an unknown category name is refused with the list of the four; a recording with no actor is refused; the South field is boarded on its own with one Yellow well"
+  },
+  "gates": {
+    "AC-1 Unassessed wells are visually distinct from green": "pass - the state sentence begins with 'unassessed' and the unit test asserts it never contains the category word in that state; the gateway asserts the transition after recording.",
+    "AC-2 Worst-first ordering is stable and documented": "pass - FieldIntegrity.WorstFirst with an ordinal tie-break, asserted twice for stability and printed on the page.",
+    "AC-3 Category counts equal the number of wells in each category": "pass - the owner's counts over the field, asserted per category and as a sum.",
+    "AC-4 A finding names which input produced it": "pass - every finding carries one of the four sources and names the element, annulus or joint.",
+    "AC-5 CSV export matches the board": "pass - the owner's ToCsv over the board's own list, asserted line by line in order.",
+    "AC-6 A failed read never shows all-green": "pass - a failed read returns no board and the page empties the owner's view."
+  },
+  "engineFindings": {
+    "noBarrierOrAssessmentStore": {
+      "where": "TheTechIdea.OilGas.Integrity (IntegrityStatus, FieldIntegrity) and TheTechIdea.OilGas.WellSchematic",
+      "finding": "The category is read from a well barrier set, and neither repository records one - so every well would be assessed as 'no barrier set with two envelopes' and the board would be uniformly red. Nothing recorded an assessment either, so 'last assessed' had no source.",
+      "handling": "WELL_BARRIER and INTEGRITY_ASSESSMENT were added in LifeCycle and registered; the barrier set is rebuilt per well from its element rows and the assessment is recorded with the reasons it was read from."
+    },
+    "assessNeedsTheSameInputsTheToolsTake": {
+      "finding": "IntegrityStatus takes IntegrityInputs - a CasingPressureFinding per annulus and the re-rated joints - which exist as recorded rows rather than as objects.",
+      "handling": "The annulus findings are rebuilt by running the owner's own classifier over the stored readings and the MAWOP the test was judged against, and the joints are rebuilt from the stored re-rating columns, so no rule is re-implemented and no number is guessed."
+    },
+    "sharedTargetsAcrossEnvelopes": {
+      "finding": "The owner flags an element common to both envelopes as 'a single failure may lead to leak to surface' - so a barrier set that lists the same casing in both envelopes is Orange by design, not by accident. A first test fixture that shared the casing across both envelopes was therefore Orange, not Green.",
+      "handling": "The fixture gives each envelope its own targets (a DHSV and packer in the primary, the casing cement in the secondary), which is the design the rule describes, and the gateway records the reason."
+    },
+    "viewSurfaceReuse": {
+      "finding": "The board visual is a ViewSurface, and the feature asks for it to be hosted rather than redrawn in WPF.",
+      "handling": "The page puts IntegrityBoardView in the shared SkiaViewSurfaceHost and fills its Wells from the assessment, so the tiles and the category colours come from the tools - and a failed read clears that same collection."
+    }
+  },
+  "limits": [
+    "No staleness threshold is configured anywhere, so the board shows the age of every assessment and marks a well stale only when an age filter is applied; the threshold is the filter's.",
+    "The feature's command table lists only View and Export (both non-writing), but 'last assessed' and the stale/unassessed states need a recorded assessment, so one write command was added - integrity.assess - and it is named here rather than hidden behind a read permission.",
+    "The barrier set is read as recorded: the board does not verify an element or age its verification date, and an element with no status is treated as Unverified by the owner's own parse fallback.",
+    "The annulus input is the most recent complete test per recorded annulus; a well whose annuli are not recorded contributes no casing-pressure input, which the missing-inputs line states.",
+    "The joint input is the latest caliper run's rows only, so an older failing joint is not carried forward once a newer run exists.",
+    "A field is matched on the well's recorded ASSIGNED_FIELD; a well with no field is only listed when no field filter is given.",
+    "The detail drawer is a text block beside the grid rather than a slide-out panel, and the board is a fixed four-column tile view.",
+    "No paging: each read loads the eight tables whole and filters in memory, which is recorded as the practical limit of the board on a large field."
+  ]
+}

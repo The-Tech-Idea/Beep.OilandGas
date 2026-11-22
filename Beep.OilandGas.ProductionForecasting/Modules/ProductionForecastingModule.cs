@@ -24,6 +24,8 @@ public sealed class ProductionForecastingModule : ModuleSetupBase
         typeof(PRODUCTION_FORECAST),
         typeof(PRODUCTION_FORECAST_POINT),
         typeof(R_PRODUCTION_FORECASTING_REFERENCE_CODE),
+        // RES-06: a decline curve fit, with its parameters, exclusions and cross-check.
+        typeof(DECLINE_FIT),
     };
 
     public ProductionForecastingModule(ModuleSetupContext context)

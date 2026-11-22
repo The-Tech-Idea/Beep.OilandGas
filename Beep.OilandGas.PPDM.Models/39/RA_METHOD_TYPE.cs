@@ -9,6 +9,7 @@ public partial class RA_METHOD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METHOD_TYPEValue;
           set { SetProperty(ref  METHOD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

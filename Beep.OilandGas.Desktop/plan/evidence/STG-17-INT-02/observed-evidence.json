@@ -1,0 +1,122 @@
+{
+  "id": "STG-17/INT-02",
+  "title": "WITSML read, write and store",
+  "date": "2026-11-09",
+  "status": "gate met for what a build can prove - AC-1, AC-3, AC-4, AC-5 and AC-6 met, plus the store pull the screen asks for; AC-2 is structural conformance only (namespaces, uuid, schemaVersion, cross-file references) because the Energistics XSDs are not shipped, and that validation remains the owner's item; store credentials are session-only because the DPAPI store the plan assumes does not exist",
+  "implementation": {
+    "bridge": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgWitsmlWorkspace.cs (OgWitsmlImport, OgWitsmlStoreCheck, Load/Write/Export21/CheckStoreAsync/Classify)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WitsmlInteropPageView.cs (route 'witsml')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'witsml', module 'interop')",
+    "tools": "TheTechIdea.OilGas.Wellbore.Loaders — WitsmlReader, WitsmlWriter, Witsml21Export, WitsmlStoreClient",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WitsmlInteropTests.cs (9)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 1519,
+      "passed": 1519,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 102,
+      "passed": 102,
+      "failed": 0
+    },
+    {
+      "cmd": "dotnet test --filter FullyQualifiedName~WitsmlInteropTests",
+      "exit": 0,
+      "run": 14,
+      "passed": 14,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 125,
+      "witsml-stations": 3,
+      "witsml-21-files": 3,
+      "witsml-store-unreachable": "Unreachable",
+      "witsml-store-auth": "AuthenticationFailed",
+      "witsml-store-password-leaked": false,
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0
+    }
+  ],
+  "smoke": {
+    "pages-declared": 18,
+    "witsml-example": true,
+    "witsml-version": "1.4.1.1",
+    "witsml-stations": 3,
+    "witsml-imported": true,
+    "witsml-onex-files": 1,
+    "witsml-onex-reload-stations": 3,
+    "witsml-21-files": 3,
+    "witsml-21-xml-wellformed": true,
+    "witsml-time-log-reported": true,
+    "witsml-store-unreachable": "Unreachable",
+    "witsml-store-auth": "AuthenticationFailed",
+    "witsml-store-password-leaked": false
+  },
+  "gates": {
+    "AC-1 a 1.4.1.1 trajectory and marker file round-trips through the writer": "pass - the example trajectory (3 stations, radians and metres) loads, is written by WitsmlWriter.Trajectory, and reloads with the same MDs, inclination and azimuth (3 dp). Markers load (2 with depth, the third skipped with 'no measured depth'), write and reload with the same names; the round-trip showed the reader prefers the sampled depth 2612.5 m over the prognosed 2600 m, and the writer carries that same value.",
+    "AC-2 a 2.1 export produces files that validate against the shipped schemas": "partial, as far as a build can go - Export21 produces the file set in the energyml WITSML 2.1 namespace, and every file now passes the structural checks: parses, energyml namespace, uuid, schemaVersion matching its namespace, unique names, and every object reference resolving to an object in the set (a tampered reference is caught and named). The repository still ships no Energistics XSDs, so validation against \"the shipped schemas\" cannot be performed here and remains the owner's item; the page prints the structural result with that sentence.",
+    "AC-3 a time-indexed log is reported as unsupported": "pass - a file containing a depth log and a time log reports \"log 'Surface time log': index type 'date time' is time-based - not a depth log, skipped\" and loads the depth log (Logs == 1).",
+    "AC-4 store credentials never appear in logs, audit or error text": "pass - credentials are session-only. A test with user 'svc_witsml' and password 'S3cret!Store-42' asserts neither appears in the check detail, the reference, or any recorded failure row. The smoke run uses a probe password and prints witsml-store-password-leaked False.",
+    "AC-5 store unreachable and authentication failure are distinguishable": "pass - a handler that throws gives Unreachable ('could not be reached'), 401 gives AuthenticationFailed ('refused these credentials'), 404 gives Refused; the smoke run prints both states.",
+    "AC-6 a partial import reports which entities succeeded": "pass - OgWitsmlImport carries Stations/Markers/Logs and Describe() names all three counts; IsPartial is true when a warning says an entity was skipped or time-based, and the logs example reports 0 stations, 0 markers, 1 depth log."
+  },
+  "security": {
+    "credentials": "passed to WitsmlStoreClient for one call; never stored, audited or echoed. Classification uses the failure kind and status only, not the request.",
+    "persistence": "none - the plan's DPAPI credential store does not exist (ADR-014 chose a one-way derivation for sign-in), so no outbound password is written to disk."
+  },
+  "limits": [
+    "Store credentials are not persisted; they are re-entered each session.",
+    "The store check ran against simulated HTTP handlers, not a real WITSML server.",
+    "Only basic authentication over https is supported by the tools' client; WS-Security is not.",
+    "Growing-log follow is not offered (it needs a live store).",
+    "The import is session-only: PPDM persistence is DAT-02.",
+    "The export in the smoke run wrote the trajectory only (1 file) because the imported document has no markers or logs; the marker and log writers are covered by tests.",
+    "AC-2's schema validation needs the Energistics XSDs checked in (or a CI step against them), which is a licensing and build-asset decision, not a code one. The structural checks here are not that validation and the page says so.",
+    "Store credentials are still session-only: the DPAPI credential store the plan assumes does not exist, and ADR-014's one-way derivation for sign-in cannot be reused for an outbound password.",
+    "The store pull was exercised against simulated SOAP handlers, not a real WITSML server; WS-Security is unsupported by the tools' client, so only basic authentication over https is proven.",
+    "The growing log is shown disabled with its reason; a live subscription would need the store client to stream, which it does not do."
+  ],
+  "delivered20261109": {
+    "storePull": "OgWitsmlWorkspace.PullAsync queries one entity of one wellbore through WitsmlStoreClient.GetFromStoreAsync and reads what comes back with the same reader a file uses, so a store pull and a file import report the same counts. The page has the entity picker, the three UID fields and \"Query store\", and the pull fills the same facts grid and station table.",
+    "queries": "OgWitsmlQueries builds the 1.4.1.1 query per entity (well, wellbore, trajectory, formation marker, log), escapes the UIDs rather than trusting them, and names the WMLtypeIn value the store method expects.",
+    "versionGate": "LoadChecked refuses a document whose declared version is not 1.3.1.1, 1.4.1.1 or 2.0 and names both the version found and the ones supported - the feature's unsupported-version state, instead of reading a document under semantics nobody checked.",
+    "exportFolder": "EnsureFolder probes the folder with a real write before any file is attempted and refuses naming the path - the feature's \"export folder not writable\" state. Both exports use it.",
+    "growingLog": "The growing log is shown on the page, disabled, with the reason (a live subscription; this client polls with GetFromStore) - the screen asks for it to be visible rather than hidden.",
+    "conformance": "Conform21 holds a 2.1 export to what a schema-independent check can: every file parses, its root is in an energyml witsmlv2 or commonv2 namespace, it carries a uuid and a schemaVersion that matches that namespace, names are unique, and every object reference resolves to a uuid defined in the set. The page prints the result and says in the same sentence that this is not schema validation."
+  },
+  "structuralChecks": {
+    "files": 3,
+    "checks": [
+      "parses as XML",
+      "root in energyml witsmlv2 or commonv2",
+      "root uuid present",
+      "schemaVersion matches the namespace",
+      "file names unique",
+      "every reference uuid resolves to a defined object"
+    ],
+    "tamperProof": "replacing the Wellbore uuid the Trajectory references with an orphan makes the Trajectory fail, naming the uuid - so the check is not vacuous",
+    "notClaimed": "cardinality, enumerations, simple types and the full object model - those need the XSDs"
+  },
+  "pullEvidence": {
+    "ok": "a simulated SOAP reply carrying the example trajectory pulls 3 stations, and the sentence is the same entity sentence a file import prints",
+    "empty": "a reply with no XMLout is Ok with no import and says the store returned no trajectory for that UID - an empty answer, not a failure",
+    "auth": "a 401 on the pull is AuthenticationFailed, and a thrown request is Unreachable - the same classification the check uses",
+    "noSecrets": "the password and the user name are absent from the pull sentence, the reference and every reported row",
+    "escaping": "a UID carrying XML is escaped in the query rather than injected into it"
+  }
+}

@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.DrillingAndConstruction
     public partial class DRILLING_FLUID : ModelEntityBase
     {
         private System.String FLUID_IDValue = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String FLUID_ID
         {
             get { return this.FLUID_IDValue; }

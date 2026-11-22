@@ -9,6 +9,7 @@ public partial class PPDM_RULE_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String RULE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RULE_IDValue;
           set { SetProperty(ref  RULE_IDValue, value); }
         } 
 private  System.String REMARK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String REMARK_TYPEValue;
           set { SetProperty(ref  REMARK_TYPEValue, value); }
         } 
 private  System.Decimal REMARK_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_SEQ_NO
         {  
             get  

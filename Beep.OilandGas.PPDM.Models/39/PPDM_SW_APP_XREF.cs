@@ -9,6 +9,7 @@ public partial class PPDM_SW_APP_XREF: Entity,IPPDMEntity
 {
 
 private  System.String SW_APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APPLICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SW_APPLICATION_IDValue;
           set { SetProperty(ref  SW_APPLICATION_IDValue, value); }
         } 
 private  System.String SW_APPLICATION_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APPLICATION_ID2
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SW_APPLICATION_ID2Value;
           set { SetProperty(ref  SW_APPLICATION_ID2Value, value); }
         } 
 private  System.Decimal XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_DEDUCT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DEDUCT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEDUCT_TYPE
         {  
             get  

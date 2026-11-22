@@ -9,6 +9,7 @@ public partial class RA_FAC_FUNCTION: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_FUNCTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_FUNCTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FACILITY_FUNCTIONValue;
           set { SetProperty(ref  FACILITY_FUNCTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

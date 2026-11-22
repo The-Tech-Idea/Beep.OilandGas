@@ -9,6 +9,7 @@ public partial class R_CONSULT_ISSUE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_ISSUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_ISSUE_TYPE
         {  
             get  

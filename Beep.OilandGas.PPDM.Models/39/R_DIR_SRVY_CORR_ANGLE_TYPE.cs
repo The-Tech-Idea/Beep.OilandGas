@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_CORR_ANGLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CORR_ANGLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORR_ANGLE_TYPE
         {  
             get  

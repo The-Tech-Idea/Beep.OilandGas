@@ -9,6 +9,7 @@ public partial class LEGAL_LOC_AREA: Entity,IPPDMEntity
 {
 
 private  System.String LEGAL_LOC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEGAL_LOC_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEGAL_LOC_IDValue;
           set { SetProperty(ref  LEGAL_LOC_IDValue, value); }
         } 
 private  System.String LOCATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOCATION_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LOCATION_TYPEValue;
           set { SetProperty(ref  LOCATION_TYPEValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

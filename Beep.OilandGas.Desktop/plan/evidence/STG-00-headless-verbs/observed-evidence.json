@@ -1,0 +1,53 @@
+{
+  "id": "STG-00/headless-verbs",
+  "title": "Headless verbs — drivers, entitlement, licence, restore",
+  "date": "2026-11-05",
+  "status": "gate met — every documented verb exists and returns its exit code; AC-1..AC-6 met",
+  "implementation": {
+    "commandLine": "src/Beep.OilandGas.Desktop/Headless/OgCommandLine.cs",
+    "runner": "src/Beep.OilandGas.Desktop/Headless/OgHeadlessRunner.cs",
+    "licence": "src/Beep.OilandGas.Desktop/Security/OgLicenceFile.cs",
+    "bundledDrivers": "src/Beep.OilandGas.Desktop.Data/Drivers/OgBundledDrivers.cs",
+    "lifetime": "src/Beep.OilandGas.Desktop/Services/OgBeepLifetime.cs",
+    "hostDispatch": "src/Beep.OilandGas.Desktop/App.xaml.cs"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~OgCommandLineTests", "exit": 0, "run": 17, "passed": 17, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~HeadlessVerbTests", "exit": 0, "run": 14, "passed": 14, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~StartupLifetimeTests", "exit": 0, "run": 6, "passed": 6, "failed": 0 },
+    { "cmd": "dotnet test (all)", "exit": 0, "run": 201, "passed": 201, "failed": 0, "skipped": 0 }
+  ],
+  "processRuns": [
+    { "verb": "--drivers-report", "exit": 0, "evidence": "drivers-known: 214, local-driver: SqlLite, result: ok; 222 stdout lines, no logger chatter, empty stderr" },
+    { "verb": "--entitlement-report", "exit": 0, "evidence": "modules: 25, pages: 9, one row per module and per page with entitlement/role/open, result: ok" },
+    { "verb": "--licence-check <signed sample>", "exit": 0, "evidence": "superseded by REL-02 (2026-11-06): the verb now verifies the signature and reports signature: verified (key dev-2026), edition Professional, customer Probe Energy, modules core,data,wells,administration, result: verified-ok" },
+    { "verb": "--licence-check bad.json", "exit": 2, "evidence": "problem: 'wellz' is not a known module key; problem: The licence expired on 2001-01-01; result: refused" },
+    { "verb": "--licence-check broken.json", "exit": 2, "evidence": "reason: the licence file could not be read; reference: 7ce4de85b6a2; no parser text on stdout" },
+    { "verb": "--licence-check (no path)", "exit": 2, "evidence": "reason: the verb needs a licence file path; result: refused" },
+    { "verb": "--restore backup.bak", "exit": 2, "evidence": "reason: no backup service is configured; REL-01 provides it; result: not-configured" },
+    { "verb": "--report-benchmark (REL-04, 2026-11-06)", "exit": 0, "evidence": "measured: 6, over-budget: 0, report: Diagnostics/benchmark-report.json, result: ok; startup/shell/grid-page/log-20k/log-100k/schematic each pass their budget on this machine" },
+    { "verb": "--seed-benchmark (REL-04, 2026-11-06)", "exit": 0, "evidence": "file: Data/Benchmark/log-100000.csv, result: ok" },
+    { "verb": "--nonsense", "exit": 2, "evidence": "usage with every documented verb; result: refused" }
+  ],
+  "gates": {
+    "AC-2 every headless verb returns its documented exit code without opening a window": "pass - the eight process runs above plus --seed-benchmark and --report-benchmark. Since REL-04 (2026-11-06) both do real work and exit 0: the report verb measures the budgets and writes Diagnostics/benchmark-report.json (result: ok), the seed verb writes the 100 000-sample log; none opened a window. Earlier evidence that they refused with exit 2 naming REL-04 is superseded.",
+    "AC-3 --smoke writes a result file even when startup throws": "pass — OgHeadlessFailureReport.Compose/Write is tested for the smoke verb (file written with 'result: failed' and the reference; console identical) and for a non-smoke verb (no file written); App calls it from its catch instead of showing a dialog",
+    "AC-5 only the shell closing ends the process": "pass — OgShellWindow takes an onClosed action (production default: Application.Shutdown(0)); a STA test constructs the shell with a recorder and Close() calls it exactly once. App.xaml is OnExplicitShutdown, so first-run, sign-in and repair dialogs cannot end the session, and a guard forbids .Shutdown( anywhere outside App.xaml.cs and the shell",
+    "AC-6 a second --smoke recreates its root": "pass — OgSmokeRoot.Prepare deletes and recreates the root (unit test seeds a stale store, setup.json and smoke-result.txt), and two live runs each report audit-rows 1 and failures-page-rows 1, so nothing accumulated",
+    "drivers report is truthful": "pass — it lists the drivers BeepDM actually holds and names the local one; the bundled-driver registration it exposed was a real gap",
+    "entitlement report shows both gates": "pass — every module and every page, with the resolved open verdict",
+    "licence check does not overclaim": "pass - since REL-02 (2026-11-06) the verb verifies the signature and names the key; an unsigned or altered file is refused with licence-unsigned / licence-signature-invalid rather than being passed as structure-only. See evidence/STG-18-REL-02.",
+    "restore refuses honestly": "pass — exit 2 and a reason, with an audit row",
+    "schema verbs": "refused with exit 2 and DAT-02 named; the owning project does not compile (G-08)",
+    "AC-5 only the shell closing ends the process": "pass - OgShellWindow takes an onClosed action (production default: Application.Shutdown(0)); a STA test constructs the shell with a recorder and Close() calls it exactly once. App.xaml is OnExplicitShutdown, so first-run, sign-in and repair dialogs cannot end the session, and a guard forbids .Shutdown( anywhere outside App.xaml.cs and the shell",
+    "AC-6 a second --smoke recreates its root": "pass - OgSmokeRoot.Prepare deletes and recreates the root (unit test seeds a stale store, setup.json and smoke-result.txt), and two live runs each report audit-rows 1 and failures-page-rows 1, so nothing accumulated"
+  },
+  "limits": [
+    "Process-level exit codes were verified with Start-Process -Wait; PowerShell needed one verb per command because the session ran out of memory on a batch.",
+    "AC-5 was proven through the shell's injected close action, not by watching a real process end.",
+    "AC-6 was proven by the root preparation plus two live runs; no assertion counts files inside the root after the second run.",
+    "The licence format is now REL-02's signed envelope (ADR-015); this evidence predates it and its licence runs are superseded by evidence/STG-18-REL-02.",
+    "Licence signature verification and import were delivered by REL-02 (2026-11-06)."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class PPDM_QUANTITY: Entity,IPPDMEntity
 {
 
 private  System.String QUANTITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUANTITY_TYPE
         {  
             get  

@@ -1,0 +1,106 @@
+{
+  "id": "STG-03/EXP-02",
+  "title": "Prospect maturation board",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: columns follow the recorded stage sequence (not the alphabet), a prospect with no stage keeps an explicit unclassified column, an incomplete risk reads \"incomplete\" and produces no chance, advancing is refused with a stated reason and writes nothing, the drop path runs the same command, and a failed read leaves the board on screen with the failure stated. Corrected while building EXP-03: the chance is now the product of the five element success probabilities (the one shared rule), not the complement of the stored overall risk.",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Exploration/OgProspectBoard.cs (OgProspectStageRow, OgProspectCard, OgProspectColumn, OgProspectFilter, OgProspectBoardSnapshot, OgRisk, IOgProspectBoard, OgProspectBoard, BuildColumns, ChanceFromOverallRisk, IsComplete)",
+    "sharedSql": "src/Beep.OilandGas.Desktop.Data/Exploration/OgExplorationSql.cs (one field-clause, escaping, value and provider-error rule for the exploration readers; EXP-01 now uses it too)",
+    "page": "src/Beep.OilandGas.Desktop/Views/ProspectBoardPageView.cs (route 'prospects': stage columns with count/aggregate chance, list toggle, filters, selected card detail with stage history, advance command)",
+    "context": "src/Beep.OilandGas.Desktop.Core/OgProspectContext.cs (the selected prospect, for the editor EXP-03 adds)",
+    "wiring": "OgBootstrapper (IOgProspectBoard, OgProspectContext), OgApplication.ProspectBoard/ProspectContext, catalog 'prospects' (OgModuleKeys.Exploration), factory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ProspectBoardTests.cs (16, no database) + ProspectBoardGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~ProspectBoard",
+      "exit": 0,
+      "run": 17,
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 606,
+      "passed": 606,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests",
+      "exit": 0,
+      "run": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests",
+      "exit": 0,
+      "run": 39,
+      "passed": 39,
+      "failed": 0
+    },
+    {
+      "cmd": "dotnet test Beep.OilandGas.ProspectIdentification.Tests",
+      "exit": 0,
+      "run": 26,
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok"
+    }
+  ],
+  "integration": {
+    "database": "SQLite PROSPECT, PLAY, PROSPECT_RISK_ASSESSMENT and PROSPECT_WORKFLOW_STAGE",
+    "column_order": "SCREENING (seq 1), APPRAISAL (seq 2), DRILLING (seq 3), unclassified - alphabetical would have started with APPRAISAL",
+    "column_counts": "1, 2, 1, 1 across five prospects in the field; the sixth prospect belongs to another field and is absent",
+    "current_stage": "P-1 has SCREENING then APPRAISAL; the board shows APPRAISAL (the highest recorded sequence), entered 2026-02-01, 28 days old at the as-of date, with both stages in its history",
+    "unclassified": "P-3 has no stage row and appears in the unclassified column with order int.MaxValue, not dropped",
+    "incomplete_risk": "P-4 has RESERVOIR_RISK null: RiskComplete false, ChancePercent null, ChanceText 'incomplete', and the board counts one incomplete prospect",
+    "chance": "P-1's five elements (0.1, 0.2, 0.1, 0.1, 0.1) give 0.9*0.8*0.9*0.9*0.9 = 52%, the product of the element success probabilities; the derivation is unit-tested for a complete set, each missing element, an out-of-range probability, and the all-certain and all-failed extremes.",
+    "filters": "play 'Lower sand' returns 3 cards and still shows all 4 columns; owner, basin, minimum chance (excludes the incomplete card) and maximum stage age all narrow the cards only",
+    "advance_refused": "AdvanceAsync returns prospect-advance-engine-not-wired naming WFL-04/STG-14, the stage-row count is identical before and after, and re-reading still shows P-1 in APPRAISAL",
+    "drop_same_check": "MoveAsync returns the same reference and the same message as AdvanceAsync",
+    "failed_read": "with PROSPECT_WORKFLOW_STAGE dropped the load fails with a reference and no snapshot"
+  },
+  "smoke": {
+    "pages-declared": 36,
+    "views-constructed": true,
+    "prospect-board-route": "prospects",
+    "prospect-board-consistent-state": true,
+    "prospect-board-advance-refused": true,
+    "prospect-board-drop-same-check": true,
+    "exploration-links-gated": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 Columns follow the reference-set order, not an alphabetical guess": "pass - the current stage is the row with the highest recorded STAGE_SEQ_NO (then the latest start) and BuildColumns orders by that sequence, tying on the code. The SQLite test renders SCREENING, APPRAISAL, DRILLING, unclassified where alphabetical would be APPRAISAL, DRILLING, SCREENING; the unit test asserts the same order and the sequence numbers.",
+    "AC-2 An unclassified stage is visible, not dropped": "pass - a prospect with no stage row gets StageOrder int.MaxValue and the label '(unclassified)', which BuildColumns places last; the unit test puts two such prospects there and the SQLite test sees P-3 in that column with all five field prospects accounted for.",
+    "AC-3 Incomplete risk shows \"incomplete\"": "pass - RiskComplete requires all five elements (IsComplete, unit-tested for each missing element) and ChancePercent is only derived when complete; the card's ChanceText is 'incomplete', 'no chance recorded' or the percentage. The SQLite test sees P-4 as 'incomplete' with a null chance and one incomplete card counted.",
+    "AC-4 Advancing is refused until the process engine is wired (STG-14), with a stated reason": "pass - AdvanceAsync refuses with prospect-advance-engine-not-wired and a sentence naming WFL-04/STG-14 and saying nothing was written; the SQLite test proves the stage-row count is unchanged and P-1 is still in APPRAISAL. Input checks (actor, target, unchanged stage) run first and are unit-tested.",
+    "AC-5 Drag-and-drop (if implemented) performs the same check as the menu command": "pass - no drag handler is added; the drop entry point MoveAsync delegates to AdvanceAsync, and both the unit and SQLite tests assert identical reference, message and success, so a future drop cannot take another path.",
+    "AC-6 A failed read does not clear the board silently": "pass - the page resolves each read through ProspectBoardPageView.AfterRead, which keeps the previous snapshot and the selected card on failure; a unit test asserts the same instance survives a failed read and is replaced by a successful one. The service returns no snapshot on failure, and the smoke asserts the page is never both failed and populated."
+  },
+  "limits": [
+    "The stage order is the sequence the records carry (STAGE_SEQ_NO); no stage catalog with its own order is seeded, so a stage that has never been recorded cannot appear as an empty column.",
+    "The chance is the product of the five element success probabilities, computed only when every element is a usable 0..1 value; the assessment's stored OVERALL_GEOLOGICAL_RISK is not used for the number, so a database whose overall risk disagrees with its elements shows the element-derived chance.",
+    "Basin comes from PLAY.BASIN_ID through the prospect's play; a prospect with no play row has no basin and is excluded by a basin filter.",
+    "The minimum-chance and maximum-age filters exclude cards whose chance or stage date is unknown, because neither can be shown to meet a threshold.",
+    "The list view is a read-only grid of the same cards; it cannot be sorted or exported, and there is no drag-and-drop board interaction to exercise.",
+    "Opening a prospect records it in OgProspectContext and says the editor arrives with EXP-03; there is no editor page yet.",
+    "The board reads every prospect in the field in one pass (no paging); a field with very many prospects would need a bounded read.",
+    "The page is exercised by construction (the smoke builds every catalog page and audits it) and by unit/integration tests; no automated click drives the columns or the filters.",
+    "EXP-03 introduced OgProspectChance as the single chance rule and this board now calls it; the earlier 1 - OVERALL_GEOLOGICAL_RISK derivation recorded here was replaced, and the gateway test's expected value changed from 60% to 52%."
+  ]
+}

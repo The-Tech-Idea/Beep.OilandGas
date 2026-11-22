@@ -9,6 +9,7 @@ public partial class R_WELL_TEST_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_TEST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_TEST_TYPE
         {  
             get  

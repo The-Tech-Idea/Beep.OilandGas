@@ -9,6 +9,7 @@ public partial class R_RIG_DESILTER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DESILTER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESILTER_TYPE
         {  
             get  

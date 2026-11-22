@@ -9,6 +9,7 @@ public partial class RA_PROD_STRING_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROD_STRING_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROD_STRING_COMPONENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROD_STRING_COMPONENT_TYPEValue;
           set { SetProperty(ref  PROD_STRING_COMPONENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

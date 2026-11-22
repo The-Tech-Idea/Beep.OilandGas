@@ -9,6 +9,7 @@ public partial class CAT_EQUIP_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String CATALOGUE_EQUIP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATALOGUE_EQUIP_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CATALOGUE_EQUIP_IDValue;
           set { SetProperty(ref  CATALOGUE_EQUIP_IDValue, value); }
         } 
 private  System.String CAT_EQUIP_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAT_EQUIP_ALIAS_ID
         {  
             get  

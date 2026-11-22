@@ -9,6 +9,7 @@ public partial class R_WELL_NODE_PICK_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String PICK_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_METHOD
         {  
             get  

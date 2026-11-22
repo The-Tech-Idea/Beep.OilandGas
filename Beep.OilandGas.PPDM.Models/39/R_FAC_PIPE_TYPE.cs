@@ -9,6 +9,7 @@ public partial class R_FAC_PIPE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PIPELINE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PIPELINE_TYPE
         {  
             get  

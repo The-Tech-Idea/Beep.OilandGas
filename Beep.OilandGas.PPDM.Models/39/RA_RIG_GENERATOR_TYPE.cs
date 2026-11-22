@@ -9,6 +9,7 @@ public partial class RA_RIG_GENERATOR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PLANT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLANT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PLANT_TYPEValue;
           set { SetProperty(ref  PLANT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

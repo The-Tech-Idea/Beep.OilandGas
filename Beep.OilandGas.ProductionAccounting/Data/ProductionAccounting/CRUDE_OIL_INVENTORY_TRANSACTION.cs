@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class CRUDE_OIL_INVENTORY_TRANSACTION : ModelEntityBase {
         private System.String TRANSACTION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String TRANSACTION_ID
         {
             get { return this.TRANSACTION_IDValue; }

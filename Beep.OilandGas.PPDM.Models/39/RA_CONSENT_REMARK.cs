@@ -9,6 +9,7 @@ public partial class RA_CONSENT_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String REMARK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REMARK_TYPEValue;
           set { SetProperty(ref  REMARK_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

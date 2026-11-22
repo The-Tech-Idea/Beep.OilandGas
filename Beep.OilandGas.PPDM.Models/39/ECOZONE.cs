@@ -9,6 +9,7 @@ public partial class ECOZONE: Entity,IPPDMEntity
 {
 
 private  System.String ECOZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECOZONE_ID
         {  
             get  

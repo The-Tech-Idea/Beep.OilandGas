@@ -9,6 +9,7 @@ public partial class SEIS_TRANS_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_TRANSACTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_TRANSACTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_TRANSACTION_IDValue;
           set { SetProperty(ref  SEIS_TRANSACTION_IDValue, value); }
         } 
 private  System.String TRANSACTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSACTION_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String TRANSACTION_TYPEValue;
           set { SetProperty(ref  TRANSACTION_TYPEValue, value); }
         } 
 private  System.String TRANSACTION_COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSACTION_COMPONENT_ID
         {  
             get  

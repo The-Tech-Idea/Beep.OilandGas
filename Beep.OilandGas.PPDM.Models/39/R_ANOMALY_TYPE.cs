@@ -9,6 +9,7 @@ public partial class R_ANOMALY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ANOMALY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANOMALY_TYPE
         {  
             get  

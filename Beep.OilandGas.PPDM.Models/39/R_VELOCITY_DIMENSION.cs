@@ -9,6 +9,7 @@ public partial class R_VELOCITY_DIMENSION: Entity,IPPDMEntity
 {
 
 private  System.String VELOCITY_DIMENSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VELOCITY_DIMENSION
         {  
             get  

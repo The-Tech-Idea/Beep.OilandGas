@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "productCode": "beep-oilandgas",
+  "name": "Beep Oil and Gas",
+  "kind": "server",
+  "tier": "subscriber",
+  "repository": "https://github.com/The-Tech-Idea/Beep.OilandGas",
+  "license": "MIT",
+  "version": {
+    "file": "Beep.OilandGas.ApiService/Beep.OilandGas.ApiService.csproj",
+    "xpath": "//Version"
+  },
+  "checks": [
+    {
+      "name": "ApiService tests",
+      "command": "dotnet test Beep.OilandGas.ApiService.Tests"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "archive",
+      "builder": "dotnet-publish",
+      "platform": "Windows",
+      "source": "Beep.OilandGas.ApiService/Beep.OilandGas.ApiService.csproj"
+    }
+  ]
+}

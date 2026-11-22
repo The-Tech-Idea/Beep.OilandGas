@@ -9,6 +9,7 @@ public partial class EQUIPMENT_XREF: Entity,IPPDMEntity
 {
 
 private  System.String EQUIPMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIPMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EQUIPMENT_IDValue;
           set { SetProperty(ref  EQUIPMENT_IDValue, value); }
         } 
 private  System.String EQUIPMENT_PART_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIPMENT_PART_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String EQUIPMENT_PART_IDValue;
           set { SetProperty(ref  EQUIPMENT_PART_IDValue, value); }
         } 
 private  System.Decimal EQUIPMENT_XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal EQUIPMENT_XREF_OBS_NO
         {  
             get  

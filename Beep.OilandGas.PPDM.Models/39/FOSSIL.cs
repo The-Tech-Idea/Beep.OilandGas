@@ -9,6 +9,7 @@ public partial class FOSSIL: Entity,IPPDMEntity
 {
 
 private  System.String FOSSIL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_ID
         {  
             get  

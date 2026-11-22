@@ -9,6 +9,7 @@ public partial class RA_ECONOMIC_SCENARIO: Entity,IPPDMEntity
 {
 
 private  System.String ECONOMIC_SCENARIOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECONOMIC_SCENARIO
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ECONOMIC_SCENARIOValue;
           set { SetProperty(ref  ECONOMIC_SCENARIOValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

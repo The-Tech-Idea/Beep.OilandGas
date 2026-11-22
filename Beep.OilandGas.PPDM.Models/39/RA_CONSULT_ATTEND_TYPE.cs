@@ -9,6 +9,7 @@ public partial class RA_CONSULT_ATTEND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ATTEND_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ATTEND_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ATTEND_TYPEValue;
           set { SetProperty(ref  ATTEND_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

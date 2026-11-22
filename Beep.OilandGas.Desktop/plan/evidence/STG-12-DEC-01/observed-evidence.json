@@ -1,0 +1,114 @@
+{
+  "id": "STG-12/DEC-01",
+  "title": "Decommissioning workspace",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-5 met: every count is taken from the latest recorded status of each asset and a failed read carries no workspace at all, so a zero always means the records say zero; an asset with no estimate is counted and excluded from the totals; the source links are decided by the shell's own page permission and the decommissioning coordinator's landing route is the RBAC seed's; costs are decimal and stay in their currency; and overdue is computed at read time from a planned year rather than stored.",
+  "dataModel": {
+    "decision": "Nothing was created. The workspace reads the owner's ABANDONMENT_STATUS, DECOMMISSIONING_STATUS, ENVIRONMENTAL_RESTORATION and R_DECOMMISSIONING_REFERENCE_CODE, all already declared by DecommissioningModule (the first three) or the LifeCycle schema (the restoration), so HseModule was not touched.",
+    "state": "An asset's state is the latest recorded status row of its abandonment or decommissioning record, ordered by STATUS_DATE then ROW_CREATED_DATE. The display label comes from the owner's own reference set (R_DECOMMISSIONING_REFERENCE_CODE) per table, so a well's 'PLANNED' reads 'Plug and abandonment planned' while a facility's reads 'Planned for decommissioning'.",
+    "costs": "A facility's costs are DECOMMISSIONING_STATUS.ESTIMATED_COST / ACTUAL_COST with COST_CURRENCY. The abandonment table records no cost at all, so a well is 'not estimated' rather than zero, and a currency group with no cost recorded produces no cost line - the workspace counts those assets instead."
+  },
+  "rules": {
+    "latest": "One scope row per asset: the latest status row of its record group. Two rows for one well (SUSPENDED then PLANNED) produce one asset in PLANNED.",
+    "unestimated": "An asset with a null estimate is counted as not estimated and contributes nothing to the totals; a per-currency line counts the unestimated assets that do carry that currency, so an operator can see what is missing from a figure.",
+    "overdue": "IsOverdue compares the planned year with the as-of date at read time. The owner's status tables record no planned date, so every row has no planned year, nothing is reported as overdue, and the page says 'no planned year is recorded' rather than printing a zero that would look like a finding.",
+    "restoration": "Environmental restoration is counted and listed apart from the asset states: the workspace reports open and certified records without deriving either from a facility's decommissioning state (SG-12-4).",
+    "links": "Each source link is offered only when the route is in the module catalog and the shell's own page gate opens it; the well P&A, facility and cost pages do not exist yet and their reasons name DEC-02 and DEC-03.",
+    "landing": "The RBAC seed's /lifecycle/decommissioning/dashboard maps to the 'decommissioning' page, and the DecommissioningCoordinator persona now lands there; the smoke report records DecommissioningCoordinator->decommissioning."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Decommissioning/OgDecommissioning.cs (OgDecomScope, OgDecomStateCount, OgRestoration, OgDecomCost, OgDecomWorkspace, DecomRules, IOgDecommissioning, OgDecommissioning)",
+    "page": "src/Beep.OilandGas.Desktop/Views/DecommissioningPageView.cs (route 'decommissioning': the counts, the state strip, the planned-year sentence, the scope grid, the cost lines, the restoration text and grid, the composed inbox, the gated source links and the refresh stamp)",
+    "wiring": "OgBootstrapper (IOgDecommissioning with IOgTaskInbox), OgApplication.Decommissioning, catalog 'decommissioning' (OgModuleKeys.Decommissioning), OgPageFactory, en + ar labels, OgRoleNames.DecommissioningCoordinator, OgPersonaLanding row and the smoke landing expectation",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DecommissioningWorkspaceTests.cs (6, no database) + DecommissioningGatewayTests.cs (1 opt-in, real SQLite over four tables)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0,
+      "warnings": "owner-project analyzer warnings only"
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 1215,
+      "passed": 1215,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 69,
+      "passed": 69,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 93,
+      "views-constructed": true,
+      "landing-map-count": 10,
+      "modulesetup-summary": "33 module(s) - 432 entity type(s)",
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0
+    }
+  ],
+  "integration": {
+    "database": "SQLite with ABANDONMENT_STATUS, DECOMMISSIONING_STATUS, ENVIRONMENTAL_RESTORATION and R_DECOMMISSIONING_REFERENCE_CODE, seeded with two wells (one with SUSPENDED then PLANNED, one SUSPENDED), one facility planned with an estimate and an actual, and two restoration records (one in progress, one complete and certified)",
+    "ac1_scope": "the scope is three assets: two wells and one facility; the well with two status rows appears once, in its latest state PLANNED",
+    "ac1_strip": "the state strip has two rows - PLANNED with two assets and SUSPENDED with one - and the labels come from the owner's reference sets",
+    "ac2_cost": "the single USD line reads estimated 2,500,000.55 and actual 400,000.25; the two wells record no cost and are counted as '2 not estimated' rather than appearing as a currency of zeros, and no '(no currency)' line is produced",
+    "ac4_decimal": "the figures are decimal and compared exactly, so the cents survive the round trip",
+    "ac5_overdue": "no planned date is recorded anywhere, so the workspace reports 0 overdue and says 'no planned year is recorded'; the rule itself is unit-tested to be true in one year and false in another for the same record",
+    "restoration": "two restoration records, one open and one certified, counted apart from the asset states",
+    "links": "with a page gate that opens only 'wells', that link is offered, 'tasks' is refused with 'may not open', and 'decommissioning-well' says 'arrives with DEC-02'",
+    "ac3_landing": "the RBAC route /lifecycle/decommissioning/dashboard maps to 'decommissioning', the persona table has the row, the catalog carries the page, and the smoke report records DecommissioningCoordinator->decommissioning with landing-map-count 10",
+    "failure": "dropping DECOMMISSIONING_STATUS makes the read fail with no workspace at all, and the page's failed branch clears every figure"
+  },
+  "gates": {
+    "AC-1 Counts come from records": "pass - each count is a count over the latest recorded status rows, and a failed read returns no workspace so nothing can be shown as zero.",
+    "AC-2 Unestimated assets are excluded from totals and counted": "pass - the totals sum only recorded estimates, and the unestimated assets are counted in the workspace and per currency.",
+    "AC-3 Persona landing matches RBAC": "pass - the seed's route maps to the page, the persona table and the catalog agree, and the smoke report records it.",
+    "AC-4 Cost figures are decimal with currency": "pass - decimal end to end, grouped by currency, never summed across currencies.",
+    "AC-5 Overdue is computed, not stored": "pass - the rule compares the planned year with the as-of date at read time and is unit-tested across two years; the owner's tables record no planned date, so nothing is reported as overdue and the page says why."
+  },
+  "engineFindings": {
+    "noPlannedDateOnTheStatusTables": {
+      "where": "Beep.OilandGas.Decommissioning/Data/Tables/ABANDONMENT_STATUS.cs and DECOMMISSIONING_STATUS.cs",
+      "finding": "Neither status table carries a planned or target date, so the feature's 'planned year' and therefore its 'overdue' have no recorded source. The KPI list also asks for 'wells to abandon', which needs a terminal-state rule the reference set does not state.",
+      "handling": "The rule is implemented and tested over a planned year, and the workspace reports that no planned year is recorded rather than inventing a schedule or a terminal-state list. Recorded as the feature's main limit."
+    },
+    "twoRestorationTables": {
+      "finding": "ENVIRONMENTAL_RESTORATION exists twice - a LifeCycle model carrying SITE_ID and a PPDM39 model without it - and both are visible to the data project, so the type name alone is ambiguous.",
+      "handling": "The workspace reads the LifeCycle model, which is the one with the site identity the feature's restoration panel needs, through an explicit alias."
+    },
+    "referenceLabelsArePerSet": {
+      "finding": "The same code means different things per reference set: PLANNED reads 'Plug and abandonment planned' for a well and 'Planned for decommissioning' for a facility.",
+      "handling": "The label lookup keys on the set and the code, so each table's states are labelled from its own set; the gateway test proves both labels from one seeded reference table."
+    },
+    "noCurrencyBucket": {
+      "finding": "A first version summed the wells' absent costs into a '(no currency)' line of zeros, which read like a cost position.",
+      "handling": "A currency group with no recorded cost now produces no line; those assets are counted as not estimated instead, and the test asserts no '(no currency)' line appears."
+    },
+    "plannedDateClosedByDec02": {
+      "finding": "This feature recorded that neither status table carried a planned date, so planned year and overdue had no recorded source.",
+      "handling": "DEC-02 added PLANNED_DATE and PLANNED_BY to ABANDONMENT_STATUS additively and records them when a well programme is planned; the workspace now reads a well's planned year from that date, and its planned-year sentence says how many assets record one. The facility side still records none, which DEC-03 owns."
+    },
+    "facilityPlannedDateClosedByDec03": {
+      "finding": "This feature recorded that the facility status table carried no planned date either, so a facility could not be called overdue.",
+      "handling": "DEC-03 added PLANNED_DATE, PLANNED_BY and DECOMMISSIONING_METHOD to DECOMMISSIONING_STATUS additively and records them when an estimate plans the work; the workspace now reads a facility's planned year from that date. Every asset in scope can therefore carry a planned year."
+    }
+  },
+  "limits": [
+    "A planned date is read from the record where one is recorded (a well from DEC-02, a facility from DEC-03); an asset whose plan records none is never called overdue.",
+    "The workspace is read-only: it has no command, because the stage's commands belong to DEC-02 (P&A) and DEC-03 (facility and cost).",
+    "A well's cost is not read, because the abandonment table records none; the cost strip therefore covers facilities only, and the wells are counted as not estimated.",
+    "The restoration records are not filtered by field: ENVIRONMENTAL_RESTORATION carries a site, not a field, so every restoration record is listed in every field's workspace.",
+    "The scope reads whole tables and filters in memory; there is no paging or server-side filter.",
+    "The cost figures are the recorded estimates and actuals; there is no escalation, contingency or revision history, which DEC-03 owns.",
+    "No per-command permission enforcement (the page is gated, and decommissioning.read is not checked per read)."
+  ]
+}

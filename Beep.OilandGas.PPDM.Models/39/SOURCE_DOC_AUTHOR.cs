@@ -9,6 +9,7 @@ public partial class SOURCE_DOC_AUTHOR: Entity,IPPDMEntity
 {
 
 private  System.String SOURCE_DOCUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE_DOCUMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SOURCE_DOCUMENT_IDValue;
           set { SetProperty(ref  SOURCE_DOCUMENT_IDValue, value); }
         } 
 private  System.String AUTHOR_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUTHOR_ID
         {  
             get  

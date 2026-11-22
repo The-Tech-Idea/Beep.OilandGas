@@ -9,6 +9,7 @@ public partial class R_MOBILITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MOBILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MOBILITY_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SAMPLE_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SAMPLE_IDValue;
           set { SetProperty(ref  SAMPLE_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class Z_R_WATER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WATER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_TYPE
         {  
             get  

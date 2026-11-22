@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_RECORD: Entity,IPPDMEntity
 {
 
 private  System.String RECORD_MODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORD_MODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RECORD_MODEValue;
           set { SetProperty(ref  RECORD_MODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

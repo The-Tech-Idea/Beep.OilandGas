@@ -9,6 +9,7 @@ public partial class RA_FOS_TAXON_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String TAXON_LEVELValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAXON_LEVEL
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TAXON_LEVELValue;
           set { SetProperty(ref  TAXON_LEVELValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

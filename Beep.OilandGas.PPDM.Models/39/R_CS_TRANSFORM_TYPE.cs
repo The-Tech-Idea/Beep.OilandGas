@@ -9,6 +9,7 @@ public partial class R_CS_TRANSFORM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TRANSFORM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSFORM_TYPE
         {  
             get  

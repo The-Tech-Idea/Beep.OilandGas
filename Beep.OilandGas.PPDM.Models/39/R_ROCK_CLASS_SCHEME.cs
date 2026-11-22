@@ -9,6 +9,7 @@ public partial class R_ROCK_CLASS_SCHEME: Entity,IPPDMEntity
 {
 
 private  System.String ROCK_CLASS_SCHEMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_CLASS_SCHEME
         {  
             get  

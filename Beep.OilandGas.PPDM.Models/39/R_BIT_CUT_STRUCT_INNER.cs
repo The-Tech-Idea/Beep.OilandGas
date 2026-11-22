@@ -9,6 +9,7 @@ public partial class R_BIT_CUT_STRUCT_INNER: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_STRUCTURE_T1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_STRUCTURE_T1
         {  
             get  

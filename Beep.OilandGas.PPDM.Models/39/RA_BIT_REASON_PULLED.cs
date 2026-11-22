@@ -9,6 +9,7 @@ public partial class RA_BIT_REASON_PULLED: Entity,IPPDMEntity
 {
 
 private  System.String REASON_PULLEDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REASON_PULLED
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REASON_PULLEDValue;
           set { SetProperty(ref  REASON_PULLEDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

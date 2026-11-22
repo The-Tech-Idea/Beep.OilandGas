@@ -9,6 +9,7 @@ public partial class R_STRAT_UNIT_DESC: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_UNIT_DESCValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_DESC
         {  
             get  

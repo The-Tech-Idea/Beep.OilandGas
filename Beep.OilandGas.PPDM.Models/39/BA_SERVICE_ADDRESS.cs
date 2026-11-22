@@ -9,6 +9,7 @@ public partial class BA_SERVICE_ADDRESS: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.Decimal ADDRESS_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ADDRESS_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal ADDRESS_OBS_NOValue;
           set { SetProperty(ref  ADDRESS_OBS_NOValue, value); }
         } 
 private  System.String BA_SERVICE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_SERVICE_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String BA_SERVICE_TYPEValue;
           set { SetProperty(ref  BA_SERVICE_TYPEValue, value); }
         } 
 private  System.Decimal BA_SERVICE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal BA_SERVICE_SEQ_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_PPDM_METRIC_CODE: Entity,IPPDMEntity
 {
 
 private  System.String METRIC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METRIC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METRIC_TYPEValue;
           set { SetProperty(ref  METRIC_TYPEValue, value); }
         } 
 private  System.String METRIC_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METRIC_CODE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String METRIC_CODEValue;
           set { SetProperty(ref  METRIC_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

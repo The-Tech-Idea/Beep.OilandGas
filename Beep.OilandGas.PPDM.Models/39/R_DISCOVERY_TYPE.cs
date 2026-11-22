@@ -9,6 +9,7 @@ public partial class R_DISCOVERY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DISCOVERY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISCOVERY_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_GAS_ANL_VALUE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GAS_ANL_VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GAS_ANL_VALUE_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_LOG_MATRIX: Entity,IPPDMEntity
 {
 
 private  System.String LOG_MATRIX_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOG_MATRIX_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LOG_MATRIX_TYPEValue;
           set { SetProperty(ref  LOG_MATRIX_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

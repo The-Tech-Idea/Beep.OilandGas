@@ -9,6 +9,7 @@ public partial class RA_PAYZONE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAYZONE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYZONE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PAYZONE_TYPEValue;
           set { SetProperty(ref  PAYZONE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

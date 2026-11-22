@@ -9,6 +9,7 @@ public partial class R_WASTE_HAZARD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_HAZARDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_HAZARD
         {  
             get  

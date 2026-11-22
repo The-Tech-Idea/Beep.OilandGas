@@ -9,6 +9,7 @@ public partial class R_BA_PREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PREFERENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PREFERENCE_TYPE
         {  
             get  

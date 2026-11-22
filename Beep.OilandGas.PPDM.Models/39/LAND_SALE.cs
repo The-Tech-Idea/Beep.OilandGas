@@ -9,6 +9,7 @@ public partial class LAND_SALE: Entity,IPPDMEntity
 {
 
 private  System.String JURISDICTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JURISDICTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String JURISDICTIONValue;
           set { SetProperty(ref  JURISDICTIONValue, value); }
         } 
 private  System.String LAND_SALE_NUMBERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_SALE_NUMBER
         {  
             get  

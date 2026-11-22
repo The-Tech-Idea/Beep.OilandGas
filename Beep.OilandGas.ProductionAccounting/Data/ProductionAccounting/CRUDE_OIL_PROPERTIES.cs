@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class CRUDE_OIL_PROPERTIES : ModelEntityBase
     {
         private System.String PROPERTIES_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String PROPERTIES_ID
         {
             get { return this.PROPERTIES_IDValue; }

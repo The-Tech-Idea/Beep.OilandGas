@@ -9,6 +9,7 @@ public partial class RA_ANL_STEP_XREF: Entity,IPPDMEntity
 {
 
 private  System.String STEP_XREF_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_XREF_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STEP_XREF_REASONValue;
           set { SetProperty(ref  STEP_XREF_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

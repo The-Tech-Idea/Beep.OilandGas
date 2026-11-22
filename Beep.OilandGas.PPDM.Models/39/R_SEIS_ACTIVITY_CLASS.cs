@@ -9,6 +9,7 @@ public partial class R_SEIS_ACTIVITY_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_ACTIVITY_CLASSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_ACTIVITY_CLASS
         {  
             get  

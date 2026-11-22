@@ -9,6 +9,7 @@ public partial class RA_POOL_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String POOL_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String POOL_STATUSValue;
           set { SetProperty(ref  POOL_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

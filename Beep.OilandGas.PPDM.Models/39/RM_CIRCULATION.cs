@@ -9,6 +9,7 @@ public partial class RM_CIRCULATION: Entity,IPPDMEntity
 {
 
 private  System.String CIRC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CIRC_ID
         {  
             get  

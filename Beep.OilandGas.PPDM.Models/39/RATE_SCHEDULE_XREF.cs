@@ -9,6 +9,7 @@ public partial class RATE_SCHEDULE_XREF: Entity,IPPDMEntity
 {
 
 private  System.String RATE_SCHEDULE_ID_1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_SCHEDULE_ID_1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RATE_SCHEDULE_ID_1Value;
           set { SetProperty(ref  RATE_SCHEDULE_ID_1Value, value); }
         } 
 private  System.String RATE_SCHEDULE_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_SCHEDULE_ID_2
         {  
             get  

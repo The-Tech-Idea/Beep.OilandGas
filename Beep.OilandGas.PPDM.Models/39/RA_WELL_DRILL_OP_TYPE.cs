@@ -9,6 +9,7 @@ public partial class RA_WELL_DRILL_OP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DRILL_OP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILL_OP_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DRILL_OP_TYPEValue;
           set { SetProperty(ref  DRILL_OP_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

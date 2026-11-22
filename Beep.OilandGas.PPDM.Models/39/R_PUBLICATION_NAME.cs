@@ -9,6 +9,7 @@ public partial class R_PUBLICATION_NAME: Entity,IPPDMEntity
 {
 
 private  System.String PUBLICATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PUBLICATION
         {  
             get  

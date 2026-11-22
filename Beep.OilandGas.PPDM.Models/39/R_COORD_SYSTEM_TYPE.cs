@@ -9,6 +9,7 @@ public partial class R_COORD_SYSTEM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COORDINATE_SYSTEM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COORDINATE_SYSTEM_TYPE
         {  
             get  

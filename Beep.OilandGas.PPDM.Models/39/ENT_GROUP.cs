@@ -9,6 +9,7 @@ public partial class ENT_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String ENTITLEMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENTITLEMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ENTITLEMENT_IDValue;
           set { SetProperty(ref  ENTITLEMENT_IDValue, value); }
         } 
 private  System.String SECURITY_GROUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SECURITY_GROUP_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SECURITY_GROUP_IDValue;
           set { SetProperty(ref  SECURITY_GROUP_IDValue, value); }
         } 
 private  System.Decimal GROUP_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal GROUP_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_INT_SET_TRIGGER: Entity,IPPDMEntity
 {
 
 private  System.String TRIGGER_EVENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRIGGER_EVENT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TRIGGER_EVENTValue;
           set { SetProperty(ref  TRIGGER_EVENTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

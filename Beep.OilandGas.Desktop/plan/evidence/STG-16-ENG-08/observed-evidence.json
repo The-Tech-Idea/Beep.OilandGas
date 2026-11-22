@@ -1,0 +1,110 @@
+{
+  "id": "STG-16/ENG-08",
+  "title": "Hydraulics",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the circulating system reproduces the textbook laminar gradients and the nozzle-area bit loss, and the ECD is the owner's own relation; velocity and pressure loss are per section, in the annulus and inside the pipe; an ECD above the recorded fracture gradient is critical with the depth; nozzles are entered and shown in 32nds; the optimiser solves the rate for a target ECD monotonically across its entire search range; and a saved run records the mud model, the two viscometer readings and the rate.",
+  "dataModel": {
+    "read": "WELL_PLAN (ENG-06) for the trajectory and the bit's true vertical depth, WELL_ANNULUS (ENG-04) for the recorded fracture gradient, and WELL_TUBULAR for the shoe depth the gradient belongs to.",
+    "addedTable": "HYDRAULICS_RUN in DrillingAndConstruction, registered in DrillingAndConstructionSetupModule: the rheology model, mud density, both viscometer readings and the PV / YP / n / K derived from them, the rate and its unit, the surface loss, the bit TVD, the nozzles as JSON and their count, the flow sections as JSON, and the answer - standpipe pressure, annular loss, ECD, bit loss, hydraulic horsepower, impact force, the highest ECD and its depth, the fracture gradient and depth it was compared with, whether it was exceeded, the critical sentence, the actor and the time.",
+    "notStored": "The section results and the ECD profile: they are a function of the recorded inputs and the plan, and both are stored, so a run is replayed rather than copied.",
+    "openQuestionAnswered": "The feature's open question - 'pore and fracture gradients may not be stored; if absent, omit the threshold lines rather than inventing them' - is answered from the data: a fracture gradient is recorded on the annulus (ENG-04), so it is read and drawn; a pore pressure or pore gradient is recorded nowhere in either repository, so no pore line is drawn and the page says so."
+  },
+  "rules": {
+    "model": "The arithmetic is the tools' Hydraulics.Circulate and Hydraulics.Gradient, with MudRheology deriving PV, YP, n and K from the 600 and 300 rpm readings, the owner's regime test at the configured turbulent Reynolds number, and the owner's field-unit correlations. The desktop adds the section geometry from the plan's depths, the ECD profile, the per-depth fracture comparison, the rate solve and the record.",
+    "rheology": "The model (binghamPlastic or powerLaw) is read from drilling.rheologyModel rather than chosen per run, because the owner's Gradient reads that setting itself and has no per-call overload. The page prints the model it used; a run cannot switch it.",
+    "profile": "The owner computes one ECD at the bit. The profile needed for the chart is the owner's own per-section Gradient applied down the annulus, accumulated, with the owner's own ECD relation evaluated at each section's true vertical depth - so the deepest point equals HydraulicsResult.Ecd, which the service checks before publishing and the gateway asserts to four decimals.",
+    "fracture": "A recorded SHOE_FRACTURE_GRADIENT is converted to an equivalent mud weight - a density is read directly, a pressure gradient is divided by the same 0.052 the ECD formula uses - and joined to the shoe depth through the string id the annulus stores. The tightest recorded gradient governs, and the comparison is made against every profile point, so the critical sentence names the point that is highest.",
+    "noUnit": "A gradient recorded without a unit is ignored rather than assumed: ppg and psi/ft differ by a factor of nineteen, so defaulting one would be a nineteen-fold error presented as a threshold.",
+    "optimiser": "AC-5's search variable is the flow rate, because that is the lever the model actually has: the annular loss, and therefore the ECD, rises with the rate in every regime, so a bracket-then-bisect solve is monotone by construction and the bracket is found by expanding from the rate entered rather than assumed. A target at or below the static mud weight is infeasible before any trajectory is needed, because the annulus only adds to the weight.",
+    "nozzles": "The nozzle sets the bit loss, the hydraulic horsepower and the impact force - not the ECD, which is the same with and without nozzles at a given rate. The gateway asserts that equality rather than implying otherwise, and the optimiser says so in its own sentence.",
+    "noNozzle": "The owner divides by the nozzle area, so an empty nozzle list gives an infinite bit loss and an infinite standpipe pressure. The feature's state says the bit loss is taken as zero and flagged, so the standpipe pressure is restated as surface + string + annulus - explicitly without the bit's share - and never published as infinity.",
+    "overlap": "Two annulus sections covering the same depth would count that depth's loss twice and inflate the ECD, so an overlap is refused naming both sections and the interval they share."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.DrillingAndConstruction/Data/Tables/HYDRAULICS_RUN.cs and Modules/DrillingAndConstructionSetupModule.cs (table registered)",
+    "chart": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgEcdProfileChart.cs (a ViewSurface: ECD across, depth down, the mud weight as a dashed static line, the recorded fracture gradient dashed, nothing drawn when none is recorded)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgHydraulics.cs (OgFlowSection, OgHydraulicsRequest, OgSectionResult, OgEcdPoint, OgHydraulicsRecommendation, OgHydraulicsWorkspace, HydraulicsRules, IOgHydraulics, OgHydraulicsService with RunAsync/SaveAsync/LoadLastAsync/OptimiseAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/HydraulicsPageView.cs (route 'hydraulics': the well bar, the mud readings, the rate and the nozzles, the flow-path editor, the summary, the mud and nozzle lines, the critical and fracture sentences, the ECD chart in the Skia host, the section grid, the profile, the target and the optimiser)",
+    "wiring": "OgBootstrapper (IOgHydraulics, taking IOgWellPlan), OgApplication.Hydraulics, catalog 'hydraulics' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HydraulicsTests.cs (12, no database, including the textbook reference arithmetic) + HydraulicsGatewayTests.cs (1 opt-in, real SQLite over the plan, run, annulus and tubular tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1395, "passed": 1395, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 89, "passed": 89, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 112, "modulesetup-summary": "33 module(s) - 448 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL_PLAN, HYDRAULICS_RUN, WELL_ANNULUS and WELL_TUBULAR. A vertical 2 000 m hole; 4.276 in drill pipe to the bit; an 8.681 in cased annulus to a 1 000 m shoe and an 8.5 in open hole below it; a 10 ppg Bingham mud with 30/20 viscometer readings; 300 gpm; three 12/32 nozzles; a fracture gradient of 10.25 ppg recorded at the shoe.",
+    "ac1_reference": "the annulus gradient is 0.0156971 psi/ft at Re 412 and the pipe gradient 0.011616 psi/ft, both matching the textbook Bingham laminar formula written out independently in the test, and the bit loss matches dp = 8.311e-5 rho q^2 / (Cd^2 A^2) for the three-nozzle area",
+    "ac1_ecd": "the ECD equals mud weight + annular loss / (0.052 x bit TVD) as the owner states it, asserted to six decimals against the run's own annular loss and bit TVD",
+    "ac2_sections": "three sections are computed, one per flow path, each with its own velocity, Reynolds number, regime, pressure loss and ECD; the narrower open hole flows faster than the casing above it at the same rate",
+    "ac3_fracture": "with the 10 ppg mud the profile reaches 10.30 ppg at 2 000 m, above the recorded 10.25 ppg, so the run is critical and the sentence names 2 000 m and 10.25 ppg; at 9.6 ppg the same system is within the same recorded gradient",
+    "ac4_nozzles": "three 12/32 nozzles are recorded, shown as '12/32' and described as thirty-seconds of an inch; the parser accepts 12, 12/32, 22 and 23 without eating the trailing digit",
+    "ac5_monotone": "targets of 10.4, 10.6 and 10.8 ppg solve to strictly increasing rates, and the ECD rises strictly across them; the trace the search recorded is non-decreasing across every probe it visited",
+    "ac6_saved": "the stored run carries binghamPlastic, 10 ppg, 300 gpm, both viscometer readings, PV 10 and YP 10, three nozzles, three sections, the ECD to four decimals, the critical sentence, FRACTURE_EXCEEDED 'Y' and the actor",
+    "no_nozzle": "a run with no nozzle reports a zero bit loss, a finite standpipe pressure equal to the sum without the bit's share, and the identical ECD - which is also the proof that the nozzle does not move the ECD",
+    "replay": "the saved run is replayed from its recorded readings, rate, nozzles and sections, and returns the same ECD and the same section count",
+    "refusals": "a section below the last station, a section with no length, an annulus whose inner diameter exceeds its outer, two annuli covering the same depth, a well with no saved plan and a well with no saved run are each refused with their own sentence",
+    "failure": "dropping HYDRAULICS_RUN fails the read with no run"
+  },
+  "gates": {
+    "AC-1 A reference case reproduces ECD within tolerance": "pass - the laminar gradients are checked against the textbook formula evaluated independently in the test, the nozzle loss against its area formula, and the ECD against the owner's published relation.",
+    "AC-2 Annular velocity and pressure loss are per section": "pass - one row per flow path with its own velocity, Reynolds number, regime, loss and ECD, and the same rows drive the grid and the profile.",
+    "AC-3 ECD above fracture gradient is critical": "pass - asserted above and below with the same recorded gradient, with the depth and the limit in the sentence.",
+    "AC-4 Nozzle sizes are in 32nds and shown as such": "pass - parsed in 32nds, shown as a fraction over 32, range-checked to 1-32.",
+    "AC-5 The optimizer's recommendation improves ECD monotonically in its search range": "pass - the search variable is the rate, three targets give strictly increasing rates and strictly increasing ECD, and the recorded trace is non-decreasing.",
+    "AC-6 A saved run records mud model and flow rate": "pass - asserted per column in SQL, and the run is replayed from those columns."
+  },
+  "engineFindings": {
+    "noPoreGradientAnywhere": {
+      "where": "TheTechIdea.OilGas.Integrity, TheTechIdea.OilGas.Wellbore.Data and the LifeCycle tables",
+      "finding": "A fracture gradient is recorded on the annulus (ENG-04), but no pore pressure, pore gradient or mud weight window is recorded in either repository.",
+      "handling": "The fracture gradient is read and drawn; no pore line is drawn, and the page states that no pore gradient is recorded rather than plotting an invented one - which is exactly what the feature's open question asked for."
+    },
+    "theModelHasNoPerRunRheology": {
+      "where": "TheTechIdea.OilGas.Drilling/Hydraulics.cs (Gradient reads DrillingToolbox.Settings.RheologyModel)",
+      "finding": "The screen is specified with a Bingham / power-law selector, but the owner's Gradient reads the model from the environment settings on every call and has no overload that takes one.",
+      "handling": "The model is configuration: the run uses drilling.rheologyModel and the page prints it. Switching it per run would mean mutating a global setting mid-session, which is recorded as a limit rather than done."
+    },
+    "aSecondCalculatorInTheBusinessLayer": {
+      "where": "Beep.OilandGas.DrillingAndConstruction/Calculations/HydraulicsCalculator.cs",
+      "finding": "The business layer carries its own hydraulics calculator. It computes velocity as 24.51 q / d^2, which is feet per minute, and feeds it to the same field-unit loss formulas the tools use with feet per second; it also uses the pipe coefficients for annuli and a 3000 Reynolds threshold. The tools' package is the one the plan names as the source for this feature.",
+      "handling": "Only the tools' Hydraulics is called, so a number on this page cannot be the other implementation's. The difference is recorded here because two hydraulics implementations in one solution will eventually be compared."
+    },
+    "laminarTurbulentStep": {
+      "finding": "The owner's laminar and turbulent correlations do not meet at the configured transition, so the ECD steps as a section becomes turbulent. A bisection therefore converges to the step, and the reached ECD can overshoot the target by the size of the jump - measured at 0.019 ppg for the 10.4 ppg target in the gateway.",
+      "handling": "The optimiser reports the rate that first reaches the target, states the reached ECD, and appends the reason: an annular section steps from laminar to turbulent flow there and the two correlations do not meet. The gateway asserts the overshoot is always upward and never a shortfall."
+    },
+    "nozzlesCannotMoveTheEcd": {
+      "finding": "The ECD is mud weight plus annular loss over depth, and the annular loss depends on the rate and the annulus only. The nozzle size does not appear in it, so the feature's 'recommend nozzle sizes for a target ECD' cannot be met as worded.",
+      "handling": "The optimiser solves the rate - the lever that does move the ECD, monotonically - and reports the bit hydraulics at that rate for the nozzles entered. The gateway proves the ECD is identical with and without nozzles, so the wording is corrected by measurement rather than by a comment."
+    },
+    "emptyNozzlesDivideByZero": {
+      "finding": "Hydraulics.BitLoss sums the nozzle areas, so an empty list gives a zero area, an infinite bit loss and an infinite standpipe pressure.",
+      "handling": "The no-nozzle state is handled before the figure is published: the bit loss, horsepower and impact are zero, the standpipe pressure is restated without the bit's share, and the page flags that the figure is understated."
+    },
+    "theProfileIsNotASecondModel": {
+      "finding": "The owner returns one ECD at the bit and no profile, which the chart and the per-depth fracture comparison both need.",
+      "handling": "The profile accumulates the owner's own Gradient down the annulus and applies the owner's own ECD relation at each depth, and the service refuses to publish it unless the deepest point equals the owner's own ECD."
+    },
+    "annulusOverlapWasNotRefused": {
+      "finding": "A first gateway fixture gave two annulus sections the same depth range, which doubled that depth's loss; the profile then had two points at one depth and the 'deepest' one was arbitrary.",
+      "handling": "Overlapping annulus sections are now refused, naming both sections and the interval they share, and the fixture records one annulus per depth."
+    }
+  },
+  "limits": [
+    "The rheology model is the configured one (drilling.rheologyModel); the screen prints it rather than offering a per-run switch, because the owner's Gradient reads the global setting.",
+    "API RP 13D's Herschel-Bulkley method is not implemented by the owner, so a mud that needs it must be fitted as Bingham plastic or power law; the toolbox says so in its own settings description.",
+    "Turbulent power-law flow has no simple correlation in the owner's model: such a section is reported as not computed, the standpipe pressure and ECD are withheld, and the optimiser refuses rather than bisecting on a figure that does not exist.",
+    "The laminar-to-turbulent transition is a step, so an ECD target can be reached only to within the jump; the reached value and the reason are stated.",
+    "The nozzle does not change the ECD in this model, so the optimiser solves the rate and reports bit hydraulics rather than claiming a nozzle choice that would move the ECD.",
+    "No pore pressure or pore gradient is recorded anywhere, so the chart carries the mud weight and the fracture gradient only - not a pore line.",
+    "A fracture gradient recorded without a unit is ignored rather than assumed, because ppg and psi/ft differ by a factor of nineteen.",
+    "The tightest recorded fracture gradient governs the whole profile: the annulus records one gradient per string, not a gradient-versus-depth band, so a formation with a weaker zone above the deepest point is not distinguished.",
+    "The flow paths are entered as text, one per line, with lengths in the plan's unit; a mistyped line is refused naming the line, and there is no sub-grid editor.",
+    "Surface loss is an input, not a computed value: the owner takes it as given, and the page does not model the surface equipment.",
+    "The ECD is quoted at measured-depth-indexed annulus section bottoms through the plan's trajectory; a plan with no survey cannot be run, which is refused.",
+    "Only the last run per well is read back, and no paging: each read loads the plan and the run tables whole."
+  ]
+}

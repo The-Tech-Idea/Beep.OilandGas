@@ -9,6 +9,7 @@ public partial class R_DRILL_HOLE_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String DRILL_HOLE_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILL_HOLE_POSITION
         {  
             get  

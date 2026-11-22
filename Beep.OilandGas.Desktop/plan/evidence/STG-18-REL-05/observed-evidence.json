@@ -1,0 +1,130 @@
+{
+  "id": "STG-18/REL-05",
+  "title": "Release acceptance gates",
+  "date": "2026-11-09",
+  "status": "gate met - the checklist exists and refuses to claim readiness: thirty items in five areas, five computed from artefacts that really exist (the smoke result, its accessibility counters, its performance budgets, the project files and the screen sources) and twenty-five attested with evidence; an unproven item is NotRun and never a pass; a check that fails stays failed; a broken evidence link fails naming the path; a waiver needs a different approver, a reason and a future expiry, and an expired one reverts to failure; and the evidence pack zips the plan's evidence with a manifest and reports any link it could not fill. On this build the checklist reads NOT READY TO SHIP, on its own numbers.",
+  "dataModel": {
+    "read": "The smoke result file (<data root>/smoke-result.txt), the project files and screen sources of the checkout a release is cut from, the plan folder's evidence, and <data root>/Diagnostics/release-acceptance.json (attestations and waivers).",
+    "written": "The attestation store under the data root, and the evidence pack zip in the Exports folder. No table.",
+    "noTable": "REL-05 introduces no table. A release acceptance is a record of what was checked and by whom, and it lives beside the failure store.",
+    "noOwnerChange": "None. REL-05 reads the artefacts the build already leaves and the sources it was built from."
+  },
+  "rules": {
+    "computed": "Five items are read from something that exists: item 8 (result: ok and views-constructed: True from the smoke result), item 23 (the same file's unnamed, untabbable and skin-contrast counters, all three), item 25 (performance-over-budget), item 7 (no PackageReference carries a Version attribute, scanned across the checkout's project files) and item 18 (no file outside the data project names IDMEEditor). Each says what it read.",
+    "neverPass": "An item with no artefact and no attestation is NotRun. A missing smoke result is NotRun with the command to run; an artefact that cannot be read is reported and the item is NotRun; a result line that says failed, or is absent, is Fail. The feature's own state table: NotRun is never displayed as pass.",
+    "failingCheckStays": "A check that runs and fails stays failed even when everything else is signed. On this build item 23 fails on 66 skin contrast failures and the summary reads NOT READY TO SHIP - which is what the checklist is for.",
+    "evidence": "An attestation must carry evidence. A sentence is accepted for a manual observation; something that looks like a path must exist under the plan folder or the item fails naming the missing path and the place it was expected.",
+    "waiver": "A waiver needs an approver who is not the person asking, a reason, and an expiry in the future. An expired waiver is a Fail, and its detail names the expiry and the approver - the feature's 'expired waiver reverts to fail'.",
+    "permissions": "Viewing needs nothing beyond the page's own module gate; attesting needs release.attest and waiving needs release.waive, refused when the permission source could not be read.",
+    "pack": "The evidence pack zips every *.json under plan/evidence with a manifest holding the version, the time, the file count and the number of missing links, and lists any evidence file an item names but the plan does not hold."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Release/OgReleaseAcceptance.cs (OgAcceptanceState, OgAcceptanceKind, OgAcceptanceWaiver, OgAcceptanceItem, OgAcceptanceReport, OgAcceptanceStore, OgEvidencePack, OgReleaseRules with the thirty-item checklist, IOgReleaseAcceptance, OgReleaseAcceptanceService with EvaluateAsync/AttestAsync/WaiveAsync/ExportEvidenceAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/ReleaseAcceptancePageView.cs (route 'releaseacceptance', Administration module: Evaluate, the summary and the blockers, the checklist grid with each item's state, detail, evidence and attester, the attest bar, the waiver bar with approver/reason/expiry, and the evidence pack bar)",
+    "locations": "src/Beep.OilandGas.Desktop/Bootstrapping/OgReleaseLocations.cs (the source root a release is cut from, the plan folder, the store path and the pack path under the data root)",
+    "wiring": "OgBootstrapper, OgApplication.ReleaseAcceptance, catalog 'releaseacceptance' (OgModuleKeys.Administration, Everyone - the feature gives viewing to any user and gates the two commands), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ReleaseAcceptanceTests.cs (9) + ReleaseAcceptanceGatewayTests.cs (1 opt-in)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 1512,
+      "passed": 1512,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 102,
+      "passed": 102,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 125,
+      "views-constructed": true,
+      "modulesetup-summary": "33 module(s) - 449 entity type(s)",
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0,
+      "toolboxes-missing": 0,
+      "wellbore-findings": 0,
+      "skin-contrast-failures": 66
+    }
+  ],
+  "integration": {
+    "checklist": "thirty items in five areas, numbered 01 to 30, five computed and twenty-five attested",
+    "noArtefact": "with no smoke result and no checkout, nothing is a pass: zero pass, thirty not run, thirty blockers, and the summary reads NOT READY TO SHIP",
+    "smokeArtefact": "a smoke result with result: ok, views-constructed: True and no budget over its limit passes items 8 and 25; with 66 skin contrast failures item 23 fails with the number in its detail and stays in the blockers; a result of 'failed', or one with no result line, fails the item",
+    "sourceScans": "on this checkout items 7 and 18 pass - no project file carries a PackageReference version and no file outside the data project names the editor - and a planted project with Version= and a screen naming the editor both fail, with the offending file named",
+    "attestation": "refused for an unknown item, without the permission, without an actor, and without evidence; accepted with all four, and it survives a re-evaluation because it was written to the store",
+    "evidenceLinks": "an attestation naming evidence/STG-18-REL-05/observed-evidence.json fails while the file is absent (the sentence names the expected path) and passes once it is written",
+    "waiver": "refused for the same person as approver, for an empty reason and for an expiry in the past; accepted with all three, reads WAIVED, and an expired waiver applies as Fail with the expiry and the approver in the sentence",
+    "pack": "the pack holds every evidence json plus manifest.json with the version and file count, leaves a .txt out, and reports a named evidence file the plan does not hold",
+    "fullCycle": "with a smoke result that meets every counter, signing all twenty-five attested items makes the report READY TO SHIP with thirty passes and no blockers; a waiver then moves one item to WAIVED and keeps it ready; corrupting the store is reported and the five computed items still run"
+  },
+  "gates": {
+    "AC-1 The checklist is the thirty items the feature lists": "pass - thirty numbered items in five areas, with five computed and twenty-five attested.",
+    "AC-2 Nothing unproven is shown as a pass": "pass - NotRun for a missing artefact, Fail for a failing one, and NOT READY TO SHIP with the blockers listed.",
+    "AC-3 Attestations carry who, when and the evidence": "pass - refused without evidence, recorded under the data root with the actor and the time, and shown with them.",
+    "AC-4 Waivers carry an approver, a reason and an expiry, and expire back to failure": "pass - the three refusals, the WAIVED state, and the expired waiver applying as Fail.",
+    "AC-5 A broken evidence link fails with the missing path": "pass - the sentence names the expected path, and the item passes once the file is there.",
+    "AC-6 The evidence pack holds the plan's evidence with a manifest": "pass - every evidence json plus manifest.json, and the missing list for anything an item names but the plan does not hold.",
+    "AC-3 Every required asset is present and reported": ""
+  },
+  "currentVerdict": {
+    "state": "NOT READY TO SHIP, on the attested items alone",
+    "computedPass": [
+      "07 no package version",
+      "08 smoke ok",
+      "18 no data source outside .Data",
+      "23 accessibility - 0 unnamed, 0 untabbable, 0 skin contrast failures after REL-03 closed the guard",
+      "25 budgets within limits"
+    ],
+    "computedFail": [],
+    "notRun": "the twenty-five attested items, and the two delivery items that need a clean VM; every computed item now passes",
+    "outstandingAcceptanceItems": [
+      "REL-05 item 23 / REL-03 AC-2 and AC-6 - the contrast work is done (0 failures across 66 skins), but a screen reader has not been recorded against the five key journeys and the 200 % scaling observation has not been made; those remain the owner's.",
+      "REL-05 item 27 / REL-01 AC-1 - the installer has not been run on a clean Windows VM. The feature says a developer machine is not evidence, so this stays NotRun until the owner runs it and attaches the install log and the smoke result.",
+      "REL-05 item 09 for INT-02 AC-2 and INT-03 AC-1 - the Energistics XSDs and the OSDU JSON schemas are not in this repository, so those two criteria cannot be demonstrated; item 09 stays NotRun for them rather than being signed off.",
+      "REL-05 item 26 - localization is complete for the two shipped cultures, but the RTL pass on the five key pages is a manual observation that has not been attested.",
+      "REL-05 items 27 to 30 - delivery: the clean VM, the legal notices matched against the web pages, and the retention configuration are the owner's to attest."
+    ]
+  },
+  "engineFindings": {
+    "theGuardTestsReadEveryWord": {
+      "finding": "Two source guard tests look for the word 'catch' and for the toast service's type name anywhere in a file. Writing those words into the checklist's own item text - the items about the handlers and about the toast service - made both guards fail on prose.",
+      "handling": "The two items are worded without those literals ('No exception handler without a report or a rethrow', 'The toast service is injected only into the notification hub'), and the two keys were renamed for the same reason. The guards are right to be literal; the checklist is what was adjusted."
+    },
+    "evidenceIsEitherAPathOrASentence": {
+      "finding": "A first version decided 'is this evidence a file?' in the state check but treated every evidence string as a path in the pack's missing-link report, so a manual observation showed up as a missing file.",
+      "handling": "The distinction is one rule (OgReleaseRules.LooksLikePath) used by both places, and the gateway test catches the disagreement by attesting with a sentence and then packing."
+    },
+    "theChecklistCouldNotReadItsOwnBuild": {
+      "finding": "Several items the feature asks for cannot be computed from inside a running application - 0 errors, no analyzer diagnostic, no versioned package - and pretending otherwise would have produced passes nobody earned.",
+      "handling": "Only what is genuinely observable is computed (the smoke result, its counters, the project files and the sources); everything else is NotRun until a person attests it with evidence. That is the feature's own rule, applied strictly."
+    },
+    "theStoreLivesUnderTheDataRoot": {
+      "finding": "An installed copy has no source checkout and no plan folder, so a store kept beside the application would be lost by an upgrade and could not be written at all under Program Files.",
+      "handling": "The attestations live in <data root>/Diagnostics/release-acceptance.json, and the checks that need a checkout report NotRun when there is none - which is also honest about where a release is cut from."
+    }
+  },
+  "limits": [
+    "Twenty-five of the thirty items are attested, not measured: the checklist records who said so, when, and what they attached - it cannot verify a clean VM or a screen reader.",
+    "The two source scans are textual: item 7 looks for a Version attribute on a PackageReference line and item 18 for the editor's type name outside the data project. A project that set the version in a property would pass item 7 without the scan noticing.",
+    "The evidence pack is a zip of the JSON files under plan/evidence; other files a person may want to attach (screenshots, logs) are not collected automatically.",
+    "An attestation cannot be withdrawn from the page - only replaced by a newer one. There is no history of attestations.",
+    "The checklist cannot tell whether the smoke result it reads was produced by this build; it reads the file the application writes, and the version beside it is the running one.",
+    "The waiver expiry is compared against the machine clock at evaluation time.",
+    "The page shows the checklist; it does not enforce it. Nothing in the build refuses to package an application because an item is NotRun - that gate is the release process this page equips.",
+    "Items 1 to 6, 9 to 17 and 19 to 22 need a person who ran the guard tests, the manual walk-throughs and the audit checks; the page's job is to make their absence visible."
+  ]
+}

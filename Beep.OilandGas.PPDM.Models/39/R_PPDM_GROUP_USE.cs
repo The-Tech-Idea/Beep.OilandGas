@@ -9,6 +9,7 @@ public partial class R_PPDM_GROUP_USE: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_USEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_USE
         {  
             get  

@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class DIVISION_ORDER : ModelEntityBase {
         private System.String DIVISION_ORDER_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String DIVISION_ORDER_ID
         {
             get { return this.DIVISION_ORDER_IDValue; }

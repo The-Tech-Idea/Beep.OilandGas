@@ -9,6 +9,7 @@ public partial class RA_PPDM_SCHEMA_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String SCHEMA_GROUP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCHEMA_GROUP_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SCHEMA_GROUP_TYPEValue;
           set { SetProperty(ref  SCHEMA_GROUP_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_QUALIFIER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String QUALIFIER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUALIFIER_TYPE
         {  
             get  

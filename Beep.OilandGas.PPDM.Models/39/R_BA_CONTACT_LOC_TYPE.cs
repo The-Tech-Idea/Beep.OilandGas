@@ -9,6 +9,7 @@ public partial class R_BA_CONTACT_LOC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTACT_LOC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_LOC_TYPE
         {  
             get  

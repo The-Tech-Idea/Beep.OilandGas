@@ -9,6 +9,7 @@ public partial class ANL_METHOD_SET: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_SET_ID
         {  
             get  

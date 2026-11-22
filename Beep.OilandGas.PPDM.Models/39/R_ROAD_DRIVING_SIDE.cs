@@ -9,6 +9,7 @@ public partial class R_ROAD_DRIVING_SIDE: Entity,IPPDMEntity
 {
 
 private  System.String DRIVING_SIDEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRIVING_SIDE
         {  
             get  

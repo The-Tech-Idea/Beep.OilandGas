@@ -1,0 +1,86 @@
+{
+  "id": "STG-13/WRK-02",
+  "title": "Work order detail and transitions",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: only the owner's own workflow graph offers a transition and anything else is refused; the actual cost is the sum of the labour and material lines with uncosted lines counted rather than zeroed; execution start is refused without a permit that covers the moment; completion is refused without recorded evidence; the person who submitted cannot approve or complete; and every labour and material line carries the actor and the date it was recorded with. A reservation above availability is refused with the short quantity.",
+  "dataModel": {
+    "owner": "The lines are the owner's own: WORK_ORDER_LABOR_USAGE (who, duty, from/to, quantity, unit, executor) and WORK_ORDER_MATERIAL_USAGE (item, allocation, quantity, used-at), with WORK_ORDER_MATERIAL_ALLOCATION for reservations, WORK_ORDER_CONDITION for the close-out evidence and WORK_ORDER_EXECUTION_PERMIT for the permit gate. Material cost comes from INVENTORY_ITEM.UNIT_COST and CURRENCY_CODE, which the owner already records.",
+    "additive": "The owner's labour table records no rate and says so ('no wage, valuation, currency or journal posting is inferred'), so the class was made partial and two additive columns - UNIT_COST and CURRENCY_CODE - were added in CompanyWorkOrderLaborUsage.Cost.cs. No recorded field was changed and the table's own report stays readable.",
+    "state": "A transition is appended to the linked project's PROJECT_STATUS with STATUS_TYPE 'WO_STATE' - the store the owner's workflow uses - rather than written to the header, which the owner says does not establish operational state."
+  },
+  "rules": {
+    "transitions": "WorkOrderDetailRules.Transitions calls the owner's WorkOrderWorkflow.Available for the recorded state and subtype; the picker offers exactly that list and the command refuses anything else, naming what is allowed.",
+    "cost": "A labour line's cost is its quantity times the rate recorded on it; a material line's cost is its quantity times the inventory item's recorded unit cost. The order's actual cost is their sum per currency, and a line that records no rate is counted as uncosted so the total is described as partial rather than understated silently.",
+    "permit": "A permit authorises execution when one is recorded for the order, its status is not one of the refusing states (rejected, withdrawn, cancelled, expired, pending, draft, revoked) and now is inside its recorded validity window. The failure says which of those it is.",
+    "evidence": "The owner's condition table has no status or result column, so a recorded CLOSE_OUT condition with an inspector, a date and a remark is the evidence a completion needs; without one the completion is refused.",
+    "approval": "The person who recorded the order's current state (the submitter) cannot move it to UNDER_REVIEW or COMPLETED.",
+    "reservation": "Availability is INVENTORY_ITEM.QUANTITY_ON_HAND less every active allocation of that item; a reservation above it is refused and names the short quantity.",
+    "lines": "A labour line records the person, the duty, the interval, the quantity and unit, the rate with its currency and the actor; a material line shows the item's unit cost and currency and the order's usage date."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.Models/Data/WorkOrder/CompanyWorkOrderLaborUsage.Cost.cs (additive UNIT_COST/CURRENCY_CODE) and CompanyWorkOrderLaborUsage.cs (made partial, one word, no behaviour change)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Work/OgWorkOrderDetail.cs (OgLabourLine, OgMaterialLine, OgWorkCost, OgPermitState, OgCompletionEvidence, OgWorkOrderDetail, WorkOrderDetailRules, IOgWorkOrderDetail, OgWorkOrderDetailService with LoadAsync/TransitionAsync/AddLabourAsync/ReserveMaterialAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WorkOrderDetailPageView.cs (route 'workorder': the order lookup, the summary, the gates (permit, evidence, checklist), the transition bar bound to the available list, the actual cost, the material and labour panels, the reservation bar and the labour bar)",
+    "wiring": "OgBootstrapper (IOgWorkOrderDetail), OgApplication.WorkOrderDetail, catalog 'workorder' (OgModuleKeys.Work), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WorkOrderDetailTests.cs (7, no database) + WorkOrderDetailGatewayTests.cs (1 opt-in, real SQLite over ten tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1247, "passed": 1247, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 73, "passed": 73, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 97, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WORK_ORDER, WORK_ORDER_COMPONENT, R_WO_TYPE, PROJECT_STATUS, WORK_ORDER_LABOR_USAGE, WORK_ORDER_MATERIAL_USAGE, WORK_ORDER_MATERIAL_ALLOCATION, WORK_ORDER_CONDITION, WORK_ORDER_EXECUTION_PERMIT and INVENTORY_ITEM. One order in PLANNED with two labour lines (2 h at 50 USD, 1 h uncosted), one material usage of 3 at 12.50 USD, an item with 10 on hand and 4 already allocated, a valid permit and a recorded close-out.",
+    "ac1": "COMPLETED is not offered from PLANNED and the attempt is refused with workorder-transition-unavailable naming what is; IN_PROGRESS is offered",
+    "ac2": "the actual cost reads 100.00 labour + 37.50 materials = 137.50 USD with 1 uncosted line and a 'partial' note",
+    "ac3": "deleting the permit makes the IN_PROGRESS transition refused with workorder-permit-required and no status row written; restoring it lets the start be recorded on the linked project with the actor",
+    "ac4": "deleting the close-out condition refuses the completion with workorder-evidence-required; restoring it lets the completion succeed and the order reads COMPLETED",
+    "ac5": "the user who recorded IN_PROGRESS cannot complete the order, and the refusal names them",
+    "ac6": "every labour line reads its executor and its interval, and the material line reads its usage date",
+    "sg13_3": "reserving 7 of an item with 6 available is refused with 'the short quantity is 1' and no allocation is written; reserving 6 succeeds",
+    "lines": "a labour line added through the service appears with its cost (2 h at 45 USD = 90.00 USD) and its actor"
+  },
+  "gates": {
+    "AC-1 Only service-reported transitions are offered": "pass - the list and the command both call the owner's WorkOrderWorkflow.Available; a skipped transition is refused (SG-13-1).",
+    "AC-2 Actual cost equals the sum of labour and material lines": "pass - the total is computed from the lines per currency and the uncosted lines are counted; the gateway asserts 137.50 USD from 2 h at 50 plus 3 at 12.50 (SG-13-4).",
+    "AC-3 Execution start is refused without a valid permit": "pass - refused with the reason, and the recorded start follows the permit (SG-13-2).",
+    "AC-4 Completion requires evidence": "pass - refused until a close-out condition with inspector, date and remark is recorded.",
+    "AC-5 Author cannot approve their own completion": "pass - the state recorder is refused for UNDER_REVIEW and COMPLETED.",
+    "AC-6 Every line records its actor and date": "pass - labour reads its executor and interval, material its usage date, and the gateway asserts both."
+  },
+  "engineFindings": {
+    "labourTableRecordsNoRate": {
+      "where": "Beep.OilandGas.Models/Data/WorkOrder/CompanyWorkOrderLaborUsage.cs",
+      "finding": "The owner's labour report is deliberately cost-free: its own remark says 'no wage, valuation, currency or journal posting is inferred', and the class was not partial.",
+      "handling": "The class was made partial and two additive columns (UNIT_COST, CURRENCY_CODE) carry the rate a line is costed at. Nothing recorded was changed; a labour report without a rate remains readable and is counted as uncosted."
+    },
+    "materialCostComesFromTheItem": {
+      "finding": "INVENTORY_ITEM already records UNIT_COST and CURRENCY_CODE, so a material line's cost needs no new column.",
+      "handling": "The service multiplies the usage quantity by the item's recorded unit cost and currency, and a material line whose item has no cost is uncosted."
+    },
+    "conditionTableHasNoResult": {
+      "finding": "WORK_ORDER_CONDITION records the condition's type, associate, remark and effective date, but no status or result column, so the owner's InspectionCondition cannot be materialised from it.",
+      "handling": "A CLOSE_OUT condition with an inspector, a date and a remark is the evidence a completion needs, stated as the rule rather than inferred from a missing status."
+    },
+    "requiredPlaceholders": {
+      "finding": "The owner marks PROCESS_INSTANCE_ID, START_ID, ASSIGNMENT_ID and LOCATION_ID as required, and the desktop has no process instance or assignment to record.",
+      "handling": "The writes record explicit placeholders (NO-PROCESS, NO-START, NO-ASSIGNMENT and the warehouse or UNSPECIFIED) so the required columns are not blank and the absence is visible; recorded as a limit."
+    },
+    "uncostedLineWithNoCurrency": {
+      "finding": "A line with neither a rate nor a currency cannot be attributed to any total, so it is excluded from every currency group.",
+      "handling": "Costs are computed per currency, and the limit is recorded: a line with no currency at all is not counted in any total even as uncosted."
+    }
+  },
+  "limits": [
+    "The owner's controlled execution workflow (its start, verification and return commands, with their evidence) is not reimplemented: a transition appends a PROJECT_STATUS row only for a destination the owner's own graph offers, and the richer command surface remains the API's.",
+    "A line with no currency is excluded from every currency total, so it cannot appear even as uncosted; a line with a currency but no rate is counted as uncosted.",
+    "The permit's positive status vocabulary is not enumerated by the desktop: the rule names the statuses that refuse and accepts anything else inside its window, so an unusual positive spelling is accepted.",
+    "Completion evidence is a recorded CLOSE_OUT condition with an inspector, a date and a remark; there is no separate evidence file store and no inspection result field to read.",
+    "The labour rate is a desktop additive column: the API and the owner's own reports do not read it, so a rate recorded here is not visible to them.",
+    "Reservations record placeholders for the owner's required process-instance, start, assignment and location columns because the desktop has no process instance; a reservation therefore cannot be traced to a workflow instance.",
+    "There is no approval record beyond the recorded state: the submitting user is the PROJECT_STATUS row's creator, and a richer approval (conditions, dual sign-off) is not built.",
+    "The page has one labour and one reservation bar rather than the nine tabs of the Web; scope, approvals, execution notes and history panels are deferred, with the Web paths recorded in the feature document.",
+    "No per-command permission enforcement beyond the submitter/approver rule: the page is gated, and work.execute/submit/approve/complete are not checked per command."
+  ]
+}

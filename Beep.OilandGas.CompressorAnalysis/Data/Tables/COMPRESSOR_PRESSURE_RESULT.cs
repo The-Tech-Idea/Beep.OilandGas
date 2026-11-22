@@ -8,6 +8,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Data
 {
     public partial class COMPRESSOR_PRESSURE_RESULT : ModelEntityBase {
         private String COMPRESSOR_PRESSURE_RESULT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public String COMPRESSOR_PRESSURE_RESULT_ID
         {
             get { return this.COMPRESSOR_PRESSURE_RESULT_IDValue; }

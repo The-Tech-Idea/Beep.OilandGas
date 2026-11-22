@@ -1,0 +1,53 @@
+{
+  "id": "STG-18/RPT-03",
+  "title": "Chart rendering service",
+  "date": "2026-11-06",
+  "status": "gate met - one renderer behind the domain's IRenderingService, six chart types, theme palette, no-data state, reported failure, point selection and a pixel-identical export",
+  "implementation": {
+    "renderer": "src/Beep.OilandGas.Desktop.WellTools/Reporting/OgSkiaChartRenderer.cs (IRenderingService; line/area/bar/scatter/pie/donut; in-session configurations)",
+    "surface": "src/Beep.OilandGas.Desktop.WellTools/Reporting/ChartHost.cs (ChartSurface : ViewSurface, ChartHost : ContentControl)",
+    "page": "src/Beep.OilandGas.Desktop/Views/ChartsPageView.cs (route 'charts')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'charts', module 'reporting')",
+    "wiring": "src/Beep.OilandGas.Desktop/Bootstrapping/OgBootstrapper.cs, OgApplication.Charts",
+    "contract": "Beep.OilandGas.Models — IRenderingService, RenderChartRequest/Result, ExportChartRequest/Result, CHART_CONFIGURATION",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ChartRenderingTests.cs (14)",
+    "decision": "plan/04-DECISIONS.md ADR-016"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~ChartRenderingTests", "exit": 0, "run": 14, "passed": 14, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 341, "passed": 341, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 20,
+    "charts-line": true,
+    "charts-line-message": "rendered",
+    "charts-pie": true,
+    "charts-bar": true,
+    "charts-empty": "no data",
+    "charts-exported": true,
+    "charts-png-bytes": 2897,
+    "charts-png-signature": "89504E47"
+  },
+  "gates": {
+    "AC-1 every chart type supported by IRenderingService renders": "pass - the implementation supports line, area, bar, scatter, pie and donut; a six-case theory renders each with non-empty pixels and LastOutcome 'rendered'. An unknown type is a failure that names it ('radar').",
+    "AC-2 colours come from theme tokens and follow a skin change": "pass - the palette is injected by the host from BeepChartBrush1..8 and by the page from the same resources; a test renders with red then green and asserts the new colour appears and the old one is absent.",
+    "AC-3 an empty series shows 'no data', not an empty axis": "pass - LastOutcome is 'no data', LastPoints is empty, and the chart area carries the sentence (non-blank frame).",
+    "AC-4 a render failure is reported, not swallowed": "pass - a throwing IRenderingService produces one failure-reporter row and a failure panel whose message carries the reference; the surface does not blank silently.",
+    "AC-5 point selection raises an event with the series and value": "pass - a click within 14 px of a drawn point raises PointSelected with the series, label and value; a click far from every point raises nothing.",
+    "AC-6 exported chart matches the on-screen chart": "pass - the export renders through the same ChartSurface, so the PNG is pixel-identical to the frame on screen; the test compares every pixel and found the tools' trademark footnote was the first discrepancy, which is why the exporter now goes through the surface."
+  },
+  "decision": {
+    "split": "IRenderingService for generic series charts; purpose-built plots (nodal, pump, well test, economics, heat maps) keep their own renderers because they encode domain geometry.",
+    "skia": "ADR-016: Beep.OilandGas.Models is referenced for the contracts; its SkiaSharp.Svg 1.60.0 assets are excluded, so one SkiaSharp (4.154.0) compiles and loads. A guard test forbids desktop use of SkiaSharp.Extended.Svg."
+  },
+  "limits": [
+    "Chart configurations are session-only: the interface is implemented in memory, but persisting CHART_CONFIGURATION needs DAT-02.",
+    "Only PNG export is offered; SVG/PDF chart export is not, keeping ADR-001's single SVG path.",
+    "Point selection is nearest-marker on cartesian charts and slice-midpoint on pie; there is no hover readout.",
+    "The optional toolbar (legend toggle, full screen) is not built.",
+    "The chart page renders the demo production series; there is no data-bound chart source yet.",
+    "The page evaluates the request off-screen so it can report state headlessly; in a shown window the host draws the same request."
+  ]
+}

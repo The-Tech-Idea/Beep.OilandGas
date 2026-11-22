@@ -9,6 +9,7 @@ public partial class RM_THESAURUS_GLOSSARY: Entity,IPPDMEntity
 {
 
 private  System.String THESAURUS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String THESAURUS_IDValue;
           set { SetProperty(ref  THESAURUS_IDValue, value); }
         } 
 private  System.String THESAURUS_WORD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_WORD_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String THESAURUS_WORD_IDValue;
           set { SetProperty(ref  THESAURUS_WORD_IDValue, value); }
         } 
 private  System.String GLOSSARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GLOSSARY_ID
         {  
             get  

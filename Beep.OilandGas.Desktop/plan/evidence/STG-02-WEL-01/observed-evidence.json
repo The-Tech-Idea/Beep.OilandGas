@@ -1,0 +1,57 @@
+{
+  "id": "STG-02/WEL-01",
+  "title": "Well search and index",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: name, UWI and API each return the expected well; 5 000 wells page and filter in SQL (30 ms for an identity search, 3 ms for a page and for a filter); no-match and failed are distinct states; selecting a well sets the shared context and cancels the in-flight load; saved searches are read back from the per-user file by a new store instance",
+  "implementation": {
+    "contracts": "src/Beep.OilandGas.Desktop.Core/Wells/OgWellTypes.cs (OgWellSummary, OgWellQuery)",
+    "search": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellSearch.cs (IOgWellSearch, OgWellSearch, BuildWhere; WELL + WELL_XREF, escaped values, page clamp 500)",
+    "context": "src/Beep.OilandGas.Desktop.Core/OgWellContext.cs (Current, Version, BeginLoad, Select, Clear, Changed)",
+    "savedSearches": "src/Beep.OilandGas.Desktop/Diagnostics/OgSavedWellSearchStore.cs (JSON under <data>/Searches/well-searches.json, Load/Upsert/Remove)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellSearchPageView.cs (route 'wells': text + field/status/type/spud filters, result grid, paging, open, saved searches)",
+    "wiring": "OgBootstrapper registrations, OgApplication.WellSearch/WellContext/SavedWellSearches, catalog 'wells' (replacing the placeholder), en+ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellSearchTests.cs (8, no database) + WellSearchGatewayTests.cs (1 opt-in, 5 000 wells)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~WellSearch", "exit": 0, "run": 9, "passed": 9, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 529, "passed": 529, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "measurements": {
+    "database": "5 000 WELL rows and 5 000 WELL_XREF API rows in local SQLite",
+    "identity search": "30 ms",
+    "first page (100 of 5 000)": "3 ms",
+    "field filter (2 500 matches, 100 shown)": "3 ms",
+    "paging": "page 50 of 50 returned 100 rows with HasMore false"
+  },
+  "smoke": {
+    "pages-declared": 29,
+    "wells-page-route": "wells",
+    "wells-search-fails-without-table": true,
+    "wells-context-cancel": true,
+    "wells-context-stale": true,
+    "wells-context-id": "UWI-SMOKE-1",
+    "wells-saved-search-roundtrip": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 Name, UWI and API number all return the expected well": "pass - the SQL matches WELL.WELL_NAME, WELL.UWI and WELL_XREF.XREF_ID in one predicate; the 5 000-row test finds UWI-0004321 by 'ALPHA-4321', by 'UWI-0004321' and by '42-001-04321', and the API column shows 42-001-04321.",
+    "AC-2 5 000 wells page and filter within the REL-04 budget": "pass - one bounded SELECT plus a matching COUNT; a 100-row page over 5 000 wells took 3 ms, a field filter returning 2 500 matches took 3 ms, and identity search took 30 ms (budget is 2 s in the test). Page size is clamped to 500.",
+    "AC-3 Empty and failed are distinguishable": "pass - a filter with no match returns success with 0 rows and the page says 'No wells match these filters'; with no filter the sentence is 'There are no wells in this company or field'; a dropped WELL table returns a failure with a reference and the page sets the failed state (smoke: wells-search-fails-without-table true).",
+    "AC-4 Selecting a well sets the shared well context and cancels prior loads": "pass - OgWellContext.BeginLoad returns a token and a version, Select cancels the token and bumps the version, and IsCurrent(version) makes a late result stale. Unit tests assert both, and the smoke shows wells-context-cancel/wells-context-stale true with the selected id.",
+    "AC-5 Saved searches survive a restart": "pass - the store writes JSON under the per-user data root; a second store instance reads the search back with its text/field/year, an upsert replaces by name case-insensitively, and a corrupt file is reported as a problem rather than crashing (unit tests). The smoke writes and reads one back through the application store."
+  },
+  "limits": [
+    "The API number is read from WELL_XREF rows whose XREF_TYPE contains 'API'; a database that records API numbers under another type or column shows no API for the row.",
+    "The spud-year filter uses SQLite's strftime; a non-SQLite provider would need its own date clause.",
+    "Field, status and well-type are exact-match text filters typed by the person; the distinct-value chip lists from the plan are not built.",
+    "No initial search runs when the page opens: the person presses Find (or loads a saved search), which keeps a large first read off the page load.",
+    "The row action sets the shared well context and audits it; there is no well overview page to navigate to yet (WEL-02), so nothing navigates.",
+    "Saved searches are one file per installation inside the per-user data root, not per signed-in account.",
+    "Multi-select, compare and working sets (WEL-06) are not part of this feature and are not built.",
+    "The page is exercised by construction and by its data/unit tests; no automated click drives the grid."
+  ]
+}

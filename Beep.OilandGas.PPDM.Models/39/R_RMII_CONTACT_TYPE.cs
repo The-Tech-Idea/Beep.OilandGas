@@ -9,6 +9,7 @@ public partial class R_RMII_CONTACT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTACT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_TYPE
         {  
             get  

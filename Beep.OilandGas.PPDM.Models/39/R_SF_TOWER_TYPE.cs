@@ -9,6 +9,7 @@ public partial class R_SF_TOWER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TOWER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TOWER_TYPE
         {  
             get  

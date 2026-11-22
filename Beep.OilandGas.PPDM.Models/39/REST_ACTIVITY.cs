@@ -9,6 +9,7 @@ public partial class REST_ACTIVITY: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESTRICTION_IDValue;
           set { SetProperty(ref  RESTRICTION_IDValue, value); }
         } 
 private  System.Decimal RESTRICTION_VERSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal RESTRICTION_VERSION
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal RESTRICTION_VERSIONValue;
           set { SetProperty(ref  RESTRICTION_VERSIONValue, value); }
         } 
 private  System.String RESTRICTED_ACTIVITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTED_ACTIVITY
         {  
             get  

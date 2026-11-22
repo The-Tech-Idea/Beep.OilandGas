@@ -9,6 +9,7 @@ public partial class RA_PERFORATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PERF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERF_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PERF_TYPEValue;
           set { SetProperty(ref  PERF_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

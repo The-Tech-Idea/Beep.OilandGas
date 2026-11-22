@@ -1,0 +1,46 @@
+{
+  "id": "STG-15/VSB-07",
+  "title": "Well path, ladder plot and travelling cylinder",
+  "date": "2026-11-05",
+  "status": "gate met - stations, plan/section paths, ladder plot, travelling cylinder, uncertainty ellipses and a per-offset cancellable scan",
+  "implementation": {
+    "bridge": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgWellPath.cs (OgWellPath, OgPathSurface)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellPathPageView.cs (route 'wellpath')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'wellpath')",
+    "tools": "TheTechIdea.OilGas.Wellbore — Trajectory.Compute, AntiCollision.Scan, LadderPlotView, TravellingCylinderView, SurveyUncertainty.ForWell"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~WellPathViewTests", "exit": 0, "run": 9, "passed": 9, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 419, "passed": 419, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 22,
+    "wellpath-stations": 7,
+    "wellpath-plan-points": 7,
+    "wellpath-section-assumed": false,
+    "wellpath-min-separation": 0.65,
+    "wellpath-uncertainty-available": true,
+    "wellpath-ellipses": 6,
+    "wellpath-offsets-superseded": true,
+    "wellpath-offsets-cancelled-flag": true,
+    "wellpath-offsets-latest": 1,
+    "wellpath-offset-sets": "One offset (demo)|Two offsets|No offsets"
+  },
+  "gates": {
+    "AC-1 MD/TVD conversion matches DepthMapper for a reference survey": "pass — the stations come from the tools' Trajectory.Compute; in the vertical leg (0–500 m) TVD equals MD to three decimals, and for the deviated well the last TVD is shorter than its MD with a non-zero north displacement",
+    "AC-2 plan and section views draw the same stations": "pass — both projections are built from one station list: equal counts and identical MD sequences in order, so the two views cannot disagree",
+    "AC-3 the ladder plot uses the same separation computation as ENG-01": "pass — OgWellPath.Collision calls AntiCollision.Scan on two WellModels with surveys, datums and coordinates; the result carries offset points and a minimum separation factor (0.65 in the demo), and both the ladder and the cylinder render non-empty frames from that result. No separation maths is re-implemented.",
+    "AC-4 uncertainty ellipses are drawn only when an error model is available": "pass - OgWellPath.Uncertainty asks SurveyUncertainty.ForWell for a horizontal ellipse per station and keeps only those with a positive semi-major axis; the plan surface draws them and the page states the count or the reason. The default environment produces a model: the smoke run reports 6 ellipses for 7 stations (the surface station has zero covariance and is correctly omitted). Proven both ways with one renderer: supplying an ellipse changes the frame, clearing them restores it byte-for-byte.",
+    "AC-5 a vertical well states the azimuth assumption for the section view": "pass — a vertical trajectory yields azimuth 0 with Assumed=true and a note naming the vertical well and the 0° assumption; the deviated demo is measured (no assumption) and lands at ~45°",
+    "AC-6 changing the offset set cancels pending computation": "pass - ComputeOffsets scans one offset well at a time and checks the token before each and after the last, so a cancel is observed at the next well boundary and a cancelled scan returns no partial result. The page cancels the previous CTS when the offset set changes and a superseded scan is never applied. Tests: cancel after the first offset stops progress at 1; a pre-cancelled token does no work; and a 300-offset scan superseded by the demo set returns null for the first and one offset for the second. The offset set became a real choice (one, two, none)."
+  },
+  "limits": [
+    "Two demo surveys and two synthetic well models; no PPDM survey was read (DAT-02, G-08).",
+    "The plan and section views are a small polyline surface drawn by the desktop; the map-style plan view (MapView) and the section targets are not wired.",
+    "The surface station has zero covariance, so 6 of the 7 stations carry an ellipse; that is the model speaking, not a filter in the desktop.",
+    "The 'Export PDF' button writes the station table as a marker list through WellboreExport, not the path picture itself.",
+    "No 3D path view and no travelling-cylinder station picker; the cylinder uses the tools' default station."
+  ]
+}

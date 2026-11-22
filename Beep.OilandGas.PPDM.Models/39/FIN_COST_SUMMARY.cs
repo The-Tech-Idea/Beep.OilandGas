@@ -9,6 +9,7 @@ public partial class FIN_COST_SUMMARY: Entity,IPPDMEntity
 {
 
 private  System.String COST_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COST_ID
         {  
             get  

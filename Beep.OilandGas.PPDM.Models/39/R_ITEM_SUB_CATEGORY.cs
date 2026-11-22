@@ -9,6 +9,7 @@ public partial class R_ITEM_SUB_CATEGORY: Entity,IPPDMEntity
 {
 
 private  System.String ITEM_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ITEM_CATEGORY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ITEM_CATEGORYValue;
           set { SetProperty(ref  ITEM_CATEGORYValue, value); }
         } 
 private  System.String ITEM_SUB_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ITEM_SUB_CATEGORY
         {  
             get  

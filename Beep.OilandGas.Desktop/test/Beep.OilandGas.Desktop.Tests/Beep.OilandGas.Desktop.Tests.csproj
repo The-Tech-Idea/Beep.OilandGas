@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TheTechIdea.Beep.OilandGas.Desktop.Tests</RootNamespace>
+    <AssemblyName>TheTechIdea.Beep.OilandGas.Desktop.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <!-- ADR-001: Svg.Skia is the accepted SVG path; the export test re-opens the file with it. -->
+    <PackageReference Include="Svg.Skia" />
+    <!-- ADR-001: one SkiaSharp at runtime; the retired SVG helper from Models is never compiled against. -->
+    <PackageReference Include="SkiaSharp.Svg" ExcludeAssets="all" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Beep.OilandGas.Desktop.Core\Beep.OilandGas.Desktop.Core.csproj" />
+    <ProjectReference Include="..\..\src\Beep.OilandGas.Desktop.Data\Beep.OilandGas.Desktop.Data.csproj" />
+    <ProjectReference Include="..\..\src\Beep.OilandGas.Desktop.Controls\Beep.OilandGas.Desktop.Controls.csproj" />
+    <ProjectReference Include="..\..\src\Beep.OilandGas.Desktop\Beep.OilandGas.Desktop.csproj" />
+    <ProjectReference Include="..\..\src\Beep.OilandGas.Desktop.WellTools\Beep.OilandGas.Desktop.WellTools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- REL-02: the development signing key. Test-only; the application ships the public half embedded. -->
+    <None Include="Fixtures\dev-licence-key.pem" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ENG-01 AC-1: the published ISCWSA MWD Rev 5 reference case, copied from the tools repository's own conformance fixture. -->
+    <None Include="Data\iscwsa\*.json" CopyToOutputDirectory="PreserveNewest" LinkBase="Data\iscwsa" />
+  </ItemGroup>
+
+</Project>

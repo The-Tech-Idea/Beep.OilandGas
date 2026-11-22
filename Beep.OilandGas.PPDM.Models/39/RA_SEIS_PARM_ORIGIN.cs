@@ -9,6 +9,7 @@ public partial class RA_SEIS_PARM_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String PARAMETER_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_ORIGIN
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARAMETER_ORIGINValue;
           set { SetProperty(ref  PARAMETER_ORIGINValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

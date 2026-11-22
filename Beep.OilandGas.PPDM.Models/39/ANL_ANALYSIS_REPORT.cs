@@ -9,6 +9,7 @@ public partial class ANL_ANALYSIS_REPORT: Entity,IPPDMEntity
 {
 
 private  System.String ANALYSIS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANALYSIS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANALYSIS_IDValue;
           set { SetProperty(ref  ANALYSIS_IDValue, value); }
         } 
 private  System.String ANL_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_SOURCE
         {  
             get  

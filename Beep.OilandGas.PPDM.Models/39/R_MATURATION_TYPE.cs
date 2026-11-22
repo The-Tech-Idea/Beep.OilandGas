@@ -9,6 +9,7 @@ public partial class R_MATURATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MATURATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MATURATION_TYPE
         {  
             get  

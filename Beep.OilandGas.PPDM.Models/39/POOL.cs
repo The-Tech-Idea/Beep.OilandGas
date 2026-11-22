@@ -9,6 +9,7 @@ public partial class POOL: Entity,IPPDMEntity
 {
 
 private  System.String POOL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_ID
         {  
             get  

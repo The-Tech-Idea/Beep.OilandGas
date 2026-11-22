@@ -9,6 +9,7 @@ public partial class RM_DATA_STORE_STRUCTURE: Entity,IPPDMEntity
 {
 
 private  System.String STORE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STORE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STORE_IDValue;
           set { SetProperty(ref  STORE_IDValue, value); }
         } 
 private  System.Decimal STRUCTURE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STRUCTURE_OBS_NO
         {  
             get  

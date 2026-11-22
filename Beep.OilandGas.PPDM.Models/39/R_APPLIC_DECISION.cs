@@ -9,6 +9,7 @@ public partial class R_APPLIC_DECISION: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_DECISIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_DECISION
         {  
             get  

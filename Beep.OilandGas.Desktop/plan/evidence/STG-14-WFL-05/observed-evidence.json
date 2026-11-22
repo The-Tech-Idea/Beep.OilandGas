@@ -1,0 +1,48 @@
+{
+  "id": "STG-14/WFL-05",
+  "title": "Task inbox",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: a missing deadline is unscheduled, an unconfirmed timestamp is never overdue, every tab's count matches its grid, a missing source record is a broken link, a newer load discards the earlier one, and a deadline is shown in UTC and the company zone. The inbox also consumes the LSE-03 expiring-lease tasks, closing LSE-03 AC-3.",
+  "dataModel": {
+    "table": "CROSS_PERSONA_TASK (LifeCycle-owned) gained DUE_CONFIRMED_IND: 'Y' only when the deadline's zone is confirmed. Everything else (persona, role, state, entity, route) already existed.",
+    "leaseProjection": "The expiring-lease tasks are not copied into CROSS_PERSONA_TASK; the inbox merges the LSE-03 projection at read time, so the lease set stays owned by LeaseAcquisition and no second copy can drift."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Workflow/OgTaskInbox.cs (OgTaskTab, OgTask, OgTaskCounts, OgTaskInboxSnapshot, IOgTaskInbox, OgTaskInboxService.MapTask/Count/Filter/DueText/ResolveZone)",
+    "page": "src/Beep.OilandGas.Desktop/Views/TaskInboxPageView.cs (route 'tasks', replacing the placeholder: queue tabs, grid, detail, open source, broken-link refusal)",
+    "wiring": "OgBootstrapper (IOgTaskInbox), OgApplication.TaskInbox, existing catalog 'tasks' entry (OgModuleKeys.Core), OgPageFactory, existing en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/TaskInboxTests.cs (7, no database) + TaskInboxGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 682, "passed": 682, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 18, "passed": 18, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 42, "views-constructed": true, "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with CROSS_PERSONA_TASK and the lease tables, seeded in TaskInboxGatewayTests",
+    "persona": "T-5 is assigned to Driller and is absent from the Accountant inbox; T-1..T-4 are present",
+    "ac1_unscheduled": "T-2 has no deadline, is in the Unscheduled tab, and the counts are Today 0 / Overdue 1 / Unscheduled 1 / All 5 / Broken 1",
+    "ac2_unconfirmed": "T-3 has a past timestamp with DUE_CONFIRMED_IND='N': it is not in Overdue, is flagged Unconfirmed, and its DueText says 'time zone unconfirmed'",
+    "ac3_counts": "the Overdue tab grid is exactly T-1 and its count is 1; Unscheduled is exactly T-2; every tab predicate is the same one Count uses",
+    "ac4_broken": "T-4 names a LEASE_ACQUISITION id that does not exist: SourceExists=false and BrokenText says 'source record not found'",
+    "ac5_persona": "TaskInboxTests starts two loads: the first version is not current and is discarded; the page checks IsCurrent after the await before rendering",
+    "ac6_zone": "a confirmed deadline renders '2026-06-01 09:00 UTC (2026-06-01 12:00 CompanyZone)' with a custom company zone",
+    "lse03_ac3": "the lease L-1 expiry 2026-07-15 is merged as a LEASE_EXPIRY task with route 'leasefinancials', source exists, so the LSE-03 expiring set is consumed by the inbox"
+  },
+  "gates": {
+    "AC-1 A missing deadline appears as unscheduled, never overdue": "pass - OgTask.Unscheduled and the Unscheduled filter; the unit and SQLite tests both prove a null DUE_DATE is unscheduled and absent from Overdue.",
+    "AC-2 A timestamp without a confirmed zone is not counted as overdue": "pass - DUE_CONFIRMED_IND gates the overdue predicate; an unconfirmed past timestamp is shown with the warning and is absent from Overdue.",
+    "AC-3 Counts per tab match the filtered grid": "pass - Count and Filter use the same predicates; the unit test asserts every tab's count equals its grid and the SQLite test checks Overdue and Unscheduled.",
+    "AC-4 A source record that cannot be found is visible as a broken link": "pass - a task whose ENTITY_TYPE is LEASE_ACQUISITION is checked against the acquisition table; a missing id is SourceExists=false, BrokenText is set, and Open source refuses to follow it.",
+    "AC-5 A persona change reloads the inbox and discards late responses": "pass - each load takes a version from BeginLoad and the page checks IsCurrent after the await; a newer load makes the earlier version stale and its result is not rendered.",
+    "AC-6 Display shows both UTC and the company zone": "pass - a confirmed deadline is formatted as UTC plus the session TimeZoneId; the page passes OgSession.TimeZoneId."
+  },
+  "limits": [
+    "The task inbox page exists at route 'tasks', but the persona landing map is unchanged: WFL-05's 'default landing for every persona' is not switched, because that is FND-07's landing policy and would change the audited landing for every persona.",
+    "Process tasks are read from CROSS_PERSONA_TASK; the process engine that writes them (WFL-03/WFL-04) is a separate feature and is not built here. A task with an unknown ENTITY_TYPE is not marked broken because the inbox cannot check that type.",
+    "Bulk 'mark read' is not implemented: CROSS_PERSONA_TASK has no read flag and WFL-05's acceptance criteria do not require it; 'Open source' is the action.",
+    "The DUE_CONFIRMED_IND column is new: an existing database needs the LIFECYCLE module applied again (or an explicit column migration) to gain it.",
+    "The field filter applies to the lease tasks (the lease read is field-scoped); process tasks carry no field column, so they are not filtered by field."
+  ]
+}

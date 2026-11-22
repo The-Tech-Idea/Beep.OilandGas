@@ -9,6 +9,7 @@ public partial class RA_VOLUME_FRACTION: Entity,IPPDMEntity
 {
 
 private  System.String VOLUME_FRACTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_FRACTION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VOLUME_FRACTION_TYPEValue;
           set { SetProperty(ref  VOLUME_FRACTION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

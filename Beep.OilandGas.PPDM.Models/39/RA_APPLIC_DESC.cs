@@ -9,6 +9,7 @@ public partial class RA_APPLIC_DESC: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String APPLICATION_TYPEValue;
           set { SetProperty(ref  APPLICATION_TYPEValue, value); }
         } 
 private  System.String APPLIC_DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLIC_DESC_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String APPLIC_DESC_TYPEValue;
           set { SetProperty(ref  APPLIC_DESC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

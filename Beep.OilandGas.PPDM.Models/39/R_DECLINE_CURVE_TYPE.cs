@@ -9,6 +9,7 @@ public partial class R_DECLINE_CURVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DECLINE_CURVE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DECLINE_CURVE_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_SEIS_RECORD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RECORD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RECORD_TYPEValue;
           set { SetProperty(ref  RECORD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

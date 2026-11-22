@@ -9,6 +9,7 @@ public partial class PROD_LEASE_UNIT_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String LEASE_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEASE_UNIT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEASE_UNIT_IDValue;
           set { SetProperty(ref  LEASE_UNIT_IDValue, value); }
         } 
 private  System.String LEASE_UNIT_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEASE_UNIT_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LEASE_UNIT_SOURCEValue;
           set { SetProperty(ref  LEASE_UNIT_SOURCEValue, value); }
         } 
 private  System.String PROD_LEASE_UNIT_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROD_LEASE_UNIT_ALIAS_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PROD_LEASE_UNIT_ALIAS_IDValue;
           set { SetProperty(ref  PROD_LEASE_UNIT_ALIAS_IDValue, value); }
         } 
 private  System.String ALIAS_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_SOURCE
         {  
             get  

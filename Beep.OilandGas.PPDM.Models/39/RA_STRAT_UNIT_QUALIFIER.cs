@@ -9,6 +9,7 @@ public partial class RA_STRAT_UNIT_QUALIFIER: Entity,IPPDMEntity
 {
 
 private  System.String QUALIFIERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUALIFIER
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String QUALIFIERValue;
           set { SetProperty(ref  QUALIFIERValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

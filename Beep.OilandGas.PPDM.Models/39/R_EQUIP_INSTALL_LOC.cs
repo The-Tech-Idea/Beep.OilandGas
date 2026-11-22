@@ -9,6 +9,7 @@ public partial class R_EQUIP_INSTALL_LOC: Entity,IPPDMEntity
 {
 
 private  System.String INSTALL_LOC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTALL_LOC_TYPE
         {  
             get  

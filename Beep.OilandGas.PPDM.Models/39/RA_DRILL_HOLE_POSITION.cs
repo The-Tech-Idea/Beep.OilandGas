@@ -9,6 +9,7 @@ public partial class RA_DRILL_HOLE_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String DRILL_HOLE_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILL_HOLE_POSITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DRILL_HOLE_POSITIONValue;
           set { SetProperty(ref  DRILL_HOLE_POSITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

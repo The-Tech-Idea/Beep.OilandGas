@@ -1,0 +1,96 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TheTechIdea.Beep.OilandGas.Desktop.Data</RootNamespace>
+    <AssemblyName>TheTechIdea.Beep.OilandGas.Desktop.Data</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Core\Beep.OilandGas.Desktop.Core.csproj" />
+    <!--
+      DAT-02: the owning project now builds (the HSE count rule was implemented), so the module-setup
+      services are referenced. See Setup/OgModuleSetupRunner.cs and Setup/OgSetupComposition.cs.
+    -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.ChokeAnalysis\Beep.OilandGas.ChokeAnalysis.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.CompressorAnalysis\Beep.OilandGas.CompressorAnalysis.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.Decommissioning\Beep.OilandGas.Decommissioning.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.DevelopmentPlanning\Beep.OilandGas.DevelopmentPlanning.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.DrillingAndConstruction\Beep.OilandGas.DrillingAndConstruction.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.EconomicAnalysis\Beep.OilandGas.EconomicAnalysis.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.EnhancedRecovery\Beep.OilandGas.EnhancedRecovery.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.FlashCalculations\Beep.OilandGas.FlashCalculations.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.GasLift\Beep.OilandGas.GasLift.csproj" />
+    <ProjectReference Include="..\..\..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
+    <ProjectReference Include="..\..\..\Beep.OilandGas.OilProperties\Beep.OilandGas.OilProperties.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.HSE\Beep.OilandGas.HSE.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.LeaseAcquisition\Beep.OilandGas.LeaseAcquisition.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.LifeCycle\Beep.OilandGas.LifeCycle.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.NodalAnalysis\Beep.OilandGas.NodalAnalysis.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.PermitsAndApplications\Beep.OilandGas.PermitsAndApplications.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.ProductionForecasting\Beep.OilandGas.ProductionForecasting.csproj" />
+    <!-- RES-06: the sibling tools checkout's DeclineFitter is the independent cross-check, not a duplicate engine. -->
+    <!-- DEC-02: the owner's permanent-abandonment barrier template, so the required barrier set is read from it. -->
+    <!-- VSB-03: the document, depth track and interval track a database well is drawn with. -->
+    <!-- ENG-03: the multi-finger caliper interpretation, the corroded-pipe re-rating and the LAS reader that
+         supplies the caliper curves. -->
+    <!-- ENG-06: the well plan, its minimum-curvature stations and the drilling settings. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Drilling\TheTechIdea.OilGas.Drilling.csproj" />
+
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Integrity\TheTechIdea.OilGas.Integrity.csproj" />
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Wellbore.Loaders\TheTechIdea.OilGas.Wellbore.Loaders.csproj" />
+    <!-- INT-05: the customer setup engine, its data-source plugins and the country presets. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Wellbore.Setup\TheTechIdea.OilGas.Wellbore.Setup.csproj" />
+    <!-- INT-06: the well-reconciliation proposals the field QC shows. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.DataAI\TheTechIdea.OilGas.DataAI.csproj" />
+    <!-- INT-07: the mapping engine - well maps, gridding, contouring, projections and the exported map view. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Mapping\TheTechIdea.OilGas.Mapping.csproj" />
+    <!-- TRN-01: the scenario runner - exercises on well views, scoring, courses and the results ledger. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Training\TheTechIdea.OilGas.Training.csproj" />
+
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Wellbore\TheTechIdea.OilGas.Wellbore.csproj" />
+
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.WellSchematic\TheTechIdea.OilGas.WellSchematic.csproj" />
+
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Production\TheTechIdea.OilGas.Production.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.ProspectIdentification\Beep.OilandGas.ProspectIdentification.csproj" />
+    <!-- DAT-02: a module whose assembly must be discoverable by AddDiscoveredModuleSetups. -->
+    <ProjectReference Include="..\..\..\Beep.OilandGas.UserManagement\Beep.OilandGas.UserManagement.csproj" />
+  </ItemGroup>
+
+  <!--
+    DAT-01. These two PackageReferences are rewritten to source ProjectReferences by the repository's
+    Directory.Build.targets (UseBeepDMSource=true), which is how every project in this repo consumes
+    BeepDM and how BEEP_SECURE_CONNECTIONS is defined.
+  -->
+  <ItemGroup>
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" />
+    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- A packaged local driver, so the driver catalog has something to discover on a fresh install. -->
+    <ProjectReference Include="..\..\..\..\BeepDataSources\DataSourcesPluginsCore\SqliteDatasourceCore\SqliteDatasourceCore.csproj"
+                      AdditionalProperties="GeneratePackageOnBuild=false" />
+  </ItemGroup>
+
+</Project>

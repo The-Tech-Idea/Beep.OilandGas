@@ -9,6 +9,7 @@ public partial class STRAT_COLUMN_XREF: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_COLUMN_ID_1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_COLUMN_ID_1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_COLUMN_ID_1Value;
           set { SetProperty(ref  STRAT_COLUMN_ID_1Value, value); }
         } 
 private  System.String STRAT_COLUMN_SOURCE_1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_COLUMN_SOURCE_1
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_COLUMN_SOURCE_1Value;
           set { SetProperty(ref  STRAT_COLUMN_SOURCE_1Value, value); }
         } 
 private  System.String STRAT_COLUMN_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_COLUMN_ID_2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String STRAT_COLUMN_ID_2Value;
           set { SetProperty(ref  STRAT_COLUMN_ID_2Value, value); }
         } 
 private  System.String STRAT_COLUMN_SOURCE_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_COLUMN_SOURCE_2
         {  
             get  

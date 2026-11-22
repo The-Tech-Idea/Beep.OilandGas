@@ -9,6 +9,7 @@ public partial class RA_RESENT_VOL_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String VOLUME_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VOLUME_METHODValue;
           set { SetProperty(ref  VOLUME_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

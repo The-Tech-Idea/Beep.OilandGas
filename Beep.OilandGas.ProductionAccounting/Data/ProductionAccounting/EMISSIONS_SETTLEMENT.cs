@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class EMISSIONS_SETTLEMENT : ModelEntityBase
     {
         private string EMISSIONS_SETTLEMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string EMISSIONS_SETTLEMENT_ID
         {
             get { return this.EMISSIONS_SETTLEMENT_IDValue; }

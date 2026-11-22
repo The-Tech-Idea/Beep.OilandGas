@@ -9,6 +9,7 @@ public partial class R_PAY_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String PAY_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAY_METHOD
         {  
             get  

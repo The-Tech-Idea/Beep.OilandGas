@@ -9,6 +9,7 @@ public partial class RA_SF_ROAD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ROAD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROAD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ROAD_TYPEValue;
           set { SetProperty(ref  ROAD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

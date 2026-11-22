@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class TRACT_ALLOCATION_DATA : ModelEntityBase {
         private System.String TRACT_ALLOCATION_DATA_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String TRACT_ALLOCATION_DATA_ID
         {
             get { return this.TRACT_ALLOCATION_DATA_IDValue; }

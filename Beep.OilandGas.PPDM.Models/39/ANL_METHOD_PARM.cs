@@ -9,6 +9,7 @@ public partial class ANL_METHOD_PARM: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METHOD_SET_IDValue;
           set { SetProperty(ref  METHOD_SET_IDValue, value); }
         } 
 private  System.String METHOD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String METHOD_IDValue;
           set { SetProperty(ref  METHOD_IDValue, value); }
         } 
 private  System.String PARAMETER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PARAMETER_TYPEValue;
           set { SetProperty(ref  PARAMETER_TYPEValue, value); }
         } 
 private  System.Decimal METHOD_PARM_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal METHOD_PARM_OBS_NO
         {  
             get  

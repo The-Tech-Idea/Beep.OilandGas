@@ -9,6 +9,7 @@ public partial class R_FACILITY_SPEC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SPEC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_TYPE
         {  
             get  

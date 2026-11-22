@@ -9,6 +9,7 @@ public partial class CLASS_SYSTEM_XREF: Entity,IPPDMEntity
 {
 
 private  System.String CLASSIFICATION_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLASSIFICATION_SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CLASSIFICATION_SYSTEM_IDValue;
           set { SetProperty(ref  CLASSIFICATION_SYSTEM_IDValue, value); }
         } 
 private  System.String CLASSIFICATION_SYSTEM_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLASSIFICATION_SYSTEM_ID2
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CLASSIFICATION_SYSTEM_ID2Value;
           set { SetProperty(ref  CLASSIFICATION_SYSTEM_ID2Value, value); }
         } 
 private  System.String EQUIV_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIV_ID
         {  
             get  

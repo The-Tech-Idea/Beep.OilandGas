@@ -9,6 +9,7 @@ public partial class R_SF_PAD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAD_TYPE
         {  
             get  

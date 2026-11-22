@@ -9,6 +9,7 @@ public partial class R_CONT_VOTE_RESPONSE: Entity,IPPDMEntity
 {
 
 private  System.String VOTE_RESPONSEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOTE_RESPONSE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_COMPLETION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COMPLETION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPLETION_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_MATURITY_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String MATURITY_METHOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MATURITY_METHOD_TYPE
         {  
             get  

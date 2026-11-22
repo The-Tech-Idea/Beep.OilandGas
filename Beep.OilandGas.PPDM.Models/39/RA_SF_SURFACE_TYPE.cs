@@ -9,6 +9,7 @@ public partial class RA_SF_SURFACE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SURFACE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SURFACE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SURFACE_TYPEValue;
           set { SetProperty(ref  SURFACE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

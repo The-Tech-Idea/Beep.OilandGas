@@ -9,6 +9,7 @@ public partial class RA_PPDM_DEFAULT_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String DEFAULT_VALUE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEFAULT_VALUE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DEFAULT_VALUE_METHODValue;
           set { SetProperty(ref  DEFAULT_VALUE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

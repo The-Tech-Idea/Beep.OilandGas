@@ -1,0 +1,25 @@
+{
+  "id": "ADR-003",
+  "title": "net10.0-windows consumes net9.0-windows and net9.0 assets",
+  "date": "2026-11-05",
+  "sdk": "10.0.403",
+  "probe": {
+    "location": "%TEMP%\\opencode\\adr003",
+    "targetFramework": "net10.0-windows",
+    "useWpf": true,
+    "referenced": "Beep.WPF/TheTechIdea.Beep.WPF.Controls (net9.0-windows)",
+    "source": "typeof(TheTechIdea.Beep.WPF.Controls.Styling.BeepControlStyle) + BeepControlStyle.Material3",
+    "result": "Build succeeded. 0 Warning(s) 0 Error(s) on the incremental build"
+  },
+  "findings": [
+    "The reference resolves; no NU1201 and no NETSDK1138.",
+    "BeepControlStyle lives in TheTechIdea.Beep.WPF.Controls.Styling, not the root namespace.",
+    "A clean build of the reference chain raises 9278 CA1416 warnings from TheTechIdea.Beep.Vis.Modules (WinForms theme code), not from our code."
+  ],
+  "decision": "Accepted — net10.0-windows for WPF projects, net10.0 for Core and Data.",
+  "requiredFollowUp": "Set NoWarn=CA1416 only on the project that references the controls library, with a comment naming the owner, before FND-04 wires BeepChrome. Keep CA1416 enabled everywhere else.",
+  "limits": [
+    "The probe compiles a type reference; it does not instantiate a control or apply a skin at runtime.",
+    "The 9278-warning count comes from a clean build of the sibling project on this machine; it may differ with another SDK."
+  ]
+}

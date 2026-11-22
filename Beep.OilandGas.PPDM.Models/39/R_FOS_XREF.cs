@@ -9,6 +9,7 @@ public partial class R_FOS_XREF: Entity,IPPDMEntity
 {
 
 private  System.String FOSSIL_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_XREF_TYPE
         {  
             get  

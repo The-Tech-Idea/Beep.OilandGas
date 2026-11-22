@@ -9,6 +9,7 @@ public partial class RA_PPDM_BOOLEAN_RULE: Entity,IPPDMEntity
 {
 
 private  System.String BOOLEAN_RULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BOOLEAN_RULE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BOOLEAN_RULEValue;
           set { SetProperty(ref  BOOLEAN_RULEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

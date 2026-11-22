@@ -9,6 +9,7 @@ public partial class R_INPUT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INPUT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INPUT_TYPE
         {  
             get  

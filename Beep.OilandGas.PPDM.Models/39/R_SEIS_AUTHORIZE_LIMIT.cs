@@ -9,6 +9,7 @@ public partial class R_SEIS_AUTHORIZE_LIMIT: Entity,IPPDMEntity
 {
 
 private  System.String LIMIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LIMIT_TYPE
         {  
             get  

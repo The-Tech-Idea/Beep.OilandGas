@@ -9,6 +9,7 @@ public partial class ECOZONE_SET_PART: Entity,IPPDMEntity
 {
 
 private  System.String ECOZONE_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECOZONE_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ECOZONE_SET_IDValue;
           set { SetProperty(ref  ECOZONE_SET_IDValue, value); }
         } 
 private  System.String ECOZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECOZONE_ID
         {  
             get  

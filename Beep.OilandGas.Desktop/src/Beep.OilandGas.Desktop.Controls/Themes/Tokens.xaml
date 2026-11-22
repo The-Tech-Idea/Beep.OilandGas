@@ -1,0 +1,63 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        The only place a colour, size or duration is written down.
+
+        Every view and control binds with DynamicResource to one of these keys. A guard test fails the
+        build when a XAML file outside this dictionary contains a literal colour.
+
+        Names follow the Beep design-system vocabulary so the same set can later be produced by
+        BeepChrome / the BrandingConfig mapper without touching a view.
+    -->
+
+    <!-- Surfaces -->
+    <SolidColorBrush x:Key="BeepBackgroundBrush" Color="#F4F6F8" />
+    <SolidColorBrush x:Key="BeepSurfaceBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="BeepSurfaceAltBrush" Color="#EDF1F5" />
+    <SolidColorBrush x:Key="BeepBorderBrush" Color="#D3DAE3" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="BeepTextPrimaryBrush" Color="#16202B" />
+    <SolidColorBrush x:Key="BeepTextSecondaryBrush" Color="#5A6775" />
+    <SolidColorBrush x:Key="BeepTextOnAccentBrush" Color="#FFFFFF" />
+
+    <!-- Accent and status -->
+    <SolidColorBrush x:Key="BeepAccentBrush" Color="#0B6E4F" />
+    <SolidColorBrush x:Key="BeepOnAccentBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="BeepSuccessBrush" Color="#1E7A45" />
+    <SolidColorBrush x:Key="BeepWarningBrush" Color="#B26A00" />
+    <SolidColorBrush x:Key="BeepDangerBrush" Color="#B3261E" />
+    <SolidColorBrush x:Key="BeepInfoBrush" Color="#1A5FB4" />
+
+    <!-- Tinted backgrounds for state presenters and toasts -->
+    <SolidColorBrush x:Key="BeepSuccessSurfaceBrush" Color="#E7F5EC" />
+    <SolidColorBrush x:Key="BeepWarningSurfaceBrush" Color="#FFF4E0" />
+    <SolidColorBrush x:Key="BeepDangerSurfaceBrush" Color="#FCE9E7" />
+    <SolidColorBrush x:Key="BeepInfoSurfaceBrush" Color="#E7F0FB" />
+
+    <!-- Charts -->
+    <SolidColorBrush x:Key="BeepChartBrush1" Color="#0B6E4F" />
+    <SolidColorBrush x:Key="BeepChartBrush2" Color="#1A5FB4" />
+    <SolidColorBrush x:Key="BeepChartBrush3" Color="#B26A00" />
+    <SolidColorBrush x:Key="BeepChartBrush4" Color="#B3261E" />
+    <SolidColorBrush x:Key="BeepChartBrush5" Color="#6A3DA1" />
+    <SolidColorBrush x:Key="BeepChartBrush6" Color="#0F7B8A" />
+    <SolidColorBrush x:Key="BeepChartBrush7" Color="#8A6D3B" />
+    <SolidColorBrush x:Key="BeepChartBrush8" Color="#4C6272" />
+
+    <!-- Typography -->
+    <FontFamily x:Key="BeepBodyFontFamily">Segoe UI</FontFamily>
+    <FontFamily x:Key="BeepMonoFontFamily">Consolas</FontFamily>
+    <system:Double x:Key="BeepTitleFontSize" xmlns:system="clr-namespace:System;assembly=System.Runtime">20</system:Double>
+    <system:Double x:Key="BeepHeadingFontSize" xmlns:system="clr-namespace:System;assembly=System.Runtime">15</system:Double>
+    <system:Double x:Key="BeepBodyFontSize" xmlns:system="clr-namespace:System;assembly=System.Runtime">13</system:Double>
+    <system:Double x:Key="BeepCaptionFontSize" xmlns:system="clr-namespace:System;assembly=System.Runtime">11.5</system:Double>
+
+    <!-- Spacing and geometry -->
+    <system:Double x:Key="BeepSpacingS" xmlns:system="clr-namespace:System;assembly=System.Runtime">4</system:Double>
+    <system:Double x:Key="BeepSpacingM" xmlns:system="clr-namespace:System;assembly=System.Runtime">8</system:Double>
+    <system:Double x:Key="BeepSpacingL" xmlns:system="clr-namespace:System;assembly=System.Runtime">16</system:Double>
+    <CornerRadius x:Key="BeepCornerRadius">6</CornerRadius>
+
+</ResourceDictionary>

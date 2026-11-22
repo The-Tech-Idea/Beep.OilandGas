@@ -9,6 +9,7 @@ public partial class ECOZONE_HIERARCHY: Entity,IPPDMEntity
 {
 
 private  System.String ECOZONE_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECOZONE_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ECOZONE_SET_IDValue;
           set { SetProperty(ref  ECOZONE_SET_IDValue, value); }
         } 
 private  System.String PARENT_ECOZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARENT_ECOZONE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PARENT_ECOZONE_IDValue;
           set { SetProperty(ref  PARENT_ECOZONE_IDValue, value); }
         } 
 private  System.String CHILD_ECOZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHILD_ECOZONE_ID
         {  
             get  

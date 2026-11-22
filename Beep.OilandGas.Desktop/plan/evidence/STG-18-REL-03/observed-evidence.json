@@ -1,0 +1,65 @@
+{
+  "id": "STG-18/REL-03",
+  "title": "Accessibility and keyboard -- the skin contrast failure closed",
+  "date": "2026-11-09",
+  "status": "gate met for what a build can prove - AC-3 now passes with numbers: the contrast guard darkens only the colours that fail and the smoke run audits all 66 skins with 0 failures. AC-1, AC-4, AC-5 and AC-7 are unchanged and pass; AC-2 (focus visible) and AC-6 (200 % scaling) are met as far as a build can show and the display observations remain the owner's.",
+  "whatChanged": {
+    "theFailure": "The smoke run applied all 66 control-library skins and every one failed a contrast pair: #F9AB00 (the library's amber) on #FFFBFE (its surface) = 1.89:1 where 3:1 is required for a status colour used as text and component state. skin-contrast-failures: 66.",
+    "theCause": "The control library is a package, not source, and its semantic brushes are the same for every design system: the same amber, the same surface. The 66 failures were one palette defect counted 66 times, which the run proves - all 66 skins report the identical adjustment.",
+    "theFix": "OgSkins applies a skin and then enforces its palette: OgThemeContrast.Enforce moves only the colours that fail, as far as the threshold needs and no further, keeping the hue. The adjusted brushes go into one ResourceDictionary of the application's own that sits last in the merge chain, so a lookup finds them; it is cleared and rebuilt for each skin, and it is detached while the skin's own palette is read.",
+    "thePairRule": "A pair is the unit, not a foreground: white text on #F9AB00 cannot be lightened any further, so the accent is darkened under the label instead - the label stays white, the amber becomes #C48700 while white text needs 4.5:1, and a passing pair is left byte-identical."
+  },
+  "measurements": {
+    "before": { "skin-contrast-audited": 66, "skin-contrast-failures": 66, "skin-contrast-text-failures": 66, "skin-contrast-first-failure": "AntDesign: #F9AB00 on #FFFBFE = 1.89:1 (needs 3.0:1) FAIL" },
+    "after": { "skin-contrast-audited": 66, "skin-contrast-failures": 0, "skin-contrast-text-failures": 0, "skin-contrast-first-failure": "(none)", "skin-contrast-adjustments": "66 lines, one per skin, each naming the colour, its replacement, the ratio and the threshold" },
+    "adjustment": "#F9AB00 -> #C48700 on #FFFBFE (1.89:1, needs 3.0:1)",
+    "unchanged": { "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "accessibility-contrast": "tokens: AA pass over 9 pair(s)", "accessibility-contrast-adverse": "adverse: 3 failure(s) over 9 pair(s)" }
+  },
+  "implementation": {
+    "contrast": "src/Beep.OilandGas.Desktop.Core/OgContrast.cs: OgContrast.Ensure (bisection to the nearest colour that reaches a threshold, keeping the hue), OgContrast.EnsurePair (moves the foreground, or the background under it when the foreground has nowhere to go), OgContrast.Journal (the sentence the run prints), OgThemeContrast.Enforce (every audited pair of a skin, with the list of what it moved).",
+    "skins": "src/Beep.OilandGas.Desktop/Theme/OgSkins.cs: ReadPalette (one reader for the guard and the audit), EnforceContrast (called from Apply, before anything draws), LastContrastAdjustments, and a self-check line.",
+    "smoke": "src/Beep.OilandGas.Desktop/Headless/SmokeRunner.cs: the audit reads OgSkins.ReadPalette, so it measures what the guard wrote; it prints skin-contrast-failures-all and skin-contrast-adjustments so the record shows every failure or every colour moved.",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/AccessibilityTests.cs: two new tests - the adjustment moves a colour only as far as the threshold needs and leaves a passing one untouched; the guard closes every pair the audit fails, reports each colour it moved, keeps a passing palette byte-identical, and settles accent-on-accent as a pair."
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1514, "passed": 1514, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 102, "passed": 102, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 125, "skin-contrast-failures": 0, "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "gates": {
+    "AC-1 Every interactive control is reachable by Tab and has an accessible name": "pass, unchanged - the smoke run reports 0 unnamed and 0 untabbable across all declared pages.",
+    "AC-2 Focus is always visible": "pass in the build's part - the Skia host draws its own focus ring and every other control uses the library's focus visuals. Seeing it on a screen is the owner's observation.",
+    "AC-3 Contrast meets WCAG 2.2 AA in every skin": "pass - 66 skins audited, 0 failures, after the guard moved the one colour that failed; the palette the desktop draws its own chrome with already passed all nine of its pairs.",
+    "AC-4 No state is conveyed by colour alone": "pass, unchanged - status rows carry text and icon as well as colour.",
+    "AC-5 Charts and canvases expose a text summary": "pass, unchanged - the smoke run prints the chart's alternative text.",
+    "AC-6 200 % scaling causes no clipping": "not measured by a build - the layout has no fixed pixel widths for primary content, and the observation on a display remains the owner's.",
+    "AC-7 The command palette works without a mouse": "pass, unchanged."
+  },
+  "engineFindings": {
+    "theLibraryPaletteIsSkinIndependent": {
+      "where": "TheTechIdea.Beep.WPF.Controls, resolved through WpfThemesManager.ApplyStyle and read from BeepStyle*Brush",
+      "finding": "All 66 design systems resolve the same semantic colours: the same amber #F9AB00, the same near-white surface #FFFBFE. The design system changes templates, geometry and chrome, not the semantic palette.",
+      "handling": "Recorded, because it changes what the number means: 66 failures were one palette counted 66 times, and one correction fixes all 66. It also explains the earlier finding that switching to the High-Contrast skin left the desktop's tokens unchanged."
+    },
+    "theGuardFirstMeasuredItsOwnAnswer": {
+      "finding": "A first version wrote the adjusted colours into the application's own resource dictionary, which takes precedence over every merged dictionary. Switching skins then read the previous skin's adjustment, so every skin after the first audited one passing palette - 66 failures became 0 with nothing actually fixed, and the adjustments list was empty. A false pass.",
+      "handling": "The guard owns one dictionary that it clears and rebuilds for each skin, and it detaches that dictionary while it reads the skin's own palette. The smoke now prints the adjustments per skin, which is what exposed the first version: an empty list against 66 skins is not a fix."
+    },
+    "aPairCannotAlwaysBeFixedByItsForeground": {
+      "finding": "White on #C48700 is 3.08:1 where 4.5:1 is required, and white cannot be lightened. A foreground-only adjustment looped and returned the same failing colour.",
+      "handling": "EnsurePair moves the foreground first and, when it has nowhere to go, darkens the background under it. That is the standard remedy for a label on a coloured button, and the unit of the fix is the pair."
+    },
+    "theOrderOfAdjustmentMatters": {
+      "finding": "Settling the accent label before the accent itself measured the label against the original amber and then darkened the amber, leaving a pair that failed again.",
+      "handling": "The accent is settled first, then its label against the accent as it will finally be."
+    }
+  },
+  "limits": [
+    "The guard corrects the palette the application draws with; it does not change the control library, so another host using the library still gets the failing colours.",
+    "It moves the semantic colours only: surfaces, text, accent, danger, success and warning. Template colours inside a skin's control templates are not audited.",
+    "A 3:1 or 4.5:1 pass is a floor, not a design review: a colour can pass and still be a poor choice.",
+    "AC-2 and AC-6 are display observations. The build can show the focus ring exists and that the layout has no fixed widths for primary content; it cannot show a screen reader announcing a chart or a window at 200 %.",
+    "The smoke run audits the brushes as resources, not as rendered pixels: a skin that overrides a colour inside a control template would not be seen."
+  ]
+}

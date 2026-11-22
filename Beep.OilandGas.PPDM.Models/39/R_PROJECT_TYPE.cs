@@ -9,6 +9,7 @@ public partial class R_PROJECT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RESENT_VOL_REGIME: Entity,IPPDMEntity
 {
 
 private  System.String RESENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESENT_IDValue;
           set { SetProperty(ref  RESENT_IDValue, value); }
         } 
 private  System.String VOLUME_REGIME_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_REGIME_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String VOLUME_REGIME_IDValue;
           set { SetProperty(ref  VOLUME_REGIME_IDValue, value); }
         } 
 private  System.Decimal RESENT_REGIME_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal RESENT_REGIME_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_DATUM_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String DATUM_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATUM_ORIGIN
         {  
             get  

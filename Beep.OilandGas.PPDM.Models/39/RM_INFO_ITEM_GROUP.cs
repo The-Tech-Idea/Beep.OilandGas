@@ -9,6 +9,7 @@ public partial class RM_INFO_ITEM_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_INFO_ITEM_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_INFO_ITEM_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GROUP_INFO_ITEM_SUBTYPEValue;
           set { SetProperty(ref  GROUP_INFO_ITEM_SUBTYPEValue, value); }
         } 
 private  System.String GROUP_INFORMATION_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_INFORMATION_ITEM_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String GROUP_INFORMATION_ITEM_IDValue;
           set { SetProperty(ref  GROUP_INFORMATION_ITEM_IDValue, value); }
         } 
 private  System.String INFO_ITEM_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFO_ITEM_SUBTYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String INFO_ITEM_SUBTYPEValue;
           set { SetProperty(ref  INFO_ITEM_SUBTYPEValue, value); }
         } 
 private  System.String INFORMATION_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFORMATION_ITEM_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String INFORMATION_ITEM_IDValue;
           set { SetProperty(ref  INFORMATION_ITEM_IDValue, value); }
         } 
 private  System.Decimal GROUP_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal GROUP_OBS_NO
         {  
             get  

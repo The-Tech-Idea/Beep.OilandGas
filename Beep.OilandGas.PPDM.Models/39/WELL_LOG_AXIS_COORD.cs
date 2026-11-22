@@ -9,6 +9,7 @@ public partial class WELL_LOG_AXIS_COORD: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String CURVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CURVE_IDValue;
           set { SetProperty(ref  CURVE_IDValue, value); }
         } 
 private  System.String AXIS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AXIS_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String AXIS_IDValue;
           set { SetProperty(ref  AXIS_IDValue, value); }
         } 
 private  System.Decimal COORDINATE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COORDINATE_SEQ_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class LAND_TERMINATION: Entity,IPPDMEntity
 {
 
 private  System.String LR_TERMINATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LR_TERMINATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LR_TERMINATION_IDValue;
           set { SetProperty(ref  LR_TERMINATION_IDValue, value); }
         } 
 private  System.Decimal LR_TERMINATION_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal LR_TERMINATION_SEQ_NO
         {  
             get  

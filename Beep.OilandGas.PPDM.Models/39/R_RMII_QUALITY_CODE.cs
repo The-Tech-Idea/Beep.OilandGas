@@ -9,6 +9,7 @@ public partial class R_RMII_QUALITY_CODE: Entity,IPPDMEntity
 {
 
 private  System.String INFORMATION_QUALITY_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFORMATION_QUALITY_CODE
         {  
             get  

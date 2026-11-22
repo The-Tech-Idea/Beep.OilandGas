@@ -9,6 +9,7 @@ public partial class RA_PPDM_RULE_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String RULE_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RULE_STATUSValue;
           set { SetProperty(ref  RULE_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

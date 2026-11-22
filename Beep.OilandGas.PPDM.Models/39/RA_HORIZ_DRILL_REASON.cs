@@ -9,6 +9,7 @@ public partial class RA_HORIZ_DRILL_REASON: Entity,IPPDMEntity
 {
 
 private  System.String HORIZ_DRILL_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HORIZ_DRILL_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HORIZ_DRILL_REASONValue;
           set { SetProperty(ref  HORIZ_DRILL_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

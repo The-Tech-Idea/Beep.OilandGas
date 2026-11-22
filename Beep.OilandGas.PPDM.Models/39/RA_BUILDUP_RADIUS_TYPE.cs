@@ -9,6 +9,7 @@ public partial class RA_BUILDUP_RADIUS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BUILDUP_RADIUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUILDUP_RADIUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUILDUP_RADIUSValue;
           set { SetProperty(ref  BUILDUP_RADIUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

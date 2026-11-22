@@ -9,6 +9,7 @@ public partial class RA_ROLL_ALONG_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ROLL_ALONG_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROLL_ALONG_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ROLL_ALONG_METHODValue;
           set { SetProperty(ref  ROLL_ALONG_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

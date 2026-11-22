@@ -9,6 +9,7 @@ public partial class R_CURVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CURVE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_TYPE
         {  
             get  

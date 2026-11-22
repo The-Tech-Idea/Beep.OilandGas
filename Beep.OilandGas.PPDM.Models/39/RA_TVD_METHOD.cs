@@ -9,6 +9,7 @@ public partial class RA_TVD_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String TVD_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TVD_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TVD_METHODValue;
           set { SetProperty(ref  TVD_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RM_WELL_LOG: Entity,IPPDMEntity
 {
 
 private  System.String INFO_ITEM_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFO_ITEM_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INFO_ITEM_SUBTYPEValue;
           set { SetProperty(ref  INFO_ITEM_SUBTYPEValue, value); }
         } 
 private  System.String INFORMATION_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFORMATION_ITEM_ID
         {  
             get  

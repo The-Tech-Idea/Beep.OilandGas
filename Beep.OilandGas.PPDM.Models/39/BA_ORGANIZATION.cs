@@ -9,6 +9,7 @@ public partial class BA_ORGANIZATION: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.String ORGANIZATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ORGANIZATION_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ORGANIZATION_IDValue;
           set { SetProperty(ref  ORGANIZATION_IDValue, value); }
         } 
 private  System.Decimal ORGANIZATION_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ORGANIZATION_SEQ_NO
         {  
             get  

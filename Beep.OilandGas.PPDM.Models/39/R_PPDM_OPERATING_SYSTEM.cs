@@ -9,6 +9,7 @@ public partial class R_PPDM_OPERATING_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String OPERATING_SYSTEMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OPERATING_SYSTEM
         {  
             get  

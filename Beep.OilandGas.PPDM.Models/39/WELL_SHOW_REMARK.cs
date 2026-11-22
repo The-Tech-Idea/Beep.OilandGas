@@ -9,6 +9,7 @@ public partial class WELL_SHOW_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SHOW_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SHOW_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SHOW_SOURCEValue;
           set { SetProperty(ref  SHOW_SOURCEValue, value); }
         } 
 private  System.String SHOW_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SHOW_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SHOW_TYPEValue;
           set { SetProperty(ref  SHOW_TYPEValue, value); }
         } 
 private  System.Decimal SHOW_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SHOW_OBS_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal SHOW_OBS_NOValue;
           set { SetProperty(ref  SHOW_OBS_NOValue, value); }
         } 
 private  System.Decimal REMARK_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_OBS_NO
         {  
             get  

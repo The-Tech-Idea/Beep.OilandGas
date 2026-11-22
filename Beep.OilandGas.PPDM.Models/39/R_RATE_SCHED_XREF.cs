@@ -9,6 +9,7 @@ public partial class R_RATE_SCHED_XREF: Entity,IPPDMEntity
 {
 
 private  System.String RATE_SCHEDULE_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_SCHEDULE_XREF_TYPE
         {  
             get  

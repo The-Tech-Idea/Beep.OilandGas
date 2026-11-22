@@ -9,6 +9,7 @@ public partial class R_PALEO_TYPE_FOSSIL: Entity,IPPDMEntity
 {
 
 private  System.String TYPE_FOSSIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TYPE_FOSSIL_TYPE
         {  
             get  

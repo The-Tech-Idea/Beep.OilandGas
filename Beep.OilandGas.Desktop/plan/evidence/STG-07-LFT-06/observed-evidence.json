@@ -1,0 +1,75 @@
+{
+  "id": "STG-07/LFT-06",
+  "title": "Hydraulic pumps",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a reference jet design reproduces the module's own M x N efficiency, computed independently from the design's reported numbers and agreeing to 1e-6; cavitation is reported with its available NPSH, its required NPSH and the margin between them; a clamped efficiency is a warning carrying both the raw and the clamped value rather than a silent answer; every finding states its severity and an error finding refuses the run and the save with the validator's own sentence; the nozzle, throat, piston and stroke sizes come from the module's standard sets; and a saved design records its kind and every input it was run with.",
+  "dataModel": {
+    "decision": "The HydraulicPumps entities in the models are calculation objects (well properties, jet and piston properties, jet and piston results) and none carries a key, so no design could persist; the only design-shaped type, HydraulicPumpDesign, holds a pump size and efficiency but none of the inputs AC-6 asks for. HYDRAULIC_PUMP_DESIGN was added with the kind, every well/jet/piston/power-fluid input, the result, the unclamped ratio, the cavitation index, the findings and the actor. The project also had no module setup at all, so HydraulicPumpModule was added.",
+    "tables": [
+      "HYDRAULIC_PUMP_DESIGN (DESIGN_ID key, WELL_UWI, DESIGN_DATE, KIND, the eleven well inputs, PUMP_DEPTH_FT, NOZZLE/THROAT/DIFFUSER/AREA_RATIO, PISTON/ROD/STROKE/SPM, POWER_FLUID pressure/rate/SG, PRODUCTION_RATE, TOTAL_FLOW_RATE, PRODUCTION_RATIO, PUMP_EFFICIENCY, SYSTEM_EFFICIENCY, RAW_SYSTEM_EFFICIENCY, POWER_FLUID_HORSEPOWER, HYDRAULIC_HORSEPOWER, intake/discharge pressure, PUMP_DISPLACEMENT, the four CAVITATION columns, FINDINGS_TEXT, WORST_SEVERITY, three unit columns, ACTOR, RECORDED_AT)",
+      "HYDRAULIC_PUMP_WELL_PROPERTIES, HYDRAULIC_JET_PUMP_PROPERTIES, HYDRAULIC_JET_PUMP_RESULT, HYDRAULIC_PISTON_PUMP_PROPERTIES, HYDRAULIC_PISTON_PUMP_RESULT - registered for the first time by the module"
+    ],
+    "registration": "HydraulicPumpModule (order 79, no seed: the sizes are HydraulicPumpConstants). --smoke now reports 32 modules and 406 entity types (up from 31 and 400): six entities, the new design table plus the five calculation types that were never registered.",
+    "engine": "HydraulicJetPumpCalculator.CalculatePerformance and HydraulicPistonPumpCalculator.CalculatePerformance for the result; HydraulicPumpCalculator.TryCalculateJetPumpPerformance for the unclamped jet efficiency; HydraulicPumpFindings for every severity and sentence; HydraulicPumpSharedCalculations for density, friction and discharge pressure."
+  },
+  "ownerAdditions": {
+    "findingsCatalog": "Beep.OilandGas.HydraulicPumps/Validation/HydraulicPumpFindings.cs - HydraulicPumpFindingSeverity (Info/Warning/Error), HydraulicPumpFinding, HydraulicPumpCavitationIndex and the evaluator. It is the list form of the validator: the same rules, in the same order, with the validator's own sentences, so a screen cannot paraphrase or invent a severity. The throwing HydraulicPumpValidator is untouched. A unit test asserts one finding's message equals the InvalidPumpPropertiesException message the validator throws for the same input.",
+    "unclampedEfficiency": "Beep.OilandGas.HydraulicPumps/Calculations/HydraulicPumpCalculator.cs - TryCalculateJetPumpPerformance added beside CalculateJetPumpPerformance, which is unchanged. It returns the raw M x N, the clamped value and the area ratio from the same expression, which is what AC-3 needs: the clamp is only visible when both numbers exist."
+  },
+  "engineDefects": {
+    "noted": [
+      {
+        "where": "Beep.OilandGas.HydraulicPumps/Services/HydraulicPumpService.Advanced.cs",
+        "finding": "AnalyzeJetPumpPerformanceAsync sets RecommendedNozzleSize = 0 with the comment 'Map R to nozzle OD in a future sizing pass; 0 = not sized here', and DesignHydraulicSystemAsync returns a fixed Efficiency = 0.30m, PumpType = \"JET\" and Status = \"DRAFT\" without sizing anything. Its status literals are \"JET\", \"DRAFT\", \"SUCCESS\" and \"WARNING_CAVITATION\", which the feature's open question already flags.",
+        "handling": "Not used. The screen calls the calculators and the findings catalog directly, and states its own kind constants in HydraulicPumpKinds. Nothing in the desktop repeats a \"JET\"/\"DRAFT\"/\"SUCCESS\" literal, so the open question is answered by not consuming that service rather than by mapping its strings."
+      },
+      {
+        "where": "Beep.OilandGas.HydraulicPumps/Calculations/HydraulicJetPumpCalculator.cs - CalculateProductionRate",
+        "finding": "The production rate is a screening expression (power-fluid rate x area ratio x density ratio x pressure differential / 100 x 0.6) with no jet-pump curve behind it, and the pump efficiency is the product of three clamped factors. Both are the module's own screening numbers, not a manufacturer's curve, so the screen labels the result as screening.",
+        "handling": "Reported, not changed: replacing the model would be inventing physics. The screen keeps the numbers, states the units, and prints the module's own efficiency minimum so a low value is visible (PUMP_EFFICIENCY_LOW)."
+      }
+    ]
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgHydraulicPump.cs (HydraulicPumpKinds, OgHydraulicFinding, OgHydraulicInputs, OgHydraulicDesign, OgHydraulicPending, OgHydraulicWorkspace, HydraulicRules, IOgHydraulicPump, OgHydraulicPumpService with DesignAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "refusal": "An error finding refuses the run before its numbers are presented (hydraulic-invalid-combination, the message listing each error with its severity and code), and SaveAsync refuses a design that carries one - the state table's 'invalid combination of nozzle/throat is refused by the validator'.",
+    "warnings": "Cavitation (the well's own condition), a clamped system efficiency and a pump efficiency under the module minimum are warnings: the design runs, the numbers are shown, and the finding says what happened.",
+    "rules": "HydraulicRules states the required inputs per kind (the jet needs its nozzle and throat, the piston its piston, rod, stroke and rate, both need the power fluid pressure, rate and gravity), the kind check and the refusal codes once.",
+    "page": "src/Beep.OilandGas.Desktop/Views/HydraulicPumpPageView.cs (route 'hydraulicpump': the well, pressure/temperature, fluid, jet, piston and power-fluid bars, the result with its efficiency and clamp line, the cavitation index line, the jet and piston detail, the findings panel and the saved designs)",
+    "wiring": "OgBootstrapper (IOgHydraulicPump), OgApplication.HydraulicPumps, catalog 'hydraulicpump' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HydraulicPumpTests.cs (10, no database) + HydraulicPumpGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1000, "passed": 1000, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 45, "passed": 45, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 69, "views-constructed": true, "modulesetup-summary": "32 module(s) - 406 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with HYDRAULIC_PUMP_DESIGN, seeded in HydraulicPumpGatewayTests",
+    "ac1_reference": "a 3,000 ft well with a 0.375 in nozzle and a 0.75 in throat at 3,000 psi power fluid and 600 bbl/d lifts 1,505.43 bbl/d; its M x N ratio is about 0.58, inside [0, 1]. The test computes the expected ratio from the design's own reported rate, intake, discharge and power-fluid pressure and compares it with the owner's TryCalculateJetPumpPerformance to 1e-6",
+    "ac2_cavitation": "a well at 40 psia bottom hole reports 39.74 psi available against the module's 50 psi required - a margin of -10.26 psi - with a CAVITATION_PREDICTED warning carrying all three numbers; the index agrees with the module's own CheckCavitation boolean, and a healthy well reports 'no cavitation'",
+    "ac3_clamped": "an 8,000 ft well at 4,000 psi power fluid pushes M x N above 1, so the design carries a JET_EFFICIENCY_CLAMPED warning naming both the raw and the clamped value, and the stored row records FINDINGS_TEXT and WORST_SEVERITY = 'WARNING'",
+    "ac4_findings": "0.75 in nozzle against a 0.5 in throat is refused with hydraulic-invalid-combination and the message 'error nozzle_not_less_than_throat: Nozzle diameter must be less than throat diameter.'; a narrow nozzle that lifts at 0.29 efficiency carries a PUMP_EFFICIENCY_LOW warning (not blocking) and the design is saveable",
+    "ac5_sizes": "an off-list nozzle (0.3 in), throat (0.7 in), piston (2.1 in) or stroke (20 in) is refused with its own code naming the standard set; the workspace offers exactly HydraulicPumpConstants' four lists",
+    "ac6_saved": "the stored row asserts KIND, all eleven well inputs, the nozzle/throat/diffuser, the power fluid pressure/rate/SG, the three unit columns, the cavitation requirement and the actor; a piston design stores KIND='PISTON' with NULL nozzle and throat, and the reload returns the same inputs and result",
+    "lost_acknowledgement": "dropping the table makes the save fail with the design retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping HYDRAULIC_PUMP_DESIGN makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A reference jet design reproduces the expected efficiency within tolerance": "pass - the expected efficiency is the module's M x N, recomputed in the test from the design's own reported numbers, and it agrees with the owner's TryCalculateJetPumpPerformance to 1e-6; the same design's production ratio asserted equal to the stored PRODUCTION_RATIO.",
+    "AC-2 Cavitation is reported with its index and threshold": "pass - HydraulicPumpFindings.Cavitation returns available, required, margin and risk; the page prints all three numbers with the unit, and the warning repeats them; the index agrees with the module's own CheckCavitation.",
+    "AC-3 A clamped efficiency is surfaced as a finding, not shown silently": "pass - TryCalculateJetPumpPerformance exposes the raw ratio beside the clamped one, the design compares them, and a clamp raises JET_EFFICIENCY_CLAMPED with both values; the raw and clamped numbers are also stored on the row.",
+    "AC-4 Validator findings are listed with severity": "pass - HydraulicPumpFindings evaluates the validator's rules and returns each with Info/Warning/Error; a unit test asserts the finding's sentence equals the InvalidPumpPropertiesException the validator throws; error findings refuse the run and the save, warnings are listed and stored.",
+    "AC-5 Nozzle and throat sizes come from the standard set": "pass - the service refuses any nozzle, throat, piston or stroke outside HydraulicPumpConstants, naming the set; the page binds the workspace's lists and a source guard asserts it holds no size literal.",
+    "AC-6 A saved design records the type and all inputs": "pass - KIND plus every input column is written and asserted in SQL, and the reload returns the same kind, inputs and result for both a jet and a piston design."
+  },
+  "limits": [
+    "The jet production rate and efficiency are the module's screening expressions, not a manufacturer's jet-pump curve: there is no pump catalogue in this repository, so the 'design' is a screening check of a chosen nozzle and throat rather than a selection from a catalogue.",
+    "The cavitation index uses the module's single required NPSH (50 psi, the value HydraulicPumpService.Advanced already uses) and the water vapour pressure at 60 degF (0.256 psia), because the module has no vapour-pressure correlation and the screen does not ask for one. Both are printed rather than assumed silently.",
+    "The jet area ratio the design reports comes from the module's own approximation (sqrt(N / (1.3 + N))) and is null when the power-fluid pressure is not above the discharge pressure, because the ratio is then undefined.",
+    "The piston path reports no production ratio (the module does not compute one) and no area ratio; its displacement and volumetric efficiency are the owner's.",
+    "The system tab (tubing friction, surface pressure requirement, system efficiency as a separate calculation) is not built as its own panel: the friction and discharge pressure are the owner's shared calculations and appear inside the result, but the screen does not break them out or add a surface-pressure requirement.",
+    "The feature's permissions (lift.hydraulic.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

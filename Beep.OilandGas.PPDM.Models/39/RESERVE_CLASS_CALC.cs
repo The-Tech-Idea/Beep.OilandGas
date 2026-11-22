@@ -9,6 +9,7 @@ public partial class RESERVE_CLASS_CALC: Entity,IPPDMEntity
 {
 
 private  System.String RESERVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESERVE_CLASS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESERVE_CLASS_IDValue;
           set { SetProperty(ref  RESERVE_CLASS_IDValue, value); }
         } 
 private  System.String FORMULA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FORMULA_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String FORMULA_IDValue;
           set { SetProperty(ref  FORMULA_IDValue, value); }
         } 
 private  System.Decimal CALCULATION_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal CALCULATION_SEQ_NO
         {  
             get  

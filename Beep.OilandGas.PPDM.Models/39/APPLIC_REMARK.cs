@@ -9,6 +9,7 @@ public partial class APPLIC_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String APPLICATION_IDValue;
           set { SetProperty(ref  APPLICATION_IDValue, value); }
         } 
 private  System.String REMARK_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_ID
         {  
             get  

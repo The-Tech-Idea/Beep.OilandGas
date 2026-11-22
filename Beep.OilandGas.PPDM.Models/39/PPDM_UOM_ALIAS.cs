@@ -9,6 +9,7 @@ public partial class PPDM_UOM_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String UOM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UOM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UOM_IDValue;
           set { SetProperty(ref  UOM_IDValue, value); }
         } 
 private  System.String UOM_SYNONYMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UOM_SYNONYM
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String UOM_SYNONYMValue;
           set { SetProperty(ref  UOM_SYNONYMValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

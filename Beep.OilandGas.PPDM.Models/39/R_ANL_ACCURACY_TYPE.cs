@@ -9,6 +9,7 @@ public partial class R_ANL_ACCURACY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACCURACY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCURACY_TYPE
         {  
             get  

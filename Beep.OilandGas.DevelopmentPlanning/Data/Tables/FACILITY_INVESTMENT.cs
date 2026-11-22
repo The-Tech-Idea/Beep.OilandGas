@@ -10,6 +10,7 @@ namespace Beep.OilandGas.Models.Data.DevelopmentPlanning
     public partial class FACILITY_INVESTMENT : ModelEntityBase
     {
         private System.String FACILITY_INV_IDValue = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String FACILITY_INV_ID
         {
             get { return this.FACILITY_INV_IDValue; }
@@ -117,6 +118,14 @@ namespace Beep.OilandGas.Models.Data.DevelopmentPlanning
         {
             get { return this.PLANNED_COMPLETION_DATEValue; }
             set { SetProperty(ref PLANNED_COMPLETION_DATEValue, value); }
+        }
+
+        private System.Int32 PLAN_VERSIONValue;
+        /// <summary>The development plan version this investment belongs to (DEV-04 AC-4).</summary>
+        public System.Int32 PLAN_VERSION
+        {
+            get { return this.PLAN_VERSIONValue; }
+            set { SetProperty(ref PLAN_VERSIONValue, value); }
         }
 
         public FACILITY_INVESTMENT() { }

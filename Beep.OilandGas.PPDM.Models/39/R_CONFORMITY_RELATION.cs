@@ -9,6 +9,7 @@ public partial class R_CONFORMITY_RELATION: Entity,IPPDMEntity
 {
 
 private  System.String CONFORMITY_RELATIONSHIPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONFORMITY_RELATIONSHIP
         {  
             get  

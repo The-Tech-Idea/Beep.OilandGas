@@ -9,6 +9,7 @@ public partial class R_SAMPLE_PREP_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String PREPARATION_CLASSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PREPARATION_CLASS
         {  
             get  

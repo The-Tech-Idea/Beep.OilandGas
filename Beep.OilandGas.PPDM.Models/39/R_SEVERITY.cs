@@ -9,6 +9,7 @@ public partial class R_SEVERITY: Entity,IPPDMEntity
 {
 
 private  System.String SEVERITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEVERITY
         {  
             get  

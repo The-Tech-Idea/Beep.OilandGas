@@ -9,6 +9,7 @@ public partial class RA_RMII_CONTACT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTACT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTACT_TYPEValue;
           set { SetProperty(ref  CONTACT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

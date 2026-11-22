@@ -9,6 +9,7 @@ public partial class PROJECT_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROJECT_IDValue;
           set { SetProperty(ref  PROJECT_IDValue, value); }
         } 
 private  System.Decimal CONDITION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal CONDITION_OBS_NO
         {  
             get  

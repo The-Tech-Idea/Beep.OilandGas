@@ -9,6 +9,7 @@ public partial class PPDM_RULE_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String RULE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RULE_IDValue;
           set { SetProperty(ref  RULE_IDValue, value); }
         } 
 private  System.String RULE_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_ALIAS_ID
         {  
             get  

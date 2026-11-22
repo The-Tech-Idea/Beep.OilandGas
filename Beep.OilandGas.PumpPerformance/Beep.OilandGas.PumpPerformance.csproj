@@ -27,6 +27,10 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
 		<ProjectReference Include="..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
+		<!-- LFT-03: the module registers its entity types, which needs the module-setup contracts. -->
+		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
 		<PackageReference Include="SkiaSharp" Version="3.119.4" />
 		<PackageReference Include="SkiaSharp.Extended" Version="3.0.0" />
 		<PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />

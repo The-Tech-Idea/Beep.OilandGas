@@ -9,6 +9,7 @@ public partial class RA_FAC_LIC_COND: Entity,IPPDMEntity
 {
 
 private  System.String CONDITION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONDITION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONDITION_TYPEValue;
           set { SetProperty(ref  CONDITION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

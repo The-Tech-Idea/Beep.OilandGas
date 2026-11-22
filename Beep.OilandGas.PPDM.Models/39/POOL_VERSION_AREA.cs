@@ -9,6 +9,7 @@ public partial class POOL_VERSION_AREA: Entity,IPPDMEntity
 {
 
 private  System.String POOL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String POOL_IDValue;
           set { SetProperty(ref  POOL_IDValue, value); }
         } 
 private  System.String POOL_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String POOL_SOURCEValue;
           set { SetProperty(ref  POOL_SOURCEValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_MEASUREMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MEASUREMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MEASUREMENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MEASUREMENT_TYPEValue;
           set { SetProperty(ref  MEASUREMENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

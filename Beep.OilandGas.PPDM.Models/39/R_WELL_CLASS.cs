@@ -9,6 +9,7 @@ public partial class R_WELL_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String WELL_CLASSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_CLASS
         {  
             get  

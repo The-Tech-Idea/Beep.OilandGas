@@ -9,6 +9,7 @@ public partial class R_ANL_GAS_CHRO_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String ANL_VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_VALUE_TYPE
         {  
             get  

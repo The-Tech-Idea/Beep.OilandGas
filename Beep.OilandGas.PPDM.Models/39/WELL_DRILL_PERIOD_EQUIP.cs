@@ -9,6 +9,7 @@ public partial class WELL_DRILL_PERIOD_EQUIP: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.Decimal PERIOD_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PERIOD_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal PERIOD_OBS_NOValue;
           set { SetProperty(ref  PERIOD_OBS_NOValue, value); }
         } 
 private  System.String EQUIPMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIPMENT_ID
         {  
             get  

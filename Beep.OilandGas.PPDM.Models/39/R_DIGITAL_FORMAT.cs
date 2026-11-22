@@ -9,6 +9,7 @@ public partial class R_DIGITAL_FORMAT: Entity,IPPDMEntity
 {
 
 private  System.String DIGITAL_FORMATValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIGITAL_FORMAT
         {  
             get  

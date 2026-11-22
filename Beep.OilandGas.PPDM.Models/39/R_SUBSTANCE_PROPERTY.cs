@@ -9,6 +9,7 @@ public partial class R_SUBSTANCE_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_PROPERTYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_PROPERTY
         {  
             get  

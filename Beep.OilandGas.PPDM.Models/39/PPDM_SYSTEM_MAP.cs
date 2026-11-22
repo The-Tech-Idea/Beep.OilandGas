@@ -9,6 +9,7 @@ public partial class PPDM_SYSTEM_MAP: Entity,IPPDMEntity
 {
 
 private  System.String MAP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAP_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class STRAT_TOPO_RELATION: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_NAME_SET_ID_1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID_1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_NAME_SET_ID_1Value;
           set { SetProperty(ref  STRAT_NAME_SET_ID_1Value, value); }
         } 
 private  System.String STRAT_UNIT_ID_1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID_1
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_UNIT_ID_1Value;
           set { SetProperty(ref  STRAT_UNIT_ID_1Value, value); }
         } 
 private  System.String STRAT_NAME_SET_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID_2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String STRAT_NAME_SET_ID_2Value;
           set { SetProperty(ref  STRAT_NAME_SET_ID_2Value, value); }
         } 
 private  System.String STRAT_UNIT_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID_2
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String STRAT_UNIT_ID_2Value;
           set { SetProperty(ref  STRAT_UNIT_ID_2Value, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String TOPO_RELATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TOPO_RELATION_ID
         {  
             get  

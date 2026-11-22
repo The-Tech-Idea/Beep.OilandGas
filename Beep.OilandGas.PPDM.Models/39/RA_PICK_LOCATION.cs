@@ -9,6 +9,7 @@ public partial class RA_PICK_LOCATION: Entity,IPPDMEntity
 {
 
 private  System.String PICK_LOCATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_LOCATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PICK_LOCATIONValue;
           set { SetProperty(ref  PICK_LOCATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_WELL_SET_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_SET_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_SET_ROLE
         {  
             get  

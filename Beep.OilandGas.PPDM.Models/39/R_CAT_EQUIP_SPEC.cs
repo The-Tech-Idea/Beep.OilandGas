@@ -9,6 +9,7 @@ public partial class R_CAT_EQUIP_SPEC: Entity,IPPDMEntity
 {
 
 private  System.String SPEC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_TYPE
         {  
             get  

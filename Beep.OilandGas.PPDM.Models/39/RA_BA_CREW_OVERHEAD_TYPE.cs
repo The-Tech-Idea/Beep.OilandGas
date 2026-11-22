@@ -9,6 +9,7 @@ public partial class RA_BA_CREW_OVERHEAD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OVERHEAD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OVERHEAD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OVERHEAD_TYPEValue;
           set { SetProperty(ref  OVERHEAD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class BA_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String BA_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_LITH_STRUCTURE: Entity,IPPDMEntity
 {
 
 private  System.String STRUCTUREValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRUCTURE
         {  
             get  

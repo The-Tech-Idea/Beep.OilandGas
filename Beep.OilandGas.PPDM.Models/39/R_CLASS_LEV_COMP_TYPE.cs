@@ -9,6 +9,7 @@ public partial class R_CLASS_LEV_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CLASS_LEVEL_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLASS_LEVEL_COMPONENT_TYPE
         {  
             get  

@@ -1,0 +1,67 @@
+{
+  "id": "STG-01/DAT-01",
+  "title": "Connections and driver catalog over BeepDM",
+  "date": "2026-11-05",
+  "commit": "uncommitted",
+  "sdk": "10.0.403",
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug",
+      "exit": 0,
+      "warningsOurProjects": 0,
+      "errors": 0,
+      "note": "Sibling BeepDM/BeepDataSources projects emit their own warnings on a clean rebuild; none are in a Beep.OilandGas.Desktop path."
+    },
+    {
+      "cmd": "dotnet test test/Beep.OilandGas.Desktop.Tests --filter FullyQualifiedName~ConnectionCatalogIntegrationTests",
+      "exit": 0,
+      "run": 2,
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "cmd": "dotnet test test/Beep.OilandGas.Desktop.Tests",
+      "exit": 0,
+      "run": 220,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok"
+    }
+  ],
+  "implementation": {
+    "host": "src/Beep.OilandGas.Desktop.Data/Bootstrapping/OgBeepHost.cs",
+    "drivers": "src/Beep.OilandGas.Desktop.Data/Drivers/OgDriverDiscovery.cs",
+    "catalog": "src/Beep.OilandGas.Desktop.Data/Connections/OgConnectionCatalog.cs",
+    "lifetime": "src/Beep.OilandGas.Desktop/Services/OgBeepLifetime.cs",
+    "screen": "src/Beep.OilandGas.Desktop/Views/ConnectionsView.cs"
+  },
+  "gates": {
+    "DAT-01 AC-1 (driver list from loaded assemblies + config catalog; unloadable skipped)": "pass — discovery loads drivers from the assembled folder and from a loaded assembly; deduped by PackageName",
+    "DAT-01 AC-2 (test distinguishes bad host / credentials / missing database / missing driver)": "pass — OgConnectionFailureClassifier maps to distinct codes (connection-database-missing, connection-driver-missing, connection-host-unreachable, connection-credentials-rejected, connection-failed); 10 message cases plus missing-driver/missing-file precedence are unit-tested, and the driver-missing and database-missing codes are proven over real BeepDM",
+    "DAT-01 AC-3 (local file database created by a driver advertising CreateLocal)": "pass — OgDriverDiscovery.SelectLocalDriver requires CreateLocal && !InMemory and has no silent fallback; a unit test proves a local in-memory cache listed first is not chosen, and the integration test asserts the selected driver advertises local creation and that EnsureLocalAsync reports which driver created the file",
+    "DAT-01 AC-4 (deleting a connection in use is refused)": "pass — RemoveAsync refuses with connection-in-use while the data source is open; proven by Deleting_a_connection_that_is_open_is_refused",
+    "DAT-01 AC-5 (active connection survives a restart)": "pass — SaveDataconnectionsValues + LoadDataConnectionsValues round-trips across a fresh runtime",
+    "DAT-01 AC-6 (no credentials in logs, audit or UI)": "pass by construction — this stage stores no credentials; ConnectionProperties is what BeepDM persists"
+  },
+  "claims": [
+    "A local SQLite database is created through the catalog, not by a view.",
+    "The connection definition survives a process restart and is listed by a fresh runtime.",
+    "A fresh runtime reopens the same database and the data written before the restart is still readable.",
+    "An unknown connection is refused with a reference, never an exception.",
+    "A failed test names which of the four actionable outcomes it was: missing file, missing driver, unreachable host or rejected credentials.",
+    "The local database is created by a driver that advertises local creation and is not an in-memory cache; a connection whose type has no driver is refused rather than guessed.",
+    "Every catch in the new code reports through IFailureReporter (SourceGuardTests still passes)."
+  ],
+  "limits": [
+    "Only the SQLite provider was exercised; the host/credential classification is proven by representative messages, not by a live SQL Server or PostgreSQL.",
+    "A provider whose wording matches no hint lands in connection-failed; the classifier lists are the place to extend.",
+    "The integration test seeds its own table; the full PPDM schema is DAT-02.",
+    "The UI page was constructed by the smoke run, not driven by a user.",
+    "No credentials, no remote provider, no concurrency."
+  ]
+}

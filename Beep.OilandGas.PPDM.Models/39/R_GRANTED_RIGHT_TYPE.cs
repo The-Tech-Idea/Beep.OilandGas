@@ -9,6 +9,7 @@ public partial class R_GRANTED_RIGHT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GRANTED_RIGHT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GRANTED_RIGHT_TYPE
         {  
             get  

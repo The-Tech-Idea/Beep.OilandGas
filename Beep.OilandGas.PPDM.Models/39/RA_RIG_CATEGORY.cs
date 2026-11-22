@@ -9,6 +9,7 @@ public partial class RA_RIG_CATEGORY: Entity,IPPDMEntity
 {
 
 private  System.String RIG_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RIG_CATEGORY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RIG_CATEGORYValue;
           set { SetProperty(ref  RIG_CATEGORYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

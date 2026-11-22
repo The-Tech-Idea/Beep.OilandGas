@@ -9,6 +9,7 @@ public partial class STRAT_UNIT_DESCRIPTION: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_UNIT_IDValue;
           set { SetProperty(ref  STRAT_UNIT_IDValue, value); }
         } 
 private  System.Decimal DESCRIPTION_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal DESCRIPTION_SEQ_NO
         {  
             get  

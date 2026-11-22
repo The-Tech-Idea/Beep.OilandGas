@@ -1,0 +1,53 @@
+{
+  "id": "STG-15/VSB-09",
+  "title": "Print and export",
+  "date": "2026-11-05",
+  "status": "gate met - PDF, SVG and PNG export with planning, DPI fidelity, no partial file, and a georeferenced map export (world file + coordinate metadata)",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.WellTools/Export/OgExportService.cs",
+    "page": "src/Beep.OilandGas.Desktop/Views/ExportPageView.cs (route 'export')",
+    "paths": "src/Beep.OilandGas.Desktop/Bootstrapping/OgPaths.cs (ExportsDirectory, under the data root)",
+    "tools": "TheTechIdea.OilGas.Wellbore — WellboreExport.ToPdf / ToSvg / ToPng, PrintPlanner, WellborePrintOptions"
+  },
+  "decision": {
+    "pdfPath": "The tools' Wellbore.Output path is the standard for well visuals (PLAN-09 §9), not Beep.OilandGas.Drawing.Export. One path, one set of options, one page planner.",
+    "partialFile": "Every export writes <destination>.partial and moves it into place only on success; a refusal, cancellation or exception deletes it, so a half-written PDF is never where someone will open it.",
+    "planFirst": "Plan() paginates through the same options Export() will use, so the page count is on screen before a large PDF is written."
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~WellExportTests", "exit": 0, "run": 9, "passed": 9, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~MapExportTests", "exit": 0, "run": 8, "passed": 8, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 427, "passed": 427, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 13,
+    "export-planned": true,
+    "export-written": true,
+    "export-pdf-signature": true,
+    "export-bytes": 629888,
+    "export-summary": "1 page(s) · 615.1 KB · <data root>\\Exports\\wellbore-YYYYMMDD-HHmmss.pdf",
+    "map-export-planned": true,
+    "map-export-world-file": true,
+    "map-export-metadata": true,
+    "map-export-crs": "EPSG:32631",
+    "map-export-pixel-size": 3.772,
+    "map-export-wells-inside": true
+  },
+  "gates": {
+    "AC-1 a PDF export is paginated with header, legend and page x of y": "pass — the file starts with %PDF-, ToPdf returns its page count, and at 1:20 the document needs more than one page; the plan's page count equals the exporter's. Header block, legend and footer tokens are the tools' defaults (IncludeHeaderBlock and IncludeLegend on, footer tokens {page}/{pages}); the text inside the PDF is not extracted by a test.",
+    "AC-2 the exported SVG opens in a browser and in Svg.Skia": "pass — the file contains an <svg> element and Svg.Skia parses it into a picture with a non-zero cull rect (ADR-001's accepted renderer).",
+    "AC-3 the PNG resolution matches the requested DPI": "pass — a 96 dpi and a 192 dpi export of the same document decode to images whose width and height double, within two pixels of rounding",
+    "AC-4 a cancelled export leaves no partial file": "pass — a pre-cancelled token returns export-cancelled and neither the destination nor destination.partial exists",
+    "AC-5 the depth range and scale in the dialog match the output": "pass — Plan reports the requested 8200–8250 range and 1:100 scale, a narrower range never needs more pages, and the plan's page count equals the written PDF's page count",
+    "AC-6 exporting a map produces a georeferenced option when coordinates exist": "pass - the Well map source exports a PNG drawn by MapView with a world file (.pgw) and coordinate metadata (.geo.json) when every well carries a CRS (EPSG:32631). The transform is sampled from the view that drew the image (ToWorld at pixel centres), so the file describes that picture. Tests read the world file back, map every well coordinate to a pixel inside the image and back to the same coordinate, assert the file extent brackets the map bounds, and check the metadata. A well without a CRS is refused with map-no-crs; unticked georeferencing writes the image alone; an existing file is refused unless overwrite is asked."
+  },
+  "limits": [
+    "Header/legend/footer text is not read back out of the PDF; only the PDF structure, page counts and the SVG's parse are asserted.",
+    "Only the three well visual sources on the page are exported (wellbore demo, log demo, schematic demo); no custom track selection or depth-window picker.",
+    "The destination is a text box with the extension synced to the format; there is no file dialog and no 'open after export'.",
+    "XLSX and GLB formats from the plan are not implemented.",
+    "The smoke run writes one PDF under the smoke data root; the tests write under disposable folders there too."
+  ]
+}

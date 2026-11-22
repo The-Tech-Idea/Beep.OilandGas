@@ -9,6 +9,7 @@ public partial class PPDM_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_ID
         {  
             get  

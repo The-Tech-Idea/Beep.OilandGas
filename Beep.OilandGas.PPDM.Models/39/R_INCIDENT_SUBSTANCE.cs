@@ -9,6 +9,7 @@ public partial class R_INCIDENT_SUBSTANCE: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_SUBSTANCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_SUBSTANCE
         {  
             get  

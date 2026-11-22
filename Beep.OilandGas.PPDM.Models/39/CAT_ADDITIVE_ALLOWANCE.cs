@@ -9,6 +9,7 @@ public partial class CAT_ADDITIVE_ALLOWANCE: Entity,IPPDMEntity
 {
 
 private  System.String ALLOWANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALLOWANCE_ID
         {  
             get  

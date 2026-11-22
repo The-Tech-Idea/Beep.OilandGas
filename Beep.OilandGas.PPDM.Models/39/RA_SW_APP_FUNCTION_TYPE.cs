@@ -9,6 +9,7 @@ public partial class RA_SW_APP_FUNCTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SW_APP_FUNCTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APP_FUNCTION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SW_APP_FUNCTION_TYPEValue;
           set { SetProperty(ref  SW_APP_FUNCTION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

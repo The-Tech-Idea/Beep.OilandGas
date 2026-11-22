@@ -9,6 +9,7 @@ public partial class R_INT_SET_TRIGGER: Entity,IPPDMEntity
 {
 
 private  System.String TRIGGER_EVENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRIGGER_EVENT
         {  
             get  

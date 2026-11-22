@@ -9,6 +9,7 @@ public partial class R_SF_LANDING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LANDING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LANDING_TYPE
         {  
             get  

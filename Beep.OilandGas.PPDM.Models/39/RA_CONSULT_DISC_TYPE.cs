@@ -9,6 +9,7 @@ public partial class RA_CONSULT_DISC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DISCUSSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISCUSSION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DISCUSSION_TYPEValue;
           set { SetProperty(ref  DISCUSSION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

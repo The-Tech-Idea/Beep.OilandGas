@@ -9,6 +9,7 @@ public partial class R_TVD_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String TVD_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TVD_METHOD
         {  
             get  

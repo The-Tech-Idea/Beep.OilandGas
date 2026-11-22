@@ -9,6 +9,7 @@ public partial class RA_RATE_SCHEDULE: Entity,IPPDMEntity
 {
 
 private  System.String RATE_SCHEDULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_SCHEDULE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RATE_SCHEDULEValue;
           set { SetProperty(ref  RATE_SCHEDULEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

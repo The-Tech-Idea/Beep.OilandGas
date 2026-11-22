@@ -9,6 +9,7 @@ public partial class R_WASTE_MATERIAL: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_MATERIALValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_MATERIAL
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_SEIS_3D_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEISMIC_3D_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEISMIC_3D_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEISMIC_3D_TYPEValue;
           set { SetProperty(ref  SEISMIC_3D_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

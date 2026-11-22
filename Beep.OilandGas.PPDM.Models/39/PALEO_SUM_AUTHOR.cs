@@ -9,6 +9,7 @@ public partial class PALEO_SUM_AUTHOR: Entity,IPPDMEntity
 {
 
 private  System.String PALEO_SUMMARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PALEO_SUMMARY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PALEO_SUMMARY_IDValue;
           set { SetProperty(ref  PALEO_SUMMARY_IDValue, value); }
         } 
 private  System.String AUTHOR_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUTHOR_ID
         {  
             get  

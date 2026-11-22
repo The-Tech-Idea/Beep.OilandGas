@@ -9,6 +9,7 @@ public partial class R_SPACING_UNIT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SPACING_UNIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPACING_UNIT_TYPE
         {  
             get  

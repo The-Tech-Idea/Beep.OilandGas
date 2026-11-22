@@ -1,4 +1,4 @@
-using Beep.OilandGas.PPDM39.Core;
+﻿using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using System;
 using System.Collections.Generic;
@@ -24,6 +24,13 @@ namespace Beep.OilandGas.Decommissioning.Modules
             typeof(DECOMMISSIONING_STATUS),
             typeof(ABANDONMENT_STATUS),
             typeof(R_DECOMMISSIONING_REFERENCE_CODE),
+            // DEC-02: the barrier evidence and the leak paths a plug-and-abandonment programme needs. The owner held the
+            // state and the plug-back depth, but no barrier record, so neither could be verified.
+            typeof(ABANDONMENT_BARRIER),
+            typeof(ABANDONMENT_LEAK_PATH),
+            // DEC-03: the versioned facility cost estimate. The status row can hold only the current figure, and a revision
+            // must not mutate the version it replaces.
+            typeof(DECOMMISSIONING_COST_REVISION),
         };
 
         public DecommissioningModule(ModuleSetupContext context)

@@ -9,6 +9,7 @@ public partial class R_TRACE_HEADER_WORD: Entity,IPPDMEntity
 {
 
 private  System.String HEADER_WORDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HEADER_WORD
         {  
             get  

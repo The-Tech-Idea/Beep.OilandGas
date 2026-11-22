@@ -1,0 +1,58 @@
+{
+  "id": "STG-02/WEL-04",
+  "title": "Well status classification and history",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: a change appends history and never edits it, codes come from R_WELL_STATUS, an illegal transition is refused with the legal set from the owning state machine, an unacknowledged change is retained and retried unchanged, effective and recorded dates are both kept, and the change is audited with actor/from/to/reason",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellStatus.cs (OgWellStatusOption, OgWellStatusHistoryEntry, OgWellStatusCurrent, OgWellStatusView, OgWellStatusChange, IOgWellStatus, OgWellStatus)",
+    "stateMachine": "Beep.OilandGas.LifeCycle/Services/WellLifecycle/WellLifecycleService.AllowedTransitions is now public and is the single source of the legal set; its own transition checks read it too",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellStatusPageView.cs (route 'wellstatus': current card, change panel, history grid, consequence sentence, retry)",
+    "navigation": "WellHeaderPageView has a Status action; the page follows the shared well context",
+    "wiring": "OgBootstrapper (IOgWellStatus with the application audit service), OgApplication.WellStatus, catalog 'wellstatus' (en + ar)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellStatusTests.cs (8, no database) + WellStatusGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~WellStatus", "exit": 0, "run": 9, "passed": 9, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 554, "passed": 554, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "options": "5 active R_WELL_STATUS codes offered; the inactive RETIRED was not offered",
+    "literal": "changing to 'BOGUS' refused with well-status-unknown-code and the codes listed",
+    "illegal": "PLANNED -> PRODUCING refused with well-status-illegal-transition and 'Legal next status(es): DRILLING'",
+    "append": "PLANNED -> DRILLING produced 2 history rows; the PLANNED row kept STATUS=PLANNED with ACTIVE_IND=N (never rewritten)",
+    "dates": "effective 2026-02-01 stored apart from the recorded date (today); both returned in the history entry",
+    "audit": "the audit sink received 'well.status.change|UWI-A|ok|from=PLANNED to=DRILLING reason=SPUD actor=fahad effective=2026-02-01'",
+    "retained": "with WELL_STATUS dropped, UWI-B DRILLING -> COMPLETED failed and Pending held the same change; after the table was recreated, RetryAsync applied it with the same effective date, note 'finished drilling' and actor 'sara'"
+  },
+  "smoke": {
+    "pages-declared": 32,
+    "well-status-route": "wellstatus",
+    "well-status-followed-context": true,
+    "well-status-reference-missing": true,
+    "well-status-last-failed": false,
+    "well-status-notice": "No status codes are available.",
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 A change appends history and cannot be edited afterwards": "pass - a change deactivates the active rows (ACTIVE_IND=N, END_TIME) and inserts a new row; no status row is updated in place. The SQLite test asserts the old row still holds PLANNED after the change, and the page offers no edit or delete.",
+    "AC-2 Status codes come from the reference table, never literals": "pass - options are read from R_WELL_STATUS (active only) and a code not in that set is refused with well-status-unknown-code listing what is available; the inactive RETIRED code was not offered.",
+    "AC-3 An illegal transition is refused and lists the legal ones": "pass - the legal set is WellLifecycleService.AllowedTransitions (now the single public definition), filtered to the offered codes; PLANNED -> PRODUCING was refused with 'Legal next status(es): DRILLING'.",
+    "AC-4 A lost acknowledgement retains the original and offers retry of the same original": "pass - when the write fails the service keeps Pending (the same OgWellStatusChange) and RetryAsync re-sends it unchanged; with WELL_STATUS dropped the change failed, and after the table was recreated the retry applied the same effective date, note and actor.",
+    "AC-5 Effective date may differ from recorded date and both are shown": "pass - EFFECTIVE_DATE is the requested date and STATUS_DATE the recording time; the SQLite rows differ (2026-02-01 vs today) and the history grid shows both columns.",
+    "AC-6 The change is audited with actor, from, to and reason": "pass - the service calls the audit sink with verb/id/outcome/detail carrying from, to, reason and actor (asserted in the integration test), and the page also writes a well.status.change audit row through IOgAuditService."
+  },
+  "limits": [
+    "The transition set is the LifeCycle state machine (PLANNED, DRILLING, COMPLETED, PRODUCING, WORKOVER, SUSPENDED, ABANDONED, REJECTED); a status code outside that machine has no legal next status.",
+    "The page offers every active code and refuses an illegal one on submit; it does not disable illegal choices in the picker.",
+    "Reason is a free-text code; there is no reason reference table to choose from, and the optional evidence attachment is not built.",
+    "The consequence preview is one informational sentence; nothing enforces or triggers production/decommissioning/licensing effects.",
+    "The change updates WELL.CURRENT_STATUS so the header and other screens see it; no workflow or notification side effects run.",
+    "The status table has no desktop edit or delete surface by design; corrections are further changes.",
+    "The page is exercised by construction and by unit/integration tests; no automated click drives the panel."
+  ]
+}

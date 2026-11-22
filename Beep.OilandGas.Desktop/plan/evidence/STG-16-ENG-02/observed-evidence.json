@@ -1,0 +1,94 @@
+{
+  "id": "STG-16/ENG-02",
+  "title": "Casing design",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: burst, collapse and tension reproduce the published API 5C3 ratings; utilisation is computed per section and per case and decides the verdict; the governing case is named; the design factors come from configuration and are printed rather than edited; a grade the configuration does not carry and a section whose wall cannot be resolved are refused; and a run records the grades, walls, factors and every verdict.",
+  "dataModel": {
+    "read": "DEVELOPMENT_WELL_DESIGN for the design's own depth unit and planned well, DEVELOPMENT_CASING_STRING for the sections, and WELL_DIR_SRVY_STATION for the shoe's true vertical depth when the planned well records a survey.",
+    "openQuestionAnswered": "The feature's open question - 'CasingLoadCase shape is not documented' - is answered from the owner's source: CasingLoadCase carries exactly two inputs, FluidGradient (the mud outside the casing) and TestPressure (the surface test pressure). The desktop adds the overpull, which the owner's simple check does not model, and records all three on the run instead of widening the owner's type.",
+    "additive": "DEVELOPMENT_CASING_STRING gained WALL_THICKNESS and TOP_DEPTH on its partial class. The owner's own comment on that table says the burst, collapse and tension arithmetic belongs to ENG-02, but it recorded neither the wall the rating needs nor the top the tension load is measured from - so both were added rather than derived twice.",
+    "addedTables": "CASING_DESIGN_RUN (the run: gradient, test pressure, overpull, factors as JSON, governing case, outcome) and CASING_DESIGN_VERDICT (one row per section per load case: load, resistance, utilisation, required factor, pass) in DevelopmentPlanning, registered in DevelopmentPlanningModule. DEV-03's own DEVELOPMENT_CASING_CHECK records that a design's inputs were checked; it does not rate pipe against loads and does not carry factors, so writing ENG-02 results into it would have put two meanings on one row."
+  },
+  "rules": {
+    "rating": "The ratings are the tools' CasingDesign.Burst, Collapse and Tension through CasingDesign.Rate, which applies API 5C3 (Barlow at 87.5 % wall, four collapse regimes by D/t, pipe-body yield) with the API rounding of 10 psi and 1 000 lbf. The desktop does not implement a second curve.",
+    "utilisation": "Utilisation = load * required factor / resistance, so above 1 does not pass and the achieved factor is the reciprocal relation. The required factor is the configured one for that case.",
+    "loads": "Burst is the surface test pressure over the string. Collapse is full evacuation: the mud gradient in psi/ft times the section's own shoe true vertical depth, taken from the planned well's survey and falling back to the shoe depth with a warning. Tension is the buoyed weight of the section - the recorded nominal weight, or the API 5CT plain-end weight when none is recorded - plus the overpull.",
+    "governing": "The governing case is the verdict with the highest utilisation, named as 'SECTION · CASE', with ties broken by section then case so the answer is stable.",
+    "factors": "The factors are read from WellboreEnvironment.Current.CasingDesign.DesignFactors (burst 1.25, collapse 1.1, tension 1.4 in the shipped configuration) and printed on the page. The page has no field for a factor, so the view cannot supply one.",
+    "wall": "A recorded wall is used as the exact geometry. Without one the owner's nominal-weight catalogue resolves it; when neither is available the section is refused rather than rated on a guessed wall.",
+    "grade": "A grade whose minimum yield is not in the configuration is refused with the grade named. The owner's family matching still applies, so L80-13Cr and N80Q rate as L80 and N80.",
+    "units": "A section whose recorded depth unit differs from the design's is refused with both units named, because a load computed across two units would be silently wrong. Depths are converted to feet for the API arithmetic.",
+    "records": "The verdict rows are committed before the run header, so a run whose detail failed to save cannot claim a result it cannot show; a failed header commit is reported and the orphaned verdicts are not read by the page."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.DevelopmentPlanning/Data/Tables/DEVELOPMENT_CASING_STRING.Casing.cs (additive wall and top), DEVELOPMENT_CASING_STRING.cs (made partial), CASING_DESIGN_RUN.cs, CASING_DESIGN_VERDICT.cs, Modules/DevelopmentPlanningModule.cs (both registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgCasingDesign.cs (OgCasingSection, OgCasingDesignFactors, OgCasingVerdict, OgCasingDesignWorkspace, CasingDesignRules, IOgCasingDesign, OgCasingDesignService with LoadAsync/CheckAsync/AddSectionAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/CasingDesignPageView.cs (route 'casingdesign': the design bar, the counts, the design factors, the section grid, the load-case bar, the verdict grid, the governing line, the warnings and the section recorder)",
+    "wiring": "OgBootstrapper (IOgCasingDesign), OgApplication.CasingDesign, catalog 'casingdesign' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/CasingDesignTests.cs (8 facts + 6 collapse theories, no database) + CasingDesignGatewayTests.cs (1 opt-in, real SQLite over five tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1334, "passed": 1334, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 83, "passed": 83, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 106, "modulesetup-summary": "33 module(s) - 439 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with DEVELOPMENT_WELL_DESIGN, DEVELOPMENT_CASING_STRING, CASING_DESIGN_RUN, CASING_DESIGN_VERDICT and WELL_DIR_SRVY_STATION. One design for a planned well with a vertical survey to 10 000 ft; a 20 in 94 lb/ft K55 surface string to 1 500 ft whose top was never recorded; a 9 5/8 in 47 lb/ft L80 production string to 10 000 ft.",
+    "ac1_ratings": "the production string rates burst 6 870 psi, collapse 4 760 psi and tension 1 086 000 lbf - the published 9 5/8 47 lb/ft L80 values, and the same figures the tools' own conformance suite asserts across six collapse regimes",
+    "ac2_utilisation": "six verdicts are written, one per section per case; the production burst reads 6 250/6 870 = 0.9097 and the collapse reads 5 194.8*1.1/4 760 = 1.2005, which decides pass and fail respectively",
+    "ac3_governing": "the run records 'SURFACE · BURST' at 2.96 - the 20 in K55 conductor against a 5 000 psi test pressure - and the page prints 'Governing case: SURFACE · BURST at utilisation 2.962 - outside its design factor.'",
+    "ac4_factors": "the verdicts carry 1.25, 1.1 and 1.4 as configured, the run stores the factors as JSON, and the page has no design-factor input at all",
+    "ac5_grade": "setting the production string's grade to X999 refuses the check with casing-grade-unknown naming X999, and no run is written",
+    "ac5_wall": "clearing the surface string's wall and setting a weight the catalogue does not know refuses the check with casing-no-wall naming SURFACE",
+    "ac6_saved": "the run row holds the gradient, test pressure, overpull, factors, governing case, outcome, section count and actor; the verdict rows hold the required factor per case; the string rows hold the grade and the wall; recording a section through the page writes WALL_THICKNESS 0.5 and TOP_DEPTH 0, which the database asserts",
+    "second_run": "re-running at 3 ppg and a 1 000 psi test passes every verdict, and the design read back shows that second run rather than the first - so the verdicts follow the load case rather than being stored as a verdict",
+    "mixed_units": "a section recorded in 'm' against an 'ft' design is refused with both units named",
+    "invalid_section": "a top below its shoe is refused as having no length",
+    "unknown_design": "reading a design that is not recorded is refused rather than returned as an empty design",
+    "failure": "dropping CASING_DESIGN_VERDICT fails the read with no workspace"
+  },
+  "gates": {
+    "AC-1 Burst, collapse and tension reproduce API 5C3 worked examples": "pass - six published collapse values across all four regimes, three burst values including the EPA worked example, and two pipe-body tension values are asserted, all through the owner's own functions.",
+    "AC-2 Utilisation is computed per section and per case": "pass - one verdict row per section per case, and the gateway asserts the arithmetic against the loads and resistances it also asserts.",
+    "AC-3 The governing case is named": "pass - the highest utilisation with its section and case, recorded on the run and printed on the page.",
+    "AC-4 Design factors come from configuration, not the view": "pass - read from the environment's CasingDesign settings, stored per verdict, and the page source is asserted to have no factor field.",
+    "AC-5 A grade absent from the catalog is refused": "pass - refused with the grade named, before anything is written; a section whose wall cannot be resolved is refused the same way.",
+    "AC-6 A saved design records grades, walls and design factors": "pass - the strings carry the grade and wall, the verdicts carry the required factor and the run carries all three plus the inputs."
+  },
+  "engineFindings": {
+    "theOutlineLackedTheRatingsInputs": {
+      "where": "Beep.OilandGas.DevelopmentPlanning/Data/Tables/DEVELOPMENT_CASING_STRING.cs",
+      "finding": "The table records OD, weight, grade and set depth and says in its own comment that the burst, collapse and tension arithmetic belongs to ENG-02 - but a 5C3 rating is a function of OD and wall, and the tension load needs a top. Neither was recorded.",
+      "handling": "WALL_THICKNESS and TOP_DEPTH were added on the table's partial class. A row that records neither still loads: the top is measured from surface with a stated warning and the wall is resolved from the owner's nominal-weight catalogue, or the section is refused."
+    },
+    "dev03CheckIsNotThisCheck": {
+      "where": "Beep.OilandGas.DevelopmentPlanning/Data/Tables/DEVELOPMENT_CASING_CHECK.cs",
+      "finding": "DEV-03 already records a casing check, but it validates the design's inputs - it has an outcome and findings text and no load, resistance, utilisation or factor. Writing ENG-02 results there would have given one row two meanings, and DEV-03's 'last check' would have shown an ENG-02 verdict.",
+      "handling": "Two new tables record the pipe-against-loads run and its verdicts, and DEVELOPMENT_CASING_CHECK is left to DEV-03."
+    },
+    "loadWasBuiltFromTheFirstSection": {
+      "finding": "The first draft computed one true vertical depth from the design's shallowest shoe and applied it to every section, which understated nothing in this vertical test well but would have been wrong in a deviated one.",
+      "handling": "The trajectory is built once and each section asks it for its own shoe's TVD, so the collapse load is that section's own."
+    },
+    "utilisationReciprocalMisstated": {
+      "finding": "A first unit assertion claimed the achieved factor was the reciprocal of the utilisation; it is not - utilisation times the achieved factor is the required factor.",
+      "handling": "The assertion now states that relation, and the gateway asserts the utilisation itself against the load and resistance it also asserts."
+    },
+    "aTypoHiddenByRounding": {
+      "finding": "The gateway's collapse-utilisation assertion used 5 179.8 instead of 5 194.8 and passed at two decimal places, because both sides rounded to 1.20.",
+      "handling": "The figure is corrected and the assertion now compares at four decimal places, so a wrong load cannot hide behind rounding."
+    }
+  },
+  "limits": [
+    "The load cases are the three simple ones the owner models - a surface test pressure, full evacuation at the shoe and the buoyed weight plus overpull. A gas-filled annulus, a circulating or a kick load is not offered.",
+    "The overpull and the test pressure are inputs to the run and are not validated against the wellhead or the hanger; the check rates the pipe body only.",
+    "The rating is API 5C3 only. ISO/TR 10400 ductile-rupture burst is not implemented by the owner and is refused rather than substituted, which the tools' own Rate notes.",
+    "A section with no recorded wall depends on the owner's nominal-weight catalogue, which ships with six pipe sizes; any other weight must have its wall recorded or it is refused.",
+    "The collapse load uses the planned well's survey when it records one and the shoe's measured depth otherwise, with a warning - a deviated well with no survey therefore over-states its collapse load.",
+    "The section's own top is used for the length, but a liner's top is not validated against the previous shoe, so a deliberately overlapped or floated string is not detected.",
+    "A single check covers every section of the design; there is no per-section load case or per-section test pressure.",
+    "The schematic overlay the feature lists is not drawn on this page: the well schematic belongs to VSB-05 and already renders strings from the database.",
+    "No paging: each read loads the four tables whole and filters in memory."
+  ]
+}

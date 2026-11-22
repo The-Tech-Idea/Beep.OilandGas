@@ -9,6 +9,7 @@ public partial class R_LOG_GOOD_VALUE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GOOD_VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GOOD_VALUE_TYPE
         {  
             get  

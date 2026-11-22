@@ -9,6 +9,7 @@ public partial class R_ALIAS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ALIAS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_TYPE
         {  
             get  

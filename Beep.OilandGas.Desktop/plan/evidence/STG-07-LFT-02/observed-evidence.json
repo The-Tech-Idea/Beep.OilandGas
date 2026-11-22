@@ -1,0 +1,65 @@
+{
+  "id": "STG-07/LFT-02",
+  "title": "Gas lift design",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: every violated limit is reported with the message from GasLiftDesignLimitMessages; a blocking limit refuses the save with that specific message while a screening warning saves and is flagged; the valve spacing is reproducible for the chosen method; the port sizes come from the reference set; the injection and production units are explicit; and a saved design records the method and every limit evaluated.",
+  "dataModel": {
+    "decision": "The GasLift module already owned GAS_LIFT_DESIGN, GAS_LIFT_PERFORMANCE and R_GAS_LIFT_REFERENCE_CODE. The design row held the valve count, the injection rate and pressure, the expected rate and the efficiency, but nothing about the spacing method, the port size, the units, the valve list or the limits - which AC-5 and AC-6 require. It was extended additively in a partial file. The entity count stays at 392, which is the check that this was an extension rather than a new registration.",
+    "addedColumns": "SPACING_METHOD, PORT_SIZE_IN, INJECTION_UNIT, PRODUCTION_UNIT, VALVE_DEPTHS, VALVE_PRESSURES, LIMIT_CODES (every code evaluated), LIMIT_MESSAGES (one catalog message per violation), BLOCKING_IND, RECOMMENDED_INJECTION_RATE, INPUTS_JSON, ACTOR, RECORDED_AT",
+    "limitsInTheOwner": "GasLiftDesignLimits was added to the GasLift module: it evaluates the six guardrails in GasLiftConstants, builds each sentence from GasLiftDesignLimitMessages, exposes the full evaluated set, and marks rate and valve-count violations blocking and depth and spacing violations as screening warnings. The catalog is the only source of the wording."
+  },
+  "engineDefects": {
+    "fixed": [
+      {
+        "where": "Beep.OilandGas.GasLift/Calculations/GasLiftPotentialCalculator.cs and GasLiftValveSpacingCalculator.cs and GasLiftValveDesignCalculator.cs",
+        "finding": "Three call sites passed the well's Fahrenheit temperatures straight into the Brill-Beggs Z-factor correlation, which takes degrees Rankine. Every ordinary well was refused with 'the temperature is too low for the Brill-Beggs Z-factor correlation' (100 degF read as 100 R). The rest of the module already converts with +459.67, so this was an omission, not a convention.",
+        "fix": "The potential calculator converts the average temperature once and uses the Rankine value in the Z-factor and the gas-law terms; the spacing and valve-design calculators convert the valve temperature at their own call sites."
+      },
+      {
+        "where": "Beep.OilandGas.GasLift/Calculations/GasLiftPotentialCalculator.cs - AnalyzeGasLiftPotential",
+        "finding": "The loop divided by the computed production rate without a guard, so the lowest injection rates threw DivideByZeroException and the whole analysis failed. The optimal-point search also assumed at least one point existed.",
+        "fix": "A point that produces nothing is skipped (it has no gas-liquid ratio to report), and an empty sweep returns without a recommendation instead of throwing on First()."
+      }
+    ]
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgGasLift.cs (GasLiftSpacingMethods, OgGasLiftInputs, OgGasLiftValve, OgGasLiftLimit, OgGasLiftDesign, OgGasLiftPending, OgGasLiftWorkspace, GasLiftRules, IOgGasLift, OgGasLiftService with DesignAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "engine": "GasLiftPotentialCalculator.AnalyzeGasLiftPotential for the recommendation, GasLiftValveDesignCalculator.DesignValvesUS for the expected rate and efficiency, the spacing calculator for the valve list, and GasLiftDesignLimits for the guardrails.",
+    "rules": "GasLiftRules states every required input, the two implemented spacing methods, the validation (injection pressure above the wellhead, bottom hole above the wellhead, water cut as a fraction, at least one valve) and the refusal codes once.",
+    "page": "src/Beep.OilandGas.Desktop/Views/GasLiftPageView.cs (route 'gaslift': the well, fluid and temperature bars, the design bar with the port-size and spacing pickers, the design result with its units, the potential recommendation, the limits panel, the valve grid and the saved designs)",
+    "wiring": "OgBootstrapper (IOgGasLift), OgApplication.GasLift, catalog 'gaslift' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/GasLiftTests.cs (8, no database) + GasLiftGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 958, "passed": 958, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 41, "passed": 41, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 65, "views-constructed": true, "modulesetup-summary": "28 module(s) - 392 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with R_GAS_LIFT_REFERENCE_CODE and GAS_LIFT_DESIGN, seeded in GasLiftGatewayTests",
+    "ac4_port_sizes": "the four port sizes seeded in the reference table are the ones offered, in order, and PortSizesFromReference is true; a design for a size outside the set is refused",
+    "design": "an 8,000 ft well producing 500 STB/d with 500 Mscf/d at 1,200 psia places five valves, none of the six limits violated, and the potential analysis recommends an injection rate inside the module's 50-10,000 Mscf/d range",
+    "save": "the stored row carries SPACING_METHOD = UNIFORM_SPACING, PORT_SIZE_IN 0.5, INJECTION_UNIT Mscf/d, PRODUCTION_UNIT STB/d, BLOCKING_IND N, the six evaluated codes, the actor and the valve depths; the reload keeps the five valve depths and the evaluated set",
+    "ac2_blocking": "a request for 25 valves is reported as MAX_VALVES with the catalog message 'Maximum number of gas lift valves is 20.' and the save is refused with gaslift-blocking-limit carrying that sentence; the row count stays at 1. The engine is given its own maximum (20) so the design itself still runs",
+    "flagged": "a shallow well breaks MIN_VALVE_SPACING_FT as a screening warning: it saves, BLOCKING_IND stays N, and LIMIT_MESSAGES carries 'Minimum valve spacing (screening) is 200 ft.'",
+    "lost_acknowledgement": "dropping the table makes the save fail with the design retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping GAS_LIFT_DESIGN makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 Every violated limit shows the message from GasLiftDesignLimitMessages": "pass - each violation's Message is asserted equal to GasLiftDesignLimitMessages.GetMessage(code) for the minimum injection rate, the maximum injection rate and the minimum valve spacing; the evaluation lives in the owner module, so the screen cannot carry its own wording.",
+    "AC-2 A blocking limit prevents save with the specific message": "pass - a 25-valve request is MAX_VALVES, blocking, and SaveAsync returns gaslift-blocking-limit whose message contains the catalog sentence; a design whose only violation is the spacing screening warning is saveable and is stored with BLOCKING_IND = 'N'.",
+    "AC-3 Valve spacing is reproducible for the chosen method": "pass - two builds of the same inputs agree valve for valve on depth, opening and closing pressure; equal-depth spacing is asserted to be a single gap repeated; the pressure-drop method is asserted to place the first valve at a different depth for the same well; the first valve is UNLOADING, the last OPERATING, the rest INTERMEDIATE, and the closing pressure is the standard ratio below the opening one.",
+    "AC-4 Port sizes come from the reference set": "pass - the sizes are read from R_GAS_LIFT_REFERENCE_CODE under GAS_LIFT_PORT_SIZE_IN (falling back to GasLiftConstants with the fallback stated), and a size outside them is refused with gaslift-port-size-unknown naming the offered sizes.",
+    "AC-5 Injection and production units are explicit": "pass - Mscf/d and STB/d are constants on the design, stored on the row and printed in the result line; a source guard asserts the view prints the service's units rather than literals of its own.",
+    "AC-6 A saved design records the method and all limits evaluated": "pass - SPACING_METHOD, the six evaluated codes in LIMIT_CODES, the violation messages in LIMIT_MESSAGES and the inputs JSON are all written; the reload returns the same evaluated set."
+  },
+  "limits": [
+    "GRADIENT_BASED is listed in the design-method reference set but has no implementation in the engine; it is refused with that reason rather than run as equal depth.",
+    "The potential analysis is called over the module's own range (GasLiftConstants.MinimumGasInjectionRate to MaximumGasInjectionRate); the recommended rate is shown beside the operator's, which is the one the design uses. The injection rate does not change the engine's valve placement, so the expected rate is the engine's number for the well, not a function of the rate.",
+    "The engine places at most 20 valves, so a request above that is designed at 20 while the limit reports the request - the placed count and the violation are both shown rather than one hiding the other.",
+    "The performance tab (unloading and producing gradients) is not built: GAS_LIFT_PERFORMANCE exists and the potential analysis produces points, but no gradient plot or table is surfaced here, and there is still no chart host for these screens.",
+    "The DesignTable and LimitChip controls the plan names are not added: the valve list is a read-only grid and the limits are a text panel. Adding controls to the shared library would be its own change.",
+    "The feature's permissions (lift.gaslift.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

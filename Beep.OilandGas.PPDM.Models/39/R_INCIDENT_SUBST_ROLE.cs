@@ -9,6 +9,7 @@ public partial class R_INCIDENT_SUBST_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ROLE
         {  
             get  

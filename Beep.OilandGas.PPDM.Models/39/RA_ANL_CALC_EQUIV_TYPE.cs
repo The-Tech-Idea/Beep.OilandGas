@@ -9,6 +9,7 @@ public partial class RA_ANL_CALC_EQUIV_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATION_EQUIV_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATION_EQUIV_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CALCULATION_EQUIV_TYPEValue;
           set { SetProperty(ref  CALCULATION_EQUIV_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

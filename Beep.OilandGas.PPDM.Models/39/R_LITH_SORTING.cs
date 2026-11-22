@@ -9,6 +9,7 @@ public partial class R_LITH_SORTING: Entity,IPPDMEntity
 {
 
 private  System.String SORTINGValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SORTING
         {  
             get  

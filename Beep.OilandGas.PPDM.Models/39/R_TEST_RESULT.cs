@@ -9,6 +9,7 @@ public partial class R_TEST_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String TEST_RESULTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_RESULT
         {  
             get  

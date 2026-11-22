@@ -9,6 +9,7 @@ public partial class RA_SEIS_LIC_DUE_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String DUE_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DUE_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DUE_CONDITIONValue;
           set { SetProperty(ref  DUE_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

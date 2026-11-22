@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class TAX_WITHHOLDING : ModelEntityBase {
         private System.String TAX_WITHHOLDING_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String TAX_WITHHOLDING_ID
         {
             get { return this.TAX_WITHHOLDING_IDValue; }

@@ -9,6 +9,7 @@ public partial class RA_LAND_TITLE_CHG_RSN: Entity,IPPDMEntity
 {
 
 private  System.String LAND_TITLE_CHANGE_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_TITLE_CHANGE_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_TITLE_CHANGE_REASONValue;
           set { SetProperty(ref  LAND_TITLE_CHANGE_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

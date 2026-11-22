@@ -9,6 +9,7 @@ public partial class R_BUILDUP_RADIUS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BUILDUP_RADIUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUILDUP_RADIUS
         {  
             get  

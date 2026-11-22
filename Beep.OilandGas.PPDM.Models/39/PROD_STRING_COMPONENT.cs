@@ -9,6 +9,7 @@ public partial class PROD_STRING_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String PR_STR_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PR_STR_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PR_STR_SOURCEValue;
           set { SetProperty(ref  PR_STR_SOURCEValue, value); }
         } 
 private  System.String STRING_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRING_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String STRING_IDValue;
           set { SetProperty(ref  STRING_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

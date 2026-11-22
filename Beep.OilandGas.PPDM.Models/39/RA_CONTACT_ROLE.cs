@@ -9,6 +9,7 @@ public partial class RA_CONTACT_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String CONTACT_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_ROLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTACT_ROLEValue;
           set { SetProperty(ref  CONTACT_ROLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

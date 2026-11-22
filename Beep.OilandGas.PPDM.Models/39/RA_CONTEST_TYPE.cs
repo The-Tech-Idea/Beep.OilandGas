@@ -9,6 +9,7 @@ public partial class RA_CONTEST_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTEST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTEST_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTEST_TYPEValue;
           set { SetProperty(ref  CONTEST_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -1,0 +1,80 @@
+{
+  "id": "STG-14/WFL-03",
+  "title": "Process instances and timeline",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: an instance is opened by its exact identity and an ambiguous identity is refused rather than resolved by recency; a step with no SLA is unscheduled and never overdue; a timestamp that carries no zone is shown as unconfirmed; the timeline holds every step and every event in order; every entry names its actor or says none is recorded; and the originating record is resolved against the data source's own entity list, so a broken link is shown instead of hidden.",
+  "dataModel": {
+    "decision": "Nothing was created. The list and the detail read PROCESS_INSTANCE, PROCESS_STEP_INSTANCE, PROCESS_HISTORY and PROCESS_DEFINITION through the same unit of work every screen uses, and the feature writes nothing.",
+    "stepAndEvent": "A step contributes to the timeline from PROCESS_STEP_INSTANCE (its sequence, name, outcome, actor, completion or start, notes); an event contributes from PROCESS_HISTORY (its type, to-status, user, date, details). The timeline is the merge of the two.",
+    "subject": "The originating record is PROCESS_INSTANCE.ENTITY_TYPE / ENTITY_ID, resolved against IDataSource.GetEntitesList(), which is the data source's own list of entity types."
+  },
+  "rules": {
+    "identity": "An instance is resolved by matching its id exactly. Zero matches is 'not recorded'; more than one is an ambiguity that is refused with the count and the sentence that the newest is deliberately not preferred. A subject that owns more than one instance is refused the same way, naming each id.",
+    "due": "The due date is the open step's start plus its recorded SLA_HOURS, and nothing else. A step with no SLA is 'no SLA' and a step that has not started is 'unscheduled'; both read 'unscheduled' in the grid and are never overdue. The SLA state reuses the same rule WFL-01 states, so the two screens agree.",
+    "zone": "A timestamp is confirmed only when it carries a zone (a UTC instant). The owner records no zone on a step or history timestamp, so a stored value arrives unspecified and is displayed as 'unconfirmed' and listed as a reason - it is never read as UTC.",
+    "timeline": "The timeline orders by timestamp, then by kind, then by step key, and contains every step of the instance plus every history entry recorded against it.",
+    "actor": "Every entry states its actor, or says 'no actor recorded'; the workspace counts the entries that name nobody.",
+    "subjectLink": "The subject is reachable when the data source lists an entity type of that name. Otherwise the workspace states that the record cannot be reached and names the missing entity type, and an instance with no subject says so."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Workflow/OgProcessInstances.cs (OgProcessEvent, OgProcessInstanceView, OgProcessInstanceWorkspace, ProcessInstanceRules, IOgProcessInstances, OgProcessInstancesService)",
+    "page": "src/Beep.OilandGas.Desktop/Views/InstancesPageView.cs (route 'instances': the field and identity bar, the instance grid, the selected instance, the subject line, the missing-record checklist, the timeline grid and the history grid)",
+    "wiring": "OgBootstrapper (IOgProcessInstances), OgApplication.ProcessInstances, catalog 'instances' (OgModuleKeys.Workflow), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ProcessInstanceTests.cs (7, no database) + ProcessInstanceGatewayTests.cs (1 opt-in, real SQLite over four tables plus a WELL table for the subject link)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1286, "passed": 1286, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 78, "passed": 78, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 102, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PROCESS_DEFINITION, PROCESS_INSTANCE, PROCESS_STEP_INSTANCE and PROCESS_HISTORY, plus a WELL table so the subject link can resolve. Six instances on one field: one with three steps and two events, one whose current step records no SLA, two whose ids differ only in case, one whose subject entity type does not exist, and one with no subject at all.",
+    "ac1_identity": "opening PI-1 returns that instance; opening PI-X matches PI-X and pi-x and is refused with instance-ambiguous, naming both and stating that the newest is not preferred",
+    "ac1_subject": "WELL/W-3 owns two instances and is refused with instance-subject-ambiguous naming PI-X and pi-x; WELL/W-2 owns one and opens PI-2",
+    "ac2_unscheduled": "PI-2's open step records no SLA, so its due date is null and it reads 'unscheduled' rather than overdue, while PI-1's 72 hour step is breached with a real due date",
+    "ac3_zone": "every stored timestamp arrives unspecified, so each timeline entry reads '(unconfirmed)' and the checklist states that the timestamp carries no confirmed zone",
+    "ac4_timeline": "the opened instance's timeline holds 3 steps and 2 events (5 entries) in timestamp order, and its history grid holds the same 2 events",
+    "ac5_actor": "every entry names its actor (sara, nadia, omar) and the workspace counts zero entries without one",
+    "ac6_subject": "PI-1's subject resolves against the WELL table with no warning; PI-3's entity type WELL_GONE does not exist and the workspace says the record cannot be reached; PI-4 says it records no originating subject",
+    "identityRefusals": "an unknown id is refused with instance-unknown, and a read with no identity is a valid list with no selection",
+    "failure": "dropping PROCESS_STEP_INSTANCE fails the read with no workspace"
+  },
+  "gates": {
+    "AC-1 An instance is selected by exact identity; ambiguity is refused": "pass - exact match, and both the identity pair and the multi-instance subject are refused with their ids named (SG-14-2).",
+    "AC-2 A missing due date shows unscheduled, not overdue": "pass - due date is the step start plus its SLA only; no SLA or no start is unscheduled.",
+    "AC-3 A timestamp without a confirmed zone shows unconfirmed": "pass - only a UTC instant is confirmed, and the real stored value is shown unconfirmed and listed as a reason.",
+    "AC-4 The timeline is ordered and complete": "pass - every step and every event, merged and ordered.",
+    "AC-5 Every event names its actor": "pass - each entry states its actor, and the workspace counts the ones that name nobody.",
+    "AC-6 The originating record is reachable and its absence is visible": "pass - resolved against the data source's entity list; a missing entity type and a missing subject are both stated."
+  },
+  "engineFindings": {
+    "duplicateIdentityCannotBeSeeded": {
+      "finding": "The first gateway scenario tried to seed two rows with the same PROCESS_INSTANCE_ID, which the primary key forbids - so the ambiguity was not actually real.",
+      "handling": "The scenario now uses two rows whose ids differ only in case (PI-X and pi-x), which an identity comparison that ignores case genuinely matches twice. That is the ambiguity the feature is about, and it is a real state of the data rather than a contrived one."
+    },
+    "openStepIsNotTheLastStep": {
+      "finding": "The first scenario expected the current step to be the last completed step of the instance.",
+      "handling": "The current step is the open step instance (no completion date) with the highest sequence, which the test now asserts explicitly by key as well as name."
+    },
+    "noZoneIsRecorded": {
+      "where": "Beep.OilandGas.LifeCycle/Data/Tables/PROCESS_HISTORY.cs and PROCESS_STEP_INSTANCE.cs",
+      "finding": "Neither table records a time zone with its timestamps, and the provider materialises them as unspecified, so no stored timestamp can be shown as confirmed.",
+      "handling": "The rule is applied as written - only a UTC instant is confirmed - and the page states that the value carries no confirmed zone rather than assuming UTC. Recorded as a limit, not papered over with a default."
+    },
+    "subjectLinkNeedsTheSchema": {
+      "finding": "There is no foreign key from an instance to its subject, so reachability can only be judged by whether the data source knows the entity type.",
+      "handling": "The subject is resolved against IDataSource.GetEntitesList(); a missing entity type is reported as a broken link and an empty subject as no subject at all, so the absence is visible rather than the row being hidden."
+    }
+  },
+  "limits": [
+    "The subject link proves the entity type exists, not that the row with that id exists: opening the originating record is the owning module's screen, and this view does not read the subject row.",
+    "No timestamp can currently be shown as confirmed, because the owner records no zone. If the owner starts writing UTC values the same rule will show them as confirmed.",
+    "The current step is the open step instance with the highest sequence; an instance whose steps are all completed but which is not completed shows no current step and is listed as missing one.",
+    "Acting on the current step is not built: WFL-04 owns gate reviews and approvals, and this screen writes nothing.",
+    "The graph tab the feature lists is not drawn here: the definition's graph is on WFL-02 and this view shows the traversed path as an ordered timeline instead.",
+    "The timeline orders events with no timestamp at the beginning (MinValue), so an undated entry sorts first rather than being hidden.",
+    "Each read loads the four tables whole and filters in memory; there is no paging.",
+    "No per-command permission enforcement beyond the page gate: workflow.read is not checked per read."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class WORK_ORDER_DELIVERY_COMP: Entity,IPPDMEntity
 {
 
 private  System.String WORK_ORDER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WORK_ORDER_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WORK_ORDER_IDValue;
           set { SetProperty(ref  WORK_ORDER_IDValue, value); }
         } 
 private  System.String DELIVERY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DELIVERY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String DELIVERY_IDValue;
           set { SetProperty(ref  DELIVERY_IDValue, value); }
         } 
 private  System.String COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_ID
         {  
             get  

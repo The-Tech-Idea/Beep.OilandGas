@@ -9,6 +9,7 @@ public partial class SP_PARCEL_OHIO: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_OHIO_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_OHIO_ID
         {  
             get  

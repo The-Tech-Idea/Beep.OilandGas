@@ -9,6 +9,7 @@ public partial class RA_CURVE_SCALE: Entity,IPPDMEntity
 {
 
 private  System.String CURVE_SCALE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_SCALE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CURVE_SCALE_TYPEValue;
           set { SetProperty(ref  CURVE_SCALE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

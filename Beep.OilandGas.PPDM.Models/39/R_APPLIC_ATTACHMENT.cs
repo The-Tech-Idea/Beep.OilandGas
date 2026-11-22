@@ -9,6 +9,7 @@ public partial class R_APPLIC_ATTACHMENT: Entity,IPPDMEntity
 {
 
 private  System.String ATTACHMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ATTACHMENT_TYPE
         {  
             get  

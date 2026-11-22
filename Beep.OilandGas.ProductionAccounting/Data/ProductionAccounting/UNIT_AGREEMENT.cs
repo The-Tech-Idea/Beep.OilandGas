@@ -20,6 +20,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         private System.String SOURCEValue;
 
         private System.String ROW_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String ROW_ID
         {
             get { return this.ROW_IDValue; }

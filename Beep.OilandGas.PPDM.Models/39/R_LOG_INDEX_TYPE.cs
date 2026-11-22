@@ -9,6 +9,7 @@ public partial class R_LOG_INDEX_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INDEX_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INDEX_TYPE
         {  
             get  

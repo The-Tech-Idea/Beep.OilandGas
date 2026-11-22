@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class RESERVE_DISCLOSURE_PACKAGE : ModelEntityBase
     {
         private string RESERVE_DISCLOSURE_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string RESERVE_DISCLOSURE_ID
         {
             get { return this.RESERVE_DISCLOSURE_IDValue; }

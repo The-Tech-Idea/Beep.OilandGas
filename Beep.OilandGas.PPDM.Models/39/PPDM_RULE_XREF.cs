@@ -9,6 +9,7 @@ public partial class PPDM_RULE_XREF: Entity,IPPDMEntity
 {
 
 private  System.String DEPENDENCY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEPENDENCY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DEPENDENCY_IDValue;
           set { SetProperty(ref  DEPENDENCY_IDValue, value); }
         } 
 private  System.String RULE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String RULE_IDValue;
           set { SetProperty(ref  RULE_IDValue, value); }
         } 
 private  System.String RULE_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_ID2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String RULE_ID2Value;
           set { SetProperty(ref  RULE_ID2Value, value); }
         } 
 private  System.Decimal XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_OBS_NO
         {  
             get  

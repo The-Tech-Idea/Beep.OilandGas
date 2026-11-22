@@ -9,6 +9,7 @@ public partial class R_FOS_NAME_SET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FOSSIL_NAME_SET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_NAME_SET_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class PDEN_ALLOC_FACTOR: Entity,IPPDMEntity
 {
 
 private  System.String FROM_PDEN_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FROM_PDEN_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FROM_PDEN_SUBTYPEValue;
           set { SetProperty(ref  FROM_PDEN_SUBTYPEValue, value); }
         } 
 private  System.String FROM_PDEN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FROM_PDEN_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String FROM_PDEN_IDValue;
           set { SetProperty(ref  FROM_PDEN_IDValue, value); }
         } 
 private  System.String FROM_PDEN_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FROM_PDEN_SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String FROM_PDEN_SOURCEValue;
           set { SetProperty(ref  FROM_PDEN_SOURCEValue, value); }
         } 
 private  System.String TO_PDEN_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TO_PDEN_SUBTYPE
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String TO_PDEN_SUBTYPEValue;
           set { SetProperty(ref  TO_PDEN_SUBTYPEValue, value); }
         } 
 private  System.String TO_PDEN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TO_PDEN_ID
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String TO_PDEN_IDValue;
           set { SetProperty(ref  TO_PDEN_IDValue, value); }
         } 
 private  System.String TO_PDEN_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TO_PDEN_SOURCE
         {  
             get  
@@ -69,6 +75,7 @@ private  System.String TO_PDEN_SOURCEValue;
           set { SetProperty(ref  TO_PDEN_SOURCEValue, value); }
         } 
 private  System.Decimal ALLOCATION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ALLOCATION_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class ANL_TABLE_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String ANALYSIS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANALYSIS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANALYSIS_IDValue;
           set { SetProperty(ref  ANALYSIS_IDValue, value); }
         } 
 private  System.String ANL_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ANL_SOURCEValue;
           set { SetProperty(ref  ANL_SOURCEValue, value); }
         } 
 private  System.String PPDM_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PPDM_SYSTEM_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PPDM_SYSTEM_IDValue;
           set { SetProperty(ref  PPDM_SYSTEM_IDValue, value); }
         } 
 private  System.String PPDM_TABLE_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PPDM_TABLE_NAME
         {  
             get  

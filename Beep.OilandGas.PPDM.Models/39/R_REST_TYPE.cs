@@ -9,6 +9,7 @@ public partial class R_REST_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_TYPE
         {  
             get  

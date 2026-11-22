@@ -9,6 +9,7 @@ public partial class SP_PARCEL_LIBYA: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_LYBIA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_LYBIA_ID
         {  
             get  

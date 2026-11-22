@@ -9,6 +9,7 @@ public partial class R_BH_PRESS_TEST_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BH_PRESSURE_TEST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BH_PRESSURE_TEST_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_RECORDER_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String RECORDER_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORDER_POSITION
         {  
             get  

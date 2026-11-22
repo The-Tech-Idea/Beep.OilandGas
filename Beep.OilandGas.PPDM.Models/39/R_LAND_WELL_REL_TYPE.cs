@@ -9,6 +9,7 @@ public partial class R_LAND_WELL_REL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_RELATIONSHIP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_RELATIONSHIP_TYPE
         {  
             get  

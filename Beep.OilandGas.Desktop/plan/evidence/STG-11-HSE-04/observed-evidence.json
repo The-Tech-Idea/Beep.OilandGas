@@ -1,0 +1,74 @@
+{
+  "id": "STG-11/HSE-04",
+  "title": "HAZOP studies",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a study is opened by its recorded id and never falls back to another; a missing or mismatched acknowledgement is reported as unconfirmed and not applied; a duplicate node key is refused; an action needs its node and its deviation before anything is written; a field change during the read clears the study and discards the response; and only the legal transitions are offered and applied.",
+  "dataModel": {
+    "decision": "No table was created. The owner already holds the whole study: a PROJECT of type HAZOP for the header, a PROJECT_COMPONENT for its field, PROJECT_STEP of type HAZOP_NODE for nodes, PROJECT_CONDITION for deviations, PROJECT_STATUS for the study and deviation states, and PROJECT_STEP/PROJECT_STEP_XREF/PROJECT_STEP_BA for an action linked to its node with a responsible person.",
+    "registration": "PROJECT_COMPONENT and PROJECT_STEP_XREF added to HseModule beside the project tables from HSE-03. --smoke moved from 427 to 429 entity types.",
+    "payload": "The owner's HAZOP reader requires its condition payload in REMARK to have exactly two properties, Deviation and Consequence, so the desktop's extra fields - parameter, cause, safeguard, risk - are written to a PROJECT_COMPONENT row linked by CONDITION_ID (the owner's own link column) as key=value lines. The owner's payload stays byte-compatible."
+  },
+  "rules": {
+    "identity": "A study is opened only by its recorded PROJECT_ID with PROJECT_TYPE=HAZOP; a missing id is refused and no other study is opened in its place (AC-1).",
+    "confirmation": "Every transition carries the state the reviewer saw. A missing or different acknowledgement is refused as unconfirmed, before the transition legality is even considered, and nothing is written (AC-2).",
+    "nodes": "A node is a PROJECT_STEP with STEP_TYPE=HAZOP_NODE and STEP_ID <study>-NODE-<seq:000>. The read refuses a study whose node ids or sequences repeat - a duplicate key - rather than showing two nodes as one (AC-3).",
+    "deviation": "A deviation is a PROJECT_CONDITION whose CONDITION_TYPE is the guide word, SOURCE the node's step id, REMARK the owner's two-field payload and CONDITION_OBS_NO its sequence. Its status is one PROJECT_STATUS row with STATUS_TYPE=HAZOP_DEVIATION and STATUS_ID <node>-DEV-<seq:000>, the owner's own id format.",
+    "action": "An action requires its node and its deviation: both are validated against the recorded nodes and deviations before anything is written (AC-4, SG-11-5). It is a PROJECT_STEP of type HAZOP_ACTION with a PROJECT_STEP_XREF to the node, the deviation number on its own row, and the responsible person in PROJECT_STEP_BA with the owner's RESPONSIBLE role.",
+    "scope": "The load captures the company and field it started under and re-reads the session's scope after the rows; a difference, or a superseded load version, clears the study and discards the response (AC-5).",
+    "transitions": "The study moves DRAFT -> OPEN -> CLOSED and a deviation OPEN -> ACTION_REQUIRED -> CLOSED; the legal set is what the page offers and what the command accepts (AC-6). A transition updates the one status row for its key, which is the owner's own upsert shape."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Hse/OgHazop.cs (OgHazopAction, OgHazopDeviation, OgHazopNode, OgHazopStudy, OgHazopWorkspace, HazopRules, IOgHazop, OgHazop with BeginLoad/IsCurrent/LoadAsync/CreateStudyAsync/AddNodeAsync/AddDeviationAsync/AddActionAsync/TransitionStudyAsync/TransitionDeviationAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/HazopPageView.cs (route 'hazop': the study id lookup, the node grid and editor, the deviation editor with guide word, parameter, cause, consequence, safeguard and risk, the action bar for the selected deviation, and the study transition picker)",
+    "wiring": "OgBootstrapper (IOgHazop), OgApplication.Hazop, catalog 'hazop' (OgModuleKeys.Hse), OgPageFactory, en + ar labels; HSE-01's hazop link now points at a real page",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HseHazopTests.cs (7, no database) + HseHazopGatewayTests.cs (1 opt-in, real SQLite over seven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1181, "passed": 1181, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 65, "passed": 65, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 89, "views-constructed": true, "modulesetup-summary": "33 module(s) - 429 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PROJECT, PROJECT_COMPONENT, PROJECT_STEP, PROJECT_STEP_XREF, PROJECT_CONDITION, PROJECT_STATUS and PROJECT_STEP_BA, seeded with two studies (a newer S-2 that must not be chosen) and one node on S-1. The schema declares the same composite keys the PPDM metadata does (PROJECT_ID,STATUS_ID and so on), because an update cannot be built without them.",
+    "ac1_identity": "loading S-1 returns S-1 even though S-2 is newer; loading S-NOT-THERE is refused with hazop-study-not-found and the sentence 'No other study is opened in its place'",
+    "ac2_unconfirmed": "a transition from DRAFT acknowledged as CLOSED is refused with hazop-unconfirmed and 'not applied', and the stored state is still DRAFT",
+    "ac3_duplicate": "a second node claiming the same sequence makes the load refused with hazop-duplicate-node-key naming the duplicate, and the study is not shown",
+    "ac4_action": "an action with no node and one naming a deviation that is not recorded are both refused (hazop-action-needs-node-and-deviation and hazop-unknown-deviation) with nothing written; a valid action writes its step, the node xref and the RESPONSIBLE person, and reads back on its deviation with owner and due date",
+    "ac5_scope": "a load whose current-scope delegate returns F-1 and then F-2 is refused with hazop-scope-changed and no study; the message says the study was cleared",
+    "ac6_transitions": "DRAFT -> OPEN succeeds and the legal set becomes [CLOSED]; OPEN -> DRAFT is refused as illegal; a deviation moves OPEN -> ACTION_REQUIRED -> CLOSED, stays one status row, and CLOSED -> OPEN is refused",
+    "payload": "the stored REMARK has exactly two properties, Deviation and Consequence; the parameter, cause, safeguard and risk are in the linked component (DESCRIPTION starting 'parameter=flow')",
+    "deviation": "the deviation reads back with guide word NO, parameter flow, its consequence, cause, HIGH risk, OPEN state and no action until one is raised"
+  },
+  "gates": {
+    "AC-1 A study is opened by explicit identity only": "pass - the id is required, a missing study is refused with a sentence that no other is opened, and the gateway proves S-2 is not chosen.",
+    "AC-2 Missing or mismatched acknowledgements are unconfirmed": "pass - the acknowledgement is checked before legality and reported as unconfirmed with both states, and nothing is written.",
+    "AC-3 Duplicate node keys are refused": "pass - repeated node ids or sequences refuse the whole study rather than collapsing or doubling it.",
+    "AC-4 An action requires a node and a deviation": "pass - both are validated against recorded rows before any write; SG-11-5.",
+    "AC-5 A field change clears the study and discards late responses": "pass - the scope is re-read after the read and a change (or a superseded load) clears the study.",
+    "AC-6 Only legal transitions are offered": "pass - the legal set is computed from the current state, the page offers only it, and the command refuses anything else."
+  },
+  "engineFindings": {
+    "ownerPayloadHasExactlyTwoProperties": {
+      "where": "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HAZOPService.cs (ParseConditionPayload)",
+      "finding": "The owner's reader checks that the condition REMARK object has exactly two properties, Deviation and Consequence, and refuses anything else. The desktop's extra deviation fields therefore cannot ride in that JSON.",
+      "handling": "They are written to a PROJECT_COMPONENT row linked by CONDITION_ID, the owner's own condition link, as key=value lines; the payload stays exactly the owner's two fields, and the gateway parses it to prove the property count."
+    },
+    "keylessUpdateIsSilent": {
+      "finding": "An update through the unit of work needs the table's key in the provider structure. A hand-built test schema without the composite key made Update return 'no primary key' while Commit reported Ok - so HSE-03's earlier step-date write was silently skipped. The PPDM metadata (PPDM39Metadata.Generated.cs) declares PROJECT_ID,STATUS_ID and the other canonical keys for the schema the app provisions.",
+      "handling": "The HAZOP gateway declares those same keys, every HSE-04 status write is checked and surfaced, and HSE-03's redundant ACTUAL_END_DATE write was removed (the COMPLETED status row is the authoritative completion). HSE-03's evidence and feature document were corrected."
+    },
+    "studyStatusIsOneRow": {
+      "finding": "The owner keeps one status row per study (STATUS_ID <study>-STUDY) and per deviation (<node>-DEV-<seq:000>), updating it rather than appending history.",
+      "handling": "Transitions update that row through the unit that read it, so the owner's reader still sees exactly one status per key; the gateway asserts the deviation status row count stays at one after two transitions."
+    }
+  },
+  "limits": [
+    "The study team is not shown. The owner's HAZOP service records no team on the study, and reading PROJECT_BA_ROLE for it was not attempted; the header shows the field, facility, node count, state and start date only.",
+    "The risk rating (HIGH/MEDIUM/LOW) and the guide-word list are desktop vocabulary: the owner's tables carry the guide word and no risk column, so the rating is stored in the desktop's linked component and is not read by the owner's own screens.",
+    "An action can be raised but not completed or verified from this screen; its state is derived from the step's actual end date, which no command in this feature writes. HSE-03 owns corrective-action completion.",
+    "Transitions carry an acknowledgement of the state reviewed, which catches a stale screen; there is no revision hash or optimistic concurrency token beyond it, so two people applying the same transition in the same instant are not serialised.",
+    "The writes are not one transaction: the study, component, condition, status, action, xref and responsible-person rows each commit separately. A failure can leave a partial row, and a retry re-reads rather than duplicating (the ids are deterministic for nodes and derived from the action id).",
+    "The desktop writes deviations into the owner's condition payload only in its two documented fields; anything else the owner's screens expect from a deviation is not written."
+  ]
+}

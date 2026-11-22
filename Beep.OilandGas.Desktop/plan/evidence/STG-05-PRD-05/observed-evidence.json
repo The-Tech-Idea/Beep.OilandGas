@@ -1,0 +1,60 @@
+{
+  "id": "STG-05/PRD-05",
+  "title": "Volume reconciliation and reporting",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: the waterfall walks produced → measured → allocated → sold → booked with each step's own difference and a test that each step is the previous one plus its difference; a material variance blocks the report until it is reasoned, and the report is refused rather than trimmed; a stage whose record is stated in another unit refuses the comparison and the units are named; a closed month refuses a reason and is marked closed with who closed it; and the month total equals the sum of the day rows.",
+  "dataModel": {
+    "decision": "The feature owns three ProductionAccounting tables: RECONCILIATION_VARIANCE (the reason per field/month/dimension/stage), R_RECONCILIATION_REASON (the code book, not seeded - the closing categories are the operator's) and RECONCILIATION_PERIOD (the open/closed month marker, because no accounting period entity exists in this repository to read the state from).",
+    "tables": [
+      "RECONCILIATION_VARIANCE (VARIANCE_ID key, FIELD_ID, PERIOD_MONTH, DIMENSION, STAGE, AMOUNT, VOLUME_OUOM, MATERIAL_IND, REASON_CODE, NOTE, ACTOR, RECORDED_AT) - one row per line and stage, updated in place when a reason is reassigned",
+      "R_RECONCILIATION_REASON (REASON_CODE key, REASON_NAME, CATEGORY, ACTIVE_IND)",
+      "RECONCILIATION_PERIOD (PERIOD_ID key, FIELD_ID, PERIOD_MONTH, STATE, CLOSED_BY, CLOSED_AT, NOTE) - closing is one-way"
+    ],
+    "registration": "ProductionAccountingModuleSetup registers the three types; --smoke now reports 383 entity types (up from 380).",
+    "stages": "produced = the wells' own PDEN_VOL_SUMMARY rows; measured and allocated = PRD-04's committed ALLOCATION_RUN/ALLOCATION_RUN_ROW; sold = the PPDM PDEN_VOL_DISPOSITION rows; booked = PRODUCTION_ALLOCATION.ALLOCATED_VOLUME. Each is joined on field + well + date, which is the join key the feature's open question asked for."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Production/OgReconciliation.cs (OgReconciliationStep, OgReconciliationLine, OgReconciliationDay, OgReconciliationTotals, OgReconciliationWorkspace, OgReconciliationReasonValues, OgReconciliationReport, ReconciliationRules, IOgReconciliation, OgReconciliationService with LoadAsync/AssignReasonAsync/ClosePeriodAsync/BuildReportAsync)",
+    "rules": "ReconciliationRules states the five stages, the month arithmetic, the materiality rule (a percentage of the stage before it), the waterfall construction and its consistency check, the unit rule, the reason validation and the export gate once, so the page and the tests agree.",
+    "page": "src/Beep.OilandGas.Desktop/Views/ReconciliationPageView.cs (route 'reconciliation': month and materiality, the waterfall with its differences and its consistency answer, the month total with its day rows, export readiness, the line grid, the day grid, the reason bar and the report/CSV preview)",
+    "wiring": "OgBootstrapper (IOgReconciliation), OgApplication.Reconciliation, catalog 'reconciliation' (OgModuleKeys.Production), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ReconciliationTests.cs (12, no database) + ReconciliationGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 841, "passed": 841, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 31, "passed": 31, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 55, "views-constructed": true, "modulesetup-summary": "28 module(s) - 383 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the PPDM WELL, PDEN_WELL, PDEN_VOL_SUMMARY and PDEN_VOL_DISPOSITION tables, the ProductionAccounting RUN_TICKET-adjacent PRODUCTION_ALLOCATION, PRD-04's ALLOCATION_RUN/ALLOCATION_RUN_ROW and the three new tables, seeded in ReconciliationGatewayTests",
+    "ac1_waterfall": "the field line reads produced 1,300 bbl, measured 900, allocated 850, sold 600, booked 850, with differences −400, −50, −250 and +250; the workspace reports the waterfall as consistent and the test checks each step equals the previous one plus its difference",
+    "ac2_material": "WELL-1 moved 40% between produced and measured and WELL-2 6.7% between measured and allocated, so two lines are material and the report is refused with reconciliation-material-variance-without-reason naming them; assigning a reason to each (with the stage named) makes the workspace export-ready and the report succeeds",
+    "ac2_reasons": "a missing code, an unknown code and an empty reference set are each refused with their own code; assigning the same line twice updates one row (the table still holds 2)",
+    "ac3_units": "setting the disposition rows to m3 makes the sold stage incomparable: the workspace names it ('sold in m3 against produced in bbl'), the export is blocked and BuildReportAsync refuses with reconciliation-unit-mismatch",
+    "ac4_closed": "closing the month stores the marker with who and when; a further reason assignment is refused with reconciliation-period-closed, closing twice is refused, and the report is still readable",
+    "ac5_monthly": "the month's produced/measured/allocated/sold/booked each equal the sum of the day rows; the first day reads 900 bbl produced (600 + 300) and 600 bbl sold",
+    "failed_read": "dropping RECONCILIATION_PERIOD makes LoadAsync fail with a reference and no workspace"
+  },
+  "gates": {
+    "AC-1 The waterfall is arithmetically consistent": "pass - the steps are built from the stage values so each difference is value − previous, the workspace exposes IsConsistent, and the test checks every available step equals the previous one plus its difference; a stage with no record stops the waterfall with an em dash.",
+    "AC-2 A material variance requires a reason before export": "pass - materiality is a percentage of the stage before it, the line reports NeedsReason, and BuildReportAsync refuses with reconciliation-material-variance-without-reason (the report is refused, not trimmed). Assigning the reason clears it and the report is produced.",
+    "AC-3 Units are consistent across all stages or the comparison is refused": "pass - each stage keeps the unit its own record states; a stage in another unit is withheld and named, and the export and the report are refused with reconciliation-unit-mismatch.",
+    "AC-4 A closed period cannot be edited": "pass - a closed month's reason assignment is refused with reconciliation-period-closed, the page marks it closed with the user and the time, and the state is stored in RECONCILIATION_PERIOD.",
+    "AC-5 Monthly totals equal the sum of daily rows": "pass - the day rows and the month totals come from the same stage reads and the test asserts each monthly figure equals the sum of its day rows; the report prints both."
+  },
+  "incident": {
+    "what": "The feature's source list names the accounting RUN_TICKET table as the sold-volume record, so it was read through its entity model first.",
+    "effect": "The reconciliation could not load: 'An item with the same key has already been added. Key: TEMPERATURE'. RUN_TICKET's compatibility partial (Beep.OilandGas.Models/Data/ProductionAccounting/AllocationRunTicketCompatibility.cs) adds PascalCase aliases beside the PPDM columns, so Temperature and TEMPERATURE collapse onto one column name and the entity cannot be read at all - the same class of defect PRD-04 hit on ALLOCATION_RESULT (ALLOCATION_METHOD vs METHOD).",
+    "repair": "The sold stage reads the PPDM PDEN_VOL_DISPOSITION rows instead - the same sales handover recorded in the PPDM model - and the page prints that decision in its join-key sentence. The accounting RUN_TICKET (and ALLOCATION_RESULT) were left untouched; both defects are now recorded twice and should be fixed by their owner."
+  },
+  "limits": [
+    "The sold volumes come from PPDM's disposition rows, not the accounting run ticket: the accounting entity cannot be read through the framework (see the incident). PG-05-5's 'run ticket' is therefore the PPDM disposition record of the same handover.",
+    "'Booked' is PRODUCTION_ALLOCATION.ALLOCATED_VOLUME for the field/well/date; the table's ALLOCATION_STATUS is not interpreted (POSTED and anything else are treated the same), because the feature does not define which statuses are bookable.",
+    "The month total is the field line, and the lines are per well; a pool-level breakdown is not built (the feature's variance grid says 'by well/pool' - the pool dimension would need the PDEN_POOL link, which PRD-02 uses, but the accounting allocation rows carry a POOL_ID that is not populated in this model).",
+    "Materiality is a percentage of the stage before the move; a variance on the first stage has no previous stage and is therefore never material by itself.",
+    "Closing a month is one-way: reopening would need an approval trail the feature does not define.",
+    "The report is produced as text and CSV in the page; the PDF/XLSX export the feature names belongs to RPT-01/RPT-02, which are not built.",
+    "The feature's permissions (production.read, production.reconciliation.write, data.export) are not enforced per command: the app gates pages."
+  ]
+}

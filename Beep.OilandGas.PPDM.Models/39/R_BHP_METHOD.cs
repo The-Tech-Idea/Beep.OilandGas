@@ -9,6 +9,7 @@ public partial class R_BHP_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String BHP_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BHP_METHOD
         {  
             get  

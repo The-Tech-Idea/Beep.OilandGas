@@ -9,6 +9,7 @@ public partial class PPDM_QUANTITY_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String QUANTITY_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUANTITY_ALIAS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String QUANTITY_ALIAS_IDValue;
           set { SetProperty(ref  QUANTITY_ALIAS_IDValue, value); }
         } 
 private  System.String QUANTITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUANTITY_TYPE
         {  
             get  

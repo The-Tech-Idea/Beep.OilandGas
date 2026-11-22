@@ -1,0 +1,70 @@
+{
+  "id": "STG-06/RES-06",
+  "title": "Decline curve analysis",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a synthetic hyperbolic history generated at qi 1000, Di 0.01/day and b 0.5 is recovered exactly; a b outside the module's Arps bounds is refused with the bounds named (AC-2); a history whose best fit wants b above the maximum is refused rather than reported at the bound (SG-06-6); excluded points are listed with their reasons and counted (AC-3); the sibling tools' independent DeclineFitter agrees within a stated tolerance and a disagreement would be shown rather than resolved (AC-4); a refused or non-converged fit draws no curve (AC-5); and the same history and model give the same fit (AC-6).",
+  "dataModel": {
+    "decision": "ProductionForecasting owned PRODUCTION_FORECAST and its points, which record a forecast rather than a fit. RES-06's contract (qi, Di, b, EUR, R2, points used and excluded, bounded) is a different record, so DECLINE_FIT was added to the same owning module and registered. The parameters are stored on the run because the fit is what the engineer accepted: a later change to the history must not silently change a saved analysis.",
+    "tables": [
+      "DECLINE_FIT (FIT_ID key, WELL_ID, POOL_ID, MODEL, OUTCOME, REFUSAL_CODE, REFUSAL_MESSAGE, QI, DI_PER_DAY, B, BOUNDED_IND, EUR, ECONOMIC_LIMIT, VOLUME_OUOM, R_SQUARED, POINTS_USED, POINTS_EXCLUDED, EXCLUSIONS_TEXT, HISTORY_FROM, HISTORY_TO, CROSS_CHECK_SOURCE, CROSS_CHECK_QI, CROSS_CHECK_B, CROSS_CHECK_AGREES, CROSS_CHECK_TEXT, ACTOR, RECORDED_AT) - a refused fit would carry its code and message and no parameters, so a refusal can never read as a result"
+    ],
+    "registration": "ProductionForecastingModule now registers four types; --smoke reports 392 entity types (up from 391).",
+    "reads": "PPDM PDEN_VOL_SUMMARY through PDEN_WELL and WELL at PRD-01's grain: the highest amendment per entity, day and activity, production rows only, each fluid summed within the dominant unit it is recorded in."
+  },
+  "implementation": {
+    "authoritative": "The ProductionForecasting module's DCAGenerator is authoritative. The sibling tools checkout's TheTechIdea.OilGas.Production.DeclineFitter is the independent cross-check, and a disagreement is shown rather than resolved - the feature's open question answered.",
+    "service": "src/Beep.OilandGas.Desktop.Data/Reservoir/OgDecline.cs (DeclineModels, DeclineFluids, OgDeclineInputs, OgDeclinePoint, OgDeclineCrossCheck, OgDeclineFit, OgDeclineWorkspace, DeclineRules, IOgDeclineCurve, OgDeclineCurveService with AnalyzeAsync/SaveAsync/LoadAsync and the public Fit)",
+    "rules": "DeclineRules states the models and fluids, the bounds lookup from the owner's Arps constants, the validation (well, fluid, model, a fixed b inside the bounds, a positive economic limit), the cross-check tolerance (b 0.05 absolute, qi 5% relative) and the determinism sentence once.",
+    "page": "src/Beep.OilandGas.Desktop/Views/DeclineCurvePageView.cs (route 'declinecurve': the well/fluid/date-range bar, the model/fixed-b/economic-limit bar, the fit summary, the bounds sentence, the refusal or bounds line, the cross-check, the excluded points and their reasons, the gaps, the fitted curve and the saved fits)",
+    "wiring": "OgBootstrapper (IOgDeclineCurve), OgApplication.DeclineCurve, catalog 'declinecurve' (OgModuleKeys.Reservoir), OgPageFactory, en + ar labels",
+    "projectReference": "Desktop.Data now references the sibling tools' TheTechIdea.OilGas.Production project so the cross-check is the real second implementation, not a copy of it.",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DeclineCurveTests.cs (11, no database) + DeclineCurveGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 924, "passed": 924, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 38, "passed": 38, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 62, "views-constructed": true, "modulesetup-summary": "28 module(s) - 392 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL, PDEN_WELL, PDEN_VOL_SUMMARY and DECLINE_FIT, seeded in DeclineCurveGatewayTests with a 24-month hyperbolic history at qi 1000, Di 0.01/day and b 0.5, two of whose months are recorded as zero",
+    "ac1_reference": "the fit reads the PPDM rows and returns qi within [999, 1001], Di within [0.0099, 0.0101] and b within [0.49, 0.51], R2 1.000 at 22 used points with EUR above zero in bbl",
+    "ac3_exclusions": "the two zero-volume months are excluded with the reason 'a rate of zero or less cannot be fitted on a log scale', counted (22 used, 2 excluded) and printed one per line",
+    "ac4_cross_check": "the tools' DeclineFitter is fitted to the same rows and agrees; the saved row stores CROSS_CHECK_AGREES='Y' with its qi and b",
+    "ac5_no_curve": "a range of three months is refused with decline-too-few-points naming the minimum of 6, and a well with no history is refused with the same code rather than fitted to another well's rows",
+    "ac2_bounds": "a fixed b of 1.5 or -0.1 is refused with decline-b-outside-bounds naming the 0 to 1 range",
+    "sg066_unbounded": "a history generated at b 1.5 is refused with decline-fit-unbounded and the message that the data wants a b above the configured maximum, with no parameters and no curve",
+    "history_unavailable": "dropping DECLINE_FIT makes LoadAsync return a workspace with HistoryFailed true, and new fits are still allowed"
+  },
+  "gates": {
+    "AC-1 A synthetic history with known parameters is recovered within tolerance": "pass - the unit test generates 24 monthly points from q = 1000 / (1 + 0.5 x 0.01 x t)^(1/0.5) and the fit returns qi 1000.0000, Di 0.010000/day, b 0.500000 with R2 1.000000; the gateway test recovers the same parameters from real PPDM rows within 1% on qi, 1% on Di and 0.01 on b.",
+    "AC-2 b outside the configured bounds is refused": "pass - the bounds are the module's own ForecastAlgorithmConstants.ArpsBdfMinB/ArpsBdfMaxB (0 and 1), a fixed b outside them is refused with decline-b-outside-bounds naming both, and an automatic fit that the data pushes to the upper bound is refused with decline-fit-unbounded rather than reported at the bound (SG-06-6).",
+    "AC-3 Excluded points are listed with reasons": "pass - a zero or negative rate is excluded with 'a rate of zero or less cannot be fitted on a log scale', counted in POINTS_EXCLUDED and printed with its date and rate; a saved fit stores the same list in EXCLUSIONS_TEXT.",
+    "AC-4 The tools' DeclineFitter agrees within tolerance, or the disagreement is shown": "pass - the second implementation is fitted to the same points and compared at b 0.05 absolute and qi 5% relative; on both the synthetic and the SQLite history it agrees, and a disagreement would be recorded as CROSS_CHECK_AGREES='N' with both parameter sets in the sentence. A cross-check that cannot run is reported as unavailable and recorded through the failure reporter rather than failing the fit.",
+    "AC-5 A non-converged fit draws no curve": "pass - a refused fit has HasCurve false, no qi/Di/b and a CurveText of 'no curve is drawn for a fit that did not succeed', and SaveAsync refuses to keep it (decline-nothing-to-save).",
+    "AC-6 Results are deterministic for the same inputs and seed": "pass - the search is a fixed golden-section sequence over a deterministic least-squares fit with no random or clock-dependent step; two runs of the same history and model compare equal on every parameter, the EUR and the whole description."
+  },
+  "engineDefects": {
+    "fixed": {
+      "where": "Beep.OilandGas.ProductionForecasting/DCA/DCAGenerator.cs - FitCurve and the regression it calls",
+      "finding": "DCAAnalysisService.AnalyzeDeclineAsync threw ConvergenceException ('Failed to converge within maximum iterations. Iterations: 100, Final Error: 1.186775E+139') on a textbook hyperbolic history at qi 1000, Di 0.01/day, b 0.5. Its FitCurve builds a basis whose second function uses the same parameter as both the coefficient and the exponent, so the normal equations are ill-posed and the step diverges.",
+      "fix": "Two additive methods: TryFitDecline fits qi and Di by exact ordinary least squares on the b-transformed rate (q^-b = qi^-b (1 + b Di t), with b = 0 the exponential case) and finds b itself with a golden-section search restricted to the caller's bounds, evaluating both bounds explicitly so a fit the data pushes to a bound is reported as pinned rather than as an answer; TryFitDeclineAtB is the fixed-b form. FitCurve is untouched, so existing callers are unaffected.",
+      "verification": "TryFitDecline returns qi 1000.0000, Di 0.010000, b 0.500000, R2 1.000000 at the reference history, and the sibling tools' independently written DeclineFitter returns the same three parameters to the same precision on the same points - two implementations, one answer."
+    },
+    "noted": {
+      "where": "DCAAnalysisService.AnalyzeDeclineAsync",
+      "finding": "The service records Iterations as DCAConstants.DefaultMaxIterations and Converged as true unconditionally ('Note: actual iterations not tracked in current implementation'), so its DCAFitResult could never report a non-converged fit even if the solve had failed.",
+      "handling": "This feature does not use that path: it calls the new TryFitDecline/TryFitDeclineAtB, whose result carries the real parameter set and whether it was pinned at a bound. The service's own reporting is left as the owner's to fix and is recorded here rather than silently relied on."
+    }
+  },
+  "limits": [
+    "There is no plot: the feature's rate-vs-time chart (history points, fitted curve, forecast, interaction handler) is not drawn, because these calculation screens still have no chart host - the same limit RES-01..RES-05 record. The fitted values are printed point by point instead.",
+    "The Monte Carlo band (P90/P50/P10 from OgForecastBand) is not produced. It is optional in the plan ('when Monte Carlo is run'), and a seeded generator would have to be wired; what is shown is the deterministic fit, which is what AC-6 asks for.",
+    "MODIFIED_HYPERBOLIC fits inside the module's soft maximum (ArpsBdfSoftMaxB = 0.95) rather than applying a terminal decline; the terminal-decline segment belongs to the forecast RES-07 builds, and the fit itself is the hyperbolic fit.",
+    "The economic limit is an input: with no limit the EUR is not computed and the page says so, because the exponential theoretical EUR at infinite time is not a reserve. No default limit is invented.",
+    "The history is read from the oil, gas or water column of PDEN_VOL_SUMMARY and summed only within one unit per fluid; a well whose rows mix units uses the dominant unit and does not convert.",
+    "Gaps are detected as more than 31 days between consecutive readings and named, but a gap is not interpolated and does not exclude points.",
+    "The feature's permissions (forecasting.dca.read and forecasting.dca.write) are not enforced per command: the app gates pages.",
+    "A refused fit is not saved: the command table's 'save analysis' keeps analyses, and keeping a refusal would let a later reader mistake it for one. The refusal is shown on the page with its code and message."
+  ]
+}

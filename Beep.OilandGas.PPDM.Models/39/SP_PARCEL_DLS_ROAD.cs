@@ -9,6 +9,7 @@ public partial class SP_PARCEL_DLS_ROAD: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_DLS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_DLS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARCEL_DLS_IDValue;
           set { SetProperty(ref  PARCEL_DLS_IDValue, value); }
         } 
 private  System.String DLS_ROAD_ALLOWANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DLS_ROAD_ALLOWANCE_ID
         {  
             get  

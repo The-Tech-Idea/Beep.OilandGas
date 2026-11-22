@@ -9,6 +9,7 @@ public partial class RM_CIRC_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String CIRC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CIRC_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CIRC_IDValue;
           set { SetProperty(ref  CIRC_IDValue, value); }
         } 
 private  System.String DATA_CIRC_PROCESS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATA_CIRC_PROCESS_ID
         {  
             get  

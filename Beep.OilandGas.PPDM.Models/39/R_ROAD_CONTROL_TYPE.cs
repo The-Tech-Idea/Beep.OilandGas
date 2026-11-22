@@ -9,6 +9,7 @@ public partial class R_ROAD_CONTROL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTROL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTROL_TYPE
         {  
             get  

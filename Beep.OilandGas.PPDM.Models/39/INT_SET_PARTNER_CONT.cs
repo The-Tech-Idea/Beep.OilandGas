@@ -9,6 +9,7 @@ public partial class INT_SET_PARTNER_CONT: Entity,IPPDMEntity
 {
 
 private  System.String INTEREST_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTEREST_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INTEREST_SET_IDValue;
           set { SetProperty(ref  INTEREST_SET_IDValue, value); }
         } 
 private  System.Decimal INTEREST_SET_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal INTEREST_SET_SEQ_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal INTEREST_SET_SEQ_NOValue;
           set { SetProperty(ref  INTEREST_SET_SEQ_NOValue, value); }
         } 
 private  System.String PARTNER_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARTNER_BA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PARTNER_BA_IDValue;
           set { SetProperty(ref  PARTNER_BA_IDValue, value); }
         } 
 private  System.Decimal PARTNER_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PARTNER_OBS_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal PARTNER_OBS_NOValue;
           set { SetProperty(ref  PARTNER_OBS_NOValue, value); }
         } 
 private  System.String CONTACT_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_BA_ID
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String CONTACT_BA_IDValue;
           set { SetProperty(ref  CONTACT_BA_IDValue, value); }
         } 
 private  System.Decimal CONTACT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal CONTACT_OBS_NO
         {  
             get  
@@ -69,6 +75,7 @@ private  System.Decimal CONTACT_OBS_NOValue;
           set { SetProperty(ref  CONTACT_OBS_NOValue, value); }
         } 
 private  System.String CONTACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_ID
         {  
             get  

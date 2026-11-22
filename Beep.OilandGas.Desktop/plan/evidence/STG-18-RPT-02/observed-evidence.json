@@ -1,0 +1,91 @@
+{
+  "id": "STG-18/RPT-02",
+  "title": "Print packs and batch export",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: a pack over four wells writes three documents and one manifest in both JSON and CSV; a well that cannot be drawn is listed as skipped with its reason instead of being dropped; a cancelled run keeps the documents already written and still writes the manifest for them; file names are deterministic and unique by index; the pack's paper, scale, header block and legend reach the owners' own print options and change the document; and every manifest page count is read back out of the file it describes.",
+  "dataModel": {
+    "read": "WELL, WELLBORE, WELL_DIR_SRVY_STATION, STRAT_WELL_SECTION and STRAT_UNIT - through the entity models, joined in memory by the shared OgWellModelReader that INT-07 and INT-08 also use.",
+    "written": "One PDF per well into the folder the person names, plus manifest.json and manifest.csv there. No table.",
+    "noTable": "RPT-02 introduces no table. A pack is files; the manifest is a file beside them.",
+    "sharedReader": "The well-model assembly that INT-07 (map) and INT-08 (3D scene) each carried was extracted into Wells/OgWellModelReader.cs and both now delegate to it, so a well is built identically for a map, a scene and a printed pack."
+  },
+  "rules": {
+    "document": "The document is the owners': WellboreExport.ToPdf with WellborePrintOptions, over the document WellModelConverter produces from the engine's WellModel. Nothing in this feature draws a page - that is what AC-5 asks for and what makes the printed pack consistent with the well view on screen.",
+    "skip": "AC-2: a well that cannot produce a document is an item with status 'skipped' and a reason - no identifier, or fewer than two survey stations - and the preview names it before the run. It is never silently dropped from the pack.",
+    "cancel": "AC-3: the token is taken at a well boundary, so a cancellation never leaves half a document. The documents already written are kept, the run reports Cancelled, and the manifest is still written for what completed.",
+    "names": "AC-4: the name is the pack's order number, the content type and the well's UWI made safe, so the same scope in the same order gives the same names (a re-run overwrites its own files) and two wells whose identifiers clean to the same text are still told apart by their index.",
+    "options": "AC-5: paper, scale ratio (0 = fit one page), the header block, the legend and the title are the owner's WellborePrintOptions. PaperSize is a readonly struct of four static sizes, not an enum, so the page offers exactly those four and an unknown name falls back to the environment's paper rather than throwing.",
+    "manifest": "AC-1 and AC-6: one manifest per pack, as JSON and CSV, written where the documents are, carrying each well's file, page count, bytes, status, reason and warnings. Every page count is read back out of the PDF's own page objects, so the manifest cannot claim a length the file does not have.",
+    "permissions": "The feature's command table asks for reporting.pack.run and data.export. Both are required (an administrator always passes), and a permission source that could not be read is a refusal rather than an empty grant.",
+    "reportPacks": "A pack may also be a set of RPT-01 reports: each document is the report printed through its own service, exported to a scratch file and read back so the bytes are the service's own document. Only the reports whose parameters are a well can be packed, and any other key is refused naming the ones that can."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reporting/OgPrintPacks.cs (OgPackContentType, OgPackScope, OgPackOptions, OgPrintPack, OgPackItem, OgPackManifest, OgPackEstimate, OgPackProgress, OgPackRules, IOgPrintPacks, OgPrintPacksService with EstimateAsync/RunAsync)",
+    "reader": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellModelReader.cs - the PPDM-to-WellModel assembly, now shared by INT-07, INT-08 and RPT-02",
+    "page": "src/Beep.OilandGas.Desktop/Views/PrintPacksPageView.cs (route 'printpacks': the content and scope bars, the print options, the output folder, the estimate with the first names and the skipped wells, progress, the run and cancel commands, the manifest text and the item grid)",
+    "wiring": "OgBootstrapper (IOgPrintPacks taking the connection, the reporter and IOgReports), OgApplication.PrintPacks, catalog 'printpacks' (OgModuleKeys.Reporting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PrintPackTests.cs (8, no database) + PrintPackGatewayTests.cs (1 opt-in, real SQLite and the owners' PDF writer)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1492, "passed": 1492, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 100, "passed": 100, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 123, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0, "skin-contrast-failures": 66 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL, WELLBORE, WELL_DIR_SRVY_STATION, STRAT_WELL_SECTION and STRAT_UNIT: four wells in two fields, three with two survey stations each and one with none, and two formation picks.",
+    "ac1_manifest": "the pack writes three PDFs and one manifest, the manifest exists in both JSON and CSV beside them, and the items total three written, one skipped and no failures",
+    "ac2_skip": "the fourth well has no survey, so it is an item with status 'skipped' and the reason 'no survey (2+ stations), so the well view cannot be drawn to depth'; it is also named in the preview before the run, and appears in the CSV",
+    "ac3_cancel": "a progress callback that cancels after the first well leaves the pack Cancelled with at least one written document, the manifest still on disk, and exactly as many PDFs in the folder as the manifest says were written",
+    "ac4_names": "the three files match ^\\d{3}-wellview-W-\\d\\.pdf$, are all distinct, and equal OgPackRules.FileName for indices 0 and 2 - so a re-run writes the same names",
+    "ac5_options": "every written file starts with %PDF and its manifest page count equals OgPackRules.PageCount of the bytes; a pack without the header block and legend produces a document of a different size, which is the options reaching the file",
+    "ac6_pages": "each manifest item's Pages equals the page objects in its file and is above zero, and the manifest's total equals the sum of the items",
+    "reportPack": "a report pack over two selected wells writes two documents with page counts above zero, and a report key that is not one a pack can print per well is refused with the pack-report-key code",
+    "noWells": "a selection naming no well in the database is refused with 'No well is in scope' rather than producing an empty pack",
+    "deleteSurvey": "deleting a well's survey stations then packing only that well writes nothing, skips one and still returns a manifest",
+    "refusals": "no permissions, one permission of the two, an unreadable permission source, an unknown content type, no folder and no connection are each refused with their own sentence"
+  },
+  "gates": {
+    "AC-1 A pack produces one PDF per well with a manifest": "pass - three documents and a manifest in JSON and CSV, with every item's status.",
+    "AC-2 A well that cannot produce a document is skipped with a reason": "pass - the well with no survey is skipped and named with the reason, in the preview and in the manifest.",
+    "AC-3 Cancellation keeps the documents completed and the manifest is still written": "pass - cancelled after the first well, the files on disk match the manifest's written count.",
+    "AC-4 File names are deterministic and unique": "pass - the numbered pattern asserted, distinct across the pack, and identical on a re-run.",
+    "AC-5 Print options (paper, scale, header, legend) reach the document": "pass - the owner's own WellborePrintOptions, and removing the header block and legend changes the file.",
+    "AC-6 The manifest page count matches the document": "pass - every count read back out of the PDF's page objects, and the total equals the sum."
+  },
+  "engineFindings": {
+    "paperSizeIsAStructNotAnEnum": {
+      "where": "TheTechIdea.OilGas.Wellbore/Output/PrintPlanner.cs (PaperSize)",
+      "finding": "PaperSize is a readonly struct with four static properties - A4, A3, Letter, Tabloid - so no paper can be added by name and Enum.TryParse throws on it. A first version offered A2 and A1, which the owner cannot make.",
+      "handling": "The page offers exactly the four the owner defines, and the print options map the name to the property explicitly; an unknown name keeps the environment's paper. A unit test asserts the list is exactly those four and that each maps to a PaperSize of the same name."
+    },
+    "theWellModelConversionIsTheSchematicProject": {
+      "where": "TheTechIdea.OilGas.WellSchematic/WellModelConverter.cs",
+      "finding": "Turning the engine's WellModel into the well view's document is WellModelConverter in the WellSchematic project, not in Wellbore - so a pack needs that reference even though it prints through WellboreExport.",
+      "handling": "The reporting service references WellSchematic and calls WellModelConverter.ToWellboreView, which is what the schematic page does, so a printed pack and the schematic on screen come from the same conversion."
+    },
+    "noCancellationTokenInTheOwner": {
+      "finding": "WellboreExport.ToPdf has no cancellation token and renders a whole document at a time.",
+      "handling": "The pack takes its cancellation at a well boundary - before starting the next document - which is what the feature asks for ('cancellation between wells') and is also the only granularity the owner allows. A unit-level cancellation inside one document is reported as a limitation, not claimed."
+    },
+    "theManifestCacheWasReadFromTheFile": {
+      "finding": "The page count could have been taken from the print planner's plan; instead it is read back out of the written PDF's page objects, which is what AC-6 asks for and what makes the manifest checkable against the file.",
+      "handling": "OgPackRules.PageCount counts the PDF's page objects, subtracting the page-tree node whose marker contains the page's own - the same correction RPT-01's PDF test needed."
+    },
+    "theSharedWellModelReader": {
+      "finding": "INT-07 and INT-08 each carried a private ReadWellsAsync that assembled a WellModel from five PPDM tables - identical code in two places, and a third copy would have gone into the pack.",
+      "handling": "It was extracted to Wells/OgWellModelReader.cs and both interop services now delegate to it, so a well is placed and printed from one assembly of the same rows."
+    }
+  },
+  "limits": [
+    "A pack's content is a well view or an RPT-01 report. Schematics, correlation panels and map packs are named in the plan's source table and are not offered here: the well view's exporter is the one that paginates a document to depth, and MapExport/ PanelExport produce single sheets rather than a paged print, so they are recorded as not built rather than offered as a type that would behave differently.",
+    "Cancellation is between wells: a single very large document is not interrupted part-way, because the owner's ToPdf has no token.",
+    "file names are numbered by the pack's order, so adding one well to the front of a scope renumbers every later file.",
+    "The manifest is written after the last document, so a process killed mid-run leaves documents with no manifest.",
+    "The report pack prints through the report service's scratch file, so a pack of reports does one extra file write per document.",
+    "A pack has no saved definition: the page's settings are not persisted, so a pack is re-entered each time. The feature's 'saved well list' scope is a comma-separated entry rather than a stored list.",
+    "The progress callback reports between wells, so a single-document pack shows no intermediate progress.",
+    "Print options are per pack, not per well: every document in a pack has the same paper, scale and chrome.",
+    "The owner's PaperSize has no A2 or A1, so the largest paper a pack can print on is A3."
+  ]
+}

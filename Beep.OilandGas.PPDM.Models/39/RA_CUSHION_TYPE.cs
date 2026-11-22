@@ -9,6 +9,7 @@ public partial class RA_CUSHION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CUSHION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUSHION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CUSHION_TYPEValue;
           set { SetProperty(ref  CUSHION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

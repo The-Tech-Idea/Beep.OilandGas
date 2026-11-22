@@ -9,6 +9,7 @@ public partial class R_CAT_ADDITIVE_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_GROUP
         {  
             get  

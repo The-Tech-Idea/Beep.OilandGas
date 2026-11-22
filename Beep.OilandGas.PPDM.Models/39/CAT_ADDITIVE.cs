@@ -9,6 +9,7 @@ public partial class CAT_ADDITIVE: Entity,IPPDMEntity
 {
 
 private  System.String CATALOGUE_ADDITIVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATALOGUE_ADDITIVE_ID
         {  
             get  

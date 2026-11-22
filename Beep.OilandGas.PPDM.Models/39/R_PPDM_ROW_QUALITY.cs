@@ -9,6 +9,7 @@ public partial class R_PPDM_ROW_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String ROW_QUALITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROW_QUALITY_ID
         {  
             get  

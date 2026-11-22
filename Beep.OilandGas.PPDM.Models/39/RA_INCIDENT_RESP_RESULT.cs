@@ -9,6 +9,7 @@ public partial class RA_INCIDENT_RESP_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String RESPONSE_RESULTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESPONSE_RESULT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESPONSE_RESULTValue;
           set { SetProperty(ref  RESPONSE_RESULTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

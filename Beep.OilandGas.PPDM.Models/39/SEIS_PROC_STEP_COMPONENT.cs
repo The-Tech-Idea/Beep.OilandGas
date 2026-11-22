@@ -9,6 +9,7 @@ public partial class SEIS_PROC_STEP_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SET_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SET_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_SET_SUBTYPEValue;
           set { SetProperty(ref  SEIS_SET_SUBTYPEValue, value); }
         } 
 private  System.String SEIS_PROC_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_PROC_SET_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SEIS_PROC_SET_IDValue;
           set { SetProperty(ref  SEIS_PROC_SET_IDValue, value); }
         } 
 private  System.String COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String COMPONENT_IDValue;
           set { SetProperty(ref  COMPONENT_IDValue, value); }
         } 
 private  System.String PROCESS_STEP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCESS_STEP_ID
         {  
             get  

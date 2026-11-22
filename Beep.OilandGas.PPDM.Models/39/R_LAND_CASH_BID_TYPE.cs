@@ -9,6 +9,7 @@ public partial class R_LAND_CASH_BID_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CASH_BID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CASH_BID_TYPE
         {  
             get  

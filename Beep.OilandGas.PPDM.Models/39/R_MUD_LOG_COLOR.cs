@@ -9,6 +9,7 @@ public partial class R_MUD_LOG_COLOR: Entity,IPPDMEntity
 {
 
 private  System.String MUD_LOG_COLORValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUD_LOG_COLOR
         {  
             get  

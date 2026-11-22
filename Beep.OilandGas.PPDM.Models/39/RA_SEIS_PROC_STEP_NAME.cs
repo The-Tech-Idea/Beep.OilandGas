@@ -9,6 +9,7 @@ public partial class RA_SEIS_PROC_STEP_NAME: Entity,IPPDMEntity
 {
 
 private  System.String STEP_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_NAME
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STEP_NAMEValue;
           set { SetProperty(ref  STEP_NAMEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

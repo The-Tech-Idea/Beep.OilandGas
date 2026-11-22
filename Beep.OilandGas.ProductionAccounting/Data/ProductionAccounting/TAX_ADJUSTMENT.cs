@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class TAX_ADJUSTMENT : ModelEntityBase {
         private string TAX_ADJUSTMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string TAX_ADJUSTMENT_ID
         {
             get { return this.TAX_ADJUSTMENT_IDValue; }

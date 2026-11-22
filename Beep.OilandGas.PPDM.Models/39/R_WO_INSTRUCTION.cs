@@ -9,6 +9,7 @@ public partial class R_WO_INSTRUCTION: Entity,IPPDMEntity
 {
 
 private  System.String INSTRUCTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUCTION_TYPE
         {  
             get  

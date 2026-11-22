@@ -9,6 +9,7 @@ public partial class R_PPDM_RULE_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String RULE_CLASS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_CLASS_TYPE
         {  
             get  

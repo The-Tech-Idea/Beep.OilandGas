@@ -9,6 +9,7 @@ public partial class R_WASTE_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_ORIGIN
         {  
             get  

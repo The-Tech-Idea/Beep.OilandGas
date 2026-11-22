@@ -9,6 +9,7 @@ public partial class APPLICATION: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_ID
         {  
             get  

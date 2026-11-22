@@ -9,6 +9,7 @@ public partial class RA_RIG_DESANDER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DESANDER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESANDER_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DESANDER_TYPEValue;
           set { SetProperty(ref  DESANDER_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

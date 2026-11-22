@@ -9,6 +9,7 @@ public partial class R_NS_DIRECTION: Entity,IPPDMEntity
 {
 
 private  System.String NS_DIRECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NS_DIRECTION
         {  
             get  

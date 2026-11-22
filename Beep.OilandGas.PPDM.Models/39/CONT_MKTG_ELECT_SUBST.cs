@@ -9,6 +9,7 @@ public partial class CONT_MKTG_ELECT_SUBST: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_IDValue;
           set { SetProperty(ref  CONTRACT_IDValue, value); }
         } 
 private  System.String OPERATING_PROCEDURE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OPERATING_PROCEDURE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String OPERATING_PROCEDURE_IDValue;
           set { SetProperty(ref  OPERATING_PROCEDURE_IDValue, value); }
         } 
 private  System.String SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SUBSTANCE_IDValue;
           set { SetProperty(ref  SUBSTANCE_IDValue, value); }
         } 
 private  System.Decimal SUBSTANCE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SUBSTANCE_OBS_NO
         {  
             get  

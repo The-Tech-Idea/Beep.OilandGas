@@ -9,6 +9,7 @@ public partial class ANL_ISOTOPE_STD: Entity,IPPDMEntity
 {
 
 private  System.String STANDARD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STANDARD_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STANDARD_IDValue;
           set { SetProperty(ref  STANDARD_IDValue, value); }
         } 
 private  System.String SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ID
         {  
             get  

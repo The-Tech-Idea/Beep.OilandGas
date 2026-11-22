@@ -9,6 +9,7 @@ public partial class ANL_ACCURACY: Entity,IPPDMEntity
 {
 
 private  System.String ANALYSIS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANALYSIS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANALYSIS_IDValue;
           set { SetProperty(ref  ANALYSIS_IDValue, value); }
         } 
 private  System.String ANL_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ANL_SOURCEValue;
           set { SetProperty(ref  ANL_SOURCEValue, value); }
         } 
 private  System.Decimal ACCURACY_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ACCURACY_OBS_NO
         {  
             get  

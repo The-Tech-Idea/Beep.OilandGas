@@ -9,6 +9,7 @@ public partial class RA_WELL_STATUS_XREF: Entity,IPPDMEntity
 {
 
 private  System.String STATUS_XREF_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS_XREF_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STATUS_XREF_IDValue;
           set { SetProperty(ref  STATUS_XREF_IDValue, value); }
         } 
 private  System.Decimal STATUS_XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STATUS_XREF_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal STATUS_XREF_OBS_NOValue;
           set { SetProperty(ref  STATUS_XREF_OBS_NOValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

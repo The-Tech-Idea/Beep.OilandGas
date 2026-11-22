@@ -9,6 +9,7 @@ public partial class RA_MBAL_CURVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CURVE_FIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_FIT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CURVE_FIT_TYPEValue;
           set { SetProperty(ref  CURVE_FIT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

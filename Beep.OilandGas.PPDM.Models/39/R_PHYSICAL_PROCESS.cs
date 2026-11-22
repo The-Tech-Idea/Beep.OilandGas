@@ -9,6 +9,7 @@ public partial class R_PHYSICAL_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_PROCESSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_PROCESS
         {  
             get  

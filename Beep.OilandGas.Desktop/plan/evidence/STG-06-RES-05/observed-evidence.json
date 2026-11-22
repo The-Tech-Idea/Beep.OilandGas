@@ -1,0 +1,62 @@
+{
+  "id": "STG-06/RES-05",
+  "title": "Reserves classification and characterization",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-5 met: totals exclude unclassified entries and state how many were left out; every entry carries a classifier and an effective date, and an entry without a classifier is flagged; a revision is an append that supersedes without overwriting; every characterization fact names the record it came from, including the two nothing records; and the disclosure is blocked while any entry lacks a classifier and needs a second person to approve it.",
+  "dataModel": {
+    "decision": "The repository had only field-level PROVED_RESERVES with proved developed/undeveloped volumes - no pool grain, no gross-versus-net pair, no revision chain and no per-entry classifier, so it cannot hold the plan's OgReserveEntry. The plan names a RESERVES table that does not exist, so two records were added to the LifeCycle owner: RESERVE_ENTRY (the plan's own grain) and RESERVE_DISCLOSURE (the approval the command table's 'approve disclosure - writes' needs). PROVED_RESERVES and the ProductionAccounting reserve services stay the accounting record and are not written here.",
+    "tables": [
+      "RESERVE_ENTRY (ENTRY_ID key, POOL_ID, FIELD_ID, CATEGORY, GROSS_VOLUME, NET_VOLUME, VOLUME_OUOM, EFFECTIVE_DATE, REVISION, CLASSIFIER, SUPERSEDES_ENTRY_ID, BASIS_TEXT, ACTOR, RECORDED_AT) - a revision is a new row that points at the one it supersedes",
+      "RESERVE_DISCLOSURE (DISCLOSURE_ID key, FIELD_ID, PERIOD, GROSS_TOTAL, NET_TOTAL, VOLUME_OUOM, ENTRY_COUNT, EXCLUDED_COUNT, PREPARED_BY, APPROVED_BY, APPROVED_AT, STATE) - the totals are copied onto the row at approval so the disclosure is reproducible after the entries move on"
+    ],
+    "registration": "LifeCycleModule registers both types; --smoke reports 391 entity types (up from 389).",
+    "reads": "PPDM FIELD and POOL (identity and status), DevelopmentPlanning DEVELOPMENT_POOL_PLAN (drive mechanism, OOIP, recovery factor), LifeCycle RESERVOIR_STATUS (reservoir state), ProspectIdentification PROSPECT_VOLUME_ESTIMATE (the maturation funnel)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reservoir/OgReserves.cs (ReserveUnits, OgReserveEntry, OgReserveTotal, OgCharacterizationFact, OgMaturationRow, OgReserveWorkspace, OgDisclosure, OgReserveEntryValues, ReserveRules, IOgReserves, OgReservesService with LoadAsync/AddRevisionAsync/ApproveDisclosureAsync)",
+    "rules": "ReserveRules states the categories and units, the validation (pool, category if given, gross/net non-negative, net not above gross, unit in the catalogue, effective date), the totals rule (only current revisions, one unit per category), the current-revision rule, and the disclosure gate once.",
+    "page": "src/Beep.OilandGas.Desktop/Views/ReservesPageView.cs (route 'reserves': the entries grid with current revision and history, the new-revision bar, the totals grid, the characterization panel with a source per fact, the maturation funnel, the disclosure preview, the approval bar and the approved disclosures)",
+    "wiring": "OgBootstrapper (IOgReserves), OgApplication.Reserves, catalog 'reserves' (OgModuleKeys.Reservoir), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ReservesTests.cs (10, no database, including the append-only source guard) + ReservesGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "routeMapping": {
+    "question": "Section 9 asks for the mapping of the five Web pages this feature consolidates.",
+    "Production/Reserves.razor": "the entries grid and the totals - route 'reserves', entries and Totals",
+    "Reservoir/ReservesClassification.razor": "the classification columns of the same grid: category, revision, classifier, effective date - route 'reserves'",
+    "CharacterizationSummary.razor": "the characterization panel, one fact per row with its source - route 'reserves', Characterization",
+    "Reservoir/Overview.razor": "the field and pool facts inside the same panel (field type, area, discovery, pool status, fluid, drive, OOIP, recovery factor, reservoir state) - route 'reserves', Characterization",
+    "BusinessProcess/ReservesMaturationReport.razor": "the maturation funnel panel, which reads PROSPECT_VOLUME_ESTIMATE - route 'reserves', Maturation"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 912, "passed": 912, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 37, "passed": 37, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 61, "views-constructed": true, "modulesetup-summary": "28 module(s) - 391 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD, POOL, RESERVE_ENTRY, RESERVE_DISCLOSURE, RESERVOIR_STATUS, DEVELOPMENT_POOL_PLAN and PROSPECT_VOLUME_ESTIMATE, seeded in ReservesGatewayTests",
+    "ac1_totals": "the proved category reads 150 bbl gross / 120 bbl net from its current revision only (the superseded 100 is not counted twice), probable reads 40 / 32, and the unclassified 900 bbl appears in no total; the workspace reports '1 entry/entries are unclassified and excluded from the totals (gross 900 bbl, net 900 bbl)'",
+    "ac3_history": "the superseded revision 1 is still a row and the current revision 2 points at it through SUPERSEDES_ENTRY_ID; adding a revision leaves the entry count one higher, never the same; a source guard asserts the service contains no .Update( or .Delete( and that the revision and supersede columns are set on insert",
+    "ac4_sources": "every characterization fact carries a source; the drive mechanism reads 'water drive' from DEVELOPMENT_POOL_PLAN.DRIVE_MECHANISM and the reservoir state reads RESERVOIR_STATUS; 'Reservoir pressure' and 'Reservoir temperature' are listed as 'not recorded' with the source 'no table in this repository records reservoir pressure/temperature'",
+    "ac2_classifier": "a revision recorded without a classifier is accepted, flagged (IsUnclassifiedByPerson) and counted in MissingClassifier, and its effective date is required by validation",
+    "ac5_gate": "with that entry present the approval is refused with reserves-disclosure-blocked naming the entries; after a further revision records the classifier the gate opens",
+    "sod": "the classifier 'sara' approving their own disclosure is refused with reserves-approver-is-preparer; 'reviewer' then approves and the row stores GROSS_TOTAL 250, EXCLUDED_COUNT 1, PREPARED_BY 'sara' and APPROVED_BY 'reviewer'",
+    "failed_read": "dropping RESERVE_ENTRY makes LoadAsync fail with a reference and no workspace"
+  },
+  "gates": {
+    "AC-1 Totals exclude unclassified entries and state how many were excluded": "pass - the totals are built from the current revisions only and skip an entry with no category; the workspace carries the excluded count and their gross/net volumes and says so on the page, and the disclosure record stores EXCLUDED_COUNT beside its totals.",
+    "AC-2 Every entry names a classifier and an effective date": "pass with a stated reading - the entry carries both, and the effective date is required by validation. A classifier is not required to save, because the state table says such an entry is 'flagged; disclosure blocked' rather than refused; the entry is flagged, listed in MissingClassifier and blocks the disclosure. That reading is recorded here rather than hidden.",
+    "AC-3 Revisions never overwrite history": "pass - a revision is a new row with REVISION = previous + 1 and SUPERSEDES_ENTRY_ID pointing at the row it replaces; the service contains no update or delete on RESERVE_ENTRY (asserted by a source guard), the workspace shows history beside the current revision, and the gateway test counts the rows after each revision.",
+    "AC-4 Characterization facts each show their source": "pass - every fact is an OgCharacterizationFact with Fact, Value and Source, and the panel prints 'fact: value (source: ...)'; the two facts no table records are listed with 'not recorded' and a source naming that absence rather than being omitted.",
+    "AC-5 Disclosure is blocked while any entry lacks a classifier": "pass - the gate is evaluated from the current revisions, names the entries, and refuses the approval with reserves-disclosure-blocked; the approval also enforces separation of duties, refusing when the approver is the classifier of the entries (reserves-approver-is-preparer)."
+  },
+  "limits": [
+    "PROVED_RESERVES (ProductionAccounting, field-level, proved only) stays the accounting record and is neither read nor written here; the screen is the plan-stage classification the feature describes. A future flow maps an approved disclosure into the accounting record.",
+    "Volumes are summed only within one unit per category and two units are named rather than converted - the feature says conversions go through the catalog, and there is no unit catalog in this application (the same limit RES-01 and RES-02 carry).",
+    "Reservoir pressure and temperature are not recorded anywhere in this repository, so the characterization shows them as 'not recorded' with that as the source. Rock properties (porosity, permeability) are also absent: POOL and DEVELOPMENT_POOL_PLAN do not hold them, and inventing them was not an option.",
+    "The maturation funnel reads the latest PROSPECT_VOLUME_ESTIMATE per prospect and shows P50 with the risked volume; it does not move an entry into reserves, because that transition is a business process the feature only asks to display.",
+    "A disclosure's totals are the sum of the category totals that have a single unit; a category with mixed units contributes nothing to the stored total and is named on the page - so a mixed-unit field cannot silently produce a wrong disclosure figure.",
+    "The separation-of-duties rule compares the approver with the classifier of the current entries; when several people classified them the rule does not fire, because the feature states SoD without defining the multi-preparer case.",
+    "The feature's permissions (reservoir.reserves.read/.write/.approve) are not enforced per command: the app gates pages."
+  ]
+}

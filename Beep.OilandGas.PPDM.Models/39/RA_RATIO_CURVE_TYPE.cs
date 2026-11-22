@@ -9,6 +9,7 @@ public partial class RA_RATIO_CURVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RATIO_CURVE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATIO_CURVE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RATIO_CURVE_TYPEValue;
           set { SetProperty(ref  RATIO_CURVE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

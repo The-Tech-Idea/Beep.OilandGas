@@ -9,6 +9,7 @@ public partial class RA_OBLIG_TRIGGER: Entity,IPPDMEntity
 {
 
 private  System.String TRIGGER_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRIGGER_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TRIGGER_METHODValue;
           set { SetProperty(ref  TRIGGER_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

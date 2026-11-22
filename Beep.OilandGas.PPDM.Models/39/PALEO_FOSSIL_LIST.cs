@@ -9,6 +9,7 @@ public partial class PALEO_FOSSIL_LIST: Entity,IPPDMEntity
 {
 
 private  System.String PALEO_SUMMARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PALEO_SUMMARY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PALEO_SUMMARY_IDValue;
           set { SetProperty(ref  PALEO_SUMMARY_IDValue, value); }
         } 
 private  System.String FOSSIL_DETAIL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_DETAIL_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String FOSSIL_DETAIL_IDValue;
           set { SetProperty(ref  FOSSIL_DETAIL_IDValue, value); }
         } 
 private  System.String FOSSIL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_ID
         {  
             get  

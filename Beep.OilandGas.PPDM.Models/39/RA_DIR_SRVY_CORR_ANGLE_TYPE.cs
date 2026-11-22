@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_CORR_ANGLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CORR_ANGLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORR_ANGLE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CORR_ANGLE_TYPEValue;
           set { SetProperty(ref  CORR_ANGLE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

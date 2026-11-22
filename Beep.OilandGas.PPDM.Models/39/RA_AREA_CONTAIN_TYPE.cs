@@ -9,6 +9,7 @@ public partial class RA_AREA_CONTAIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTAIN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTAIN_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTAIN_TYPEValue;
           set { SetProperty(ref  CONTAIN_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

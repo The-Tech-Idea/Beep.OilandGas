@@ -9,6 +9,7 @@ public partial class RA_MONTH: Entity,IPPDMEntity
 {
 
 private  System.String MONTHValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MONTH
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MONTHValue;
           set { SetProperty(ref  MONTHValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

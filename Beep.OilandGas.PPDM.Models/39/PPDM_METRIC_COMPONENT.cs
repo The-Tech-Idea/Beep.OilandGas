@@ -9,6 +9,7 @@ public partial class PPDM_METRIC_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String METRIC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METRIC_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METRIC_IDValue;
           set { SetProperty(ref  METRIC_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

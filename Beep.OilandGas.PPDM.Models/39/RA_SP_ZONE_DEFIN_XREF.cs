@@ -9,6 +9,7 @@ public partial class RA_SP_ZONE_DEFIN_XREF: Entity,IPPDMEntity
 {
 
 private  System.String XREF_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String XREF_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String XREF_REASONValue;
           set { SetProperty(ref  XREF_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

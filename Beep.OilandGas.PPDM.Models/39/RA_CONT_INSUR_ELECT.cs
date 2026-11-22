@@ -9,6 +9,7 @@ public partial class RA_CONT_INSUR_ELECT: Entity,IPPDMEntity
 {
 
 private  System.String INSURANCE_ELECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSURANCE_ELECTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INSURANCE_ELECTIONValue;
           set { SetProperty(ref  INSURANCE_ELECTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

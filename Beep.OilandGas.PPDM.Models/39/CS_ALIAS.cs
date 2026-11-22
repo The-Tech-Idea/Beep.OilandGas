@@ -9,6 +9,7 @@ public partial class CS_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String COORD_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COORD_SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COORD_SYSTEM_IDValue;
           set { SetProperty(ref  COORD_SYSTEM_IDValue, value); }
         } 
 private  System.String COORD_SYSTEM_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COORD_SYSTEM_ALIAS_ID
         {  
             get  

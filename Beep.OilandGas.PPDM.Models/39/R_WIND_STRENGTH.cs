@@ -9,6 +9,7 @@ public partial class R_WIND_STRENGTH: Entity,IPPDMEntity
 {
 
 private  System.String WIND_STRENGTHValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WIND_STRENGTH
         {  
             get  

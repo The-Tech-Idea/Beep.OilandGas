@@ -9,6 +9,7 @@ public partial class RA_COORD_CAPTURE: Entity,IPPDMEntity
 {
 
 private  System.String CAPTURE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAPTURE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CAPTURE_METHODValue;
           set { SetProperty(ref  CAPTURE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

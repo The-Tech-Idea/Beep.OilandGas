@@ -9,6 +9,7 @@ public partial class R_DIST_REF_PT: Entity,IPPDMEntity
 {
 
 private  System.String DISTANCE_REF_POINTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISTANCE_REF_POINT
         {  
             get  

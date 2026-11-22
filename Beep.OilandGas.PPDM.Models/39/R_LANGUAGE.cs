@@ -9,6 +9,7 @@ public partial class R_LANGUAGE: Entity,IPPDMEntity
 {
 
 private  System.String LANGUAGE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LANGUAGE_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class WELL_ACTIVITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACTIVITY_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACTIVITY_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACTIVITY_SET_IDValue;
           set { SetProperty(ref  ACTIVITY_SET_IDValue, value); }
         } 
 private  System.String ACTIVITY_TYPE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACTIVITY_TYPE_ID
         {  
             get  

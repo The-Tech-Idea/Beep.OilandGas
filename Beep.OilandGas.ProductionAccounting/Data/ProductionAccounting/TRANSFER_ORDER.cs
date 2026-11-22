@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class TRANSFER_ORDER : ModelEntityBase {
         private System.String TRANSFER_ORDER_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String TRANSFER_ORDER_ID
         {
             get { return this.TRANSFER_ORDER_IDValue; }

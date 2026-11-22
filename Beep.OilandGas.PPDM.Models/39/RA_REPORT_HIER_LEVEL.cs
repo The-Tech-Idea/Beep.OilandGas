@@ -9,6 +9,7 @@ public partial class RA_REPORT_HIER_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String LEVEL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEVEL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEVEL_TYPEValue;
           set { SetProperty(ref  LEVEL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_NS_DIRECTION: Entity,IPPDMEntity
 {
 
 private  System.String NS_DIRECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NS_DIRECTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String NS_DIRECTIONValue;
           set { SetProperty(ref  NS_DIRECTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

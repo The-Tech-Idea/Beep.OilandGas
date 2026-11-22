@@ -9,6 +9,7 @@ public partial class RA_TITLE_OWN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TITLE_OWN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TITLE_OWN_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TITLE_OWN_TYPEValue;
           set { SetProperty(ref  TITLE_OWN_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

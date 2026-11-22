@@ -9,6 +9,7 @@ public partial class R_HEAT_CONTENT_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String HEAT_CONTENT_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HEAT_CONTENT_METHOD
         {  
             get  

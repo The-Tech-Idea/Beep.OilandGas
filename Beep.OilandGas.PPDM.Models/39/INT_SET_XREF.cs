@@ -9,6 +9,7 @@ public partial class INT_SET_XREF: Entity,IPPDMEntity
 {
 
 private  System.String INTEREST_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTEREST_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INTEREST_SET_IDValue;
           set { SetProperty(ref  INTEREST_SET_IDValue, value); }
         } 
 private  System.Decimal INTEREST_SET_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal INTEREST_SET_SEQ_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal INTEREST_SET_SEQ_NOValue;
           set { SetProperty(ref  INTEREST_SET_SEQ_NOValue, value); }
         } 
 private  System.String INTEREST_SET_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTEREST_SET_ID_2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String INTEREST_SET_ID_2Value;
           set { SetProperty(ref  INTEREST_SET_ID_2Value, value); }
         } 
 private  System.Decimal INTEREST_SET_SEQ_NO_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal INTEREST_SET_SEQ_NO_2
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal INTEREST_SET_SEQ_NO_2Value;
           set { SetProperty(ref  INTEREST_SET_SEQ_NO_2Value, value); }
         } 
 private  System.Decimal INT_SET_XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal INT_SET_XREF_OBS_NO
         {  
             get  

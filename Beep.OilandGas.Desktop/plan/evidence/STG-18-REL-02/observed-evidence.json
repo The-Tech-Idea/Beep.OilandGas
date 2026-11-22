@@ -1,0 +1,70 @@
+{
+  "id": "STG-18/REL-02",
+  "title": "Licensing and entitlements",
+  "date": "2026-11-06",
+  "status": "gate met - signed licence, two gates, expiry/grace with write blocking, licence page and shell banner; seat limits read but not enforced",
+  "implementation": {
+    "format": "src/Beep.OilandGas.Desktop/Security/OgLicenceVerifier.cs (envelope, base64url, RSA-2048/SHA-256, embedded trust anchors)",
+    "claimsProjection": "src/Beep.OilandGas.Desktop/Security/OgLicenceState.cs",
+    "service": "src/Beep.OilandGas.Desktop/Security/OgLicenceService.cs (reload, import, enforcement, Changed)",
+    "gate": "src/Beep.OilandGas.Desktop.Core/OgEntitlement.cs (Allows / AllowsWriting, permissive vs enforced)",
+    "navigation": "src/Beep.OilandGas.Desktop/Services/OgNavigationService.cs (entitlement first, then roles)",
+    "page": "src/Beep.OilandGas.Desktop/Views/LicencePageView.cs (route 'licence')",
+    "rows": "src/Beep.OilandGas.Desktop/Services/OgLicenceRows.cs",
+    "shell": "src/Beep.OilandGas.Desktop/Shell/OgShellWindow.xaml(.cs) (LicenceBanner, rebuilt navigation on Changed)",
+    "headless": "src/Beep.OilandGas.Desktop/Headless/OgHeadlessRunner.cs (--licence-check verifies; --entitlement-report prints licence and write state)",
+    "keys": "src/Beep.OilandGas.Desktop/Security/licence-keys.json (embedded public key, keyId dev-2026)",
+    "sample": "src/Beep.OilandGas.Desktop/Security/Samples/sample-licence.json (pre-signed, expires 2030-12-31)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/LicensingTests.cs (13), TestLicences.cs, HeadlessVerbTests.cs (licence verbs), SourceGuardTests.cs (no private key under src)",
+    "decision": "plan/04-DECISIONS.md ADR-015"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~LicensingTests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test (all)", "exit": 0, "run": 299, "passed": 299, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "processRuns": [
+    { "verb": "--licence-check <sample>", "exit": 0, "evidence": "signature: verified (key dev-2026); edition Professional; customer Probe Energy; modules core,data,wells,administration; expires 2030-12-31; usable True; result: verified-ok" },
+    { "verb": "--licence-check <altered signature>", "exit": 2, "evidence": "signature: not verified - licence-signature-invalid; problem: the signature does not match its contents; result: refused" },
+    { "verb": "--licence-check <unsigned>", "exit": 2, "evidence": "signature: not verified - licence-unsigned; problem: not signed, contents cannot be authenticated; result: refused" },
+    { "verb": "--entitlement-report", "exit": 0, "evidence": "entitlement-service OgLicenceService; licence-enforcement Permissive; licence-status 'No licence is installed. Enforcement is off, so every module is available.'; module: wells = allowed | write=allowed; page: wells ... open=True" }
+  ],
+  "smoke": {
+    "pages-declared": 16,
+    "licence-imported": true,
+    "licence-edition": "Professional",
+    "licence-customer": "Probe Energy",
+    "licence-modules": "core,data,wells,administration",
+    "licence-signature-verified": true,
+    "licence-key": "dev-2026",
+    "licence-usable": true,
+    "licence-tampered-refused": true,
+    "licence-after-tamper-customer": "Probe Energy",
+    "licence-expired-read-allowed": true,
+    "licence-expired-write-blocked": true,
+    "licence-page-rows": 13
+  },
+  "gates": {
+    "AC-1 a module is available only when both the entitlement and the role allow it": "pass - OgNavigationService asks the entitlement first and then the role. An_entitled_module_still_needs_the_role proves a granted module is denied with only the Viewer role and allowed with SystemAdmin; A_module_the_licence_does_not_grant_is_denied_even_for_an_administrator proves the reverse direction.",
+    "AC-2 an expired licence blocks writes and permits reads, with a visible banner": "pass - An_expired_licence_past_grace_allows_reads_and_blocks_writes_when_enforced: Allows(wells) true, AllowsWriting(wells) false, AllowsWriting(core) true. The smoke run asserts the same projection with a clock ten years ahead. The shell banner shows the status sentence when expired, in grace, or unlicensed under enforcement.",
+    "AC-3 an invalid signature is treated as unlicensed with a stated reason": "pass - An_altered_payload_is_treated_as_unlicensed_with_a_stated_reason and A_licence_signed_by_a_key_this_build_does_not_trust_is_refused return licence-signature-invalid / licence-key-unknown and IsLicensed false; the process run exits 2 with the same code and no exception text.",
+    "AC-4 the entitlement report lists edition, customer and modules exactly as the file says": "pass - the sample's payload and the report agree field for field (Professional / Probe Energy / core,data,wells,administration); the smoke run reads the same values after Import.",
+    "AC-5 a licence never contains a plaintext secret": "pass - the format has four fields (schema, keyId, payload, signature) and no secret field; A_licence_carries_no_secret_and_the_trusted_keys_are_public_only asserts the field names, the absence of PRIVATE KEY/password/secret/token, and that every embedded trust anchor is a PUBLIC KEY.",
+    "AC-6 changing a licence takes effect without reinstalling": "pass - Importing_a_valid_licence_takes_effect_without_a_restart imports into the same service instance and reads the new customer immediately; the service raises Changed and the shell rebuilds navigation and banner. Importing_a_tampered_licence_is_refused_and_leaves_the_installed_one_intact proves a bad import cannot degrade a working install."
+  },
+  "security": {
+    "signedBytes": "the decoded payload verbatim; no serializer in the trust path",
+    "algorithm": "RSA-2048 / SHA-256 / PKCS#1 v1.5",
+    "trustAnchor": "embedded resource, not a file under the data root",
+    "privateKey": "development key only, in the test project's Fixtures folder; guard No_private_key_material_is_committed_under_src fails the build if any file under src contains PRIVATE KEY",
+    "releaseAction": "replace Security/licence-keys.json with the production vendor public key before release (REL-01/REL-05)"
+  },
+  "limits": [
+    "Seat counts are parsed, shown and carried on the entitlement but not enforced at sign-in; the local user store keeps no active-session count.",
+    "The shell banner's visibility and text are computed from the entitlement and covered by state tests, but no screenshot or click-through exists.",
+    "The development key is the only trusted key: a production-signed licence is refused until the real key is embedded.",
+    "There is no vendor-side licence issuance tool; licences are signed outside the product.",
+    "Enforcement defaults to Permissive because the commercial terms are undecided (REL-02 §9)."
+  ]
+}

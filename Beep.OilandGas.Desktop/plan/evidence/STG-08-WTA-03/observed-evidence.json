@@ -1,0 +1,82 @@
+{
+  "id": "STG-08/WTA-03",
+  "title": "Pipeline analysis and integrity",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a reference gas capacity reproduces the published Weymouth relation to within 0.1%; the erosion threshold always names API RP 14E and the C-factor service that set it, and a service outside the standard is refused; the flow regime is printed with the Reynolds thresholds it was decided against; the experimental slug-flow and simulation tabs are disabled by default and labelled; the exported analysis is built from the same properties the panels print; and a saved result records its mode and every input.",
+  "dataModel": {
+    "decision": "PIPELINE_ANALYSIS_RESULT is the module's own result record, but it declares ten pairs of properties whose names differ only by case - STATUS/Status, FLOW_RATE/FlowRate, PRESSURE_DROP/PressureDrop, VELOCITY/Velocity, INLET_PRESSURE/InletPressure, OUTLET_PRESSURE/OutletPressure, FLOW_REGIME/FlowRegime, ANALYSIS_ID/AnalysisId, PIPELINE_ID/PipelineId, ANALYSIS_DATE/AnalysisDate. A case-insensitive store cannot create one table for that, and the unit of work's property map throws 'An item with the same key has already been added. Key: Status' before it writes anything, so no row could be persisted through it at all. Both sets are in use by existing code (the module's PipelineAnalysisService.DataManagement writes the upper-case names, PPDMCalculationService writes the mixed-case ones), so neither could be removed without breaking the owner. A new PIPELINE_ANALYSIS_REGISTER was added to the PipelineAnalysis module as the additive persistence contract, and the defect is recorded here rather than papered over.",
+    "tables": [
+      "PIPELINE_ANALYSIS_REGISTER (REGISTER_ID key, MODE, WELL_UWI, PIPELINE_ID, ANALYSIS_DATE, the geometry and conditions, the gas and liquid properties, CAPACITY, CAPACITY_OUOM, FLOW_REGIME, REYNOLDS_NUMBER, FRICTION_FACTOR, PRESSURE_DROP_PSI, VELOCITY_FPS, the erosion figures, THRESHOLD_SOURCE, EROSION_SERVICE, FEASIBLE_IND, NOTES, ACTOR, RECORDED_AT)"
+    ],
+    "registration": "typeof(PIPELINE_ANALYSIS_REGISTER) added to PipelineAnalysisModule's entity list. --smoke now reports 33 modules and 411 entity types (up from 33 and 410), which is the one added entity.",
+    "engine": "PipelineCapacityCalculator.CalculateGasPipelineCapacity (Weymouth) and CalculateLiquidPipelineCapacity (Darcy-Weisbach); PipelineValidator for the refusals; ErosionPrediction.CalculateErosionalVelocity and CalculateSalamaErosionRate for the erosion figures."
+  },
+  "ownerAdditions": {
+    "standards": "Beep.OilandGas.PipelineAnalysis/Constants/PipelineStandards.cs - the erosional velocity citation (API RP 14 E (2007) 2.5), the sand and corrosion citations, the three C-factor services taken from ErosionPrediction's own public constants (C_SolidService 100, C_InhibitedService 125, C_CleanService 150), the threshold sentence built from them, and the regime bands taken from PipelineConstants.LaminarFlowThreshold (2,000) and TurbulentFlowThreshold (4,000). It exists so a limit is never stored without its source and so the printed boundary is the one applied."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/WellTest/OgPipeline.cs (PipelineModes, OgPipelineInputs, OgPipelineErosion, OgPipelineResult, OgPipelinePending, OgPipelineWorkspace, PipelineRules, IOgPipeline, OgPipelineService with AnalyseAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "units": "The module's two capacity relations do not share a length unit: Weymouth takes miles and the liquid Darcy-Weisbach path takes feet. One input in miles, converted once for the liquid path, and the conversion is stated in the code.",
+    "regime": "Decided from the capacity relation's own Reynolds number against PipelineConstants' thresholds, named once in PipelineStandards so the page cannot print a different boundary than the one applied. A Reynolds number of zero or less leaves the regime UNDETERMINED and the run is refused with the velocity it saw.",
+    "erosion": "ErosionPrediction.CalculateErosionalVelocity with the C-factor of the chosen service, and CalculateSalamaErosionRate when a sand rate is given. The threshold's sentence and the sand model's name are stored beside the numbers.",
+    "export": "OgPipelineResult.ExportText builds the report from the same properties the panels print, so an export cannot carry a number the screen did not show. The module's own PipelineAnalysisService.Reporting is not used - see the engine findings.",
+    "page": "src/Beep.OilandGas.Desktop/Views/PipelinePageView.cs (route 'pipeline': the line, geometry, pressure, gas, liquid and erosion bars, then the result, the regime line, the Reynolds/friction/velocity line, the threshold panel, the notes, the disabled-tab list and the saved analyses)",
+    "wiring": "OgBootstrapper (IOgPipeline), OgApplication.Pipelines, catalog 'pipeline' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PipelineTests.cs (8, no database) + PipelineGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1046, "passed": 1046, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 50, "passed": 50, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 74, "views-constructed": true, "modulesetup-summary": "33 module(s) - 411 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PIPELINE_ANALYSIS_REGISTER, seeded in PipelineGatewayTests",
+    "ac1_reference": "a 12 in, 10 mi line from 1,000 to 800 psia at 530 R with a gas specific gravity of 0.65 carries a capacity the test recomputes from the published Weymouth relation Q = 433.5 (Tb/Pb) D^2.667 sqrt((P1^2-P2^2)/(L T Z SG)), taking only the Z-factor from the module's own correlation, and agrees to 0.1%; a 24 in line carries more at the same drawdown. This is SG-08-5.",
+    "ac2_threshold": "the row stores EROSION_THRESHOLD_FPS with THRESHOLD_SOURCE = 'API RP 14 E (2007) 2.5 - erosional velocity Ve = C / sqrt(mixture density); C = 100 for solid or sand-laden service'; the three services scale the limit exactly with their C-factors (150/100 for CLEAN against SOLID); a service outside the standard is refused naming the services; a sand rate stores EROSION_RATE_MPY with Salama-Venkatesh named. This is SG-08-6.",
+    "ac3_regime": "the result carries TURBULENT for the reference line, and the text prints 'laminar below 2,000, turbulent from 4,000' - the module's own constants, whose boundaries are asserted directly",
+    "ac4_experimental": "the workspace lists slug flow and simulation as disabled by default with the reason, and a source guard asserts the view has no slug-flow or simulation panel",
+    "ac5_export": "ExportText contains every formatted value the panels show (mode, capacity, regime, Reynolds, friction, pressure drop, threshold, verdict, notes), and the page exposes the result's own export",
+    "ac6_saved": "the row asserts MODE='GAS', CAPACITY_OUOM='Mscf/d', the capacity above zero, FLOW_REGIME, REYNOLDS_NUMBER, the diameter and length, both pressures, the erosion threshold and ratio, the threshold's source, the erosion service, the verdict, the gas gravity, the temperature and the actor; a liquid run stores MODE='LIQUID' with CAPACITY_OUOM='bbl/d' and its viscosity",
+    "lost_acknowledgement": "dropping the table makes the save fail with the result retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping PIPELINE_ANALYSIS_REGISTER makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A reference capacity case matches within tolerance": "pass - the Weymouth relation recomputed independently in the test agrees to 0.1%, and the diameter term is checked by the wider-line comparison. SG-08-5.",
+    "AC-2 Erosion always names its threshold source or says it is unconfigured": "pass - the threshold is stored with the citation and the C-factor service beside it, the three services scale the limit by their factors, and a result with no source stores the sentence that says so. SG-08-6.",
+    "AC-3 Flow regime is displayed with the result": "pass - the regime is printed with the two Reynolds thresholds it was decided against, an undecided regime refuses the run naming the velocity, and the boundaries are asserted at 1,999 / 2,000 / 4,000.",
+    "AC-4 Experimental tabs are disabled by default and labelled": "pass - the workspace names slug flow and simulation, says they are disabled by default, and a source guard keeps any such panel out of the view.",
+    "AC-5 Export produces the same numbers as the screen": "pass - the export is built from the properties the panels print, and the test asserts every one of them appears in it.",
+    "AC-6 Saved results record mode and inputs": "pass - the mode, every geometry, pressure, temperature and fluid input, the result and the actor are columns, asserted in SQL for a gas and a liquid run."
+  },
+  "engineFindings": {
+    "modelDefect": {
+      "where": "Beep.OilandGas.Models/Data/PipelineAnalysis/PIPELINE_ANALYSIS_RESULT.cs",
+      "finding": "Ten pairs of properties differ only in case. The unit of work builds its property map with a case-insensitive dictionary and throws 'An item with the same key has already been added. Key: Status' before it writes, so no row can be persisted through that entity; a case-insensitive database cannot hold one table for it either.",
+      "handling": "Recorded and worked around with PIPELINE_ANALYSIS_REGISTER rather than by deleting either set, because both are used by existing owner code (PipelineAnalysisService.DataManagement writes the upper-case names, PPDMCalculationService writes the mixed-case ones). The model was left exactly as it was - an attempt to remove the unused-looking duplicates broke the owner's build, which is what proved both sets are live."
+    },
+    "reportingStub": {
+      "where": "Beep.OilandGas.PipelineAnalysis/Services/PipelineAnalysisService.Reporting.cs",
+      "finding": "GenerateAnalysisReportAsync returns canned findings - 'Pipeline operating within normal parameters', 'No critical issues identified', 'All safety factors within acceptable limits' - regardless of the analysis it is given.",
+      "handling": "Not used. Exporting through it would print invented conclusions beside real numbers, so the export is built from the result's own properties instead."
+    },
+    "frictionScreening": {
+      "where": "PipelineCapacityCalculator.CalculateLiquidPipelineCapacity / CalculateLiquidFrictionFactor",
+      "finding": "The liquid path evaluates its friction factor at a substitute velocity of 5 ft/s (CalculateLiquidReynoldsNumber replaces a zero velocity with 'typical 5 ft/s') rather than at the velocity its own answer implies, so the friction factor and the capacity are not a converged Darcy-Weisbach solution.",
+      "handling": "Not changed - solving it would need an iteration the module does not have. The screen states in the result's notes that the liquid capacity is a screening figure, and the test verifies the two identities the module does solve (v = sqrt(2 g D h / (f L)) and Q = v A) from the friction factor it reports."
+    },
+    "lengthUnits": {
+      "where": "PipelineCapacityCalculator - the gas and liquid relations",
+      "finding": "The same PIPELINE_PROPERTIES.LENGTH column is miles for the Weymouth relation and feet for the liquid Darcy-Weisbach relation.",
+      "handling": "The screen takes miles once and converts to feet for the liquid path, with the conversion stated in the code; a caller that passed one number to both would be wrong by 5,280 times on one of them."
+    }
+  },
+  "limits": [
+    "The leak-detection, integrity, optimisation and reporting tabs are not built: the module's leak and integrity partials exist but were not verified as real calculations in this pass, and its reporting service returns canned findings. They are not offered rather than half-wired.",
+    "The liquid capacity is a screening figure: its friction factor is evaluated at a typical velocity rather than the converged one (see the engine findings).",
+    "The gas capacity is Weymouth only. The module's flow calculator (which iterates a friction factor and uses a diameter in feet against the inches-based Weymouth coefficient) disagrees with the capacity calculator, so it is not used for the capacity; the regime is taken from the capacity relation's own Reynolds number instead.",
+    "No elevation change or fittings are accounted for: the capacity relations take diameter, length, roughness and the two pressures only.",
+    "The slug-flow and simulation tabs stay disabled; the module labels them experimental and the screen says so rather than enabling them.",
+    "The feature's permissions (pipeline.read/.write/.experimental) are not enforced per command: the app gates pages."
+  ]
+}

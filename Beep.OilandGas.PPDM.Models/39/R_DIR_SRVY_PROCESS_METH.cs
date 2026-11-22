@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_PROCESS_METH: Entity,IPPDMEntity
 {
 
 private  System.String PROCESS_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCESS_METHOD
         {  
             get  

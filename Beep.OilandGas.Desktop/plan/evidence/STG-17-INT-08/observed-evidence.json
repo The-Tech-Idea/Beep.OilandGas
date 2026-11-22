@@ -1,0 +1,95 @@
+{
+  "id": "STG-17/INT-08",
+  "title": "3D scenes and glTF export",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: a surface with three wells renders and the view is framed on it; a click returns the value of the node it landed on, and a click on nothing returns nothing; the vertical exaggeration is applied to the view's geometry and written into the file as both the root node's extras and its scale; the GLB is a glTF 2.0 container whose JSON chunk parses and whose accessors all resolve inside the binary chunk; a grid over the view's limit is thinned and the thinning is stated with the numbers behind it; and an 89 401-cell grid's frame is drawn inside the engine's limit and measured.",
+  "dataModel": {
+    "read": "WELL, WELLBORE, WELL_DIR_SRVY_STATION, STRAT_WELL_SECTION and STRAT_UNIT - the same five PPDM tables INT-07 reads, through the same well-model assembly, so a well stands in the same place in the scene as on the map.",
+    "written": "Only the export: a .glb or .gltf under the folder the person names (the data root's Exports folder by default).",
+    "noTable": "INT-08 introduces no table. A scene is a view of recorded data and the feature's command table says View writes nothing; the opt-in test therefore drives the real service against a real SQLite database.",
+    "noOwnerChange": "No change was needed in TheTechIdea.OilGas.Mapping: Scene3D, Scene3DView, Camera3D and SceneExport already do the geometry, the camera, the drawing and the glTF. The desktop adds the well models, the refusal rules, the picking arithmetic, the decimation statement and the record."
+  },
+  "rules": {
+    "scene": "The scene is the engine's: Gridding.Run makes the surface, Scene3D.AddSurface converts the depths to elevation in metres, Scene3D.AddWells places the paths through WellMaps.Paths (the same placing the map uses) and Scene3D.AddPicks marks the top through WellMaps.StructureWith in tvdss. The view and the exporter are the engine's too, so the picture on screen and the file written are one scene.",
+    "projection": "The coordinate system is required and resolved through the engine, and the list offered is INT-07's own (IOgMap.ProjectionsAsync) rather than a second answer to the same question - which matters because mapping.coordinateSystems ships empty and the UTM zone derived from the wells is what makes a scene drawable at all.",
+    "exaggeration": "AC-3: the value is the view's own VerticalExaggeration, so the slider moves the geometry; it is also passed to SceneExport, which writes it in the root node's extras and as the root scale [1, ve, 1] with the vertices left true. A value outside 1..20 is refused with the range rather than clamped, because the exaggeration is a claim about the vertical scale.",
+    "picking": "AC-2: the engine has no hit test, so the pick projects every node the view draws through the same camera and returns the nearest inside 25 points. Masked nodes are skipped, so a masked cell never reports a depth that does not exist, and a click further than the tolerance from every node returns nothing - the feature's 'no readout rather than a wrong one'.",
+    "decimation": "AC-5: the view thins a surface by a stride of ceil(sqrt(cells / mapping.maxSurfaceCells)). The page re-derives the same stride from the same setting and states both numbers, so the sentence and the drawing cannot disagree. The unit is the cell, because that is what the view draws and what its limit is expressed in.",
+    "lighting": "The azimuth and elevation are the environment's settings and are printed; the ambient and diffuse weights are the engine's fixed 0.3 and 0.7, written into the drawing code, so they are stated as constants rather than offered as controls - a control that changed nothing would be a lie.",
+    "export": "AC-4: the GLB is written by SceneExport.ToGlb - magic 'glTF', version 2, a JSON chunk and a BIN chunk that ends the file - and the JSON form by ToGltf with the buffer embedded as a data URI. The test parses the JSON chunk and resolves every accessor into the binary chunk, which is what an external loader does first."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Interop/OgScene.cs (OgScenePick, OgSceneExport, OgSceneRequest, OgSceneWorkspace, OgSceneRules, IOgScene, OgSceneService with ProjectionsAsync/BuildAsync/PickAsync/ExportAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/ScenePageView.cs (route 'scene3d': the value bar, the projection and method bar, the exaggeration slider with its printed value and Fit, the scene in the Skia host with click-to-pick, the picked cell, the decimation and lighting statements, the well table, the left-out list and the export bar)",
+    "wiring": "OgBootstrapper (IOgScene, taking IOgMap), OgApplication.Scenes, catalog 'scene3d' (OgModuleKeys.Interop), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/SceneTests.cs (8, no database, including the GLB container and a timed 89 401-cell frame) + SceneGatewayTests.cs (1 opt-in, real SQLite over five PPDM tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1451, "passed": 1451, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 95, "passed": 95, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~A_large_scene_is_drawn --logger console;verbosity=detailed", "exit": 0, "passed": 1, "durationMs": 444 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 118, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL, WELLBORE, WELL_DIR_SRVY_STATION, STRAT_WELL_SECTION and STRAT_UNIT. Four vertical wells in UTM 31N; three with a wellhead position 2 km apart and one pick each on the top, and a fourth with a survey and a pick but no wellhead position.",
+    "ac1_scene": "the scene is built with 3 placed wells, 3 paths, 3 picks and one surface; the surface is named for the map's description ('Hod (TVDSS)'), the view is framed on the scene, its title names the top and the projection, and its legend, picks and well labels are on",
+    "ac2_pick": "a click on the surface's middle node returns a value equal to that node's depth to six decimals and an elevation equal to -depth x the surface's metres-per-unit; a click at (0.5, 0.5) is refused with 'The click did not land on the surface' and the pick-miss code",
+    "ac3_exaggeration": "a build at x8 puts x8 on the view and on the workspace, and the same node projects to a different screen height at x8 than at x1; the export carries x8 in the root node's extras and as scale [1, 8, 1], and warns 'the vertical exaggeration is x8 ... not true scale'",
+    "ac4_glb": "the file starts 'glTF', declares version 2 and its own length, carries a 4-byte-aligned JSON chunk that parses and a BIN chunk that ends the file at the declared length; every accessor resolves inside the BIN chunk; the meshes are the surface ('Hod (TVDSS)'), the three wells by name ('Alpha 1', 'Alpha 2', 'Alpha 3') and 'picks'; the glTF form embeds its buffer as a data URI",
+    "ac5_decimation": "a small grid reports 'No decimation' with its cell count and the engine's limit; a 300 x 300 grid (89 401 cells) is thinned to at most 40 000 and the sentence carries the three numbers; a 401 x 401 grid gives stride 2",
+    "ac6_interactivity": "a 300 x 300 grid's frame - 89 401 cells drawn as at most 40 000 - was rendered to an SVG canvas in 444 ms in the test host, asserted against a 5 s bound so the check is a measurement rather than a stopwatch race",
+    "fewer_than_three": "with one well's pick removed only two can be placed, so no scene is built, Scene is null, the view is null and the summary says 'a surface needs at least 3 placed wells and only 2 could be placed'; picking and exporting are then refused with the no-scene code",
+    "refusals": "no top, no projection, an unknown projection, an unknown gridding method, an exaggeration of 0, -2, 21 or NaN, no connection, an export with no scene, no path or an unknown format, and a pick with no scene are each refused with their own sentence",
+    "failure": "dropping WELL_DIR_SRVY_STATION fails the build with no workspace"
+  },
+  "gates": {
+    "AC-1 A surface with three wells renders and orbits": "pass - three wells and three picks over the gridded surface, the view framed on the scene, with the camera's own orbit, zoom and pan handling (the engine's) reachable from the host.",
+    "AC-2 Picking returns the value at the picked cell": "pass - the nearest drawn node is projected through the same camera and returned with its value, its elevation in metres and its distance from the click; a click on nothing is refused.",
+    "AC-3 Vertical exaggeration is applied to geometry and recorded in the export": "pass - the view's exaggeration moves the projected height, and the export carries it in the root extras and as the root scale.",
+    "AC-4 GLB export loads in an external viewer": "pass - the container is validated as a glTF 2.0 binary (magic, version, declared length, JSON and BIN chunks, accessor bounds) and the JSON chunk parses with the expected asset, meshes and root node.",
+    "AC-5 Grid decimation is stated when applied": "pass - the page re-derives the view's own stride and prints the cell count, the drawn count and the stride, or states plainly that nothing was thinned.",
+    "AC-6 Large scenes remain interactive (REL-04 budget)": "pass - an 89 401-cell grid is drawn as at most 40 000 cells and the frame was measured at 444 ms in the test host, inside the 5 s bound the test asserts."
+  },
+  "engineFindings": {
+    "theshadingWeightsAreFixed": {
+      "where": "TheTechIdea.OilGas.Mapping/Scene3D/Scene3DView.cs (AddSurface: '0.3 + 0.7')",
+      "finding": "The ambient and diffuse weights are written into the drawing code, not read from the settings. Only the light's azimuth, its elevation and the surface opacity are configuration.",
+      "handling": "The page offers no ambient/diffuse control and prints the two constants as the engine's own; azimuth, elevation and opacity are shown from the settings. A control that changed nothing would have been worse than the limit."
+    },
+    "decimationIsSilentInTheView": {
+      "where": "TheTechIdea.OilGas.Mapping/Scene3D/Scene3DView.cs (AddSurface: stride = ceil(sqrt(cells / MaxSurfaceCells)))",
+      "finding": "The view thins a surface by a whole stride without telling anyone: a 300 x 300 grid is drawn from every second node and the picture gives no sign of it - which is exactly what AC-5 exists to prevent.",
+      "handling": "OgSceneRules.StrideFor recomputes the same formula from the same setting and the page prints the surface's cells, the cells actually drawn and the stride. A unit test asserts the numbers for 10 x 10, 401 x 401 and several sizes in between."
+    },
+    "cellsAndNodesWereMixed": {
+      "finding": "The view's limit is a count of cells - (Nx-1) x (Ny-1) - while a natural node count is Nx x Ny. A first version reported nodes as the surface's size and cells as the drawn size, so a grid drawn whole appeared to have lost 188 cells (8888 against 8700).",
+      "handling": "Both figures are now cells, which is the unit the view draws and the unit its limit is expressed in, and the gateway test asserts they are equal when the stride is one."
+    },
+    "thereIsNoHitTest": {
+      "where": "TheTechIdea.OilGas.Mapping/Scene3D (no pick or hit-test member)",
+      "finding": "The engine has a Camera3D.Project but no inverse, so nothing turns a click back into a cell.",
+      "handling": "Picking projects every node the view draws - the same stride it draws - and takes the nearest within 25 points. That is the node the person pointed at; an exact ray/quad intersection would be more precise only between nodes, and the feature asks for the picked cell's value."
+    },
+    "thesurfaceUnitIsTheMapsNotTheScenes": {
+      "finding": "SceneSurface keeps the map's unit (feet in this environment) and converts to the scene's metres through MetresPerUnit, so a node's value and its elevation differ by that factor.",
+      "handling": "The pick reports the value in the map's unit and the elevation in metres, and the gateway test multiplies by MetresPerUnit - the first version compared them directly and was out by 0.3048."
+    },
+    "theSceneReusesTheMapsProjectionList": {
+      "finding": "mapping.coordinateSystems ships empty, so a scene would have had no projection at all - the same gap INT-07 found.",
+      "handling": "OgSceneService takes IOgMap and returns the map's projection list, so the UTM zone derived from the wells serves both pages and there is one answer to the question rather than two."
+    }
+  },
+  "limits": [
+    "Ambient and diffuse shading are the engine's fixed 0.3 and 0.7: the page shows them and offers no control, because the drawing code does not read them.",
+    "The light's azimuth, elevation and the surface opacity are the environment's settings, printed per scene; they are not changed per request, because mutating a global setting mid-session is not a per-scene choice.",
+    "Picking is the nearest drawn node within 25 points, not an exact ray-quad intersection: a click between two nodes reports the closer one, and a click further than the tolerance from every node reports nothing.",
+    "A masked node is not a value: clicking where one was reports a miss rather than the neighbouring depth, unless a real node is inside the tolerance.",
+    "The decimation is the engine's stride and cannot be coarsened or refined from the page; the view draws at most mapping.maxSurfaceCells cells and the page states what that means for this grid.",
+    "The scene draws the top's structure (or the thickness between two tops) only - the same value INT-07 maps. Net pay and arbitrary per-well values are not offered, because the pay zones are PAY's data and are not read here.",
+    "No scene is saved: the view writes nothing, and only the export writes a file. Rebuilding is the way back to a scene.",
+    "The interactivity figure is a frame measured in the test host on a 300 x 300 grid, not a REL-04 budget figure for this application on a named machine; a bigger field thins further and will be slower.",
+    "A well with no wellhead position, no datum elevation or no pick for the top is left out and listed, as on the map - not given an invented coordinate or depth.",
+    "The camera resets when the exaggeration changes (the view refits), so an orbit is lost when the slider moves; that is the engine's FitToScene, not an extra behaviour."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class R_WELL_RELATIONSHIP: Entity,IPPDMEntity
 {
 
 private  System.String WELL_RELATIONSHIPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_RELATIONSHIP
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_RETENTION_PERIOD: Entity,IPPDMEntity
 {
 
 private  System.String RETENTION_PERIODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RETENTION_PERIOD
         {  
             get  

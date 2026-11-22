@@ -143,6 +143,25 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
             set { SetProperty(ref ERROR_MESSAGEValue, value); }
         }
 
+        // ---- RES-03 (additive): which model produced the result, how many iterations it took, and what the
+        //      stability test said when a cubic EOS path was chosen ----
+
+        private string EOS_CODEValue = string.Empty;
+        /// <summary>The FLASH_EOS_MODEL reference code the run used (IDEAL_K, PR, SRK, ...), not a free-text label.</summary>
+        public string EOS_CODE
+        {
+            get { return this.EOS_CODEValue; }
+            set { SetProperty(ref this.EOS_CODEValue, value); }
+        }
+
+        private string STABILITY_TEXTValue;
+        /// <summary>The stability answer of a cubic-EOS run, for example 'Stable single-phase'.</summary>
+        public string STABILITY_TEXT
+        {
+            get { return this.STABILITY_TEXTValue; }
+            set { SetProperty(ref this.STABILITY_TEXTValue, value); }
+        }
+
         // Standard PPDM columns
     }
 }

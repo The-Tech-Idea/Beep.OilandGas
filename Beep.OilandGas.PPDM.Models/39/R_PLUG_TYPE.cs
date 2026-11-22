@@ -9,6 +9,7 @@ public partial class R_PLUG_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PLUG_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLUG_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_VSP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VSP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VSP_TYPE
         {  
             get  

@@ -1,0 +1,48 @@
+{
+  "id": "STG-01/DAT-05",
+  "title": "Entity form and validation",
+  "date": "2026-11-07",
+"status": "gate met - all six criteria: validation blocks the save before any gateway call, decimals keep exact precision, reference pickers list only active codes from the LOV service, keys and audit columns are read-only, defaults come from the defaults service scoped to the table, and messages are localised and name the field",
+  "implementation": {
+    "form": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgEntityForm.cs (OgFormFieldKind, OgFormField, OgFormDefinition, OgFormProblem, OgEntityForm.Build/Validate/Convert, OgFormMessages en+ar)",
+    "saveGate": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgEntityFormService.cs (validate then write; WriteAttempts counts gateway calls)",
+    "generation": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgPpdmTableGateway.cs (FormAsync: EntityStructure fields + registry keys -> OgFormDefinition)",
+    "page": "src/Beep.OilandGas.Desktop/Views/EntityFormPageView.cs (route 'entityform': generated fields, read-only keys/audit, Save as new / Save changes, validation list)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/EntityFormTests.cs (9)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~EntityFormTests", "exit": 0, "run": 9, "passed": 9, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 484, "passed": 484, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 26,
+    "form-fields": 3,
+    "form-key-readonly": true,
+    "form-audit-readonly": true,
+    "form-problem-field": "NAME",
+    "form-problem-message": "Name is required.",
+    "form-page-open-with-no-request": true,
+    "form-lookups-wired": true,
+    "form-defaults-wired": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 mandatory violation blocks the save before any service call": "pass - OgEntityFormService validates first and returns form-invalid without touching the gateway; a test with a counting gateway asserts zero gateway calls and zero write attempts when WELL_NAME is missing, and the smoke shows the problem naming NAME with the form still unwritten.",
+    "AC-2 decimal precision is preserved exactly (no double round trip)": "pass - Decimal fields are parsed with decimal.Parse from invariant text and the converted value is asserted to be a decimal equal to 1234.5678901234567890123, printed back with every digit; no double is involved anywhere on the path.",
+    "AC-3 reference pickers list only active codes for the correct reference set": "pass - OgLovFormLookups reads the LOV service by value type (the column), keeps only ActiveInd = Y and falls back to the code when a label is blank; the page renders a ComboBox for a field that has lookup values. Tests prove inactive codes are dropped, a blank code is dropped and a blank label becomes the code; the smoke shows the source is resolved from the host (form-lookups-wired true).",
+    "AC-4 audit and system columns are never editable": "pass - ROW_CHANGED_BY, ROW_CHANGED_DATE, ROW_CREATED_BY, ROW_CREATED_DATE, ROW_EFFECTIVE_DATE, ROW_EXPIRY_DATE, ROW_QUALITY and PPDM_GUID are marked read-only (as are key columns), EditableFields excludes them, the page renders them with IsReadOnly, and the smoke reports form-audit-readonly true.",
+    "AC-5 defaults come from the owning service, not from the form": "pass - OgDefaultValueFormDefaults reads PPDMDefaultValueService and keeps only the keys prefixed with this table, so another table's default cannot leak into the form. A generated field carries the value as Default, the page pre-fills it (and preselects a picker value), and a test asserts a default never lands on a key or an audit column; the smoke shows form-defaults-wired true.",
+    "AC-6 validation messages are localized and name the field": "pass - every message takes the field's label and exists in English and Arabic; a test asserts the Arabic sentence still names 'Well Name', and the smoke shows 'Name is required.' with problem field NAME."
+  },
+  "limits": [
+    "The LOV and defaults services are constructed in Desktop.Data (OgFormSourceFactory) because FND-02 AC-4 forbids IDMEEditor outside that project; the guard test caught the first attempt at wiring them in the bootstrapper.",
+    "Update on the page guards only on the key columns it can see; the full original-row guard is available at the gateway and used by the workbench.",
+    "The page is not covered by an automated UI test beyond construction in the smoke; the form logic is unit-tested and the save path is proven with a counting gateway.",
+    "Field kinds are inferred from the CLR type (text/integer/decimal/date/boolean); there is no lookup, multi-select or file field.",
+    "The form shows one flat list of fields; the plan's sectioned layout and wizard steps are not implemented."
+  ]
+}

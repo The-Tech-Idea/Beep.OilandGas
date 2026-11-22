@@ -9,6 +9,7 @@ public partial class SUBSTANCE_USE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SUBSTANCE_IDValue;
           set { SetProperty(ref  SUBSTANCE_IDValue, value); }
         } 
 private  System.Decimal SUBSTANCE_USE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SUBSTANCE_USE_OBS_NO
         {  
             get  

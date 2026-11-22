@@ -9,6 +9,7 @@ public partial class R_ENCODING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ENCODING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENCODING_TYPE
         {  
             get  

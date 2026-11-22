@@ -9,6 +9,7 @@ public partial class R_MUD_COLLECT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String MUD_COLLECT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUD_COLLECT_REASON
         {  
             get  

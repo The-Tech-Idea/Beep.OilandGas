@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.DrillingAndConstruction
     public partial class CEMENT_JOB : ModelEntityBase
     {
         private System.String CEMENT_JOB_IDValue = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String CEMENT_JOB_ID
         {
             get { return this.CEMENT_JOB_IDValue; }

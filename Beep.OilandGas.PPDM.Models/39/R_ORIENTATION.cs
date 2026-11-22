@@ -9,6 +9,7 @@ public partial class R_ORIENTATION: Entity,IPPDMEntity
 {
 
 private  System.String ORIENTATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ORIENTATION
         {  
             get  

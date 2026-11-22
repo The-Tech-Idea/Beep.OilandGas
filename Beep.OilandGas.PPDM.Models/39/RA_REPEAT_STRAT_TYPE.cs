@@ -9,6 +9,7 @@ public partial class RA_REPEAT_STRAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REPEAT_STRAT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPEAT_STRAT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REPEAT_STRAT_TYPEValue;
           set { SetProperty(ref  REPEAT_STRAT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

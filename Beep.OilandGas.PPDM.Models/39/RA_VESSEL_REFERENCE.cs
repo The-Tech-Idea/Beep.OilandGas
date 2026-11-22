@@ -9,6 +9,7 @@ public partial class RA_VESSEL_REFERENCE: Entity,IPPDMEntity
 {
 
 private  System.String REFERENCE_POINTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REFERENCE_POINT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REFERENCE_POINTValue;
           set { SetProperty(ref  REFERENCE_POINTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

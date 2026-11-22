@@ -9,6 +9,7 @@ public partial class R_DRILL_BIT_DETAIL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BIT_DETAIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BIT_DETAIL_TYPE
         {  
             get  

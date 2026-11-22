@@ -1,0 +1,109 @@
+{
+  "id": "STG-11/HSE-03",
+  "title": "Investigation, RCA and corrective action",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: an investigator is assigned once and the original is retained, and a second assignment is refused with the recorded name; a different field context cannot clear or move it, and a roster change does not clear it; a corrective action is closed out only when completed and verified, and closure is refused while any is outstanding; the investigator cannot close the incident; and every action records its owner and its due date.",
+  "dataModel": {
+    "decision": "No table was created. The owner already holds the whole investigation: HSE_INCIDENT_CAUSE for the cause chain, and the PROJECT family for a corrective-action plan (PROJECT), its actions (PROJECT_STEP), the people on them (PROJECT_STEP_BA) and their status history (PROJECT_STATUS). The investigator is an HSE_INCIDENT_COMPONENT row with the owner's INVESTIGATOR role, which HSE-02 already reads.",
+    "registration": "HSE_INCIDENT_CAUSE and PROJECT_STEP_BA added to HseModule beside the incident and project tables. --smoke moved from 425 to 427 entity types.",
+    "noNewTables": "The feature's OgInvestigatorAssignment and OgCorrectiveAction shapes are desktop read and command models over those owner tables."
+  },
+  "rules": {
+    "assignment": "The investigator is the HSE_INCIDENT_COMPONENT row whose COMPONENT_ROLE is INVESTIGATOR; its COMPONENT_TYPE is the role and its REMARK the rationale. A first assignment writes it. A second, different assignment is refused with the recorded name and says the original is retained (AC-1); the same participant is a retry that adopts the original. A scope whose field differs from the incident's recorded field is refused before assignment (AC-2), and the roster is never consulted to clear or replace an assignment (AC-3).",
+    "causes": "A cause is an HSE_INCIDENT_CAUSE row: CAUSE_TYPE is one of the owner's IMMEDIATE/CONTRIBUTING/ROOT, CAUSE_CODE is the owner's category, REMARK the description, and CAUSE_OBS_NO the sequence the timeline is built from. The owner's own RCA rule is used for completeness: a ROOT cause whose description is at least 20 characters.",
+    "plan": "The first action creates the plan: a PROJECT of type CORRECTIVE_ACTION with its name and a CAP-<year>-<id> number, and links it to the incident through an HSE_INCIDENT_COMPONENT row whose PROJECT_ID is the plan - the same link HSE-02 counts open actions from, so one link serves both screens.",
+    "action": "An action is a PROJECT_STEP (name, sequence, due date), the responsible person a PROJECT_STEP_BA row with the owner's RESPONSIBLE role, and its first PROJECT_STATUS row OPEN. Completion appends a COMPLETED status - the status row is the authoritative record of completion, and the step's ACTUAL_END_DATE is not written: PROJECT_STEP carries no key in this app's entity attributes, so an update through the unit of work cannot build its WHERE clause and would silently change nothing (found while building HSE-04, whose transitions do the same kind of update against the metadata-declared key). Verification appends a PROJECT_STEP_BA row with the VERIFIER role, because the owner's status vocabulary has no verified state.",
+    "closure": "Closure requires a root cause under the owner's rule, every action completed and verified, a closer who is not the investigator, and an incident that is still open; every blocking reason is returned, not just the first (AC-4, AC-5). A successful closure appends a CLOSED STATUS response carrying the decision and reason."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Hse/OgInvestigation.cs (OgCause, OgCorrectiveAction, OgInvestigationWorkspace, InvestigationRules, IOgInvestigation, OgInvestigation with LoadAsync/AssignAsync/AddCauseAsync/AddActionAsync/CompleteActionAsync/VerifyActionAsync/CloseAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/InvestigationPageView.cs (route 'investigation': the incident lookup, the investigator and assignment bar, the cause chain with its types and categories, the action plan with owner and due date, complete and verify, the closure checklist and the decision/reason bar)",
+    "wiring": "OgBootstrapper (IOgInvestigation), OgApplication.Investigation, catalog 'investigation' (OgModuleKeys.Hse), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HseInvestigationTests.cs (9, no database) + HseInvestigationGatewayTests.cs (1 opt-in, real SQLite over eight tables)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0,
+      "warnings": "owner-project analyzer warnings only"
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 1173,
+      "passed": 1173,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 64,
+      "passed": 64,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 88,
+      "views-constructed": true,
+      "modulesetup-summary": "33 module(s) - 427 entity type(s)",
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0
+    }
+  ],
+  "integration": {
+    "database": "SQLite with HSE_INCIDENT, HSE_INCIDENT_RESPONSE, HSE_INCIDENT_COMPONENT, HSE_INCIDENT_CAUSE, PROJECT, PROJECT_STEP, PROJECT_STEP_BA and PROJECT_STATUS, seeded with one reported incident whose primary component records field F-1",
+    "ac1_assignment": "the first assignment to omar writes one INVESTIGATOR component; a second assignment to nadia is refused with investigation-assignment-recorded naming omar and 'the original is retained', and the investigator row count stays at one; assigning omar again is a retry that leaves the count at one",
+    "ac2_field": "assigning against field F-2 while the incident is recorded in F-1 is refused with investigation-field-changed, and the investigator is still omar",
+    "ac3_roster": "adding a WITNESS component (a roster change) and then trying nadia again is still refused, and the investigator is unchanged - the roster neither clears nor replaces the assignment",
+    "ac6_actions": "an action without an owner is refused with investigation-input-required and nothing is written; with an owner and a due date it writes the plan, the step with its due date, the RESPONSIBLE person and the OPEN status, and the incident's component now carries the plan's PROJECT_ID",
+    "overdue": "a second action due 2026-01-01 reads back overdue with '(overdue)' in its due text",
+    "ac4_rca_and_verification": "a ROOT cause of ten characters leaves the root cause incomplete and a twenty-plus-character ROOT cause completes it; verification before completion is refused with investigation-action-not-completed; the owner cannot verify their own action; nadia verifies it, the action reads completed and verified, and verifying again adds no second VERIFIER row",
+    "ac4_closure": "closing while the second action is outstanding is refused with investigation-closure-blocked naming 'Update the procedure', and no CLOSED response is written; after completing and verifying it the incident closes",
+    "ac5_closer": "the investigator omar is refused with investigation-closer-is-investigator; a missing reason is refused; nadia closes, the incident reads CLOSED and the response row carries the decision and reason; a second closure is refused with investigation-already-closed",
+    "checklist": "the workspace's checklist is the same set of reasons the command returns, and reads all-ticked after closure"
+  },
+  "gates": {
+    "AC-1 A lost acknowledgement retains the original and blocks a second assignment": "pass - a recorded assignment is returned unchanged for the same participant and refused for a different one, in both the rule and the gateway.",
+    "AC-2 The original cannot be cleared by a different context": "pass - an assignment under another field is refused before anything is written, and the recorded investigator is unchanged.",
+    "AC-3 A roster change does not clear a pending original": "pass - the roster is not consulted for assignment at all; the gateway proves a new participant row neither clears nor replaces it.",
+    "AC-4 All actions must be verified before closure": "pass - an action is closed out only when completed and verified, the closure command names every outstanding action, and the root cause follows the owner's own completeness rule.",
+    "AC-5 The closer cannot be the investigator": "pass - refused naming the investigator, before anything is written.",
+    "AC-6 Every action records owner and due date": "pass - both are required, the refusal names which is missing, and the stored step and RESPONSIBLE row carry them."
+  },
+  "engineFindings": {
+    "investigationWasAllInTheProjectFamily": {
+      "where": "Beep.OilandGas.PPDM39.DataManagement/Services/HSE/CorrectiveActionService.cs and RCAService.cs",
+      "finding": "The owner stores causes in HSE_INCIDENT_CAUSE and the whole corrective-action plan in PROJECT/PROJECT_STEP/PROJECT_STEP_BA/PROJECT_STATUS, with the responsible person as a step role. There is no separate 'investigation' table.",
+      "handling": "The desktop writes exactly those tables; the responsible role is the owner's RESPONSIBLE and the plan link is the incident component's PROJECT_ID, which HSE-02 already counts from."
+    },
+    "noVerifiedState": {
+      "finding": "The owner's corrective-action status vocabulary is OPEN and COMPLETED; there is no 'verified' state, yet the feature asks for verification of effectiveness.",
+      "handling": "Verification is a second PROJECT_STEP_BA row with the VERIFIER role and its effective date, stated once in InvestigationRules rather than invented per screen; the owner cannot verify their own action."
+    },
+    "closureWritesTheTerminalStatus": {
+      "finding": "HSE-02 refused state changes because the workflow engine (WFL-01/WFL-02) is not wired, but HSE-03's own acceptance criteria require a closure.",
+      "handling": "Closure is the one transition this build performs, as the owner's own API does in PPDMCompanyCorrectiveActionCommands.Closure: it is a rule-guarded terminal command (root cause, verified actions, different closer) that appends a CLOSED status response. Every other transition remains refused by HSE-02, and the page offers no general state change."
+    },
+    "locDictionaryDuplicatesFound": {
+      "finding": "The earlier HSE-02 wiring left duplicate Arabic and English entries in OgLoc's dictionaries (the indexer initializer allowed them, so the build stayed green).",
+      "handling": "The duplicates were removed while adding HSE-03's labels; each key now appears exactly once per dictionary."
+    },
+    "keylessUpdatesWereSilent": {
+      "finding": "A row update through UnitofWork needs the table's primary key in the provider's structure. Where the entity type carries no [Key] attribute the desktop's hand-built test schema had no key, Update could not build a WHERE clause, and Commit returned Ok with nothing pending - so the first version of HSE-03 \"set\" a step's ACTUAL_END_DATE that was never written. The PPDM metadata (PPDM39Metadata.Generated.cs) does declare these keys for the schema the app provisions.",
+      "handling": "HSE-03 no longer writes ACTUAL_END_DATE (the COMPLETED status row is the authoritative completion), and HSE-04 declares the canonical composite keys in its test schema and checks every status write, so a transition that cannot be written is reported rather than assumed."
+    }
+  },
+  "limits": [
+    "Reassignment is blocked rather than offered: with no workflow review step (WFL-02) the original is retained and a different investigator cannot be assigned at all. That is the AC-1 rule taken literally, and it means a mistaken assignment needs a data correction outside this screen.",
+    "Verification of effectiveness is a role on the step with a timestamp; there is no separate verification note, evidence file or signature, so 'verified' means a named person recorded it.",
+    "RCA evidence is text only: there is no document or image store in this app, so the cause description is the evidence the screen can keep.",
+    "The cause timeline is ordered by CAUSE_OBS_NO; it is not a cross-source chronological timeline of incident responses, actions and causes.",
+    "The writes are not one transaction: the plan, step, owner, status and verification rows each commit separately, so a failure can leave a partial action. A retry re-reads and continues rather than duplicating, but a reader in between sees an incomplete action.",
+    "Closure writes the incident's CLOSED status directly - the one terminal transition this build performs - because the feature's criteria require a closure and the owner's API does the same; every other transition stays refused until the workflow engine lands.",
+    "The closer's authority is checked as 'not the investigator'; the feature's hse.incident.close permission and any further segregation-of-duties roles are not enforced per command, as in the other HSE features."
+  ]
+}

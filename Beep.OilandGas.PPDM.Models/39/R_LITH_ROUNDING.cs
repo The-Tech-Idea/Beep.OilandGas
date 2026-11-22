@@ -9,6 +9,7 @@ public partial class R_LITH_ROUNDING: Entity,IPPDMEntity
 {
 
 private  System.String ROUNDINGValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROUNDING
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_REST_DURATION: Entity,IPPDMEntity
 {
 
 private  System.String REST_DURATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REST_DURATION_TYPE
         {  
             get  

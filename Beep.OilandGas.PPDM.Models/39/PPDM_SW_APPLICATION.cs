@@ -9,6 +9,7 @@ public partial class PPDM_SW_APPLICATION: Entity,IPPDMEntity
 {
 
 private  System.String SW_APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APPLICATION_ID
         {  
             get  

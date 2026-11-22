@@ -9,6 +9,7 @@ public partial class R_PAYMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAYMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYMENT_TYPE
         {  
             get  

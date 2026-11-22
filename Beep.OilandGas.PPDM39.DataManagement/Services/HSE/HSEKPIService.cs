@@ -124,9 +124,87 @@ public class HSEKPIService : IHSEKPIService
         return await ConfirmAsync(exp > 0 ? (rec * 1_000_000.0) / exp : 0);
     }
 
-    private async Task<int> CountIncidentsAsync(string fieldId, DateRangeFilter range, int? tier)
+    /// <summary>
+    /// The one count of HSE incidents: active incidents in the field when one is named, in every field otherwise, dated
+    /// within <paramref name="start"/>..<paramref name="end"/> when given, with how many are open and how many in each
+    /// tier. The scope is decided here; the tier and open rules come from <see cref="HSEIncidentRules"/>.
+    /// </summary>
+    public async Task<IncidentCounts> CountIncidentsAsync(string? fieldId, DateTime? start, DateTime? end)
     {
-        var incidentIds = await GetFieldIncidentIdsAsync(fieldId);
+        // A named field must match the reviewed company/FIELD binding; the all-fields read only needs the binding.
+        await RequireCurrentBindingAsync(fieldId, null, fieldId is not null);
+
+        HashSet<string>? fieldIncidentIds = null;
+
+        if (!string.IsNullOrWhiteSpace(fieldId))
+        {
+            fieldIncidentIds = await GetFieldIncidentIdsAsync(fieldId);
+            if (fieldIncidentIds.Count == 0)
+            {
+                return await ConfirmAsync(new IncidentCounts(0, 0, 0, 0, 0, 0));
+            }
+        }
+
+        var filters = new List<AppFilter>
+        {
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+        };
+
+        if (start is { } from)
+        {
+            filters.Add(new AppFilter
+            {
+                FieldName = "INCIDENT_DATE",
+                Operator = ">=",
+                FilterValue = from.ToString("yyyy-MM-dd"),
+            });
+        }
+
+        if (end is { } to)
+        {
+            filters.Add(new AppFilter
+            {
+                FieldName = "INCIDENT_DATE",
+                Operator = "<=",
+                FilterValue = to.ToString("yyyy-MM-dd"),
+            });
+        }
+
+        var incidentRepo = await BuildRepo<HSE_INCIDENT>("HSE_INCIDENT");
+        var incidents = (await incidentRepo.GetAsync(filters)).OfType<HSE_INCIDENT>()
+            .Where(incident => fieldIncidentIds is null || fieldIncidentIds.Contains(incident.INCIDENT_ID))
+            .ToList();
+
+        if (incidents.Count == 0)
+        {
+            return await ConfirmAsync(new IncidentCounts(0, 0, 0, 0, 0, 0));
+        }
+
+        var ids = incidents
+            .Select(incident => incident.INCIDENT_ID)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var activeOnly = new List<AppFilter>
+        {
+            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" },
+        };
+
+        var detailRepo = await BuildRepo<HSE_INCIDENT_DETAIL>("HSE_INCIDENT_DETAIL");
+        var details = (await detailRepo.GetAsync(activeOnly)).OfType<HSE_INCIDENT_DETAIL>()
+            .Where(detail => ids.Contains(detail.INCIDENT_ID))
+            .ToList();
+
+        var responseRepo = await BuildRepo<HSE_INCIDENT_RESPONSE>("HSE_INCIDENT_RESPONSE");
+        var responses = (await responseRepo.GetAsync(activeOnly)).OfType<HSE_INCIDENT_RESPONSE>()
+            .Where(response => ids.Contains(response.INCIDENT_ID))
+            .ToList();
+
+        return await ConfirmAsync(HSEIncidentRules.Count(incidents, details, responses));
+    }
+
+    private async Task<int> CountIncidentsAsync(string fieldId, DateRangeFilter range, int? tier)
+    {        var incidentIds = await GetFieldIncidentIdsAsync(fieldId);
         if (incidentIds.Count == 0)
         {
             return 0;

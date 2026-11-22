@@ -9,6 +9,7 @@ public partial class RA_PPDM_RULE_XREF_COND: Entity,IPPDMEntity
 {
 
 private  System.String RULE_XREF_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_XREF_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RULE_XREF_CONDITIONValue;
           set { SetProperty(ref  RULE_XREF_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

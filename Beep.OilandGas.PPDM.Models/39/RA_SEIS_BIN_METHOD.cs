@@ -9,6 +9,7 @@ public partial class RA_SEIS_BIN_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String BIN_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BIN_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BIN_METHODValue;
           set { SetProperty(ref  BIN_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -1,0 +1,59 @@
+{
+  "id": "STG-04/DEV-07",
+  "title": "Completion tests and acceptance",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: acceptance is refused while no test has a PASS result; an evidence item naming another well is refused rather than filed against this one; the author cannot decide their own completion; an acceptance carries its conditions and the handover recipient on the record production reads; every test states the unit of its result; and a lost acknowledgement leaves the completion submitted and is retried without writing a second acceptance.",
+  "dataModel": {
+    "decision": "PPDM owns WELL_TEST and WELL_COMPLETION as the interchange records, and the module's DrillingOperationService.CompletionTests partial reads them for the funded company flow. The plan-stage completion screen needs its own state (draft/submitted/decided), its own evidence list and its own acceptance record, so DEV-07 owns three tables in DrillingAndConstruction, following the DEV-05/DEV-06 pattern. The acceptance is a state of the submission row rather than a second record, which is what makes a retried decision unable to duplicate it.",
+    "tables": [
+      "DEVELOPMENT_COMPLETION_TEST (TEST_ID key, WELL_ID, PROGRAM_ID, TEST_TYPE, TOP_DEPTH, BASE_DEPTH, DEPTH_OUOM, STATUS, RESULT, RESULT_OUOM, PERFORMED_BY, PERFORMED_AT, EVIDENCE_REF, ACTOR, RECORDED_AT)",
+      "DEVELOPMENT_COMPLETION_SUBMISSION (SUBMISSION_ID key, WELL_ID, PROGRAM_ID, SUMMARY, STATE, AUTHOR, SUBMITTED_AT, REVIEWER, RATIONALE, CONDITIONS_TEXT, ACCEPTED_AT, ACCEPTED_BY, HANDOVER_TO, HANDOVER_AT) - one row carries the whole lifecycle, including the acceptance",
+      "DEVELOPMENT_COMPLETION_EVIDENCE (EVIDENCE_ID key, SUBMISSION_ID, WELL_ID, DOCUMENT, REFERENCE, ADDED_BY, ADDED_AT) - WELL_ID is stored so a foreign item can be refused and an accepted item can be audited"
+    ],
+    "registration": "DrillingAndConstructionSetupModule registers the three types; --smoke now reports 373 entity types (up from 370)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgWellCompletion.cs (OgCompletionTest, OgCompletionEvidence, OgCompletionHandover, OgCompletionSubmission, OgCompletionWell, OgCompletionWorkspace, OgCompletionTestValues, OgCompletionPendingDecision, OgCompletionDecision, CompletionRules, IOgWellCompletion, OgWellCompletionService with RecordTestAsync/CreateSubmissionAsync/AddEvidenceAsync/SubmitAsync/DecideAsync/RetryDecisionAsync)",
+    "rules": "CompletionRules states ValidateTest (type, status, interval, depth unit, result unit), SubmissionGaps (a test and an evidence item) and ValidateDecision (known decision, submitted state, author separation, passing test for an acceptance, handover recipient, conditions for a conditional acceptance, rationale for a return/rejection) once, so the page, the service and the tests agree.",
+    "page": "src/Beep.OilandGas.Desktop/Views/CompletionPageView.cs (route 'completion': well picker from the field's drilling executions, test grid and editor, submission picker and actions, evidence grid and panel, decision panel with conditions and handover recipient, handover sentence, retry)",
+    "wiring": "OgBootstrapper (IOgWellCompletion), OgApplication.Completion, catalog 'completion' (OgModuleKeys.Development), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/CompletionTests.cs (12, no database) + CompletionGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 757, "passed": 757, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 25, "passed": 25, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 49, "views-constructed": true, "modulesetup-summary": "28 module(s) - 373 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with DEVELOPMENT_DRILLING_EXECUTION, DEVELOPMENT_COMPLETION_TEST, DEVELOPMENT_COMPLETION_SUBMISSION and DEVELOPMENT_COMPLETION_EVIDENCE, seeded in CompletionGatewayTests",
+    "wells": "the wells come from the field's drilling executions: three wells in F-1 are offered, and the F-2 execution (WELL-9) is not; a test on a well with no execution is refused with completion-well-unknown",
+    "ac5_result_unit": "recording a test with a result but no RESULT_OUOM is refused with completion-test-unit-required",
+    "recorded_test": "a PASS test with result 3500 psi is stored and read back as '3500 psi'; its interval 2400-2500 m is shown; a second FAIL test on the same well is stored and counted",
+    "submission": "a draft submission is created for the well and a second open one is refused with completion-already-submitted",
+    "ac2_foreign_evidence": "attaching evidence naming WELL-2 to WELL-1's submission is refused with completion-evidence-foreign-well (the message names both wells) and no row is written; an item with neither document nor reference is refused with completion-evidence-required",
+    "ac3_author": "the author 'sara' deciding her own submitted completion is refused with completion-author-cannot-accept; a draft is refused earlier with completion-not-submitted",
+    "ac4_handover": "a conditional acceptance by 'reviewer' stores both conditions and HANDOVER_TO 'production' on the submission; the workspace's Handover record reports the well, the acceptor, the date, both conditions and the recipient",
+    "ac6_replay": "replaying the same conditional acceptance by the same reviewer returns the already-accepted workspace and the submission count stays 1 with its two conditions (no duplicate acceptance)",
+    "ac1_no_pass": "WELL-2 has only a FAIL test; its submitted completion is refused with completion-no-passing-test and the message names PASS; a return on the same well is allowed with its rationale and produces no handover",
+    "return_then_accept": "after the return, a PASS test is recorded, the completion is submitted again and accepted with no conditions, whose handover reads 'no conditions'",
+    "ac6_lost_ack": "a SQLite trigger blocked the update of WELL-3's submission to an ACCEPTED state: the decision was refused, Pending was set with the submission id, a re-read showed the completion still SUBMITTED with no handover; after the trigger was dropped RetryDecisionAsync accepted it once - one submission row, one accepted row, one condition"
+  },
+  "gates": {
+    "AC-1 Acceptance needs a passing test": "pass - CompletionRules.ValidateDecision refuses an acceptance when hasPassingTest is false (completion-no-passing-test), the workspace exposes CanAccept from the same rule, and the gateway test proves the refusal on a well whose only test failed while a return on that same well is allowed.",
+    "AC-2 Evidence belongs to the same well": "pass - AddEvidenceAsync compares the item's well with the submission's well and refuses a mismatch with completion-evidence-foreign-well; the stored row keeps WELL_ID so the accepted evidence is auditable.",
+    "AC-3 The author cannot accept their own completion": "pass - ValidateDecision compares the submission's author with the reviewer, case-insensitively, for every decision; proven against SQLite for the author and against the reviewer.",
+    "AC-4 An acceptance carries its conditions and the handover recipient": "pass - an acceptance writes ACCEPTED_BY, ACCEPTED_AT, HANDOVER_TO, HANDOVER_AT and CONDITIONS_TEXT on the submission, and the handover record (which production reads) exposes exactly those values; a conditional acceptance without a condition and an acceptance without a recipient are both refused.",
+    "AC-5 The result unit is required": "pass - ValidateTest refuses a test whose RESULT_OUOM is empty, with completion-test-unit-required; the gateway test proves the refusal before anything is written.",
+    "AC-6 A lost acknowledgement is retried without duplicating the acceptance": "pass - the acceptance is a state of the submission row; a failed update sets Pending and leaves the row SUBMITTED, and the retry writes the acceptance once. A replay of the same decision by the same reviewer is returned rather than re-applied, and the row counts (1 submission, 1 accepted) prove no duplicate."
+  },
+  "limits": [
+    "The three tables are the plan-stage completion record; the module's WELL_COMPLETION and WELL_TEST stay the PPDM interchange records and are neither read nor written by this screen. A future funded flow maps the accepted submission onto them.",
+    "A submission needs one test and one evidence item to be submitted, and an acceptance needs one PASS test. The feature document does not require a specific test set (for example a CBL and a pressure test), so no test-type completeness rule is invented.",
+    "Tests can be recorded after a submission is accepted; the screen does not lock the test list, and a later test does not retract an acceptance. That would be a new decision, which the feature does not define.",
+    "The completion schematic preview named in the feature's external packages is not rendered on this page; the design preview that exists is DEV-03's casing outline. The WellTools schematic renderer can be wired when a completion schematic contract exists.",
+    "A returned completion is resubmitted for the same row (the state goes back to SUBMITTED); it does not create a new submission version, so the submission count per well stays one.",
+    "The feature's per-command permissions (drilling.completion.write / .submit / .approve) are not enforced: the app gates pages, not commands.",
+    "The three new tables need the DRILLING_EXECUTION module applied again on an existing database."
+  ]
+}

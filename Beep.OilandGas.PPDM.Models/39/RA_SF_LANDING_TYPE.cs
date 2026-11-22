@@ -9,6 +9,7 @@ public partial class RA_SF_LANDING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LANDING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LANDING_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LANDING_TYPEValue;
           set { SetProperty(ref  LANDING_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class WELL_NODE_M_B: Entity,IPPDMEntity
 {
 
 private  System.String NODE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NODE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String NODE_IDValue;
           set { SetProperty(ref  NODE_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

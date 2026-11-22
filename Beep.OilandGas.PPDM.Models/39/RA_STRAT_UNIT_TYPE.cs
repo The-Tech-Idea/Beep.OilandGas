@@ -9,6 +9,7 @@ public partial class RA_STRAT_UNIT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_TYPEValue;
           set { SetProperty(ref  STRAT_TYPEValue, value); }
         } 
 private  System.String STRAT_UNIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_UNIT_TYPEValue;
           set { SetProperty(ref  STRAT_UNIT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

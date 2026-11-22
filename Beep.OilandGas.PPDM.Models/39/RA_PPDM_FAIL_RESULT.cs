@@ -9,6 +9,7 @@ public partial class RA_PPDM_FAIL_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String RULE_FAIL_RESULTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_FAIL_RESULT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RULE_FAIL_RESULTValue;
           set { SetProperty(ref  RULE_FAIL_RESULTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

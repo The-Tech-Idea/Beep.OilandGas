@@ -9,6 +9,7 @@ public partial class R_LITH_CONSOLIDATION: Entity,IPPDMEntity
 {
 
 private  System.String CONSOLIDATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSOLIDATION
         {  
             get  

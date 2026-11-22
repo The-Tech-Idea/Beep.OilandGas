@@ -9,6 +9,7 @@ public partial class RA_STRAT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_STATUSValue;
           set { SetProperty(ref  STRAT_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

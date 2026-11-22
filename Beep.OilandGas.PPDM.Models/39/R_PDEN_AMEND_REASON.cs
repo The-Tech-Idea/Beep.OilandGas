@@ -9,6 +9,7 @@ public partial class R_PDEN_AMEND_REASON: Entity,IPPDMEntity
 {
 
 private  System.String AMEND_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AMEND_REASON
         {  
             get  

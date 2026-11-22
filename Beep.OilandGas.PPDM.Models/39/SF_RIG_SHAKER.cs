@@ -9,6 +9,7 @@ public partial class SF_RIG_SHAKER: Entity,IPPDMEntity
 {
 
 private  System.String SF_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SF_SUBTYPEValue;
           set { SetProperty(ref  SF_SUBTYPEValue, value); }
         } 
 private  System.String RIG_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RIG_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String RIG_IDValue;
           set { SetProperty(ref  RIG_IDValue, value); }
         } 
 private  System.String SHAKER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SHAKER_ID
         {  
             get  

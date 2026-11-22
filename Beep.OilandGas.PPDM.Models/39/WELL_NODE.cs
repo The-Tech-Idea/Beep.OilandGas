@@ -9,6 +9,7 @@ public partial class WELL_NODE: Entity,IPPDMEntity
 {
 
 private  System.String NODE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NODE_ID
         {  
             get  

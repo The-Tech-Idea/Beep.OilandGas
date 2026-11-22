@@ -9,6 +9,7 @@ public partial class R_SAMPLE_COLLECT_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String COLLECT_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLLECT_METHOD
         {  
             get  

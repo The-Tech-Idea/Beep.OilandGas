@@ -9,6 +9,7 @@ public partial class R_SP_POINT_VERSION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VERSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VERSION_TYPE
         {  
             get  

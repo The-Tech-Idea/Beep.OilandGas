@@ -9,6 +9,7 @@ public partial class RA_REVISION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String REVISION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REVISION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REVISION_METHODValue;
           set { SetProperty(ref  REVISION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

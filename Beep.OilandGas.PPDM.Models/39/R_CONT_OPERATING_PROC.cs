@@ -9,6 +9,7 @@ public partial class R_CONT_OPERATING_PROC: Entity,IPPDMEntity
 {
 
 private  System.String OPERATING_PROCEDUREValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OPERATING_PROCEDURE
         {  
             get  

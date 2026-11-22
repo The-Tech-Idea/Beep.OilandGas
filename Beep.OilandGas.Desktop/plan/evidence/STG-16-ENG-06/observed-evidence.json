@@ -1,0 +1,89 @@
+{
+  "id": "STG-16/ENG-06",
+  "title": "Well plan",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a build-and-hold plan closes on its target within tolerance; the dogleg each station shows is the minimum-curvature walk's own figure and is checked against the configured limit; the station table, the plan view and the section view are all built from one station list; every geometric column names the unit taken from the plan; the handoff records the actor and passes the computed trajectory; and a saved plan records its design method and the outcome it produced.",
+  "dataModel": {
+    "read": "Nothing outside the plan itself: the tie-on, the target and the sections are the design inputs, and the owner's WellPlan reproduces the stations from them.",
+    "addedTable": "WELL_PLAN in DrillingAndConstruction, registered in DrillingAndConstructionSetupModule: the well, field, plan name, design method, unit, tie-on, target and tolerance, the design dogleg and the limit applied, the explicit sections as JSON, and the outcome - station count, final MD/N/E/TVD/inclination/azimuth, miss distance, target hit, largest station dogleg, tortuosity with its basis, and who saved and handed it off when.",
+    "notStored": "The stations. The owner's minimum-curvature construction reproduces them exactly from the inputs, so a saved plan keeps the method and the inputs and the geometry is recomputed when it is opened - which is also what makes the handoff a trajectory rather than a copy of the record.",
+    "openQuestionAnswered": "The feature's open question - 'WellPlan is a class with a Start factory; check whether it mutates or returns a new instance before designing the editor' - is answered: it mutates. Hold, Curve and CurveHoldToTarget each append a node to the same plan and return this, so the design is one builder call chain and the editor holds no plan object between commands, only the inputs."
+  },
+  "rules": {
+    "design": "BUILD_AND_HOLD starts at the tie-on and calls CurveHoldToTarget(dogleg, target), which is the owner's arc-then-hold solve; EXPLICIT replays a list of holds and curves (dogleg, toolface, length) through Hold and Curve.",
+    "methods": "Only BUILD_AND_HOLD and EXPLICIT are offered, and the refusal names why: the owner's plan is a sequence of straight holds and circular arcs and its one target solver curves then holds. A J-shape is that same solver with the target at TD, a horizontal well is the same solver with a target at the landing TVD, and an S-shape needs a drop-back solve the package does not provide - so listing it would promise a design the maths cannot produce.",
+    "target": "The miss is the 3D distance from the last station to the target, and the plan is on target when it is within the tolerance. The curve-and-hold solver lands exactly, so a build-and-hold miss is numerical noise; an explicit plan is reported with its real miss.",
+    "dogleg": "The dogleg column is the minimum-curvature walk's Dls per station - degrees per 100 ft or per 30 m, labelled from the plan's own unit - compared with drilling.maxDogleg. The owner's own warning list is kept and a station above the limit is added to it; a limit that is not configured says so rather than reporting a pass.",
+    "tortuosity": "tortuosity = the plan's measured length over the straight-line distance from the tie-on to the last station, less one; zero is a straight hole. The definition is printed beside the figure so it is not a bare number.",
+    "units": "The plan carries one unit and every geometric value is in it. A section may be written with a unit suffix, and a suffix that is not the plan's unit is refused rather than converted. The grid's headers are rewritten from the plan's unit on load.",
+    "unreachable": "A target the arc and hold cannot land on - behind the bit or inside the turning circle - is refused with a sentence naming both possibilities and a reference; the owner's exception is reported, and its text is never passed to the person.",
+    "handoff": "The handoff is recorded on the saved plan with its actor and time, and it passes the computed WellModel (the plan's own ToWellModel) rather than a copy of the record. Handing off before saving, or handing off a plan that does not exist, is refused with the reason.",
+    "saved": "A saved plan records the design method (AC-6), the sections it was built from, the limit it was checked against and the outcome, so reopening it reproduces the same stations and the same checks."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.DrillingAndConstruction/Data/Tables/WELL_PLAN.cs and Modules/DrillingAndConstructionSetupModule.cs (table registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgWellPlan.cs (OgPlanSection, OgPlanRequest, OgPlanStation, OgPlanPoint, OgWellPlanWorkspace, WellPlanRules, IOgWellPlan, OgWellPlanService with DesignAsync/SaveAsync/LoadAsync/HandoffAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellPlanPageView.cs (route 'wellplan': the well/method/unit bar, the tie-on bar, the target bar, the explicit sections box, the summary, target, dogleg, tortuosity and view lines, the unit-labelled station grid, and the save and handoff commands)",
+    "wiring": "OgBootstrapper (IOgWellPlan), OgApplication.WellPlan, catalog 'wellplan' (OgModuleKeys.Wells), OgPageFactory, en + ar labels; the Data project now references TheTechIdea.OilGas.Drilling",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellPlanTests.cs (9, no database) + WellPlanGatewayTests.cs (1 opt-in, real SQLite over the plan table)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1374, "passed": 1374, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 87, "passed": 87, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 110, "modulesetup-summary": "33 module(s) - 446 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the added WELL_PLAN table and nothing else: the plan is self-contained, so the test proves the save, the reproduction, the handoff and the newest-plan rule rather than a join.",
+    "ac1_target": "a build-and-hold plan from a surface tie-on to (N 800, E 0, TVD 2 000) at 3 deg/30 m lands with a miss below 1e-6, is on target, and its last station sits exactly on the target with an inclination between 0 and 90",
+    "ac2_dogleg": "each station reports a dogleg no larger than the design value, and with drilling.maxDogleg set to 1.0 the same 3 deg plan reports that it is above the limit and appends the reason to the owner's warning list; with no limit configured the plan says so",
+    "ac3_views": "the plan view and the vertical section are built from the station list the grid binds, through the shared path maths, so the last plan point is the last station's N/E and the section ends at the last station's TVD",
+    "ac4_units": "'hold 500 ft' in a metre plan is refused as mixed units, the grid's headers are rewritten as 'MD (m)', and a straight 1 000 m hold reports tortuosity 0 while a build reports a positive figure with its definition",
+    "ac5_handoff": "the handoff records nadia and the time in the database and returns the trajectory, whose survey holds one station per plan station; handing off an unsaved or unknown plan is refused",
+    "ac6_saved": "the saved row carries BUILD_AND_HOLD (or EXPLICIT with its sections), the unit, the tie-on, the target, the design dogleg, the limit, the station count, the final position, the miss, the hit, the largest station dogleg, the tortuosity and its basis",
+    "reproduced": "reopening the plan gives the same station count and the same final MD, north and TVD as the saved outcome, because the stations are recomputed rather than read back",
+    "newest": "after a second plan is saved, the plan read is the newest one - by SAVED_AT_UTC - not the first",
+    "failure": "dropping WELL_PLAN fails the read with no plan"
+  },
+  "gates": {
+    "AC-1 A build-and-hold plan closes on its target within tolerance": "pass - the owner's curve-and-hold lands to within 1e-6 of a target 800 m out, and the final station is asserted on the target.",
+    "AC-2 Dogleg is computed per station and checked against the limit": "pass - the column is the minimum-curvature Dls, compared with drilling.maxDogleg, with a warning above it and an explicit 'no limit configured' when there is none.",
+    "AC-3 The station table and the plan view agree": "pass - both views are built from the same station list, and the unit test asserts the page does exactly that.",
+    "AC-4 Units are explicit on every geometric value": "pass - the grid headers are rewritten from the plan's unit, the dogleg column is labelled with the course length, and a section in another unit is refused.",
+    "AC-5 Handoff passes the computed trajectory": "pass - the handoff records the actor and time and returns the WellModel the plan builds, with one survey station per plan station.",
+    "AC-6 A saved plan records the design method": "pass - DESIGN_METHOD and SECTIONS_TEXT are on the row and asserted in SQL."
+  },
+  "engineFindings": {
+    "thePlanMutates": {
+      "where": "TheTechIdea.OilGas.Drilling/WellPlan.cs",
+      "finding": "The feature's open question asked whether Start returns a new instance or the class mutates. It mutates: Hold, Curve and CurveHoldToTarget append a node to the same internal list and return this.",
+      "handling": "The design is a single builder chain built fresh from the request every time; nothing holds a plan object between commands, so an edit cannot append to a plan that was already saved."
+    },
+    "theSolverIsTheOnlyTargetMethod": {
+      "finding": "The package offers exactly three plan primitives - a straight hold, an arc at a dogleg and toolface, and an arc-and-hold that lands on a target. There is no S-shape or horizontal solver.",
+      "handling": "The method list offers BUILD_AND_HOLD and EXPLICIT, and the refusal explains that a J-shape and a horizontal well are the target solver with a different target while an S-shape would need a drop-back solve the package does not have."
+    },
+    "doglegIsTheWalksNotTheRequest": {
+      "finding": "The plan's own stations carry the requested dogleg on a curve section, which would make the AC-2 check a tautology.",
+      "handling": "The column is the minimum-curvature walk's Dls per station, recomputed from the station list by Trajectory.Compute, and the largest of those is what is compared with the configured limit."
+    },
+    "theLibraryRefusalIsAnOrdinaryAnswer": {
+      "finding": "An unreachable target throws from the solver, which is a planning answer rather than a defect - and the exception's text must not reach the person.",
+      "handling": "The exception is reported through the failure reporter (so it is stored with a reference) and the refusal names the condition in the desktop's own words: behind the bit or inside the turning circle, with the dogleg it was tried at."
+    },
+    "theUnitHadToBeOnTheHeaders": {
+      "finding": "A grid whose columns read 'MD' and 'TVD' does not say what unit the numbers are in, which is exactly what AC-4 asks for.",
+      "handling": "The page rewrites the header text from the plan's own unit on load, and the dogleg, build and turn columns are labelled with the course length from Trajectory.DoglegCourseLabel."
+    }
+  },
+  "limits": [
+    "S-shape and horizontal are not offered as methods: the owner's plan has no drop-back or horizontal solver, so the method list names only what the maths can produce and the refusal explains the rest.",
+    "The plan view and the vertical section are summarised in words with their point counts and extents rather than drawn: the drawn path views belong to VSB-02's well-path screen, which renders the same stations.",
+    "A plan is one design per row: there is no revision history, so saving a second plan adds a row and the newest is the one read.",
+    "The handoff records the actor and time and exposes the computed trajectory, but the torque-and-drag screen that will consume it is ENG-07 and is not built yet - the trajectory is passed, not shown downstream.",
+    "The dogleg limit is drilling.maxDogleg when a plan is designed; a plan reopened after the limit changes reports the limit it was checked against on the row but recomputes the check with the current setting, which is stated in the evidence rather than hidden.",
+    "The tortuosity figure is the length-over-displacement definition stated on the page; the package computes no tortuosity of its own, so this is the desktop's definition.",
+    "The build and turn columns are derived from consecutive inclinations and azimuths over the course length; a station that changes both at once shows the two rates but not their vector sum (that is the dogleg column).",
+    "No paging: a read loads the plan table whole and filters in memory."
+  ]
+}

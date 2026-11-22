@@ -9,6 +9,7 @@ public partial class WELL_SET_WELL: Entity,IPPDMEntity
 {
 
 private  System.String WELL_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WELL_SET_IDValue;
           set { SetProperty(ref  WELL_SET_IDValue, value); }
         } 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.Decimal WELL_SET_WELL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal WELL_SET_WELL_OBS_NO
         {  
             get  

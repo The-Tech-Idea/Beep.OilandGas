@@ -9,6 +9,7 @@ public partial class R_BA_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_TYPE
         {  
             get  

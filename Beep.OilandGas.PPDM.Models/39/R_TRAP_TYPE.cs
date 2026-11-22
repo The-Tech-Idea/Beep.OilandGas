@@ -9,6 +9,7 @@ public partial class R_TRAP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TRAP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRAP_TYPE
         {  
             get  

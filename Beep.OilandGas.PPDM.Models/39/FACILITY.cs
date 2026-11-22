@@ -9,6 +9,7 @@ public partial class FACILITY: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FACILITY_IDValue;
           set { SetProperty(ref  FACILITY_IDValue, value); }
         } 
 private  System.String FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_TYPE
         {  
             get  

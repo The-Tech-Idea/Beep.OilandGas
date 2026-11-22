@@ -9,6 +9,7 @@ public partial class RA_WELL_SET_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_SET_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_SET_ROLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WELL_SET_ROLEValue;
           set { SetProperty(ref  WELL_SET_ROLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

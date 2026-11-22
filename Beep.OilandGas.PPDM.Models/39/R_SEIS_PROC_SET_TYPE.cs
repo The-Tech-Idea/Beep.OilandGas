@@ -9,6 +9,7 @@ public partial class R_SEIS_PROC_SET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROC_SET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROC_SET_TYPE
         {  
             get  

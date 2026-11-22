@@ -9,6 +9,7 @@ public partial class R_ANL_REMARK_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ANL_REMARK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_REMARK_TYPE
         {  
             get  

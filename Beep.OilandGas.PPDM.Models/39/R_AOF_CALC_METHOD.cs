@@ -9,6 +9,7 @@ public partial class R_AOF_CALC_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String AOF_CALCULATE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AOF_CALCULATE_METHOD
         {  
             get  

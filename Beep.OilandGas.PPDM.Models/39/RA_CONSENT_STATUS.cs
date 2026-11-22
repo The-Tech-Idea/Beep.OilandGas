@@ -9,6 +9,7 @@ public partial class RA_CONSENT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSENT_STATUSValue;
           set { SetProperty(ref  CONSENT_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

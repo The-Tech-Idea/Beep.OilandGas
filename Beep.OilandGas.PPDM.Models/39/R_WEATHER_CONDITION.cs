@@ -9,6 +9,7 @@ public partial class R_WEATHER_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String WEATHER_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WEATHER_CONDITION
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_DRILLING_MEDIA: Entity,IPPDMEntity
 {
 
 private  System.String DRILLING_MEDIAValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILLING_MEDIA
         {  
             get  

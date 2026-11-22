@@ -9,6 +9,7 @@ public partial class RA_DRILL_TOOL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DRILL_TOOL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILL_TOOL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DRILL_TOOL_TYPEValue;
           set { SetProperty(ref  DRILL_TOOL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

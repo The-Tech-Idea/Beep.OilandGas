@@ -9,6 +9,7 @@ public partial class RA_PPDM_OPERATING_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String OPERATING_SYSTEMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OPERATING_SYSTEM
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OPERATING_SYSTEMValue;
           set { SetProperty(ref  OPERATING_SYSTEMValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

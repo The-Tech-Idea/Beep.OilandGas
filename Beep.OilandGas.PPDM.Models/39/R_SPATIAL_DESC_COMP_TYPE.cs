@@ -9,6 +9,7 @@ public partial class R_SPATIAL_DESC_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SP_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SP_COMPONENT_TYPE
         {  
             get  

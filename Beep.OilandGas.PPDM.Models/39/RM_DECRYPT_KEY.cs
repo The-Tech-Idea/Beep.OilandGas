@@ -9,6 +9,7 @@ public partial class RM_DECRYPT_KEY: Entity,IPPDMEntity
 {
 
 private  System.String DECRYPT_KEY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DECRYPT_KEY_ID
         {  
             get  

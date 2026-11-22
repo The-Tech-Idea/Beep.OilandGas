@@ -9,6 +9,7 @@ public partial class R_CONTEST_PARTY_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String PARTY_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARTY_ROLE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_RMII_METADATA_CODE: Entity,IPPDMEntity
 {
 
 private  System.String METADATA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METADATA_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METADATA_TYPEValue;
           set { SetProperty(ref  METADATA_TYPEValue, value); }
         } 
 private  System.String METADATA_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METADATA_CODE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String METADATA_CODEValue;
           set { SetProperty(ref  METADATA_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_LITH_INTENSITY: Entity,IPPDMEntity
 {
 
 private  System.String INTENSITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTENSITY
         {  
             get  

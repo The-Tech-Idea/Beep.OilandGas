@@ -9,6 +9,7 @@ public partial class STRAT_NODE_VERSION: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_STATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_STATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FIELD_STATION_IDValue;
           set { SetProperty(ref  FIELD_STATION_IDValue, value); }
         } 
 private  System.String NODE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NODE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String NODE_IDValue;
           set { SetProperty(ref  NODE_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal NODE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal NODE_OBS_NO
         {  
             get  

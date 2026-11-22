@@ -9,6 +9,7 @@ public partial class RA_MEDIA_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MEDIA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MEDIA_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MEDIA_TYPEValue;
           set { SetProperty(ref  MEDIA_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

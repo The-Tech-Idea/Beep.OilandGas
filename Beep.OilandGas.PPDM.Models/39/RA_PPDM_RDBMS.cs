@@ -9,6 +9,7 @@ public partial class RA_PPDM_RDBMS: Entity,IPPDMEntity
 {
 
 private  System.String RDBMS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RDBMS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RDBMS_IDValue;
           set { SetProperty(ref  RDBMS_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

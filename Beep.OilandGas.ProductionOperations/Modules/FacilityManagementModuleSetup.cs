@@ -38,7 +38,14 @@ namespace Beep.OilandGas.ProductionOperations.Modules
             typeof(Beep.OilandGas.Models.Data.DevelopmentPlanning.FACILITY_EDIT_INTENT),
             typeof(Beep.OilandGas.DevelopmentPlanning.Models.FACILITY_CREATE_INTENT),
             typeof(Beep.OilandGas.DevelopmentPlanning.Models.FACILITY_EQUIPMENT_INSTALL_INTENT),
-            typeof(R_FACILITY_MONITORING_CODE)
+            typeof(R_FACILITY_MONITORING_CODE),
+            // PRD-03: the recorded deferments with their coded reason and volume, and the reason-code reference set.
+            typeof(PRODUCTION_DEFERMENT),
+            typeof(R_DEFERMENT_REASON),
+            // PRD-06: intervention decisions, their candidate options and the method code book.
+            typeof(INTERVENTION_DECISION),
+            typeof(INTERVENTION_OPTION),
+            typeof(R_INTERVENTION_METHOD)
         };
 
         public FacilityManagementModuleSetup(ModuleSetupContext context) : base(context) { }

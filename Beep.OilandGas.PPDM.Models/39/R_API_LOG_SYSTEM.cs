@@ -9,6 +9,7 @@ public partial class R_API_LOG_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String API_CODE_SYSTEMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String API_CODE_SYSTEM
         {  
             get  

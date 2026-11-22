@@ -9,6 +9,7 @@ public partial class RA_SPATIAL_DESC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SPATIAL_DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPATIAL_DESC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SPATIAL_DESC_TYPEValue;
           set { SetProperty(ref  SPATIAL_DESC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_SEIS_SRC_ARRAY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SRC_ARRAY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SRC_ARRAY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_SRC_ARRAY_TYPEValue;
           set { SetProperty(ref  SEIS_SRC_ARRAY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

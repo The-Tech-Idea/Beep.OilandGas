@@ -9,6 +9,7 @@ public partial class RA_LAND_CASE_ACTION: Entity,IPPDMEntity
 {
 
 private  System.String LAND_CASE_ACTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_CASE_ACTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_CASE_ACTIONValue;
           set { SetProperty(ref  LAND_CASE_ACTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

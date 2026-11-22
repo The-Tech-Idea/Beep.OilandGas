@@ -9,6 +9,7 @@ public partial class R_FIN_COST_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COST_TYPE
         {  
             get  

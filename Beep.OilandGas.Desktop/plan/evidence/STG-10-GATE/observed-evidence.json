@@ -1,0 +1,35 @@
+{
+  "id": "STG-10/GATE",
+  "title": "Stage exit gate - SG-10-9 decimal round-trip",
+  "date": "2026-11-08",
+  "status": "gate met - SG-10-9 met: every amount and rate the stage writes round-trips through persistence exactly, asserted by decimal equality rather than a tolerance, through UnitofWork<T> and again on a fresh read of the store.",
+  "whySeparate": "SG-10-9 is the one stage gate that belongs to no single feature: it is a property of every money and rate value ACC-02..ACC-08 write. It therefore has its own evidence file and its own test rather than being claimed inside a feature whose acceptance criteria do not mention it.",
+  "implementation": {
+    "test": "test/Beep.OilandGas.Desktop.Tests/Stg10DecimalRoundTripTests.cs (opt-in, OG_RUN_SETUP_INTEGRATION=1)",
+    "method": "Amounts are written through UnitofWork<JOURNAL_ENTRY_LINE> (the ledger's money row) and rates and volumes through UnitofWork<TAX_TRANSACTION> (TAX_RATE and TAX_BASIS), committed, then read back with ReadAllAsync and compared with Assert.Equal on the decimal itself - no epsilon. A second read after a WAL checkpoint proves the value survived the store rather than a unit-of-work cache.",
+    "values": {
+      "amounts": ["0.01", "0.10", "0.99", "1.00", "12.34", "393.75", "1234.56", "99999999.99", "123456789.12"],
+      "ratesAndVolumes": ["0.075", "0.125", "0.0625", "0.0001", "0.21", "12.5", "1234.5678"]
+    },
+    "whyThese": "They are the shapes this app actually produces: currency to the cent including both ends of a cent and a nine-figure balance, rates as fractions to four decimal places (12.5 % is 0.125), and volumes to four decimal places (ACC-06's quantity convention)."
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~Stg10DecimalRoundTripTests", "exit": 0, "run": 1, "passed": 1, "failed": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 61, "passed": 61, "failed": 0 }
+  ],
+  "gates": {
+    "SG-10-9 All amounts round-trip through persistence without precision loss": "pass - nine amounts and seven rates/volumes are written through the unit of work and read back with exact decimal equality, then read again after a checkpoint."
+  },
+  "engineFindings": {
+    "storeRepresentation": {
+      "finding": "The SQLite provider stores a decimal as an IEEE double (REAL). That is exact for the precision this app uses - money to the cent, rates and volumes to four decimal places, at up to thirteen significant digits, all proven here - but a value needing more than about fifteen significant digits is not representable in the store at all, so 'without precision loss' is true for the values the stage produces and is not a claim about arbitrary precision.",
+      "handling": "The test states this in its remarks and the limit is recorded here rather than implied away; every figure asserted is one of the values the features actually write."
+    }
+  },
+  "limits": [
+    "The proof covers the decimal columns exercised (JOURNAL_ENTRY_LINE's amounts, TAX_TRANSACTION's rate and basis). Other decimal columns use the same mapping and the same store, but they are not each enumerated.",
+    "The store is SQLite. A different provider (SQL Server, Oracle, PostgreSQL) maps decimal natively and would be stronger, not weaker, but is not exercised by this test.",
+    "JSON round-tripping of money (the 'including JSON mapping' half of the stage's architecture note) is covered by the features that persist command JSON; this test covers database persistence."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class RA_WATER_PROPERTY_CODE: Entity,IPPDMEntity
 {
 
 private  System.String WATER_PROPERTYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_PROPERTY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WATER_PROPERTYValue;
           set { SetProperty(ref  WATER_PROPERTYValue, value); }
         } 
 private  System.String WATER_PROPERTY_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_PROPERTY_CODE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String WATER_PROPERTY_CODEValue;
           set { SetProperty(ref  WATER_PROPERTY_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

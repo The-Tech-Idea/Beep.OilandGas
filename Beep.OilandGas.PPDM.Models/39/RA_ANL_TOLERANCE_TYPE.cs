@@ -9,6 +9,7 @@ public partial class RA_ANL_TOLERANCE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TOLERANCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TOLERANCE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TOLERANCE_TYPEValue;
           set { SetProperty(ref  TOLERANCE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

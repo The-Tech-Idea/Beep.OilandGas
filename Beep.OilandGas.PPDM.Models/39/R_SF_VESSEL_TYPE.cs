@@ -9,6 +9,7 @@ public partial class R_SF_VESSEL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VESSEL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VESSEL_TYPE
         {  
             get  

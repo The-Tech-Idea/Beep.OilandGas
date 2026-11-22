@@ -9,6 +9,7 @@ public partial class RA_LEGAL_SURVEY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LEGAL_SURVEY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEGAL_SURVEY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEGAL_SURVEY_TYPEValue;
           set { SetProperty(ref  LEGAL_SURVEY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

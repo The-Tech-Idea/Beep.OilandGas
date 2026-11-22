@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class ACCOUNTING_AMORTIZATION : ModelEntityBase {
         private String ACCOUNTING_AMORTIZATION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public String ACCOUNTING_AMORTIZATION_ID
         {
             get { return this.ACCOUNTING_AMORTIZATION_IDValue; }

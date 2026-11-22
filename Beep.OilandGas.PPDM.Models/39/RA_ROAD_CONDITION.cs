@@ -9,6 +9,7 @@ public partial class RA_ROAD_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String ROAD_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROAD_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ROAD_CONDITIONValue;
           set { SetProperty(ref  ROAD_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

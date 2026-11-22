@@ -1,0 +1,76 @@
+{
+  "id": "STG-10/ACC-04",
+  "title": "Sales receivables and payments",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a receipt either allocates its whole amount or keeps the remainder as unapplied cash on the receipt; the ageing buckets are computed from due dates at a stated as-of date; a partial payment leaves exactly the remainder; an over-allocation is refused naming the excess; posting writes exactly one journal and a retry neither duplicates it nor applies the cash twice; and the author cannot approve their own receipt.",
+  "dataModel": {
+    "decision": "AR_PAYMENT is one amount against one invoice, which is exactly what an allocation is - so the payment row is reused as the allocation rather than duplicated by an allocation table; it only needed the receipt it belongs to. The receipt header had no owner at all: a single bank payment covering three invoices had nowhere to live as one fact, and 'unapplied cash' was a convention with no column. A new AR_RECEIPT is that header, and AR_PAYMENT gained RECEIPT_ID.",
+    "addedTable": "AR_RECEIPT (AR_RECEIPT_ID key, RECEIPT_NUMBER, CUSTOMER_BA_ID, RECEIPT_DATE, AMOUNT, UNAPPLIED_AMOUNT, CURRENCY_CODE, REFERENCE, BANK_ACCOUNT, STATUS, AUTHOR, JOURNAL_ENTRY_ID, POSTED_BY, POSTED_AT, APPROVED_BY, APPROVED_AT, RETURN_REASON, the owner tenant/company/book)",
+    "addedColumns": "AR_PAYMENT: RECEIPT_ID",
+    "registration": "typeof(AR_RECEIPT) added beside the other AR tables in ProductionAccountingModuleSetup. --smoke now reports 33 modules and 414 entity types (up from 413)."
+  },
+  "ownerAdditions": {
+    "ageing": "Beep.OilandGas.Accounting/Calculations/ReceivableAgeing.cs - the bucket rule the project did not state. The accounting project carries an ARAgingSummary request shape but no rule, so the rule is written once here: an open invoice is bucketed by days past its due date at the as-of date (CURRENT when not yet due, then 30, 60, 90+), inclusive at each upper bound (30 days past due is '30', 31 is '60'), falling back to the invoice date when no due date is stated - and that fallback is stated rather than left to the screen."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgReceivable.cs (ReceivableCodes, OgAllocationInput, OgReceiptInputs, OgAllocation, OgReceipt, OgOpenInvoice, OgAgeingRow, OgReceivableWorkspace, ReceivableRules, IOgReceivable, OgReceivableService with RecordAsync/PostAsync/ReviewAsync/LoadAsync)",
+    "record": "RecordAsync validates the receipt, then checks every allocation against its invoice before writing anything: the invoice must exist, its currency must match the receipt's, and the allocation may not exceed that invoice's open balance - and the refusal names the excess. The header stores AMOUNT and UNAPPLIED_AMOUNT (the amount less the allocations), so unapplied cash is a fact on the row (AC-1).",
+    "post": "PostAsync checks the period lock first, then writes one journal - cash debit, receivables credit - whose REFERENCE_NUMBER is 'RECEIPT-' + the receipt id, a key that exists before any numbering, so a retry after a lost acknowledgement finds and adopts it. It then reduces each invoice's PAID_AMOUNT and recomputes BALANCE_DUE as total less paid less credited (AC-3), and only then marks the allocations POSTED and the receipt numbered/posted.",
+    "idempotency": "An allocation that is already POSTED is skipped when applying cash, so the retry path cannot reduce an invoice twice. The gateway test clears the receipt's journal link and status by hand and re-posts: the journal count stays at one and every invoice keeps its paid amount.",
+    "ageing": "The workspace carries the open invoices with their bucket, a per-customer ageing row, and the four totals with the as-of date they were measured at - all from ReceivableAgeing, so the grid and the total cannot disagree (AC-2).",
+    "review": "Approve records APPROVED_BY/APPROVED_AT and refuses the author before anything is written; return requires a reason and stores it (AC-6).",
+    "page": "src/Beep.OilandGas.Desktop/Views/ReceivablesPageView.cs (route 'receivables': the receipt bar, the allocation editor, post and review, the ageing sentence and grid, the open invoices, the receipts and the selected receipt's allocation, unapplied cash and journal). Selecting an open invoice appends it to the allocation editor with its open balance, so a long id is not retyped.",
+    "wiring": "OgBootstrapper (IOgReceivable), OgApplication.Receivables, catalog 'receivables' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ReceivableTests.cs (4, no database) + ReceivableGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1089, "passed": 1089, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 56, "passed": 56, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 80, "views-constructed": true, "modulesetup-summary": "33 module(s) - 414 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with GL_ACCOUNT, AR_INVOICE, AR_PAYMENT, AR_RECEIPT, JOURNAL_ENTRY, JOURNAL_ENTRY_LINE and COMPANY_LEDGER_PERIOD, seeded in ReceivableGatewayTests",
+    "ac1_unapplied": "an 8,000 receipt allocated 6,000 and 1,000 stores AMOUNT 8000 and UNAPPLIED_AMOUNT 1000, and the receipt's sentence reads 'allocated 7,000.00 of 8,000.00 USD · unapplied 1,000.00 USD (kept as customer credit)'; the unapplied figure is still 1,000 after posting, so the cash was not spent",
+    "ac2_ageing": "three seeded invoices at an as-of date of 2026-04-15 bucket as current (2,000, due 2026-05-01), 30 (11,000, due 2026-03-31) and 90+ (5,000, due 2026-01-15); the totals read 2,000 / 11,000 / 0 / 5,000 with 18,000 overall, and the unit test walks the boundaries at 0, 1, 30, 31, 60 and 61 days plus the no-due-date fallback",
+    "ac3_partial": "6,000 against an 11,000 invoice stores PAID_AMOUNT 6000 and BALANCE_DUE 5000; 1,000 against a 5,000 invoice stores 1000 and 4000 - both asserted on the stored rows",
+    "ac4_over_allocation": "an allocation of 12,000 against an 11,000 invoice is refused with receivables-over-allocation naming 'an excess of 1,000.00', and no receipt is written; an allocation larger than the receipt itself is refused separately, as is one in another currency",
+    "ac5_one_journal": "posting writes exactly one JOURNAL_ENTRY with SOURCE_MODULE 'AR_RECEIPT' and two lines (cash 8,000 debit, receivables 8,000 credit); posting again leaves the count at one",
+    "ac6_author": "the receipt is recorded by sara and an approval by sara is refused with receivables-author-cannot-approve naming her; nadia approves and APPROVED_BY/APPROVED_AT are on the row",
+    "lost_ack": "JOURNAL_ENTRY_ID, RECEIPT_NUMBER and STATUS are cleared by hand and the receipt re-posted: the journal count stays at one, and both invoices keep their paid and balance figures unchanged - the allocations were already POSTED, so they are not applied twice",
+    "return": "a return without a reason is refused; with one the receipt reads RETURNED and the reason is stored",
+    "unavailable": "dropping AR_PAYMENT and AR_RECEIPT makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 Allocation equals the receipt or leaves explicit unapplied cash": "pass - UNAPPLIED_AMOUNT is a column, the sentence names it as customer credit, and a reconciliation of allocated + unapplied against the amount is asserted.",
+    "AC-2 Ageing buckets come from due dates": "pass - ReceivableAgeing states the rule once, the gateway asserts three buckets and their totals at a stated as-of date, and the unit test asserts every boundary.",
+    "AC-3 A partial payment leaves the correct balance": "pass - paid is added and balance is recomputed as total less paid less credited in decimal, asserted on both invoices.",
+    "AC-4 Over-allocation is refused": "pass - refused against the invoice balance with the excess named, against the receipt amount, and across currencies; nothing is written in each case.",
+    "AC-5 Posting creates exactly one journal": "pass - one posted entry with the cash/receivables pair, and a second post writes none.",
+    "AC-6 Author cannot approve their own receipt": "pass - the author is refused before anything is written and a different reviewer approves."
+  },
+  "engineFindings": {
+    "noReceiptHeader": {
+      "finding": "AR_PAYMENT is one amount against one invoice, so a single bank payment covering several invoices had no single record, and unapplied cash had no owner anywhere in the model.",
+      "handling": "AR_RECEIPT added as the header with UNAPPLIED_AMOUNT; AR_PAYMENT keeps its own meaning as the allocation and gained RECEIPT_ID."
+    },
+    "noAgeingRule": {
+      "finding": "The accounting project has an ARAgingSummary request shape but no bucket rule, so any screen would have had to invent its own boundaries.",
+      "handling": "ReceivableAgeing states the buckets, their inclusive bounds and the no-due-date fallback in one place; both the grid and the totals read it."
+    },
+    "unitOfWorkUpdate": {
+      "finding": "UnitofWork.Update/Delete locate a row through the unit's own read buffer, so reading with ReadAllAsync and then updating through a fresh unit throws 'Object not found'.",
+      "handling": "Every write reads through the unit that performs it; the invoice application and the previous feature's delete path were both corrected to do so. This is a real constraint of the data layer, recorded here because it will bite any future write path."
+    }
+  },
+  "limits": [
+    "There is no customer master: the customer is the id stated on the receipt, and the ageing groups by that string. A customer name or credit limit is not shown because no such table exists in this app.",
+    "Unapplied cash is held on the receipt and shown, but there is no command to apply it to a later invoice: a second receipt is the only path. That is the real gap against 'apply the receipt across invoices' for cash that arrives before the invoice.",
+    "A receipt cannot be unposted or reversed. Correcting one means a contra entry through the ledger, which this feature does not write.",
+    "The bank account is a free reference, not an account in the chart of accounts; posting always debits the house cash account (1000) whatever bank the money landed in.",
+    "The receipt's journal is written already POSTED (posting is the posting) and is not routed through the ledger's draft/post cycle or its author-versus-poster rule; the period lock is still checked.",
+    "No payment methods, no partial-currency settlement and no FX: the receipt must be in the invoice's currency or it is refused.",
+    "The feature's permissions (accounting.receivable.write/.approve) are not enforced per command: the app gates pages, and segregation of duties is the author-versus-approver rule only.",
+    "ACC-01 and ACC-05..ACC-08 are not started, so STG-10 is not complete."
+  ]
+}

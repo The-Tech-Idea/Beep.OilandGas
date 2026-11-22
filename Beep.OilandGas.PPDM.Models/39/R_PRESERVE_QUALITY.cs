@@ -9,6 +9,7 @@ public partial class R_PRESERVE_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String PRESERVATION_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRESERVATION_QUALITY
         {  
             get  

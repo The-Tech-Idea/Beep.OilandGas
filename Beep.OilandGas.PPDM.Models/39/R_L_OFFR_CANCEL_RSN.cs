@@ -9,6 +9,7 @@ public partial class R_L_OFFR_CANCEL_RSN: Entity,IPPDMEntity
 {
 
 private  System.String LAND_OFFR_CANCEL_RSNValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_OFFR_CANCEL_RSN
         {  
             get  

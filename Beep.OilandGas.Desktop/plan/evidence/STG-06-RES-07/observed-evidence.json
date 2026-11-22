@@ -1,0 +1,64 @@
+{
+  "id": "STG-06/RES-07",
+  "title": "Production forecasting with scenarios",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a saved forecast reloads with identical points, rates, monthly volumes and running totals (SG-06-7); every forecast records its method and the RES-06 fit it was generated from; a save is always a new version and no version overwrites another; an approved forecast is immutable and approving one is a state transition, not an edit; a ceiling the profile breaks is refused rather than clamped; and every stream carries its own unit.",
+  "dataModel": {
+    "decision": "ProductionForecasting already owned PRODUCTION_FORECAST and PRODUCTION_FORECAST_POINT, which record a forecast and its points, so both were extended in place with partial files rather than replaced or duplicated: the forecast gained SOURCE_FIT_ID, STATUS, RISK_RATING, VERSION, VERSION_OF, IMMUTABLE_IND, ECONOMIC_LIMIT, MAX_RATE, a unit per stream, ACTOR, RECORDED_AT, APPROVED_BY and APPROVED_AT; a point gained MONTHLY_VOLUME, CUMULATIVE_VOLUME and VOLUME_OUOM. The entity count stays at 392, which is the check that this was an extension rather than a new registration.",
+    "whyPartialFiles": "The entity classes are generated; the additions live in PRODUCTION_FORECAST.Scenario.cs and PRODUCTION_FORECAST_POINT.Volume.cs so the generated columns are untouched and the change is one file per entity.",
+    "res06GapClosed": "RES-06's DECLINE_FIT could not say which stream its fit described, because the fit was run for one fluid and the row never stored it. RES-07 cannot build a forecast without that: a profile of 1000 has no meaning without the stream it is in. DECLINE_FIT gained FLUID, RES-06's save writes it, and RES-06's own gateway test now asserts it. That is an addition to RES-06's record, not a change to its behaviour.",
+    "referenceSets": "Methods come from R_PRODUCTION_FORECASTING_REFERENCE_CODE under PRODUCTION_FORECAST_METHOD (the ForecastType names the seed already writes), statuses from PRODUCTION_FORECAST_RUN_STATUS and risk ratings from PRODUCTION_FORECAST_RISK_RATING. The lifecycle statuses Draft, Approved and Archived were added to the seed, because the shipped set had only Generated/OK/Active/Inactive and a saved forecast needs a reviewed state."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reservoir/OgForecast.cs (ForecastStatuses, ForecastStreams, ForecastMethods, OgForecastInputs, OgForecastPoint, OgForecast, OgForecastPending, OgForecastWorkspace, ForecastRules, IOgForecast, OgForecastService with GenerateAsync/SaveAsync/ApproveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "generation": "The profile is the owner's Arps arithmetic: qi, Di and b come from the RES-06 fit (or typed parameters), each month's rate is ArpsDeclineMethods at the month start and its volume is the difference of the owner's closed-form cumulative between the month's two ends. The stream the fit describes gets the rate; the other two streams stay zero and carry no unit.",
+    "rules": "ForecastRules states the horizon bounds (1..600 months), the validation (name, start, method parsed against ForecastTypeand supported, a positive ceiling and floor, a ceiling at or above the floor, and either a saved fit or all three typed parameters), and the refusal codes once.",
+    "page": "src/Beep.OilandGas.Desktop/Views/ForecastingPageView.cs (route 'forecasting': name/entity/method, source-fit picker with a manual option, start, months, ceiling, economic limit, the typed-parameter bar, Generate/Save/Approve/Retry, the selected forecast with its units, source and approval, the monthly points grid and the saved versions grid)",
+    "wiring": "OgBootstrapper (IOgForecast), OgApplication.Forecasting, catalog 'forecasting' (OgModuleKeys.Reservoir), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ForecastTests.cs (12, no database) + ForecastGatewayTests.cs (1 opt-in, real SQLite) + Stage06Tests.cs (2, the stage-level SG-06-8 guard)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 939, "passed": 939, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 63, "views-constructed": true, "modulesetup-summary": "28 module(s) - 392 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with DECLINE_FIT (RES-06), PRODUCTION_FORECAST, PRODUCTION_FORECAST_POINT and R_PRODUCTION_FORECASTING_REFERENCE_CODE, seeded in ForecastGatewayTests",
+    "ac1_identical_reload": "a 24-month forecast generated from fit FIT-1 and saved is read back point by point: the same date, the same oil, gas and water rates, the same monthly volume, the same running total and the same unit on every one of the 24 points, with the same total and the same rendered table",
+    "ac2_method_and_source": "the stored row carries FORECAST_TYPE = Hyperbolic and SOURCE_FIT_ID = FIT-1, and the workspace offers only the methods the reference table lists",
+    "ac3_versions": "saving the same run again writes version 2 with VERSION_OF = version 1's id: two forecast rows and 48 points, and version 1 still holds its own points and total - nothing was overwritten",
+    "ac4_approval": "approving with the creator's own name is refused with forecast-approver-is-creator; a second person approves and the row becomes STATUS Approved with IMMUTABLE_IND Y and APPROVED_BY reviewer; approving again is refused with forecast-already-approved",
+    "ac5_constraints": "a ceiling of 900 against an initial rate of 1000 is refused with forecast-constraint-exceeded naming month 1 and both values, and no point is produced - the profile is never silently clamped; an economic limit of 500 ends the profile at the first month at or below it, and a limit at or above qi is refused rather than producing an empty table",
+    "ac6_units": "the oil fit stores OIL_VOLUME_OUOM = bbl with GAS_VOLUME_OUOM and WATER_VOLUME_OUOM null, and every point stores the same unit; a gas fit stores MMscf on the gas stream",
+    "save_ack_lost": "dropping the point table makes the save fail with the forecast retained in Pending; recreating the table and retrying inserts the run once, leaving three forecast rows and the retried version's 24 points",
+    "history_unavailable": "dropping PRODUCTION_FORECAST makes LoadAsync return a workspace with HistoryFailed true, and generation is still allowed"
+  },
+  "gates": {
+    "AC-1 A saved forecast reloads with identical points": "pass - the gateway test compares every point's date, three rates, monthly volume, running total and unit, plus the total and the rendered table, between the saved forecast and the reload (SG-06-7).",
+    "AC-2 Every forecast records its method and source fit": "pass - FORECAST_TYPE and SOURCE_FIT_ID are columns on the row, the page shows both, and a manual forecast says 'manual parameters (no saved fit)' rather than pretending it has one.",
+    "AC-3 Versions never overwrite each other": "pass - a save always inserts, with VERSION = the highest existing version of that name and entity plus one and VERSION_OF pointing at it; the gateway test counts two rows and 48 points after a second save and re-reads version 1 unchanged.",
+    "AC-4 A forecast used by ECO-01 is immutable while referenced": "pass with a stated substitution - ECO-01 is not built, so the reference cannot be created. What is implemented is that an approved forecast is immutable: approval sets IMMUTABLE_IND, no code path updates a forecast except the approval transition, and every later save is a new version. When ECO-01 exists it references an approved id, which is already immutable.",
+    "AC-5 Constraints are enforced and violations refused, not clamped": "pass - a rate above the ceiling is refused with the month and both values and no points are produced; the economic limit is not a violation but the defined end of the profile, and that reading is stated on the page and in the rules.",
+    "AC-6 Volumes carry units per stream": "pass - the forecast stores a unit per stream, the point stores the unit of the volume it holds, and the page prints 'Units: oil bbl, gas (none), water (none)' for an oil forecast."
+  },
+  "stage": {
+    "SG-06-1": "met by RES-01",
+    "SG-06-2": "met by RES-02",
+    "SG-06-3": "met by RES-03",
+    "SG-06-4": "met by RES-03",
+    "SG-06-5": "met by RES-04",
+    "SG-06-6": "met by RES-06",
+    "SG-06-7": "met by RES-07 (this feature)",
+    "SG-06-8": "met by Stage06Tests: a structural check that every saved calculation in the stage carries its inputs, its model and its actor, and a source check that each data service refuses an empty actor and fills the actor column on its save path"
+  },
+  "limits": [
+    "Only the four Arps methods can be generated from this screen (Decline, Exponential, Harmonic, Hyperbolic). PseudoSteadyState, Transient, GasWell, ReservoirSim, Ensemble and the other ForecastType codes are listed from the reference table but refused with the reason that this screen has no source for them.",
+    "ECO-01 does not exist, so 'immutable while referenced' is represented by approval; there is no reference count to check.",
+    "The forecast is for one stream, because a RES-06 fit is for one fluid. Water and gas are stored as zero beside the produced stream rather than being modelled, and that is stated.",
+    "The comparison screen (up to four forecasts on one chart with a delta table) is not built, and neither is a chart: these calculation screens still have no chart host. The monthly table and the version list are shown instead, and CompareForecastsAsync is not surfaced.",
+    "The risk rating list is the reference table's own; the shipped seed contains only Unknown, so a rating is operator data. A forecast is Draft until approved, which is the state table's 'unverified method' rule.",
+    "The export the reference service offers (ExportForecastAsync to CSV) is not surfaced: data export belongs to the export page this plan has elsewhere.",
+    "The feature's permissions (forecasting.read/.write/.approve) are not enforced per command: the app gates pages. Separation of duties on approval is enforced."
+  ]
+}

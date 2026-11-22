@@ -9,6 +9,7 @@ public partial class RESENT_REVISION_CAT: Entity,IPPDMEntity
 {
 
 private  System.String REVISION_CATEGORY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REVISION_CATEGORY_ID
         {  
             get  

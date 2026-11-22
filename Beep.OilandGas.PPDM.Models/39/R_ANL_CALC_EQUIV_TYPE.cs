@@ -9,6 +9,7 @@ public partial class R_ANL_CALC_EQUIV_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATION_EQUIV_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATION_EQUIV_TYPE
         {  
             get  

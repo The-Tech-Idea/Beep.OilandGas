@@ -9,6 +9,7 @@ public partial class WELL_XREF: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String XREF_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String XREF_ID
         {  
             get  

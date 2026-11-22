@@ -9,6 +9,7 @@ public partial class R_OBLIG_COMPONENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OBLIGATION_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBLIGATION_COMPONENT_TYPE
         {  
             get  

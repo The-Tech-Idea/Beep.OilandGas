@@ -9,6 +9,7 @@ public partial class R_RMII_CONTENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RMII_CONTENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RMII_CONTENT_TYPE
         {  
             get  

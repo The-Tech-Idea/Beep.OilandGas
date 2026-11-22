@@ -9,6 +9,7 @@ public partial class RA_LEASE_UNIT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LEASE_UNIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEASE_UNIT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEASE_UNIT_TYPEValue;
           set { SetProperty(ref  LEASE_UNIT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

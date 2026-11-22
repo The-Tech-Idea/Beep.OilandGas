@@ -1,0 +1,88 @@
+{
+  "id": "STG-14/WFL-04",
+  "title": "Gate reviews and approvals",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: approve is offered only when the gate's other required approvals are recorded and no blocking segregation conflict exists for the actor; a reject or a return without a rationale is refused; a delegated decision records and displays the delegator and the delegate; a second decision for the same step is refused with the original retained; conditions are recorded on the decision and propagated to the subject and its history; and the author of the subject cannot decide it.",
+  "dataModel": {
+    "decision": "No new table. The gate IS an approval row in PROCESS_APPROVAL, so a decision writes the row the queue already reads; the checklist is the other approvals of the same step instance; segregation reads the owner's SOD_RULE/SOD_CONFLICT pair; and the delegation columns DELEGATED_FROM/DELEGATED_TO/DELEGATED_BY were already on the approval row, so nothing was added to record it.",
+    "checklist": "A gate's checklist is the other PROCESS_APPROVAL rows of the same PROCESS_STEP_INSTANCE_ID, each satisfied only when its status is APPROVED. The decision being taken is excluded, so a gate cannot block itself.",
+    "delegation": "PROCESS_APPROVAL.DELEGATED_FROM names the delegator and DELEGATED_TO the delegate; a decision writes APPROVED_BY as the delegate and DELEGATED_BY as the delegator, so both names survive on the record.",
+    "propagation": "Conditions are written into the approval's APPROVAL_NOTES and merged into the instance's INSTANCE_DATA_JSON under gateConditions, and the decision is appended to PROCESS_HISTORY as GATE_<kind>."
+  },
+  "rules": {
+    "kinds": "APPROVE, APPROVE_WITH_CONDITIONS, RETURN and REJECT. An unknown kind is refused with the list.",
+    "rationale": "A RETURN or a REJECT without a rationale is refused; an APPROVE_WITH_CONDITIONS without the conditions is refused. A plain approval needs neither.",
+    "checklist": "Every other approval of the step must be recorded as APPROVED before the gate can be approved; each unsatisfied item names what it is and why.",
+    "sod": "An unresolved SOD_CONFLICT for the actor only blocks when its SOD_RULE has IS_BLOCKING = 'Y': the owner records that distinction and it is honoured, so an advisory rule is visible but does not disable the decision. A resolved conflict (RESOLVED_DATE set or status RESOLVED) no longer blocks.",
+    "author": "The instance's creator and the approval's requester are both refused as the decider, so the author of a subject cannot approve their own work.",
+    "delegation": "When the row records a delegator and delegate, only the delegate may act; a row with a delegator but no delegate cannot be decided by anybody, and both are stated.",
+    "single": "A gate whose status is anything but empty/PENDING is read-only; the original decision stands and no second decision is written.",
+    "ordering": "The author and requester checks are applied before the delegation check, so a decision by the requester is reported as their own conflict rather than as a delegation mismatch."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Workflow/OgGateReviews.cs (OgGateChecklistItem, OgPriorDecision, OgGateReview, OgGateWorkspace, GateRules, IOgGateReviews, OgGateReviewsService)",
+    "page": "src/Beep.OilandGas.Desktop/Views/GatesPageView.cs (route 'gates': the gate queue, the delegation banner, the checklist grid and text, the blocks panel, the decision state, the decision bar and the prior-decisions grid)",
+    "wiring": "OgBootstrapper (IOgGateReviews), OgApplication.GateReviews, catalog 'gates' (OgModuleKeys.Workflow), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/GateReviewTests.cs (7, no database) + GateReviewGatewayTests.cs (1 opt-in, real SQLite over seven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1294, "passed": 1294, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 79, "passed": 79, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 103, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PROCESS_APPROVAL, PROCESS_STEP_INSTANCE, PROCESS_INSTANCE, PROCESS_DEFINITION, PROCESS_HISTORY, SOD_RULE and SOD_CONFLICT. One gate (PA-1) assigned to nadia on a step of an instance authored by sara and requested by omar, a second required approval (PA-2) assigned to omar, and a blocking segregation rule seeded but not yet conflicted.",
+    "ac1_pending": "with PA-2 pending, approve is not offered, the blocks text names 'TECHNICAL #2 is not satisfied: it is pending', and an approval attempt is refused with gate-checklist-incomplete without writing a status",
+    "ac1_cleared": "once PA-2 is recorded as APPROVED by omar, the checklist clears and approve becomes available",
+    "sg14_3_sod": "adding an open conflict for nadia against a blocking rule disables approve, names the rule and both roles, and the decision is refused with gate-sod-conflict; setting the rule to IS_BLOCKING='N' re-enables it, which proves the owner's flag is honoured",
+    "ac2_rationale": "a reject with a blank rationale is refused with gate-rationale-required (SG-14-4), and an approval with conditions but no conditions text is refused with gate-conditions-required",
+    "ac6_author": "a decision by sara, the instance's author, is refused with gate-author-cannot-approve",
+    "ac3_delegation": "after the row records DELEGATED_FROM sara and DELEGATED_TO nadia, the banner reads 'Acting for sara ... nadia', and a decision by huda is refused with gate-delegated-to-another naming nadia",
+    "ac5_conditions": "nadia's approval with conditions records APPROVAL_STATUS APPROVED, APPROVED_BY nadia and DELEGATED_BY sara, puts the conditions in APPROVAL_NOTES and in the instance's INSTANCE_DATA_JSON, and appends a GATE_APPROVE_WITH_CONDITIONS history row; the prior-decision entry shows nadia acting for sara",
+    "ac4_second": "a second decision on the same gate is refused with gate-already-decided, the row still reads APPROVED, and the instance has exactly one gate history row",
+    "failure": "dropping SOD_CONFLICT fails the read with no workspace"
+  },
+  "gates": {
+    "AC-1 Approve is disabled when the checklist is incomplete or SoD conflicts": "pass - both refusals are shown as blocks and enforced by the command (SG-14-3).",
+    "AC-2 Reject and return require a rationale": "pass - refused with the reason before anything is written (SG-14-4).",
+    "AC-3 A delegated decision shows delegator and delegate": "pass - the banner and the record both name them (SG-14-7).",
+    "AC-4 A second decision for the same step is refused": "pass - the decided gate is read-only and the original is retained.",
+    "AC-5 Conditions are recorded with the decision and propagate to the subject": "pass - notes, instance data and history all carry them.",
+    "AC-6 The author of the subject cannot approve it": "pass - the creator and the requester are both refused."
+  },
+  "engineFindings": {
+    "gateIsAnApprovalRow": {
+      "where": "Beep.OilandGas.LifeCycle/Data/Tables/PROCESS_APPROVAL.cs",
+      "finding": "The owner has no separate gate table: a gate is a PROCESS_APPROVAL row, and it already carries the delegation columns (DELEGATED_FROM, DELEGATED_TO, DELEGATED_BY, DELEGATION_REASON), the requester, the required action and the decision fields.",
+      "handling": "The decision writes the approval row and the checklist is the other approvals of the same step, so no second table and no additive column was needed."
+    },
+    "sodBlockingIsTheOwnersFlag": {
+      "where": "Beep.OilandGas.LifeCycle/Data/Tables/SOD_RULE.cs and SodEvaluationEngine.cs",
+      "finding": "The owner stores IS_BLOCKING and a severity (CRITICAL/HIGH) per rule and records conflicts per user in SOD_CONFLICT with a resolution date.",
+      "handling": "Only a rule with IS_BLOCKING='Y' disables the decision; a non-blocking rule is shown but does not block, and a conflict with a resolution date or status RESOLVED stops blocking. That keeps the owner's distinction rather than treating every conflict alike."
+    },
+    "requesterCheckPrecedesDelegation": {
+      "finding": "The first gateway scenario tested the wrong-delegate rule with omar, who is also the requester, so the refusal came back as gate-author-cannot-approve rather than the delegation error.",
+      "handling": "The order of the checks is now stated as a rule, and the scenario uses a third user (huda) for the delegation refusal. Both rules are correct; the test had to address the one it meant."
+    },
+    "conditionsNeedAResolvedConflict": {
+      "finding": "After re-enabling the blocking rule, the delegate's approval was correctly refused - the scenario had left the conflict open.",
+      "handling": "The scenario resolves the conflict with a compensating control before approving, which is also the path the states table expects for a resolved conflict."
+    },
+    "conditionsMustReachTheSubject": {
+      "finding": "Recording conditions only on the approval would leave the subject without them, which is what AC-5 forbids.",
+      "handling": "The conditions are merged into PROCESS_INSTANCE.INSTANCE_DATA_JSON under gateConditions (the original payload is preserved) and the decision is appended to PROCESS_HISTORY; a failure to write either is reported as degraded rather than losing the decision."
+    }
+  },
+  "limits": [
+    "Delegation of authority (DELEGATION_OF_AUTHORITY thresholds by entity type and value) is not evaluated: the subject's monetary amount is not recorded on the instance, so the threshold ladder cannot be applied. The feature's person-to-person delegation is what is implemented.",
+    "The decision and the propagation are separate writes: the approval is committed first, then the history and the instance data; a failure in the latter two is reported as degraded and the approval still records the decision.",
+    "Evidence attachments are not shown or uploaded: the checklist carries evidence references (the approving user), and there is no document store in this build.",
+    "The gate's checklist is the other approvals of the step; a gate that requires non-approval evidence (a document, a test) has nowhere to record it, because the owner has no gate-evidence table.",
+    "Only SOD_CONFLICT rows already recorded are consulted: the desktop does not run SodEvaluationEngine to detect a new conflict at decision time, so a conflict nobody has evaluated would not block.",
+    "An approval row with no PROCESS_STEP_INSTANCE_ID has an empty checklist, so it can be approved whenever nothing else blocks; the owner records step instances for the gates this feature's seed models.",
+    "No paging: each read loads the seven tables whole and filters in memory.",
+    "No per-command permission enforcement beyond the page gate: workflow.approve is not checked, and the step's required role is not enforced here."
+  ]
+}

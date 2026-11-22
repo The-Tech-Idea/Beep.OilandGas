@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TheTechIdea.Beep.OilandGas.Desktop.WellTools</RootNamespace>
+    <AssemblyName>TheTechIdea.Beep.OilandGas.Desktop.WellTools</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Core\Beep.OilandGas.Desktop.Core.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Controls\Beep.OilandGas.Desktop.Controls.csproj" />
+  </ItemGroup>
+
+  <!--
+    ADR-008: the sibling OilandGasTools checkout. SkiaSharp is pinned to the ADR-001 version.
+    SkipMinVer: the desktop's reproducible build must not depend on a git client being on PATH;
+    versioning of the tools checkout is its own repository's concern.
+  -->
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" />
+
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Wellbore\TheTechIdea.OilGas.Wellbore.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <!-- INT-01: LAS 2.0/3.0 and DLIS readers plus the LAS writers. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Wellbore.Loaders\TheTechIdea.OilGas.Wellbore.Loaders.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <!-- VSB-03: the document mapping and the triple-combo demo document. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.WellLogs\TheTechIdea.OilGas.WellLogs.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <!-- The six toolboxes VSB-02 registers before any environment is read. -->
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Integrity\TheTechIdea.OilGas.Integrity.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Drilling\TheTechIdea.OilGas.Drilling.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Production\TheTechIdea.OilGas.Production.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.DataAI\TheTechIdea.OilGas.DataAI.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Training\TheTechIdea.OilGas.Training.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+    <ProjectReference Include="$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Mapping\TheTechIdea.OilGas.Mapping.csproj"
+                      AdditionalProperties="SkipMinVer=true" />
+  </ItemGroup>
+
+  <Target Name="OgRequireOilGasTools" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(OilGasToolsRoot)\src\TheTechIdea.OilGas.Wellbore\TheTechIdea.OilGas.Wellbore.csproj')"
+           Text="ADR-008: the OilandGasTools checkout was not found at '$(OilGasToolsRoot)'. Set the OilGasToolsRoot property to its location." />
+  </Target>
+
+</Project>

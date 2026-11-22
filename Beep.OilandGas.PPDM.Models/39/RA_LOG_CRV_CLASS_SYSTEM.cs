@@ -9,6 +9,7 @@ public partial class RA_LOG_CRV_CLASS_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SYSTEM_TYPEValue;
           set { SetProperty(ref  SYSTEM_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SF_DOCK_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DOCK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DOCK_TYPE
         {  
             get  

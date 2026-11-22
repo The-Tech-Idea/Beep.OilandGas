@@ -9,6 +9,7 @@ public partial class R_ALLOCATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ALLOCATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALLOCATION_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_PHYSICAL_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_PROCESSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_PROCESS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PHYSICAL_PROCESSValue;
           set { SetProperty(ref  PHYSICAL_PROCESSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

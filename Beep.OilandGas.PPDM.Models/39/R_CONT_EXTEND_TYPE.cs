@@ -9,6 +9,7 @@ public partial class R_CONT_EXTEND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String EXTENSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EXTENSION_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_DOC_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String DOCUMENT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DOCUMENT_STATUS
         {  
             get  

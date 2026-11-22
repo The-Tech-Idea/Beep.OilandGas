@@ -9,6 +9,7 @@ public partial class R_SAMPLE_REF_VALUE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REFERENCE_VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REFERENCE_VALUE_TYPE
         {  
             get  

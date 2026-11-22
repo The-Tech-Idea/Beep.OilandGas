@@ -1,0 +1,77 @@
+{
+  "id": "STG-07/LFT-07",
+  "title": "Choke analysis",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the gas rate reproduces the module's own orifice equation (checked by the throat-area invariant, 2x diameter giving 4x rate) and each multiphase correlation reproduces its published coefficient set to 2 decimal places; every result carries the flow regime with the pressure ratio that decided it and both the correlation chosen and the one actually evaluated; the erosion threshold always names API RP 14E as its source; the choke types and regimes come from the owning enums; the analysis is deterministic; and a saved result records its correlation and regime.",
+  "dataModel": {
+    "decision": "CHOKE_FLOW_RESULT already existed and was registered by ChokeAnalysisModule, with the rate, the pressures, the pressure ratios and the regime - but no correlation, no choke, no inputs and no erosion, which AC-6 and AC-3 require. It was extended additively in a partial file rather than replaced or duplicated, so the module's existing registration and its PPDM reasoning stay untouched. No new module was needed: this is the one stage feature whose owner already had a ModuleSetupBase.",
+    "addedColumns": "CORRELATION_CHOSEN, CORRELATION_USED, CHOKE_DIAMETER_IN, CHOKE_SIZE_64THS, CHOKE_TYPE, DISCHARGE_COEFFICIENT, GAS_SPECIFIC_GRAVITY, TEMPERATURE_F, Z_FACTOR, LIQUID_RATE_BBLD, GAS_RATE_MSCFD, GLR_SCF_BBL, EROSION_VELOCITY_FPS, EROSION_LIMIT_FPS, EROSION_RATIO, EROSION_RISK, THRESHOLD_SOURCE, WARNING_IND, NOTES, RATE_OUOM, PRESSURE_OUOM, ACTOR, RECORDED_AT",
+    "correlationRegistry": "Beep.OilandGas.ChokeAnalysis/Calculations/ChokeCorrelationRegistry.cs - resolves each seeded correlation code to the path that evaluates it and to the code it will actually run. It exists because the module documents that PILEHVARI and SACHDEVA have no model and fall back to Gilbert, and EvaluatePilehvari returns zero; a screen that labelled a fallback with the chosen code would misname the correlation.",
+    "registration": "--smoke still reports 32 modules and 406 entity types, which is the check that this was a column extension on an already-registered table rather than a new registration."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgChoke.cs (OgChokeNote, OgChokeInputs, OgChokeErosion, OgChokeResult, OgChokePending, OgChokeWorkspace, ChokeRules, IOgChoke, OgChokeService with AnalyseAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "twoDirections": "A single-phase gas correlation gives a rate from the two pressures (GasChokeCalculator.CalculateDownholeChokeFlow); a multiphase empirical one gives the upstream pressure a liquid rate needs at a choke size (MultiphaseChokeCalculator.CalculatePressures + SelectCorrelationUpstreamPressure), which is what those correlations are functions of - the plan's 'predict the resulting rate or pressure'. The result's unit says which one it is.",
+    "regime": "The gas path takes the module's own regime from its critical pressure ratio; the multiphase path uses MultiphaseChokeCalculator.DefaultMultiphaseCriticalPressureRatio, which the module documents for exactly that purpose. Both are printed with the ratio that decided them.",
+    "erosion": "ChokeErosionAndSizing.Assess, whose ErosionalVelocityLimitFtPerSec the module documents as 'API RP 14E erosional velocity limit Ve (ft/s)'. That sentence is the stored THRESHOLD_SOURCE, so a limit is never stored without where it came from.",
+    "page": "src/Beep.OilandGas.Desktop/Views/ChokePageView.cs (route 'choke': the well/choke, pressure, gas, rate and method bars, the result with its correlation and regime lines, the erosion panel, the notes list and the saved results)",
+    "wiring": "OgBootstrapper (IOgChoke), OgApplication.Choke, catalog 'choke' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ChokeTests.cs (9, no database) + ChokeGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1010, "passed": 1010, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 46, "passed": 46, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 70, "views-constructed": true, "modulesetup-summary": "32 module(s) - 406 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with CHOKE_FLOW_RESULT (the extended shape), seeded in ChokeGatewayTests",
+    "ac1_gas": "a 0.5 in bean at 3,000/1,000 psia passes 19.139 MMscf/d in sonic flow; a 1.0 in bean passes 4.000x that, which is the throat-area invariant of the published orifice relation",
+    "ac1_multiphase": "at 1,000 bbl/d, 600 scf/bbl and a 32/64 choke the four correlations give Gilbert 20,446.85, Ros 416.22, Achong 361.56 and Baxendell 391.19 psia, each matching C x Q x R^a / S^b with its published coefficients to 2 decimals",
+    "ac2_regime_correlation": "every result carries FLOW_REGIME with the pressure ratio and critical ratio that decided it, and both CORRELATION_CHOSEN and CORRELATION_USED; PILEHVARI and SACHDEVA record GILBERT as used with a CORRELATION_FALLBACK warning",
+    "ac3_threshold": "EROSION_LIMIT_FPS is stored with THRESHOLD_SOURCE = 'API RP 14E erosional velocity, Ve = C / sqrt(mixture density)'; a 0.25 in choke at 4,000 bbl/d and 900 scf/bbl reports a ratio of 4.07 (SEVERE) and an EROSION_ABOVE_THRESHOLD warning",
+    "ac4_enums": "every ChokeType name is accepted and echoed; the stored regime is the enum's own name in the module's stored-code casing; an unknown type is refused naming the enum's names; a source guard asserts the view binds the workspace's type list and holds no BEAN or SONIC literal",
+    "ac5_deterministic": "two builds of the same inputs agree on the description, the rate, the regime, the erosion ratio and the notes",
+    "ac6_saved": "the stored row asserts FLOW_REGIME = 'SONIC', both correlation codes, CHOKE_TYPE, the diameter, the 64ths equivalent, the rate and pressure ratios, the erosion limit and its source, the units and the actor; a PILEHVARI run stores CHOSEN = 'PILEHVARI' with USED = 'GILBERT' and WARNING_IND = 'Y'",
+    "lost_acknowledgement": "dropping the table makes the save fail with the result retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping CHOKE_FLOW_RESULT makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A reference case reproduces the expected rate within tolerance": "pass - the gas path is checked by the throat-area invariant (2x diameter giving 4.00x the rate), which catches a wrong area or unit without re-implementing the module's equation; each multiphase correlation is checked against a pressure computed in the test from its published coefficient set (Gilbert 435/Q R^0.546/S^1.89, Ros 17.4/0.5/2.0, Achong 3.82/0.65/1.88, Baxendell 9.56/0.546/1.93) to 2 decimals.",
+    "AC-2 Flow regime and correlation are displayed with every result": "pass - the ratio line prints the pressure ratio against the critical ratio and the regime it implies; the correlation line prints the chosen one and, when they differ, the one actually evaluated with the reason.",
+    "AC-3 An erosion threshold always names its source": "pass - OgChokeErosion.Source is API RP 14E, printed in the erosion line and stored as THRESHOLD_SOURCE beside the limit; a result with no threshold (no liquid or no gas) carries no erosion assessment at all rather than a limit with no source.",
+    "AC-4 Choke types and regimes come from the owning enums": "pass - types are validated and echoed from Enum names of ChokeType, the regime is ChokeFlowRegime's name in the module's stored casing, and a source guard keeps both literals out of the view.",
+    "AC-5 Results are deterministic for the same inputs": "pass - the calculators are pure functions of their inputs, and two builds agree on every reported figure.",
+    "AC-6 Saved results record the correlation and regime": "pass - CORRELATION_CHOSEN, CORRELATION_USED and FLOW_REGIME are columns, asserted in SQL for a sonic gas run, a subsonic run and a Pilehvari fallback."
+  },
+  "engineFindings": {
+    "units": {
+      "where": "GAS_CHOKE_PROPERTIES.TEMPERATURE versus ChokeErosionAndSizing.Assess(temperatureF)",
+      "finding": "One module carries two temperature units: the gas calculator validates 450-800 degR (its own guard says 'Temperature outside 450-800 R range') and uses Rankine in its ideal-gas relations, while the erosion assessment takes Fahrenheit and converts it internally. A caller that passed the same number to both would be wrong by 460 degrees on one of them.",
+      "handling": "The screen takes Fahrenheit (what an engineer enters), converts once with ChokeRules.ToRankine for the gas calculator and passes the Fahrenheit value to the erosion assessment. Both are stated in the code and the test asserts the conversion."
+    },
+    "narrowWindow": {
+      "where": "GasChokeCalculator.ValidateInputs",
+      "finding": "The gas correlations accept only 450-800 degR, which is about -10 to 340 degF: a wellhead or separator temperature outside that window is refused outright.",
+      "handling": "Pre-checked in ChokeRules with the range named in the refusal, so the caller is told which input rather than meeting an exception. The window itself is the module's and is not widened here; it is recorded as a limit."
+    },
+    "fallbacks": {
+      "where": "MultiphaseChokeCalculator.SelectCorrelationUpstreamPressure and EvaluatePilehvari",
+      "finding": "PILEHVARI and SACHDEVA are seeded as correlation codes but have no model: the selector documents that they 'fall back to Gilbert until dedicated mechanism models are wired', and EvaluatePilehvari returns 0 unconditionally.",
+      "handling": "ChokeCorrelationRegistry records the fallback, the result stores both the chosen and the used code, and a warning says so - the state table's 'correlation chosen but out of range, result marked'. Not fixed: writing a Pilehvari mechanism model would be inventing physics."
+    },
+    "mutatingHelper": {
+      "where": "MultiphaseChokeCalculator.CalculateGilbert",
+      "finding": "It writes its answer into the caller's input object (TotalPressureDrop) instead of returning one, and its own comments debate which direction the equation solves for.",
+      "handling": "Not used. The screen calls CalculatePressures and SelectCorrelationUpstreamPressure, which return values and have a stated direction (pressure from rate at a choke size)."
+    }
+  },
+  "limits": [
+    "The multiphase correlations answer with a required upstream pressure, not a rate: that is what the module computes from a liquid rate, a GLR and a choke size. The screen labels the unit so the direction is never ambiguous, but it cannot invert those correlations to give a rate without a solver the module does not have.",
+    "A required upstream pressure at or below the caller's downstream pressure is reported with a warning ('this choke does not limit the rate at these conditions') rather than refused, because the module still returns a number and the regime falls out of its own ratio rule.",
+    "The gas rate's unit is the module's (its sonic path converts to Mscf/day) and is reported as MMscf/d; the module's own conversion chain is not re-derived here.",
+    "The plan's sensitivity panel (rate against choke size, with the chosen size marked) is not built: it would be a sweep of the same calculation and a table, and it is recorded as deferred rather than half-built.",
+    "There is no bean-size catalogue in the repository, so the screen accepts a diameter within the module's stated 0.01-2.0 in bounds and shows its equivalent in 64ths rather than offering a list it cannot source.",
+    "The feature's permissions (lift.choke.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class R_PROPPANT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROPPANT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROPPANT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_ANL_EQUIP_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String ANL_EQUIP_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_EQUIP_ROLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANL_EQUIP_ROLEValue;
           set { SetProperty(ref  ANL_EQUIP_ROLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_CAT_EQUIP_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String CAT_EQUIP_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAT_EQUIP_GROUP
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_CHECKSHOT_SRVY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CHECKSHOT_SURVEY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHECKSHOT_SURVEY_TYPE
         {  
             get  

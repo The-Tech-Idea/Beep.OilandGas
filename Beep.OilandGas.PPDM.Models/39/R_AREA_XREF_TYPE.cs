@@ -9,6 +9,7 @@ public partial class R_AREA_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AREA_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_XREF_TYPE
         {  
             get  

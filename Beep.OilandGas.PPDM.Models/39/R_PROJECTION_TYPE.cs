@@ -9,6 +9,7 @@ public partial class R_PROJECTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROJECTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECTION_TYPE
         {  
             get  

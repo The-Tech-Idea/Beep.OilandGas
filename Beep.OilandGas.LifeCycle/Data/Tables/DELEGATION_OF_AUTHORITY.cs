@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.LifeCycle.Data.Tables;
@@ -8,7 +8,7 @@ namespace Beep.OilandGas.LifeCycle.Data.Tables;
 /// Defines approval levels triggered by entity field values (e.g., AFE amount > $500K requires Executive approval).
 /// Part of Phase 2 workflow engine enhancement.
 /// </summary>
-public class DELEGATION_OF_AUTHORITY : ModelEntityBase
+public partial class DELEGATION_OF_AUTHORITY : ModelEntityBase
 {
     [Key, MaxLength(128)]
     public string DOA_ID { get; set; } = Guid.NewGuid().ToString();

@@ -9,6 +9,7 @@ public partial class RA_DATUM_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String DATUM_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATUM_ORIGIN
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DATUM_ORIGINValue;
           set { SetProperty(ref  DATUM_ORIGINValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

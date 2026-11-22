@@ -1,0 +1,94 @@
+{
+  "id": "STG-18/TRN-01",
+  "title": "Scenario runner",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: a scenario loads and presents its well (or its map) with its questions and accepts answers; the marking is the engine's own scoring against the scenario's expected values, and a wrong unit is marked as a wrong answer with the expected unit shown; the answer key and the solution's exhibit appear only after the attempt is submitted; a broken scenario file is listed with its validation problem while the sound ones still load; the runner takes no data source at all, so training cannot read or write production data; and the attempt policy in force is applied and stated.",
+  "dataModel": {
+    "read": "Scenario files (*.scenario.json), their well files (WellModel JSON) and their course files (*.course.json) - files, not records. A map exercise carries its map instead of a well.",
+    "written": "The results ledger, <data root>/Training/results.json, through the tools' own ResultsLedger; and the built-in sample pack, <data root>/Training/Samples, when a machine has no scenario folder.",
+    "noTable": "TRN-01 introduces no table. A scenario is a file by the feature's own contract ('Scenarios are files, not database records'), and the ledger is customer data under the data root. The opt-in test therefore drives the real service against real files.",
+    "noOwnerChange": "No change was needed in TheTechIdea.OilGas.Training: ScenarioLibrary, Scenario, ScenarioScoring, ScenarioRender, CourseLibrary, ResultsLedger and SamplePacks already do the loading, the marking, the drawing and the ledger. The desktop adds where the files live, the entry checks the screen needs, the exhibit by kind, the history and the record."
+  },
+  "rules": {
+    "scenario": "The exercise is the engine's file: ScenarioLibrary.LoadFolder reads the folder and validates every scenario, and a file the engine rejects is reported by name and left out - the feature's 'listed with the validation problem, not ignored'.",
+    "exhibit": "An exercise shows one exhibit. A well exercise is its WellboreDocument, rendered by ScenarioRender and drawn in the same well view every other page uses; a map exercise has no well at all, so its exhibit is the engine's map rendered by ScenarioRender.ToPng and shown as an image. Asking for a document on a map exercise throws, which is how the engine says a scenario has no well.",
+    "marking": "The marking is ScenarioScoring.Score - a pure function of the scenario and the answers: choice full or nothing, multi exact or (right - wrong)/right, depth and number within the tolerance and, with a partialTolerance, falling linearly to zero. The result shown is the ledger's Rescore of the recorded attempt, so what is displayed and what is stored are the same function of the same answers.",
+    "units": "AC-2's unit rule is the engine's: an answer carrying a different unit is converted when the units are comparable, and when they are not it scores nothing with the note that the two cannot be compared. The page keeps the trainee's unit as written and shows the expected value with its own unit, so a mismatch is a marked answer rather than a refusal.",
+    "solution": "AC-3 is structural, not a flag: the run handed to the page before an attempt carries the questions only - the outcome list is empty and no expected value exists anywhere in it - and the exhibit is the trainee's. Only after submission does the same object carry the key, the explanations and the solution's exhibit.",
+    "incomplete": "AC-1's entry rule: an attempt with a question unanswered is refused by id rather than scored as blanks, and nothing is written to the ledger. The page also refuses to offer Submit while anything is unanswered.",
+    "policy": "AC-6: the engine's attempt policy is latest, best or first - which attempt counts towards a course result - and ResultsLedger.Counted applies it. The page states the policy and marks the counting attempt in the history. The engine has no attempt limit, so the feature's 'attempt policy exhausted' state cannot arise; that is stated rather than invented as a maximum.",
+    "passMark": "The pass mark is the course's when the scenario belongs to one, otherwise training.passMark. ScenarioScoring.Score itself only knows the setting, so the run's pass/fail is computed from the course-aware mark - which is what the ledger records.",
+    "noDatabase": "AC-5 is structural: the service takes no IDataSource at all, so there is no way for it to reach a well table. A test asserts the source contains no IDataSource, no OgUow and no WELLBORE, so a later edit that added one would fail."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Training/OgTraining.cs (OgScenarioSummary, OgScenarioOptionView, OgScenarioQuestionView, OgScenarioAnswer, OgQuestionOutcome, OgScenarioRun, OgAttemptRow, OgCourseGroup, OgTrainingWorkspace, OgTrainingRules, IOgTrainingScenarios, OgTrainingScenariosService with LoadAsync/StartAsync/SubmitAsync/WriteSamplePackAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/TrainingScenariosPageView.cs (route 'training': the trainee bar with Reload and 'Write the sample pack', the scenario grid, the courses, the folder's problems, Start and Submit, the exercise in the Skia host or as the map image, the questions, the one-line-per-answer entry, the missing list, the marking, the warnings, the history and the policy)",
+    "wiring": "OgBootstrapper (IOgTrainingScenarios, taking the first configured folder, the samples folder and the ledger file from OgPaths), OgApplication.TrainingScenarios, catalog 'training' (OgModuleKeys.Training), OgPageFactory, en + ar labels; the Data project now references TheTechIdea.OilGas.Training",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/TrainingScenarioTests.cs (8, the tools' sample pack in a temporary folder) + TrainingScenarioGatewayTests.cs (1 opt-in, the whole service end to end including the policy and the ledger on disk)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1461, "passed": 1461, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 96, "passed": 96, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 119, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "files": "The tools' own sample pack written by the service into a temporary folder: the scenario files, their well files, the map exercise and the course files. No database is opened anywhere in this feature.",
+    "ac1_opens": "a well exercise opens with its questions, its document (a non-empty track list) and its count of unanswered questions equal to the number of questions; an attempt with one question missing is refused with the incomplete code and no ledger file is created",
+    "ac2_marking": "answering every question from the scenario's own key scores every point to six decimals and every outcome is fully correct with its expected value shown; a second attempt with one numeric answer given in the wrong unit scores less than the maximum, that question is marked wrong, the given value carries 'ft' and the expected value carries the question's own unit",
+    "ac3_solution": "before submission the run has no outcomes and no exhibit for the solution; after submission the same scenario carries the outcomes, the explanations and the solution's exhibit - and for a map exercise the exhibit is a PNG, with the PNG signature asserted",
+    "ac4_broken": "a scenario file with no id, no title and no questions is reported as 'broken.scenario.json: ... no questions', is not loaded, and the sound scenarios beside it still load; a file that is not JSON at all is reported the same way rather than throwing",
+    "ac5_noDatabase": "the runner's source contains no IDataSource, no OgUow and no WELLBORE, and its constructor takes no data source - so training cannot read or write production well data",
+    "ac6_policy": "with two attempts recorded, the history holds both and exactly one is marked as counting; setting the policy to best selects the higher-scoring attempt, first selects the earlier one and latest the later one, and the setting is restored afterwards; the workspace states 'the latest attempt counts' (or the policy in force)",
+    "samplePack": "with no folder configured the runner reports itself disabled with the reason and offers the pack; the pack is written under the data root (the path is asserted), after which the folder is configured and the scenarios run",
+    "networkOfRefusals": "a blank trainee, a blank scenario id, an unknown scenario, a bad answer line, an unknown question id and a value that is not a number are each refused with their own sentence"
+  },
+  "gates": {
+    "AC-1 A scenario loads, presents its document and accepts answers": "pass - the exercise opens with its exhibit, its questions and its missing list, and an incomplete attempt is refused by id.",
+    "AC-2 Scoring matches the scenario's expected values exactly, with units": "pass - the engine's own scoring, asserted to six decimals against the scenario's own key, with the wrong-unit case marked and the expected unit shown.",
+    "AC-3 The solution view is available after submission, not before": "pass - the pre-attempt object carries no outcomes and no solution exhibit; the post-attempt one carries both, for a well and for a map.",
+    "AC-4 A broken scenario is listed with its validation error": "pass - the file is named with its problems, is not loaded, and the sound scenarios around it still load.",
+    "AC-5 Training never reads or writes production well data": "pass - structurally: no data source is taken anywhere in the service, and a source test fails if one is added.",
+    "AC-6 Attempt policy is enforced and stated": "pass - ResultsLedger.Counted applies latest/best/first, the history marks the counting attempt, and the page states which policy is in force; the engine has no attempt limit, which is stated rather than invented."
+  },
+  "engineFindings": {
+    "aMapExerciseHasNoWell": {
+      "where": "TheTechIdea.OilGas.Training/Scenario.cs (LoadWell) and ScenarioScoring.cs (ScenarioRender.Document)",
+      "finding": "One of the shipped sample scenarios ('coords-axes') is a map exercise with no well at all, so ScenarioRender.Document throws InvalidOperationException(\"scenario 'coords-axes' has no well\"). A first version rendered every exercise as a well document and failed on the first valid scenario it met.",
+      "handling": "The runner renders the exhibit by kind: a well exercise as its WellboreDocument in the well view, a map exercise as ScenarioRender.ToPng shown as an image. Both are the engine's own rendering, and the run says which kind it is."
+    },
+    "anAttemptHasNoId": {
+      "where": "TheTechIdea.OilGas.Training/Results.cs (Attempt)",
+      "finding": "An attempt carries a trainee, a scenario, a time, its scores and its answers - but no id, so there is nothing to reference one by.",
+      "handling": "The attempt's identity is trainee|scenario|time (ISO 8601), which is what distinguishes two attempts of the same scenario by the same person; the history's 'counts under the policy' mark and the run's attempt reference both use it rather than inventing a column."
+    },
+    "theRescoreIsOnTheLedger": {
+      "where": "TheTechIdea.OilGas.Training/Results.cs (ResultsLedger.Rescore)",
+      "finding": "Re-scoring a recorded attempt is ResultsLedger.Rescore(attempt, scenario), not a member of ScenarioScoring - the marking function and the ledger are separate types.",
+      "handling": "The run is built from the ledger's own rescore of the recorded attempt, so the marking displayed is the marking stored rather than a second call to Score that could differ once the key is corrected."
+    },
+    "thePolicyIsNotALimit": {
+      "finding": "training.attemptPolicy is latest, best or first - which attempt counts - and the engine has no maximum number of attempts at all.",
+      "handling": "The page states the policy, applies it through ResultsLedger.Counted and marks the counting attempt. The feature's 'attempt policy exhausted' state is recorded as unreachable rather than implemented as an invented limit that the engine would not enforce."
+    },
+    "thePassMarkIsTwoPlaces": {
+      "finding": "A course may carry its own pass mark over training.passMark, but ScenarioScoring.Score only reads the setting, so its Passed flag ignores the course.",
+      "handling": "The run computes pass/fail from the course-aware mark (course first, then setting), and the ledger is given that mark when it records the attempt - so the stored verdict and the displayed one are the course's."
+    },
+    "theSamplePackIsTheOnlyThingShipped": {
+      "finding": "No scenario folder ships with the application: training.scenarioFolders is empty by default, and SamplePacks is the only source of exercises.",
+      "handling": "The page offers to write the built-in pack under the data root and states that it is being used in place of a customer folder - a substitution the page says out loud rather than a silent second source."
+    }
+  },
+  "limits": [
+    "The answer entry is text - one line per question, 'id = value' - rather than a widget per question type; the question list shows each option's id and text so a choice can be given, and a mistyped line is refused naming the line.",
+    "A hint is carried on the question but the page does not offer a hint button, so no hint penalty can arise in this build even though the engine scores it.",
+    "Only the first configured scenario folder is used: the engine accepts several and merges them by id, which this page does not yet exercise.",
+    "There is no attempt limit, because the engine has none; the policy decides which attempt counts, not how many are allowed.",
+    "A map exercise is shown as the engine's rendered image, not as an interactive exhibit.",
+    "The history lists the trainee whose name is typed on the page; there is no directory of trainees and no cross-trainee report (that is TRN-02's course result).",
+    "The ledger is one JSON file under the data root with no locking: two copies of the application writing at once is last-writer-wins.",
+    "The solution is not printed or exported here: PDF/SVG output of an exercise belongs with the printing work (RPT), and only the engine's rendering is shown.",
+    "A course result is not computed on this page - only the scenario's own marking and the attempt history; the course roll-up is TRN-02's."
+  ]
+}

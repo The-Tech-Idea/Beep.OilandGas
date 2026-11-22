@@ -9,6 +9,7 @@ public partial class RA_SEVERITY: Entity,IPPDMEntity
 {
 
 private  System.String SEVERITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEVERITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEVERITYValue;
           set { SetProperty(ref  SEVERITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

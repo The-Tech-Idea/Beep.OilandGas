@@ -9,6 +9,7 @@ public partial class RA_EQUIP_INSTALL_LOC: Entity,IPPDMEntity
 {
 
 private  System.String INSTALL_LOC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTALL_LOC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INSTALL_LOC_TYPEValue;
           set { SetProperty(ref  INSTALL_LOC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

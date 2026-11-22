@@ -9,6 +9,7 @@ public partial class RA_CORE_SHIFT_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CORE_SHIFT_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_SHIFT_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CORE_SHIFT_METHODValue;
           set { SetProperty(ref  CORE_SHIFT_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

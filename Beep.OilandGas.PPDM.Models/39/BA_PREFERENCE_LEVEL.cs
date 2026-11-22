@@ -9,6 +9,7 @@ public partial class BA_PREFERENCE_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.String PREFERENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PREFERENCE_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PREFERENCE_TYPEValue;
           set { SetProperty(ref  PREFERENCE_TYPEValue, value); }
         } 
 private  System.Decimal PREFERENCE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PREFERENCE_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal PREFERENCE_OBS_NOValue;
           set { SetProperty(ref  PREFERENCE_OBS_NOValue, value); }
         } 
 private  System.String LEVEL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEVEL_ID
         {  
             get  

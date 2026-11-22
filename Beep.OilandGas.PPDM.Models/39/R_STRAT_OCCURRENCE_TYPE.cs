@@ -9,6 +9,7 @@ public partial class R_STRAT_OCCURRENCE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OCCURRENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OCCURRENCE_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_BIT_CUT_STRUCT_OUTER: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_STRUCTURE_TOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_STRUCTURE_TO
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CUTTING_STRUCTURE_TOValue;
           set { SetProperty(ref  CUTTING_STRUCTURE_TOValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

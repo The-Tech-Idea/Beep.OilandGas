@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class DELAY_RENTAL : ModelEntityBase {
         private string DELAY_RENTAL_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string DELAY_RENTAL_ID
         {
             get { return this.DELAY_RENTAL_IDValue; }

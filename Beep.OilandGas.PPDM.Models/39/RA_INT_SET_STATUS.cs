@@ -9,6 +9,7 @@ public partial class RA_INT_SET_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STATUS_TYPEValue;
           set { SetProperty(ref  STATUS_TYPEValue, value); }
         } 
 private  System.String STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STATUSValue;
           set { SetProperty(ref  STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_INT_SET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INTEREST_SET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTEREST_SET_TYPE
         {  
             get  

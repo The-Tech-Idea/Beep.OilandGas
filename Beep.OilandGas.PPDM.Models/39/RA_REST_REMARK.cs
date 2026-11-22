@@ -9,6 +9,7 @@ public partial class RA_REST_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTION_REMARK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_REMARK_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESTRICTION_REMARK_TYPEValue;
           set { SetProperty(ref  RESTRICTION_REMARK_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

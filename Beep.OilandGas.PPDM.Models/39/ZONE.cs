@@ -9,6 +9,7 @@ public partial class ZONE: Entity,IPPDMEntity
 {
 
 private  System.String ZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ZONE_IDValue;
           set { SetProperty(ref  ZONE_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

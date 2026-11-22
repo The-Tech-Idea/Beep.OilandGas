@@ -9,6 +9,7 @@ public partial class CONSENT_COND: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSENT_IDValue;
           set { SetProperty(ref  CONSENT_IDValue, value); }
         } 
 private  System.String CONDITION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONDITION_ID
         {  
             get  

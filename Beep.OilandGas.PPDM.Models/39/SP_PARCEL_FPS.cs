@@ -9,6 +9,7 @@ public partial class SP_PARCEL_FPS: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_FPS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_FPS_ID
         {  
             get  

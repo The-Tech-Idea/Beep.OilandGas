@@ -9,6 +9,7 @@ public partial class R_STRAT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_STATUS
         {  
             get  

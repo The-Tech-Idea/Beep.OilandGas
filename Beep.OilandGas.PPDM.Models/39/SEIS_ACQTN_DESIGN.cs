@@ -9,6 +9,7 @@ public partial class SEIS_ACQTN_DESIGN: Entity,IPPDMEntity
 {
 
 private  System.String ACQTN_DESIGN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACQTN_DESIGN_ID
         {  
             get  

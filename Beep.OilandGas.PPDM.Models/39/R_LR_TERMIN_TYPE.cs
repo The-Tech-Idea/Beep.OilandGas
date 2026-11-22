@@ -9,6 +9,7 @@ public partial class R_LR_TERMIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TERMINATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TERMINATION_TYPE
         {  
             get  

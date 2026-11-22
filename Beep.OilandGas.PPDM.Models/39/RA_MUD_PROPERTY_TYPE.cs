@@ -9,6 +9,7 @@ public partial class RA_MUD_PROPERTY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MUD_PROPERTYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUD_PROPERTY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MUD_PROPERTYValue;
           set { SetProperty(ref  MUD_PROPERTYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class CEILING_TEST_CALCULATION : ModelEntityBase {
         private System.String CEILING_TEST_CALCULATION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String CEILING_TEST_CALCULATION_ID
         {
             get { return this.CEILING_TEST_CALCULATION_IDValue; }

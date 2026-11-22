@@ -9,6 +9,7 @@ public partial class RA_RMII_DEFICIENCY: Entity,IPPDMEntity
 {
 
 private  System.String DEFICIENCY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEFICIENCY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DEFICIENCY_TYPEValue;
           set { SetProperty(ref  DEFICIENCY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

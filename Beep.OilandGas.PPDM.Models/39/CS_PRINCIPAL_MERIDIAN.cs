@@ -9,6 +9,7 @@ public partial class CS_PRINCIPAL_MERIDIAN: Entity,IPPDMEntity
 {
 
 private  System.String PRINCIPAL_MERIDIANValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRINCIPAL_MERIDIAN
         {  
             get  

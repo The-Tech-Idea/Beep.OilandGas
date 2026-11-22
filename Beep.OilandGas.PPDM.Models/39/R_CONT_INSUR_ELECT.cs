@@ -9,6 +9,7 @@ public partial class R_CONT_INSUR_ELECT: Entity,IPPDMEntity
 {
 
 private  System.String INSURANCE_ELECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSURANCE_ELECTION
         {  
             get  

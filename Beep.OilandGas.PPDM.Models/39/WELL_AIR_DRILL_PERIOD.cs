@@ -9,6 +9,7 @@ public partial class WELL_AIR_DRILL_PERIOD: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String INTERVAL_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTERVAL_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String INTERVAL_SOURCEValue;
           set { SetProperty(ref  INTERVAL_SOURCEValue, value); }
         } 
 private  System.Decimal AIR_DRILL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal AIR_DRILL_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal AIR_DRILL_OBS_NOValue;
           set { SetProperty(ref  AIR_DRILL_OBS_NOValue, value); }
         } 
 private  System.Decimal DEPTH_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal DEPTH_OBS_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal DEPTH_OBS_NOValue;
           set { SetProperty(ref  DEPTH_OBS_NOValue, value); }
         } 
 private  System.Decimal PERIOD_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PERIOD_OBS_NO
         {  
             get  

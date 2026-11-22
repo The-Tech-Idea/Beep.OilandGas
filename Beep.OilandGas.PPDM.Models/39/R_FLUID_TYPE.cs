@@ -9,6 +9,7 @@ public partial class R_FLUID_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FLUID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FLUID_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_DECRYPT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DECRYPTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DECRYPTION_TYPE
         {  
             get  

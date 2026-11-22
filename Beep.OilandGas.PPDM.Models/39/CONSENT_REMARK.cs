@@ -9,6 +9,7 @@ public partial class CONSENT_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSENT_IDValue;
           set { SetProperty(ref  CONSENT_IDValue, value); }
         } 
 private  System.String REMARK_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_ID
         {  
             get  

@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class EMISSIONS_OBLIGATION : ModelEntityBase
     {
         private string EMISSIONS_OBLIGATION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string EMISSIONS_OBLIGATION_ID
         {
             get { return this.EMISSIONS_OBLIGATION_IDValue; }

@@ -1,0 +1,71 @@
+{
+  "id": "STG-09/ECO-03",
+  "title": "Investment review and handoff queue",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a decision records its actor, date, rationale, conditions and the amount decided on; a decision on an amount changed after review is refused until the proposal is re-reviewed; the submitter cannot decide; a handoff creates exactly one AFE with the reviewed amount and currency and carries the conditions onto it; and a lost acknowledgement is recovered from the AFE rather than duplicating it.",
+  "dataModel": {
+    "decision": "APPROVAL_WORKFLOW is the owner's generic approval record and already held the entity, the amount, who requested it, who approved it and when - which is most of what ECO-03's two contract records describe - so the proposal and its decision live in that row rather than in a parallel table. One row is both because a decision is final in this feature ('already decided - read-only', and a concurrent loser is refused rather than creating a second row). It was extended additively.",
+    "addedColumns": "APPROVAL_WORKFLOW: PROPOSAL_TITLE, INVESTMENT_CLASS, DECISION_DUE, DECISION, RATIONALE, CONDITIONS_TEXT, DECISION_AMOUNT, ECONOMICS_ID, ECONOMICS_NPV, REVIEWED_AMOUNT, REVIEWED_AT, RISKS_TEXT, AFE_ID, HANDOFF_AT, HANDOFF_BY (the currency and the submission fields reuse the columns the entity already carries)",
+    "afeColumns": "AFE: SOURCE_PROPOSAL_ID and CONDITIONS_TEXT - the AFE has to remember the proposal it came from, because after a lost acknowledgement the approval row may still point nowhere and the handoff is found by asking the AFEs which proposal they belong to",
+    "registration": "--smoke still reports 33 modules and 412 entity types: APPROVAL_WORKFLOW and AFE were already registered, so this was a column extension on existing tables."
+  },
+  "ownerAdditions": {
+    "codes": "Beep.OilandGas.LifeCycle/Constants/InvestmentDecisionCodes.cs - the three queue states, the four decisions, which of them authorise money (APPROVED and CONDITIONAL only), the condition rules (one per line, required for a conditional approval) and the refusal codes. LifeCycle owns the approval engine, so the codes live there and the screen cannot invent a decision."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Economics/OgInvestmentReview.cs (OgInvestmentProposal, OgInvestmentEntry, OgInvestmentWorkspace, InvestmentReviewRules, IOgInvestmentReview, OgInvestmentReviewService with SubmitAsync/DecideAsync/AmendAsync/ReviewAsync/HandoffAsync/LoadAsync)",
+    "queue": "The queue is the APPROVAL_WORKFLOW rows whose ENTITY_NAME is INVESTMENT, so the same table's other workflows do not leak into it; rows are ordered by their decision due date and the age column is measured from the submission date against that due date.",
+    "decisions": "DecideAsync checks, in order: the row exists, it is still queued (else 'already decided', naming the winner), the actor is not the submitter (AC-3), economics is linked (else the ECO-01 link state), and the amount still equals the reviewed amount (AC-2). It then writes DECISION, RATIONALE, CONDITIONS_TEXT, DECISION_AMOUNT, STATUS=DECIDED and APPROVED_BY/APPROVAL_DATE.",
+    "staleness": "AmendAsync changes the amount and deliberately leaves REVIEWED_AMOUNT alone, which makes the review stale; ReviewAsync copies the current amount into REVIEWED_AMOUNT and clears it. That is the review cycle AC-2 describes, rather than an artificial check.",
+    "handoff": "HandoffAsync requires an authorising decision, then looks for an AFE whose SOURCE_PROPOSAL_ID is this proposal: if one exists it adopts it (the lost-acknowledgement path), otherwise it creates one with the reviewed amount and currency, STATUS=APPROVED, the decider as approver, SOURCE_PROPOSAL_ID and the conditions, and records the AFE on the proposal. Both directions are idempotent, so a retry cannot produce a second AFE (AC-4, AC-6).",
+    "page": "src/Beep.OilandGas.Desktop/Views/InvestmentReviewPageView.cs (route 'investmentreview': the submit, decide, amend/review and handoff bars, the queue grid with amount/class/state/age/due, and the selected proposal's summary, economics, decision, conditions and handoff)",
+    "wiring": "OgBootstrapper (IOgInvestmentReview), OgApplication.InvestmentReview, catalog 'investmentreview' (OgModuleKeys.Economics), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/InvestmentReviewTests.cs (6, no database) + InvestmentReviewGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1069, "passed": 1069, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 53, "passed": 53, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 77, "views-constructed": true, "modulesetup-summary": "33 module(s) - 412 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with APPROVAL_WORKFLOW and AFE (the extended shapes), seeded in InvestmentReviewGatewayTests",
+    "ac1_decision_record": "a conditional approval by omar stores STATUS=DECIDED, DECISION=CONDITIONAL, APPROVED_BY=omar, a non-null APPROVAL_DATE, the rationale, both conditions in CONDITIONS_TEXT and DECISION_AMOUNT=3,000,000 - each asserted as its own predicate so a missing field says which one. This is SG-09-5.",
+    "ac2_stale": "the proposal is amended from 2,000,000 to 3,000,000 while REVIEWED_AMOUNT stays at 2,000,000; a decision is then refused with economics.investment-stale-economics naming both amounts, and after ReviewAsync the same decision goes through",
+    "ac3_author": "the proposal is submitted by sara and a decision by sara is refused with economics.investment-author-cannot-decide naming her; omar decides",
+    "ac3_concurrent": "a second decision on the same proposal is refused with economics.investment-already-decided naming omar as the winner",
+    "ac4_one_afe": "one handoff creates one AFE whose ESTIMATED_COST and APPROVED_AMOUNT are the reviewed 3,000,000 and whose currency is USD; a second handoff leaves the AFE count at 1",
+    "ac5_conditions": "the AFE stores both conditions in CONDITIONS_TEXT and the test asserts both are present on the created row",
+    "ac6_lost_ack": "AFE_ID, HANDOFF_AT, HANDOFF_BY are cleared and STATUS reset to DECIDED by hand; the next handoff adopts the existing AFE by SOURCE_PROPOSAL_ID, the AFE count stays 1 and the proposal is HANDED_OFF again with the actor recorded",
+    "not_authorised": "a proposal decided RETURNED cannot be handed off - refused with economics.investment-not-authorised - and the AFE count is unchanged",
+    "economics_missing": "a proposal submitted without an economics link has its decision refused with economics.investment-economics-missing, naming ECO-01",
+    "unavailable": "dropping APPROVAL_WORKFLOW and AFE makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A decision records actor, date, rationale and conditions": "pass - the six fields are written and each is asserted on the stored row, with the conditions kept as one per line and read back as a list. SG-09-5.",
+    "AC-2 A decision on stale economics is refused": "pass - an amendment leaves the reviewed amount behind, the decision is refused until a re-review, and both amounts are named in the sentence.",
+    "AC-3 Author cannot approve": "pass - the submitter is refused before anything is written, and a different reviewer decides; the concurrent-loser rule is proven separately.",
+    "AC-4 Handoff creates exactly one AFE per decision": "pass - one AFE with the reviewed amount and currency, and a second handoff leaves the count at one.",
+    "AC-5 Conditions travel to the AFE": "pass - the decision's conditions are written onto the AFE and read back, and a conditional decision cannot be recorded without at least one.",
+    "AC-6 A lost acknowledgement does not duplicate the AFE": "pass - with the proposal's AFE link cleared, the handoff finds the AFE by SOURCE_PROPOSAL_ID, adopts it and stays at one AFE."
+  },
+  "engineFindings": {
+    "genericApprovalTable": {
+      "where": "Beep.OilandGas.Models/Data/ProductionAccounting/APPROVAL_WORKFLOW.cs",
+      "finding": "The table already models a generic approval (entity, amount, requester, approver, date, comments) and is registered, but it has no currency, decision, rationale, conditions, economics link or handoff - so it could record that something was approved but not what was decided or what it became.",
+      "handling": "Extended additively rather than duplicating it with a new proposal table; the queue filters on ENTITY_NAME = INVESTMENT so other workflows in the same table are untouched."
+    },
+    "noLifeCycleProposalEntity": {
+      "finding": "LifeCycle owns the approval engine but has no investment proposal entity, and the five Web panels the feature references are Razor components in another project, not services.",
+      "handling": "The decision codes were added to LifeCycle (the owner of the engine) and the persistence reuse is stated above. The Web panels were read for behaviour only; their routing and assignment panels are not reproduced (see limits)."
+    }
+  },
+  "limits": [
+    "The routing panel (who reviews next when several approvers are required) is not built: the feature's own open question says only queue, detail, decision and handoff are needed in 1.0, and there is no approver-routing model in the owner.",
+    "The decision is single-step: one reviewer decides, and there is no multi-approver chain, no delegation and no escalation, even though the owner has DELEGATION_OF_AUTHORITY and the approval workflow tables.",
+    "The economics link is an id plus the NPV the reviewer saw, not a validated foreign key into ECONOMIC_ANALYSIS_RESULT: the queue can be told an id that does not exist. What it does guarantee is that a decision cannot be made on an amount that changed after the review.",
+    "The handoff creates the AFE directly rather than going through ECO-02's Submit/Approve cycle: the investment decision is the approval, so the AFE is created already APPROVED with the decider as its approver. It does not create a commitment, which ACC-05 owns.",
+    "There is no notification, no queue ageing report and no bulk decision.",
+    "The feature's permissions (economics.investment.approve/.handoff) are not enforced per command: the app gates pages, and segregation of duties is enforced only by the submitter-versus-decider rule."
+  ]
+}

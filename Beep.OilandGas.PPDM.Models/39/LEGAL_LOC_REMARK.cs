@@ -9,6 +9,7 @@ public partial class LEGAL_LOC_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String LEGAL_LOC_REMARK_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEGAL_LOC_REMARK_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEGAL_LOC_REMARK_IDValue;
           set { SetProperty(ref  LEGAL_LOC_REMARK_IDValue, value); }
         } 
 private  System.String LOCATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOCATION_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LOCATION_TYPEValue;
           set { SetProperty(ref  LOCATION_TYPEValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal REMARK_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_SEQ_NO
         {  
             get  

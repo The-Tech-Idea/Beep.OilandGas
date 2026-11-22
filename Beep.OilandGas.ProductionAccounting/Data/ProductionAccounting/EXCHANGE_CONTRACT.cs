@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class EXCHANGE_CONTRACT : ModelEntityBase {
         private System.String CONTRACT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String CONTRACT_ID
         {
             get { return this.CONTRACT_IDValue; }

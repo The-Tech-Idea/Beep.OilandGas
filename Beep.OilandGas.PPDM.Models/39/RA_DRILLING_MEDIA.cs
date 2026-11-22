@@ -9,6 +9,7 @@ public partial class RA_DRILLING_MEDIA: Entity,IPPDMEntity
 {
 
 private  System.String DRILLING_MEDIAValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILLING_MEDIA
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DRILLING_MEDIAValue;
           set { SetProperty(ref  DRILLING_MEDIAValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

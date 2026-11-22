@@ -9,6 +9,7 @@ public partial class R_SEIS_TRANS_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_TRANS_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_TRANS_COMPONENT_TYPE
         {  
             get  

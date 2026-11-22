@@ -9,6 +9,7 @@ public partial class RA_BIT_BEARING_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String BEARING_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BEARING_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BEARING_CONDITIONValue;
           set { SetProperty(ref  BEARING_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

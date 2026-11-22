@@ -9,6 +9,7 @@ public partial class ENT_SECURITY_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String SECURITY_GROUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SECURITY_GROUP_ID
         {  
             get  

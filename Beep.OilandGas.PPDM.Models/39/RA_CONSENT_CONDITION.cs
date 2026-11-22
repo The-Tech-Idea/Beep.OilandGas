@@ -9,6 +9,7 @@ public partial class RA_CONSENT_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSENT_TYPEValue;
           set { SetProperty(ref  CONSENT_TYPEValue, value); }
         } 
 private  System.String CONSENT_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_CONDITION
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CONSENT_CONDITIONValue;
           set { SetProperty(ref  CONSENT_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

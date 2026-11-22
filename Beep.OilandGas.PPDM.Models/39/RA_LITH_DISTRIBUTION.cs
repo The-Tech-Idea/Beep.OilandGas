@@ -9,6 +9,7 @@ public partial class RA_LITH_DISTRIBUTION: Entity,IPPDMEntity
 {
 
 private  System.String DISTRIBUTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISTRIBUTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DISTRIBUTIONValue;
           set { SetProperty(ref  DISTRIBUTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

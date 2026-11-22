@@ -9,6 +9,7 @@ public partial class R_CORE_HANDLING: Entity,IPPDMEntity
 {
 
 private  System.String CORE_HANDLINGValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_HANDLING
         {  
             get  

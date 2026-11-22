@@ -9,6 +9,7 @@ public partial class R_EW_START_LINE: Entity,IPPDMEntity
 {
 
 private  System.String EW_START_LINEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EW_START_LINE
         {  
             get  

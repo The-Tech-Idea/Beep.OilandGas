@@ -9,6 +9,7 @@ public partial class R_ANL_METHOD_SET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_SET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_SET_TYPE
         {  
             get  

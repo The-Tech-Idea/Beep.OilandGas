@@ -9,6 +9,7 @@ public partial class WELL_AREA: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

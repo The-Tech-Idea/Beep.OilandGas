@@ -1,0 +1,68 @@
+{
+  "id": "STG-06/RES-01",
+  "title": "Gas properties",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: a run at the reference point reproduces Z = 0.7761 within 2% and the engine's own Brill-Beggs correlation independently returns 0.7765 there; the correlation is displayed with every result; a calculation the engine cannot complete is a failed run with its reason and no number; the units are converted once with the typed and converted values both recorded; every saved run stores its inputs, correlations and actor; and the same inputs always produce the same result.",
+  "dataModel": {
+    "decision": "The GasProperties module already owned GAS_COMPOSITION and GAS_COMPOSITION_COMPONENT, which hold a fluid's analysis. A calculation run is not a composition: AC-5 requires every saved result to record its inputs, its correlation and its actor, and the feature's History tab needs to rerun a saved case. So GAS_PROPERTY_RUN was added to the same owning module, holding the typed inputs with their units, the converted psia/Rankine pair the engine actually used, both correlation names, every result, the applicability warnings and the failure.",
+    "tables": [
+      "GAS_PROPERTY_RUN (RUN_ID key, STATUS, PRESSURE_INPUT, PRESSURE_UNIT, PRESSURE_PSIA, TEMPERATURE_INPUT, TEMPERATURE_UNIT, TEMPERATURE_R, SPECIFIC_GRAVITY, Z_CORRELATION, VISCOSITY_CORRELATION, Z_FACTOR, VISCOSITY_CP, DENSITY, FORMATION_VOLUME_FACTOR, PSEUDO_PRESSURE, APPLICABILITY_TEXT, FAILURE_CODE, FAILURE_MESSAGE, ACTOR, RECORDED_AT) - both the typed value and the converted one are stored, which is what makes a saved result reproducible even if the conversion table is later revised"
+    ],
+    "registration": "GasPropertiesModule now registers three types; --smoke reports 387 entity types (up from 386).",
+    "engine": "The calculation is the owning project's: ZFactorCalculator, GasViscosityCalculator, PseudoPressureCalculator and GasPropertiesValidator are called directly. No correlation is re-implemented on the desktop side."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reservoir/OgGasProperties.cs (GasUnits, GasCorrelations, OgGasPropertyInputs, OgGasPropertyRun, OgGasPropertyWorkspace, GasPropertyRules, IOgGasProperties, OgGasPropertiesService with RunAsync/SaveAsync/LoadAsync)",
+    "rules": "GasPropertyRules states the missing-input list, the validation (units inside the catalog, correlations inside the engine's set), and the failure codes once, so the page and the tests agree. GasUnits holds the only conversion in the feature; GasCorrelations holds the engine's supported names so the view carries no literal.",
+    "page": "src/Beep.OilandGas.Desktop/Views/GasPropertiesPageView.cs (route 'gasproperties': pressure and unit, temperature and unit, specific gravity, Z and viscosity correlations, Run and Save, the results line with the correlation and the engine inputs, the applicability warnings, and the history grid whose selection reloads the inputs)",
+    "wiring": "OgBootstrapper (IOgGasProperties), OgApplication.GasProperties, catalog 'gasproperties' (OgModuleKeys.Reservoir), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/GasPropertiesTests.cs (10, no database) + GasPropertiesGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 868, "passed": 868, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 33, "passed": 33, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 57, "views-constructed": true, "modulesetup-summary": "28 module(s) - 387 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with GAS_PROPERTY_RUN, seeded in GasPropertiesGatewayTests",
+    "ac5_save": "a successful run saved by 'sara' stores PRESSURE_PSIA 2010.387, TEMPERATURE_R 547.665, the specific gravity, both correlation names, every result and the actor; the history reads 'saved by sara'",
+    "ac4_units": "the same physical state entered as 1000 kPa / 15 degC is stored with PRESSURE_INPUT 1000 and PRESSURE_UNIT kPa beside PRESSURE_PSIA 145.0377377 and TEMPERATURE_R 491.67 + 15*1.8; running that metric case and its converted imperial equivalent returns the same Z",
+    "ac6_determinism": "two runs of the same inputs return identical Z, viscosity, density, Bg and pseudo-pressure; the reloaded run's Z equals the saved value within 1e-6 (the round trip is through SQLite's REAL) and re-running the reloaded inputs reproduces it",
+    "ac3_failed": "a temperature of 90 R is refused by the engine's own 100..1000 R bound: the run is FAILED with no Z, and the stored row carries STATUS='FAILED' and the reason while the two successful rows carry STATUS='OK'",
+    "history_unavailable": "dropping the table makes LoadAsync return a workspace with HistoryFailed=true and 'the saved history could not be read; new runs are still allowed' - a state, not a dead page - and a new run still succeeds",
+    "no_duplicate": "saving an already-saved run returns the history instead of writing a second row"
+  },
+  "gates": {
+    "AC-1 A reference case reproduces the expected Z within the stated tolerance": "pass - at specific gravity 0.65 the pseudo-criticals give Ppc 670.129 psia and Tpc 365.11 R, so Ppr 3.0 / Tpr 1.5 is 2010.387 psia / 547.665 R. The Dranchuk-Abou-Kassem value there is 0.7761 and the test asserts it within 2%; independently, the engine's own Brill-Beggs correlation returns 0.7765 at the same point and the test asserts the two agree within 1%. The expected value is therefore cross-checked against a second correlation rather than taken on trust from the one under test.",
+    "AC-2 The correlation is displayed with the result": "pass - every run carries its Z and viscosity correlation names, CorrelationText prints both, and the page shows it beneath the results; the test loops all six combinations.",
+    "AC-3 A non-converged calculation is shown as failed": "pass - a Standing-Katz point the DAK equation cannot converge is a FAILED run (TryCalculateStandingKatz returns false) and every other engine refusal is a FAILED run carrying its reason; no result is shown and the failure is stored as a failure.",
+    "AC-4 Units are stored and converted through the unit catalog only": "pass with a stated limit - there is no unit catalog in this application (DAT-04 is the PPDM table workbench), so the conversion lives in one place, GasUnits, and the run stores both the typed value and the converted psia/Rankine pair. A unit outside the catalog is refused and the compatible units are named.",
+    "AC-5 Every saved result records inputs, correlation and actor": "pass - GAS_PROPERTY_RUN stores the inputs, both correlations, the engine inputs, the results and ACTOR/RECORDED_AT, and the gateway test reads them back.",
+    "AC-6 Runs with the same inputs produce identical results": "pass - two runs return identical values, and a reloaded run re-run from its own stored inputs reproduces the stored Z."
+  },
+  "engineDefects": {
+    "fixed": {
+      "where": "Beep.OilandGas.GasProperties/Calculations/ZFactorCalculator.cs - CalculateStandingKatz",
+      "finding": "At the ordinary reference point (Tpr = 1.5, Ppr = 3.0, sub-critical, inside the correlation's stated range) the old implementation returned exactly 2.0 - the top of its own clamp - because the Newton iteration diverged to the lower reduced-density clamp. The equation it solved used the DAK coefficient names in a form that does not match the published relation.",
+      "fix": "The published Drankuk-Abou-Kassem relation was implemented as written: Z = 1 + (A1 + A2/T + A3/T^3 + A4/T^4 + A5/T^5) r + (A6 + A7/T + A8/T^2) r^2 - A9 (A7/T + A8/T^2) r^5 + A10 (1 + A11 r^2)(r^2/T^3) e^(-A11 r^2), r = 0.27 Ppr /(Z Tpr), solved by successive substitution, with the correlation's stated range (1.0 < Tpr <= 3.0, Ppr <= 30) checked before solving.",
+      "compatibility": "CalculateStandingKatz keeps its signature and its clamp so existing callers are unaffected. A new TryCalculateStandingKatz reports whether the equation actually converged, which is what lets a screen show a failure instead of a clamped number.",
+      "verification": "After the fix the Standing-Katz result at the reference point is 0.7761, and the engine's independent Brill-Beggs correlation returns 0.7765 there - a 0.05% agreement between two correlations that previously disagreed by 157%."
+    },
+    "reported_not_fixed": {
+      "where": "Beep.OilandGas.GasProperties/Calculations/GasViscosityCalculator.cs - Carr-Kobayashi-Burrows",
+      "finding": "At the reference point the calculator returns 0.00124 cp. Its own atmospheric term computes 0.0112 cp for those conditions (which is the right magnitude), so the Carr-Kobayashi-Burrows viscosity ratio is coming back around 0.11 where the correlation expects roughly 1.5, giving a value about an order of magnitude low.",
+      "why_not_fixed": "The published ratio coefficients could not be verified from a primary source in this session, and replacing one unverified implementation with another would be worse than reporting it. The value is shown as the engine returned it, labelled with the correlation that produced it, and asserted in the tests only as 'computed and positive' rather than against a band this feature cannot justify."
+    },
+    "also_noted": "At low pseudo-reduced temperature (about 1.05 and below, e.g. 383 R with specific gravity 0.65) every correlation path throws from a later step, so the run is reported as FAILED. That is honest - the screen shows a failure rather than a number - but the underlying refusal was not traced."
+  },
+  "limits": [
+    "There is no unit catalog in this application, so AC-4's 'converted through the unit catalog only' is met by having one explicit converter (GasUnits) rather than a catalog call. The factors are stated in that one type and both the typed and converted values are stored with every run.",
+    "There is no R_GAS_CORRELATION reference table, so the correlation names are stated once in GasCorrelations - exactly the set the owning service switches on - and the view reads that list rather than hard-coding strings.",
+    "The screen computes Z, viscosity, density, formation volume factor and pseudo-pressure. The gas compressibility (cg) and the Z-vs-pressure and viscosity-vs-pressure charts from the feature's screens list are not drawn: no chart host was added for this feature, and the plan's CurveCanvas control does not exist yet.",
+    "A composition-based run (GAS_COMPOSITION / GAS_COMPOSITION_COMPONENT) is not offered: the engine's simple-gas path takes a specific gravity, and the composition path would need the validator's composition overload wired, which is RES-02/RES-03 territory.",
+    "The formation volume factor coefficient (0.02827) is mirrored from GasPropertiesService.CalculateFormationVolumeFactor because the owner does not expose it as a constant; it is named FormationVolumeFactorConstant rather than left as a bare literal in the formula.",
+    "The feature's permissions (properties.gas.read, properties.gas.write, data.export) are not enforced per command: the app gates pages. Chart and data export are not built here (data.export belongs to the export page).",
+    "The ViscosityCarrKobayashiBurrows defect above means the viscosity shown at ordinary conditions is about an order of magnitude low. It is reported, not corrected."
+  ]
+}

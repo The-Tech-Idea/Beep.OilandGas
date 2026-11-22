@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
@@ -16,6 +16,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<SetupStatusResult> GetSetupStatusAsync();
         Task<CreateSqliteResult> CreateSqliteAsync(CreateSqliteRequest request);
         Task<SchemaMigrationPlanResult> PlanSchemaMigrationAsync(SchemaMigrationPlanRequest request);
+
+    /// <summary>
+    /// The entity types a module selection resolves to, by name. PPDM_CORE resolves to the whole catalogue, so the setup
+    /// needs this to report the true size and to apply the catalogue in bounded batches.
+    /// </summary>
+    IReadOnlyList<string> ResolvedEntityTypeNames(IReadOnlyList<string> moduleIds);
         Task<SchemaMigrationApprovalResult> ApproveSchemaMigrationPlanAsync(SchemaMigrationApprovalRequest request);
         Task<SchemaMigrationCiValidationResult> ValidateMigrationPlanForCiAsync(string planId);
         Task<SchemaMigrationExecuteResult> ExecuteSchemaMigrationPlanAsync(SchemaMigrationExecuteRequest request);

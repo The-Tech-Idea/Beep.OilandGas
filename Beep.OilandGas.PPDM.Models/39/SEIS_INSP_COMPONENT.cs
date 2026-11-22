@@ -9,6 +9,7 @@ public partial class SEIS_INSP_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String INSPECTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSPECTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INSPECTION_IDValue;
           set { SetProperty(ref  INSPECTION_IDValue, value); }
         } 
 private  System.String INSPECTION_COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSPECTION_COMPONENT_ID
         {  
             get  

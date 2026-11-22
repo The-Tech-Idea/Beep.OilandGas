@@ -9,6 +9,7 @@ public partial class PPDM_MEASUREMENT_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String UOM_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UOM_SYSTEM_ID
         {  
             get  

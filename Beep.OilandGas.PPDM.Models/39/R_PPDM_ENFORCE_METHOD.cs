@@ -9,6 +9,7 @@ public partial class R_PPDM_ENFORCE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ENFORCE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENFORCE_METHOD
         {  
             get  

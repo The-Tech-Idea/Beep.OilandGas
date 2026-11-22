@@ -9,6 +9,7 @@ public partial class RA_FIELD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FIELD_TYPEValue;
           set { SetProperty(ref  FIELD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

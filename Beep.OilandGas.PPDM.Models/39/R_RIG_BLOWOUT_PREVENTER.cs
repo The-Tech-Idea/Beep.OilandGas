@@ -9,6 +9,7 @@ public partial class R_RIG_BLOWOUT_PREVENTER: Entity,IPPDMEntity
 {
 
 private  System.String BLOWOUT_PREVENTER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BLOWOUT_PREVENTER_TYPE
         {  
             get  

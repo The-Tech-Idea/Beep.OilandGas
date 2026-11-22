@@ -9,6 +9,7 @@ public partial class R_EQUIP_MAINT_LOC: Entity,IPPDMEntity
 {
 
 private  System.String MAINT_LOCATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAINT_LOCATION_TYPE
         {  
             get  

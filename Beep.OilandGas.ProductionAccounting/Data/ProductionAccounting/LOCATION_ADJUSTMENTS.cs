@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class LOCATION_ADJUSTMENTS : ModelEntityBase {
         private System.String LOCATION_ADJUSTMENTS_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String LOCATION_ADJUSTMENTS_ID
         {
             get { return this.LOCATION_ADJUSTMENTS_IDValue; }

@@ -9,6 +9,7 @@ public partial class SP_POINT: Entity,IPPDMEntity
 {
 
 private  System.String POINT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POINT_ID
         {  
             get  

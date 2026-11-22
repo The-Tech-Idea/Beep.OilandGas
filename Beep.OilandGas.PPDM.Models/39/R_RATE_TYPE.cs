@@ -9,6 +9,7 @@ public partial class R_RATE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RATE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_TYPE
         {  
             get  

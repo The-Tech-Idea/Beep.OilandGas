@@ -9,6 +9,7 @@ public partial class RA_STORE_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_STORE_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_STORE_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PHYSICAL_STORE_STATUSValue;
           set { SetProperty(ref  PHYSICAL_STORE_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -1,0 +1,43 @@
+{
+  "id": "STG-15/VSB-02",
+  "title": "Environment, toolboxes and configuration",
+  "date": "2026-11-05",
+  "status": "gate met",
+  "implementation": {
+    "bootstrap": "src/Beep.OilandGas.Desktop.WellTools/Environment/OgToolboxBootstrap.cs",
+    "environment": "src/Beep.OilandGas.Desktop.WellTools/Environment/OgWellboreEnvironment.cs (Load, LoadCountryPreset, Reload, Findings)",
+    "store": "src/Beep.OilandGas.Desktop.WellTools/Environment/OgEnvironmentStore.cs (Current, CheckResources, ToolboxAvailability, IsToolboxUsable)",
+    "hostLifetime": "src/Beep.OilandGas.Desktop/Services/OgWellboreLifetime.cs (lazy, Reload, ApplyCountryPreset, EnvironmentChanged, LastChangeSummary)",
+    "ui": "Views/SettingsView.cs (environment section, reload, resource check, preset picker, findings), Views/OgPageBase.cs (DiagnosticsView), Views/WellboreDemoView.cs (environment source on the visual screen)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~WellboreEnvironmentTests", "exit": 0, "run": 11, "passed": 11, "failed": 0 },
+    { "cmd": "dotnet test (all)", "exit": 0, "run": 69, "passed": 69, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 9,
+    "views-constructed": true,
+    "toolboxes-registered": 6,
+    "toolboxes-missing": 0,
+    "wellbore-environment": "defaults",
+    "wellbore-units": 59,
+    "wellbore-findings": 0
+  },
+  "gates": {
+    "AC-1 register-before-load": "pass — A_toolbox_section_is_validated_only_after_the_toolbox_is_registered: an unregistered probe section yields no line; registering the probe makes Validate() report it. Plus Registering_every_toolbox_leaves_none_missing and Registering_twice_does_not_duplicate_a_toolbox.",
+    "AC-2 path on every visual screen": "pass — SettingsView shows file/defaults/preset plus country, units and toolbox counts; WellboreDemoView prints 'Environment: <source>' on the visual screen.",
+    "AC-3 findings with section and key": "pass — SettingsView renders '[severity] source: message' lines (up to 8) and an EnvironmentFindings count.",
+    "AC-4 country preset applied and labelled": "pass — LoadCountryPreset uses CountryPresets.Load ('extends: country:XX'), sets IsUsingCountryPreset, and both the Settings and Wellbore pages label it as a preset. A_country_preset_is_applied_and_labelled_as_a_preset, An_unknown_country_preset_is_refused.",
+    "AC-5 reload rebuilds open views and reports the change": "pass — OgWellboreLifetime.Reload/ApplyCountryPreset raise EnvironmentChanged; the shell re-creates the current page from the page factory; LastChangeSummary ('<source> · N warning(s) · M finding(s)') is shown in Settings. A_reload_announces_the_change_and_describes_it.",
+    "AC-6 missing resource disables the dependent toolbox with the reason": "pass at the service layer — CheckResources_reports_a_missing_folder_for_a_registered_toolbox proves a registered toolbox's failing Check produces 'toolboxes.<name>: <reason>'; ToolboxAvailability/IsToolboxUsable turn that into per-toolbox usability and Settings shows 'X/Y toolbox(es) usable'. No toolbox screen exists yet to disable, so the consumer arrives with VSB-04/05 and the ENG features.",
+    "toolboxResourceCheck": "pass — CheckResources_reports_a_missing_folder_for_a_registered_toolbox covers both the failing and the satisfied case."
+  },
+  "limits": [
+    "AC-6 is enforced and tested at the store; nothing in the UI is hidden yet because there is no toolbox screen in the desktop.",
+    "The country preset was exercised for KW only; the other 61 presets are unverified.",
+    "The reload rebuild was verified by construction and event wiring; no window was shown, so the visual rebuild is unobserved.",
+    "The settings page was constructed by the smoke run, not driven by clicks."
+  ]
+}

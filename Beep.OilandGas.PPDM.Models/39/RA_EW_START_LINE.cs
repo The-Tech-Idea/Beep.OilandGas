@@ -9,6 +9,7 @@ public partial class RA_EW_START_LINE: Entity,IPPDMEntity
 {
 
 private  System.String EW_START_LINEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EW_START_LINE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EW_START_LINEValue;
           set { SetProperty(ref  EW_START_LINEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_LITH_CONSOLIDATION: Entity,IPPDMEntity
 {
 
 private  System.String CONSOLIDATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSOLIDATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSOLIDATIONValue;
           set { SetProperty(ref  CONSOLIDATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

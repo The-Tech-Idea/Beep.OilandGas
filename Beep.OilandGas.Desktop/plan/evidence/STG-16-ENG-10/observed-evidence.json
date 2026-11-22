@@ -1,0 +1,62 @@
+{
+  "id": "STG-16/ENG-10",
+  "title": "Pay summary, petrophysics and log editing",
+  "date": "2026-11-06",
+  "status": "gate met - reference interval reproduced, refusals for overlap/gap/missing cutoff, missing-curve exclusion that names the curve, audited depth shift and splice with undo, CSV and XLSX exports",
+  "implementation": {
+    "bridge": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgPaySummaryWorkspace.cs (OgPayCutoffs, OgPayParameters, OgPayZoneInput, OgPayZoneRow, OgPaySummaryResult, Compute, ToCsv, ExportCsv, ExportXlsx)",
+    "page": "src/Beep.OilandGas.Desktop/Views/PaySummaryPageView.cs (route 'paysummary')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'paysummary', module wells, engineering roles)",
+    "tools": "TheTechIdea.OilGas.Wellbore.Data — PaySummary.Compute/ToCsv, PetrophysicsSettings/PayCutoffs, LogEditing/LogEditSession; TheTechIdea.OilGas.Wellbore.Loaders — PaySummaryExport.ToXlsx",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PaySummaryTests.cs (10)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~PaySummaryTests", "exit": 0, "run": 10, "passed": 10, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 406, "passed": 406, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 22,
+    "pay-zones": 2,
+    "pay-net": 3.5,
+    "pay-net-pay": 2.5,
+    "pay-ntg": 0.389,
+    "pay-shifted": true,
+    "pay-stale-after-edit": true,
+    "pay-undone": true,
+    "pay-recomputed": true,
+    "pay-history-rows": 4,
+    "pay-excluded": true,
+    "pay-excluded-note": "no curve for GR (or VSH)",
+    "pay-overlap-refused": true,
+    "pay-overlap-code": "pay-zones-overlap",
+    "pay-csv": true,
+    "pay-xlsx": true,
+    "pay-spliced": true,
+    "pay-splice-both-runs": true,
+    "pay-splice-actor": "stage0-user",
+    "pay-splice-undone": true
+  },
+  "gates": {
+    "AC-1 a reference interval reproduces the expected net and N/G within tolerance": "pass - zone A gross 5, logged 5, net reservoir 3, net pay 2, N/G 0.6, porosity 0.1875, Sw 0.1475/0.375, Vsh 0.25, hydrocarbon column 0.2275; zone B gross 4, net reservoir 0.5, net pay 0.5. The values are the library's own test's, so the desktop cannot drift from it silently. The smoke run reports net 3.5, net pay 2.5, N/G 0.389.",
+    "AC-2 a missing curve excludes the zone and names it": "pass - a well without GR or VSH produces zones flagged Excluded, with net reservoir and net pay set to 0 and the note 'no curve for GR (or VSH)'; the run's warnings repeat it and the smoke reads the same note.",
+    "AC-3 overlapping zones are refused": "pass - overlap is refused before any arithmetic, naming both zones and both depths (code pay-zones-overlap). The same validator refuses a gap between zones (pay-zones-not-contiguous), a zone whose base is at or above its top, and a last zone that does not end at the log's bottom.",
+    "AC-4 a depth shift is undoable and audited": "pass - the shift goes through LogEditSession, which appends an audit entry with the author, the field 'depthShift' and the reason; the test asserts the entry and that undo restores the original index. The page additionally writes a logs.edit row to the desktop audit.",
+    "AC-5 a splice records both intervals and the actor": "pass - the composite's audit entry carries both run names and the splice depths, the author, and the reason; undo removes the composite. The smoke asserts both run names are in the entry and that the actor is recorded.",
+    "AC-6 XLSX export matches the result grid": "pass - the workbook is written by the tools' PaySummaryExport and read back through the tools' ExcelTabularSource: same row count, same zone name and the same net reservoir value. An existing file is refused unless overwrite is requested."
+  },
+  "findings": [
+    { "what": "an unnamed tab strip on the new page", "detail": "the accessibility audit (REL-03) reported 'paysummary: TabControl has no accessible name' on the first smoke run with the page; it now has a name and the count is 0." },
+    { "what": "the smoke compared the recorded edit actor with a session that sign-in replaces later", "detail": "the pay page is constructed before the run signs in, so its author is the bootstrap user; the assertion now checks the actor is recorded instead of comparing it with a later session. Identity is asserted in the unit test." },
+    { "what": "the reference well's run is named 'main', not 'run 1'", "detail": "the first splice filter looked for 'run 1' and could never match; it now looks for the names that are actually spliced ('main' and 'run 2 (synthetic)')." }
+  ],
+  "limits": [
+    "Zones must be contiguous: PaySummary derives a zone from its top to the next top, so the editor refuses a non-contiguous set instead of reporting a different gross.",
+    "The page computes the library's reference well; there is no well picker until DAT-02 and results are not persisted.",
+    "The pay track is not overlaid on a log view; the tools' PaySummaryTrack is available for a later VSB integration.",
+    "The page's splice uses a synthetic second run; splicing two loaded runs needs persistence (DAT-02 / INT-01).",
+    "The per-command permissions in the feature's §6 are not separate checks: anyone who can open the page can compute and edit.",
+    "Gross/net are measured in the log's own unit; TVD columns are null without a survey (the reference well has none)."
+  ]
+}

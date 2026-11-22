@@ -9,6 +9,7 @@ public partial class RA_DRILL_BIT_JET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String JET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JET_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String JET_TYPEValue;
           set { SetProperty(ref  JET_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

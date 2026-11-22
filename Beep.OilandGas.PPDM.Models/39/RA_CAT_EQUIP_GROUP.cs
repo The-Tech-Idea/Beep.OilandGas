@@ -9,6 +9,7 @@ public partial class RA_CAT_EQUIP_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String CAT_EQUIP_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAT_EQUIP_GROUP
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CAT_EQUIP_GROUPValue;
           set { SetProperty(ref  CAT_EQUIP_GROUPValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

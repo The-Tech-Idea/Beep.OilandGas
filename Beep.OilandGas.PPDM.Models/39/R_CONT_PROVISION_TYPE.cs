@@ -9,6 +9,7 @@ public partial class R_CONT_PROVISION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONT_PROVISION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONT_PROVISION_TYPE
         {  
             get  

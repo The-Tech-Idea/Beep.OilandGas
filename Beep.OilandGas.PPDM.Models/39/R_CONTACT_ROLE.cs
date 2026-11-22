@@ -9,6 +9,7 @@ public partial class R_CONTACT_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String CONTACT_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_ROLE
         {  
             get  

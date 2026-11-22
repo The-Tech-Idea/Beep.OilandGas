@@ -9,6 +9,7 @@ public partial class R_LAND_RIGHT_CATEGORY: Entity,IPPDMEntity
 {
 
 private  System.String LAND_RIGHT_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_RIGHT_CATEGORY
         {  
             get  

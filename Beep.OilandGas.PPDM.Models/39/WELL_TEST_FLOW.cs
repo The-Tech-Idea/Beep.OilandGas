@@ -9,6 +9,7 @@ public partial class WELL_TEST_FLOW: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String TEST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String TEST_TYPEValue;
           set { SetProperty(ref  TEST_TYPEValue, value); }
         } 
 private  System.String RUN_NUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RUN_NUM
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String RUN_NUMValue;
           set { SetProperty(ref  RUN_NUMValue, value); }
         } 
 private  System.String TEST_NUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_NUM
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String TEST_NUMValue;
           set { SetProperty(ref  TEST_NUMValue, value); }
         } 
 private  System.String PERIOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERIOD_TYPE
         {  
             get  
@@ -69,6 +75,7 @@ private  System.String PERIOD_TYPEValue;
           set { SetProperty(ref  PERIOD_TYPEValue, value); }
         } 
 private  System.Decimal PERIOD_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PERIOD_OBS_NO
         {  
             get  
@@ -79,6 +86,7 @@ private  System.Decimal PERIOD_OBS_NOValue;
           set { SetProperty(ref  PERIOD_OBS_NOValue, value); }
         } 
 private  System.String FLUID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FLUID_TYPE
         {  
             get  

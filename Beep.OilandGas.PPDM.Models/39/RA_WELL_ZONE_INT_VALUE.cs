@@ -9,6 +9,7 @@ public partial class RA_WELL_ZONE_INT_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALUE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VALUE_TYPEValue;
           set { SetProperty(ref  VALUE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

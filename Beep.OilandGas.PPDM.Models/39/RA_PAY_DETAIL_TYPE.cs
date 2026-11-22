@@ -9,6 +9,7 @@ public partial class RA_PAY_DETAIL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAY_DETAIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAY_DETAIL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PAY_DETAIL_TYPEValue;
           set { SetProperty(ref  PAY_DETAIL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

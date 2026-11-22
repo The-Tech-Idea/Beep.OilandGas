@@ -9,6 +9,7 @@ public partial class R_PPDM_AUDIT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AUDIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUDIT_TYPE
         {  
             get  

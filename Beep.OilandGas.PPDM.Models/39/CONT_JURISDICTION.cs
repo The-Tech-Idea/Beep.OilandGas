@@ -9,6 +9,7 @@ public partial class CONT_JURISDICTION: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_IDValue;
           set { SetProperty(ref  CONTRACT_IDValue, value); }
         } 
 private  System.String JURISDICTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JURISDICTION
         {  
             get  

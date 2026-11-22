@@ -9,6 +9,7 @@ public partial class R_RESENT_USE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String USE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String USE_TYPE
         {  
             get  

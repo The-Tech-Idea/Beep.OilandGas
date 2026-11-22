@@ -9,6 +9,7 @@ public partial class R_PPDM_SCHEMA_ENTITY: Entity,IPPDMEntity
 {
 
 private  System.String ELEMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ELEMENT_TYPE
         {  
             get  

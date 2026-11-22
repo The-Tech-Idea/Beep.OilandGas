@@ -9,6 +9,7 @@ public partial class R_ENVIRONMENT: Entity,IPPDMEntity
 {
 
 private  System.String ENVIRONMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENVIRONMENT_TYPE
         {  
             get  

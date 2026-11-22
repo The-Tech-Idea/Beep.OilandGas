@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class PRODUCTION_SHARING_AGREEMENT : ModelEntityBase
     {
         private string PSA_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string PSA_ID
         {
             get { return this.PSA_IDValue; }

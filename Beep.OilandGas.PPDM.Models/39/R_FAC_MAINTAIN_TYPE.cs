@@ -9,6 +9,7 @@ public partial class R_FAC_MAINTAIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FACILITY_TYPEValue;
           set { SetProperty(ref  FACILITY_TYPEValue, value); }
         } 
 private  System.String MAINTAIN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAINTAIN_TYPE
         {  
             get  

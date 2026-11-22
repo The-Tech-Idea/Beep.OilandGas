@@ -9,6 +9,7 @@ public partial class SEIS_PROC_PLAN: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_PROC_PLAN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_PROC_PLAN_ID
         {  
             get  

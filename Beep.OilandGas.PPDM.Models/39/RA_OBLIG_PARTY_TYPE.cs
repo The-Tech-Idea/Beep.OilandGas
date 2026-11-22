@@ -9,6 +9,7 @@ public partial class RA_OBLIG_PARTY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PARTY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARTY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARTY_TYPEValue;
           set { SetProperty(ref  PARTY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_DOCUMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DOCUMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DOCUMENT_TYPE
         {  
             get  

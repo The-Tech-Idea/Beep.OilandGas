@@ -9,6 +9,7 @@ public partial class ANL_VALID_BA: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METHOD_SET_IDValue;
           set { SetProperty(ref  METHOD_SET_IDValue, value); }
         } 
 private  System.String METHOD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String METHOD_IDValue;
           set { SetProperty(ref  METHOD_IDValue, value); }
         } 
 private  System.String VALID_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALID_BA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String VALID_BA_IDValue;
           set { SetProperty(ref  VALID_BA_IDValue, value); }
         } 
 private  System.Decimal VALID_BA_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal VALID_BA_OBS_NO
         {  
             get  

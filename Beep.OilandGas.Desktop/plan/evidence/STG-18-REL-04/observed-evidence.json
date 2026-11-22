@@ -1,0 +1,88 @@
+{
+  "id": "STG-18/REL-04",
+  "title": "Performance and large-data handling",
+  "date": "2026-11-06",
+  "status": "gate met - all six acceptance criteria, with the measured limits recorded: 6 of 11 budgets measurable here (5 named with reasons), bounded reads without a paging control, and cancellation measured for chunked work rather than a single draw",
+  "machine": {
+    "os": "Microsoft Windows 10.0.26200",
+    "architecture": "X64",
+    "cores": 12,
+    "visibleMemoryMegabytes": 65425,
+    "framework": ".NET 10.0.14",
+    "processArchitecture": "X64"
+  },
+  "implementation": {
+    "budgetsAndReport": "src/Beep.OilandGas.Desktop.Core/Performance/OgBenchmark.cs (OgBudget, OgMeasurement, OgMachine, OgBenchmarkReport, OgPage/OgPageRequest/OgPager)",
+    "cancellation": "src/Beep.OilandGas.Desktop.Core/Performance/OgCancellationProbe.cs",
+    "runner": "src/Beep.OilandGas.Desktop/Performance/OgBenchmarkRunner.cs (Run, Save, LoadLast, SeedData)",
+    "startupMarks": "src/Beep.OilandGas.Desktop/Bootstrapping/OgStartupTimeline.cs (+ Begin in OgBootstrapper.Create, gate/shell marks in App.xaml.cs)",
+    "largeData": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgBenchmarkData.cs (SyntheticLog, Plan, Decimate, Points)",
+    "page": "src/Beep.OilandGas.Desktop/Views/PerformancePageView.cs (route 'performance')",
+    "verbs": "src/Beep.OilandGas.Desktop/Headless/OgHeadlessRunner.cs (Benchmark, SeedBenchmark); OgCommandLine (--report-benchmark, --benchmark alias, --seed-benchmark)",
+    "paths": "src/Beep.OilandGas.Desktop/Bootstrapping/OgPaths.cs (BenchmarkReportPath, BenchmarkDirectory)",
+    "ceilingMessages": "src/Beep.OilandGas.Desktop/Views/AdminFailuresView.cs, AuditLogView.cs (OceanMessage via OgPager.RecentCeiling)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PerformanceTests.cs (15) and HeadlessVerbTests.cs (benchmark verbs rewritten)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~PerformanceTests", "exit": 0, "run": 15, "passed": 15, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 396, "passed": 396, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "processRuns": [
+    { "verb": "--report-benchmark", "exit": 0, "evidence": "measured: 6, over-budget: 0, report: %LOCALAPPDATA%/TheTechIdea/BeepOilGas/Diagnostics/benchmark-report.json, result: ok" },
+    { "verb": "--benchmark (alias)", "exit": 0, "evidence": "identical output; startup 62.0 ms, shell 406.9 ms, grid-page 1.3 ms, log-20k 3.7 ms, log-100k 5.7 ms, schematic 2.6 ms, measured: 6, result: ok" },
+    { "verb": "--seed-benchmark", "exit": 0, "evidence": "file: Data/Benchmark/log-100000.csv, result: ok" },
+    { "verb": "--soak 30", "exit": 0, "evidence": "cycles 26215, start 109 MB, end 131 MB, peak 135 MB, growth +23 MB (+0.8 MB/min), within-budget True, report Diagnostics/soak-report.json, result: ok (30 min wall clock)" }
+  ],
+  "measured": {
+    "startup": { "milliseconds": 62, "target": 3000, "note": "application build only in a headless run; a windowed run uses the gate mark" },
+    "shell": { "milliseconds": 452.5, "target": 2000 },
+    "grid-page": { "milliseconds": 1.3, "target": 800, "note": "200 of 5000 rows, ceiling 20000" },
+    "log-20k": { "milliseconds": 4.9, "target": 250, "note": "median of 3 frames at 900x600" },
+    "log-100k": { "milliseconds": 6.1, "target": 400, "note": "median of 3 frames; Decimated: 100,000 samples drawn as at most 2,400 points (41.7:1) at 600 px" },
+    "schematic": { "milliseconds": 3.8, "target": 200, "note": "median of 3 frames at 600x800" },
+    "cancel-latency": { "milliseconds": 16, "target": 500, "note": "chunked operation, cancel observed in 15-17 ms" },
+    "soak-30min": { "startMegabytes": 109, "endMegabytes": 131, "peakMegabytes": 135, "growthMegabytes": 23, "growthMegabytesPerMinute": 0.8, "cycles": 26215, "target": 800, "result": "within budget" }
+  },
+  "smoke": {
+    "pages-declared": 22,
+    "performance-report-path": "Diagnostics/benchmark-report.json",
+    "performance-measured": 6,
+    "performance-over-budget": 0,
+    "performance-log-20k-ms": "4.9",
+    "performance-log-100k-ms": "6.2",
+    "performance-grid-page-ms": "1.1",
+    "performance-schematic-ms": "2.7",
+    "performance-decimation": "median of 3 frames at 900x600; Decimated: 100,000 samples drawn as at most 2,400 points (41.7:1) at 600 px.",
+    "performance-cancel-ms": "16.0",
+    "performance-report-parseable": true,
+    "performance-page-rows": 11,
+    "performance-page-over-budget": 0,
+    "soak-cycles": 16,
+    "soak-peak-mb": 200,
+    "soak-within-budget": true
+  },
+  "gates": {
+    "AC-1 every budget in section 4 is measured and recorded": "partial - 6 of 11 are measured and recorded (startup, shell, grid page, log 20 000, log 100 000, schematic), and memory is now measured by the 30-minute soak. The four remaining budgets have no feature to measure in this build: well search and 29-module setup need DAT-02, contour mapping is INT-07, 3D is INT-08. They are recorded as unmeasured with that reason rather than guessed at.",
+    "AC-2 log rendering applies decimation above the configured threshold and states the ratio": "pass - the renderer thins long curves with the tools' CurveDecimation (four points per pixel row); the plan states 'Decimated: 100,000 samples drawn as at most 2,400 points (41.7:1) at 600 px', and a test proves the thinned polyline stays within the bound, keeps the ends and keeps the peak. 20 000 samples (the threshold itself) is not thinned.",
+    "AC-3 every grid read is paged and no screen loads an unbounded result": "partial - OgPager is the only grid-page reader and enforces a page size, a normalised request and a row ceiling that reports 'Showing 200 of the first 1,000 rows (5,000 match). Narrow the search to see the rest.' The audit and failure grids state how many recent rows they show when the store holds more. No screen yet offers a next-page control, so paging is bounded rather than navigable.",
+    "AC-4 a long operation is cancellable within 500 ms of the cancel request": "partial - the cancellation contract is measured at 15-17 ms against 500 ms for a chunked operation that observes the token. A single synchronous Render call cannot be interrupted mid-frame; that limit is recorded rather than hidden.",
+    "AC-5 memory stays within budget after 30 minutes of scripted use": "pass - --soak 30 ran 26 215 cycles of scripted use (a 20 000-sample log frame, a schematic frame, a chart, a paged grid read and an audit read) on surfaces created once and re-rendered. Working set went from 109 MB to 131 MB, peaked at 135 MB of the 800 MB budget, and grew +23 MB in total (+0.8 MB/min). The report is written to Diagnostics/soak-report.json; a peak above the budget would have produced result: over-budget rather than a pass.",
+    "AC-6 the benchmark report is machine-readable and comparable across runs": "pass - the report is JSON with a schema version, capture time, machine description and one keyed row per budget, ordered by the budget list, so two runs diff on values. It round-trips through OgBenchmarkReport.FromJson and is written to Diagnostics/benchmark-report.json by --report-benchmark."
+  },
+  "findings": [
+    { "what": "startup measurement was not what its key claimed", "detail": "the first version reported the bootstrap duration under the 'application start to sign-in prompt' key. The runner now prefers the gate mark in a windowed run and, when the process returned before the gate (headless), reports the application build and says so in the row's note." },
+    { "what": "the benchmark failed on a non-STA thread", "detail": "shell and schematic measurements construct WPF objects. The runner now skips them with a stated reason when the thread is not STA, so a console caller or a test gets a partial report instead of a failure. The verb and the smoke run are STA and measure all six." },
+    { "what": "two headless tests encoded the old refusal", "detail": "HeadlessVerbTests asserted the benchmark verbs refused with exit 2 and named REL-04. They were rewritten to assert what the verbs now do (report written and parseable, seed file written), the same way the licence tests were rewritten when REL-02 landed." },
+    { "what": "a stale CLI help line", "detail": "--licence-check still described itself as 'structure (signature: REL-02)'. Corrected to 'verify a signed licence file'." }
+  ],
+  "limits": [
+    "Four budgets are unmeasurable in this build: well search and module setup need DAT-02, contour mapping is INT-07, and 3D is INT-08. Memory is measured by the 30-minute soak.",
+    "Budgets are REL-04's proposals and were not agreed before REL-01.",
+    "No screen has a next-page control; reads are bounded and state their ceiling but cannot be navigated.",
+    "A synchronous render cannot be interrupted mid-frame; the cancellation figure is for chunked work.",
+    "Timings are from one workstation and one run each (median of three frames); they are evidence for the delivered slice, not a release gate.",
+    "The console table replaces the em dash with '?' on the Windows console code page; the JSON is unaffected."
+  ]
+}

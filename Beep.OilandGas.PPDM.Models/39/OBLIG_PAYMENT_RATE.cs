@@ -9,6 +9,7 @@ public partial class OBLIG_PAYMENT_RATE: Entity,IPPDMEntity
 {
 
 private  System.String JURISDICTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JURISDICTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String JURISDICTIONValue;
           set { SetProperty(ref  JURISDICTIONValue, value); }
         } 
 private  System.String PAY_RATE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAY_RATE_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PAY_RATE_TYPEValue;
           set { SetProperty(ref  PAY_RATE_TYPEValue, value); }
         } 
 private  System.String PAYMENT_RATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYMENT_RATE_ID
         {  
             get  

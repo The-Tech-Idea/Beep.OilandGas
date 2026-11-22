@@ -9,6 +9,7 @@ public partial class POOL_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String POOL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String POOL_IDValue;
           set { SetProperty(ref  POOL_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

@@ -1,0 +1,765 @@
+{
+  "id": "SETUP-RESEARCH",
+  "title": "Best practice research behind the setup lifecycle revision (SETUP-00 \u2026 SETUP-13)",
+  "date": "2026-11-09",
+  "method": "Primary vendor and standards documentation was read directly (not summaries). Each fact below is quoted or closely paraphrased from the page named beside it, and each is followed by what the revision does with it.",
+  "sources": [
+    {
+      "id": "S1",
+      "title": "Authentication Cheat Sheet",
+      "publisher": "OWASP Cheat Sheet Series",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+      "facts": [
+        "A password shorter than 8 characters is weak when MFA is enabled; shorter than 15 characters is weak when MFA is not enabled (citing NIST SP 800-63B-4).",
+        "The maximum password length should be at least 64 characters to allow passphrases, and passwords must not be silently truncated.",
+        "There should be no password composition rules limiting the type of characters permitted; no requirement for upper or lower case, numbers or special characters.",
+        "Avoid requiring periodic password changes; rotate credentials on evidence of compromise instead.",
+        "Screen passwords against common and previously breached password lists.",
+        "Authentication responses must be generic regardless of whether the user id or password was wrong, the account does not exist, or the account is locked or disabled, to prevent enumeration.",
+        "Failed authentication attempts, lockouts and password failures must be logged and reviewed.",
+        "Do not allow login with sensitive accounts (backend / middleware / database) to any front-end user interface."
+      ],
+      "adopted": [
+        "OgPasswordPolicy rewritten: minimum 15, maximum 64, no composition rules, digits-only and short common-password blocklist refused; no periodic rotation. Tested in LocalIdentityTests and DatabaseIdentityTests.",
+        "One generic refusal sentence for wrong password, unknown user and seeded principal (BeepDmDatabaseIdentity, tested).",
+        "The database service account in a connection is not a login account; sign-in reads the USER table only (SETUP-02 \u00a77, SETUP-05 \u00a77)."
+      ],
+      "planned": [
+        "Breached-password list screening (SETUP-05 AC-6).",
+        "Per-account lockout and throttling with recorded attempts (SETUP-05 AC-7, SETUP-09 AC-7).",
+        "MFA, after which the floor may drop to 8 (SETUP-05 \u00a710)."
+      ]
+    },
+    {
+      "id": "S2",
+      "title": "Multi-Tenant Application Security Cheat Sheet",
+      "publisher": "OWASP Cheat Sheet Series",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html",
+      "facts": [
+        "Tenant context must be established early and bound to a server-verified identity and current tenant membership; client-supplied tenant identifiers are selectors only, never authorization.",
+        "Tenant onboarding is all-or-nothing: if a step fails, partially created resources are removed and the failure is recorded; the audit trail covers failed and partial operations.",
+        "Generated tenant API credentials use at least 128 bits of entropy, are returned once and stored only as a hash.",
+        "A documented retention and deletion policy applies to every place tenant data lives, including backups and replicas.",
+        "Offboarding rejects new operations, then revokes sessions and tenant-scoped credentials.",
+        "A shared backup must not be restored over live data to recover a single tenant; a tenant-scoped restore is authorised and recorded."
+      ],
+      "adopted": [
+        "The company is derived from the authenticated session's connection, never from a typed identifier; settings are read only after sign-in (SETUP-09 AC-1).",
+        "No default credential is seeded; the administrator is created with a PBKDF2 hash (SETUP-03, SETUP-05).",
+        "A restore is visible to the next settings write because of the revision check (SETUP-12 \u00a77, AC-4)."
+      ],
+      "planned": [
+        "Rollback of a half-created company and a recorded partial-operation audit (SETUP-03 AC-5, gap G-2).",
+        "Backup/restore and an explicit retention policy for a company database (SETUP-12 AC-5, gap G-7)."
+      ]
+    },
+    {
+      "id": "S3",
+      "title": "Tenant Onboarding Best Practices in SaaS with the AWS Well-Architected SaaS Lens",
+      "publisher": "Amazon Web Services (Partner Network blog)",
+      "url": "https://aws.amazon.com/blogs/apn/tenant-onboarding-best-practices-in-saas-with-the-aws-well-architected-saas-lens/",
+      "facts": [
+        "All phases of onboarding are orchestrated by a single mechanism rather than by one-off scripts.",
+        "The tenant management service creates the tenant id and stores tenant-specific details, including tenant settings and environment details, at creation time.",
+        "The user management service creates the tenant administrator in the identity provider during onboarding, and the admin's tenant association is carried on the identity.",
+        "Each onboarding step emits tenant-aware logs and metrics so operations can troubleshoot a specific onboarding.",
+        "Offboarding is designed alongside onboarding so tenant-specific resources can be removed."
+      ],
+      "adopted": [
+        "One wizard owns company creation: the company record, the module set, the environment and the SystemAdmin are one run (SETUP-03).",
+        "The company settings and environment are written at creation, not configured later (SETUP-04, SETUP-07).",
+        "Every failure names the company and the connection and is recorded in the failure store (SETUP-03 \u00a76)."
+      ],
+      "planned": [
+        "A per-stage progress record visible after the run (an onboarding log an operator can read), beyond the module state file."
+      ]
+    },
+    {
+      "id": "S4",
+      "title": "Bootstrapping and recovering an admin account",
+      "publisher": "Keycloak (CNCF)",
+      "url": "https://www.keycloak.org/server/bootstrap-admin-recovery",
+      "facts": [
+        "A bootstrap admin account is temporary: it should exist only for the operations needed to gain permanent and more secure admin access, and must be removed manually afterwards.",
+        "The UI marks such an account as temporary (warning banner, labels, log messages).",
+        "Bootstrap options apply only on the first start, when the master realm does not yet exist.",
+        "A dedicated recovery command exists for regaining lost administrator access.",
+        "Secrets are supplied through environment variables rather than plain command-line arguments in the documented examples."
+      ],
+      "adopted": [
+        "The administrator is created by the setup run only, and a second creation is refused (SETUP-03 AC-1/AC-3).",
+        "The existing account is adopted on a workstation that joins, rather than a second administrator being minted (SETUP-08 AC-2)."
+      ],
+      "planned": [
+        "A temporary/bootstrap marker on the first administrator and a forced password change at first sign-in (SETUP-03 AC-4, gap G-3).",
+        "A documented recovery path for a lost administrator password (SETUP-12)."
+      ]
+    },
+    {
+      "id": "S5",
+      "title": "Wizards: Definition and Design Recommendations",
+      "publisher": "Nielsen Norman Group",
+      "url": "https://www.nngroup.com/articles/wizards/",
+      "facts": [
+        "Wizards suit infrequent processes such as configuration or setup, and novice users; they are poor for work repeated often.",
+        "Communicate the mental model: display the list of steps and highlight the current one.",
+        "Enforce a clear sequential order of steps; do not let users pick a step before completing the preceding ones.",
+        "Label navigation with what the next step does, not a bare 'Next'.",
+        "Allow the user to exit midway and resume later without re-entering what was already accepted.",
+        "Each step should be self-sufficient, and previous choices should become the defaults next time."
+      ],
+      "adopted": [
+        "Six named steps with the review last, and Review states what it will create in order (SETUP-03 \u00a78).",
+        "A re-run preselects the recorded deployment and company values (SETUP-01 AC-2)."
+      ],
+      "planned": [
+        "Replace the TabControl with an ordered step rail that shows completed/current/upcoming and refuses to jump ahead (SETUP-03 AC-7, gap G-1).",
+        "Resume an interrupted wizard (SETUP-03 AC-6).",
+        "Descriptive next-button labels per step."
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "decision": "Settings are read only after authentication; machine facts are read before it.",
+      "because": "S2 (tenant context from a verified identity) and S1 (a backend account is not a login).",
+      "where": "OgApplication.LoadSettingsAsync guard; App.OnStartup order; SETUP-09 AC-1."
+    },
+    {
+      "id": "D2",
+      "decision": "The company database's own USER/ROLE tables are the account directory for a company deployment.",
+      "because": "S3 (tenant administrator created in the identity store during onboarding) and the product requirement that RBAC is the SystemAdmin's to prepare in the database.",
+      "where": "BeepDmDatabaseIdentity; OgSignInService.SignInAsync; SETUP-05."
+    },
+    {
+      "id": "D3",
+      "decision": "Password rule is length-based: 15 to 64, no composition, common and digits-only refused.",
+      "because": "S1.",
+      "where": "Core/OgPasswordPolicy; PasswordPolicyTests; DatabaseIdentityTests."
+    },
+    {
+      "id": "D4",
+      "decision": "One settings table in the company database (BEEPSETTINGS) with one JSON row per document and a revision-checked write.",
+      "because": "S2 (onboarding writes tenant settings; partial writes must be detected) and the owner's instruction that settings are stored in the database.",
+      "where": "Data/Settings/OgSharedSetup.cs; SETUP-04."
+    },
+    {
+      "id": "D5",
+      "decision": "The wizard is scheduled to become an ordered, resumable step sequence rather than tabs.",
+      "because": "S5.",
+      "where": "SETUP-03 AC-7 / AC-6; gaps G-1 and the resume gap."
+    },
+    {
+      "id": "D6",
+      "decision": "Rollback of a partly created company and a temporary-administrator marker are recorded as gaps rather than claimed.",
+      "because": "S2 and S4 demand them and they are not built; claiming them would be false.",
+      "where": "SETUP-03 AC-4/AC-5; gap register G-2, G-3."
+    },
+    {
+      "id": "D7",
+      "decision": "No setting is stored in a file, for either deployment. setup.json, the local credential file and the repair run were removed; the installation is discovered by opening its database, and a personal installation is one whose database is a local file.",
+      "because": "the owner requires settings in the database for all users; a file copy is a second truth, and it made the earlier company setup read settings before anybody had signed in.",
+      "where": "OgInstallationProbe; OgStartupGate; OgApplication.InstalledDatabase; OgCompanyCreation used by both deployments; smoke reports installation-connection-configured / -provisioned / -company-recorded"
+    },
+    {
+      "id": "D8",
+      "decision": "The administrator a setup creates is provisional: a BOOTSTRAP marker makes the first sign-in replace the password before the shell opens.",
+      "because": "Keycloak bootstrap-admin (S4): a password typed by the installer is temporary by nature. The rule is enforced, not merely warned about.",
+      "where": "OgCompanyCreation (marker + rollback), BeepDmDatabaseIdentity (flag, change, clear), App.OnStartup (window before the shell)"
+    },
+    {
+      "id": "D9",
+      "decision": "Account administration is a SystemAdmin page over the database tables, with a last-administrator guard and a provisional password on every create and reset.",
+      "because": "SETUP-05 AC-9 / SETUP-10 AC-6; the password an administrator types must never be the one the person keeps using (S4, D8).",
+      "where": "BeepDmUserAdministration, UsersView, OgAccountDialog"
+    },
+    {
+      "id": "D10",
+      "decision": "Authorisation on a write path is role OR permission, and the permission codes come from the owning module through ROLE_PERMISSION at sign-in.",
+      "because": "SETUP-05 AC-8 and OWASP least privilege: a role is a bundle, and a capability should be grantable without inventing a role for it.",
+      "where": "ReadPermissionsAsync, OgPermissionNames, CanManageUsers/CanConfigureSystem, the users and settings pages"
+    },
+    {
+      "id": "D11",
+      "decision": "Lockout is per account: 5 failures in 15 minutes, 15-minute lock, owner told the time, guesses do not extend it, a success resets it, an administrator can clear it.",
+      "because": "OWASP Authentication Cheat Sheet: count against the account rather than the IP, and balance security with usability.",
+      "where": "OgSignInPolicy, BeepDmDatabaseIdentity, UsersView"
+    },
+    {
+      "id": "D12",
+      "decision": "Password screening uses the checked-in SecLists 10k-most-common list (10,001 entries as retrieved), matched exactly and case-insensitively, with the source recorded in the file and in this evidence.",
+      "because": "OWASP Authentication Cheat Sheet asks for a blocklist of common/breached passwords; a published list is honest where a hand-written one is a guess.",
+      "where": "Core/Security/breached-passwords.txt, OgPasswordPolicy"
+    },
+    {
+      "id": "D13",
+      "decision": "The sign-in window offers the database account names in an editable picker, names only and sign-in accounts only; a typed name is still accepted.",
+      "because": "SETUP-08 AC-5: a person joining an existing company should not have to guess the exact spelling; the account directory is already the company's.",
+      "where": "ListUserNamesAsync, SignInWindow"
+    },
+    {
+      "id": "D14",
+      "decision": "The settings save writes its own audit row (one per attempt, ok or refused), instead of relying on the calling page.",
+      "because": "SETUP-10 AC-5: an audit trail that depends on the caller forgetting nothing is not a trail.",
+      "where": "OgSharedSetupService.SaveAsync / DeleteDocumentAsync"
+    },
+    {
+      "id": "D15",
+      "decision": "The shared environment is edited as one document (country preset + unit system + JSON overrides, override wins) from a SystemAdmin page, saved with the revision read and applied to the running lifetime.",
+      "because": "SETUP-10 AC-7: the company must be able to set anything the engine supports without a build, and a stale write must not overwrite another administrator.",
+      "where": "OgEnvironmentDocument, OgEnvironmentDialog, SettingsView"
+    },
+    {
+      "id": "D16",
+      "decision": "The wizard shows a completed/current/upcoming rail and records each accepted step in BEEPSETTINGS/SETUP_PROGRESS, so an interruption resumes after that step.",
+      "because": "NN/g wizard guidance (S5): show the steps, keep the order, and let an interrupted setup resume. Progress is a row, not a file.",
+      "where": "OgSetupSteps, FirstRunWindow, OgSharedSetupService"
+    },
+    {
+      "id": "D17",
+      "decision": "A file database is backed up by copying it with the connection closed; a server database is refused and left to its DBA; an upgrade refuses without an existing backup.",
+      "because": "SETUP-12 AC-5/AC-6 and OWASP multi-tenant restore guidance: a backup nobody can restore is not a backup, and an upgrade without one is an unnecessary risk.",
+      "where": "OgDatabaseBackup, OgPaths.BackupDirectory, SettingsView"
+    },
+    {
+      "id": "D18",
+      "decision": "There is one version marker - the BEEPSETTINGS/SYSTEM row. Migration re-saves the documents the database holds through the ordinary service and stamps the version last; a newer database is refused before any read.",
+      "because": "SETUP-11 (gap G-8): a later build must open an earlier installation, an older build must never rewrite a newer record - and one version answer is simpler than two.",
+      "where": "OgSetupMigration, OgApplication.LoadSettingsAsync, BEEPSETTINGS/SYSTEM"
+    },
+    {
+      "id": "D19",
+      "decision": "The plan is audited criterion by criterion, not by the feature-row checker: every setup stage is Built, SETUP-02 AC-7 is recorded as blocked on an enterprise server, and no criterion is left as \"not met\".",
+      "because": "the tracker checker validates feature rows and links, not acceptance criteria; a stage table saying \"Partial\" is a claim nobody measured.",
+      "where": "plan/setup/*.md, plan/00-MASTER-TRACKER.md \u00a712a"
+    },
+    {
+      "id": "D20",
+      "decision": "The PPDM registry is the single truth for table keys: every generated model carries [Key] on each column the registry names, and the migration and its verification read the models with one shared EntityReadOptions (strings nullable, [Key] not null).",
+      "because": "the apply path could not create a single reference table: the models had keys the registry knew and the compiler did not, so entity validation refused them as keyless.",
+      "where": "Beep.OilandGas.PPDM.Models, ModuleSchemaVerification.ModelReadOptions, PPDM39SetupService"
+    },
+    {
+      "id": "D21",
+      "decision": "Opt-in tests are declared with a conditional Fact attribute, so a run that cannot execute them reports them as Skipped; and the database-backed suite is run as part of acceptance, not left unrun.",
+      "because": "a [Fact] whose body returned early reported Passed. 106 tests - all of the gateway evidence for the 130 features - were \"passing\" without ever running, which is how a real defect (dashboard ageing against the wall clock instead of the requested period) survived a green suite.",
+      "where": "IntegrationFactAttribute, the 106 converted tests, OgProcessDashboard"
+    },
+    {
+      "id": "D22",
+      "decision": "The full-catalogue apply claim is withdrawn rather than worked around: the setup stays on the engine defaults, and the criterion is kept as a test gated behind OG_RUN_SETUP_FULL=1 until BeepDM's checkpoint persistence is fixed.",
+      "because": "a workaround that crashes the process, or a flag that silently drops the audit trail, would be worse than an honest blocker; the measured failure is in migration history sizing, not in the setup code.",
+      "where": "plan/00-MASTER-TRACKER.md DAT-02, plan/setup/SETUP-06-MODULES-LOV.md AC-2b, ModuleSetupIntegrationTests.The_unscoped_apply_creates_and_seeds_every_module"
+    },
+    {
+      "id": "D23",
+      "decision": "The engine workaround for the full apply is rejected and reverted: neither the compact-history flags nor an iterative canonicaliser is shipped, because the first crashes ordinary tests and the second does not address the failure. The blocker stays recorded rather than papered over.",
+      "because": "a shipped flag that kills the process in normal use is worse than an honest blocker, and a rewrite that changes engine behaviour without fixing the observed failure is unjustified risk.",
+      "where": "BeepDM MigrationManager/PPDM39SetupService (reverted), plan/setup/SETUP-06-MODULES-LOV.md AC-2b"
+    },
+    {
+      "id": "D24",
+      "decision": "A SelectProperties optimisation (read only the named properties instead of serialising the whole object) was implemented, measured and reverted: the crash persisted, and changing the inputs of ComputePlanHash would invalidate plan hashes persisted by earlier builds.",
+      "because": "an engine change that does not fix the observed failure but changes a persisted identity is a regression risk with no proven benefit; the hashing cost it removes is real but must be fixed together with, not instead of, the crash.",
+      "where": "BeepDM MigrationManager.PlanIntent.cs (reverted)"
+    },
+    {
+      "id": "D25",
+      "decision": "Provider selection needs no fix; the plan-hashing cost is the measured driver of the full-apply failure, and fixing it requires a plan-hash version plus migration rather than an unproven patch.",
+      "because": "the SQL Server frames were a sampling artefact from another repository\u2019s process, and the correctly filtered stack shows the time in ComputePlanHash serialising per-operation schemas.",
+      "where": "BeepDM MigrationManager.PlanIntent.cs (ComputePlanHash/OperationIntent), plan/00-MASTER-TRACKER.md"
+    },
+    {
+      "id": "D26",
+      "decision": "Plan hashing moved to a compact projection and PlanHashVersion 3, with older plans refused. The checkpoint\u2019s copy of the whole plan was left alone, because it is the resume payload.",
+      "because": "the measurement showed hashing and the checkpoint copy are separate costs; the first can be fixed safely, the second is a design question about cross-process resume that must not be improvised.",
+      "where": "BeepDM MigrationManager.PlanIntent.cs (SchemaSignature, CurrentPlanHashVersion), MigrationManager.ExecutionOrchestration.cs (BuildNewCheckpoint)"
+    },
+    {
+      "id": "D27",
+      "decision": "The checkpoint-by-reference change is measured but not shipped: it cut PPDM_CORE from ~10 minutes to 47 seconds and then failed on the plan/checkpoint cycle, and with the cycle cut it still crashed. Hash v3 is kept; the checkpoint change is reverted until resume is tested.",
+      "because": "the record is the resume payload; a change that strips it and is not exercised through a restart is a regression waiting to happen, and it did not make the apply pass anyway.",
+      "where": "BeepDM MigrationManager.ExecutionOrchestration.cs / PlanIntent.cs (reverted), tracker 2026-11-10"
+    },
+    {
+      "id": "D28",
+      "decision": "The checkpoint/plan-copy work is not shipped: five call sites were identified and reduced, the cycle was cut with a contract resolver, and the process still died at ~125 s without a dump. Hash v3 is the only engine change kept.",
+      "because": "a change that alters the resume payload and does not fix the failure is pure risk; the remaining crash is inside plan serialisation and needs a stack overflow diagnosis that this environment does not produce a dump for.",
+      "where": "BeepDM MigrationManager.ExecutionOrchestration.cs / PlanIntent.cs (reverted), tracker 2026-11-10"
+    },
+    {
+      "id": "D29",
+      "decision": "The checkpoint-interval experiment was reverted like the others: it did not change the crash, and it coarsens the resume point. The blocker is now recorded as an execution-phase crash whose dump needs administrator rights or an engine owner.",
+      "because": "three independent reductions (payload copy, checkpoint frequency, hash cost) each removed real cost and none prevented the crash, which means the remaining cause is elsewhere in execution and cannot be diagnosed without a faulting-thread dump.",
+      "where": "plan/evidence, plan/00-MASTER-TRACKER.md"
+    },
+    {
+      "id": "D30",
+      "decision": "The crash is recorded as an execution-phase defect timed inside checkpoint validation/hashing; sampling cannot see the recursion, and the dump route needs administrator rights or procdump. The resume-after-restart test was not added because the payload change it would validate is unshipped.",
+      "because": "adding a test for a reverted change would prove nothing about what ships, and the remaining failure is diagnosable only with a faulting-thread dump.",
+      "where": "plan/evidence, plan/00-MASTER-TRACKER.md"
+    },
+    {
+      "id": "D31",
+      "decision": "The crash is attributed to plan size (2,716 column-level operations) combined with ~7 whole-plan hash and copy passes, measured in-process. The instrumentation was removed and no engine change shipped beyond hash v3.",
+      "because": "the numbers are now concrete and actionable: batching column operations and hashing once are the fixes, and both change plan identity/ordering, so they need a hash version and a resume test rather than a patch at the end of a session.",
+      "where": "plan/evidence, plan/00-MASTER-TRACKER.md"
+    },
+    {
+      "id": "D32",
+      "decision": "The apply failure is attributed to PPDM_CORE expanding to the whole catalogue (2,716 entity types); the setup plan under-reports that as 17. The hash-once cache was measured and reverted.",
+      "because": "five independent reductions each removed cost without preventing the crash; the remaining problem is the size of a single PPDM_CORE plan, which is a product/engine design question (apply the catalogue in batches, or report and plan it honestly) rather than a hot-spot fix.",
+      "where": "Beep.OilandGas.PPDM39.DataManagement/Core/ModuleSetup/ModuleMigrationScope.cs (Resolve), plan/evidence, plan/00-MASTER-TRACKER.md"
+    },
+    {
+      "id": "D33",
+      "decision": "The resume prerequisite is now tested: a plan built by one MigrationManager reloads through a new one with the same id, hash, version and operations. PPDM catalogue batching is still not implemented.",
+      "because": "any future change to the checkpoint payload must keep the plan recoverable; that is now checked. Batching 2,716 entity types into bounded plans is a larger module-design change and remains the next step.",
+      "where": "test/Beep.OilandGas.Desktop.Tests/MigrationResumeTests.cs, plan/00-MASTER-TRACKER.md"
+    },
+    {
+      "id": "D34",
+      "decision": "PPDM_CORE is applied in bounded batches of 128 entity types (22 plans) instead of one 2,716-operation plan, and the plan reports the resolved entity-type count.",
+      "because": "the single plan could not be hashed or persisted in a usable time; the module declares 17 types and resolves to 2,716, so the wizard was also under-reporting what a first run would create.",
+      "where": "OgModuleSetupRunner (SchemaBatchSize + chunk loop), SchemaMigrationPlanRequest.EntityTypeNames, PPDM39SetupService.ResolvedEntityTypeNames"
+    },
+    {
+      "id": "D35",
+      "decision": "Batching is kept (it is correct and reports 22 batches), but it is recorded as not fixing the crash: the first 128-type batch still kills the host, so the cause is size-independent.",
+      "because": "the log proves the batch path ran and the plan per batch was small; the failure must be tied to a particular type or structure reached during planning, not to the catalogue size.",
+      "where": "plan/evidence, plan/00-MASTER-TRACKER.md"
+    },
+    {
+      "id": "D36",
+      "decision": "The crash boundary is 57-64 types in one plan: 0:56 passes, 0:64 crashes, and no single type or sub-range reproduces it. The harness now supports type-level bisection so the exact boundary can be found with a few more runs.",
+      "because": "both halves of 0..63 pass independently, so neither a named entity type nor a time limit explains it; the remaining question is what the 57th-64th operation adds to the plan document.",
+      "where": "ModuleSetupPerformanceTests (OG_SETUP_PERF_TYPE_RANGE), OgModuleSetupRunner.ApplyAsync overload"
+    },
+    {
+      "id": "D37",
+      "decision": "Snapshot depth raised from 64 to 256 and SchemaBatchSize set to 64 (the largest measured-safe batch); the full catalogue run is recorded as a multi-hour operation rather than an unexplained failure.",
+      "because": "the crash boundary was exactly the MaxDepth value, and 64 types passed at 256 depth while 128 did not finish in 50 minutes; 64 is the batch that is both measured and proportionate (about 8 minutes).",
+      "where": "BeepDM MigrationManager.PlanIntent.cs (MaxDepth), OgModuleSetupRunner.SchemaBatchSize"
+    },
+    {
+      "id": "D38",
+      "decision": "ResolvedEntityTypeNames returns an empty list for a module the migration refuses, instead of throwing.",
+      "because": "the caller asks \"what will be applied\"; for SECURITY the answer is nothing, and throwing made a skipped module fail the whole catalogue apply at 1 h 50 m.",
+      "where": "PPDM39SetupService.ResolvedEntityTypeNames"
+    },
+    {
+      "id": "D39",
+      "decision": "A module with no entity types of its own and no demonstration data is skipped - recorded as succeeded with \"no schema or data of its own\" - instead of being handed to the seeding orchestrator.",
+      "because": "SECURITY is installed through the default EF repository and the orchestrator refuses to seed it; treating that refusal as a failure aborted a 2 h 52 m catalogue run.",
+      "where": "OgModuleSetupRunner.RunAsync"
+    },
+    {
+      "id": "D40",
+      "decision": "Two classes of failure from the 3-hour run are addressed: keys added to module model files, and checkpoints no longer carrying the plan (with resume re-attaching the persisted artifact). The key sweep is not finished (shared Models project), and no green full run exists yet.",
+      "because": "the run gave an exact list, and each class has a targeted fix; claiming completion before a green run would repeat the earlier mistake of treating a partial fix as proof.",
+      "where": "Beep.OilandGas.*/Data/**/ [Key] annotations, MigrationManager.ExecutionOrchestration.cs (includePlanAndSteps: false + TryLoadPersistedPlan)"
+    }
+  ],
+  "notConsulted": [
+    "Microsoft Entra / SAP activation documentation: no page was read for this revision, so no claim rests on them.",
+    "No secondary blog or AI summary was used as a source; every fact above is from the page named."
+  ],
+  "implementation": {
+    "installationProbe": "src/Beep.OilandGas.Desktop.Data/Setup/OgInstallationProbe.cs",
+    "companyCreation": "src/Beep.OilandGas.Desktop.Data/Setup/OgCompanyCreation.cs (all-or-nothing with compensations)",
+    "schemaVersion": "src/Beep.OilandGas.Desktop.Core/OgSetupCompatibility.cs + BEEPSETTINGS/SYSTEM",
+    "bootstrapAdministrator": "src/Beep.OilandGas.Desktop.Data/Security/OgDatabaseIdentity.cs (marker, ChangePasswordAsync) + BEEPSETTINGS/BOOTSTRAP + Views/ChangePasswordWindow.cs + App.xaml.cs",
+    "userAdministration": "src/Beep.OilandGas.Desktop.Data/Security/OgUserAdministration.cs + Views/UsersView.cs + Views/OgAccountDialog.cs + OgModuleCatalog(\"users\") + OgPageFactory",
+    "permissionGates": "Data/Security/OgDatabaseIdentity.cs (ReadPermissionsAsync) + Core/OgPermissions.cs (OgPermissionNames, CanManageUsers, CanConfigureSystem) + UsersView/SettingsView gates",
+    "signInLockout": "Core/OgSignInPolicy.cs + Data/Security/OgDatabaseIdentity.cs (failure/success writers, ClearLockoutAsync) + UsersView unlock button",
+    "breachedPasswordList": "src/Beep.OilandGas.Desktop.Core/Security/breached-passwords.txt (SecLists 10k-most-common, 10,001 entries, embedded) + Core/OgPasswordPolicy.cs (lazy set, IsBreached)",
+    "accountPicker": "Data/Security/OgDatabaseIdentity.cs (ListUserNamesAsync) + Views/SignInWindow.cs (editable picker)",
+    "settingsAudit": "Data/Settings/OgSharedSetupService.cs (SaveAsync/DeleteDocumentAsync write the audit row) + OgApplication.SharedSettings passes AuditLog",
+    "environmentEditor": "Data/Settings/OgEnvironmentDocument.cs + Views/OgEnvironmentDialog.cs + SettingsView.OnEditEnvironment",
+    "wizardRailAndResume": "Core/OgSetupSteps.cs (StateOf, LabelFor, ResumeIndex) + Views/FirstRunWindow.cs (rail, SetStep, OnLoaded resume, RecordProgressAsync) + BEEPSETTINGS/SETUP_PROGRESS via OgSharedSetupService",
+    "databaseBackup": "Data/Setup/OgDatabaseBackup.cs + OgPaths.BackupDirectory + SettingsView backup section",
+    "setupMigration": "Data/Setup/OgSetupMigration.cs + OgApplication.MigrateSettingsAsync (called from LoadSettingsAsync before the settings are read). One version marker: the BEEPSETTINGS/SYSTEM row.",
+    "modulePlanStatus": "Data/Setup/OgModuleSetupRunner.cs (OgSetupModulePlan.Describe) + FirstRunWindow",
+    "referenceLists": "Data/Setup/OgModuleSetupRunner.cs (OgSetupReferenceTables, OgSetupModulePlan.ReferenceLists, OgSetupPlan.ReferenceLists) + FirstRunWindow.ShowReferenceLists",
+    "ppdmCodeTableKeys": "Beep.OilandGas.PPDM.Models (every entity with a registry key carries [Key]) + ModuleSchemaVerification.ModelReadOptions (shared by the migration and the verification) + PPDM39SetupService.CreateMigrationManager",
+    "integrationEvidence": "test/\u2026/IntegrationFactAttribute.cs (opt-in tests report Skipped) + the 106 database-backed tests that now execute under OG_RUN_SETUP_INTEGRATION=1",
+    "processDashboardAgeing": "src/Beep.OilandGas.Desktop.Data/Workflow/OgProcessDashboard.cs (ageing at the end of the requested period)",
+    "migrationResumeTest": "test/Beep.OilandGas.Desktop.Tests/MigrationResumeTests.cs (plan persisted by one MigrationManager, loaded back by a new one over the same datasource)",
+    "catalogueBatching": "src/Beep.OilandGas.Desktop.Data/Setup/OgModuleSetupRunner.cs (SchemaBatchSize = 128, chunked plan/approve/execute loop) + Models/Data/PPDM39Setup/SchemaMigrationContracts.cs (EntityTypeNames) + PPDM39SetupService.ResolvedEntityTypeNames",
+    "honestEntityTypeCount": "OgModuleSetupRunner.PlanAsync reports the resolved count per module (PPDM_CORE: 2,716, not 17)",
+    "typeScopeBisection": "OgModuleSetupRunner.ApplyAsync(confirmation, moduleIds, entityTypeNames, ...) + ModuleSetupPerformanceTests OG_SETUP_PERF_TYPES / OG_SETUP_PERF_TYPE_RANGE",
+    "snapshotDepthLimit": "BeepDM MigrationManager.PlanIntent.cs: SnapshotSettings/JsonTextReader MaxDepth 256 (was 64) - the plan snapshot nests with the entity count, and 64 entity types exceeded the 64-depth limit"
+  },
+  "tests": [
+    {
+      "name": "CompanyCreationTests.A_successful_creation_writes_the_company_the_environment_the_modules_and_the_administrator",
+      "proves": "one run writes the four settings documents and the administrator"
+    },
+    {
+      "name": "CompanyCreationTests.A_failure_after_the_settings_were_written_removes_them_again",
+      "proves": "all-or-nothing: a refusal after the settings writes leaves no company record, no environment, no module set and no account"
+    },
+    {
+      "name": "CompanyCreationTests.A_module_failure_writes_no_company_at_all",
+      "proves": "a schema failure before the first write leaves even the settings table uncreated"
+    },
+    {
+      "name": "CompanyCreationTests.An_existing_company_is_adopted_and_nothing_is_rewritten",
+      "proves": "joining does not rewrite the company record"
+    },
+    {
+      "name": "SetupVersioningTests",
+      "proves": "a database at a newer schema version is refused; an unversioned record needs migration"
+    },
+    {
+      "name": "SetupStepOrderTests",
+      "proves": "the wizard cannot jump past the next step"
+    },
+    {
+      "name": "BootstrapPasswordTests.A_setup_created_administrator_is_asked_to_change_its_password",
+      "proves": "the setup writes the marker and the first sign-in reports MustChangePassword"
+    },
+    {
+      "name": "BootstrapPasswordTests.An_adopted_administrator_is_not_marked",
+      "proves": "joining an existing company does not ask the account owner to change a password they chose"
+    },
+    {
+      "name": "BootstrapPasswordTests.A_weak_new_password_is_refused_and_the_marker_stays",
+      "proves": "the shared password policy applies and a refusal leaves the account provisional"
+    },
+    {
+      "name": "BootstrapPasswordTests.After_the_change_the_old_password_stops_working_and_the_marker_is_gone",
+      "proves": "the setup password is dead, the new one works, and the marker row is deleted"
+    },
+    {
+      "name": "BootstrapPasswordTests.An_existing_company_without_a_marker_signs_in_normally",
+      "proves": "a database without the marker is unaffected"
+    },
+    {
+      "name": "UserAdministrationTests.A_created_user_signs_in_with_the_role_it_was_given",
+      "proves": "creation writes a plain account with exactly the role asked for, provisional until the owner replaces the password"
+    },
+    {
+      "name": "UserAdministrationTests.A_reset_password_is_provisional_again_and_the_old_one_stops_working",
+      "proves": "an administrator reset re-marks the account and kills the previous password"
+    },
+    {
+      "name": "UserAdministrationTests.A_disabled_account_is_refused",
+      "proves": "disabling refuses sign-in and enabling restores it"
+    },
+    {
+      "name": "UserAdministrationTests.A_role_can_be_granted_and_revoked",
+      "proves": "grants and revocations change the roles returned at sign-in"
+    },
+    {
+      "name": "UserAdministrationTests.The_last_active_administrator_cannot_be_disabled_or_lose_the_role",
+      "proves": "no operation can lock everybody out of the database"
+    },
+    {
+      "name": "UserAdministrationTests.The_list_shows_every_account_and_flags_the_provisional_ones",
+      "proves": "the page sees every account, its roles and its provisional flag"
+    },
+    {
+      "name": "PermissionGateTests.A_role_without_the_permission_cannot_administer_accounts",
+      "proves": "a Viewer is refused the account administration path"
+    },
+    {
+      "name": "PermissionGateTests.A_role_with_the_permission_can_administer_accounts_without_being_an_administrator",
+      "proves": "a non-administrator role carrying Admin.ManageUsers may administer accounts but not change system settings"
+    },
+    {
+      "name": "PermissionGateTests.The_administrator_role_keeps_both_gates_open",
+      "proves": "the seeded Administrator role carries both permission codes"
+    },
+    {
+      "name": "PermissionGateTests.An_expired_role_grant_grants_nothing",
+      "proves": "an expired USER_ROLE row yields no role and no permission"
+    },
+    {
+      "name": "PermissionGateTests.The_gate_names_the_permission_it_needs",
+      "proves": "a refusal can name the permission the write requires"
+    },
+    {
+      "name": "SignInLockoutTests.The_rule_counts_within_a_window_and_locks_at_the_threshold",
+      "proves": "the counting window, threshold and duration as a pure function"
+    },
+    {
+      "name": "SignInLockoutTests.The_configured_number_of_failures_locks_the_account",
+      "proves": "the threshold locks the account, the owner is told, a guess does not extend the lock"
+    },
+    {
+      "name": "SignInLockoutTests.A_successful_sign_in_clears_the_count",
+      "proves": "a correct password resets the counter before the threshold"
+    },
+    {
+      "name": "SignInLockoutTests.An_expired_lock_opens_with_the_owners_password_and_is_cleared",
+      "proves": "a lock in the past no longer applies and is cleared by the success"
+    },
+    {
+      "name": "SignInLockoutTests.An_administrator_can_clear_the_lock_before_it_expires",
+      "proves": "the \"or it is cleared\" half of the rule, from the users page service"
+    },
+    {
+      "name": "PasswordPolicyTests.The_published_list_is_embedded_and_loaded",
+      "proves": "the resource is present and holds at least 9000 entries"
+    },
+    {
+      "name": "PasswordPolicyTests.A_listed_password_is_refused_with_the_reason",
+      "proves": "six listed passwords are refused with the breached reason"
+    },
+    {
+      "name": "PasswordPolicyTests.The_screen_ignores_case",
+      "proves": "PASSWORD and QwErTy are matched"
+    },
+    {
+      "name": "PasswordPolicyTests.An_unlisted_passphrase_is_accepted",
+      "proves": "the screen does not refuse a good passphrase"
+    },
+    {
+      "name": "PasswordPolicyTests.No_composition_rule_is_reintroduced",
+      "proves": "lower-case-only and symbol-free passwords pass"
+    },
+    {
+      "name": "PasswordPolicyTests.Length_and_digits_only_rules_still_apply",
+      "proves": "the other rules are unchanged"
+    },
+    {
+      "name": "PasswordPolicyTests.A_passphrase_that_merely_contains_a_listed_password_is_allowed",
+      "proves": "the match is exact, not substring"
+    },
+    {
+      "name": "AccountPickerTests.The_picker_lists_the_accounts_that_can_sign_in",
+      "proves": "names of active sign-in accounts only; a disabled account is excluded"
+    },
+    {
+      "name": "AccountPickerTests.A_seeded_principal_and_a_disabled_account_are_not_offered",
+      "proves": "seeded-no-login never appears"
+    },
+    {
+      "name": "AccountPickerTests.The_names_carry_no_secret_and_no_address",
+      "proves": "no hash, email or display name is exposed"
+    },
+    {
+      "name": "AccountPickerTests.A_typed_name_still_signs_in_whether_or_not_it_was_offered",
+      "proves": "the picker does not restrict sign-in, and an unknown name is refused identically"
+    },
+    {
+      "name": "AccountPickerTests.A_database_with_no_accounts_lists_nothing_rather_than_failing",
+      "proves": "an empty directory is an empty list, not an error"
+    },
+    {
+      "name": "SettingsAuditTests.A_successful_save_writes_one_audit_row_with_the_previous_revision",
+      "proves": "one ok row from the save itself, naming previous=(none) and the new revision"
+    },
+    {
+      "name": "SettingsAuditTests.A_stale_save_writes_one_refused_row_and_nothing_changes",
+      "proves": "one refused row carrying settings-record-changed, and the stored company is unchanged"
+    },
+    {
+      "name": "SettingsAuditTests.Each_document_records_its_own_row",
+      "proves": "company, environment and module set each leave their own row"
+    },
+    {
+      "name": "SettingsAuditTests.A_removed_document_records_its_own_row",
+      "proves": "settings.delete records the revision removed"
+    },
+    {
+      "name": "EnvironmentEditorTests.An_override_wins_over_the_preset_and_the_unit_system",
+      "proves": "explicit overrides beat the preset and the chosen unit system"
+    },
+    {
+      "name": "EnvironmentEditorTests.The_document_is_one_the_engine_can_read",
+      "proves": "WellboreEnvironment.FromJson reads the composed document without warnings"
+    },
+    {
+      "name": "EnvironmentEditorTests.Overrides_that_are_not_a_json_object_are_refused_with_a_sentence",
+      "proves": "malformed overrides and a missing country are refused with codes"
+    },
+    {
+      "name": "EnvironmentEditorTests.A_saved_override_round_trips_through_the_database",
+      "proves": "the stored document keeps the override, the engine reads it, and the save wrote its audit row"
+    },
+    {
+      "name": "EnvironmentEditorTests.A_stale_environment_write_is_refused_and_the_stored_document_is_unchanged",
+      "proves": "revision-checked write refuses a second administrator"
+    },
+    {
+      "name": "WizardResumeTests.The_rail_states_are_completed_current_and_upcoming",
+      "proves": "the three states for a mid-way wizard"
+    },
+    {
+      "name": "WizardResumeTests.Every_label_says_which_step_it_is_and_where_it_stands",
+      "proves": "the rail text a person and a screen reader get"
+    },
+    {
+      "name": "WizardResumeTests.A_resume_opens_at_the_step_after_the_last_one_accepted",
+      "proves": "the resume index for none, mid-way, complete and an over-large record"
+    },
+    {
+      "name": "WizardResumeTests.The_progress_record_round_trips_and_is_cleared",
+      "proves": "the record persists in the database, is replaced, cleared, and audited"
+    },
+    {
+      "name": "WizardResumeTests.A_database_with_no_settings_table_reports_no_progress_rather_than_failing",
+      "proves": "no record is not an error"
+    },
+    {
+      "name": "DatabaseBackupTests.A_backup_round_trips_the_company_record",
+      "proves": "backup, change, restore returns the original record; both operations audited"
+    },
+    {
+      "name": "DatabaseBackupTests.A_restore_without_a_named_backup_is_refused",
+      "proves": "no path and a missing file are refused"
+    },
+    {
+      "name": "DatabaseBackupTests.A_file_that_is_not_a_database_is_refused_as_a_backup",
+      "proves": "the SQLite signature is checked"
+    },
+    {
+      "name": "DatabaseBackupTests.The_backups_are_listed_newest_first",
+      "proves": "the settings page can show the copies"
+    },
+    {
+      "name": "DatabaseBackupTests.An_upgrade_without_a_backup_is_refused",
+      "proves": "upgrade-no-backup unless an existing backup is named"
+    },
+    {
+      "name": "SetupMigrationTests.An_older_installation_is_migrated_and_stays_readable",
+      "proves": "an installation with no version row is re-saved, stays readable, is stamped, audited, and a second run has nothing to do"
+    },
+    {
+      "name": "SetupMigrationTests.A_database_written_by_a_newer_build_is_refused_and_nothing_is_rewritten",
+      "proves": "the downgrade refusal happens before any write"
+    },
+    {
+      "name": "ModulePlanStatusTests.A_module_to_be_applied_says_so_and_how_many_types_it_brings",
+      "proves": "the wizard row states what will happen and the size of the module (SETUP-06 AC-5)"
+    },
+    {
+      "name": "ModulePlanStatusTests.A_module_already_in_the_database_says_already_applied_and_asks_for_no_confirmation",
+      "proves": "an applied module is not offered as work to do"
+    },
+    {
+      "name": "ModulePlanStatusTests.A_demonstration_module_says_it_needs_confirmation",
+      "proves": "a demo module states the confirmation it needs"
+    },
+    {
+      "name": "ModulePlanStatusTests.The_row_never_claims_a_module_will_be_applied_when_it_is_demo_data",
+      "proves": "the plan does not promise work the confirmation may cancel"
+    },
+    {
+      "name": "DatabaseBackupTests.A_restore_is_visible_to_the_next_settings_write",
+      "proves": "a restore is visible: the pre-restore revision is refused and the restored one is accepted (SETUP-12 AC-4)"
+    },
+    {
+      "name": "ReferenceListTests.Only_the_reference_tables_are_selected",
+      "proves": "the R_* convention selects code tables and nothing else"
+    },
+    {
+      "name": "ReferenceListTests.The_selection_is_case_insensitive_and_deduplicated",
+      "proves": "one table listed three ways is one list"
+    },
+    {
+      "name": "ReferenceListTests.The_selection_ignores_blanks_and_drops_ordinary_tables",
+      "proves": "blank and ordinary entity names are dropped"
+    },
+    {
+      "name": "ReferenceListTests.The_selection_is_ordered_so_two_runs_show_the_same_list",
+      "proves": "the review list is stable between runs"
+    },
+    {
+      "name": "ReferenceListTests.An_empty_module_names_no_reference_lists_and_never_returns_null",
+      "proves": "the properties are never null"
+    },
+    {
+      "name": "ReferenceListTests.The_plan_carries_the_union_of_its_modules_reference_tables",
+      "proves": "the plan-level list the wizard renders"
+    },
+    {
+      "name": "ReferenceListTests.A_module_row_still_states_its_size_and_state",
+      "proves": "adding the lists did not displace the row text"
+    },
+    {
+      "name": "ModuleSetupIntegrationTests.Plan_names_the_reference_lists_it_will_seed",
+      "proves": "a plan built from the real PPDM modules names its R_* code tables (opt-in, run this session)"
+    },
+    {
+      "name": "PpdmCodeTableKeyTests.Every_table_in_the_metadata_has_a_keyed_model_when_the_model_exists",
+      "proves": "the metadata registry and the generated models agree on every primary key, family-wide"
+    },
+    {
+      "name": "PpdmCodeTableKeyTests.The_reference_tables_and_their_audit_twins_are_keyed",
+      "proves": "every R_* and RA_* code table has a [Key] on its model"
+    },
+    {
+      "name": "PpdmCodeTableKeyTests.The_well_status_type_code_table_is_keyed_on_the_column_the_metadata_names",
+      "proves": "the table that blocked the apply now declares STATUS_TYPE as its key"
+    },
+    {
+      "name": "ModuleSetupIntegrationTests.Apply_then_resume_on_a_fresh_sqlite_file",
+      "proves": "opt-in: a fresh database gets the schema and the seed, and a second apply and a resume both skip (run green this session)"
+    },
+    {
+      "name": "MigrationResumeTests.A_plan_built_by_one_manager_is_loaded_by_a_second_one_after_a_restart",
+      "proves": "the artifact a restart needs is persisted when the plan is built and reloads with the same id, hash, version and operation count through a new manager"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0
+    },
+    {
+      "cmd": "dotnet test src/Beep.OilandGas.Desktop.slnx -c Debug --no-build",
+      "exit": 0,
+      "run": 1622,
+      "passed": 1514,
+      "skipped": 108,
+      "failed": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter MigrationResumeTests",
+      "exit": 0,
+      "passed": 1,
+      "note": "plan reloaded by a new manager: same id/hash/version/operations"
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter Apply_then_resume_on_a_fresh_sqlite_file",
+      "exit": 0,
+      "passed": 1
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 126
+    }
+  ],
+  "smoke": {
+    "result": "ok",
+    "pages-declared": 126,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0,
+    "skin-contrast-failures": 0,
+    "toolboxes-missing": 0,
+    "setup-gate-first-run": "RunSetup",
+    "installation-connection-configured": false,
+    "installation-connection-provisioned": true,
+    "installation-company-recorded": false,
+    "setup-gate-empty-database": "RunSetup"
+  },
+  "limits": [
+    "The third full-catalogue run completed its planning and apply pass in **3 h 1 m** and reported **25 modules failed**, in two classes: eight modules were refused because an entity type has no primary key (ENVIRONMENTAL_RESTORATION, LEASE_ACQUISITION, PROSPECT, DRILLING_ACTIVITY, DEVELOPMENT_COSTS, GAS_COMPOSITION, R_FLASH_CALCULATION_REFERENCE_CODE, R_GAS_LIFT_REFERENCE_CODE), and seventeen failed with \"Checkpoint was not acknowledged (Failed); no DDL was admitted\" because the migration history reached **1,024 MB**. Both causes are addressed in the tree: 200+ model files in the module projects now carry [Key] on their *_ID column (79 duplicates removed where a [Key] already existed), and checkpoints no longer embed the plan (the planning step still persists the artifact; resume re-attaches it, verified by MigrationResumeTests and the scoped apply). The key work is incomplete: GAS_COMPOSITION and NODAL_ANALYSIS_RESULT live in the shared Beep.OilandGas.Models project and still lack a key, and the whole-catalogue run has not been re-run since.",
+    "The first full-catalogue run (1 h 50 m, 34 modules / 3,173 resolved entity types) failed at the SECURITY module: ResolvedEntityTypeNames called ModuleMigrationScope.Resolve, which throws for a selection the migration refuses, and the batching sizing call turned that into a failed apply. Refused modules now resolve to no entity types, so SECURITY is skipped exactly as it was before batching. That run is the first time the whole catalogue was attempted; the failure is recorded rather than hidden.",
+    "The crash was a plan-nesting depth limit, and it is fixed: bisection pinned the boundary at exactly 64 entity types (0:63 passed in 543 s, 0:64 crashed at 125 s, and the 64th type alone passed), which is the serialiser\u2019s MaxDepth of 64. Raising SnapshotSettings.MaxDepth to 256 made **0:64 pass in 483 s**. A 128-type batch did not finish within 50 minutes, so the batch size is set to the measured-safe 64; the full catalogue is 2,716 types, i.e. 43 batches of roughly 8 minutes each - several hours, which no single session here can run to completion. The failure is no longer a crash; it is duration.",
+    "Plan-hash version 3 refuses version-2 plans rather than re-hashing them: ValidatePlanIntent answers \"Legacy or unsupported migration plan hash version. Rebuild and re-approve the plan before execution or resume.\" A plan persisted by an earlier build must be rebuilt; that is deliberate, because the old hash covered a different document.",
+    "The full unscoped module apply (34 modules / 475 entity types) does not complete, and the engine workaround was reproduced precisely on 2026-11-10. The six-entity scoped module passes with PersistPlanArtifactsInHistory = false (15 s); PPDM_CORE dies instead, at 135-303 s depending on the run, with \"Test host process crashed\" and no managed exception. A dotnet-stack sample taken 90 s in shows the time going to ValidatePlanIntent -> ComputePlanHash -> SelectProperties -> JObject.FromObject: the plan hash serialises each operation's whole schema graph to read eight scalar fields. Memory oscillates 1.4-3.2 GB, so it is not a simple out-of-memory. No dump is produced for our test host; %LOCALAPPDATA%/CrashDumps holds dumps from another repository's LivePresentation app, and other repositories' test hosts (SfmParty, Beep.DoitAll.Web) run concurrently on this machine, which also polluted an earlier stack capture.",
+    "SETUP-02 AC-7 is blocked, not met: there is no enterprise SQL Server/PostgreSQL/Oracle in this environment, so a server connection is compiled and reviewed but never exercised against a real server. The criterion stays in the stage document rather than being claimed.",
+    "SETUP-10 has no per-field audit trail and no \"compare with the previous revision\" view. The audit row records the document, the actor and the revisions; no acceptance criterion in SETUP-04 or SETUP-10 asks for a field diff.",
+    "The engine's documented mitigation for that (PersistPlanArtifactsInHistory = false, and/or TrackOperationsInHistory = false - the note names \"the desktop's module setup\") cannot be shipped: with either set, the process crashes in ordinary migration tests as well. An iterative rewrite of MigrationManager.Canonicalize was also tried; it did not fix the failure, which by then was in the DDL/ownership stage. Both changes were reverted, and the setup service is on the engine defaults.",
+    "The test host dies intermittently in this environment. With OG_RUN_SETUP_INTEGRATION=1 the suite passed 1620/1620 twice, then later runs aborted after ~2 minutes (719-876 tests) with \"Test host process crashed\"; one default run aborted the same way at 1141 tests and passed 1514/107 on the next attempt. There is no managed exception and no crash dump (even with --blame-crash --blame-crash-dump-type full); --blame-crash names whichever test was running (AfeGatewayTests, TaxGatewayTests, both of which pass in isolation). A genuine process-level crash remains unidentified; the passing runs above are real, and so is this instability.",
+    "A mixed-clock defect was found by the date rollover: OgMaintenancePlan.DaysOverdue compared the due date with DateTime.Today (the workstation\u2019s local date) while the product records and compares UTC, so a plan showed a day overdue for the first hours after local midnight and a UTC-fixture test failed. It now uses DateTime.UtcNow.Date. This is the second date-dependent test found this way; the first was ProcessDashboardGatewayTests."
+  ]
+}

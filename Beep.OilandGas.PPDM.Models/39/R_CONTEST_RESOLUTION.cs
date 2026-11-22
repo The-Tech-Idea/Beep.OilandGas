@@ -9,6 +9,7 @@ public partial class R_CONTEST_RESOLUTION: Entity,IPPDMEntity
 {
 
 private  System.String RESOLUTION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESOLUTION_METHOD
         {  
             get  

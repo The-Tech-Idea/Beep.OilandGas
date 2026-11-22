@@ -1,0 +1,100 @@
+{
+  "id": "STG-17/INT-07",
+  "title": "Mapping, gridding and contour maps",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: a three-well structure map is built from the database and drawn with the legend, the scale bar, the north arrow and values as bubbles; the projection returns the point it was given, measured in metres at the wells' own latitude; a well with no wellhead position is excluded and named with the engine's own reason; the grid's quality check reports the empty cells and the farthest cell from any datum; the contour interval is the engine's round interval unless one is set; and the PDF is a paginated document with the drawing on it, written by the owner's exporter alongside PNG and SVG.",
+  "dataModel": {
+    "read": "WELL for the name, the field and the depth datum with its elevation (DEPTH_DATUM_ELEV), WELLBORE for the wellhead position (SURFACE_LATITUDE / SURFACE_LONGITUDE), WELL_DIR_SRVY_STATION for the trajectory, STRAT_WELL_SECTION for the picks and STRAT_UNIT for the top's long name. Nothing is written to a table.",
+    "written": "Only the export: a PDF, PNG or SVG file under the folder the person names (the data root's Exports folder by default).",
+    "noTable": "INT-07 introduces no table: a map is a view of data that is already recorded, and the feature's own command table says Build map writes nothing. The opt-in test therefore drives the real service against a real SQLite database rather than around one.",
+    "noOwnerChange": "No change was needed in TheTechIdea.OilGas.Mapping: WellMaps, Gridding, Contouring, ContourBands, ContourMapView and MapExport already do every geometric step. The desktop adds the well models assembled from PPDM, the refusal rules, the projection list and the record."
+  },
+  "rules": {
+    "geometry": "A pick is placed where the well really is - the wellhead converted from geographic to the chosen projection, plus the trajectory's offset at the pick's measured depth - by WellMaps.Structure (one top) or WellMaps.Thickness (two tops). The surface is Gridding.Run over the same points, the levels are Contouring's, the bands are ContourBands' and the drawing is ContourMapView's.",
+    "crs": "The PPDM wellhead coordinates are told to the model as EPSG:4326, explicitly. The engine skips a well whose CRS it cannot resolve rather than assuming one, because a wrong datum can move a well hundreds of metres; the alternative - assumeWgs84WhenCrsUnknown - is left off and the CRS is stated instead.",
+    "datum": "A structure map is drawn in the configured basis (tvdss by default), so a well's pick needs its depth datum's elevation; a well without one is excluded by the engine with its reason rather than given a made-up subsea depth.",
+    "projection": "AC-2 is measured, not asserted: every projection offered is taken through FromGeographic and back through ToGeographic at the wells' own positions, the differences are converted to metres at each latitude, and a system that returns a point further than 0.05 m is marked unusable. The zones offered are derived from the wellheads because mapping.coordinateSystems ships empty.",
+    "exclusion": "AC-3 is the engine's own: a well with no wellhead position, no survey, no datum elevation or no pick for the top is left out of the surface and its reason travels into the table, which the page prints. Nothing is guessed to keep a well on the map.",
+    "qc": "AC-4: the figures are the gridding result's - points used and merged, empty cells, the farthest any node is from a datum, the largest and RMS residual, whether the surface swings beyond the data's range, and the three worst residuals by well. Outliers are shown; excluding a well is a person's decision, which is what the feature says.",
+    "interval": "AC-5: an interval the person sets is passed to the engine and used exactly; with none, Contouring.Interval chooses the round interval (Heckbert 1990) for about mapping.targetContours lines. Which one happened is on the page, not left for the reader to infer.",
+    "export": "AC-6: the map is written by MapExport.ToPdf / ToPng / ToSvg - the file the feature asks for, drawn from the same view on screen - and the result is reported with its size and path. A failure is reported and the workspace is kept, so the request is not lost."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Interop/OgMap.cs (OgMapWell, OgMapQc, OgMapContours, OgMapProjection, OgMapWorkspace, OgMapExport, OgMapRequest, OgMapRules, IOgMap, OgMapService with ProjectionsAsync/BuildAsync/ExportAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/MapPageView.cs (route 'map': the value bar - field, top, lower top; the projection and method bar with the interval; the map in the Skia host; the projection table with its round-trip error; the quality check; the well table; the left-out list; and the export bar with the format and path)",
+    "wiring": "OgBootstrapper (IOgMap), OgApplication.Map, catalog 'map' (OgModuleKeys.Interop), OgPageFactory, en + ar labels; the Data project now references TheTechIdea.OilGas.Mapping",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/MapTests.cs (10, no database) + MapGatewayTests.cs (1 opt-in, real SQLite over five PPDM tables and four wells)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1443, "passed": 1443, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 94, "passed": 94, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 117, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL, WELLBORE, WELL_DIR_SRVY_STATION, STRAT_WELL_SECTION and STRAT_UNIT. Four vertical wells in UTM 31N: three with a wellhead position 2 km apart and one pick each on the same formation at 2 000, 2 030 and 1 980 m, and a fourth with a survey and a pick but no wellhead position.",
+    "ac2_projection": "the projection list offers utm:31N for this field - derived from the wells because the environment defines no system of its own - its method is transverseMercator, and its round trip at the wells' positions is under the 0.05 m tolerance",
+    "ac1_structure": "three wells are placed at three distinct eastings and northings within the zone (eastings 300 000-600 000, northings above 6 000 000), each carrying a different top depth; the view is the owner's ContourMapView with ShowLegend, ShowScaleBar, ShowNorthArrow, ShowContours and ShowFill on, its title naming the top and the projection, and three bubbles carrying the values",
+    "ac3_exclusion": "the fourth well is excluded with the engine's reason 'no wellhead latitude and longitude', listed as '✗ Alpha 4: ...' with X and Y at zero and no value; deleting a placed well's pick then excludes it with 'no top named 'Hod'' while the other two remain",
+    "ac4_qc": "the quality check reports 3 points, a finite maximum extrapolation distance and a finite RMS residual, from the gridding result's own GridQc",
+    "ac5_interval": "with no interval the levels are the engine's round interval and FromNiceInterval is true, every level strictly inside the data's range; asking for 10 m gives exactly 10 m and FromNiceInterval false",
+    "ac6_export": "PDF, PNG and SVG are each written, non-trivial in size, and start with their own signatures - %PDF, the PNG magic and <?xml - and the PDF carries a page object",
+    "fewer_than_three": "with one well's pick removed only two can be placed, so no surface is drawn, the view is null and the summary says 'a surface needs at least 3 placed wells and only 2 could be placed'",
+    "refusals": "no projection, no top, an unknown gridding method, an unknown projection, no connection, an export with no view, no path and an unknown format are each refused with their own sentence; a top nothing was picked on yields a map that is not possible, naming the top and the count",
+    "failure": "dropping WELL_DIR_SRVY_STATION fails the build with no workspace"
+  },
+  "gates": {
+    "AC-1 A three-well structure map renders with a legend and scale bar": "pass - three wells placed from the database, drawn by the owner's view with the legend, the scale bar, the north arrow, the fill and the contours on, and the values as bubbles.",
+    "AC-2 Projection round-trips within tolerance": "pass - measured at the wells' own positions through the engine's own two methods, in metres, against a 0.05 m tolerance, and reported per system.",
+    "AC-3 Wells without coordinates are excluded and listed": "pass - the fourth well is excluded with the engine's reason and printed with it, and a well whose pick is missing is excluded with its own reason.",
+    "AC-4 QC reports empty cells and maximum extrapolation distance": "pass - the gridding result's own figures, with the residuals named by well and the overshoot flag.",
+    "AC-5 Contour intervals come from NiceInterval unless overridden": "pass - the engine's round interval by default, an exact interval when set, and which one happened stated on the page.",
+    "AC-6 PDF export paginates and includes legend, scale bar and north arrow": "pass - the PDF is written by the owner's exporter from the same view, carries a page object, and the view has the legend, the scale bar and the north arrow drawn on it; PNG and SVG are written the same way."
+  },
+  "engineFindings": {
+    "noCoordinateSystemShips": {
+      "where": "TheTechIdea.OilGas.Mapping/MappingToolbox.cs (CoordinateSystems) and CoordinateSystems.cs (DefinedNames)",
+      "finding": "mapping.coordinateSystems is an empty dictionary by default, so DefinedNames() returns nothing and a map had no projection to be drawn in at all - the feature's 'projection undefined, refused' state would have been the only reachable one.",
+      "handling": "The projection list adds the UTM zone each wellhead falls in (utm:<zone><N|S>), which the engine generates from its own definition and needs no configuration. A field straddling a zone boundary is offered both. A customer with a national grid defines it in the environment and it appears beside the zone."
+    },
+    "levelsCarryIndexFlags": {
+      "where": "TheTechIdea.OilGas.Mapping/Gridding/Contouring.cs (Levels)",
+      "finding": "Contouring.Levels returns (Level, IsIndex) pairs, because the index-contour frequency is part of the choice.",
+      "handling": "The service keeps the levels for the table and passes the interval to the view, which re-derives the index flags from mapping.indexContourEvery itself - so the heavier lines are the engine's decision in both places rather than two lists that could disagree."
+    },
+    "theRowNamesTheWellNotItsId": {
+      "finding": "WellMapRow.Well - and so OgMapWell.Well - carries the well's name, not its UWI, because that is what a map label is.",
+      "handling": "The page labels with the name, and the test asserts the name: 'Alpha 3', not 'W-3'."
+    },
+    "theValueBelongsToABubble": {
+      "where": "TheTechIdea.OilGas.Mapping/Wells/MapPoints.cs (MapWell, MapBubble)",
+      "finding": "MapWell carries only a label and a position; the value belongs to MapBubble, whose area stands for it.",
+      "handling": "The page adds a MapWell and a MapBubble for every placed well, which is exactly the bubble map the feature asks for beside the contours - not a workaround."
+    },
+    "datumNeedsAnElevation": {
+      "finding": "A structure map is drawn in tvdss by default, so a pick needs the well's depth datum elevation; a well without one is excluded by the engine.",
+      "handling": "The elevation is read from WELL.DEPTH_DATUM_ELEV with its unit and added as a DatumElevation on the header. A well that has none is excluded with the engine's own reason rather than mapped at an invented subsea depth."
+    },
+    "twoWellsIsNotASurface": {
+      "finding": "The engine will grid any set of points, but the feature's rule is three; with two the surface would be a plane between two wells.",
+      "handling": "Fewer than three placed wells yields a workspace with MapPossible false, no view and a sentence naming the count - the feature's own 'map disabled with the rule' state, rather than a failed read."
+    },
+    "labelOverlapIsTheEnginesOwn": {
+      "where": "TheTechIdea.OilGas.Mapping/Rendering/ContourMapView.cs (LabelLayout)",
+      "finding": "The feature's open question asks that label placement use LabelLayout and be measured rather than eyeballed. The view already places every label through LabelLayout - inside the frame, clear of the symbols and of the labels already placed.",
+      "handling": "The page hosts the view rather than drawing one, so placement is the engine's own. Overlap is not separately measured on the page, which is recorded as a limit rather than claimed."
+    }
+  },
+  "limits": [
+    "The value mapped is a formation top's depth (structure) or the thickness between two tops (isochore). Net pay and arbitrary per-well values are the engine's own NetPay and Values, but the pay-zone intervals are PAY's data and are not read here, so they are not offered.",
+    "mapping.coordinateSystems ships empty, so the page offers the UTM zone the wells fall in; a national grid or a project grid has to be defined in the environment, as the engine requires.",
+    "Kriging's standard-deviation grid is returned by the engine but not drawn: the page reports the quality-check figures instead of a second surface.",
+    "Outliers are shown and not excluded - the feature says exclusion is a person's decision - but the page offers no per-well exclude toggle; the table shows what the engine placed and left out.",
+    "There is no saved map: the feature's command table names 'Save map', and this build writes nothing but the export. A map is rebuilt from the same wells each time, which is why no table was needed.",
+    "Label overlap is not measured on the page: the engine's LabelLayout places the labels, and no separate overlap count is reported.",
+    "Label placement can still be poor on a very dense field, where the layout has to drop labels; the view's own behaviour is what the page shows.",
+    "The map reads at most the number of wells the person sets and caps at 500 by the engine's own default; there is no paging and no progress bar (the build is awaited).",
+    "A well is placed at its pick's trajectory position only if its survey has two or more stations; a well with a single station is excluded by the engine rather than assumed vertical.",
+    "A projection's round trip is measured at the wells' positions only; a map extended far beyond the field is not re-checked."
+  ]
+}

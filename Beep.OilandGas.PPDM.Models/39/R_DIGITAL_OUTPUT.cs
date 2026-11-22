@@ -9,6 +9,7 @@ public partial class R_DIGITAL_OUTPUT: Entity,IPPDMEntity
 {
 
 private  System.String DIGITAL_OUTPUTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIGITAL_OUTPUT
         {  
             get  

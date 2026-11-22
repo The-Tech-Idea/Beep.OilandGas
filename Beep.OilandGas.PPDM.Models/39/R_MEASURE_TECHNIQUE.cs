@@ -9,6 +9,7 @@ public partial class R_MEASURE_TECHNIQUE: Entity,IPPDMEntity
 {
 
 private  System.String MEASUREMENT_TECHNIQUEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MEASUREMENT_TECHNIQUE
         {  
             get  

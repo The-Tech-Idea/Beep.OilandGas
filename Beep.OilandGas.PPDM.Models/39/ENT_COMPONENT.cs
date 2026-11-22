@@ -9,6 +9,7 @@ public partial class ENT_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String ENTITLEMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENTITLEMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ENTITLEMENT_IDValue;
           set { SetProperty(ref  ENTITLEMENT_IDValue, value); }
         } 
 private  System.String COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String COMPONENT_IDValue;
           set { SetProperty(ref  COMPONENT_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

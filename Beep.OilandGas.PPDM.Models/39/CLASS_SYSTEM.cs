@@ -9,6 +9,7 @@ public partial class CLASS_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String CLASSIFICATION_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLASSIFICATION_SYSTEM_ID
         {  
             get  

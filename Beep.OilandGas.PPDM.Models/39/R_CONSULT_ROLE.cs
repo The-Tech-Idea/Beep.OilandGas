@@ -9,6 +9,7 @@ public partial class R_CONSULT_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_ROLE
         {  
             get  

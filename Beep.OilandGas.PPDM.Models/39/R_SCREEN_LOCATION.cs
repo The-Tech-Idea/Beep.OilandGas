@@ -9,6 +9,7 @@ public partial class R_SCREEN_LOCATION: Entity,IPPDMEntity
 {
 
 private  System.String SCREEN_LOCATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCREEN_LOCATION
         {  
             get  

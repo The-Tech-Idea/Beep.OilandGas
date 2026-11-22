@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_COMPUTE: Entity,IPPDMEntity
 {
 
 private  System.String COMPUTE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPUTE_METHOD
         {  
             get  

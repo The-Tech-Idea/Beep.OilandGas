@@ -9,6 +9,7 @@ public partial class RA_LITH_OIL_STAIN: Entity,IPPDMEntity
 {
 
 private  System.String OIL_STAINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OIL_STAIN
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OIL_STAINValue;
           set { SetProperty(ref  OIL_STAINValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

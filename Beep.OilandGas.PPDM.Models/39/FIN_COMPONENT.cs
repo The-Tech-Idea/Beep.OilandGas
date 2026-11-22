@@ -9,6 +9,7 @@ public partial class FIN_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String FINANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FINANCE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FINANCE_IDValue;
           set { SetProperty(ref  FINANCE_IDValue, value); }
         } 
 private  System.String FINANCE_COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FINANCE_COMPONENT_ID
         {  
             get  

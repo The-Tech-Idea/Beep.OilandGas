@@ -9,6 +9,7 @@ public partial class SP_LINE_POINT: Entity,IPPDMEntity
 {
 
 private  System.String LINE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LINE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LINE_IDValue;
           set { SetProperty(ref  LINE_IDValue, value); }
         } 
 private  System.Decimal POINT_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal POINT_SEQ_NO
         {  
             get  

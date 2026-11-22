@@ -9,6 +9,7 @@ public partial class R_PAY_RATE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAY_RATE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAY_RATE_TYPE
         {  
             get  

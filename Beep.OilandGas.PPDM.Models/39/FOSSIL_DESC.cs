@@ -9,6 +9,7 @@ public partial class FOSSIL_DESC: Entity,IPPDMEntity
 {
 
 private  System.String FOSSIL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FOSSIL_IDValue;
           set { SetProperty(ref  FOSSIL_IDValue, value); }
         } 
 private  System.String FOSSIL_DESC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_DESC_ID
         {  
             get  

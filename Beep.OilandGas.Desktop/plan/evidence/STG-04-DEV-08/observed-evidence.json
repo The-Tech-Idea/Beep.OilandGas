@@ -1,0 +1,59 @@
+{
+  "id": "STG-04/DEV-08",
+  "title": "Construction progress and handover",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: a milestone cannot complete without evidence; overdue is computed from the planned date and never stored; a rejected evidence submission hides the create and edit controls and names itself until it is resolved; the handover records recipient, date, conditions and the signature it was signed under; recorded equipment is shown with the sentence that it does not prove installation, testing or acceptance; and the facility is revalidated before and after every write.",
+  "dataModel": {
+    "decision": "DevelopmentPlanning already owns FACILITY_INVESTMENT (the plan's facility, its budget, capacity and planned dates) and ProductionOperations owns the operational facility tables. Construction progress needs its own milestone, evidence and handover records, so those three were added to DevelopmentPlanning next to the investment they belong to, and the PPDM FACILITY_EQUIPMENT rows are read (never written) for the equipment panel.",
+    "tables": [
+      "FACILITY_MILESTONE (MILESTONE_ID key, FACILITY_INV_ID, FACILITY_ID, FDP_ID, FIELD_ID, MILESTONE_NAME, MILESTONE_SEQ, PLANNED_DATE, ACTUAL_DATE, STATE, NOTES, ACTOR, RECORDED_AT) - one row per milestone of the tracker; overdue is never stored",
+      "FACILITY_MILESTONE_EVIDENCE (EVIDENCE_ID key, MILESTONE_ID, FACILITY_INV_ID, DOCUMENT, REFERENCE, EVIDENCE_DATE, REVIEWER, OUTCOME, ADDED_BY, ADDED_AT) - append-only; the newest outcome decides completion and the unresolved rule",
+      "FACILITY_HANDOVER (HANDOVER_ID key, FACILITY_INV_ID, FACILITY_ID, FDP_ID, FIELD_ID, HANDED_OVER_TO, HANDED_OVER_AT, CONDITIONS_TEXT, SIGNATURE, SIGNED_BY, SIGNED_AT, ACTOR, RECORDED_AT) - one acceptance record per facility"
+    ],
+    "registration": "DevelopmentPlanningModule registers the three types; --smoke now reports 376 entity types (up from 373).",
+    "reused": "FACILITY_INVESTMENT (budget, actual, currency, capacity, plan version), DEVELOPMENT_COMPLETION_SUBMISSION (DEV-07's accepted handovers), PPDM FACILITY_EQUIPMENT (read only)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgConstruction.cs (OgMilestoneEvidence, OgConstructionMilestone, OgEquipmentRecord, OgFacilityHandover, OgConstructionFacility, OgUpstreamHandover, OgConstructionWorkspace, OgMilestoneValues, OgMilestoneUpdate, OgMilestoneEvidenceValues, OgFacilityHandoverValues, ConstructionRules, IOgConstruction, OgConstructionService with CreateMilestoneAsync/UpdateMilestoneAsync/AddEvidenceAsync/CompleteMilestoneAsync/HandoverAsync)",
+    "rules": "ConstructionRules states the six milestone names and their sequence, the overdue arithmetic, the completion gaps, the unresolved rule, the handover gaps and validation, and the equipment sentence once, so the page, the service and the tests agree.",
+    "page": "src/Beep.OilandGas.Desktop/Views/ConstructionPageView.cs (route 'construction': facility picker, milestone grid and tracker bars, evidence grid and panel, equipment grid with the AC-5 sentence, upstream well-handover panel, handover panel with conditions and signature, hidden create/edit bars when unresolved)",
+    "wiring": "OgBootstrapper (IOgConstruction), OgApplication.Construction, catalog 'construction' (OgModuleKeys.Development), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ConstructionTests.cs (16, no database) + ConstructionGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 774, "passed": 774, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 26, "passed": 26, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 50, "views-constructed": true, "modulesetup-summary": "28 module(s) - 376 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD_DEVELOPMENT_PLAN, FACILITY_INVESTMENT, FACILITY_MILESTONE, FACILITY_MILESTONE_EVIDENCE, FACILITY_HANDOVER, DEVELOPMENT_COMPLETION_SUBMISSION and FACILITY_EQUIPMENT, seeded in ConstructionGatewayTests",
+    "facility_list": "the field's two facility investments are listed with state, completion, overdue count, budget 80 USD, spend 95 USD and '15 over budget'; the other field's facility (FI-9) is not offered",
+    "ac2_overdue": "FABRICATION planned 2026-09-20 is 11 days overdue on 2026-10-01; a milestone created with a past planned date is overdue immediately; completing it drops the facility's overdue count to 0, so overdue is computed and never stored",
+    "ac1_no_evidence": "completing FABRICATION before any evidence is refused with construction-milestone-no-evidence",
+    "ac3_unresolved": "a REJECTED FAT certificate makes the facility's CanEdit false and its UnresolvedReason names the document; completing is refused with construction-unresolved; adding an ACCEPTED_WITH_NOTES item restores CanEdit and the completion then succeeds",
+    "ac4_handover": "handing over with an incomplete milestone is refused with construction-handover-milestones-incomplete; without a signature with construction-handover-signature-required; the accepted handover stores recipient 'operations', the date, both conditions and signature 'signed-2026-10-01' signed by 'reviewer', and a second handover is refused with construction-handover-already-recorded",
+    "ac5_equipment": "two FACILITY_EQUIPMENT rows (one active, one not) are shown for the facility and the page states that recorded equipment is not evidence that it was installed, tested or accepted",
+    "ac6_before": "bumping FACILITY_INVESTMENT.PLAN_VERSION from 3 to 4 makes CreateMilestoneAsync with expected version 3 fail with construction-facility-changed naming both versions, and the same write with version 4 succeeds",
+    "ac6_after": "a SQLite trigger that mutates the facility after a milestone insert makes the write return construction-facility-changed and the failure reporter records 'revalidating the facility after a construction write'",
+    "upstream": "DEV-07's accepted completion for WELL-1 (with its condition 'Install the flow meter within 30 days') is shown as the upstream handover; it is read only and is not copied onto the facility handover"
+  },
+  "gates": {
+    "AC-1 A milestone cannot complete without evidence": "pass - CompleteMilestoneAsync refuses with construction-milestone-no-evidence when the milestone has no evidence, and with construction-unresolved when its newest evidence was rejected; proven against SQLite.",
+    "AC-2 Overdue is computed from dates": "pass - IsOverdue/DaysOverdue compare the planned date with the as-of date and the complete state; nothing is stored, and the gateway test reads 11 days overdue then 0 after completion.",
+    "AC-3 An unresolved prior submission hides create/edit controls": "pass - the newest rejected evidence makes the facility's CanEdit false, the page collapses the create, update and evidence bars, and the reason is shown; a later accepted item restores editing.",
+    "AC-4 Handover records recipient, date and conditions": "pass - the handover row stores HANDED_OVER_TO, HANDED_OVER_AT, CONDITIONS_TEXT (one per line), the signature and who signed it, and the record exposes them; recipient, date and signature are required.",
+    "AC-5 Recorded equipment does not prove installation, testing or acceptance - say so": "pass - the equipment grid is shown with the plan's own warning, worded as 'Recorded equipment shows what is listed for the facility; it is not evidence that the equipment was installed, tested or accepted.', and the same sentence is used when no equipment is recorded.",
+    "AC-6 Facility selection is revalidated before and after a write": "pass - every write re-reads the facility, refuses when the plan version the caller saw has moved (construction-facility-changed, naming both versions) and re-reads again after the commit, reporting a degraded failure and refusing to report success when the facility changed underneath the write."
+  },
+  "limits": [
+    "The feature document names 'an unresolved original' without defining it. This screen implements the rule as: the newest evidence item for any milestone of the facility was rejected, and that item is what the page names as the unresolved submission. The funded company flow's FACILITY_EDIT_INTENT / FACILITY_CREATE_INTENT records, which are that author's governance proofs, are neither read nor written here.",
+    "Milestone order is shown (design, procurement, fabrication, installation, commissioning, handover) but a later milestone may be completed before an earlier one: the feature document's state table states only the evidence rule, so no ordering rule was invented. Handover does require every tracked milestone to be complete.",
+    "Handover requires a signature string and records who signed it; it does not verify a cryptographic signature or a certificate, and the 'acceptance signature record' is the text the signer is held to.",
+    "The one-handover-per-facility rule is enforced by the service, not by a database unique constraint; a retried handover is refused as already recorded rather than written twice.",
+    "Recorded equipment is read from PPDM FACILITY_EQUIPMENT by FACILITY_ID and shown with its active state and dates; nothing is inferred about installation, testing or acceptance from it (AC-5).",
+    "The page lists the field's accepted well completions (DEV-07) as the upstream record. It does not gate the facility handover on them, because the feature document states no such rule.",
+    "The feature's per-command permissions (development.construction.write / .handover) are not enforced: the app gates pages, not commands.",
+    "The three new tables need the DEVELOPMENT_PLANNING module applied again on an existing database."
+  ]
+}

@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class IMBALANCE_RECONCILIATION : ModelEntityBase {
         private System.String IMBALANCE_RECONCILIATION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String IMBALANCE_RECONCILIATION_ID
         {
             get { return this.IMBALANCE_RECONCILIATION_IDValue; }

@@ -9,6 +9,7 @@ public partial class RA_BA_CONTACT_LOC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTACT_LOC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTACT_LOC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTACT_LOC_TYPEValue;
           set { SetProperty(ref  CONTACT_LOC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_DECRYPT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DECRYPTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DECRYPTION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DECRYPTION_TYPEValue;
           set { SetProperty(ref  DECRYPTION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

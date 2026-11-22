@@ -9,6 +9,7 @@ public partial class RA_PICK_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String PICK_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_QUALITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PICK_QUALITYValue;
           set { SetProperty(ref  PICK_QUALITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

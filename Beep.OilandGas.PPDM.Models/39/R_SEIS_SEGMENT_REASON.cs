@@ -9,6 +9,7 @@ public partial class R_SEIS_SEGMENT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SEGMENT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SEGMENT_REASON
         {  
             get  

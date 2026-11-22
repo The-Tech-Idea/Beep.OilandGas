@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_REPORT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REPORT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPORT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REPORT_TYPEValue;
           set { SetProperty(ref  REPORT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class PPDM_GROUP_OWNER: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GROUP_IDValue;
           set { SetProperty(ref  GROUP_IDValue, value); }
         } 
 private  System.Decimal OWNER_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal OWNER_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PPDM_RULE_XREF_COND: Entity,IPPDMEntity
 {
 
 private  System.String RULE_XREF_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_XREF_CONDITION
         {  
             get  

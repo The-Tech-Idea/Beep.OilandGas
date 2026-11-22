@@ -9,6 +9,7 @@ public partial class RA_COORD_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String COORDINATE_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COORDINATE_QUALITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COORDINATE_QUALITYValue;
           set { SetProperty(ref  COORDINATE_QUALITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

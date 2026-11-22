@@ -9,6 +9,7 @@ public partial class RA_OPERAND_QUALIFIER: Entity,IPPDMEntity
 {
 
 private  System.String OPERAND_QUALIFIERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OPERAND_QUALIFIER
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OPERAND_QUALIFIERValue;
           set { SetProperty(ref  OPERAND_QUALIFIERValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

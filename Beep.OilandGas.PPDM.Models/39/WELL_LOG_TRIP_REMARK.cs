@@ -9,6 +9,7 @@ public partial class WELL_LOG_TRIP_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String JOB_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JOB_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String JOB_SOURCEValue;
           set { SetProperty(ref  JOB_SOURCEValue, value); }
         } 
 private  System.String JOB_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JOB_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String JOB_IDValue;
           set { SetProperty(ref  JOB_IDValue, value); }
         } 
 private  System.Decimal TRIP_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal TRIP_OBS_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal TRIP_OBS_NOValue;
           set { SetProperty(ref  TRIP_OBS_NOValue, value); }
         } 
 private  System.Decimal REMARK_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_OBS_NO
         {  
             get  

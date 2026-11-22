@@ -9,6 +9,7 @@ public partial class RA_RM_THESAURUS_XREF: Entity,IPPDMEntity
 {
 
 private  System.String THESAURUS_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_XREF_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String THESAURUS_XREF_TYPEValue;
           set { SetProperty(ref  THESAURUS_XREF_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

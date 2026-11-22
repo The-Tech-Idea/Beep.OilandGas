@@ -9,6 +9,7 @@ public partial class CONT_PROVISION_TEXT: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_IDValue;
           set { SetProperty(ref  CONTRACT_IDValue, value); }
         } 
 private  System.String PROVISION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROVISION_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PROVISION_IDValue;
           set { SetProperty(ref  PROVISION_IDValue, value); }
         } 
 private  System.Decimal PROVISION_TEXT_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PROVISION_TEXT_SEQ_NO
         {  
             get  

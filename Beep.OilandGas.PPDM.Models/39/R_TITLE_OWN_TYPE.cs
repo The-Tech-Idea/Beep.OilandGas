@@ -9,6 +9,7 @@ public partial class R_TITLE_OWN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TITLE_OWN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TITLE_OWN_TYPE
         {  
             get  

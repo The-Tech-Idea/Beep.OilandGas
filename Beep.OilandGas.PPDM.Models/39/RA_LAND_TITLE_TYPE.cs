@@ -9,6 +9,7 @@ public partial class RA_LAND_TITLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LAND_TITLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_TITLE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_TITLE_TYPEValue;
           set { SetProperty(ref  LAND_TITLE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

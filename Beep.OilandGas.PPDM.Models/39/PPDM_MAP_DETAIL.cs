@@ -9,6 +9,7 @@ public partial class PPDM_MAP_DETAIL: Entity,IPPDMEntity
 {
 
 private  System.String MAP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAP_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MAP_IDValue;
           set { SetProperty(ref  MAP_IDValue, value); }
         } 
 private  System.Decimal MAP_DETAIL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal MAP_DETAIL_OBS_NO
         {  
             get  

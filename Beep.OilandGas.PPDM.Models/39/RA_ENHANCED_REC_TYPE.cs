@@ -9,6 +9,7 @@ public partial class RA_ENHANCED_REC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ENHANCED_RECOVERY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENHANCED_RECOVERY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ENHANCED_RECOVERY_TYPEValue;
           set { SetProperty(ref  ENHANCED_RECOVERY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

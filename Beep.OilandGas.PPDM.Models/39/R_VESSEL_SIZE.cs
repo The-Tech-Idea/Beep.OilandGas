@@ -9,6 +9,7 @@ public partial class R_VESSEL_SIZE: Entity,IPPDMEntity
 {
 
 private  System.String VESSEL_SIZEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VESSEL_SIZE
         {  
             get  

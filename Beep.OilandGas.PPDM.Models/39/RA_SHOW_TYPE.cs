@@ -9,6 +9,7 @@ public partial class RA_SHOW_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SHOW_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SHOW_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SHOW_TYPEValue;
           set { SetProperty(ref  SHOW_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

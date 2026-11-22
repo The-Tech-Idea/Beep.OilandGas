@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_REPORT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REPORT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPORT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_OPERAND_QUALIFIER: Entity,IPPDMEntity
 {
 
 private  System.String OPERAND_QUALIFIERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OPERAND_QUALIFIER
         {  
             get  

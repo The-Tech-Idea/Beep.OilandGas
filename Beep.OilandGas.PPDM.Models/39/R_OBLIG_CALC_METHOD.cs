@@ -9,6 +9,7 @@ public partial class R_OBLIG_CALC_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATION_METHOD
         {  
             get  

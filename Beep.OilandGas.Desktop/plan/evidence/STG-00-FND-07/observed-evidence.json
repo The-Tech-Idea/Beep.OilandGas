@@ -1,0 +1,70 @@
+{
+  "id": "STG-00/FND-07",
+  "title": "First-run setup, sign-in and session",
+  "date": "2026-11-05",
+  "status": "gate met - AC-1..AC-7, with ADR-014 changing how local passwords are protected",
+  "implementation": {
+    "credentialStore": "src/Beep.OilandGas.Desktop/Security/OgLocalCredentialStore.cs",
+    "identity": "src/Beep.OilandGas.Desktop/Security/OgLocalIdentityService.cs",
+    "signIn": "src/Beep.OilandGas.Desktop/Security/OgSignInService.cs",
+    "setupState": "src/Beep.OilandGas.Desktop/Setup/OgSetupStore.cs",
+    "startupGate": "src/Beep.OilandGas.Desktop/Setup/OgStartupGate.cs",
+    "firstRunWindow": "src/Beep.OilandGas.Desktop/Setup/FirstRunWindow.cs",
+    "signInWindow": "src/Beep.OilandGas.Desktop/Views/SignInWindow.cs",
+    "hostWiring": "src/Beep.OilandGas.Desktop/App.xaml.cs (gate before the shell), Bootstrapping/OgBootstrapper.cs, Bootstrapping/OgApplication.cs",
+    "paths": "src/Beep.OilandGas.Desktop/Bootstrapping/OgPaths.cs (CredentialStorePath, SetupPath)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet build <each of Core|Controls|Data|WellTools|Desktop> -t:Rebuild -p:BuildProjectReferences=false", "exit": 0, "warningsPerProject": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~SetupAndSignInTests", "exit": 0, "run": 18, "passed": 18, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~LocalRepairTests", "exit": 0, "run": 5, "passed": 5, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~LocalIdentityTests", "exit": 0, "run": 10, "passed": 10, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~PersonaLandingTests", "exit": 0, "run": 17, "passed": 17, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 381, "passed": 381, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "setup-gate-first-run": "RunSetup",
+    "administrator-created": true,
+    "setup-round-trip": "Smoke Energy",
+    "setup-gate-signed-out": "SignIn",
+    "wrong-password-refused": true,
+    "session-company": "Smoke Energy",
+    "setup-gate-signed-in": "Ready",
+    "credential-has-no-plaintext": true,
+    "sign-in-audit-rows": 2,
+    "sign-in-audit-outcomes": "ok,refused",
+    "landing-persona": "Administrator",
+    "landing-route": "dashboard",
+    "landing-landed-route": "dashboard",
+    "landing-audited": true,
+    "landing-fallback": "dashboard (Drilling engineer; fallback=True)",
+    "landing-map": "SystemAdmin->dashboard TenantAdmin->dashboard DrillingEngineer->wellpath ReservoirEngineer->correlation ProductionEngineer->logs HseOfficer->charts Accountant->export Viewer->dashboard",
+    "result": "ok"
+  },
+  "gates": {
+    "AC-1 shell cannot open while setup is incomplete": "pass with a stated limit — App.OnStartup consults OgStartupGate.Decide before constructing OgShellWindow, shows FirstRunWindow for RunSetup and SignInWindow for SignIn, and shuts down if either dialog is cancelled. OgStartupGate.Decide is covered exhaustively for all six combinations (including 'setup flag set but the credential file was wiped' → RunSetup). Guard The_shell_is_created_only_after_the_startup_gate reads App.xaml.cs and was proven able to fail by temporarily moving the shell creation above the gate (it then reported 'The shell is created before the setup/sign-in gate decides.').",
+    "AC-2 repair run fixes a missing local database without losing setup state": "pass — OgRepairService.Assess requires a complete setup and a live administrator before it will call a repair needed (so a wiped credential file still goes to the wizard, never to a second administrator). RepairAsync re-provisions through IOgConnectionCatalog.EnsureLocalAsync — the DAT-01 path — and writes nothing else. Setup_state_and_the_administrator_survive_a_repair creates an installation in one runtime, disposes it, deletes the database file, starts a fresh runtime and asserts: the gate decides Repair, repair recreates the file, setup.json and credentials.json are byte-identical to before, the administrator still signs in, the gate then decides SignIn, and a second repair is a no-op with no second audit row. The smoke run adds repair-before-setup False → repair-after-setup True → gate-with-repair Repair without starting BeepDM.",
+    "AC-3 first administrator created exactly once": "pass — The_first_administrator_is_created_once; a second attempt returns administrator-exists. The smoke run creates the first administrator on a fresh root.",
+    "AC-4 password policy enforced before any credential is stored": "pass — A_weak_password_is_refused_before_anything_is_stored (store still reports no users) plus a four-case theory covering length, upper, lower, digit and symbol.",
+    "AC-5 credentials never written in plain text": "pass with a documented change — credentials are PBKDF2-SHA256, 210 000 iterations, random 16-byte salt, constant-time comparison (ADR-014). The AC named DPAPI; a password hash is not reversible while DPAPI ciphertext is decryptable by the same Windows account, so the requirement's intent is met more strongly. The_credential_file_contains_no_plaintext_password asserts the file holds Salt and Hash only; the smoke run asserts the password string is absent from the file.",
+    "AC-6 every sign-in attempt audited": "pass — A_refused_sign_in_writes_one_audit_row_and_creates_no_session and An_accepted_sign_in_writes_one_audit_row_and_builds_the_session (via a recording IOgAuditService); the smoke run writes one ok and one refused row to the real SQLite audit store.",
+    "AC-7 persona sets the landing route": "pass - OgPersonaLanding maps the RBAC role set to a landing route (Administrator/TenantAdmin->dashboard, DrillingEngineer->wellpath, ReservoirEngineer->correlation, ProductionEngineer->logs, HseOfficer->charts, Accountant->export, Viewer->dashboard). The more privileged persona wins regardless of role order; a page that cannot be opened falls back to the dashboard with a stated reason and IsFallback true; every mapped route is asserted to exist in the page catalog. The shell selects the landing after load (LandedRoute == dashboard for the administrator role set) and writes one audited landing row carrying the persona and the roles. The session persona is resolved from the roles rather than a hard-coded placeholder."
+  },
+  "claims": [
+    "The shell cannot be constructed before the setup/sign-in gate, and a guard fails the build if that order is reversed.",
+    "The first-run wizard records the company and creates exactly one administrator; the setup state round-trips under the per-user data root.",
+    "A successful sign-in produces the session the shell runs under, carrying the recorded company name.",
+    "Every sign-in attempt writes exactly one audit row with outcome ok or refused, and the audit contract resolves to the same pipeline instance as the failure reporter.",
+    "No password is ever written to disk."
+  ],
+  "limits": [
+    "No window was displayed: FirstRunWindow and SignInWindow were compiled and their logic is exercised through OgLocalIdentityService / OgSignInService, but no click-through or screenshot exists.",
+    "The startup gate was verified by its pure function plus a source guard, not by launching the app with a populated data root.",
+    "Only the administrator persona was proven end to end in a shell; the other personas were proven by resolving through the same route guard the navigation uses, not by launching a shell with that role set.",
+    "RepairWindow was compiled and its logic is exercised through OgRepairService, but no click-through or screenshot exists.",
+    "SQLite keeps the database file open while a provider is connected, so the repair test deletes the file after the first runtime is disposed — which is also the real 'between sessions' case.",
+    "PBKDF2 parameters are constants in code; making them configurable is an REL decision."
+  ]
+}

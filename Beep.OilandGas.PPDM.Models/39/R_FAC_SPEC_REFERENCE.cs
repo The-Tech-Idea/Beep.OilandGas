@@ -9,6 +9,7 @@ public partial class R_FAC_SPEC_REFERENCE: Entity,IPPDMEntity
 {
 
 private  System.String REFERENCE_VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REFERENCE_VALUE_TYPE
         {  
             get  

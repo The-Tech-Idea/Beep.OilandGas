@@ -1,0 +1,86 @@
+{
+  "id": "STG-17/INT-06",
+  "title": "Field QC and mapping suggestions",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: a proposal is applied only by the accept command and never by looking at it; coverage read from no well is stated as unknown and never as zero; a run cancelled after one well reports that scope and only those findings; a duplicate stays a proposal until a person decides, and a rejected pair is not proposed again; every finding carries the engine's rule, the item it is about and the well it was attributed to; and the export is exactly the grid's filter.",
+  "dataModel": {
+    "read": "Nothing from a database. The run reads the environment's configured data sources through the tools' FieldQc, and the duplicate proposals read the same wells through their provider.",
+    "written": "One file, and only when a person decides about a duplicate: well-crosswalk.json beside the environment, holding the confirmations and rejections through the tools' own WellCrosswalk. A run writes nothing - which the gateway asserts by checking that no environment file exists after it.",
+    "noTable": "INT-06 introduces no table: the findings are an analysis of the source, and the only durable state is the crosswalk, which is customer data next to the environment."
+  },
+  "rules": {
+    "run": "The run is FieldQc.Run over the environment's source: its own codes (QC001..QC006 for a missing name, survey, position, datum, tops or tubulars; LOAD for a load warning; the equipment rules' own codes), its own severities and its own wording. Nothing about the rules is re-implemented.",
+    "attribution": "The engine reports a row per well with eight completeness flags and the issues grouped by code. A finding is attributed to a well by intersecting the two: the row says which well is missing which item, the group supplies the code, severity and message. A code the engine only aggregates (LOAD, equipment, a host validator) is shown at field scope with '(not attributed)' rather than being pinned on a well it did not name.",
+    "coverage": "AC-2: the coverage panel counts the engine's own eight flags against the wells actually read. With no well read it is unknown, with a sentence that says unknown is not the same as nothing populated.",
+    "cancellation": "AC-3: the engine throws before reading the next well, so its partial report is lost. The service records how far it got through the engine's progress callback and then runs the same engine over exactly that slice - two passes only on a cancellation.",
+    "duplicates": "AC-4: WellReconciliation.Propose returns scored candidates with their evidence and conflicts; nothing is merged. A decision is resolved against the engine's current proposals, written to the crosswalk, and a rejected pair is not proposed again - which the engine does itself.",
+    "suggestions": "The mapping proposals are the setup engine's, and the acceptance goes through its command (INT-05), so a proposal has one path to the environment and AC-1 has one boundary to test.",
+    "thresholds": "The feature's own open question is answered on screen: the page lists the thresholds the run used - the completeness codes are raised by the engine with no count to tune, the duplicate floor is dataai.minimumMatchScore, the proposal floor is the matcher's 0.5, and location evidence is only used when dataai.locationTolerance is configured.",
+    "filter": "AC-6: the export is built from the same filtered list the grid binds, and is rebuilt whenever either filter changes."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Interop/OgFieldQc.cs (OgQcFinding, OgQcCompleteness, OgQcDuplicate, OgFieldQcWorkspace, OgFieldQcRules, OgFieldQcRequest, IOgFieldQc, OgFieldQcService with RunAsync/DecideDuplicateAsync/AcceptSuggestionAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/FieldQcPageView.cs (route 'fieldqc': the scope bar with its cancel, the severity and text filter, the findings grid, the coverage panel, the unresolved list, the proposal grid with its accept, the duplicate grid with confirm and reject, the failed wells, the thresholds, the notes and the filtered export)",
+    "wiring": "OgBootstrapper (IOgFieldQc, taking IOgWellboreSetup and the environment path), OgApplication.FieldQc, catalog 'fieldqc' (OgModuleKeys.Interop), OgPageFactory, en + ar labels; the Data project now references TheTechIdea.OilGas.DataAI",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/FieldQcTests.cs (7, no files) + FieldQcGatewayTests.cs (1 opt-in, the real engine over a three-well CSV source)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1432, "passed": 1432, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 93, "passed": 93, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 116, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "source": "A three-well CSV source registered in the environment for the duration of the test: W-1 and W-3 share a name, a UWI and a wellhead position and have no survey; W-2 has a survey and no wellhead position.",
+    "ac5_findings": "the run returns one QC003 on the position field for W-2 at Warning, and two QC002 on the survey field for W-1 and W-3; every finding carries entity 'well', the field it is about and the engine's rule",
+    "ac2_coverage": "position is 2 of 3 wells and survey is 1 of 3, counted from the engine's own flags; a run cancelled before its first well reports covered 0 and 'Coverage unknown ... not the same as nothing being populated'",
+    "ac3_cancelled": "cancelling from the progress callback after the first well returns a workspace with Cancelled true, 1 of 3 wells covered, the sentence 'cancelled after 1 of 3 well(s)', and findings about that one well only - matched against its findings in the full run",
+    "ac4_duplicates": "the pair whose name, UWI and location agree is proposed with its reasons and marked 'proposed only'; rejecting it writes well-crosswalk.json and the pair is no longer proposed; confirming it afterwards is refused because the engine no longer offers it",
+    "ac1_no_silent_apply": "the run creates no environment file at all, and accepting a proposal that the engine did not offer is refused with nothing written",
+    "ac6_export": "the full export has one header line plus one line per finding in the grid's order; a severity filter and a needle each narrow both the grid and the export to the same rows",
+    "thresholds": "the page's threshold list names QC001..QC006 as engine rules with nothing to tune, dataai.minimumMatchScore for duplicates, the matcher's 0.5 for proposals, and states that location is not used as evidence when dataai.locationTolerance is unset",
+    "refusals": "a run with no source name, a decision with no actor, a decision naming no pair, and a decision about a pair the engine no longer proposes are each refused with their own sentence"
+  },
+  "gates": {
+    "AC-1 A suggestion is never applied without explicit acceptance": "pass - the acceptance is a separate command that goes through the setup engine; the run creates no file, and an acceptance the engine does not offer is refused with nothing written.",
+    "AC-2 Unknown coverage is distinct from zero coverage": "pass - coverage counts the engine's flags against the wells read, and no well read gives 'Coverage unknown', asserted against a run cancelled before its first well.",
+    "AC-3 A cancelled run reports the scope actually covered": "pass - counted from the engine's own progress and completed by re-running the same engine over that slice; the findings are only that well's.",
+    "AC-4 Duplicate candidates are proposals only": "pass - proposed with evidence and conflicts, 'proposed only' until decided, decisions written to the crosswalk, and a reversed decision refused.",
+    "AC-5 Findings carry entity, field and rule": "pass - every finding has all three, and a code the engine only aggregates is labelled '(not attributed)' rather than pinned on a well.",
+    "AC-6 Export matches the grid filter": "pass - one row per grid row, rebuilt on each filter change, asserted for a severity filter and for a needle."
+  },
+  "engineFindings": {
+    "cancellationLosesThePartialReport": {
+      "where": "TheTechIdea.OilGas.Wellbore.Loaders/Tabular/FieldQc.cs (Run)",
+      "finding": "The loop calls ThrowIfCancellationRequested before reading the next well and lets the exception out, so a cancelled run returns no report at all - the wells it had already read are lost with it.",
+      "handling": "The service tracks the engine's own progress callback and, on cancellation, runs the engine again over a provider slice limited to the wells already read. The partial findings are then the engine's own rather than a second implementation's, at the cost of a second pass only when a run is cancelled."
+    },
+    "issuesHaveNoWellOrField": {
+      "finding": "FieldQcReport keeps a row per well with eight completeness flags and the issues grouped by code; QcIssue carries a severity, a code and a message but no well and no field.",
+      "handling": "A finding is attributed by intersecting the two: the row names the well and the missing item, the group supplies the code, severity and message. The code-to-field table is the engine's own (QC001 name, QC002 survey, QC003 position, QC004 datum, QC005 tops, QC006 tubulars), read from its Add method. Codes it only aggregates are shown at field scope."
+    },
+    "proposalFloorCannotBeLowered": {
+      "finding": "Suggestions(source) keeps only the candidates its matcher scores at least 0.5, and offers no per-call minimum - so 'show all' cannot be a lower threshold.",
+      "handling": "The page shows the coverage's unresolved values alongside the proposals and says which list is which, so a value with no proposal is visible rather than hidden, without pretending a threshold was changed."
+    },
+    "locationEvidenceIsOptional": {
+      "finding": "The reconciliation only uses location when dataai.locationTolerance is configured - and it ships unset, so the same name and UWI are what propose a duplicate out of the box.",
+      "handling": "The threshold list says exactly that rather than implying location was weighed."
+    },
+    "cancelIsReported": {
+      "finding": "A cancelled run is an ordinary answer, but the guard rightly refuses a swallowed exception.",
+      "handling": "The service reports the cancellation at Degraded with the operation and consequence, so a shortened run is visible in the application's record rather than silently smaller."
+    }
+  },
+  "limits": [
+    "Only the six completeness codes are attributed to a well; a LOAD warning, an equipment rule or a host validator's issue is shown at field scope with '(not attributed)', because the engine does not say which well it came from.",
+    "The coverage panel counts the engine's eight items (header, position, datum, survey, tubulars, tops, logs, pressures); a fraction for an arbitrary model field is not computed.",
+    "A cancelled run reads the covered wells a second time, so a cancellation costs one extra pass over the wells already read.",
+    "The engine's proposal floor of 0.5 cannot be lowered per call, so 'show all' lists the unresolved values rather than more candidates.",
+    "A duplicate decision is only accepted for a pair the engine still proposes; once rejected, the pair is not proposed again, so the decision cannot be reversed from this page.",
+    "The page exports the findings only, as the feature asks; the coverage and duplicate panels are shown but not exported.",
+    "The run reads the application's configured data sources: there is no ad-hoc file picker on this page, which keeps it to sources the environment knows.",
+    "Cancellation happens at well boundaries - a single very large well is not interrupted inside its own load.",
+    "No paging on the findings, proposal or duplicate grids."
+  ]
+}

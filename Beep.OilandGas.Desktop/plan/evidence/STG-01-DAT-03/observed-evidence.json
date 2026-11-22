@@ -1,0 +1,50 @@
+{
+  "id": "STG-01/DAT-03",
+  "title": "PPDM tree browser",
+  "date": "2026-11-06",
+  "status": "gate met - AC-1..AC-6: the tree is built from the registry, filtered by name and description, reads no count on open, marks restricted tables, fails rather than showing an empty tree, and opens the workbench with the same table and filter",
+  "implementation": {
+    "contracts": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgPpdmTree.cs (OgTreeNode, OgTreeOptions, OgTableSummary, IOgPpdmTreeBuilder, OgPpdmSearch)",
+    "builder": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgPpdmTree.cs (OgPpdmTreeBuilder over IPPDMMetadataRepository; lazy row counts; policy probe)",
+    "page": "src/Beep.OilandGas.Desktop/Views/PpdmTreePageView.cs (route 'ppdmtree', filter, tree, summary, related tables, Count rows, Open in workbench)",
+    "wiring": "Bootstrapping/OgBootstrapper.cs (PPDMMetadataService + validated row-count reader), OgApplication.PpdmTree",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (ppdmtree, data module, everyone) + OgLoc en/ar",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PpdmTreeTests.cs (10)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~PpdmTreeTests", "exit": 0, "run": 10, "passed": 10, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 462, "passed": 462, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 24,
+    "ppdm-loaded": true,
+    "ppdm-categories": 56,
+    "ppdm-registry-count": 2712,
+    "ppdm-tables-on-open": 2712,
+    "ppdm-count-reads-on-open": 0,
+    "ppdm-filter-found": true,
+    "ppdm-first-table": "CAT_ADDITIVE",
+    "ppdm-summary": "2712 table(s) in 56 categories.",
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 node count equals the registry count for the active connection": "pass - the tree is built from IPPDMMetadataRepository.GetAllMetadataAsync and the smoke run reports ppdm-registry-count 2712 == ppdm-tables-on-open 2712 across 56 categories; a test asserts the same equality over a fake registry.",
+    "AC-2 search finds a table by name and by description": "pass - OgPpdmSearch matches the node title (table name) and the subject-area description, case-insensitively, and requires every term. Tests cover name, description, and the two-term narrowing case; the smoke run filters the real 2712-table tree and finds the table it asked for.",
+    "AC-3 opening a table navigates to DAT-04 with the same filter context": "pass - OpenSelected sets OgTableOpenRequest(table, filter) on OgWorkbenchNavigation and calls OgPageNavigator.Navigate(\"tableworkbench\"); the shell installed the handler, switches page and the workbench (DAT-04) takes the request. Smoke: ppdm-workbench-requested true, workbench-opened-pending true, workbench-table CAT_ADDITIVE. A navigation test asserts the request, the route and that Take() consumes it once.",
+    "AC-4 a failed metadata read shows failed, never an empty tree": "pass - BuildAsync reports through IFailureReporter and returns ppdm-metadata-unavailable; the page clears the tree, sets the failed view state and shows the message. A test drives a throwing registry and asserts failure plus exactly one reported failure.",
+    "AC-5 row counts are not fetched for every node on first open": "pass - building the tree reads no count at all; CountRowsAsync is the only reader and increments CountReads. The smoke run reports ppdm-count-reads-on-open 0 with 2712 nodes, and a test asserts both the delegate and CountReads stay at zero.",
+    "AC-6 policy-restricted tables are hidden or marked, never silently missing": "pass - a policy probe marks the node PolicyRestricted with a note that it is listed so it is not silently missing; the page shows '(restricted)' and a tooltip. A test keeps both tables present and asserts the mark."
+  },
+  "limits": [
+    "DAT-04 itself is read-only (its AC-3/AC-4/AC-6 are open), so the workbench the tree opens cannot yet edit.",
+    "The page builds every table node up front (2712) and populates the TreeView eagerly; it is not virtualised. The plan's section 9 warns about 2740 entity files, so this needs virtualisation or lazy category expansion before it is comfortable on a slow machine.",
+    "Row counts are read through a SELECT COUNT(*) per table on request; the identifier is validated as a plain SQL name first. No count is batched or cached.",
+    "The business-process subtree (the plan's second root) is not built; the tree has one root and module categories.",
+    "Table summaries come from the metadata registry (primary key, module, subject area, FK edges). Column lists and a relationship graph are not shown; only a flat related-table list.",
+    "The policy probe is wired to 'everything readable' in the app; the desktop has no per-table row policy yet, so AC-6 is proven by the test rather than by a real restricted table."
+  ]
+}

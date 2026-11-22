@@ -9,6 +9,7 @@ public partial class R_VESSEL_REFERENCE: Entity,IPPDMEntity
 {
 
 private  System.String REFERENCE_POINTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REFERENCE_POINT
         {  
             get  

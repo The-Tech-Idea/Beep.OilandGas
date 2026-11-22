@@ -9,6 +9,7 @@ public partial class R_STRAT_TOPO_RELATION: Entity,IPPDMEntity
 {
 
 private  System.String TOPO_RELATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TOPO_RELATION_TYPE
         {  
             get  

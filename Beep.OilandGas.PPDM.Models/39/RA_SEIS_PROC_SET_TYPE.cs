@@ -9,6 +9,7 @@ public partial class RA_SEIS_PROC_SET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROC_SET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROC_SET_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROC_SET_TYPEValue;
           set { SetProperty(ref  PROC_SET_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

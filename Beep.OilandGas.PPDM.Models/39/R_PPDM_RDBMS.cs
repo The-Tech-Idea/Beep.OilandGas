@@ -9,6 +9,7 @@ public partial class R_PPDM_RDBMS: Entity,IPPDMEntity
 {
 
 private  System.String RDBMS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RDBMS_ID
         {  
             get  

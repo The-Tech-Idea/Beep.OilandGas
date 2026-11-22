@@ -9,6 +9,7 @@ public partial class RM_PHYS_ITEM_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_PHYSICAL_ITEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GROUP_PHYSICAL_ITEM_IDValue;
           set { SetProperty(ref  GROUP_PHYSICAL_ITEM_IDValue, value); }
         } 
 private  System.String PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_ITEM_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PHYSICAL_ITEM_IDValue;
           set { SetProperty(ref  PHYSICAL_ITEM_IDValue, value); }
         } 
 private  System.Decimal GROUP_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal GROUP_OBS_NO
         {  
             get  

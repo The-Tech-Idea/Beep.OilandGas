@@ -9,6 +9,7 @@ public partial class R_HSE_INCIDENT_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_TYPE
         {  
             get  

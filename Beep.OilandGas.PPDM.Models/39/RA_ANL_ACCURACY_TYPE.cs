@@ -9,6 +9,7 @@ public partial class RA_ANL_ACCURACY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACCURACY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCURACY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACCURACY_TYPEValue;
           set { SetProperty(ref  ACCURACY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

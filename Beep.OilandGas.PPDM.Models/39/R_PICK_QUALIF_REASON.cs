@@ -9,6 +9,7 @@ public partial class R_PICK_QUALIF_REASON: Entity,IPPDMEntity
 {
 
 private  System.String PICK_QUALIF_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_QUALIF_REASON
         {  
             get  

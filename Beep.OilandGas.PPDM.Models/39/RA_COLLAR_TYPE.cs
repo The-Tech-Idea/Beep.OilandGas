@@ -9,6 +9,7 @@ public partial class RA_COLLAR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COLLAR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLLAR_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COLLAR_TYPEValue;
           set { SetProperty(ref  COLLAR_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_OBLIG_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LAND_OBLIG_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_OBLIG_TYPE
         {  
             get  

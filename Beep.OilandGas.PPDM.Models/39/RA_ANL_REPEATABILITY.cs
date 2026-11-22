@@ -9,6 +9,7 @@ public partial class RA_ANL_REPEATABILITY: Entity,IPPDMEntity
 {
 
 private  System.String REPEATABILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPEATABILITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REPEATABILITY_TYPEValue;
           set { SetProperty(ref  REPEATABILITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

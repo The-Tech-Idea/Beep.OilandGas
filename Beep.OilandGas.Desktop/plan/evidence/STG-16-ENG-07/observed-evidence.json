@@ -1,0 +1,91 @@
+{
+  "id": "STG-16/ENG-07",
+  "title": "Torque and drag",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the run follows the saved well plan's trajectory and a vertical string's hook load reproduces the buoyed weight; the limiting component is named with the depth and the percentage of its limit; the cased and open-hole friction factors are separate per interval and shown on every station; the stations are ordered by measured depth and cover the string; a component whose length is written in another unit is refused rather than converted; and a saved run records the scenario, the friction factors and the answer.",
+  "dataModel": {
+    "read": "WELL_PLAN (ENG-06) for the trajectory the run follows, and the owner's casing-design settings for steel density and the grade minimum yields the component limits come from.",
+    "addedTable": "TORQUE_DRAG_RUN in DrillingAndConstruction, registered in DrillingAndConstructionSetupModule: the scenario, both friction factors, the shoe, the mud density, the element length, the WOB / bit tension / bit torque, the string as JSON, and the answer - hook load, surface torque, the limiting component and its sentence, utilisation, margin, station count, passed, actor and time.",
+    "notStored": "The stations, for the same reason the well plan does not store its own: they are a function of the trajectory and the inputs, and both are recorded. Re-reading a run replays it through the same model, so the grid and the saved answer cannot drift apart.",
+    "openQuestionAnswered": "The feature's open question - 'Chart control: reuse TimeDepthView or draw a new ViewSurface?' - is answered by neither reusing nor inventing inside a page: TimeDepthView plots time against depth and this needs load against depth, so a new ViewSurface (OgTorqueDragChart) was written to the same conventions - measured depth downward, the tools' WellboreTheme colours, SKFont sizes, and its own draw call - and hosted in the same SkiaViewSurfaceHost the other views use."
+  },
+  "rules": {
+    "model": "The arithmetic is the tools' TorqueDrag.Run - a soft-string element walk at the configured element length - with the owner's TorqueDragCase carrying the operation, the two friction factors, the shoe, the mud density, the WOB, the bit tension and the bit torque. The desktop adds the string, the limits, the interval bookkeeping and the record.",
+    "scenario": "The four scenarios map one-to-one onto the owner's StringOperation: PICK_UP to TripOut, SLACK_OFF to TripIn, ROTATE_OFF to RotatingOffBottom, DRILLING to Drilling. A name outside those four is refused with the list.",
+    "friction": "Both factors are calibration inputs, so neither is defaulted: a cased factor that is missing is refused, and an open-hole factor is required only when the shoe is above the bit, with the interval named in the sentence.",
+    "limits": "A component's limit is the API 5C3 pipe-body yield at its own wall (from its recorded OD and ID) and grade, in newtons, converted to kN for display and comparison. A grade the configuration does not carry has no limit, and the run is refused naming the component rather than comparing against nothing.",
+    "limiting": "The limiting factor is the station with the highest load over its own component's limit, with ties broken by measured depth, and the sentence names the component, the depth, the load, the limit and the percentage.",
+    "interval": "A station is cased when it is at or above the recorded shoe and open hole below it; with no shoe recorded the whole string is taken as cased, and the page says so rather than implying open hole exists.",
+    "trajectory": "The trajectory is not read from a stored copy: it is the saved plan's station list recomputed through the owner's minimum-curvature walk, which is the handoff ENG-06 passes. A well with no saved plan has no trajectory, and the refusal says to design and save one first.",
+    "units": "The trajectory's unit governs every length. A component line with a length suffix in another unit is refused as mixed units, at the point of entry; the diameters and the weight carry their own oilfield units."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.DrillingAndConstruction/Data/Tables/TORQUE_DRAG_RUN.cs and Modules/DrillingAndConstructionSetupModule.cs (table registered)",
+    "chart": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgTorqueDragChart.cs (a ViewSurface: load across, measured depth down, the component limit dashed, over-limit stations marked, caption above)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgTorqueDrag.cs (OgDrillStringComponent, OgTorqueDragRequest, OgTorqueDragRow, OgTorqueDragChartPoint, OgTorqueDragWorkspace, TorqueDragRules, IOgTorqueDrag, OgTorqueDragService with RunAsync/SaveAsync/LoadLastAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/TorqueDragPageView.cs (route 'torquedrag': the well and scenario bar, the friction bar, the operation bar, the string editor, the summary, the limiting factor, the chart in the Skia host, the station grid and the save / load-last commands)",
+    "wiring": "OgBootstrapper (IOgTorqueDrag, taking IOgWellPlan), OgApplication.TorqueDrag, catalog 'torquedrag' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/TorqueDragTests.cs (7, no database) + TorqueDragGatewayTests.cs (1 opt-in, real SQLite over the plan and run tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1382, "passed": 1382, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 88, "passed": 88, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 111, "modulesetup-summary": "33 module(s) - 447 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL_PLAN and TORQUE_DRAG_RUN. A vertical 2 000 m hole planned explicitly, a 5 in x 4.276 in 19.5 lb/ft drill string with its grade added to the configuration, 10 ppg mud, a shoe at 1 000 m, 0.2 cased and 0.3 open-hole friction, and a 10 m element.",
+    "ac1_hook_load": "on a vertical string in pick-up the hook load equals the buoyed weight of the pipe - (19.5 lb/ft in kg/m) x g x (1 - mud/steel) x 2 000 m - to within 1 %, the surface torque is zero, and every station's side force is zero",
+    "ac2_limiting": "a 4 000 kN overpull pushes the surface load above the drill pipe's pipe-body yield: the run fails, the component is named 'drill pipe', the sentence carries the pipe-body yield and a utilisation above 1, and the over-limit station is marked",
+    "ac3_friction": "both factors are recorded on the run (0.2 and 0.3), the shoe at 1 000 m is stored, and the stations show 'cased' above it and 'open hole' below it - never a single blended factor",
+    "ac4_stations": "201 stations from 0 to 2 000 m at a 10 m element, in ascending measured depth, the first carrying the hook load and the last zero load at the bit",
+    "ac5_units": "'6500 ft' in a metre plan is refused at the entry point as mixed units, and the unit test asserts the refusal names both units",
+    "ac6_saved": "the stored run carries PICK_UP, 0.2, 0.3, the shoe, the string as JSON, the hook load within 5 kN of the computed figure, station count 201, PASSED 'Y', LIMIT_COMPONENT 'drill pipe' and the actor",
+    "load_last": "reading the last run replays it from its recorded inputs and returns the same hook load and the same run id and actor",
+    "refusals": "a well with no saved plan has no trajectory; a missing cased factor is refused naming the cased-hole interval; a 500 m string against a 2 000 m trajectory is refused as not reaching TD; a grade the configuration does not carry is refused naming the grade; a well with no saved run is refused",
+    "failure": "dropping TORQUE_DRAG_RUN fails the read with no run"
+  },
+  "gates": {
+    "AC-1 Hook load and torque match a reference case": "pass - the reference case is a vertical string, where the answer is closed-form: the buoyed weight, zero torque and zero side force are all asserted.",
+    "AC-2 The limiting factor is identified per station": "pass - the station with the highest load over its component's limit is named with the component, the depth and the percentage, and an overpull case is shown failing on the drill pipe.",
+    "AC-3 Friction factors are separate for cased and open hole": "pass - two factors on the run and on the record, one interval per station, and the shoe decides which.",
+    "AC-4 The results grid is ordered by measured depth": "pass - 0 to 2 000 m ascending, one station per element, asserted for order and count.",
+    "AC-5 Units are explicit and a mixed string is refused": "pass - the entry parser refuses a length in another unit and the unit names are named in the sentence.",
+    "AC-6 A saved run records the scenario, friction and result": "pass - asserted per column in SQL, and re-reading it replays it."
+  },
+  "engineFindings": {
+    "theGradeTableIsCasingGrades": {
+      "where": "TheTechIdea.OilGas.Wellbore.Data/Configuration/EnvironmentSections.cs (CasingDesignSettings.GradeYield)",
+      "finding": "The limits come from the configured minimum yields, and the shipped table is API 5CT casing grades (H40 to Q125). A drill-pipe grade such as S135 or G105 is not in it, so a first unit assertion expecting a limit for S135 failed.",
+      "handling": "The evidence states the limit is the configured yield rather than a built-in drill-pipe table, the unit test asserts that an unconfigured grade has no limit, and the gateway adds S135 to the configuration for its run and removes it afterwards - which is what an operator would do."
+    },
+    "noChartToReuse": {
+      "where": "TheTechIdea.OilGas.Drilling/TimeDepthView.cs",
+      "finding": "The package's only drilling chart plots time against depth, not load against depth, so it cannot show this run.",
+      "handling": "A new ViewSurface was written to the tools' own conventions - the same theme, fonts, axis placement and host - rather than a WPF drawing, so it draws and exports like every other view."
+    },
+    "theRunIsAFunctionOfTheTrajectory": {
+      "finding": "The owner's model takes a Trajectory object, and the plan stores stations rather than a trajectory.",
+      "handling": "The trajectory is rebuilt from the saved plan's stations through Trajectory.Compute - the owner's own minimum-curvature walk - so the run is always against the plan it names and a stored copy cannot go stale."
+    },
+    "openHoleFrictionIsConditional": {
+      "finding": "The first draft required an open-hole friction factor whenever the shoe was missing, which is backwards: with no shoe the whole string is cased and no open-hole factor is needed.",
+      "handling": "The requirement now follows the interval: the open-hole factor is demanded only when the shoe is above the bit, and a shoe-less run is cased throughout, which the page states."
+    },
+    "aThrowawayTrajectoryWasBuiltPerStation": {
+      "finding": "A first draft computed each station's inclination from a single-station throwaway trajectory, which would have thrown or returned zero.",
+      "handling": "The inclination and azimuth are interpolated from the real trajectory's bracketing stations, so the grid's angles are the plan's."
+    }
+  },
+  "limits": [
+    "The model is the owner's soft-string model: it does not model stiffness, buckling or stick-slip, so a run in compression is reported as stations in compression rather than as a buckled string.",
+    "Component limits are the pipe-body yield in tension only. Torsion, burst, collapse and connection limits are not compared, and the surface torque is shown without a torsional limit beside it.",
+    "A component's limit needs a grade the configuration carries: the shipped table is casing grades, so drill-pipe grades must be added before a run is accepted rather than being supplied by the build.",
+    "Friction factors are not derived from anything: they are the field-calibration inputs the feature says they are, and a missing one refuses the run rather than defaulting.",
+    "The string is entered as text, one component per line, rather than as an editable sub-grid; a mistyped line is refused naming the line.",
+    "The chart plots load and the component limit only - drag and torque are in the grid, not on the axes - and it carries no zoom or cursor readout.",
+    "Only the last run per well is read back: the table keeps every run but the screen offers the most recent, so a run-by-run comparison is not offered.",
+    "The trajectory comes from the saved plan's own unit; a run cannot be made against a plan in one unit with a string in another, which is the mixed-unit refusal.",
+    "No paging: a read loads the plan and the run tables whole and filters in memory."
+  ]
+}

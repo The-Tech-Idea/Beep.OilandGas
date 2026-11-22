@@ -9,6 +9,7 @@ public partial class RA_LITH_CYCLE_BED: Entity,IPPDMEntity
 {
 
 private  System.String CYCLE_BEDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CYCLE_BED
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CYCLE_BEDValue;
           set { SetProperty(ref  CYCLE_BEDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

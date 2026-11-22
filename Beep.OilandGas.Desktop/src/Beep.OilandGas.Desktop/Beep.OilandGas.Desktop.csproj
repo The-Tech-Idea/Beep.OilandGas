@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TheTechIdea.Beep.OilandGas.Desktop</RootNamespace>
+    <AssemblyName>TheTechIdea.Beep.OilandGas.Desktop</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon />
+    <!--
+      ADR-003 finding: referencing TheTechIdea.Beep.WPF.Controls pulls TheTechIdea.Beep.Vis.Modules,
+      whose WinForms theme code raises CA1416 once per call site (~9 278 warnings on a clean build).
+      CA1416 stays enabled everywhere else; this suppression is scoped to the host, which is the only
+      project that references the controls library.
+    -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- REL-02: the trusted vendor key(s) are embedded, never read from a writable folder. -->
+    <EmbeddedResource Include="Security\licence-keys.json" />
+    <!-- REL-02: a pre-signed sample licence, used by the smoke run and by an operator trying the feature. -->
+    <Content Include="Security\Samples\sample-licence.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Core\Beep.OilandGas.Desktop.Core.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Data\Beep.OilandGas.Desktop.Data.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Controls\Beep.OilandGas.Desktop.Controls.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.WellTools\Beep.OilandGas.Desktop.WellTools.csproj" />
+    <!-- FND-06: the shared device outbox and delivery that carry a failure to the API's intake. -->
+    <ProjectReference Include="..\..\..\..\Beep.Web\TheTechIdeaWeb.Diagnostics.Device\TheTechIdeaWeb.Diagnostics.Device.csproj" />
+    <ProjectReference Include="..\..\..\..\Beep.WPF\TheTechIdea.Beep.WPF.Controls\TheTechIdea.Beep.WPF.Controls.csproj" />
+    <!--
+      SETUP-FIRST-RUN: the same integrated data controls the ERP's first-run setup hosts (the
+      connection catalog, the connection editor and the driver/data-source downloaders), so the
+      Oil & Gas setup offers the identical Database experience instead of a hand-rolled form.
+    -->
+    <ProjectReference Include="..\..\..\..\Beep.WPF\TheTechIdea.Beep.Wpf.Data.Integrated\TheTechIdea.Beep.Wpf.Data.Integrated.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -9,6 +9,7 @@ public partial class WELL_DRILL_MUD_ADDITIVE: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.Decimal DRILL_PERIOD_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal DRILL_PERIOD_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal DRILL_PERIOD_OBS_NOValue;
           set { SetProperty(ref  DRILL_PERIOD_OBS_NOValue, value); }
         } 
 private  System.String ADDITIVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String ADDITIVE_IDValue;
           set { SetProperty(ref  ADDITIVE_IDValue, value); }
         } 
 private  System.Decimal ADDITIVE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ADDITIVE_SEQ_NO
         {  
             get  

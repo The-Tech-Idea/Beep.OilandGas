@@ -9,6 +9,7 @@ public partial class R_CREATOR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CREATOR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREATOR_TYPE
         {  
             get  

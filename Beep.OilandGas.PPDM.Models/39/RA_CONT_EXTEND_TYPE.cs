@@ -9,6 +9,7 @@ public partial class RA_CONT_EXTEND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String EXTENSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EXTENSION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EXTENSION_TYPEValue;
           set { SetProperty(ref  EXTENSION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

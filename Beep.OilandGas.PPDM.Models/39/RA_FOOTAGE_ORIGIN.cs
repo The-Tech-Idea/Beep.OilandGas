@@ -9,6 +9,7 @@ public partial class RA_FOOTAGE_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String FOOTAGE_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOOTAGE_ORIGIN
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FOOTAGE_ORIGINValue;
           set { SetProperty(ref  FOOTAGE_ORIGINValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

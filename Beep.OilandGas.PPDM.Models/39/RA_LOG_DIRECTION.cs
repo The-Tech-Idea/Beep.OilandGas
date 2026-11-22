@@ -9,6 +9,7 @@ public partial class RA_LOG_DIRECTION: Entity,IPPDMEntity
 {
 
 private  System.String LOG_DIRECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOG_DIRECTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LOG_DIRECTIONValue;
           set { SetProperty(ref  LOG_DIRECTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

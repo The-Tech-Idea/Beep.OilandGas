@@ -1,0 +1,55 @@
+{
+  "id": "STG-04/DEV-02",
+  "title": "Field development plan wizard and review",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: the wizard saves step values into a draft and a submit locks it while naming the first missing step; a review records a decision with a rationale, a return names the step to correct, and the author cannot review their own plan; an approval appends an immutable baseline; a revision starts a new draft from the latest baseline and its approval appends a second baseline while the first stays readable; costs are decimals with an explicit currency.",
+  "dataModel": {
+    "decision": "DevelopmentPlanning had a plan service that returned in-memory projections and no draft, baseline or review persistence. The plan's own contract and DEV-02's acceptance criteria were implemented as three DevelopmentPlanning-owned tables, registered in DevelopmentPlanningModule, following the WELL_PROGRAM (EXP-05) and LEASE_TERM (LSE-03) pattern.",
+    "tables": [
+      "FDP_DRAFT (DRAFT_ID key, FDP_ID, FIELD_ID, VERSION, STATE, CURRENT_STEP, AUTHOR, SCOPE_TEXT, RESERVOIR_TEXT, WELL_COUNT, FACILITY_TEXT, COST_AMOUNT, COST_CURRENCY, RISK_TEXT, BASELINE_ID, RETURNED_STEP, RETURN_REASON) - the editable wizard document",
+      "FDP_BASELINE (BASELINE_ID key, FDP_ID, DRAFT_ID, VERSION, APPROVED_AT, APPROVED_BY, CONDITIONS_TEXT, and the frozen scope/reservoir/wells/facility/cost/risk) - append-only, never updated",
+      "FDP_REVIEW (REVIEW_ID key, DRAFT_ID, FDP_ID, DECISION, RATIONALE, RETURNED_STEP, CONDITIONS_TEXT, REVIEWER, REVIEWED_AT) - append-only review history"
+    ],
+    "registration": "Beep.OilandGas.DevelopmentPlanning/Modules/DevelopmentPlanningModule.cs registers the three types; the module summary in --smoke reports 358 entity types (up from 355)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgFdpWizard.cs (OgFdpDraft, OgFdpBaseline, OgFdpReview, OgFdpDraftValues, OgFdpDecision, OgFdpPlan, OgFdpWorkspace, OgFdpSubmit, IOgFdpWizard, OgFdpWizardService with Steps/StepName/MissingSteps/CreateDraftAsync/SaveDraftAsync/SubmitAsync/ReviewAsync/ReviseAsync/RetrySubmitAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/FdpWizardPageView.cs (route 'fdpwizard': plan picker, seven-step wizard fields, submit/revise/retry, review decision with returned step and conditions, baseline grid, detail with missing steps and reviews)",
+    "wiring": "OgBootstrapper (IOgFdpWizard), OgApplication.FdpWizard, catalog 'fdpwizard' (OgModuleKeys.Development), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/FdpWizardTests.cs (8, no database) + FdpWizardGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 700, "passed": 700, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 20, "passed": 20, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 44, "views-constructed": true, "modulesetup-summary": "28 module(s) - 358 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 },
+    { "cmd": "source guard: The_desktop_data_layer_contains_no_sql_statement_text", "exit": 0, "offenders": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD_DEVELOPMENT_PLAN, FDP_DRAFT, FDP_BASELINE, FDP_REVIEW and DEVELOPMENT_WELL_SCHEDULE, seeded in FdpWizardGatewayTests",
+    "ac1_create_save_submit": "CreateDraftAsync writes the plan row and its first draft; SaveDraftAsync writes all seven step values; the saved draft has no missing step; SubmitAsync moves draft and plan to SUBMITTED",
+    "ac1_locked": "after the submit, SaveDraftAsync is refused with fdp-draft-locked and nothing is written",
+    "ac3_return": "a RETURN names step 4; the draft becomes RETURNED with RETURNED_STEP=4 and ReturnText 'Step 4 (Facilities and capacity): capacity is not justified'; the returned draft is editable and resubmittable",
+    "ac4_author": "the author reviewing their own plan is refused with fdp-author-cannot-approve",
+    "ac5_money": "the approval baseline stores COST_AMOUNT 1200 and COST_CURRENCY USD; the unit test proves a negative cost and a missing currency are refused",
+    "ac2_baseline": "approving appends one FDP_BASELINE at version 1 with the draft's frozen values",
+    "ac6_revision": "ReviseAsync creates draft version 2 from baseline 1; approving it appends baseline 2 (1500 USD, two conditions); baseline 1 is still readable with 1200 USD and its original scope",
+    "lost_ack": "a SQLite trigger made the draft update fail: the submit was refused and retained in Pending; after the trigger was dropped RetrySubmitAsync submitted the same draft",
+    "field_scope": "the other field's plan is absent; the loaded plan holds 2 baselines and 3 reviews (return, approve, approve-with-conditions)"
+  },
+  "gates": {
+    "AC-1 The wizard saves a draft and the submit locks it, naming the first missing step": "pass - SaveDraftAsync persists every step value and the current step; SubmitAsync first lists any missing step (and moves CURRENT_STEP to the first one) and otherwise moves the draft and the plan row to SUBMITTED; editing a submitted draft is refused with fdp-draft-locked.",
+    "AC-2 An approval appends a baseline and a revision keeps the previous one": "pass - approving writes an FDP_BASELINE row; ReviseAsync creates the next draft version from the latest baseline; its approval appends a second baseline, and the gateway test reads baseline 1 unchanged afterwards.",
+    "AC-3 A return names the step to correct": "pass - a RETURN requires RETURNED_STEP in 1..6, stores it on the draft and the review, and the draft's ReturnText names the step and the reason; the page shows it.",
+    "AC-4 The author cannot approve their own plan": "pass - ReviewAsync compares the draft author with the reviewer and refuses with fdp-author-cannot-approve; proven against SQLite.",
+    "AC-5 Costs are decimals with an explicit currency": "pass - COST_AMOUNT is a decimal and COST_CURRENCY is required when the amount is above zero; a negative amount and a missing currency are refused with named codes.",
+    "AC-6 The baseline history is immutable": "pass - FDP_BASELINE rows are only ever inserted; the service never updates or deletes one, and the second approval leaves the first baseline's cost and scope intact."
+  },
+  "limits": [
+    "The wizard is one scrolling page with a step picker, not a stepper control; the seven step names and the current step are the same data either way.",
+    "The draft stores the step values as text and numbers on FDP_DRAFT; the well-schedule step is satisfied by the existence of a DEVELOPMENT_WELL_SCHEDULE row for the plan, and the schedule itself is authored by DEV-03/DEV-05.",
+    "The baseline stores the plan scope, reservoir, well count, facility, cost and risk; it does not copy the schedule rows, which stay owned by DEV-03/DEV-05.",
+    "The plan row keeps a single FDP_STATUS, so it reflects the newest draft state; the per-draft state is authoritative and is what the reviews and baselines are keyed on.",
+    "The new tables need the DEVELOPMENT_PLANNING module applied again on an existing database to be created."
+  ]
+}

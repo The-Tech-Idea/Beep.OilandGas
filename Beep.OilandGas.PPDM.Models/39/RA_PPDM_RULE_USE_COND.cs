@@ -9,6 +9,7 @@ public partial class RA_PPDM_RULE_USE_COND: Entity,IPPDMEntity
 {
 
 private  System.String USE_CONDITION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String USE_CONDITION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String USE_CONDITION_TYPEValue;
           set { SetProperty(ref  USE_CONDITION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

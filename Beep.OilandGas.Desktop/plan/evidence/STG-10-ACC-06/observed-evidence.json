@@ -1,0 +1,86 @@
+{
+  "id": "STG-10/ACC-06",
+  "title": "Warehouse, receipt stock and returns",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: available is on hand less reserved, computed from the open reservations and never stored as a scalar; an issue above availability is refused naming the shortfall, what is on hand and what is held; a reservation names the document holding it; a return states its restock decision before anything moves; every value change posts a linked journal; and stock never goes below zero, by count or by movement.",
+  "dataModel": {
+    "decision": "The owner already had INVENTORY_ITEM (quantity on hand, unit cost, total value, warehouse, location, valuation method), INVENTORY_TRANSACTION (type, date, quantity, cost, reference - with the owner's own negative-quantity convention for a deduction), INVENTORY_ADJUSTMENT and INVENTORY_VALUATION, all registered. What did not exist anywhere was a reservation: the model had no record of stock being held for a document, so AC-3 had nothing to write and availability could not be explained. A new INVENTORY_RESERVATION carries it, and 'reserved' is the sum of the item's open reservations rather than a scalar that could drift from them.",
+    "addedTable": "INVENTORY_RESERVATION (INVENTORY_RESERVATION_ID key, INVENTORY_ITEM_ID, QUANTITY, HOLDING_DOCUMENT, HOLDING_KIND, RESERVED_AT, ACTOR, STATUS, ISSUED_TRANSACTION_ID, RELEASED_BY, RELEASED_AT, RELEASE_REASON)",
+    "addedColumns": "INVENTORY_TRANSACTION: CONDITION_CODE, RESTOCK_DECISION, RESERVATION_ID, JOURNAL_ENTRY_ID, ACTOR. INVENTORY_ITEM: LINKED_ASSET_TYPE, LINKED_ASSET_ID.",
+    "checkedForDuplicates": "Every entity was checked for the case-only duplicate property pairs that make PIPELINE_ANALYSIS_RESULT unpublishable (WTA-03). None has one, proven by the gateway reading and updating all of them.",
+    "registration": "typeof(INVENTORY_RESERVATION) added beside the other inventory tables in ProductionAccountingModuleSetup. --smoke now reports 33 modules and 416 entity types (up from 415)."
+  },
+  "openQuestion": {
+    "question": "Two inventory services exist (accounting and production accounting). Which owns the stock quantity?",
+    "answer": "The accounting one. Its own header says it 'manages inventory items, stock transactions, and valuations' over INVENTORY_ITEM and INVENTORY_TRANSACTION and documents the postings this feature uses. The ProductionAccounting service says it 'manages tank and pipeline inventory ... tracks volume levels', which is the crude/tank volume on CRUDE_OIL_INVENTORY and TANK_INVENTORY - a different fact on different tables, not a rival answer. So a warehouse movement is an INVENTORY_TRANSACTION row, and a deduction carries a negative quantity, which is exactly what the owner's own UseStockAsync writes.",
+    "recorded": "in WarehouseCodes' remarks, the service's remarks, the workspace's OwnerText shown on the page, and the feature document"
+  },
+  "ownerAdditions": {
+    "codes": "Beep.OilandGas.Accounting/Constants/WarehouseCodes.cs - the movement kinds (reusing the owner's own RECEIPT), the three reservation states, the four conditions, the three restock decisions, the two predicates that matter (does a state still hold stock, does a decision actually restock) and the four accounts from DefaultGlAccounts: inventory 1300, payables 2000, cost of goods sold 5000, impairment loss 6300."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgWarehouse.cs (OgWarehouseContext, OgStockItem, OgReservation, OgStockMovement, OgWarehouseWorkspace, WarehouseRules, IOgWarehouse, OgWarehouseService with ReceiveAsync/ReserveAsync/IssueAsync/ReleaseAsync/ReturnAsync/AdjustAsync/RevalueAsync/LinkAsync/LoadAsync)",
+    "availability": "Reserved is the sum of the item's open reservations; Available is OnHand - Reserved in decimal with no rounding and no allowance, so the number the grid shows is the number the issue checks (AC-1).",
+    "issue": "Checked against availability before anything is written, and the refusal names the short quantity, the on-hand quantity and the reserved quantity - an issuer who expected more stock is told who is holding it (AC-2). The movement is written with a negative quantity, the owner's convention, and posts cost out of inventory to cost of goods sold.",
+    "reservation": "A reservation requires its holding document and an optional kind (work order, cost centre, request); it may only hold what is available; issuing against it marks it ISSUED with the transaction that spent it, and releasing it records the actor, the time and the reason (AC-3).",
+    "return": "A return must state its condition and its restock decision before anything moves. RESTOCK puts the quantity and its value back (inventory debit, cost of goods sold credit); SCRAP or REPAIR records the decision and moves neither, which is why the decision cannot be inferred (AC-4).",
+    "journal": "Every movement whose value changes posts one balanced entry and stores its id on the transaction: receipt debits inventory and credits payables, issue debits cost of goods sold and credits inventory, a restocked return reverses that, a count loss or gain posts against cost of goods sold, and a lower-of-cost-or-market write-down debits impairment loss. The reference is derived from the movement id, so a retry adopts the entry. A movement with no value change stores no journal and says so in its own text rather than leaving a zero to be misread (AC-5).",
+    "negativeStock": "Checked twice: a count below zero (or below what a document holds) is refused with the item, the count and the reason, and every movement computes its resulting quantity and refuses before writing if it would go negative or below the reserved quantity (AC-6).",
+    "revaluation": "IAS 2 lower of cost or market: a market below cost writes the carrying value down and posts the difference; a market above cost does not revalue upwards, which is the standard's asymmetry and is stated in the code rather than treated as an omission. The valuation row records the method, the quantity, the unit cost and the resulting total.",
+    "page": "src/Beep.OilandGas.Desktop/Views/WarehousePageView.cs (route 'warehouse': the item grid with on hand, reserved and available; the receive, reserve, issue/release, return, count, revaluation and link bars; the selected item's availability, its holders and its link; the reservation grid and the movement grid with each movement's journal)",
+    "wiring": "OgBootstrapper (IOgWarehouse), OgApplication.Warehouse, catalog 'warehouse' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WarehouseTests.cs (8, no database) + WarehouseGatewayTests.cs (1 opt-in, real SQLite over nine tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1112, "passed": 1112, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 58, "passed": 58, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 82, "views-constructed": true, "modulesetup-summary": "33 module(s) - 416 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with INVENTORY_ITEM, INVENTORY_TRANSACTION, INVENTORY_RESERVATION, INVENTORY_ADJUSTMENT, INVENTORY_VALUATION, GL_ACCOUNT, JOURNAL_ENTRY, JOURNAL_ENTRY_LINE and COMPANY_LEDGER_PERIOD, seeded with one casing item at 100 on hand and 10 unit cost",
+    "ac1_availability": "a 100 on-hand item with a 40 hold reports available 110 after a 50 receipt, and 120 with nothing held; the unit test asserts the subtraction to the last decimal place (1,234.567 - 234.567 = 1,000.000 and 1.01 - 1.00 = 0.01)",
+    "ac2_issue": "issuing 120 with 150 on hand and 40 held is refused with 'a shortfall of 10' and '150 is on hand and 40 is reserved', and no movement is written; exactly the available quantity is accepted",
+    "ac3_reservation": "a blank holder is refused with warehouse-holder-required and nothing is written; WO-2026-014 is stored as the holding document with its kind and appears on the item as 'held by WO-2026-014 (40 ea)'",
+    "ac4_return": "a damaged delivery with no decision is refused; a DAMAGED return with SCRAP is recorded with quantity 0, no journal and the stock unchanged; the same quantity returned SERVICEABLE with RESTOCK raises on hand from 120 to 130 and posts inventory 100 / cost of goods sold 100",
+    "ac5_journal": "the run produces five inventory journals in total - receipt 500, issue 300, restocked return 100, count loss 50 and write-down 250 - each balanced, and the gateway asserts that no transaction with a non-zero total cost lacks a journal while exactly one zero-cost movement (the scrap return) correctly has none",
+    "ac6_negative": "a count of -1 is refused with 'never goes below zero'; a count of 30 while 40 is held is refused naming the hold; releasing the hold then allows a count of 125, which records COUNT_LOSS -5 with its reason",
+    "revaluation": "a market cost of 8 against 125 on hand writes the value from 1,250 to 1,000, stores a LOWER_OF_COST_OR_MARKET valuation and posts impairment loss 250 against inventory",
+    "link": "the item is linked to EQUIPMENT PUMP-7 and the grid reads 'linked to EQUIPMENT PUMP-7'",
+    "closedPeriod": "a closed period row for the current month makes a receipt refused with warehouse-period-closed",
+    "unavailable": "dropping the movement and item tables makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 Available = on hand - reserved, exactly": "pass - reserved is the sum of the open reservations, available is the decimal difference, and the unit test walks the arithmetic including a hundredth.",
+    "AC-2 An issue above availability is refused": "pass - checked before any write, naming the shortfall, the on hand and the reserved quantities.",
+    "AC-3 A reservation names its holding document": "pass - the holder is required, stored, printed on the item, and a reservation that is spent or released stops holding.",
+    "AC-4 A return requires an explicit restock decision": "pass - required for every return and for a damaged or scrapped receipt, and the decision is what decides whether quantity and value move.",
+    "AC-5 Stock value changes produce a linked journal": "pass - every value-changing movement posts one balanced entry and stores its id; a zero-value movement stores none and says so.",
+    "AC-6 Negative stock is impossible": "pass - refusals at both the count and the movement, and a count may not go below what a document holds."
+  },
+  "engineFindings": {
+    "reservationGap": {
+      "finding": "No reservation record existed in any owner project - not in the models, not in either inventory service - so 'reserved' and 'available' had no source and AC-3 had nothing to write.",
+      "handling": "INVENTORY_RESERVATION added to the owning module; available is derived from the open reservations rather than stored, so it cannot disagree with the documents holding the stock."
+    },
+    "twoInventoryServices": {
+      "finding": "Two InventoryService classes exist and the feature flags them as a risk. They do different jobs: the accounting one owns materials stock over INVENTORY_ITEM/INVENTORY_TRANSACTION; the production one tracks tank and pipeline volume over CRUDE_OIL_INVENTORY/TANK_INVENTORY.",
+      "handling": "Recorded as the answer to the feature's open question, printed on the page so an operator can see which service owns the number, and used to justify the negative-quantity convention (the owner's own UseStockAsync)."
+    },
+    "postingDirectionBugCaught": {
+      "finding": "The first run of the gateway test failed on the receipt's ledger lines: the service had debited accounts payable and credited inventory, the reverse of the owner's documented posting for a receipt.",
+      "handling": "Corrected to debit inventory and credit payables. Recorded here because it is exactly the kind of error a screen cannot show and only a stored-row assertion finds."
+    }
+  },
+  "limits": [
+    "Receipts do not re-average the item's unit cost: the value rises by quantity x cost and the unit cost stays as recorded, so an item received at a different price keeps its old standard cost while its total value reflects the money spent. A weighted-average or FIFO routine is the owner's to add.",
+    "The cost used by an issue, a return or a count is the item's current unit cost, not the cost of the specific units moved, so there is no layer-by-layer costing even though VALUATION_METHOD is shown.",
+    "A revaluation only writes down (lower of cost or market). A market above cost does not write up, which is IAS 2's asymmetry but means a recovery is not reflected.",
+    "The item master is not maintained here: items are read as seeded or created elsewhere, so this feature moves stock but cannot create an item or change its unit of measure.",
+    "The link is a pair of columns on the item (type and id), not a validated reference into an asset or equipment table, because no such table exists in this app yet.",
+    "There is no reservation expiry, no partial issue against a reservation (a reservation is spent whole when issued against), and no transfer between warehouses or bins beyond setting the location on a receipt.",
+    "The count adjustment writes an INVENTORY_ADJUSTMENT row but there is no physical-count document, no count sheet and no approval of a variance above a threshold.",
+    "The feature's permissions (accounting.stock.write/.adjust) are not enforced per command: the app gates pages, and there is no author-versus-approver rule in this feature because none of its acceptance criteria asks for one.",
+    "ACC-01 and ACC-07..ACC-08 are not started, so STG-10 is not complete."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class RA_PPDM_ENFORCE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ENFORCE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENFORCE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ENFORCE_METHODValue;
           set { SetProperty(ref  ENFORCE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

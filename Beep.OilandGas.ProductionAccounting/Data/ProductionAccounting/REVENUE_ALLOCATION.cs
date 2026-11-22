@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class REVENUE_ALLOCATION : ModelEntityBase {
         private System.String REVENUE_ALLOCATION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String REVENUE_ALLOCATION_ID
         {
             get { return this.REVENUE_ALLOCATION_IDValue; }

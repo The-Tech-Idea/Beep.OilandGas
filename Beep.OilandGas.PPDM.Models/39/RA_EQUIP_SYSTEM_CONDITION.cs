@@ -9,6 +9,7 @@ public partial class RA_EQUIP_SYSTEM_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SYSTEM_CONDITIONValue;
           set { SetProperty(ref  SYSTEM_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -1,0 +1,90 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:TheTechIdea.Beep.OilandGas.Desktop.Controls">
+
+    <!--
+        The page frame every feature content is hosted in: title, context line, status badge, command
+        bar and the content slot. Feature views never draw their own chrome.
+    -->
+
+    <Style x:Key="OgPageTitleText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource BeepBodyFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource BeepTitleFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BeepTextPrimaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="OgCaptionText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource BeepBodyFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource BeepCaptionFontSize}" />
+        <Setter Property="Foreground" Value="{DynamicResource BeepTextSecondaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="OgBodyText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource BeepBodyFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource BeepBodyFontSize}" />
+        <Setter Property="Foreground" Value="{DynamicResource BeepTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="OgHeadingText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource BeepBodyFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource BeepHeadingFontSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource BeepTextPrimaryBrush}" />
+    </Style>
+
+    <Style TargetType="controls:PageFrame">
+        <Setter Property="Background" Value="{DynamicResource BeepBackgroundBrush}" />
+        <Setter Property="Padding" Value="{DynamicResource BeepSpacingL}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:PageFrame">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" Margin="0,0,0,12" LastChildFill="True">
+                            <Border DockPanel.Dock="Right"
+                                    x:Name="StatusHost"
+                                    VerticalAlignment="Center"
+                                    Padding="8,3"
+                                    CornerRadius="{DynamicResource BeepCornerRadius}"
+                                    Background="{DynamicResource BeepSurfaceAltBrush}">
+                                <TextBlock x:Name="StatusText"
+                                           Style="{DynamicResource OgCaptionText}"
+                                           Text="{TemplateBinding StatusText}" />
+                            </Border>
+
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Style="{DynamicResource OgPageTitleText}"
+                                           Text="{TemplateBinding Title}" />
+                                <TextBlock Style="{DynamicResource OgCaptionText}"
+                                           Margin="0,2,0,0"
+                                           Text="{TemplateBinding ContextText}" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <ContentPresenter Grid.Row="1"
+                                          x:Name="ToolbarHost"
+                                          Margin="0,0,0,12"
+                                          Content="{TemplateBinding Toolbar}" />
+
+                        <Border Grid.Row="2"
+                                Background="{DynamicResource BeepSurfaceBrush}"
+                                BorderBrush="{DynamicResource BeepBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{DynamicResource BeepCornerRadius}">
+                            <ContentPresenter Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

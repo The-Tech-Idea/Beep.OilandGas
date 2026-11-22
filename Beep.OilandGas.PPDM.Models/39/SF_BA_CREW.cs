@@ -9,6 +9,7 @@ public partial class SF_BA_CREW: Entity,IPPDMEntity
 {
 
 private  System.String SF_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SF_SUBTYPEValue;
           set { SetProperty(ref  SF_SUBTYPEValue, value); }
         } 
 private  System.String SUPPORT_FACILITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUPPORT_FACILITY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SUPPORT_FACILITY_IDValue;
           set { SetProperty(ref  SUPPORT_FACILITY_IDValue, value); }
         } 
 private  System.String CREW_COMPANY_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_COMPANY_BA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String CREW_COMPANY_BA_IDValue;
           set { SetProperty(ref  CREW_COMPANY_BA_IDValue, value); }
         } 
 private  System.String CREW_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String CREW_IDValue;
           set { SetProperty(ref  CREW_IDValue, value); }
         } 
 private  System.Decimal SF_BA_CREW_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SF_BA_CREW_OBS_NO
         {  
             get  

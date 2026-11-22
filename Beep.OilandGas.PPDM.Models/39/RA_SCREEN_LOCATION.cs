@@ -9,6 +9,7 @@ public partial class RA_SCREEN_LOCATION: Entity,IPPDMEntity
 {
 
 private  System.String SCREEN_LOCATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCREEN_LOCATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SCREEN_LOCATIONValue;
           set { SetProperty(ref  SCREEN_LOCATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

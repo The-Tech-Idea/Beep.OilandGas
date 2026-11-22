@@ -9,6 +9,7 @@ public partial class R_SW_APP_FUNCTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SW_APP_FUNCTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APP_FUNCTION_TYPE
         {  
             get  

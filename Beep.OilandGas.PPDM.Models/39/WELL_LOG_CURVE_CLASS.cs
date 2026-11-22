@@ -9,6 +9,7 @@ public partial class WELL_LOG_CURVE_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String CURVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_CLASS_ID
         {  
             get  

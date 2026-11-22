@@ -9,6 +9,7 @@ public partial class R_RATE_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String RATE_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_CONDITION
         {  
             get  

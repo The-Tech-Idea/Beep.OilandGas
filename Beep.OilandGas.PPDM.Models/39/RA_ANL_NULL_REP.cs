@@ -9,6 +9,7 @@ public partial class RA_ANL_NULL_REP: Entity,IPPDMEntity
 {
 
 private  System.String NULL_REPRESENTATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NULL_REPRESENTATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String NULL_REPRESENTATIONValue;
           set { SetProperty(ref  NULL_REPRESENTATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

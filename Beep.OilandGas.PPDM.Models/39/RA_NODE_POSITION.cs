@@ -9,6 +9,7 @@ public partial class RA_NODE_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String NODE_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NODE_POSITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String NODE_POSITIONValue;
           set { SetProperty(ref  NODE_POSITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

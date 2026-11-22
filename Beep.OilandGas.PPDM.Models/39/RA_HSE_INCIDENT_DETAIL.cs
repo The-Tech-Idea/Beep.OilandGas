@@ -9,6 +9,7 @@ public partial class RA_HSE_INCIDENT_DETAIL: Entity,IPPDMEntity
 {
 
 private  System.String DETAIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DETAIL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DETAIL_TYPEValue;
           set { SetProperty(ref  DETAIL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

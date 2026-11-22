@@ -9,6 +9,7 @@ public partial class SP_PARCEL_DLS: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_DLS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_DLS_ID
         {  
             get  

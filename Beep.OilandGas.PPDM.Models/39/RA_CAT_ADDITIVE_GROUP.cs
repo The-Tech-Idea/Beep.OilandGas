@@ -9,6 +9,7 @@ public partial class RA_CAT_ADDITIVE_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_GROUP
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ADDITIVE_GROUPValue;
           set { SetProperty(ref  ADDITIVE_GROUPValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

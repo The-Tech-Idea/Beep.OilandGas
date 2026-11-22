@@ -1,4 +1,4 @@
-using Beep.OilandGas.Models.Data.Company;
+﻿using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -52,6 +52,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         private static readonly ConcurrentDictionary<string, SchemaMigrationPlanSession> _schemaMigrationPlans =
             new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Where the planning phases report progress (DAT-02's perf harness). Null means no live trace; the line is a
+        /// phase name and its timing, never a secret or a row value.
+        /// </summary>
+        public static Action<string>? Trace { get; set; }
 
         private readonly IDMEEditor _editor;
         private readonly ILogger<PPDM39SetupService> _logger;
@@ -242,6 +248,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 if (scopeRefusal != null)
                     return RefusedPlan(request, scopeRefusal);
                 var entityTypes = ModuleMigrationScope.Resolve(request.ModuleIds, modules, GetPpdm39EntityTypes());
+
+                // A module such as PPDM_CORE resolves to the whole catalogue; the setup applies it in bounded batches by
+                // naming the types of each batch, so one plan never carries thousands of operations.
+                if (request.EntityTypeNames is { Count: > 0 } scopedNames)
+                {
+                    var wanted = new HashSet<string>(scopedNames, StringComparer.OrdinalIgnoreCase);
+                    entityTypes = entityTypes
+                        .Where(type => wanted.Contains(type.Name) || wanted.Contains(type.FullName ?? string.Empty))
+                        .ToList();
+
+                    if (entityTypes.Count == 0)
+                        return RefusedPlan(request, "None of the named entity types belong to the selected modules.");
+                }
                 ModuleSchemaBoundary.Validate(entityTypes);
                 var moduleIds = request.ModuleIds.ToArray();
                 var bindingFingerprint = await _migrationBindingFingerprint(moduleIds, request.ConnectionName);
@@ -288,6 +307,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 {
                     EnvironmentTier = environmentTier
                 };
+
+                // DAT-02: the operator who planned the migration is the approval for a high-risk plan. Without it the
+                // plan's own CI gate re-evaluates with the planning-time governance and blocks a plan this request has
+                // already approved ("requires approval metadata").
+                if (!string.IsNullOrWhiteSpace(request.PreparedBy))
+                {
+                    policyOptions.Approver = request.PreparedBy;
+                    policyOptions.OverrideReason = "Approved by the planner who requested this migration.";
+                }
+
                 var resolvedTier = policyOptions.EnvironmentTier;
 
                 var policy = migration.EvaluateMigrationPlanPolicy(plan, policyOptions);
@@ -299,13 +328,18 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     request.BackupConfirmed,
                     request.RestoreTestEvidenceProvided,
                     request.RestoreTestEvidence);
-                var ciValidation = migration.ValidatePlanForCi(plan);
 
+                // The reports and the governance are part of the plan before the CI gate reads them, and the gate gets
+                // the same options: a plan is not judged by a governance record the request did not use.
                 plan.PolicyEvaluation = policy;
                 plan.DryRunReport = dryRun;
                 plan.PreflightReport = preflight;
                 plan.CompensationPlan = compensation;
                 plan.RollbackReadinessReport = rollback;
+                plan.GovernancePolicy = policyOptions;
+
+                var ciValidation = migration.ValidatePlanForCi(plan, policyOptions);
+
                 plan.CiValidationReport = ciValidation;
 
                 var session = new SchemaMigrationPlanSession
@@ -1403,6 +1437,24 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             return _moduleSetupOrchestrator.GetModuleMetadata();
         }
 
+        /// <inheritdoc />
+        public IReadOnlyList<string> ResolvedEntityTypeNames(IReadOnlyList<string> moduleIds)
+        {
+            if (moduleIds is null || moduleIds.Count == 0)
+                return Array.Empty<string>();
+
+            var modules = GetAvailableModules();
+
+            // A selection the migration refuses (SECURITY is installed through EF migrations, not a module database)
+            // resolves to nothing rather than throwing: the caller is asking "what will be applied", and the answer is
+            // "nothing for this module". Throwing here turned a skip into a failed apply.
+            if (ModuleMigrationScope.Refusal(moduleIds, modules) is not null)
+                return Array.Empty<string>();
+
+            var resolved = ModuleMigrationScope.Resolve(moduleIds, modules, GetPpdm39EntityTypes());
+            return resolved.Select(type => type.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
         private static List<Type> GetPpdm39EntityTypes()
         {
             return typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly
@@ -1442,7 +1494,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.IsNullOrWhiteSpace(targetIdentity))
                 throw new InvalidOperationException("A canonical physical migration target is required.");
             return new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, dataSource)
-            { ExecutionTargetIdentity = targetIdentity };
+            {
+                ExecutionTargetIdentity = targetIdentity,
+
+                // One definition of how a generated model is read, shared with the post-migration verification
+                // (ModuleSchemaVerification.ModelReadOptions): strings are nullable columns, [Key] stays NOT NULL.
+                ReadOptions = ModuleSchemaVerification.ModelReadOptions,
+
+
+
+            };
         }
 
         /// <summary>

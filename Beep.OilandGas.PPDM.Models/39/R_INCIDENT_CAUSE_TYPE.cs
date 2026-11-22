@@ -9,6 +9,7 @@ public partial class R_INCIDENT_CAUSE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CAUSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAUSE_TYPE
         {  
             get  

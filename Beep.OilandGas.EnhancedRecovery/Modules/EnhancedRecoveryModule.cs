@@ -20,7 +20,10 @@ public sealed class EnhancedRecoveryModule : ModuleSetupBase
 {
     private static readonly IReadOnlyList<Type> _entityTypes = new List<Type>
     {
-        typeof(R_ENHANCED_RECOVERY_REFERENCE_CODE)
+        typeof(R_ENHANCED_RECOVERY_REFERENCE_CODE),
+        // RES-04: the screening run and the method-by-method outcome it recorded.
+        typeof(EOR_SCREENING_RUN),
+        typeof(EOR_SCREENING_CANDIDATE)
     };
 
     public EnhancedRecoveryModule(ModuleSetupContext context)

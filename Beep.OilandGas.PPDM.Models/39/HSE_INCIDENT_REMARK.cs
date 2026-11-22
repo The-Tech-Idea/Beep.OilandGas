@@ -9,6 +9,7 @@ public partial class HSE_INCIDENT_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INCIDENT_IDValue;
           set { SetProperty(ref  INCIDENT_IDValue, value); }
         } 
 private  System.Decimal REMARK_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_SEQ_NO
         {  
             get  

@@ -1,0 +1,66 @@
+{
+  "id": "STG-03/EXP-05",
+  "title": "Well program approval",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: a decision records actor, date, rationale and conditions; an incomplete prospect risk blocks the gate; the author cannot decide their own program; a second decision is refused against the state the program was read at; conditions are stored on the approved program where DEV-05 reads them; and a decision that is not acknowledged is retained and retried unchanged. The generic approval engine (WFL-04) is not wired, which is stated on the page and recorded below.",
+  "dataModel": {
+    "decision": "No well-program entity existed for a prospect (EXPLORATION_PROGRAM is field-level, with no prospect, target depth, state or conditions), and the plan's own contract names the fields (OgWellProgram { Id, ProspectId, Name, Objective, TargetDepth, DepthUnit, EstimatedCost, Currency, State, Conditions[] }). With the owning module named as LifeCycle in the feature doc, two owner tables were added - the same pattern the owner approved for WELLBORE in WEL-03: WELL_PROGRAM (PROGRAM_ID, PROSPECT_ID, FIELD_ID, PROGRAM_NAME, OBJECTIVE, TARGET_DEPTH, DEPTH_OUOM, ESTIMATED_COST, CURRENCY, STATE, AUTHOR, SUBMITTED_AT, DECIDED_BY, DECIDED_AT, RATIONALE, CONDITIONS_TEXT, ROW_VERSION) and the append-only WELL_PROGRAM_DECISION (PROGRAM_ID, DECISION_SEQ_NO, DECISION, RESULTING_STATE, RATIONALE, CONDITIONS_TEXT, DECIDED_BY, DECIDED_AT).",
+    "verified": "LIFECYCLE module setup applied in 0.2 min and the SQLite database contains both tables, with keys PROGRAM_ID and (PROGRAM_ID, DECISION_SEQ_NO)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Exploration/OgWellProgramApprovals.cs (OgWellProgramHistoryEntry, OgWellProgram, OgWellProgramDecision, IOgWellProgramApprovals, OgWellProgramApprovals.Validate/DecideAsync/RetryAsync)",
+    "tables": "Beep.OilandGas.LifeCycle/Data/Tables/WELL_PROGRAM.cs and WELL_PROGRAM_DECISION.cs, registered in Modules/LifeCycleModule.cs",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellProgramPageView.cs (route 'wellprogram': queue with age/cost/state/risk, detail, decision panel, retry, history)",
+    "wiring": "OgBootstrapper (IOgWellProgramApprovals), OgApplication.WellProgramGate, catalog 'wellprogram' (OgModuleKeys.Exploration), factory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellProgramApprovalTests.cs (9, no database) + WellProgramGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_PERF=1 OG_SETUP_PERF_SCOPE=LIFECYCLE (module setup)", "exit": 0, "schema": "applied for 1 module, 0.2 min; WELL_PROGRAM and WELL_PROGRAM_DECISION created with their keys" },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~WellProgram", "exit": 0, "run": 10, "passed": 10, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 646, "passed": 646, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.ProspectIdentification.Tests", "exit": 0, "run": 26, "passed": 26, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "database": "SQLite WELL_PROGRAM, WELL_PROGRAM_DECISION, PROSPECT and PROSPECT_RISK_ASSESSMENT",
+    "queue": "four programs for the field (the fifth in another field is absent), each carrying its author, age, cost ('12,000,000 USD'), state and prospect risk",
+    "ac2_incomplete_risk": "WP-2's prospect has SEAL_RISK null, so an approval is refused with well-program-risk-incomplete and the state stays PENDING",
+    "ac3_author": "the author deciding their own program is refused with well-program-author-cannot-decide and the state stays PENDING",
+    "ac1_recorded": "an approval by 'approver' with a rationale set STATE=APPROVED, DECIDED_BY=approver, DECIDED_AT, RATIONALE, and appended one WELL_PROGRAM_DECISION row with the same actor, state and rationale",
+    "ac4_second_decision": "deciding the now-approved program again (with the stale record) is refused with well-program-conflict ('already decided'), the state stays APPROVED and the decision count stays 1",
+    "ac5_conditions": "APPROVE_WITH_CONDITIONS with two conditions set STATE=APPROVED_WITH_CONDITIONS and stored both conditions on the program row (CONDITIONS_TEXT contains '9-5/8 liner'), and the history entry carries the same list",
+    "ac6_lost_ack": "a trigger made the update fail for WP-4: the decision was refused, Pending held the decision with RetainedProgramId WP-4 and nothing was written (state PENDING, 0 decisions); after the trigger was removed, RetryAsync recorded the same rationale and actor without the page resubmitting anything",
+    "unknown_and_empty": "an unknown program id is a failure with well-program-unknown; a field with no programs is an empty queue"
+  },
+  "smoke": {
+    "pages-declared": 39,
+    "views-constructed": true,
+    "well-program-route": "wellprogram",
+    "well-program-consistent-state": true,
+    "well-program-notice-wfl04": true,
+    "well-program-author-blocked": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 Approval records actor, date, rationale and conditions": "pass - DecideAsync writes DECIDED_BY, DECIDED_AT, RATIONALE and CONDITIONS_TEXT on the program and appends the same four to WELL_PROGRAM_DECISION; the SQLite test reads them back from both places through the reloaded program and its history.",
+    "AC-2 Approval is refused while the prospect risk is incomplete": "pass - the program carries ProspectRiskComplete, computed from PROSPECT_RISK_ASSESSMENT with the same five-element rule the prospect board and editor use (OgProspectChance.IsComplete); Validate refuses with well-program-risk-incomplete and the SQLite test confirms the row was not touched. The unit test proves every decision type is refused, not just approval.",
+    "AC-3 Author cannot approve their own program": "pass - Validate compares the program's AUTHOR with the decision's actor (case-insensitive) and refuses with well-program-author-cannot-decide; the unit test and the SQLite test both prove it, and the state is unchanged afterwards.",
+    "AC-4 A second concurrent decision is refused": "pass - the decision is guarded twice: the service re-reads STATE and ROW_VERSION immediately before the write and refuses with well-program-conflict if either moved, and the UPDATE itself carries STATE='PENDING' AND ROW_VERSION=<read> in its WHERE clause. The SQLite test decides an approved program a second time and sees the refusal, the unchanged state and one decision row.",
+    "AC-5 Conditions appear on the resulting drill program (DEV-05) as constraints": "pass - an approval with conditions stores the list on the program row (CONDITIONS_TEXT, one condition per line) and in the decision history; we could not test DEV-05's consumption because DEV-05 is not built, so the proof stops at 'the approved program carries its conditions in a column DEV-05 reads' - the SQLite test reads the column back.",
+    "AC-6 A lost acknowledgement retains the decision original": "pass - a failed or unacknowledged write sets Pending and RetainedProgramId; RetryAsync re-reads the program and re-sends the retained decision (same actor, rationale and conditions). The SQLite test forces a real failure with a trigger, proves nothing was written, removes the trigger and retries successfully."
+  },
+  "limits": [
+    "The generic approval engine (WFL-04 / ApprovalWorkflowEngine) is not wired: delegation, escalation, quorum and role-based approvers are unavailable, and the gate records its own decision in WELL_PROGRAM/WELL_PROGRAM_DECISION instead of PROCESS_APPROVAL. The page states this in a sentence shown whatever the state, and the smoke asserts it.",
+    "WELL_PROGRAM and WELL_PROGRAM_DECISION are a new LifeCycle-owned model, not PPDM 3.9; an existing database needs the LIFECYCLE module applied again to gain them.",
+    "Submitting a program (DRAFT to PENDING) is not built: the queue reads programs that are already pending, which module seeding or a later submission screen must create.",
+    "The concurrency guard is a re-read followed by a guarded update; SQLite cannot report affected rows through this datasource, so a race between the re-read and the update is narrowed but not eliminated by a single atomic statement.",
+    "AC-5 is only half provable here: the conditions are stored for DEV-05, but DEV-05 does not exist, so nothing consumes them yet.",
+    "Evidence attachments on the program are not modelled; there is no document table link in this feature.",
+    "The retry recomputes the decision timestamp on success rather than reusing the original instant, so the retained content (actor, rationale, conditions) is identical but the recorded time is the retry's.",
+    "The page is exercised by construction (the smoke builds every catalog page and audits it) and by unit/integration tests; no automated click drives the queue or the decision panel."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class RA_ANL_MISSING_REP: Entity,IPPDMEntity
 {
 
 private  System.String MISSING_REPRESENTATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MISSING_REPRESENTATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MISSING_REPRESENTATIONValue;
           set { SetProperty(ref  MISSING_REPRESENTATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

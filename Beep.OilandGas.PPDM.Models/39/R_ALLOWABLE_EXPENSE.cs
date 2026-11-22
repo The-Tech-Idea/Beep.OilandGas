@@ -9,6 +9,7 @@ public partial class R_ALLOWABLE_EXPENSE: Entity,IPPDMEntity
 {
 
 private  System.String ALLOWABLE_EXPENSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALLOWABLE_EXPENSE_TYPE
         {  
             get  

@@ -19,4 +19,14 @@ public sealed class COMPANY_LEDGER_PERIOD:ModelEntityBase
     [Required,MaxLength(16)] public string STATUS {get;set;}=string.Empty;
     [Required,MaxLength(65536)] public string AUTHORITY_JSON {get;set;}=string.Empty;
     [MaxLength(2097152),System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public string? STATE_HISTORY_JSON {get;set;}
+
+    // ACC-02: the close and the reopen a person performed. The owner's guarded transition engine records a richer state
+    // history, but the desk needs the actor, the time and the reason on the row itself to show who closed the books and
+    // who opened them again.
+    [MaxLength(128)] public string? CLOSED_BY {get;set;}
+    public DateTime? CLOSED_AT {get;set;}
+    [MaxLength(128)] public string? REOPENED_BY {get;set;}
+    public DateTime? REOPENED_AT {get;set;}
+    [MaxLength(1000)] public string? REOPEN_REASON {get;set;}
+    [MaxLength(1000)] public string? CLOSE_NOTE {get;set;}
 }

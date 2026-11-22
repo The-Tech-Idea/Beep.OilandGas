@@ -9,6 +9,7 @@ public partial class LITH_LOG: Entity,IPPDMEntity
 {
 
 private  System.String LITHOLOGY_LOG_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITHOLOGY_LOG_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LITHOLOGY_LOG_IDValue;
           set { SetProperty(ref  LITHOLOGY_LOG_IDValue, value); }
         } 
 private  System.String LITH_LOG_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITH_LOG_SOURCE
         {  
             get  

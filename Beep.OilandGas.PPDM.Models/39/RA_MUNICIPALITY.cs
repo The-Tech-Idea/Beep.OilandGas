@@ -9,6 +9,7 @@ public partial class RA_MUNICIPALITY: Entity,IPPDMEntity
 {
 
 private  System.String MUNICIPALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUNICIPALITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MUNICIPALITYValue;
           set { SetProperty(ref  MUNICIPALITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

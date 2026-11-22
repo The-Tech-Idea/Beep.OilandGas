@@ -9,6 +9,7 @@ public partial class R_STORE_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_STORE_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_STORE_STATUS
         {  
             get  

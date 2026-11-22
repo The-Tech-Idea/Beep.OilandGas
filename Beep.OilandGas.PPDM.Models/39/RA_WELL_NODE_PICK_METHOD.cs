@@ -9,6 +9,7 @@ public partial class RA_WELL_NODE_PICK_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String PICK_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PICK_METHODValue;
           set { SetProperty(ref  PICK_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

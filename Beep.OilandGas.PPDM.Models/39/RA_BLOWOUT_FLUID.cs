@@ -9,6 +9,7 @@ public partial class RA_BLOWOUT_FLUID: Entity,IPPDMEntity
 {
 
 private  System.String BLOWOUT_FLUIDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BLOWOUT_FLUID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BLOWOUT_FLUIDValue;
           set { SetProperty(ref  BLOWOUT_FLUIDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

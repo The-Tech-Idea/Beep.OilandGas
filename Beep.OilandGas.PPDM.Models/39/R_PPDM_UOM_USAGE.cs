@@ -9,6 +9,7 @@ public partial class R_PPDM_UOM_USAGE: Entity,IPPDMEntity
 {
 
 private  System.String UOM_USAGE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UOM_USAGE_TYPE
         {  
             get  

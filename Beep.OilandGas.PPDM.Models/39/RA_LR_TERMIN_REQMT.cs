@@ -9,6 +9,7 @@ public partial class RA_LR_TERMIN_REQMT: Entity,IPPDMEntity
 {
 
 private  System.String TERMINATION_REQMTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TERMINATION_REQMT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TERMINATION_REQMTValue;
           set { SetProperty(ref  TERMINATION_REQMTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

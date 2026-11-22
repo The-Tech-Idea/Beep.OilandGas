@@ -1,0 +1,90 @@
+{
+  "id": "STG-11/HSE-01",
+  "title": "HSE workspace",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the open incident count is the sum of the five recognised active states and nothing else; closed, cancelled and any unrecognised state are rows of their own; a failed read returns no snapshot and therefore no zero; the page holds no hardcoded alert and no count taken from a literal; each source link is decided by the shell's own page permission and a missing page names the feature that adds it; and the HSE officer's landing route is the RBAC seed's /hse/dashboard.",
+  "dataModel": {
+    "decision": "Nothing was created and no owner record was duplicated. The workspace counts the registers the owner already holds, and registers the ones the desktop did not yet provision: HSE_INCIDENT and HSE_INCIDENT_RESPONSE (the header and its status history), OBLIGATION, and the PROJECT family that carries a HAZOP study or a corrective action with its steps and statuses. PERMIT_STATUS_HISTORY was already in the PERMITS manifest and needed no change.",
+    "registration": "Six types added to HseModule's entity list (it deliberately declared none, with a comment that the incident command binds to PPDM_CORE). --smoke moved from 418 to 423 entity types, so five of the six were new and one was already declared by another module.",
+    "noNewTables": "No table was added. The feature's OgHseCounts and OgIncidentStateCount shapes are desktop read models over existing owner records, as the feature document itself specifies."
+  },
+  "rules": {
+    "incidentState": "An incident's state is the RESPONSE_RESULT of its latest STATUS response in HSE_INCIDENT_RESPONSE, ordered by RESPONSE_OBS_NO then EFFECTIVE_DATE, ignoring inactive rows and non-STATUS responses. The five active states are the owner's IncidentState constants (REPORTED, UNDER_INVESTIGATION, PENDING_RCA, PENDING_CORRECTIVE_ACTION, PENDING_CLOSE_OUT); CLOSED and CANCELLED are separate rows; any other or missing state is an 'other or unrecorded' row.",
+    "obligationDue": "An obligation is due when it is not fulfilled and its recorded critical date - or its expiry date when no critical date is recorded - has arrived at the as-of date. No lead time is invented and an obligation with no date is not counted.",
+    "overdueAction": "A corrective-action step is overdue when its recorded DUE_DATE has passed and its latest CA_STEP status is not COMPLETED. A step with no status row is open, which is the owner's default.",
+    "openHazopAction": "A HAZOP deviation is open when its latest recorded HAZOP_DEVIATION status is OPEN or ACTION_REQUIRED, using the owner's HseReferenceCodes values.",
+    "pendingPermit": "A permit is pending when the latest PERMIT_STATUS_HISTORY row for its application is SUBMITTED, UNDER_REVIEW or ADDITIONAL_INFO_REQUIRED, using the owner's PermitApplicationStatusCodes storage keys.",
+    "links": "Each source link is offered only when the route is in the module catalog and the shell's own page-permission check would open it; a route this build does not carry says which feature adds it, which is a different answer from a refusal.",
+    "landing": "The HSE officer's persona route changed from 'charts' to 'hse' because the RBAC seed's DEFAULT_LANDING_ROUTE for HSE_OFFICER is /hse/dashboard and this feature adds that page. A guard test reads the seed and fails if either side moves."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Hse/OgHseWorkspace.cs (OgHseCounts, OgIncidentStateCount, OgHseLink, OgHseInbox, OgHseSnapshot, HseRules, IOgHseWorkspace, OgHseWorkspace)",
+    "composition": "The assigned-work panel is WFL-05's IOgTaskInbox, composed rather than re-read: a failure there is a line on the page, not a failed workspace. Everything else is read through UnitofWork<T> from the owner tables.",
+    "page": "src/Beep.OilandGas.Desktop/Views/HseWorkspacePageView.cs (route 'hse': the refresh line, the counts, the failure panel, the incident state strip and its grid, the inbox line and the source links with their reasons)",
+    "wiring": "OgBootstrapper (IOgHseWorkspace with IOgTaskInbox), OgApplication.Hse, catalog 'hse' (OgModuleKeys.Hse), OgPageFactory, en + ar labels, and OgPersonaLanding's HSE officer route",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HseWorkspaceTests.cs (8, no database) + HseWorkspaceGatewayTests.cs (1 opt-in, real SQLite over seven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1152, "passed": 1152, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 62, "passed": 62, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 86, "views-constructed": true, "modulesetup-summary": "33 module(s) - 423 entity type(s)", "landing-map": "… HseOfficer->hse …", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with HSE_INCIDENT, HSE_INCIDENT_RESPONSE, OBLIGATION, PROJECT, PROJECT_STEP, PROJECT_STATUS and PERMIT_STATUS_HISTORY, seeded with ten incidents (six in active states, one closed, one cancelled, one unrecognised, one with no status row), five obligations, one corrective-action project with four steps, two HAZOP projects with three deviations and four permit applications",
+    "ac1_open": "six incidents are open and the figure is the sum of the five active rows; a header whose latest STATUS response is UNDER_INVESTIGATION is counted there even though it was first reported, and an inactive status row does not win over the active one",
+    "ac2_separate": "closed 1, cancelled 1, other 2 - the unrecognised state ONSITE_REVIEW and the incident with no status row share the 'other or unrecorded' row, and none of them is in the open figure",
+    "ac3_failure": "dropping HSE_INCIDENT_RESPONSE makes the read fail with no snapshot at all, so the page has no count to show and says the read failed; the unit test also proves the no-connection path returns no value",
+    "overdue_actions": "two of four corrective-action steps are past due and not completed: one open, one with no status row; the completed step and the future step are not counted, and the completed status wins over the step's earlier OPEN row",
+    "obligations": "two of five are due: one by critical date, one by expiry date; the future one, the fulfilled one and the undated one are not",
+    "hazop": "two deviations are open (OPEN and ACTION_REQUIRED); the deviation whose latest status is CLOSED is not, even though it was OPEN earlier",
+    "permits": "two of four applications are pending: one submitted and then under review (the latest row wins), one submitted; the approved and the draft ones are not",
+    "links": "with a page gate that opens only 'wells', that link is offered, 'tasks' is refused with 'your account may not open tasks', and 'incidents' says 'arrives with HSE-02' - three different answers",
+    "inbox": "the composed inbox reports overdue 3, all 7, and is shown on its own line",
+    "jurisdiction": "the session has no jurisdiction, so the workspace reports 'jurisdiction not specified' rather than defaulting to a country",
+    "landing": "the RBAC seed's /hse/dashboard maps to 'hse', the persona table says 'hse', and 'hse' is in the catalog; smoke now records HseOfficer->hse"
+  },
+  "gates": {
+    "AC-1 Open counts include only the five recognised active states": "pass - the open figure is the sum of the five active rows, asserted in the gateway and in the unit test.",
+    "AC-2 Cancelled and other states are shown separately": "pass - closed, cancelled and 'other or unrecorded' are their own rows and never folded into open.",
+    "AC-3 A failed read never becomes zero": "pass - a failed read returns no snapshot and the page clears every figure; the guard test asserts the failed branch sets the count and strip text to empty.",
+    "AC-4 No hardcoded alert exists in this feature": "pass - a guard test rejects any 'Count = <number>' assignment and any '<number> incidents/actions/permits' sentence in the view, and asserts the counts come from the workspace.",
+    "AC-5 Each source link is independently gated": "pass - the gateway gives three different answers for three routes (offered, refused, not in this build) from one page-permission predicate.",
+    "AC-6 The persona landing route matches the RBAC configuration": "pass - a guard test reads DEFAULT_LANDING_ROUTE for HSE_OFFICER from the seed, maps it with OgPersonaLanding.RouteFor, and requires the persona table and the catalog to agree."
+  },
+  "engineFindings": {
+    "incidentStateIsAHistory": {
+      "where": "Beep.OilandGas.PPDM.Models/39/HSE_INCIDENT.cs and HSE_INCIDENT_RESPONSE.cs",
+      "finding": "The incident header has no status column. The state is a series of STATUS responses (RESPONSE_TYPE='STATUS', RESPONSE_RESULT=state), so 'the state' only exists as the latest row - and the API reads it the same way.",
+      "handling": "The workspace takes the latest active STATUS response per incident by RESPONSE_OBS_NO then EFFECTIVE_DATE; the gateway seeds a status that changes and an inactive later row to prove the rule."
+    },
+    "hazopAndCorrectiveActionsAreProjectRows": {
+      "where": "HseReferenceCodes.Hazop and HseReferenceCodes.CorrectiveAction",
+      "finding": "There are no HAZOP_* or CA_* tables. A HAZOP study and a corrective action are PROJECT rows distinguished by PROJECT_TYPE, with PROJECT_STEP for nodes/steps and PROJECT_STATUS for their status history - which is why HSE-01 reads the PROJECT family rather than a dedicated HSE table.",
+      "handling": "The workspace filters by the owner's own reference codes (HAZOP, CORRECTIVE_ACTION, HAZOP_DEVIATION, CA_STEP) and takes the latest status per step/deviation. The HSE module now declares these tables so a desktop document provisions them."
+    },
+    "permitsCarryEnums": {
+      "where": "Beep.OilandGas.PermitsAndApplications/Data/PermitsAndApplications/Tables/PERMIT_APPLICATION.cs",
+      "finding": "PERMIT_APPLICATION stores STATUS as a PermitApplicationStatus enum, and one of its storage keys (ADDITIONAL_INFO_REQUIRED) does not match the enum member name, so reading the header through the unit of work would fail on such a row.",
+      "handling": "Pending permits are counted from PERMIT_STATUS_HISTORY, whose STATUS is a plain canonical string - the owner's own history table - so no enum conversion is involved. The limit that an application with no history row is not counted is recorded."
+    },
+    "hseModuleDeclaredNoTypes": {
+      "finding": "HseModule deliberately declared no entity types because the incident command binds to PPDM_CORE, and the PPDM foundation module declares none of its own - so the tables the HSE screen reads were not provisioned by any module.",
+      "handling": "The six tables are declared in HseModule, the module that owns HSE, with the reason written on the list. Nothing was moved out of another owner."
+    },
+    "personaLandingWasAStopgap": {
+      "finding": "The HSE officer's persona route was 'charts', a page that happened to exist, because no HSE page did.",
+      "handling": "With the HSE workspace added, the route is the RBAC seed's 'hse'. The persona test and the smoke expectation were updated with it."
+    }
+  },
+  "limits": [
+    "No FIELD scoping or load revalidation. The stage's architecture note asks for FIELD-scoped reads revalidated before and after; these PPDM tables carry no FIELD column the desktop can filter on, so the workspace reads the company database and shows the session's field name only. This is the single largest gap against the stage note and must be closed by whichever feature introduces a field-scoped HSE record.",
+    "The jurisdiction is always reported as 'not specified': the session has no jurisdiction field and no company jurisdiction record is read here. The rule that it is never defaulted is honoured, but the value cannot yet be supplied.",
+    "'Obligations due' counts only obligations whose recorded critical or expiry date has arrived; there is no lead-time window, because HSE-05's compliance calendar owns that reading.",
+    "An open HAZOP action is a deviation whose latest status is open; the action raised against it (and its own owner and due date) belongs to HSE-04, so the count is of deviations awaiting action rather than of action items.",
+    "An application with no PERMIT_STATUS_HISTORY row is not counted as pending, because the header's enum status is not read. A Draft application is correctly not pending, but an application created without history would also be missed.",
+    "The assigned-work panel is WFL-05's inbox, composed and stubbed in this feature's tests; how the inbox reads tasks is proven by WFL-05, not here.",
+    "No regulator delivery and no legal interpretation of deadlines, as the stage scopes: the page reports recorded facts only.",
+    "The page is read-only: it has no incident, obligation, HAZOP or permit commands, which arrive with HSE-02..HSE-07."
+  ]
+}

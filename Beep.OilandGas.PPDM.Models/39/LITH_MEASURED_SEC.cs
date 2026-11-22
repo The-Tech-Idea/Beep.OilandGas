@@ -9,6 +9,7 @@ public partial class LITH_MEASURED_SEC: Entity,IPPDMEntity
 {
 
 private  System.String MEAS_SECTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MEAS_SECTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MEAS_SECTION_IDValue;
           set { SetProperty(ref  MEAS_SECTION_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_LOST_MATERIAL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LOST_MATERIAL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOST_MATERIAL_TYPE
         {  
             get  

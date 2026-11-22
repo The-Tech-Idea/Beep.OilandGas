@@ -9,6 +9,7 @@ public partial class CS_COORD_TRANSFORM: Entity,IPPDMEntity
 {
 
 private  System.String TRANSFORM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSFORM_ID
         {  
             get  

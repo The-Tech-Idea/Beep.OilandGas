@@ -9,6 +9,7 @@ public partial class R_PROJECT_BA_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROLE
         {  
             get  

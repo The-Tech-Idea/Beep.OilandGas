@@ -9,6 +9,7 @@ public partial class PPDM_VOL_MEAS_REGIME: Entity,IPPDMEntity
 {
 
 private  System.String VOLUME_REGIME_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_REGIME_ID
         {  
             get  

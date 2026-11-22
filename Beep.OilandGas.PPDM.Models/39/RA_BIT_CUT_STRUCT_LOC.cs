@@ -9,6 +9,7 @@ public partial class RA_BIT_CUT_STRUCT_LOC: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_STRUCTURE_LOCValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_STRUCTURE_LOC
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CUTTING_STRUCTURE_LOCValue;
           set { SetProperty(ref  CUTTING_STRUCTURE_LOCValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

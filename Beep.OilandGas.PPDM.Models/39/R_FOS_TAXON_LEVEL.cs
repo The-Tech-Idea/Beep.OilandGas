@@ -9,6 +9,7 @@ public partial class R_FOS_TAXON_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String TAXON_LEVELValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAXON_LEVEL
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_DIGITAL_OUTPUT: Entity,IPPDMEntity
 {
 
 private  System.String DIGITAL_OUTPUTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIGITAL_OUTPUT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DIGITAL_OUTPUTValue;
           set { SetProperty(ref  DIGITAL_OUTPUTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

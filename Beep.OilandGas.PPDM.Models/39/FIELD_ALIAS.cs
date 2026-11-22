@@ -9,6 +9,7 @@ public partial class FIELD_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FIELD_IDValue;
           set { SetProperty(ref  FIELD_IDValue, value); }
         } 
 private  System.String FIELD_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_ALIAS_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String FIELD_ALIAS_IDValue;
           set { SetProperty(ref  FIELD_ALIAS_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class PROJECT_PLAN: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_PLAN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_PLAN_ID
         {  
             get  

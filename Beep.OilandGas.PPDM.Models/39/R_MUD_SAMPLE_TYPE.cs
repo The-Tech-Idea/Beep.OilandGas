@@ -9,6 +9,7 @@ public partial class R_MUD_SAMPLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MUD_SAMPLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUD_SAMPLE_TYPE
         {  
             get  

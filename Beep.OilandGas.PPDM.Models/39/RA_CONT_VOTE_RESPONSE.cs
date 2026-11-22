@@ -9,6 +9,7 @@ public partial class RA_CONT_VOTE_RESPONSE: Entity,IPPDMEntity
 {
 
 private  System.String VOTE_RESPONSEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOTE_RESPONSE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VOTE_RESPONSEValue;
           set { SetProperty(ref  VOTE_RESPONSEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

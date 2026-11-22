@@ -9,6 +9,7 @@ public partial class RA_OBLIG_SUSPEND_PAY: Entity,IPPDMEntity
 {
 
 private  System.String SUSPEND_PAYMENT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUSPEND_PAYMENT_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SUSPEND_PAYMENT_REASONValue;
           set { SetProperty(ref  SUSPEND_PAYMENT_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

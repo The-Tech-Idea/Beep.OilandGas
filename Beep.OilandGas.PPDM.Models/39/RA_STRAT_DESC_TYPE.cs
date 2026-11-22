@@ -9,6 +9,7 @@ public partial class RA_STRAT_DESC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DESCRIPTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESCRIPTION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DESCRIPTION_TYPEValue;
           set { SetProperty(ref  DESCRIPTION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

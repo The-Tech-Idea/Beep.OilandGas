@@ -9,6 +9,7 @@ public partial class CS_COORDINATE_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String COORD_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COORD_SYSTEM_ID
         {  
             get  

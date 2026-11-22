@@ -9,6 +9,7 @@ public partial class RA_SP_ZONE_DERIV: Entity,IPPDMEntity
 {
 
 private  System.String ZONE_DERIVATION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_DERIVATION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ZONE_DERIVATION_METHODValue;
           set { SetProperty(ref  ZONE_DERIVATION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

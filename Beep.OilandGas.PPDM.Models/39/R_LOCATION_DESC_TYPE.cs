@@ -9,6 +9,7 @@ public partial class R_LOCATION_DESC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LOCATION_DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOCATION_DESC_TYPE
         {  
             get  

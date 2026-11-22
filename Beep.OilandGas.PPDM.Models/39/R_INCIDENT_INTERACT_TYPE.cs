@@ -9,6 +9,7 @@ public partial class R_INCIDENT_INTERACT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INTERACTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTERACTION_TYPE
         {  
             get  

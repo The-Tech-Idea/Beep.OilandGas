@@ -9,6 +9,7 @@ public partial class PPDM_SCHEMA_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GROUP_SYSTEM_IDValue;
           set { SetProperty(ref  GROUP_SYSTEM_IDValue, value); }
         } 
 private  System.String GROUP_SCHEMA_ENTITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_SCHEMA_ENTITY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String GROUP_SCHEMA_ENTITY_IDValue;
           set { SetProperty(ref  GROUP_SCHEMA_ENTITY_IDValue, value); }
         } 
 private  System.String COMP_SCHEMA_ENTITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMP_SCHEMA_ENTITY_ID
         {  
             get  

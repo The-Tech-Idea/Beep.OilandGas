@@ -9,6 +9,7 @@ public partial class WORK_ORDER_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String WORK_ORDER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WORK_ORDER_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WORK_ORDER_IDValue;
           set { SetProperty(ref  WORK_ORDER_IDValue, value); }
         } 
 private  System.Decimal CONDITION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal CONDITION_OBS_NO
         {  
             get  

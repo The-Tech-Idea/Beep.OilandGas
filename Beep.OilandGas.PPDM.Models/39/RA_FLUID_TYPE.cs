@@ -9,6 +9,7 @@ public partial class RA_FLUID_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FLUID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FLUID_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FLUID_TYPEValue;
           set { SetProperty(ref  FLUID_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

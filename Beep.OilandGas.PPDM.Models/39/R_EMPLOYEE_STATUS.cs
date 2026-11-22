@@ -9,6 +9,7 @@ public partial class R_EMPLOYEE_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String EMPLOYEE_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EMPLOYEE_STATUS
         {  
             get  

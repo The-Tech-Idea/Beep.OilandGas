@@ -9,6 +9,7 @@ public partial class R_COLOR_FORMAT: Entity,IPPDMEntity
 {
 
 private  System.String COLOR_FORMATValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLOR_FORMAT
         {  
             get  

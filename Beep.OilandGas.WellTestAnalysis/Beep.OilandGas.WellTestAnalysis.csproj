@@ -27,6 +27,9 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
 		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+		<!-- WTA-01: the module registers its entity types, which needs the module-setup contracts. -->
+		<ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

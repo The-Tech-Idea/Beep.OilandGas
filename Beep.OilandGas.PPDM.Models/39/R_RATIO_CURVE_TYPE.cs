@@ -9,6 +9,7 @@ public partial class R_RATIO_CURVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RATIO_CURVE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATIO_CURVE_TYPE
         {  
             get  

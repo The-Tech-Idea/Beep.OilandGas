@@ -9,6 +9,7 @@ public partial class RA_PRODUCTION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String PRODUCTION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRODUCTION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PRODUCTION_METHODValue;
           set { SetProperty(ref  PRODUCTION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

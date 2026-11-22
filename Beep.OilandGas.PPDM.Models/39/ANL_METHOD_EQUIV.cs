@@ -9,6 +9,7 @@ public partial class ANL_METHOD_EQUIV: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_SET_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_SET_ID1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METHOD_SET_ID1Value;
           set { SetProperty(ref  METHOD_SET_ID1Value, value); }
         } 
 private  System.String METHOD_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_ID1
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String METHOD_ID1Value;
           set { SetProperty(ref  METHOD_ID1Value, value); }
         } 
 private  System.String METHOD_SET_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_SET_ID2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String METHOD_SET_ID2Value;
           set { SetProperty(ref  METHOD_SET_ID2Value, value); }
         } 
 private  System.String METHOD_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_ID2
         {  
             get  

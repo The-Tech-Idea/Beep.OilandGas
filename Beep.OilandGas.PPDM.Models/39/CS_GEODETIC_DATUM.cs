@@ -9,6 +9,7 @@ public partial class CS_GEODETIC_DATUM: Entity,IPPDMEntity
 {
 
 private  System.String GEODETIC_DATUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GEODETIC_DATUM
         {  
             get  

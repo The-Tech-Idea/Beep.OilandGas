@@ -9,6 +9,7 @@ public partial class R_PROD_STRING_STAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS_TYPE
         {  
             get  

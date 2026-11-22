@@ -9,6 +9,7 @@ public partial class CS_COORD_ACQUISITION: Entity,IPPDMEntity
 {
 
 private  System.String ACQUISITION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACQUISITION_ID
         {  
             get  

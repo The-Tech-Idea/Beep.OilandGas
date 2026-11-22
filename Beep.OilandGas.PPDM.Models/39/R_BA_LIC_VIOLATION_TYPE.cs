@@ -9,6 +9,7 @@ public partial class R_BA_LIC_VIOLATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VIOLATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VIOLATION_TYPE
         {  
             get  

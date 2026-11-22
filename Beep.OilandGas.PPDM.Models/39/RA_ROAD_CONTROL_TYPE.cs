@@ -9,6 +9,7 @@ public partial class RA_ROAD_CONTROL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTROL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTROL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTROL_TYPEValue;
           set { SetProperty(ref  CONTROL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class CONSULT: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_ID
         {  
             get  

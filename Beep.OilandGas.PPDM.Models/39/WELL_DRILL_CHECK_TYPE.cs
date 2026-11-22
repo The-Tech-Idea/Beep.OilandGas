@@ -9,6 +9,7 @@ public partial class WELL_DRILL_CHECK_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CHECK_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHECK_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CHECK_SET_IDValue;
           set { SetProperty(ref  CHECK_SET_IDValue, value); }
         } 
 private  System.String CHECK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHECK_TYPE
         {  
             get  

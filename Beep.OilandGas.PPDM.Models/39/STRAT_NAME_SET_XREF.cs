@@ -9,6 +9,7 @@ public partial class STRAT_NAME_SET_XREF: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_NAME_SET_ID_1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID_1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_NAME_SET_ID_1Value;
           set { SetProperty(ref  STRAT_NAME_SET_ID_1Value, value); }
         } 
 private  System.String STRAT_NAME_SET_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID_2
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_NAME_SET_ID_2Value;
           set { SetProperty(ref  STRAT_NAME_SET_ID_2Value, value); }
         } 
 private  System.Decimal XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_OBS_NO
         {  
             get  

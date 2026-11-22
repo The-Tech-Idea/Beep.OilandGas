@@ -1,0 +1,16 @@
+<Solution>
+
+  <Folder Name="/src/">
+    <Project Path="Beep.OilandGas.Desktop.Core/Beep.OilandGas.Desktop.Core.csproj" />
+    <Project Path="Beep.OilandGas.Desktop.Data/Beep.OilandGas.Desktop.Data.csproj" />
+    <Project Path="Beep.OilandGas.Desktop.Controls/Beep.OilandGas.Desktop.Controls.csproj" />
+    <Project Path="Beep.OilandGas.Desktop.Modules/Beep.OilandGas.Desktop.Modules.csproj" />
+    <Project Path="Beep.OilandGas.Desktop.WellTools/Beep.OilandGas.Desktop.WellTools.csproj" />
+    <Project Path="Beep.OilandGas.Desktop/Beep.OilandGas.Desktop.csproj" />
+  </Folder>
+
+  <Folder Name="/test/">
+    <Project Path="../test/Beep.OilandGas.Desktop.Tests/Beep.OilandGas.Desktop.Tests.csproj" />
+  </Folder>
+
+</Solution>

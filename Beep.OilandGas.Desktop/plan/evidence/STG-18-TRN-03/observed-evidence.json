@@ -1,0 +1,82 @@
+{
+  "id": "STG-18/TRN-03",
+  "title": "Training server and sample packs",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: the sample pack installs into the configured scenario folder and the runner reads it back; the server starts on a system-chosen free port and stops cleanly with the port free again; binding beyond loopback is refused until it is explicitly confirmed; a port another process holds is refused with the port named before anything is opened; the trainees the server has heard from are listed with their request and attempt counts; and a pack exported from one folder and imported into another keeps its scenarios and courses.",
+  "dataModel": {
+    "read": "The scenario and course files of the configured folder, and the results ledger the training pages already use.",
+    "written": "The sample pack into the scenario folder (the tools' SamplePacks), a pack zip, and the ledger the server records attempts into - the same file the desktop reads.",
+    "noTable": "TRN-03 introduces no table. A pack is files and the server writes the ledger it was given.",
+    "ownerChange": "One additive change in TheTechIdea.OilGas.Training: TrainingServerOptions gained a nullable Observe callback, invoked once per request with the trainee name the request carried. It is how the host supplies the notion of a session, because the server has none of its own; an observer that throws is caught so it can never break a request."
+  },
+  "rules": {
+    "pack": "AC-1: the pack is SamplePacks.Write into the folder training.scenarioFolders names, which is the folder ScenarioLibrary.LoadFolder reads - so 'appears in TRN-01' is the runner's own loader finding the files, which the test asserts by loading them. A second install reports itself as a reinstall and says how many scenario files were already there; other files in the folder are left alone.",
+    "server": "AC-2: the server is the tools' TrainingServer over HttpListener. Port 0 asks the system for a free one; the state reports the address it is listening on; stopping disposes the listener, waits for the accept loop, and the test then binds the same port to prove it was released.",
+    "exposure": "AC-3: the bind address is checked with the server's own IsLoopback, and anything else is refused unless the exposure was confirmed - because the server has no sign-in and anyone who can reach the port can read the exercises and record attempts in any name. The page states that in those words for whichever address is in force.",
+    "portConflict": "AC-4: the port is asked of the operating system's own listener list (IPGlobalProperties.GetActiveTcpListeners) rather than by binding and catching the failure, so a conflict is refused with the port named and nothing is opened. If the runtime still refuses the bind (for example access denied, code 5), the state returns to stopped with a sentence about URL reservations rather than an exception.",
+    "sessions": "AC-5: the server tracks no sessions, so the page defines one - a trainee name the server has heard from, with the number of requests carrying it, the attempts recorded in that name, and when it was first and last seen. It is named for what it is and not dressed up as authentication: a page refresh is a request, and an unnamed request is listed as '(no name given)'.",
+    "packZip": "AC-6: an export selects the exercise files by name - scenario, course, well and solution files - so the ledger and any unrelated file in the folder are left out; an import extracts each entry by its file name only (a zip cannot write outside the folder) and then reads the folder back through the engine's own loaders, so the round trip is measured rather than assumed.",
+    "offByDefault": "The server is off until it is asked for: the page has no start-on-open, and every start is a command that is audited. That is the feature's own risk note answered - an embedded web server in a desktop application is unusual, so it is opt-in and its exposure is stated."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Training/OgTrainingServer.cs (OgPackInstall, OgPackTransfer, OgServerSession, OgTrainingServer, OgServerRequest, OgTrainingServerRules, IOgTrainingServer, OgTrainingServerService with InstallSamplePackAsync/ExportPackAsync/ImportPackAsync/StartAsync/StopAsync/StatusAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/TrainingServerPageView.cs (route 'trainingserver': the install and pack bars, the server bar with port, bind and the exposure confirmation, the state, the security sentence, the session grid and the notice)",
+    "wiring": "OgBootstrapper (IOgTrainingServer with the scenario folder, the ledger and the packs folder), OgApplication.TrainingServer, catalog 'trainingserver' (OgModuleKeys.Training), OgPageFactory, en + ar labels",
+    "owner": "TheTechIdea.OilGas.Training/TrainingServer.cs (TrainingServerOptions.Observe and the two calls that raise it)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/TrainingServerTests.cs (5, no socket listening beyond what a conflict test takes) + TrainingServerGatewayTests.cs (1 opt-in, a real listener, real HTTP requests and a real stop)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1474, "passed": 1474, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 98, "passed": 98, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 121, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "files": "The sample pack in a temporary scenario folder, a pack zip in and out of two folders, and the ledger. No database is opened anywhere in this feature.",
+    "ac1_install": "the pack installs with more than six scenarios and at least one course; ScenarioLibrary.LoadFolder on the same folder returns exactly the count the install reported and no problems; a second install reports itself as a reinstall and names how many files were already there",
+    "ac2_start_stop": "the server starts on port 0, reports a port above zero and a loopback address, serves the page and two API calls over real HTTP, and after the stop reports not running with no address; the test then binds the same port successfully, proving it was released, and a second start after the stop works",
+    "ac3_exposure": "starting on 0.0.0.0 without the confirmation is refused with a sentence that says the server has no sign-in and asks for the confirmation; loopback with no confirmation starts",
+    "ac4_conflict": "with another socket holding a port, starting on it is refused with 'Port <n> ... is already in use' and the server never opens; the conflict code is the one the page reports",
+    "ac5_sessions": "after a page request, a courses request and a progress request carrying the name practice-1, the status lists practice-1 with at least one request and an anonymous row for the requests that carried no name; the request count equals the sum of the session counts, and each session's last-seen is not before its first",
+    "ac6_pack": "the export reports the same scenario and course counts as the source folder, the zip is larger than a kilobyte, the import into a different folder reports the same counts, the scenario ids match the source, and an unrelated text file in the folder is not in the pack; a file that is not a zip and a missing file are refused with their own codes",
+    "refusals": "installing with no folder, with no actor, exporting from a folder that is not there, exporting to no path, importing with no folder or a missing zip are each refused with their own sentence; starting with no scenario folder, and starting while running, likewise"
+  },
+  "gates": {
+    "AC-1 Sample packs install and appear in TRN-01": "pass - installed into the configured folder and read back by the runner's own loader with no problems; the reinstall state is reported.",
+    "AC-2 The server starts on a free port and stops cleanly": "pass - real listener on a system-chosen port, real HTTP requests served, clean stop, and the port independently re-bound afterwards.",
+    "AC-3 Binding beyond localhost requires explicit confirmation": "pass - 0.0.0.0 without the confirmation refused with the reason; loopback needs none; the page prints the exposure for whichever address is in force.",
+    "AC-4 A port conflict is reported with the port": "pass - asked of the system's listener list before anything is opened, and refused with the port named.",
+    "AC-5 Server sessions are visible and countable": "pass - the names seen, with requests, attempts and first/last times, summed to the request count; the page says they are names and not authentication.",
+    "AC-6 Exporting and re-importing a pack preserves scenarios and courses": "pass - same scenario ids and counts after a zip round trip through the engine's loaders, with the ledger excluded."
+  },
+  "engineFindings": {
+    "theServerHasNoSessions": {
+      "where": "TheTechIdea.OilGas.Training/TrainingServer.cs and TrainingPage.cs",
+      "finding": "The server tracks nothing between requests: there is no connection, session or trainee registry, and the trainee name lives in the browser's sessionStorage and is sent with each call. So 'server sessions are visible' had nothing to show.",
+      "handling": "TrainingServerOptions gained an additive Observe callback, raised for every request with the name the request carried, and the page defines a session as a name the server has heard from. It is named for what it is on the page, because calling a typed name an authenticated session would be a claim the server cannot support."
+    },
+    "thePortConflictDoesNotNameThePort": {
+      "finding": "TrainingServer.Start lets HttpListenerException out when a port is held, and the message from HttpListener does not necessarily name the port.",
+      "handling": "The service asks the operating system's own listener list first, so a conflict is answered with the port named and nothing is opened. The runtime's refusal is still caught for the cases the list cannot predict (an address needing a URL reservation) and turned into a sentence with the reference, with the state returning to stopped."
+    },
+    "loopbackWorkedWithoutAReservation": {
+      "finding": "On this machine HttpListener on http://127.0.0.1:<free port>/ starts without an administrator URL reservation, so the real-server test runs rather than skipping.",
+      "handling": "The gateway test asserts the server is actually running and fails with the state's own text if it is not, rather than quietly passing over an untested state. That is recorded because a machine that refuses the bind cannot verify this feature."
+    },
+    "theLedgerSitsBesideTheScenarios": {
+      "finding": "The ledger's default home is the data root, but a folder configured as the scenario folder can easily contain results.json too - and a zip of the folder would carry every trainee's attempts to another machine.",
+      "handling": "The export selects exercise files by name (scenario, course, well, solution) and excludes results.json, which the unit test proves by planting one and a stray text file and asserting neither is in the pack."
+    }
+  },
+  "limits": [
+    "The server is an HttpListener: binding beyond loopback on Windows generally needs a URL reservation made by an administrator, so the confirmation is necessary but not always sufficient - the page reports the refusal when that happens.",
+    "The server has no sign-in at all, by design: the trainee name is typed, so an attempt can be recorded in anyone's name. The page states this for whichever address is bound, and binding beyond loopback needs confirmation.",
+    "No TLS: the traffic is plain HTTP, which is acceptable on loopback and should be behind a proxy if it is ever exposed.",
+    "A 'session' is a name seen, not a connection: a page refresh is a request, and a trainee who never types a name appears under '(no name given)'.",
+    "The session list is per server run - it is cleared when the server starts - so it answers 'who is working now', not 'who has ever worked'.",
+    "A pack is a flat zip: file names only, no subfolders, and an import overwrites a file of the same name without asking.",
+    "The page starts the server on the UI thread, so a slow bind blocks the window briefly; a long-running start would need moving to a background task.",
+    "Attempts recorded through the server go to the ledger file, but the courses page only sees them when it is reloaded - there is no live update.",
+    "The plan's training.admin permission is not a separate gate: the page is gated by the application's own module permission, and the start, stop, install and pack commands are audited instead."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class R_SUBSTANCE_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_COMPONENT_TYPE
         {  
             get  

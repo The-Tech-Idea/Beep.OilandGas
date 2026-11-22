@@ -9,6 +9,7 @@ public partial class RA_FACILITY_SPEC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SPEC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SPEC_TYPEValue;
           set { SetProperty(ref  SPEC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

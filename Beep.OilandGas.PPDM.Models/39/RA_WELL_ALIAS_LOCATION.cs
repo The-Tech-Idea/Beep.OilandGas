@@ -9,6 +9,7 @@ public partial class RA_WELL_ALIAS_LOCATION: Entity,IPPDMEntity
 {
 
 private  System.String LOCATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOCATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LOCATION_TYPEValue;
           set { SetProperty(ref  LOCATION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

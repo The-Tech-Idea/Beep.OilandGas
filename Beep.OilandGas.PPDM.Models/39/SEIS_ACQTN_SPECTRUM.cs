@@ -9,6 +9,7 @@ public partial class SEIS_ACQTN_SPECTRUM: Entity,IPPDMEntity
 {
 
 private  System.String ACQTN_DESIGN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACQTN_DESIGN_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACQTN_DESIGN_IDValue;
           set { SetProperty(ref  ACQTN_DESIGN_IDValue, value); }
         } 
 private  System.String SEIS_SPECTRUM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SPECTRUM_TYPE
         {  
             get  

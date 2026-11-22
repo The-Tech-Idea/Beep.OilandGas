@@ -9,6 +9,7 @@ public partial class R_WELL_SERVICE_METRIC: Entity,IPPDMEntity
 {
 
 private  System.String SERVICE_METRICValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SERVICE_METRIC
         {  
             get  

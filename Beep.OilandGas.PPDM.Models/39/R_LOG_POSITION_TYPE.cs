@@ -9,6 +9,7 @@ public partial class R_LOG_POSITION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String POSITION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POSITION_TYPE
         {  
             get  

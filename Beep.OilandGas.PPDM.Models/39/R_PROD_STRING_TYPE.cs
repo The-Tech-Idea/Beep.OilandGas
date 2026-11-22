@@ -9,6 +9,7 @@ public partial class R_PROD_STRING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROD_STRING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROD_STRING_TYPE
         {  
             get  

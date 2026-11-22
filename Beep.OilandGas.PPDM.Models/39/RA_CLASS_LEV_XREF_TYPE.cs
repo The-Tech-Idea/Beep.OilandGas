@@ -9,6 +9,7 @@ public partial class RA_CLASS_LEV_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LEVEL_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEVEL_XREF_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEVEL_XREF_TYPEValue;
           set { SetProperty(ref  LEVEL_XREF_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

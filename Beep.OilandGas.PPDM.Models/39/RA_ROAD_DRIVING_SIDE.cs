@@ -9,6 +9,7 @@ public partial class RA_ROAD_DRIVING_SIDE: Entity,IPPDMEntity
 {
 
 private  System.String DRIVING_SIDEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRIVING_SIDE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DRIVING_SIDEValue;
           set { SetProperty(ref  DRIVING_SIDEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

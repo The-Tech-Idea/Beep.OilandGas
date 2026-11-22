@@ -9,6 +9,7 @@ public partial class PPDM_PROPERTY_COLUMN: Entity,IPPDMEntity
 {
 
 private  System.String PROPERTY_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROPERTY_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROPERTY_SET_IDValue;
           set { SetProperty(ref  PROPERTY_SET_IDValue, value); }
         } 
 private  System.Decimal PROPERTY_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PROPERTY_OBS_NO
         {  
             get  

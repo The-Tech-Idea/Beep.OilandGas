@@ -1,0 +1,57 @@
+{
+  "id": "STG-03/EXP-01",
+  "title": "Exploration workspace",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-4 met: every count is a COUNT over records and a failed read returns no counts at all; each source link is decided by the shell's page-permission answer, with the feature that will add a missing page named; only prospects with a missing risk element are counted; and the exploration persona's landing route is derived from the RBAC seed's DEFAULT_LANDING_ROUTE and guarded against drift",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Exploration/OgExplorationWorkspace.cs (OgFunnelStage, OgExplorationKpis, OgExplorationLink, OgExplorationSnapshot, IOgExplorationWorkspace, OgExplorationWorkspace, BuildLinks, IsIncomplete, FieldClause)",
+    "page": "src/Beep.OilandGas.Desktop/Views/ExplorationWorkspacePageView.cs (route 'exploration': header, KPI sentence, incomplete-risk strip, permission-gated source buttons, funnel grid, inbox state)",
+    "persona": "Core/OgRoleNames.cs (ExplorationGeologist), Core/OgPersonaLanding.cs (persona row plus RouteFor, which maps an RBAC web route to the desktop module route)",
+    "wiring": "OgBootstrapper (IOgExplorationWorkspace), OgApplication.ExplorationWorkspace, catalog 'exploration' (OgModuleKeys.Exploration), factory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ExplorationWorkspaceTests.cs (15, no database, incl. the RBAC-seed guard) + ExplorationWorkspaceGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~ExplorationWorkspace", "exit": 0, "run": 16, "passed": 16, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 589, "passed": 589, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.ProspectIdentification.Tests", "exit": 0, "run": 26, "passed": 26, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "database": "SQLite PROSPECT, PROSPECT_WORKFLOW_STAGE, PROSPECT_RISK_ASSESSMENT, PLAY, LEAD and WELL",
+    "funnel": "SCREENING 2 and DRILLING 1 for FIELD-1 (three distinct prospects, ordered by stage sequence); the other field's prospect never appears",
+    "kpis": "plays 2, leads 3, wells planned 1, wells drilling 1 - each from its own table, with an ABANDONED well not counted",
+    "incomplete_risk": "exactly PROS-2 (no assessment) and PROS-4 (RESERVOIR_RISK null); PROS-1 and PROS-3 have complete assessments and are not counted",
+    "field_scope": "FIELD-1 by id and \"South\" by name both resolve; a field with no records is success with zeros, not a failure",
+    "failed_read": "with PROSPECT_WORKFLOW_STAGE dropped the load returns a failure with a reference and no snapshot - the page then shows the failure state, not zeros",
+    "links": "with a permission answer that allows only 'wells', only that link is available; the prospect board is unavailable and its reason names EXP-02"
+  },
+  "smoke": {
+    "pages-declared": 35,
+    "views-constructed": true,
+    "exploration-route": "exploration",
+    "exploration-consistent-state": true,
+    "exploration-links-gated": true,
+    "exploration-persona-route": "exploration",
+    "landing-map-count": 9,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 Counts come from records; a failed read is never zero": "pass - every number is a COUNT over PROSPECT_WORKFLOW_STAGE, PLAY, LEAD or WELL, and the SQLite test matches them to the seeded rows (a fourth prospect with no stage and a fifth in another field are both excluded). Each query's provider error is checked immediately after it runs, so a later successful query cannot overwrite it: with PROSPECT_WORKFLOW_STAGE dropped the load fails with a reference and a null snapshot, and the page clears its counts and shows the failure state.",
+    "AC-2 Every source link is gated by its own page permission": "pass - the workspace is given the shell's page-permission function and builds the link list from it (BuildLinks); a link is Available exactly when the predicate answers true, and the SQLite test with a 'wells only' predicate offers only that link. A route with no page in this build is unavailable and its reason names the feature that adds it (EXP-02, EXP-04, EXP-05, LSE-01); the page renders a button only for the available links.",
+    "AC-3 The incomplete-risk warning counts only prospects with missing elements": "pass - a prospect is counted when it has no PROSPECT_RISK_ASSESSMENT row or any of TRAP_RISK, RESERVOIR_RISK, SEAL_RISK, SOURCE_RISK, TIMING_RISK is NULL. IsIncomplete is unit-tested for a complete assessment, no assessment, each single missing element, and zeroed values; the SQLite test sees exactly PROS-2 and PROS-4 and neither PROS-1 nor PROS-3.",
+    "AC-4 The persona landing route matches the RBAC DEFAULT_LANDING_ROUTE": "pass - OgPersonaLanding gains the ExplorationGeologist persona on route 'exploration' and a RouteFor mapping (the module segment before a trailing 'dashboard'). A guard test reads Beep.OilandGas.UserManagement/Services/DefaultSecuritySeedService.cs, extracts the EXPLORATION_GEOLOGIST route, and asserts the mapped route equals the persona row and is a real catalog page, so moving either side fails the test. The smoke resolves the persona through the real navigation service and gets 'exploration'."
+  },
+  "limits": [
+    "The workspace reads the field by id or name over the columns each table has (PROSPECT.FIELD_ID/PRIMARY_FIELD_ID, PLAY/LEAD.FIELD_ID, WELL.ASSIGNED_FIELD); a database that stores the field in another column shows zero for that field.",
+    "The persona inbox is a stated placeholder: WFL-05 is not built, so the page says the inbox arrives with WFL-05 instead of inventing items.",
+    "Only three of the plan's seven sources exist as pages today (well index, stratigraphy, well path); the prospect board, seismic, well-program approval and lease register are listed as unavailable with the feature that adds them.",
+    "Wells planned and drilling are counted from WELL.CURRENT_STATUS values PLANNED and DRILLING; a database that uses different status words for the same states shows zero.",
+    "The page has no field or period switcher; it uses the signed-in session's field, period and persona, and a Refresh button re-reads them.",
+    "The funnel shows stages that have at least one prospect; a prospect with no workflow-stage row is excluded from the funnel and is not reported as an extra stage.",
+    "The page is exercised by construction (the smoke builds every catalog page and audits it) and by unit/integration tests; no automated click drives its buttons."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class R_CORE_SAMPLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CORE_SAMPLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_SAMPLE
         {  
             get  

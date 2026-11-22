@@ -9,6 +9,7 @@ public partial class R_PPDM_METRIC_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String METRIC_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METRIC_COMPONENT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SAMPLE_CONTAMINANT: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_CONTAMINANTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_CONTAMINANT
         {  
             get  

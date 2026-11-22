@@ -9,6 +9,7 @@ public partial class PPDM_CONSTRAINT: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SYSTEM_IDValue;
           set { SetProperty(ref  SYSTEM_IDValue, value); }
         } 
 private  System.String TABLE_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TABLE_NAME
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String TABLE_NAMEValue;
           set { SetProperty(ref  TABLE_NAMEValue, value); }
         } 
 private  System.String CONSTRAINT_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSTRAINT_NAME
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_LOG_ARRAY_DIMENSION: Entity,IPPDMEntity
 {
 
 private  System.String DIMENSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIMENSION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DIMENSIONValue;
           set { SetProperty(ref  DIMENSIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

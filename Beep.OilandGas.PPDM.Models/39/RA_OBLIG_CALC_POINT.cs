@@ -9,6 +9,7 @@ public partial class RA_OBLIG_CALC_POINT: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATION_POINTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATION_POINT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CALCULATION_POINTValue;
           set { SetProperty(ref  CALCULATION_POINTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

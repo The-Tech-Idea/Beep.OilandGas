@@ -9,6 +9,7 @@ public partial class RA_STRAT_OCCURRENCE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OCCURRENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OCCURRENCE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OCCURRENCE_TYPEValue;
           set { SetProperty(ref  OCCURRENCE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

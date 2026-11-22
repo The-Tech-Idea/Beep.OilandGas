@@ -9,6 +9,7 @@ public partial class CONT_ACCOUNT_PROC: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_IDValue;
           set { SetProperty(ref  CONTRACT_IDValue, value); }
         } 
 private  System.String ACCOUNT_PROC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCOUNT_PROC_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ACCOUNT_PROC_TYPEValue;
           set { SetProperty(ref  ACCOUNT_PROC_TYPEValue, value); }
         } 
 private  System.Decimal ACCOUNT_PROC_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ACCOUNT_PROC_OBS_NO
         {  
             get  

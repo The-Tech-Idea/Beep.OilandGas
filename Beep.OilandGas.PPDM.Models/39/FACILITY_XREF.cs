@@ -9,6 +9,7 @@ public partial class FACILITY_XREF: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FACILITY_IDValue;
           set { SetProperty(ref  FACILITY_IDValue, value); }
         } 
 private  System.String FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String FACILITY_TYPEValue;
           set { SetProperty(ref  FACILITY_TYPEValue, value); }
         } 
 private  System.String FACILITY_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_ID_2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String FACILITY_ID_2Value;
           set { SetProperty(ref  FACILITY_ID_2Value, value); }
         } 
 private  System.String FACILITY_TYPE_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_TYPE_2
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String FACILITY_TYPE_2Value;
           set { SetProperty(ref  FACILITY_TYPE_2Value, value); }
         } 
 private  System.Decimal XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_OBS_NO
         {  
             get  

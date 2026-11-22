@@ -9,6 +9,7 @@ public partial class R_ENHANCED_REC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ENHANCED_RECOVERY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENHANCED_RECOVERY_TYPE
         {  
             get  

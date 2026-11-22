@@ -9,6 +9,7 @@ public partial class RA_LANGUAGE: Entity,IPPDMEntity
 {
 
 private  System.String LANGUAGE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LANGUAGE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LANGUAGE_IDValue;
           set { SetProperty(ref  LANGUAGE_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

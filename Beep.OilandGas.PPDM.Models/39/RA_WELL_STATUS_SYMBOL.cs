@@ -9,6 +9,7 @@ public partial class RA_WELL_STATUS_SYMBOL: Entity,IPPDMEntity
 {
 
 private  System.String PLOT_SYMBOLValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLOT_SYMBOL
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PLOT_SYMBOLValue;
           set { SetProperty(ref  PLOT_SYMBOLValue, value); }
         } 
 private  System.Decimal PLOT_SYMBOL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PLOT_SYMBOL_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal PLOT_SYMBOL_OBS_NOValue;
           set { SetProperty(ref  PLOT_SYMBOL_OBS_NOValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

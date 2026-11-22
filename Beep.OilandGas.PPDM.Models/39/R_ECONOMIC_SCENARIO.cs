@@ -9,6 +9,7 @@ public partial class R_ECONOMIC_SCENARIO: Entity,IPPDMEntity
 {
 
 private  System.String ECONOMIC_SCENARIOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECONOMIC_SCENARIO
         {  
             get  

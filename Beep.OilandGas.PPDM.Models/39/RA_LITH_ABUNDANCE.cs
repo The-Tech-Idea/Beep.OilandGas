@@ -9,6 +9,7 @@ public partial class RA_LITH_ABUNDANCE: Entity,IPPDMEntity
 {
 
 private  System.String ABUNDANCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ABUNDANCE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ABUNDANCEValue;
           set { SetProperty(ref  ABUNDANCEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

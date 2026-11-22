@@ -9,6 +9,7 @@ public partial class WELL_PAYZONE: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String ZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String ZONE_IDValue;
           set { SetProperty(ref  ZONE_IDValue, value); }
         } 
 private  System.String ZONE_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_SOURCE
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String ZONE_SOURCEValue;
           set { SetProperty(ref  ZONE_SOURCEValue, value); }
         } 
 private  System.String PAYZONE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYZONE_TYPE
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String PAYZONE_TYPEValue;
           set { SetProperty(ref  PAYZONE_TYPEValue, value); }
         } 
 private  System.String FLUID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FLUID_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_OBLIG_DEDUCT_CALC: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CALCULATION_METHODValue;
           set { SetProperty(ref  CALCULATION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

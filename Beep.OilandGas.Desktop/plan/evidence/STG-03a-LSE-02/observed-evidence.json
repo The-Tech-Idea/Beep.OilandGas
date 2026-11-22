@@ -1,0 +1,56 @@
+{
+  "id": "STG-03a/LSE-02",
+  "title": "Acquisition pipeline and due diligence",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: a stage advance records actor, date and rationale; open diligence blocks the move out of due diligence and later; the rights matrix keeps mineral, surface and working interest apart; a declined opportunity keeps its history; and money is a decimal with an explicit currency. The pipeline records also implement the lost-acknowledgement state (the original is retained and retried unchanged).",
+  "dataModel": {
+    "decision": "The LeaseAcquisition module had no persistence for the pipeline, diligence, rights or negotiation: its service partials return hard-coded projections and the only table is LEASE_ACQUISITION. The plan's own contract (OgLeaseOpportunity, OgDiligenceItem) and its acceptance criteria were implemented as four LeaseAcquisition-owned tables, the same pattern used for WELL_PROGRAM in EXP-05.",
+    "tables": [
+      "LEASE_PIPELINE_STAGE (STAGE_ID key, LEASE_ID, STAGE_SEQ_NO, STAGE, OUTCOME, RATIONALE, ACTOR, DECIDED_AT) - append-only history; the current stage is the highest sequence",
+      "LEASE_DILIGENCE_ITEM (ITEM_ID key, LEASE_ID, CATEGORY, QUESTION, OUTCOME, EVIDENCE_REF, REVIEWER, REVIEWED_AT) - an empty or OPEN outcome blocks an advance",
+      "LEASE_RIGHT (RIGHT_ID key, LEASE_ID, RIGHT_TYPE, OWNER, INTEREST_PERCENT, EFFECTIVE_DATE, EXPIRY_DATE) - the mineral/surface/working matrix",
+      "LEASE_NEGOTIATION (NEGOTIATION_ID key, LEASE_ID, ROUND_NO, COUNTERPARTY, OFFER_AMOUNT, CURRENCY, NOTES, ACTOR, RECORDED_AT)"
+    ],
+    "registration": "Beep.OilandGas.LeaseAcquisition/Modules/LeaseAcquisitionModule.cs now registers the four types, so module setup creates them.",
+    "keys": "Each table carries [Key] on its own generated id; LEASE_ACQUISITION.LEASE_ACQUISITION_ID also gained [Key]. OgUow now falls back to '<entity>_ID' then 'ID' when a provider records no key, so an update can still find its row."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lease/OgLeasePipeline.cs (LeasePipelineStage rules, OgLeaseOpportunity, OgDiligenceItem, OgLeaseRight, OgNegotiationEntry, OgPipelineHistoryEntry, OgPipelineCard/Column/Snapshot/Detail, OgPipelineDecision, IOgLeasePipeline, OgLeasePipelineService)",
+    "page": "src/Beep.OilandGas.Desktop/Views/LeasePipelinePageView.cs (route 'leasepipeline': board grid, stage summary, detail with diligence/rights/negotiation/history, record diligence, record negotiation, advance, decline, retry)",
+    "wiring": "OgBootstrapper (IOgLeasePipeline), OgApplication.LeasePipeline, catalog 'leasepipeline' (OgModuleKeys.Lease), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/LeasePipelineTests.cs (9, no database) + LeasePipelineGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only; the desktop projects add none" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 662, "passed": 662, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 16, "passed": 16, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 41, "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "modulesetup-summary": "28 module(s) - 351 entity type(s)" },
+    { "cmd": "source guard: The_desktop_data_layer_contains_no_sql_statement_text", "exit": 0, "offenders": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with LEASE_ACQUISITION plus the four pipeline tables, seeded in LeasePipelineGatewayTests",
+    "board": "three opportunities for F-1 (OP-1 OPPORTUNITY, OP-2 DUE_DILIGENCE, OP-3 no stage), the fourth in another field absent; the unclassified column contains OP-3",
+    "detail": "OP-1 reads '1,000 USD' for the asking price, mineral 1 / surface 1 / working 1, one negotiation round ('900 USD') and one history entry",
+    "ac2_block": "advancing OP-2 out of DUE_DILIGENCE with an open 'Is the title clear?' item is refused with lease-pipeline-diligence-open and the item is named",
+    "ac2_release": "closing that item with PASS and DOC-1 drops the open count to 0; the same advance then succeeds",
+    "ac1_recorded": "the advance writes a LEASE_PIPELINE_STAGE row with STAGE=NEGOTIATION, ACTOR=sara, DECIDED_AT and RATIONALE='diligence is complete', and updates LEASE_ACQUISITION.ACQUISITION_STATUS to NEGOTIATION",
+    "negotiation": "a round without a counterparty is refused (lease-pipeline-counterparty-required) and a round without a currency is refused (lease-pipeline-currency-required); no row is written in either case",
+    "ac4_decline": "declining OP-1 writes DECLINED as a second history entry; the original OPPORTUNITY entry is still present with its rationale",
+    "lost_ack": "a SQLite trigger made the stage insert fail for OP-3: the change was refused, Pending retained the exact decision, no row was written; after the trigger was dropped, RetryAsync recorded the same stage, rationale and actor"
+  },
+  "gates": {
+    "AC-1 Stage advance records actor, date and rationale": "pass - the advance writes ACTOR, DECIDED_AT and RATIONALE on LEASE_PIPELINE_STAGE and the detail reads them back; a blank rationale is refused with lease-pipeline-rationale-required.",
+    "AC-2 Diligence items block advance while open": "pass - from DUE_DILIGENCE onward, any item with no outcome or OPEN refuses the move with lease-pipeline-diligence-open and names the open questions; the SQLite test proves the block and the release after closing the item.",
+    "AC-3 Rights matrix distinguishes mineral, surface and working interest": "pass - OgLeaseRight carries the typed RIGHT_TYPE and the detail groups MineralRights/SurfaceRights/WorkingInterest; the SQLite test seeds one of each and reads 'mineral 1 / surface 1 / working 1'. The matrix is read-only in this build; the feature's command table has no rights command.",
+    "AC-4 A declined opportunity keeps its history": "pass - decline is the same append-only AdvanceAsync with DECLINED; the SQLite test sees both the earlier OPPORTUNITY entry and the DECLINED entry.",
+    "AC-5 Money values are decimal with an explicit currency": "pass - OgLeaseOpportunity carries decimal AskingPrice and Currency and prints '(currency not recorded)' when absent; a negotiation round refuses a blank currency; the test reads '1,000 USD' and '900 USD'."
+  },
+  "limits": [
+    "The board is a grid with a stage summary, not a drag-and-drop kanban; the stage rule is the single service command, and the grid's columns show the same stages.",
+    "The rights matrix is read-only: LSE-02's command table has diligence, negotiation and advance/decline, and no rights command. Editing rights belongs to a later feature.",
+    "The pipeline has no document store; EVIDENCE_REF on a diligence item is the reference the reviewer records, not an uploaded file.",
+    "The stage order is a fixed constant (OPPORTUNITY..EXECUTED plus DECLINED); a configurable stage model is not part of the feature.",
+    "The asking price is read from LEASE_ACQUISITION.BONUS_AMOUNT/BONUS_AMOUNT_OUOM; an opportunity with no bonus amount shows 'no asking price recorded'.",
+    "The new tables need the LEASE_ACQUISITION module applied again on an existing database to be created."
+  ]
+}

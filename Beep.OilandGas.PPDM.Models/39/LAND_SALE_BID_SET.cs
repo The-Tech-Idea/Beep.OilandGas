@@ -9,6 +9,7 @@ public partial class LAND_SALE_BID_SET: Entity,IPPDMEntity
 {
 
 private  System.String LAND_SALE_BID_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_SALE_BID_SET_ID
         {  
             get  

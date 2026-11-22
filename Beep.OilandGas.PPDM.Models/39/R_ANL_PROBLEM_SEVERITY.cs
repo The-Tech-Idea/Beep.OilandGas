@@ -9,6 +9,7 @@ public partial class R_ANL_PROBLEM_SEVERITY: Entity,IPPDMEntity
 {
 
 private  System.String PROBLEM_SEVERITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROBLEM_SEVERITY
         {  
             get  

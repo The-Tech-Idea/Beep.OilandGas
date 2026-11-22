@@ -9,6 +9,7 @@ public partial class RA_RIG_PUMP_FUNCTION: Entity,IPPDMEntity
 {
 
 private  System.String PUMP_FUNCTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PUMP_FUNCTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PUMP_FUNCTIONValue;
           set { SetProperty(ref  PUMP_FUNCTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

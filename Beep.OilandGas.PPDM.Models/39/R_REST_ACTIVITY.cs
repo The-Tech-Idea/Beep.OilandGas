@@ -9,6 +9,7 @@ public partial class R_REST_ACTIVITY: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTED_ACTIVITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTED_ACTIVITY
         {  
             get  

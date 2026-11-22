@@ -9,6 +9,7 @@ public partial class RA_CAT_ADDITIVE_XREF: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_XREF_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ADDITIVE_XREF_TYPEValue;
           set { SetProperty(ref  ADDITIVE_XREF_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

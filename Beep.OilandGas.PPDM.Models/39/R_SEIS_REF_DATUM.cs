@@ -9,6 +9,7 @@ public partial class R_SEIS_REF_DATUM: Entity,IPPDMEntity
 {
 
 private  System.String REFERENCE_DATUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REFERENCE_DATUM
         {  
             get  

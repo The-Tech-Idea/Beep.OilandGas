@@ -9,6 +9,7 @@ public partial class R_MAINT_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String MAINTAIN_PROCESSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAINTAIN_PROCESS
         {  
             get  

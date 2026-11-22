@@ -9,6 +9,7 @@ public partial class RA_SEIS_DIMENSION: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_DIMENSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_DIMENSION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_DIMENSIONValue;
           set { SetProperty(ref  SEIS_DIMENSIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

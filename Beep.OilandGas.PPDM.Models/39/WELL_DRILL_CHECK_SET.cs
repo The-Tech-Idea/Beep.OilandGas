@@ -9,6 +9,7 @@ public partial class WELL_DRILL_CHECK_SET: Entity,IPPDMEntity
 {
 
 private  System.String CHECK_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHECK_SET_ID
         {  
             get  

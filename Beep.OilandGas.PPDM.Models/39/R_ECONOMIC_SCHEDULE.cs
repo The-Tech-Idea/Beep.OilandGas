@@ -9,6 +9,7 @@ public partial class R_ECONOMIC_SCHEDULE: Entity,IPPDMEntity
 {
 
 private  System.String ECONOMIC_SCHEDULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECONOMIC_SCHEDULE
         {  
             get  

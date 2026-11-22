@@ -9,6 +9,7 @@ public partial class R_CLASS_SYSTEM_DIMENSION: Entity,IPPDMEntity
 {
 
 private  System.String CLASS_DIMENSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLASS_DIMENSION
         {  
             get  

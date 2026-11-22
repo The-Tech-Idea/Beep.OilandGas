@@ -9,6 +9,7 @@ public partial class R_STRAT_AGE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_AGE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_AGE_METHOD
         {  
             get  

@@ -1,0 +1,54 @@
+{
+  "id": "STG-07/LFT-04",
+  "title": "Sucker rod pumping",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: an unsafe string is refused and the limiting section is named with its stress and Goodman ratio; the grades, diameters, stroke lengths and strokes per minute come from the owning constants; the pump card is produced and its extremes match the computed loads; the design is reproducible; lengths and diameters carry units; and a saved design records the grade, the taper and the safety factor achieved.",
+  "dataModel": {
+    "decision": "The SuckerRodPumping project's types are calculation objects (system properties, string, section, load result, flow-rate result, card) and none is a table, so a design had nowhere to persist. SRP_DESIGN was added with the numbers and the taper stored as values rather than pointers, so a saved design reads back without re-running the engine. The project also had no module setup, so a SuckerRodPumpingModule was added to register the table.",
+    "tables": [
+      "SRP_DESIGN (DESIGN_ID key, WELL_UWI, DESIGN_DATE, PUMP_DIAMETER_IN, STROKE_LENGTH_IN, STROKES_PER_MINUTE, PUMP_DEPTH_FT, GRADE, TAPER, SECTION_COUNT, TOTAL_LENGTH_FT, PEAK_LOAD_LB, MIN_LOAD_LB, FLUID_LOAD_LB, MAX_STRESS_PSI, STRESS_RANGE_PSI, MIN_SAFETY_FACTOR, REQUIRED_SAFETY_FACTOR, GOODMAN_RATIO, CRITICAL_SECTION, RISK, PRODUCTION_RATE_BPD, MOTOR_HORSEPOWER, CARD_PEAK_LB, CARD_MIN_LB, CARD_POINTS, UNITS_TEXT, DENSITY_ASSUMED_IND, ACTOR, RECORDED_AT)"
+    ],
+    "registration": "SuckerRodPumpingModule (order 77, no seed: the grades and sizes are the module's constants, not database rows). --smoke now reports 30 modules and 399 entity types (up from 29 and 398).",
+    "engine": "SuckerRodLoadCalculator.CalculateLoads and GeneratePumpCard, FatigueAnalysis.AnalyzeString, SuckerRodFlowRatePowerCalculator.CalculateFlowRateAndPower."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgSuckerRod.cs (RodGrades, OgRodSection, OgSrpInputs, OgRodSectionResult, OgPumpCardPoint, OgSrpResult, OgSrpPending, OgSrpWorkspace, SrpRules, IOgSuckerRod, OgSuckerRodService with DesignAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "rules": "SrpRules states every required input, the explicit density acceptance, the grade check against RodGrades, the section checks, the required safety factor read from SuckerRodConstants.MinimumSafetyFactor, the units and the refusal codes once.",
+    "page": "src/Beep.OilandGas.Desktop/Views/SuckerRodPageView.cs (route 'suckerrod': the well/pump/fluid/density bars, the taper editor, the result with the loads and the safety sentence, the pump card line, the per-section grid and the saved designs)",
+    "wiring": "OgBootstrapper (IOgSuckerRod), OgApplication.SuckerRod, catalog 'suckerrod' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/SuckerRodTests.cs (9, no database) + SuckerRodGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 977, "passed": 977, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 43, "passed": 43, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 67, "views-constructed": true, "modulesetup-summary": "30 module(s) - 399 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with SRP_DESIGN, seeded in SuckerRodGatewayTests",
+    "ac1_unsafe": "a 0.625 in string over 5,000 ft has a safety factor under the module's 1.5: the design is refused with srp-unsafe-string naming section 1, its diameter, its max stress and its Goodman ratio, and no row is written. The same string in grade HY is safe, which is what the message recommends",
+    "safe_string": "the tapered string (1.0 in x 2,500 ft, 0.875 in x 1,500 ft, 0.75 in x 1,000 ft) in grade D is safe with a safety factor above the required 1.5; peak and minimum load, fluid load, stress and stress range are all positive, the rate and motor horsepower come from the owner's calculator, and the critical section is the one with the lowest safety factor",
+    "ac3_card": "the pump card has 73 sampled points; its stated peak and minimum equal the load result's, and its sampled extremes are within 1% of them",
+    "ac4_reproducible": "two builds of the same inputs agree on the description, the safety factor, the peak load, the max stress and every section's safety factor",
+    "ac5_units": "diameters in in, lengths in ft, loads in lb, stresses in psi, rate in STB/d and power in hp, stored as a single units sentence on the row",
+    "ac6_saved": "the stored row carries GRADE='D', SECTION_COUNT=3, TOTAL_LENGTH_FT=5000, MIN_SAFETY_FACTOR above REQUIRED_SAFETY_FACTOR (1.5), the taper pairs, the units text, the card figures and the actor; the reload keeps the taper, the grade and the figures within 1e-3 (SQLite REAL)",
+    "density": "a missing density is refused with srp-density-not-accepted until the default steel density is accepted explicitly; the stored flag then reads 'Y'",
+    "lost_acknowledgement": "dropping the table makes the save fail with the design retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping SRP_DESIGN makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 An unsafe string is refused and names the limiting section": "pass - DesignAsync refuses when the string's minimum safety factor is below SuckerRodConstants.MinimumSafetyFactor, naming the critical section, its diameter, its stress and its Goodman ratio; SaveAsync refuses the same condition again at the door. This is SG-07-5.",
+    "AC-2 Rod grades come from the owning constant class": "pass - RodGrades.All is built from SuckerRodConstants (C, D, HL, HY) and excludes AUTO, which the optimizer uses as an instruction; an unknown grade is refused; a source guard asserts the view binds the workspace's grade list and names no grade itself.",
+    "AC-3 The pump card is produced and matches the computed loads": "pass - the card is generated, its stated peak and minimum equal the load result's, and its sampled extremes are asserted within 1% of them (the owner carries an analytic peak and a sampled point set).",
+    "AC-4 Optimizer output is reproducible": "pass - the design is deterministic: two builds agree on every figure and on every section's safety factor. (The taper optimizer itself is not surfaced; see the limits.)",
+    "AC-5 Lengths and diameters carry units": "pass - unit constants on the result, units in every text, and one units sentence stored with the design.",
+    "AC-6 A saved design records grade, taper and the safety factor achieved": "pass - GRADE, TAPER, SECTION_COUNT, MIN_SAFETY_FACTOR and REQUIRED_SAFETY_FACTOR are columns, written on save and read back."
+  },
+  "limits": [
+    "RodStringOptimization is not surfaced: the screen takes the taper the engineer enters and checks it. The optimizer exists and is deterministic, but exposing an auto-optimize action would need its own UI decision about which of its result columns to show; it is recorded here rather than claimed.",
+    "The pump card is shown as its extreme loads and a point count, not as a plot: there is still no chart host for these calculation screens.",
+    "Several system properties the load calculator needs are not inputs on this screen and are set to fixed screening values (wellhead 100 psia, bottom hole 1,000 psia, fluid density 62.4 lb/ft3). They are stated here rather than hidden; a full fluid model belongs to a later feature.",
+    "The fatigue uses the module's own section-by-section analysis over the whole-string peak and minimum loads, which is what FatigueAnalysis.AnalyzeString does; it is not a per-section wave-equation solution.",
+    "The feature's permissions (lift.srp.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

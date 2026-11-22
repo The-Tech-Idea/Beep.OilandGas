@@ -9,6 +9,7 @@ public partial class R_MUD_PROPERTY_REF: Entity,IPPDMEntity
 {
 
 private  System.String MUD_PROPERTY_REFValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUD_PROPERTY_REF
         {  
             get  

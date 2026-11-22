@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class DEPLETION_CALCULATION : ModelEntityBase {
         private String DEPLETION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public String DEPLETION_ID
         {
             get { return this.DEPLETION_IDValue; }

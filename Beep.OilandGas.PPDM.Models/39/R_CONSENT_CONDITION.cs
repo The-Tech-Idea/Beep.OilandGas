@@ -9,6 +9,7 @@ public partial class R_CONSENT_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSENT_TYPEValue;
           set { SetProperty(ref  CONSENT_TYPEValue, value); }
         } 
 private  System.String CONSENT_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_CONDITION
         {  
             get  

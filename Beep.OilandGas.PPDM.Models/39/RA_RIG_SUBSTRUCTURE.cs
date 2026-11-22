@@ -9,6 +9,7 @@ public partial class RA_RIG_SUBSTRUCTURE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTRUCTURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTRUCTURE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SUBSTRUCTURE_TYPEValue;
           set { SetProperty(ref  SUBSTRUCTURE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

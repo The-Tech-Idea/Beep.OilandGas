@@ -9,6 +9,7 @@ public partial class R_SEIS_PROC_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String PROCESS_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCESS_STATUS
         {  
             get  

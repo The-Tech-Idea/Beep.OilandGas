@@ -9,6 +9,7 @@ public partial class PPDM_PROCEDURE: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SYSTEM_IDValue;
           set { SetProperty(ref  SYSTEM_IDValue, value); }
         } 
 private  System.String PROCEDURE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCEDURE_ID
         {  
             get  

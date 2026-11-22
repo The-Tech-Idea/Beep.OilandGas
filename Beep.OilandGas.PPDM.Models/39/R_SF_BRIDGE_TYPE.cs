@@ -9,6 +9,7 @@ public partial class R_SF_BRIDGE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BRIDGE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BRIDGE_TYPE
         {  
             get  

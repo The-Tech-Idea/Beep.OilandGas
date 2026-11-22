@@ -9,6 +9,7 @@ public partial class RA_ANL_ELEMENT_VALUE_CODE: Entity,IPPDMEntity
 {
 
 private  System.String VALUE_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALUE_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VALUE_CODEValue;
           set { SetProperty(ref  VALUE_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

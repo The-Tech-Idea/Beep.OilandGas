@@ -9,6 +9,7 @@ public partial class R_PPDM_GROUP_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_XREF_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PPDM_TABLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TABLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TABLE_TYPE
         {  
             get  

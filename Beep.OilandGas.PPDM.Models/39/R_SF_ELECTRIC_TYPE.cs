@@ -9,6 +9,7 @@ public partial class R_SF_ELECTRIC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ELECTRIC_FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ELECTRIC_FACILITY_TYPE
         {  
             get  

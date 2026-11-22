@@ -1,0 +1,83 @@
+{
+  "id": "STG-11/HSE-06",
+  "title": "GHG factors and reporting",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a report without usable factors, without a reviewed revision or without recorded activity is unavailable with every reason stated and never a zero; every line names its factor, factor unit, source and revision; a catalog or company-environment revision that moved since the review forces a re-review; an unrepresentable product is refused by the owner's own checked arithmetic; the page distinguishes unavailable from zero; and the export is built from the same figures the grid shows.",
+  "dataModel": {
+    "decision": "No table was created. The owner already holds everything: the shared factor catalog is a SYSTEM_SETUP_RECORD with CATEGORY 'GHG_FACTORS' and the jurisdiction as its key, the company's reviewed revision is COMPANY_GHG_CATALOG_SELECTION, the environment revision it was reviewed against is COMPANY_OILGAS_ENVIRONMENT, and the activity is PDEN plus PDEN_VOL_DISPOSITION.",
+    "registration": "PDEN and PDEN_VOL_DISPOSITION added to HseModule, because nothing declared them and the GHG screen reads them. The three configuration tables were deliberately NOT registered there: SystemSetupModule (order -10) already owns SYSTEM_SETUP_RECORD, COMPANY_OILGAS_ENVIRONMENT and COMPANY_GHG_CATALOG_SELECTION, so registering them again would put a second module in charge of the same tables.",
+    "noNewTables": "The feature's OgGhgLine and OgGhgReport shapes are desktop read models over those rows, as the feature document itself specifies."
+  },
+  "rules": {
+    "review": "The review state compares the revisions the company recorded when it selected a catalog with the revisions that hold now. Nothing recorded is NOT_REVIEWED; no company environment is its own state; a catalog revision that differs is CATALOG_CHANGED; an environment revision that differs is ENVIRONMENT_CHANGED; only equal revisions are CURRENT. Both compared revisions are named in the sentence.",
+    "factor": "A factor applies only when its source category equals the recorded activity type, its input unit equals the recorded unit, and its effective period covers the recorded activity period. Every condition is required; nothing is matched by approximation and no period is filled in when it is absent.",
+    "arithmetic": "The multiplication is the owner's own GhgArithmetic.Check, which requires matching activity/units/dates and multiplies with checked decimal arithmetic, throwing when the result exceeds the supported range. The desktop does not reimplement it.",
+    "unavailable": "A report is produced only when the catalog is usable, the review is current and at least one activity row exists, and every activity row has an applicable factor whose product is representable. Otherwise the report is null, the total reads 'unavailable', and each missing thing is stated: no usable catalog, the review sentence, no recorded activity, or the activity with no applicable factor.",
+    "export": "One formatting helper (GhgRules.Figure, up to 28 decimal places, invariant) feeds the line text, the total text and the CSV, so the export cannot disagree with the screen. Totals are grouped by output unit and are never summed across units."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Hse/OgGhg.cs (OgGhgCatalog, OgGhgReview, OgGhgActivity, OgGhgLine, OgGhgTotal, OgGhgReport, OgGhgWorkspace, GhgRules, IOgGhg, OgGhg with LoadAsync/SelectAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/GhgPageView.cs (route 'ghg': the year and jurisdiction bar, the catalog panel, the review sentence with its review-and-select bar, the report status, the unavailable reasons, the total, the line grid, the recorded activity grid and the export text)",
+    "wiring": "OgBootstrapper (IOgGhg), OgApplication.Ghg, catalog 'ghg' (OgModuleKeys.Hse), OgPageFactory, en + ar labels; HSE-01's GHG link now points at a real page",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HseGhgTests.cs (9, no database) + HseGhgGatewayTests.cs (1 opt-in, real SQLite over five tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1199, "passed": 1199, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 67, "passed": 67, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 91, "views-constructed": true, "modulesetup-summary": "33 module(s) - 432 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with SYSTEM_SETUP_RECORD, COMPANY_GHG_CATALOG_SELECTION, COMPANY_OILGAS_ENVIRONMENT, PDEN and PDEN_VOL_DISPOSITION, declaring the keys the owner uses (PDEN/PDEN_VOL_DISPOSITION composites). Seeded with a reviewed TX catalog at revision cat-rev-1 holding a FLARE factor (0.002 tCO2e per m3) and a VENT factor (0.001), an environment at env-rev-1, a selection recording both, two field entities with 2026 dispositions (1,000,000 m3 flare and 5,000 m3 vent), one row on another field and one in 2025.",
+    "ac1_report": "the report is produced with two lines: 2,000 tCO2e for the flare and 5 tCO2e for the vent, total 2,005 tCO2e; the other field's row and the 2025 row are excluded",
+    "ac1_no_factors": "jurisdiction ND has no catalog, so the report is unavailable with 'no factor catalog is recorded for jurisdiction ND' and its total reads 'unavailable'",
+    "ac1_no_jurisdiction": "a missing jurisdiction is refused with 'no jurisdiction is selected, so no factor catalog applies' and no country appears in the text",
+    "ac1_no_activity": "year 2024 has no dispositions, so the report is unavailable with 'no verified activity' for this field and year",
+    "ac2_lines": "every line carries its factor id, its factor unit (tCO2e), the catalog revision (cat-rev-1) and a source starting 'EPA 40 CFR 98'",
+    "ac3_catalog": "setting the catalog record's revision to cat-rev-2 makes the review CATALOG_CHANGED and the report unavailable, naming both cat-rev-1 and cat-rev-2; the select command records cat-rev-2, the review becomes CURRENT and the report returns",
+    "ac3_environment": "moving the company environment to env-rev-2 makes the review ENVIRONMENT_CHANGED and the report unavailable, naming env-rev-2",
+    "ac4_arithmetic": "replacing the flare factor with decimal.MaxValue makes the product of 1,000,000 m3 overflow, and the report is unavailable with 'cannot be represented within the supported calculation range' rather than an exception or a wrapped number",
+    "ac5_text": "the unavailable state prints 'report unavailable - not zero' and its total prints 'unavailable', while a produced report prints '2,005 tCO2e' - the two can never be confused",
+    "ac6_export": "the CSV contains the same quantity, factor and emissions figures as the lines and the total, and the page binds the report's own CSV text",
+    "selection": "selecting with a blank jurisdiction is refused (ghg-jurisdiction-required) and with a blank rationale refused (ghg-rationale-required); a valid selection keeps one row per company and jurisdiction and records the actor and rationale",
+    "field": "a report with no field is refused with ghg-field-required, because a report is produced for one field"
+  },
+  "gates": {
+    "AC-1 A report without verified factors is unavailable, never zero": "pass - no usable catalog, no recorded activity and no applicable factor each make the report null with the reason stated, and the total reads 'unavailable'.",
+    "AC-2 Every line names its factor, unit, source and revision": "pass - the line carries the factor id, its output unit, the catalog revision and the source reference, and the gateway asserts all four on every line.",
+    "AC-3 A revision mismatch forces re-review": "pass - a catalog or environment revision that moved since the selection is its own review state with both revisions named, and the report is refused until the selection is recorded again.",
+    "AC-4 Arithmetic refuses unrepresentable values": "pass - the multiplication is the owner's checked GhgArithmetic.Check, and an overflowing product refuses the report with a sentence rather than a wrapped number.",
+    "AC-5 The screen distinguishes unavailable from zero": "pass - the status says 'report unavailable - not zero' and the total says 'unavailable'; a produced report prints its figure.",
+    "AC-6 Report export matches the on-screen figures exactly": "pass - one formatting helper feeds the grid text, the total and the CSV, and the test compares the export with the line values."
+  },
+  "engineFindings": {
+    "reportingServiceIsARefusalStub": {
+      "where": "Beep.OilandGas.PPDM39.DataManagement/Services/Compliance/GHGReportingService.cs",
+      "finding": "The owner's GHGReportingService implements all three methods by throwing 'GHG reporting requires verified company-scoped activity data and emission factors'. There is no report to reuse, and its message names exactly the two things this feature must supply.",
+      "handling": "The desktop builds the report from the recorded rows, using the owner's GhgFactorCatalogValidation for the catalog contract and GhgArithmetic.Check for the arithmetic, so the two owner rules are reused even though the reporting service is not."
+    },
+    "catalogIsAJsonSetupRecord": {
+      "finding": "The factor catalog is not a table of factors: it is a JSON document in SYSTEM_SETUP_RECORD under CATEGORY 'GHG_FACTORS' with the jurisdiction as its key, validated by GhgFactorCatalogValidation.Parse (1-256 factors, non-negative values, no overlapping periods, explicit source per factor, no unmapped members).",
+      "handling": "The desktop reads that record, parses it through the owner's validator, and shows the record's REVISION as the catalog revision the review is compared against. A catalog that fails validation becomes the stated reason the report is unavailable instead of an exception."
+    },
+    "reviewIsTwoRevisions": {
+      "finding": "The API's CompanyGhgCatalogReader derives the review from a resolved company environment (comparing TOOLS/DEFAULT, the country preset and the company overrides) plus the selected catalog record, and refuses when either changed during the review.",
+      "handling": "The desktop compares the two revisions the company recorded in COMPANY_GHG_CATALOG_SELECTION with the catalog record's REVISION and the company environment row's REVISION. It does not re-derive the environment from the setup layers, so a change inside those layers that leaves the environment row's revision untouched is not detected - recorded as a limit."
+    },
+    "activityIsPerProductionEntity": {
+      "finding": "Activity comes from PDEN_VOL_DISPOSITION, which is keyed by production entity (subtype, id, source) and carries no FIELD_ID; the field link is on PDEN.",
+      "handling": "The report joins through PDEN.FIELD_ID, so it reports only the selected field's entities and never presents another field's activity as this field's."
+    }
+  },
+  "limits": [
+    "Save report is not built. The feature's command table lists it, but no acceptance criterion covers it and there is no report archive: SYSTEM_SETUP_RECORD is the owner's configuration store, not a report store, and inventing a table for it was not done. The export text is produced for the person to keep.",
+    "The review compares revisions recorded on the selection row with the catalog record and the company environment row. It does not re-derive the environment from TOOLS/DEFAULT, the country preset and the company overrides as the API does, so a change inside those layers that leaves the environment row's revision unchanged is not detected.",
+    "Review and select are one command here: the selection row records the catalog and environment revisions reviewed, and there is no separate review record because the owner has none.",
+    "There is no gas split. A catalog factor carries an output unit (tCO2e in this data) and no gas type, so the report groups by output unit and does not invent a CO2/CH4/N2O breakdown; the feature's OgGhgLine.GasType is therefore not populated as a gas name.",
+    "The report is not stored, versioned or signed, so two runs of the same data are not provably identical to a third party beyond the export text.",
+    "Activity is taken as verified because it is recorded and active; there is no separate verification flag on PDEN_VOL_DISPOSITION, so 'verified activity' means 'recorded, active rows for this field and year'.",
+    "Emissions are computed in the catalog's own output unit with no unit conversion: if a catalog mixes tCO2e and kgCO2e the report shows two totals and refuses to present a single CO2e figure.",
+    "The writes are not one transaction: the selection row is the only write, so this is not a concern here; the read path reads five tables separately and does not lock them.",
+    "No per-command permission enforcement: the page is gated, and hse.ghg.read/.write/.review/.select are not checked per command."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class RA_OBLIG_CATEGORY: Entity,IPPDMEntity
 {
 
 private  System.String LAND_OBLIG_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_OBLIG_CATEGORY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_OBLIG_CATEGORYValue;
           set { SetProperty(ref  LAND_OBLIG_CATEGORYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

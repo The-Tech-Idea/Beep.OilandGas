@@ -9,6 +9,7 @@ public partial class R_RIG_OVERHEAD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OVERHEAD_EQUIP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OVERHEAD_EQUIP_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_REVISION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String REVISION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REVISION_METHOD
         {  
             get  

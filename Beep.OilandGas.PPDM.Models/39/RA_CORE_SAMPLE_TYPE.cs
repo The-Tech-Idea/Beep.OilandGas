@@ -9,6 +9,7 @@ public partial class RA_CORE_SAMPLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CORE_SAMPLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_SAMPLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CORE_SAMPLEValue;
           set { SetProperty(ref  CORE_SAMPLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

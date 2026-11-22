@@ -9,6 +9,7 @@ public partial class PROD_LEASE_UNIT_VERSION: Entity,IPPDMEntity
 {
 
 private  System.String LEASE_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEASE_UNIT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEASE_UNIT_IDValue;
           set { SetProperty(ref  LEASE_UNIT_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

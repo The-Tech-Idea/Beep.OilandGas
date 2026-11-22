@@ -9,6 +9,7 @@ public partial class LAND_SALE_REQUEST: Entity,IPPDMEntity
 {
 
 private  System.String LAND_REQUEST_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_REQUEST_ID
         {  
             get  

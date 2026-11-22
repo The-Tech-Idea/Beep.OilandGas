@@ -9,6 +9,7 @@ public partial class R_COMPLETION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String COMPLETION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPLETION_METHOD
         {  
             get  

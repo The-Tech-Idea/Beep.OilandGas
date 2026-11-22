@@ -9,6 +9,7 @@ public partial class R_BA_ORGANIZATION_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BA_ORGANIZATION_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_ORGANIZATION_COMPONENT_TYPE
         {  
             get  

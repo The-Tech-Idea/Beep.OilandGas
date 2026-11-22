@@ -9,6 +9,7 @@ public partial class R_CS_TRANSFORM_PARM: Entity,IPPDMEntity
 {
 
 private  System.String TRANSFORM_PARMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSFORM_PARM
         {  
             get  

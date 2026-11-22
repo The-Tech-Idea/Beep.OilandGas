@@ -9,6 +9,7 @@ public partial class PPDM_OBJECT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String STATUS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STATUS_IDValue;
           set { SetProperty(ref  STATUS_IDValue, value); }
         } 
 private  System.Decimal STATUS_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STATUS_OBS_NO
         {  
             get  

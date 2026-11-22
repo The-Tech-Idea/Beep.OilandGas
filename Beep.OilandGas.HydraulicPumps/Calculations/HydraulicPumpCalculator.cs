@@ -54,6 +54,47 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
             return (efficiency, (decimal)r_approx);
         }
 
+        /// <summary>
+        /// The jet pump's efficiency before the clamp, with the clamped value and the area ratio (LFT-06 AC-1, AC-3).
+        /// </summary>
+        /// <remarks>
+        /// <see cref="CalculateJetPumpPerformance"/> returns the efficiency clamped into [0, 1], which is the right answer
+        /// for a design but hides the case where the raw M x N is outside the range - the state table's "a clamped
+        /// efficiency must not be presented as real". This method answers the same question with both numbers, so a caller
+        /// can show the clamped value and say it was clamped. The arithmetic is the same expression, and the original
+        /// method is unchanged.
+        /// </remarks>
+        public static bool TryCalculateJetPumpPerformance(
+            decimal q_produced,
+            decimal q_power,
+            decimal p_suction,
+            decimal p_discharge,
+            decimal p_power_fluid_surface,
+            out decimal rawEfficiency,
+            out decimal clampedEfficiency,
+            out decimal areaRatio)
+        {
+            rawEfficiency = 0m;
+            clampedEfficiency = 0m;
+            areaRatio = 0m;
+
+            if (q_power <= 0m || (p_power_fluid_surface - p_discharge) <= 0m)
+            {
+                return false;
+            }
+
+            decimal productionRatio = q_produced / q_power;
+            decimal headRatio = (p_discharge - p_suction) / (p_power_fluid_surface - p_discharge);
+
+            rawEfficiency = productionRatio * headRatio;
+            clampedEfficiency = Math.Max(0m, Math.Min(1m, rawEfficiency));
+
+            double n = (double)headRatio;
+            areaRatio = (decimal)Math.Sqrt(n / (1.3 + n));
+
+            return true;
+        }
+
         // Check for Cavitation using NPSH
         // NPSH_available = P_suction - P_vapor
         // NPSH_required is pump specific.

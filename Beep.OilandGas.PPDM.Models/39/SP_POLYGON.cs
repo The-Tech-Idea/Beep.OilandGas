@@ -9,6 +9,7 @@ public partial class SP_POLYGON: Entity,IPPDMEntity
 {
 
 private  System.String POLYGON_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POLYGON_ID
         {  
             get  

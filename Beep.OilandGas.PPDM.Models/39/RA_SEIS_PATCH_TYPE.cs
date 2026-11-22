@@ -9,6 +9,7 @@ public partial class RA_SEIS_PATCH_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PATCH_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PATCH_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PATCH_TYPEValue;
           set { SetProperty(ref  PATCH_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

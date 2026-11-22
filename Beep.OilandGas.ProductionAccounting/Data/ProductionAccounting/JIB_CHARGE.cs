@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class JIB_CHARGE : ModelEntityBase {
         private System.String JIB_CHARGE_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String JIB_CHARGE_ID
         {
             get { return this.JIB_CHARGE_IDValue; }

@@ -9,6 +9,7 @@ public partial class RA_SAMPLE_PREP_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String PREPARATION_CLASSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PREPARATION_CLASS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PREPARATION_CLASSValue;
           set { SetProperty(ref  PREPARATION_CLASSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

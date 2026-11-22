@@ -9,6 +9,7 @@ public partial class R_BA_PERMIT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PERMIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERMIT_TYPE
         {  
             get  

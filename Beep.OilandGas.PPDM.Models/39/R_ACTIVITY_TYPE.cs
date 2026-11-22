@@ -9,6 +9,7 @@ public partial class R_ACTIVITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACTIVITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACTIVITY_TYPE
         {  
             get  

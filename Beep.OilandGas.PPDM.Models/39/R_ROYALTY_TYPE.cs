@@ -9,6 +9,7 @@ public partial class R_ROYALTY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ROYALTY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROYALTY_TYPE
         {  
             get  

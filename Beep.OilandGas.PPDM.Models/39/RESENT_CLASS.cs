@@ -9,6 +9,7 @@ public partial class RESENT_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String RESENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESENT_IDValue;
           set { SetProperty(ref  RESENT_IDValue, value); }
         } 
 private  System.String RESERVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESERVE_CLASS_ID
         {  
             get  

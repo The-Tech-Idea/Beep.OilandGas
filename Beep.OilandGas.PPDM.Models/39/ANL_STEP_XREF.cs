@@ -9,6 +9,7 @@ public partial class ANL_STEP_XREF: Entity,IPPDMEntity
 {
 
 private  System.String ANALYSIS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANALYSIS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANALYSIS_IDValue;
           set { SetProperty(ref  ANALYSIS_IDValue, value); }
         } 
 private  System.String ANL_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ANL_SOURCEValue;
           set { SetProperty(ref  ANL_SOURCEValue, value); }
         } 
 private  System.Decimal STEP_SEQ_NO1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STEP_SEQ_NO1
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal STEP_SEQ_NO1Value;
           set { SetProperty(ref  STEP_SEQ_NO1Value, value); }
         } 
 private  System.Decimal STEP_SEQ_NO2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STEP_SEQ_NO2
         {  
             get  

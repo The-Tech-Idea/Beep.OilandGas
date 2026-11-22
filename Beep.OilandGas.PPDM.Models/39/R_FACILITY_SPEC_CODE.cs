@@ -9,6 +9,7 @@ public partial class R_FACILITY_SPEC_CODE: Entity,IPPDMEntity
 {
 
 private  System.String SPEC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SPEC_TYPEValue;
           set { SetProperty(ref  SPEC_TYPEValue, value); }
         } 
 private  System.String SPEC_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_CODE
         {  
             get  

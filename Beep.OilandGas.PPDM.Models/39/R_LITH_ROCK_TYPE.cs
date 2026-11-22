@@ -9,6 +9,7 @@ public partial class R_LITH_ROCK_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ROCK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_TYPE
         {  
             get  

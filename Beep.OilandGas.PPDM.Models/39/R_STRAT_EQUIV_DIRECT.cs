@@ -9,6 +9,7 @@ public partial class R_STRAT_EQUIV_DIRECT: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_EQUIVALENCE_DIRECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_EQUIVALENCE_DIRECTION
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_PROPPANT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROPPANT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROPPANT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROPPANT_TYPEValue;
           set { SetProperty(ref  PROPPANT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

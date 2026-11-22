@@ -9,6 +9,7 @@ public partial class R_WELL_DATUM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_DATUM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_DATUM_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class BUSINESS_ASSOCIATE: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  

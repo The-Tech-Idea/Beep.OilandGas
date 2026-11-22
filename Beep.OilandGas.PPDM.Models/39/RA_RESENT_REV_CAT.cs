@@ -9,6 +9,7 @@ public partial class RA_RESENT_REV_CAT: Entity,IPPDMEntity
 {
 
 private  System.String CATEGORY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATEGORY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CATEGORY_TYPEValue;
           set { SetProperty(ref  CATEGORY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

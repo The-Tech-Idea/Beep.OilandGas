@@ -10,6 +10,7 @@ namespace Beep.OilandGas.Models.Data.DevelopmentPlanning
     public partial class DEVELOPMENT_WELL_SCHEDULE : ModelEntityBase
     {
         private System.String SCHEDULE_IDValue = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String SCHEDULE_ID
         {
             get { return this.SCHEDULE_IDValue; }

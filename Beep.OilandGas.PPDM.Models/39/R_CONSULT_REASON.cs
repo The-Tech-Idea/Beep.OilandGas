@@ -9,6 +9,7 @@ public partial class R_CONSULT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_REASON
         {  
             get  

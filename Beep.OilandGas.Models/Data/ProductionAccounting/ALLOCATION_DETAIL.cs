@@ -85,6 +85,5 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref AllocationRequest_IDValue, value); }
         }
 
-       
     }
 }

@@ -9,6 +9,7 @@ public partial class RA_COLOR_PALETTE: Entity,IPPDMEntity
 {
 
 private  System.String COLOR_PALETTEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLOR_PALETTE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COLOR_PALETTEValue;
           set { SetProperty(ref  COLOR_PALETTEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

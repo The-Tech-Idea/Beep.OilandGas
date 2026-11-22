@@ -9,6 +9,7 @@ public partial class R_DRILL_STAT_CODE: Entity,IPPDMEntity
 {
 
 private  System.String STATISTIC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATISTIC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STATISTIC_TYPEValue;
           set { SetProperty(ref  STATISTIC_TYPEValue, value); }
         } 
 private  System.String STATISTIC_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATISTIC_CODE
         {  
             get  

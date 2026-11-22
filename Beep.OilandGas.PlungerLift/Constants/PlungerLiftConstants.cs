@@ -118,14 +118,24 @@ namespace Beep.OilandGas.PlungerLift.Constants
         public const decimal MaximumFallVelocity = 1000m;
 
         /// <summary>
-        /// Minimum rise velocity in ft/min.
+        /// Minimum rise velocity in ft/min - the low end of <c>PlungerLiftCalculator.EstimateRiseVelocity</c>'s own
+        /// 5-20 ft/s clamp.
         /// </summary>
-        public const decimal MinimumRiseVelocity = 200m;
+        /// <remarks>
+        /// LFT-05: this was 200 ft/min and <see cref="MaximumRiseVelocity"/> was 500, which made every well with a
+        /// differential above <see cref="MinimumPressureDifferential"/> fail: the rise estimate is a function of the
+        /// differential alone, so 50 psi gives exactly 500 ft/min and anything above it gives more. The two constants
+        /// also contradicted the calculator, whose comment states a typical 500-1000 ft/min and whose clamp accepts
+        /// 300-1200. They now state the calculator's own clamp, which is the only self-consistent reading; the schedule
+        /// itself is unchanged and no other caller in the repository used either constant.
+        /// </remarks>
+        public const decimal MinimumRiseVelocity = 300m;
 
         /// <summary>
-        /// Maximum rise velocity in ft/min.
+        /// Maximum rise velocity in ft/min - the high end of <c>PlungerLiftCalculator.EstimateRiseVelocity</c>'s own
+        /// 5-20 ft/s clamp (see <see cref="MinimumRiseVelocity"/>).
         /// </summary>
-        public const decimal MaximumRiseVelocity = 500m;
+        public const decimal MaximumRiseVelocity = 1200m;
 
         /// <summary>
         /// Minimum gas-liquid ratio in scf/bbl.

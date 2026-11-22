@@ -9,6 +9,7 @@ public partial class RA_RATE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RATE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RATE_TYPEValue;
           set { SetProperty(ref  RATE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

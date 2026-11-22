@@ -9,6 +9,7 @@ public partial class OBLIG_XREF: Entity,IPPDMEntity
 {
 
 private  System.String OBLIGATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBLIGATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OBLIGATION_IDValue;
           set { SetProperty(ref  OBLIGATION_IDValue, value); }
         } 
 private  System.Decimal OBLIGATION_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal OBLIGATION_SEQ_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal OBLIGATION_SEQ_NOValue;
           set { SetProperty(ref  OBLIGATION_SEQ_NOValue, value); }
         } 
 private  System.String OBLIGATION_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBLIGATION_ID_2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String OBLIGATION_ID_2Value;
           set { SetProperty(ref  OBLIGATION_ID_2Value, value); }
         } 
 private  System.Decimal OBLIGATION_SEQ_NO_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal OBLIGATION_SEQ_NO_2
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal OBLIGATION_SEQ_NO_2Value;
           set { SetProperty(ref  OBLIGATION_SEQ_NO_2Value, value); }
         } 
 private  System.Decimal XREF_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_SEQ_NO
         {  
             get  

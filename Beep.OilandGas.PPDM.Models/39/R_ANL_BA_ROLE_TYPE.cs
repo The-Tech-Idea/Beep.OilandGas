@@ -9,6 +9,7 @@ public partial class R_ANL_BA_ROLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BA_ROLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_ROLE_TYPE
         {  
             get  

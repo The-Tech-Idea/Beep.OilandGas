@@ -9,6 +9,7 @@ public partial class RA_COLOR_FORMAT: Entity,IPPDMEntity
 {
 
 private  System.String COLOR_FORMATValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLOR_FORMAT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COLOR_FORMATValue;
           set { SetProperty(ref  COLOR_FORMATValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

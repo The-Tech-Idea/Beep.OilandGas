@@ -9,6 +9,7 @@ public partial class RESERVE_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String RESERVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESERVE_CLASS_ID
         {  
             get  

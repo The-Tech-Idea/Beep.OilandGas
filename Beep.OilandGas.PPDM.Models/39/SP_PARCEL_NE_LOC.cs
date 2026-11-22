@@ -9,6 +9,7 @@ public partial class SP_PARCEL_NE_LOC: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_NE_LOC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_NE_LOC_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_CONT_STATUS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_STATUS_TYPE
         {  
             get  

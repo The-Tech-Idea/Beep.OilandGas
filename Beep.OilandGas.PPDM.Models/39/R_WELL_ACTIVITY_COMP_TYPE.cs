@@ -9,6 +9,7 @@ public partial class R_WELL_ACTIVITY_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_ACTIVITY_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_ACTIVITY_COMPONENT_TYPE
         {  
             get  

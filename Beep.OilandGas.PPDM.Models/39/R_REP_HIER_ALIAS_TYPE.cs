@@ -9,6 +9,7 @@ public partial class R_REP_HIER_ALIAS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REP_HIER_ALIAS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REP_HIER_ALIAS_TYPE
         {  
             get  

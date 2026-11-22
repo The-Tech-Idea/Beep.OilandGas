@@ -9,6 +9,7 @@ public partial class PROJECT_STEP_BA: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROJECT_IDValue;
           set { SetProperty(ref  PROJECT_IDValue, value); }
         } 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.String ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROLE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String ROLEValue;
           set { SetProperty(ref  ROLEValue, value); }
         } 
 private  System.Decimal ROLE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ROLE_SEQ_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal ROLE_SEQ_NOValue;
           set { SetProperty(ref  ROLE_SEQ_NOValue, value); }
         } 
 private  System.String STEP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_ID
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String STEP_IDValue;
           set { SetProperty(ref  STEP_IDValue, value); }
         } 
 private  System.Decimal STEP_BA_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STEP_BA_OBS_NO
         {  
             get  

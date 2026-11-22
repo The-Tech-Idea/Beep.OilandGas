@@ -9,6 +9,7 @@ public partial class R_FAC_FUNCTION: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_FUNCTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_FUNCTION
         {  
             get  

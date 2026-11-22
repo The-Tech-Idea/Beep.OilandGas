@@ -9,6 +9,7 @@ public partial class R_OBLIG_SUSPEND_PAY: Entity,IPPDMEntity
 {
 
 private  System.String SUSPEND_PAYMENT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUSPEND_PAYMENT_REASON
         {  
             get  

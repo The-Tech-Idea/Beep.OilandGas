@@ -9,6 +9,7 @@ public partial class R_INTERP_ORIGIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ORIGIN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ORIGIN_TYPE
         {  
             get  

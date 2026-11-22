@@ -9,6 +9,7 @@ public partial class R_WELL_LIC_VIOL_RESOL: Entity,IPPDMEntity
 {
 
 private  System.String RESOLVE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESOLVE_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PAL_SUM_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PALEO_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PALEO_XREF_TYPE
         {  
             get  

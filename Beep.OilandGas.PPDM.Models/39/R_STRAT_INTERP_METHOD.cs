@@ -9,6 +9,7 @@ public partial class R_STRAT_INTERP_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_INTERPRET_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_INTERPRET_METHOD
         {  
             get  

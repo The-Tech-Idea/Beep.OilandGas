@@ -1,0 +1,64 @@
+{
+  "id": "STG-03/EXP-03",
+  "title": "Prospect editor and risk assessment",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: five recorded probabilities produce the chance, a missing element reads \"incomplete\" with no number, the volume percentiles carry the recorded unit and are checked for order, a submitted prospect is read-only and is revised into a new draft version, every risk save records assessor and date, and the economic summary is read-only with its ECO-01 link gated",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Exploration/OgProspectEditor.cs (OgProspectRiskElement, OgProspectVolume, OgProspectIdentity, OgProspectTrapDetail, OgProspectReservoirDetail, OgProspectSourceDetail, OgProspectEconomicSummary, OgProspectDetail, IOgProspectEditor, OgProspectEditor)",
+    "chanceRule": "src/Beep.OilandGas.Desktop.Data/Exploration/OgProspectChance.cs (the single rule: product of the five element success probabilities, only when every element is a usable 0..1 value). EXP-02's board now uses it too, so the board and the editor cannot disagree",
+    "page": "src/Beep.OilandGas.Desktop/Views/ProspectEditorPageView.cs (route 'prospect': Identity / Trap / Reservoir / Source / Volume / Risk / Economics / History tabs, identity save, risk save, revise)",
+    "navigation": "the board's 'Open prospect' now selects the card and opens this page",
+    "wiring": "OgBootstrapper (IOgProspectEditor), OgApplication.ProspectEditor, catalog 'prospect' (OgModuleKeys.Exploration), factory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/ProspectEditorTests.cs (18, no database) + ProspectEditorGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~ProspectEditor", "exit": 0, "run": 19, "passed": 19, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 619, "passed": 619, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.ProspectIdentification.Tests", "exit": 0, "run": 26, "passed": 26, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "database": "SQLite PROSPECT, PLAY, PROSPECT_TRAP, PROSPECT_RESERVOIR, PROSPECT_SOURCE_ROCK, PROSPECT_VOLUME_ESTIMATE, PROSPECT_RISK_ASSESSMENT, PROSPECT_ECONOMIC, PROSPECT_HISTORY and PROSPECT_WORKFLOW_STAGE",
+    "read": "P-1 reads name/play/operator, trap THREE_WAY with a 12.5 km2 closure, reservoir SANDSTONE at 0.22 porosity, source TOC 1.5, volume P90 10 / P50 20 / P10 30 MMBO, risk elements with assessor 'geologist' and date 2026-02-01, economics BASE with NPV 1,000,000 USD, and the stage history starting at APPRAISAL",
+    "chance_complete": "0.9 * 0.8 * 0.9 * 0.9 * 0.9 = 52%",
+    "chance_incomplete": "P-3 has SEAL null: ChancePercent null, ChanceText 'incomplete', MissingElements ['SEAL']",
+    "identity_save": "P-1 renamed to 'Alpha renamed', play changed to PLAY-2 (name resolved from PLAY), operator to BA-2; the PROSPECT_HISTORY count rose by one",
+    "risk_save": "SEAL set to 0.5 by 'sara' on 2026-03-02: the chance became 29% and every element now reports assessor 'sara' and that date",
+    "submitted_locked": "P-2 (SUBMITTED) refuses an identity save and a risk save with prospect-editor-locked, and re-reading still shows the original name and status",
+    "revision": "P-2 revised to P-2R: the new prospect is DRAFT, carries the copied assessment (52% chance, assessor 'geologist' preserved), has no stage history of its own, and has one PROSPECT_HISTORY row; the submitted P-2 is unchanged",
+    "revision_guards": "revising the draft P-1 is refused (prospect-editor-revision-needs-submitted) and revising to an existing id is refused (prospect-editor-revision-exists)",
+    "unknown": "loading P-NOPE is a failure with no detail and prospect-editor-unknown"
+  },
+  "smoke": {
+    "pages-declared": 37,
+    "views-constructed": true,
+    "prospect-editor-route": "prospect",
+    "prospect-editor-empty-without-selection": true,
+    "prospect-editor-consistent-state": true,
+    "prospect-editor-economics-route": "economics",
+    "prospect-editor-economics-available": false,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 A prospect with all required risk elements produces a chance value": "pass - OgProspectChance.Of multiplies the complements of the five recorded probabilities and returns a whole percentage; the editor's detail carries it (52% for 0.1/0.2/0.1/0.1/0.1), and after saving SEAL 0.5 the re-read chance is 29%. Unit tests cover 52%, 100% (all zero risk), 0% (all certain failure) and the out-of-range and missing cases.",
+    "AC-2 A prospect with a missing element shows incomplete - never a number": "pass - IsComplete requires every element to be a usable 0..1 value, Of returns null otherwise, and OgProspectDetail.ChanceText is 'incomplete' with MissingElements naming the gap. The gateway test reads P-3 (SEAL null) as 'incomplete' with a null chance.",
+    "AC-3 Volume percentiles are ordered and unit-annotated": "pass - OgProspectVolume exposes IsOrdered (P90 <= P50 <= P10) and HasUnit, and Describe() appends the recorded unit or says 'unit not recorded'. The unit comes from PROSPECT_VOLUME_ESTIMATE.VOLUME_OUOM, then the prospect's ESTIMATED_VOLUME_OUOM; nothing guesses it. The gateway test reads 10/20/30 MMBO ordered, and the unit test proves a crossed triple is flagged and a missing unit is named.",
+    "AC-4 A submitted prospect cannot be edited; a revision is a new version": "pass - IsLocked covers SUBMITTED, APPROVED, CLOSED, COMPLETED and ARCHIVED; SaveIdentityAsync and SaveRiskAsync refuse those statuses with prospect-editor-locked, and ReviseAsync refuses an unlocked prospect (revision-needs-submitted) and an existing target id (revision-exists). Revising P-2 creates P-2R as a DRAFT with a copied assessment and its own PROSPECT_HISTORY row, while P-2 stays SUBMITTED.",
+    "AC-5 Every risk row records assessor and date": "pass - SaveRiskAsync refuses a blank assessor and an unset date, and writes ASSESSOR and ASSESSMENT_DATE on every save; the read puts them on each element, and the gateway test asserts all five elements report 'sara' / 2026-03-02 after a save. The schema stores one assessor and date per assessment, which is the limit recorded below.",
+    "AC-6 Economic summary is read-only and links to ECO-01": "pass - the editor exposes no economic write (a reflection test asserts no IOgProspectEditor method takes or returns an economic summary), the summary is read from PROSPECT_ECONOMIC plus the assessment's EMV/NPV, and the page offers the evaluation button only when the 'economics' route can be opened, otherwise stating that it arrives with ECO-01. The smoke records the route and the current permission answer."
+  },
+  "limits": [
+    "PROSPECT_RISK_ASSESSMENT stores one ASSESSOR and one ASSESSMENT_DATE for the whole assessment, so the five element rows share one attribution and one shared rationale (RISK_FACTORS); a per-element assessor or rationale needs new columns.",
+    "The editor writes the identity and the risk assessment. Trap, reservoir, source, volume and economic rows are read-only here; the plan's trap/reservoir/source editors are not built.",
+    "A revision copies the prospect row and its assessment and writes one PROSPECT_HISTORY row; the trap/reservoir/source/economic/volume rows are not copied, so the new draft carries the identity and the risk only. The statements are not wrapped in a transaction, so a failure between them leaves a draft with no assessment, reported as such.",
+    "PROSPECT has no LEAD_ID or BASIN_ID column, so identity shows play, field, type and operator; the lead and basin come through the play and are not edited here.",
+    "The stage is not changed by the editor: EXP-02's board owns the (refused) advance command and WFL-04/STG-14 will own the write.",
+    "The volume percentiles come from the risk assessment's LOW/BEST/HIGH estimate columns; PROSPECT_VOLUME_ESTIMATE stores P50 only, so a second percentile set there is not shown.",
+    "The economic summary shows the scenario, date, evaluator and description plus the assessment's EMV/NPV; there is no economics page yet (ECO-01), so the link is gated rather than navigable.",
+    "The page is exercised by construction (the smoke builds every catalog page and audits it) and by unit/integration tests; no automated click drives the tabs or the save buttons."
+  ]
+}

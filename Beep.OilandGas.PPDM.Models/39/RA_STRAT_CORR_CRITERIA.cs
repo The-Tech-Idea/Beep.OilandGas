@@ -9,6 +9,7 @@ public partial class RA_STRAT_CORR_CRITERIA: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_CORRELATION_CRITERIAValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_CORRELATION_CRITERIA
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_CORRELATION_CRITERIAValue;
           set { SetProperty(ref  STRAT_CORRELATION_CRITERIAValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

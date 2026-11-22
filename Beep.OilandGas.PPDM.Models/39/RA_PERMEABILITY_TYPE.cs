@@ -9,6 +9,7 @@ public partial class RA_PERMEABILITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PERMEABILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERMEABILITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PERMEABILITY_TYPEValue;
           set { SetProperty(ref  PERMEABILITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

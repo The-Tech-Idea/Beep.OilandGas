@@ -9,6 +9,7 @@ public partial class RA_TAX_CREDIT_CODE: Entity,IPPDMEntity
 {
 
 private  System.String TAX_CREDIT_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAX_CREDIT_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TAX_CREDIT_CODEValue;
           set { SetProperty(ref  TAX_CREDIT_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

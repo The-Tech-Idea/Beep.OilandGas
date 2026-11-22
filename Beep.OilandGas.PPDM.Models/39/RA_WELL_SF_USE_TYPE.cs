@@ -9,6 +9,7 @@ public partial class RA_WELL_SF_USE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SF_USE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_USE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SF_USE_TYPEValue;
           set { SetProperty(ref  SF_USE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

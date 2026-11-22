@@ -9,6 +9,7 @@ public partial class R_RIG_SWIVEL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SWIVEL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SWIVEL_TYPE
         {  
             get  

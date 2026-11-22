@@ -9,6 +9,7 @@ public partial class RA_AIRCRAFT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AIRCRAFT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AIRCRAFT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AIRCRAFT_TYPEValue;
           set { SetProperty(ref  AIRCRAFT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

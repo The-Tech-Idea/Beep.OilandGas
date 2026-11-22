@@ -9,6 +9,7 @@ public partial class R_ANL_REPEATABILITY: Entity,IPPDMEntity
 {
 
 private  System.String REPEATABILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPEATABILITY_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_WELL_QUALIFIC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_QUALIFIC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_QUALIFIC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WELL_QUALIFIC_TYPEValue;
           set { SetProperty(ref  WELL_QUALIFIC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

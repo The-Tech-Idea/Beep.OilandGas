@@ -9,6 +9,7 @@ public partial class RA_FAC_MAINTAIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FACILITY_TYPEValue;
           set { SetProperty(ref  FACILITY_TYPEValue, value); }
         } 
 private  System.String MAINTAIN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAINTAIN_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String MAINTAIN_TYPEValue;
           set { SetProperty(ref  MAINTAIN_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_REPORT_HIER_COMP: Entity,IPPDMEntity
 {
 
 private  System.String COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_TYPE
         {  
             get  

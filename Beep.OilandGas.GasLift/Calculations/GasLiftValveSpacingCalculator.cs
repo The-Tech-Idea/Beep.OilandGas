@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasProperties.Calculations;
@@ -104,9 +104,11 @@ namespace Beep.OilandGas.GasLift.Calculations
 
             openingPressure = Math.Max(minimumPressure, Math.Min(maximumPressure, openingPressure));
 
-            // Adjust for temperature (gas expands with temperature)
+            // Adjust for temperature (gas expands with temperature). The valve temperature is Fahrenheit and the
+            // correlation takes Rankine, so it is converted here - without this every ordinary well was refused as
+            // "temperature too low".
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                openingPressure, valveTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
+                openingPressure, valveTemperature + 459.67m, wellProperties.GAS_SPECIFIC_GRAVITY);
 
             // Temperature correction
             decimal temperatureCorrection = valveTemperature / wellProperties.WELLHEAD_TEMPERATURE;

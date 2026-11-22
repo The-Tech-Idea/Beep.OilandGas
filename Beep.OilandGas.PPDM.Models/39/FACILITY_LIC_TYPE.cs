@@ -9,6 +9,7 @@ public partial class FACILITY_LIC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GRANTED_BY_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GRANTED_BY_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GRANTED_BY_BA_IDValue;
           set { SetProperty(ref  GRANTED_BY_BA_IDValue, value); }
         } 
 private  System.String FACILITY_LICENSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_LICENSE_TYPE
         {  
             get  

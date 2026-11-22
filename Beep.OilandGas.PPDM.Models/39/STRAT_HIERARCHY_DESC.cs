@@ -9,6 +9,7 @@ public partial class STRAT_HIERARCHY_DESC: Entity,IPPDMEntity
 {
 
 private  System.String HIERARCHY_DESC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIERARCHY_DESC_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HIERARCHY_DESC_IDValue;
           set { SetProperty(ref  HIERARCHY_DESC_IDValue, value); }
         } 
 private  System.Decimal HIERARCHY_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal HIERARCHY_SEQ_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SUBSTANCE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ID
         {  
             get  

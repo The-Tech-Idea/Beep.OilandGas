@@ -9,6 +9,7 @@ public partial class R_EQUIP_SYSTEM_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_CONDITION
         {  
             get  

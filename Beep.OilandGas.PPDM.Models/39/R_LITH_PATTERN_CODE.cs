@@ -9,6 +9,7 @@ public partial class R_LITH_PATTERN_CODE: Entity,IPPDMEntity
 {
 
 private  System.String LITH_PATTERN_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITH_PATTERN_CODE
         {  
             get  

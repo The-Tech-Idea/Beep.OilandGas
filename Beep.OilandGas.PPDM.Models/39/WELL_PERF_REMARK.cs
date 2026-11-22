@@ -9,6 +9,7 @@ public partial class WELL_PERF_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String PERFORATION_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERFORATION_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PERFORATION_SOURCEValue;
           set { SetProperty(ref  PERFORATION_SOURCEValue, value); }
         } 
 private  System.Decimal PERFORATION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PERFORATION_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal PERFORATION_OBS_NOValue;
           set { SetProperty(ref  PERFORATION_OBS_NOValue, value); }
         } 
 private  System.Decimal REMARK_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_PPDM_AUDIT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String AUDIT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUDIT_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AUDIT_REASONValue;
           set { SetProperty(ref  AUDIT_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

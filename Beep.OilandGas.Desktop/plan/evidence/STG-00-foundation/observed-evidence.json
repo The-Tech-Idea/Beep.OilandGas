@@ -1,0 +1,79 @@
+{
+  "id": "STG-00",
+  "title": "Foundation and host shell — first slice",
+  "date": "2026-11-05",
+  "commit": "uncommitted",
+  "sdk": "10.0.403",
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug",
+      "exit": 0,
+      "warnings": 0,
+      "errors": 0,
+      "projects": 7
+    },
+    {
+      "cmd": "dotnet test test/Beep.OilandGas.Desktop.Tests -c Debug",
+      "exit": 0,
+      "run": 24,
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0
+    }
+  ],
+  "smokeResult": {
+    "dataRoot": "%TEMP%\\TheTechIdea\\BeepOilGasSmoke",
+    "failureStore": "%TEMP%\\TheTechIdea\\BeepOilGasSmoke\\Diagnostics\\failures.db",
+    "storeUnderRoot": true,
+    "reference": "550e789735a6",
+    "referenceWellFormed": true,
+    "failureStored": true,
+    "secretRedacted": true,
+    "severityStored": "Error",
+    "auditRows": 1,
+    "toastsRaised": 1,
+    "toastCarriesReference": true,
+    "toastCarriesNoSecret": true,
+    "pagesDeclared": 8,
+    "viewsConstructed": true,
+    "shellConstructed": true,
+    "result": "ok"
+  },
+  "gates": {
+    "SG-00-1": "pass — 0 errors",
+    "SG-00-2": "pass — 0 warnings; BEEP0001..0004 analyzers active on every non-test project",
+    "SG-00-3": "pass — smoke writes result: ok with views-constructed and shell-constructed",
+    "SG-00-4": "open — only --smoke is implemented",
+    "SG-00-5": "partial — shell constructs and navigation is built; not shown or screenshotted",
+    "SG-00-6": "pass — route guard and source guard tests",
+    "SG-00-7": "pass — failed read renders FailurePanel and raises one toast (ToastPipelineTests, DiagnosticsPipelineTests)",
+    "SG-00-8": "partial — views use DynamicResource tokens; no automated grep guard yet",
+    "SG-00-9": "open — no RTL pass yet",
+    "SG-00-10": "pass — every catalog page constructs",
+    "SG-00-11": "pass — failure toast carries a 12-hex reference and no exception text",
+    "SG-00-12": "pass — record durable in the store; log line emitted",
+    "SG-00-13": "partial — ProcessFailureSubscription started at startup; not exercised by a test",
+    "SG-00-14": "pass — SourceGuardTests",
+    "SG-00-15": "pass — one audit row per write and per refusal",
+    "SG-00-16": "pass — OgPathsTests + smoke store-under-root"
+  },
+  "claims": [
+    "The solution builds with zero warnings and zero errors under the repository analyzers.",
+    "Every catalog page constructs and the shell constructs.",
+    "A reported failure returns a well-formed 12-hex reference, is stored, and is redacted.",
+    "The toast is produced by the pipeline, carries the reference, and carries no secret.",
+    "One audit row is written per write and per refusal.",
+    "The failure store and log resolve under the per-user data root and never beside the executable."
+  ],
+  "limits": [
+    "No live database, provider, API or identity server.",
+    "The window was constructed but not shown; no screenshot, pixel, accessibility or RTL verification.",
+    "Only the --smoke headless verb exists.",
+    "The business audit store is a local SQLite table, not yet Beep.OilandGas.Repository.",
+    "The source guards are heuristics: they read source text and prove reporting presence, not correctness of the report."
+  ]
+}

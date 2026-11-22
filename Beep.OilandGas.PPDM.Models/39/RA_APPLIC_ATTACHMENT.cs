@@ -9,6 +9,7 @@ public partial class RA_APPLIC_ATTACHMENT: Entity,IPPDMEntity
 {
 
 private  System.String ATTACHMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ATTACHMENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ATTACHMENT_TYPEValue;
           set { SetProperty(ref  ATTACHMENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

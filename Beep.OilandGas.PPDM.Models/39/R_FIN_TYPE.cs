@@ -9,6 +9,7 @@ public partial class R_FIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FIN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIN_TYPE
         {  
             get  

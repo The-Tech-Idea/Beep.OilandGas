@@ -9,6 +9,7 @@ public partial class R_LOG_DIRECTION: Entity,IPPDMEntity
 {
 
 private  System.String LOG_DIRECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOG_DIRECTION
         {  
             get  

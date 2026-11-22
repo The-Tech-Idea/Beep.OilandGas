@@ -9,6 +9,7 @@ public partial class LAND_SALE_BA_SERVICE: Entity,IPPDMEntity
 {
 
 private  System.String JURISDICTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JURISDICTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String JURISDICTIONValue;
           set { SetProperty(ref  JURISDICTIONValue, value); }
         } 
 private  System.String LAND_SALE_NUMBERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_SALE_NUMBER
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LAND_SALE_NUMBERValue;
           set { SetProperty(ref  LAND_SALE_NUMBERValue, value); }
         } 
 private  System.String LAND_SALE_OFFERING_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_SALE_OFFERING_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String LAND_SALE_OFFERING_IDValue;
           set { SetProperty(ref  LAND_SALE_OFFERING_IDValue, value); }
         } 
 private  System.String PROVIDED_BYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROVIDED_BY
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String PROVIDED_BYValue;
           set { SetProperty(ref  PROVIDED_BYValue, value); }
         } 
 private  System.Decimal SERVICE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SERVICE_SEQ_NO
         {  
             get  

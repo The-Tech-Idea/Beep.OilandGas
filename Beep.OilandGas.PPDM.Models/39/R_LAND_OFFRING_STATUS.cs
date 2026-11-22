@@ -9,6 +9,7 @@ public partial class R_LAND_OFFRING_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String LAND_OFFRING_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_OFFRING_STATUS
         {  
             get  

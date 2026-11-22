@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class ROYALTY_OWNER : ModelEntityBase {
         private System.String ROYALTY_OWNER_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String ROYALTY_OWNER_ID
         {
             get { return this.ROYALTY_OWNER_IDValue; }

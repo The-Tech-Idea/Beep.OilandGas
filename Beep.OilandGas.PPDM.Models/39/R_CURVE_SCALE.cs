@@ -9,6 +9,7 @@ public partial class R_CURVE_SCALE: Entity,IPPDMEntity
 {
 
 private  System.String CURVE_SCALE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_SCALE_TYPE
         {  
             get  

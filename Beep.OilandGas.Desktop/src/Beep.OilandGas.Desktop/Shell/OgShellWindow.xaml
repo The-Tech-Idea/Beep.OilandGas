@@ -1,0 +1,131 @@
+<Window x:Class="TheTechIdea.Beep.OilandGas.Desktop.Shell.OgShellWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:notifications="clr-namespace:TheTechIdea.Beep.OilandGas.Desktop.Controls.Notifications;assembly=TheTechIdea.Beep.OilandGas.Desktop.Controls"
+        Title="Beep Oil &amp; Gas Desktop"
+        Height="780"
+        Width="1240"
+        MinHeight="560"
+        MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BeepBackgroundBrush}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Top bar -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BeepSurfaceBrush}"
+                BorderBrush="{DynamicResource BeepBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Beep"
+                               FontSize="{DynamicResource BeepHeadingFontSize}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BeepAccentBrush}" />
+                    <TextBlock Text=" Oil &amp; Gas"
+                               FontSize="{DynamicResource BeepHeadingFontSize}"
+                               FontWeight="SemiBold"
+                               Margin="4,0,0,0"
+                               Foreground="{DynamicResource BeepTextPrimaryBrush}" />
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right">
+                    <Button x:Name="NotificationsButton"
+                            Padding="10,4"
+                            Margin="0,0,12,0"
+                            Click="OnNotificationsClick"
+                            AutomationProperties.Name="Notifications" />
+                    <TextBlock x:Name="ContextText"
+                               Style="{DynamicResource OgCaptionText}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Navigation and content -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- REL-02: shown only when the licence affects what the person can do. -->
+            <Border x:Name="LicenceBanner"
+                    Grid.Row="0"
+                    Visibility="Collapsed"
+                    Background="{DynamicResource BeepSurfaceAltBrush}"
+                    BorderBrush="{DynamicResource BeepBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,7">
+                <TextBlock x:Name="LicenceBannerText"
+                           Style="{DynamicResource OgCaptionText}"
+                           TextWrapping="Wrap" />
+            </Border>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="230" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Background="{DynamicResource BeepSurfaceAltBrush}"
+                        BorderBrush="{DynamicResource BeepBorderBrush}"
+                        BorderThickness="0,0,1,0">
+                    <ListBox x:Name="NavList"
+                             DisplayMemberPath="Title"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="8,10"
+                             SelectionChanged="OnNavigationSelectionChanged"
+                             AutomationProperties.Name="Navigation" />
+                </Border>
+
+                <ContentControl Grid.Column="1" x:Name="ContentHost" />
+            </Grid>
+        </Grid>
+
+        <!-- Status bar -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource BeepSurfaceBrush}"
+                BorderBrush="{DynamicResource BeepBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,6">
+            <DockPanel LastChildFill="True">
+                <TextBlock x:Name="StatusText"
+                           Style="{DynamicResource OgCaptionText}"
+                           VerticalAlignment="Center" />
+                <Button x:Name="HealthButton"
+                        DockPanel.Dock="Right"
+                        Padding="8,2"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center"
+                        Click="OnHealthClick"
+                        AutomationProperties.Name="Data path health" />
+                <TextBlock DockPanel.Dock="Right"
+                           x:Name="ModeText"
+                           Style="{DynamicResource OgCaptionText}"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <!-- The visible end of the diagnostics pipeline -->
+        <notifications:ToastHost x:Name="Toasts"
+                                 Grid.Row="1"
+                                 Margin="0,0,20,20"
+                                 Panel.ZIndex="10" />
+    </Grid>
+</Window>

@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class RUN_TICKET_VALUATION : ModelEntityBase {
         private System.String VALUATION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String VALUATION_ID
         {
             get { return this.VALUATION_IDValue; }

@@ -9,6 +9,7 @@ public partial class RA_RECORDER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RECORDER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORDER_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RECORDER_TYPEValue;
           set { SetProperty(ref  RECORDER_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

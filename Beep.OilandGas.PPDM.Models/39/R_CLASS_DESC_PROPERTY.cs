@@ -9,6 +9,7 @@ public partial class R_CLASS_DESC_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESC_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_LAND_ACQTN_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String LAND_ACQTN_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_ACQTN_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_ACQTN_METHODValue;
           set { SetProperty(ref  LAND_ACQTN_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

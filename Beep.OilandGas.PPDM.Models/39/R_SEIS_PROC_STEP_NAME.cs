@@ -9,6 +9,7 @@ public partial class R_SEIS_PROC_STEP_NAME: Entity,IPPDMEntity
 {
 
 private  System.String STEP_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_NAME
         {  
             get  

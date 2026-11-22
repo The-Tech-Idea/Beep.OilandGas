@@ -1,0 +1,90 @@
+{
+  "id": "STG-13/WRK-04",
+  "title": "Contractors and permit-to-work",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: execution start is refused until every required readiness item is satisfied and the permit covers the moment; an expired licence or a closed window leaves its item unsatisfied with the date named; the requester cannot issue their own permit; the validity is a window with both ends; every readiness item carries its evidence reference; and a retried request lands on the permit it already wrote, so a lost acknowledgement never issues a second permit for the same order.",
+  "dataModel": {
+    "owner": "The permit is the owner's WORK_ORDER_EXECUTION_PERMIT; the readiness rows are its WORK_ORDER_INSPECTION records, each carrying PERMIT_PREREQUISITE_KIND, a result and the acceptance revisions that evidence it; the contractor register is BUSINESS_ASSOCIATE with BA_LICENSE and the latest BA_LICENSE_STATUS.",
+    "openQuestionAnswered": "The feature's open question - 'the readiness item list is not enumerated in the repository' - is answered by the owner's own columns: a work order's inspection conditions ARE its execution prerequisites, each identified by PERMIT_PREREQUISITE_KIND. Readiness is that list plus the window item the permit itself supplies plus the personnel check derived from the assigned people's licences.",
+    "additive": "WORK_ORDER_EXECUTION_PERMIT recorded who issued it but not who asked for it, so AC-3 had nothing to compare against. REQUESTED_BY, REQUESTED_AT_UTC, CONDITIONS and REQUEST_INTENT_ID were added on the class's own partial (the class was made partial). A permit issued by the owner's own flow simply records no requester."
+  },
+  "rules": {
+    "readiness": "Required items are the work order's inspection conditions (kind = PERMIT_PREREQUISITE_KIND, else COND_TYPE), a PERSONNEL_COMPETENCY item derived from the assigned people, and PERMIT_WINDOW. A condition is satisfied only when its result is a passing result AND an acceptance revision or regulatory reference is recorded.",
+    "licence": "A licence is current when it is active, its latest status is not one of the refusing states (expired, suspended, revoked, denied, pending, cancelled, withdrawn, lapsed) and its expiry is recorded and not past. A licence with no expiry is not current, because it cannot be shown to be.",
+    "window": "A validity window needs both ends and an end after its start; nothing is defaulted to a day or an open-ended window. A permit outside its window is not usable whichever end has passed.",
+    "issue": "Issue is refused for the requester, for a second issued permit covering the same moment on the same order, for a closed window, and while any required item is unsatisfied - each with its own reason.",
+    "start": "Start is allowed only when the permit is issued, inside its window and every required item is satisfied; the reasons are collected so the page and the command agree.",
+    "idempotency": "The permit id is derived from the request intent (PTW-<intent>), so a retry adopts the permit it already wrote; the same key with a different order or scope is refused rather than silently reused (AC-6)."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.Models/Data/WorkOrder/WORK_ORDER_EXECUTION_PERMIT.Request.cs (additive request columns) and WORK_ORDER_EXECUTION_PERMIT.cs (made partial)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Work/OgPermitsToWork.cs (OgContractor, OgCompetency, OgReadinessItem, OgWorkPermit, OgPermitToWorkWorkspace, PermitToWorkRules, IOgPermitsToWork, OgPermitsToWorkService with LoadAsync/RequestAsync/IssueAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/PermitToWorkPageView.cs (route 'permittowork': the work-order filter, the counts, the contractor grid, the permit grid, the readiness list, the execution-start answer, the request bars and the issue bar)",
+    "wiring": "OgBootstrapper (IOgPermitsToWork), OgApplication.PermitsToWork, catalog 'permittowork' (OgModuleKeys.Work), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PermitToWorkTests.cs (7, no database) + PermitToWorkGatewayTests.cs (1 opt-in, real SQLite over seven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1262, "passed": 1262, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 75, "passed": 75, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 99, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WORK_ORDER_EXECUTION_PERMIT, WORK_ORDER, WORK_ORDER_COMPONENT, WORK_ORDER_INSPECTION, BUSINESS_ASSOCIATE, BA_LICENSE and BA_LICENSE_STATUS. Two contractors (one current, one with a licence that expired in 2025), a work order with a passing personnel prerequisite and a pending material prerequisite, and the expired contractor assigned to a different order.",
+    "ac2_register": "the register reads two contractors: BA-1 is current, BA-2 reads 'not current: expired on 2025-06-30'",
+    "ac6_request": "requesting with intent 'permit-abc' writes PTW-permit-abc with the requester and the window; the same request twice leaves exactly one permit row, and the same key with a different scope is refused",
+    "ac4_window": "a request whose start equals its end is refused with permit-to-work-window-invalid",
+    "ac1_readiness": "issuing while MATERIAL_READINESS is pending is refused with permit-to-work-readiness-incomplete naming the item, and no permit is ISSUED",
+    "ac3_issue": "after the material prerequisite passes, issuing as the requester sara is refused with permit-to-work-self-issue; nadia issues it and the row records STATUS ISSUED and ISSUED_BY nadia",
+    "ac5_evidence": "every satisfied readiness item carries an evidence reference, asserted for all of them",
+    "ac6_second": "a second permit for the same order is refused with permit-to-work-already-issued and 'The original is retained'; exactly one permit is ISSUED",
+    "ac2_expired_permit": "moving the permit's window into the past makes IsWithinWindow false and the start refused with 'does not cover this moment'",
+    "ac2_expired_licence": "assigning the expired contractor to the order leaves PERSONNEL_COMPETENCY unsatisfied naming 'expired on 2025-06-30'",
+    "failure": "a service without a connection returns no workspace, and the page's failed branch clears the readiness"
+  },
+  "gates": {
+    "AC-1 Execution start refused unless every readiness item is satisfied": "pass - the checklist, the issue command and the start answer all use the same rule; the gateway refuses the issue while the material item is pending.",
+    "AC-2 Expired competency or permit makes the item unsatisfied": "pass - a licence past its expiry is not current with the date named, and a permit outside its window blocks the start.",
+    "AC-3 Only a different person may issue a permit they did not request": "pass - the requester is refused with their own name in the sentence.",
+    "AC-4 Permit validity is a window with start and end": "pass - both ends required, end after start, and a closed window refuses the issue.",
+    "AC-5 Readiness items carry evidence references": "pass - each item exposes its acceptance revision or regulatory reference, and a condition without one is not satisfied.",
+    "AC-6 A lost acknowledgement does not issue two permits": "pass - the intent key derives the permit id, and a second issued permit for the same order is refused while the original is retained."
+  },
+  "engineFindings": {
+    "permitRecordedNoRequester": {
+      "where": "Beep.OilandGas.Models/Data/WorkOrder/WORK_ORDER_EXECUTION_PERMIT.cs",
+      "finding": "The permit recorded ISSUED_BY but no requester, so the feature's segregation of duties (only a different person may issue) had nothing to compare against.",
+      "handling": "REQUESTED_BY, REQUESTED_AT_UTC, CONDITIONS and REQUEST_INTENT_ID were added on the class's partial; the class itself only gained the partial keyword."
+    },
+    "readinessIsTheInspectionConditions": {
+      "where": "Beep.OilandGas.Models/Data/WorkOrder/WORK_ORDER_INSPECTION.cs",
+      "finding": "The readiness list the feature says is 'not enumerated in the repository' is already there: each inspection condition carries PERMIT_PREREQUISITE_KIND, a result and personnel/material/document acceptance revisions.",
+      "handling": "Readiness is read from those rows instead of a list invented in the desktop, which answers the feature's own open question."
+    },
+    "requiredPermitColumns": {
+      "finding": "The owner marks ISSUED_BY, INSPECTION_REVISION, ISOLATION_REFERENCE, RISK_REFERENCE, PERSONNEL_REFERENCE and MATERIAL_REFERENCE required, and a freshly requested permit has none of them.",
+      "handling": "A request records explicit placeholders (NOT-ISSUED, NO-INSPECTION, NOT-RECORDED) and the read model shows the placeholder back as 'no reference recorded', so the absence is honest rather than blank. Recorded as a limit."
+    },
+    "competencyCarriesItsReason": {
+      "finding": "A first version of the competency row said only 'not current: granted', which named the status that was fine and dropped the reason it failed.",
+      "handling": "OgCompetency carries the reason from the licence rule, so the row and the readiness refusal both read 'expired on <date>'."
+    },
+    "scenarioNeededSeparating": {
+      "finding": "The first gateway scenario assigned the expired contractor to the order under test, so the readiness refusal named PERSONNEL_COMPETENCY rather than the material item the test was about.",
+      "handling": "The expired contractor starts on another order and is assigned to this one only in the AC-2 step, so each refusal names the item it is actually about."
+    }
+  },
+  "limits": [
+    "The contractor register is read-only: 'maintain contractors' would write into BUSINESS_ASSOCIATE and its licence tables, which this build does not offer, so the page shows the register and its expiries without editing them.",
+    "Insurance and performance are not modelled: the owner records no insurance or performance attribute on a business associate, so neither is displayed rather than invented.",
+    "The readiness set is the work order's inspection conditions; a work order with no condition rows therefore has only the personnel and window items, and a gas test or supervision requirement can only be present if it is recorded as a condition.",
+    "A gas test is not a distinct recorded fact: if it is required it is one of the condition rows with its own result and evidence, not a separate test record.",
+    "The personnel check reads the work order component's employee or business associate; a person recorded only on the execution workflow is not seen.",
+    "The permit's positive status vocabulary is not enumerated: the issue writes ISSUED and the start refuses anything that is not ISSUED, so a permit issued by the owner's own flow under a different positive spelling would need review.",
+    "Explicit placeholders (NOT-ISSUED, NO-INSPECTION, NOT-RECORDED) stand in for the owner's required columns on a requested permit; they are read back as 'not recorded' rather than presented as data.",
+    "A second permit is refused by reading the other permits first, not by a database constraint, so two concurrent writers could both pass the check.",
+    "There is no lost-acknowledgement recovery command: the feature's 'retained original' state is the intent-key rule plus the second-permit refusal, not a recovery workflow.",
+    "No per-command permission enforcement beyond the requester/issuer rule: the page is gated and work.permit.write/.issue are not checked per command.",
+    "The page has one request bar and one issue bar rather than the Web's seven panels (issuer, personnel source, material readiness, approval review, document source, execution start, handoff); those panels are deferred."
+  ]
+}

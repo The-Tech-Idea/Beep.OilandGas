@@ -9,6 +9,7 @@ public partial class RA_SCALE_TRANSFORM: Entity,IPPDMEntity
 {
 
 private  System.String SCALE_TRANSFORMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCALE_TRANSFORM
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SCALE_TRANSFORMValue;
           set { SetProperty(ref  SCALE_TRANSFORMValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

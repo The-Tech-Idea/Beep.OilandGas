@@ -9,6 +9,7 @@ public partial class R_WELL_FACILITY_USE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_USE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_USE_TYPE
         {  
             get  

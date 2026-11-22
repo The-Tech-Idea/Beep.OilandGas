@@ -9,6 +9,7 @@ public partial class R_TRANS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TRANS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANS_TYPE
         {  
             get  

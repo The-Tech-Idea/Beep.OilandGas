@@ -9,6 +9,7 @@ public partial class R_PDEN_COMPONENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PDEN_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_COMPONENT_TYPE
         {  
             get  

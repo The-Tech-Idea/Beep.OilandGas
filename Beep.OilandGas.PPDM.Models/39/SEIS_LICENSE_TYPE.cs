@@ -9,6 +9,7 @@ public partial class SEIS_LICENSE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GRANTED_BY_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GRANTED_BY_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GRANTED_BY_BA_IDValue;
           set { SetProperty(ref  GRANTED_BY_BA_IDValue, value); }
         } 
 private  System.String SEIS_LICENSE_TYPE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_LICENSE_TYPE_ID
         {  
             get  

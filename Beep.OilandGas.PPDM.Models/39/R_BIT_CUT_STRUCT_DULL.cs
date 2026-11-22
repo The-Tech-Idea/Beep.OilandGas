@@ -9,6 +9,7 @@ public partial class R_BIT_CUT_STRUCT_DULL: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_STRUCTURE_MDCValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_STRUCTURE_MDC
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_DRILL_BIT_JET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String JET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JET_TYPE
         {  
             get  

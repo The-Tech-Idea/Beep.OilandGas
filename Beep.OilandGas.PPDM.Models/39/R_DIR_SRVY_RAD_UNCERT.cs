@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_RAD_UNCERT: Entity,IPPDMEntity
 {
 
 private  System.String RAD_UNCERT_DIST_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RAD_UNCERT_DIST_REASON
         {  
             get  

@@ -9,6 +9,7 @@ public partial class WORK_ORDER: Entity,IPPDMEntity
 {
 
 private  System.String WORK_ORDER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WORK_ORDER_ID
         {  
             get  

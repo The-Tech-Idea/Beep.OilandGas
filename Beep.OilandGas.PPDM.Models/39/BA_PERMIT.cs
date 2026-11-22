@@ -9,6 +9,7 @@ public partial class BA_PERMIT: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.String JURISDICTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JURISDICTION
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String JURISDICTIONValue;
           set { SetProperty(ref  JURISDICTIONValue, value); }
         } 
 private  System.String PERMIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERMIT_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PERMIT_TYPEValue;
           set { SetProperty(ref  PERMIT_TYPEValue, value); }
         } 
 private  System.Decimal PERMIT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PERMIT_OBS_NO
         {  
             get  

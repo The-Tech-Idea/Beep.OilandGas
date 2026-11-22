@@ -9,6 +9,7 @@ public partial class RA_SAMPLE_FRACTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_FRACTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_FRACTION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SAMPLE_FRACTION_TYPEValue;
           set { SetProperty(ref  SAMPLE_FRACTION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

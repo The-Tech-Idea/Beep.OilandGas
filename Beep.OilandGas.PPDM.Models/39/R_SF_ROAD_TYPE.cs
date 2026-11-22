@@ -9,6 +9,7 @@ public partial class R_SF_ROAD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ROAD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROAD_TYPE
         {  
             get  

@@ -1,0 +1,63 @@
+{
+  "id": "STG-00/FND-06",
+  "title": "Notifications, failure reporting, audit and CompanyApi forwarding",
+  "date": "2026-11-05",
+  "status": "gate met — local store, rolling log, toasts, audit, redaction, forwarding, admin pages and both halves of AC-7 delivered",
+  "implementation": {
+    "pipeline": "src/Beep.OilandGas.Desktop/Diagnostics/OgDiagnosticsPipeline.cs",
+    "localStore": "src/Beep.OilandGas.Desktop/Diagnostics/SqliteFailureStore.cs (FORWARDED column, MarkForwarded)",
+    "forwarder": "src/Beep.OilandGas.Desktop/Diagnostics/OgFailureForwarder.cs",
+    "relay": "src/Beep.OilandGas.Desktop/Diagnostics/OgFailureRelay.cs",
+    "outboxPath": "src/Beep.OilandGas.Desktop/Bootstrapping/OgPaths.cs (FailureOutboxDirectory)",
+    "deviceLibrary": "Beep.Web/TheTechIdeaWeb.Diagnostics.Device — FailureOutbox, FailureDelivery",
+    "hostWiring": "src/Beep.OilandGas.Desktop/Bootstrapping/OgBootstrapper.cs, OgApplication.FailureRelay"
+  },
+  "design": {
+    "localFirst": "The pipeline writes the durable local record and raises Published afterwards; the relay subscribes to Published, exactly as the notification hub does, so a failure cannot be forwarded before it is stored.",
+    "sameReference": "The wire report is built from the stored OgFailureRecord, not from the exception, so the reference a person is shown is the one the administrator finds on the server.",
+    "redactedOnly": "Forwarding uses the already-redacted local fields; exception.ToString() never leaves the machine. A queued report containing 'password=hunter2' is asserted to carry neither secret.",
+    "noCycle": "The forwarder is a subscriber rather than a pipeline dependency: access mode -> audit trail -> pipeline would otherwise form a cycle.",
+    "forwardedMeansDelivered": "FORWARDED is set only after FailureDelivery reports Delivered, so the flag never claims a delivery the API did not accept. A 400 (outside the contract) is discarded by the library but not marked forwarded."
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~FailureForwardingTests", "exit": 0, "run": 8, "passed": 8, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~UnobservedFailureTests", "exit": 0, "run": 2, "passed": 2, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~FailureRowTests", "exit": 0, "run": 7, "passed": 7, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~StartupLifetimeTests", "exit": 0, "run": 6, "passed": 6, "failed": 0 },
+    { "cmd": "dotnet test (all)", "exit": 0, "run": 201, "passed": 201, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "failure-forwarding-enabled": false,
+    "failures-page-rows": 1,
+    "audit-page-rows": 1,
+    "failures-page-forwarding-label": "Local only",
+    "failure-outbox-pending": 0,
+    "failure-forwarded-this-session": 0,
+    "log-file-written": true,
+    "log-carries-reference": true,
+    "note": "A local installation has no API URL, so forwarding must be off. The smoke run asserts that it is."
+  },
+  "gates": {
+    "AC-1 every catch reports or rethrows": "pass — SourceGuardTests + BEEP0001..BEEP0004 analyzers; two catches I wrote were rejected by BEEP0003/BEEP0004 during this work and were restructured rather than suppressed",
+    "AC-2 no catch body is only a log call": "pass — analyzer BEEP0003",
+    "AC-3 every user-visible failure carries a 12-hex reference": "pass — DiagnosticsPipelineTests + ToastPipelineTests",
+    "AC-4 no exception text reaches a toast or result": "pass — ToastPipelineTests; the licence verb and health window show only a reference",
+    "AC-5 a sentinel never renders": "pass — smoke asserts 'smoke-sentinel-value' is absent from the store, the toast and the reason",
+    "AC-6 the failure is in the store and the log": "pass — OgFileLoggerProvider writes one file per day under the data root; A_reported_failure_is_in_the_store_and_in_the_file_log asserts the stored record and a log line carrying the same reference, and the smoke run reports log-file-written True and log-carries-reference True",
+    "AC-7 unobserved task and unhandled dispatcher exceptions reach the reporter": "pass for the unobserved task — An_unobserved_task_exception_reaches_the_reporter starts a task that throws with nothing awaiting it, forces collections until the finalizer raises TaskScheduler.UnobservedTaskException, and asserts one report with operation 'running a task nothing awaited'; A_disposed_subscription_reports_nothing_more proves the subscription unsubscribes. The dispatcher handler is wired in App but not exercised by a test.",
+    "AC-8 IOgToastService only in the hub": "pass — SourceGuardTests",
+    "AC-9 one audit row per write and per refusal": "pass — Add_writes_exactly_one_audit_row, Add_records_a_refusal_as_an_audit_row (now on private stores)",
+    "AC-10 Critical sticky, Error 10 s": "pass — ToastPipelineTests",
+    "AC-11 store down still returns and shows a reference": "pass — ReportHandled_never_throws_when_the_store_fails + IsDegraded",
+    "AC-12 only the startup MessageBox": "pass — SourceGuardTests",
+    "forwarding in CompanyApi mode": "pass — 8 tests: disabled queues nothing; a reported failure is queued under the same reference; no secret in the wire report; 204 clears and marks; unreachable keeps and does not mark; 400 discards and does not mark; a queued report survives a restart and the next session delivers it; a local install reports forwarding off"
+  },
+  "limits": [
+    "The API was a stub HttpMessageHandler; no real ApiService intake was called.",
+    "Forwarding is decided at startup from the access settings; enabling it after a mode change needs a restart (recorded as an open item).",
+    "The FORWARDED flag says 'the API accepted it', not 'an administrator has read it'.",
+    "The admin pages were constructed in the smoke run and their row projections are unit-tested; they were not clicked through in a shown window."
+  ]
+}

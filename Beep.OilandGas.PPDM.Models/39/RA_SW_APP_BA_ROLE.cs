@@ -9,6 +9,7 @@ public partial class RA_SW_APP_BA_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String SW_APP_BA_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APP_BA_ROLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SW_APP_BA_ROLEValue;
           set { SetProperty(ref  SW_APP_BA_ROLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

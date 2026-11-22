@@ -9,6 +9,7 @@ public partial class RA_STUDY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STUDY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STUDY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STUDY_TYPEValue;
           set { SetProperty(ref  STUDY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

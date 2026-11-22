@@ -9,6 +9,7 @@ public partial class RA_CONT_OPERATING_PROC: Entity,IPPDMEntity
 {
 
 private  System.String OPERATING_PROCEDUREValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OPERATING_PROCEDURE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OPERATING_PROCEDUREValue;
           set { SetProperty(ref  OPERATING_PROCEDUREValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

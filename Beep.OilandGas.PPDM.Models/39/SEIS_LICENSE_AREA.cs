@@ -9,6 +9,7 @@ public partial class SEIS_LICENSE_AREA: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SET_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SET_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_SET_SUBTYPEValue;
           set { SetProperty(ref  SEIS_SET_SUBTYPEValue, value); }
         } 
 private  System.String SEIS_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SET_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SEIS_SET_IDValue;
           set { SetProperty(ref  SEIS_SET_IDValue, value); }
         } 
 private  System.String LICENSE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String LICENSE_IDValue;
           set { SetProperty(ref  LICENSE_IDValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

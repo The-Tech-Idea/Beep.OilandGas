@@ -29,6 +29,16 @@ namespace Beep.OilandGas.LeaseAcquisition.Modules
             typeof(GOVERNMENT_LEASE),
             typeof(NET_PROFIT_LEASE),
             typeof(R_LEASE_REFERENCE_CODE),
+            // LSE-02: the acquisition pipeline - append-only stage history, diligence, rights and negotiation.
+            typeof(LEASE_PIPELINE_STAGE),
+            typeof(LEASE_DILIGENCE_ITEM),
+            typeof(LEASE_RIGHT),
+            typeof(LEASE_NEGOTIATION),
+            // LSE-03: append-only terms, obligations, payments and lifecycle events.
+            typeof(LEASE_TERM),
+            typeof(LEASE_OBLIGATION),
+            typeof(LEASE_PAYMENT),
+            typeof(LEASE_LIFECYCLE),
         };
 
         public LeaseAcquisitionModule(ModuleSetupContext context)

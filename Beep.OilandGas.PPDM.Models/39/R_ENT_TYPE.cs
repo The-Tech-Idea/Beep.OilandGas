@@ -9,6 +9,7 @@ public partial class R_ENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ENTITLEMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENTITLEMENT_TYPE
         {  
             get  

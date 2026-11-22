@@ -9,6 +9,7 @@ public partial class R_CONSULT_RESOLUTION: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_RESOLUTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_RESOLUTION
         {  
             get  

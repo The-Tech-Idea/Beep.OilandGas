@@ -9,6 +9,7 @@ public partial class RA_ACCESS_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String ACCESS_CONDITION_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCESS_CONDITION_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACCESS_CONDITION_CODEValue;
           set { SetProperty(ref  ACCESS_CONDITION_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PLOT_SYMBOL: Entity,IPPDMEntity
 {
 
 private  System.String PLOT_SYMBOLValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLOT_SYMBOL
         {  
             get  

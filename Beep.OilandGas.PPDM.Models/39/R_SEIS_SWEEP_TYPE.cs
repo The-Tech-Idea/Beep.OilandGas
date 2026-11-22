@@ -9,6 +9,7 @@ public partial class R_SEIS_SWEEP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SWEEP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SWEEP_TYPE
         {  
             get  

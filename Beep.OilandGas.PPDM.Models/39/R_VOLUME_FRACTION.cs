@@ -9,6 +9,7 @@ public partial class R_VOLUME_FRACTION: Entity,IPPDMEntity
 {
 
 private  System.String VOLUME_FRACTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_FRACTION_TYPE
         {  
             get  

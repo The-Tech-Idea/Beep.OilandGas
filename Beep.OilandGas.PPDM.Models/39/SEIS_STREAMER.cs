@@ -9,6 +9,7 @@ public partial class SEIS_STREAMER: Entity,IPPDMEntity
 {
 
 private  System.String STREAMER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STREAMER_ID
         {  
             get  

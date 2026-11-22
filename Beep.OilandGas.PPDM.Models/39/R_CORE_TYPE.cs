@@ -9,6 +9,7 @@ public partial class R_CORE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CORE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_TYPE
         {  
             get  

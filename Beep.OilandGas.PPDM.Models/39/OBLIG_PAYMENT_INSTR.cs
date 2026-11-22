@@ -9,6 +9,7 @@ public partial class OBLIG_PAYMENT_INSTR: Entity,IPPDMEntity
 {
 
 private  System.String PAYEE_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYEE_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PAYEE_BA_IDValue;
           set { SetProperty(ref  PAYEE_BA_IDValue, value); }
         } 
 private  System.String PAYMENT_INSTRUCTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYMENT_INSTRUCTION_ID
         {  
             get  

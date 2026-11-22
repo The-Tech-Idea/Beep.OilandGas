@@ -9,6 +9,7 @@ public partial class R_CONSENT_BA_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_BA_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_BA_ROLE
         {  
             get  

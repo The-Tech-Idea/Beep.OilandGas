@@ -9,6 +9,7 @@ public partial class RA_SEIS_AUTHORIZE_LIMIT: Entity,IPPDMEntity
 {
 
 private  System.String LIMIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LIMIT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LIMIT_TYPEValue;
           set { SetProperty(ref  LIMIT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

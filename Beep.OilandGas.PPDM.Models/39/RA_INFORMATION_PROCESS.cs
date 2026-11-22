@@ -9,6 +9,7 @@ public partial class RA_INFORMATION_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String INFORMATION_PROCESSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFORMATION_PROCESS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INFORMATION_PROCESSValue;
           set { SetProperty(ref  INFORMATION_PROCESSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

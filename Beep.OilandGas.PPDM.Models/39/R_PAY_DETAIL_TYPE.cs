@@ -9,6 +9,7 @@ public partial class R_PAY_DETAIL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAY_DETAIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAY_DETAIL_TYPE
         {  
             get  

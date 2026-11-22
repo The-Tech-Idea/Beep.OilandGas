@@ -1,0 +1,88 @@
+{
+  "id": "STG-10/ACC-07",
+  "title": "Royalties, joint interest billing and cost allocation",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the royalty is net revenue times the rate in decimal and is re-derivable from its own row; a lease with no ownership fraction, or a division that does not reach 100 %, is refused naming the lease and the total; a disputed royalty cannot be paid and the refusal carries the dispute reference; a joint-interest statement nets to its charges less its credits, computed from the lines written; the allocation commit writes exactly the shares the preview showed; and every royalty and bill carries the volume it came from and posts at the configured accounts.",
+  "dataModel": {
+    "decision": "The owner already had the royalty, joint-interest and cost-allocation tables and they were all registered - ROYALTY_CALCULATION, ROYALTY_DEDUCTIONS, ROYALTY_PAYMENT, OWNERSHIP_INTEREST, JOINT_INTEREST_STATEMENT, JIB_CHARGE, JIB_CREDIT, COST_ALLOCATION - so nothing was duplicated. Two things were missing: a dispute record against the calculation that is actually paid, and the posting/traceability columns on the joint-interest statement. Both were added additively in the owning ProductionAccounting project.",
+    "addedColumns": "ROYALTY_CALCULATION: DISPUTED_IND, DISPUTE_REFERENCE, DISPUTE_REASON, DISPUTED_BY, DISPUTED_AT, DISPUTE_RESOLVED_BY, DISPUTE_RESOLVED_AT, AUTHOR, CURRENCY_CODE, PAID_AT, PAID_BY, PAID_AMOUNT, PAYMENT_JOURNAL_ENTRY_ID. JOINT_INTEREST_STATEMENT: STATUS, PARTICIPANT_ID, AUTHOR, APPROVED_BY, APPROVED_AT, POSTED_BY, POSTED_AT, RETURN_REASON, JOURNAL_ENTRY_ID, SOURCE_VOLUME_REFERENCE, CURRENCY_CODE.",
+    "registration": "--smoke still reports 33 modules and 416 entity types, which is the check that this was a column extension on already-registered tables rather than a new registration.",
+    "partialsInTheOwningAssembly": "ROYALTY_CALCULATION and JOINT_INTEREST_STATEMENT are declared in the ProductionAccounting project, not in Models, so their partials were placed there - a partial in another assembly would have been a second, unrelated type."
+  },
+  "ownerAdditions": {
+    "math": "Beep.OilandGas.ProductionAccounting/Calculations/RoyaltyAndJibMath.cs - the royalty, ownership, JIB and allocation arithmetic, stated once so the screen, the service and the tests share it. RoyaltyMath implements the owner's documented relation (net revenue x rate, the rate in percentage points, which is why RoyaltyService divides by 100) with a single rounding to the minor unit away from zero; OwnershipFractions implements AC-2's gate in percentage points; JibMath computes the net from the charges and credits; CostAllocationMath splits a pool by weight with largest-remainder rounding so the shares add back to the pool exactly.",
+    "statuses": "Beep.OilandGas.ProductionAccounting/Constants/JibStatus.cs - the four JIB states (the column existed with no stated values) and the two dispute states. The royalty states are the owner's own RoyaltyStatus, reused rather than respelled.",
+    "accounts": "Beep.OilandGas.Accounting/Constants/RoyaltyJibCodes.cs - the accounts SG-10-7 posts to, taken from DefaultGlAccounts (royalty expense 6100, accrued royalties 2200, cash 1000, receivable 1110, operating expense 6001), plus the allocation methods taken from the owner's own AllocationMethod enumeration so the screen cannot invent a method."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgRoyalties.cs (OgRoyaltyContext, OgRoyaltyDeductions, OgRoyaltyInputs, OgRoyalty, OgJibLine, OgJib, OgAllocationRow, OgAllocationPreview, OgRoyaltyWorkspace, RoyaltyRules, IOgRoyalties, OgRoyaltiesService with CalculateAsync/PayAsync/DisputeAsync/ResolveDisputeAsync/RaiseJibAsync/ReviewJibAsync/PostJibAsync/PreviewAllocation/CommitAllocationAsync/LoadAsync)",
+    "ownershipGate": "Every calculation reads the lease's OWNERSHIP_INTEREST rows, filters them to the effective window, and refuses when there are none (naming the lease) or when the net revenue interests plus the declared residual do not equal 100 exactly (naming every owner and the total). The owner's JIB service writes NET_REVENUE_INTEREST from an interest percent and its recorded-inputs test seeds a rate of 12.5, so the unit is percentage points and is stated rather than guessed (AC-2).",
+    "royalty": "Gross value is volume x price, rounded once; deductions are netted and stored as their own ROYALTY_DEDUCTIONS row so the total on the calculation is never unexplained; the amount is net revenue x rate/100. The calculation carries GROSS_VOLUME, GROSS_VOLUME_OUOM, PRICE_PER_UNIT, ALLOCATION_DETAIL_ID and ALLOCATION_RESULT_ID (AC-6), and the accrual posts royalty expense against accrued royalties at the configured accounts (SG-10-7).",
+    "payment": "Paying posts accrued royalties against cash with a reference derived from the royalty id, then marks the calculation PAID with the actor, the time, the amount and the payment journal. A second payment is refused, and the pay command refuses the person who calculated it.",
+    "dispute": "A dispute records an OPEN flag, a DIS-<year>-<seq> reference and the reason; the calculation moves to the owner's DISPUTED status; a payment attempt is refused with the reference and the reason in the sentence; resolving restores the accrued state and releases the payment (AC-3).",
+    "jib": "The statement is raised with its charges and credits as JIB_CHARGE and JIB_CREDIT lines, and its header totals are computed from those lines, so AC-4 holds by construction. It requires a source volume reference (AC-6), is reviewed by someone other than its author, and posts the net to the receivable against the cost it recovers, once - the journal reference is derived from the statement id so a retry adopts it (SG-10-7).",
+    "allocation": "PreviewAllocation and CommitAllocationAsync both call the same CostAllocationMath.Allocate, so AC-5 cannot be violated by a second implementation; the preview writes nothing, and the commit writes COST_ALLOCATION rows carrying the amount, the percentage and the method, with the property, well or cost centre in its own column.",
+    "page": "src/Beep.OilandGas.Desktop/Views/RoyaltiesPageView.cs (route 'royalties': the royalty calculation with its deduction bar, the calculation grid and the selected royalty's trace, deductions and payment state, the dispute and resolve actions; the joint-interest billing bar with charge and credit editors, the statement grid and its lines plus trace and journal; the cost-allocation bar with its target editor, preview and commit)",
+    "wiring": "OgBootstrapper (IOgRoyalties), OgApplication.Royalties, catalog 'royalties' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/RoyaltyTests.cs (9, no database) + RoyaltyGatewayTests.cs (1 opt-in, real SQLite over eleven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1122, "passed": 1122, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 59, "passed": 59, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 83, "views-constructed": true, "modulesetup-summary": "33 module(s) - 416 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with ROYALTY_CALCULATION, ROYALTY_DEDUCTIONS, OWNERSHIP_INTEREST, JOINT_INTEREST_STATEMENT, JIB_CHARGE, JIB_CREDIT, COST_ALLOCATION, GL_ACCOUNT, JOURNAL_ENTRY, JOURNAL_ENTRY_LINE and COMPANY_LEDGER_PERIOD, seeded with a 75/25 division on LSE-1 and a 60 % single owner on LSE-3",
+    "ac1_royalty": "50 bbl at 70 is 3,500 gross; 200 transport + 100 ad valorem + 50 severance is 350 of deductions; 3,150 net at 12.5 % is 393.75 - each figure asserted on the stored row, and the amount re-derived from the row's own net and rate. The unit test also asserts the second form (value x rate less the deduction's rate share) and that deducting the whole deduction would give a different, wrong answer.",
+    "ac2_ownership": "LSE-9, which has no ownership rows, is refused with royalty-ownership-missing naming LSE-9; LSE-3, whose single owner holds 60 %, is refused with royalty-ownership-not-summing naming 'totals 60 %' and the owner; nothing is written in either case. A 75/25 division and a 75 % + 25 % declared residual both pass (unit test).",
+    "ac3_dispute": "a dispute raises DIS-<year>-0001 and moves the royalty to DISPUTED; a payment by a different actor is refused with royalty-disputed and the sentence carries the reference and the reason; resolving restores the accrued state and the payment then succeeds.",
+    "ac4_jib": "charges of 2,000 + 500 and a 500 credit produce TOTAL_CHARGES 2500, TOTAL_CREDITS 500 and NET_AMOUNT 2000 on the statement, asserted in SQL, and the record re-derives its net from the lines it carries.",
+    "ac5_allocation": "a 1,000 pool across 60/40 previews 600 and 400 and adds back exactly; the commit writes those same two amounts as COST_ALLOCATION rows, SUM(ALLOCATED_AMOUNT) is 1,000, and every committed share is compared with its previewed share. A duplicate target is refused before anything is written.",
+    "ac6_traceability": "the royalty stores its volume, unit, price, allocation detail and allocation result, and the page prints 'volume 50 bbl at 70.00 ... allocation AL-1'; the joint-interest statement refuses to be raised without a source volume reference and stores 'ALLOC-1', which the page prints as its trace.",
+    "sg10_7_accounts": "the accrual posts 393.75 to royalty expense 6100 against accrued royalties 2200; the payment posts 393.75 from 2200 to cash 1000; the bill posts 2,000 to the receivable 1110 against operating expense 6001 - all four asserted by account id and amount. A chart without the accounts refuses the command naming the missing number.",
+    "sod": "the person who calculated a royalty cannot pay it, and the person who raised a joint-interest statement can neither approve nor post it - each proven by a refusal followed by a different actor's success.",
+    "idempotency": "the bill posts once; after clearing its journal link and status by hand and re-posting, the journal count stays at one because the reference is derived from the statement id.",
+    "unavailable": "dropping the royalty and statement tables makes LoadAsync return a workspace with HistoryFailed true."
+  },
+  "gates": {
+    "AC-1 Royalty nets exactly to value x rate - deductions": "pass - the amount is net revenue times the rate in decimal, rounded once, and re-derivable from the row's own net and rate; the unit test also proves the equivalent form and that deducting the whole deduction is a different answer.",
+    "AC-2 Missing or non-summing ownership fraction refused": "pass - the lease is named when there is no fraction, and the owners and the total are named when the division does not reach 100 %, with a declared residual accepted.",
+    "AC-3 A disputed royalty cannot be paid": "pass - the payment is refused with the dispute reference and the reason, until the dispute is resolved.",
+    "AC-4 JIB net equals charges minus credits": "pass - the header is computed from the lines written, asserted in SQL and re-derived from the record.",
+    "AC-5 Allocation preview equals the committed result": "pass - both call the same arithmetic and the test compares every share; the shares add back to the pool exactly.",
+    "AC-6 Every posting is traceable to the source volume": "pass - the royalty stores its volume, unit, price and allocation; the statement requires and stores its source volume reference; both print it."
+  },
+  "engineFindings": {
+    "royaltyPaymentModelDefect": {
+      "where": "Beep.OilandGas.ProductionAccounting/Data/ProductionAccounting/ROYALTY_PAYMENT.cs and CompatibilityAliases.cs",
+      "finding": "ROYALTY_PAYMENT declares both STATUS (the stored column) and Status (a [JsonIgnore] alias delegating to it). The unit of work builds a case-insensitive property map and throws 'An item with the same key has already been added. Key: STATUS' before it writes, so no payment row can be persisted through that entity - the same defect class as PIPELINE_ANALYSIS_RESULT in WTA-03.",
+      "handling": "NOT deleted. Removing a public property is not additive and cannot be verified here, because the ApiService test host does not build, so an unseen consumer could break. The payment is instead recorded on the calculation it settles - PAID_AT, PAID_BY, PAID_AMOUNT and PAYMENT_JOURNAL_ENTRY_ID - with the journal proving the money moved. That is the additive workaround, and the defect is recorded rather than papered over."
+    },
+    "royaltyDisputeKeyedToAnUnusedTable": {
+      "where": "Beep.OilandGas.Models/Data/Royalty/ROYALTY_DISPUTE.cs",
+      "finding": "The owner's dispute record is keyed to ROYALTY_STATEMENT, a table this app never populates (its royalty is ROYALTY_CALCULATION), and it is not registered in the ProductionAccounting module.",
+      "handling": "The dispute is recorded against the calculation that is actually paid, with the DIS-<year>-<seq> reference AC-3 asks for, and the reason for not reusing ROYALTY_DISPUTE is written on the columns."
+    },
+    "ac1PhrasingVersusTheOwnerFormula": {
+      "where": "the feature document's AC-1 against RoyaltyService's documented relation",
+      "finding": "AC-1 reads 'value x rate - deductions'. Taken literally that takes the whole deduction off the royalty amount, charging the mineral owner 100 % of the cost instead of their rate share. The owner's own header states Royalty = Net Revenue x Rate with Net Revenue = Gross - Deductions, which is the ASC 932/COPAS relation.",
+      "handling": "The documented relation is implemented, and the unit test asserts both forms - net x rate, and value x rate less the deduction's rate share - which are algebraically identical, and asserts that the literal reading gives a different answer. The reading is recorded here rather than silently chosen."
+    },
+    "fractionUnitIsPercentagePoints": {
+      "finding": "Whether an ownership interest is stored as a fraction (0-1) or a percentage (0-100) is not documented on the two tables that carry it.",
+      "handling": "Established from the owner's own code rather than guessed: JointInterestBillingService writes NET_REVENUE_INTEREST from a value it calls interestPercent, and the owner's recorded-inputs test seeds a royalty rate of 12.5. The gate is therefore written in percentage points and requires 100, and a caller that passes fractions is refused by the sum rather than silently accepted."
+    }
+  },
+  "limits": [
+    "Overlift and underlift are not built. The owner has IMBALANCE_STATEMENT and OIL_IMBALANCE, but the feature's imbalance tab needs a nominated-versus-actual volume process this app does not have, so it is not offered rather than half-wired.",
+    "COPAS overhead is not built: the owner's COPAS_OVERHEAD_SCHEDULE and COPAS_OVERHEAD_AUDIT are not read here, and the overhead tab is left out for the same reason.",
+    "The royalty is a single-owner calculation from a stated volume and price. It does not read a run ticket or ALLOCATION_DETAIL row: the allocation ids are carried on the calculation for traceability, but the volume and price are entered and no engine-derived production is consumed.",
+    "Severance and ad valorem are stated amounts, not computed from a jurisdiction's rate table; withholding is zero on the payment and there is no 1099 or equivalent reporting.",
+    "A joint-interest bill posts the net only. Charges and credits are lines on the statement, not separate ledger entries, so the ledger shows one net receivable per statement rather than its composition.",
+    "The cost allocation writes the shares but posts no journal: it splits an existing cost rather than moving money between accounts, which the feature's commands do not ask for.",
+    "Ownership fractions are read, never maintained: there is no fraction editor with a running total (the feature's own open question suggests one), and a lease whose fractions change gets a new OWNERSHIP_INTEREST row from outside this app.",
+    "The feature's permissions (accounting.royalty.write/.pay/.dispute, accounting.jib.post) are not enforced per command: the app gates pages, and segregation of duties is the author-versus-actor rule on payment and on JIB approval.",
+    "ACC-01 and ACC-08 are not started, so STG-10 is not complete."
+  ]
+}

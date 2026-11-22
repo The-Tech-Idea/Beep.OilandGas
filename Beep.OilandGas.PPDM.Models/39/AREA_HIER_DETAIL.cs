@@ -9,6 +9,7 @@ public partial class AREA_HIER_DETAIL: Entity,IPPDMEntity
 {
 
 private  System.String AREA_HIERARCHY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_HIERARCHY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AREA_HIERARCHY_IDValue;
           set { SetProperty(ref  AREA_HIERARCHY_IDValue, value); }
         } 
 private  System.Decimal AREA_HIER_LEVEL_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal AREA_HIER_LEVEL_SEQ_NO
         {  
             get  

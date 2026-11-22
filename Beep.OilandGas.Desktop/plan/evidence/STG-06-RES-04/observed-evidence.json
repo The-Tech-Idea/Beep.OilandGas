@@ -1,0 +1,55 @@
+{
+  "id": "STG-06/RES-04",
+  "title": "EOR screening",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-5 met: every method carries the rule that decided it, including the window and the values it was applied to; a method whose window needs a value the inputs do not carry is insufficient data, which is a different state from ineligible and is never folded into it; every threshold, recovery factor and cost is read from the EnhancedRecovery module's constants and the page holds none of them; the economics panel shows only what the module states and says plainly that a cost per incremental barrel belongs to ECO-01; and a saved scheme links the pool to the inputs it was screened with.",
+  "dataModel": {
+    "decision": "The EnhancedRecovery module owned a reference table and its constants but no record of a screening. Two tables were added to it: EOR_SCREENING_RUN (the pool, the inputs, the counts, the chosen method and the actor) and EOR_SCREENING_CANDIDATE (one row per method with its state, its deciding rule, its score, the module's recovery factor and any cost with its basis). The inputs are stored on the run rather than read back from the pool, so a saved scheme stays reproducible after the pool's recorded properties change - which is what AC-5 asks for.",
+    "tables": [
+      "EOR_SCREENING_RUN (RUN_ID key, FIELD_ID, POOL_ID, API_GRAVITY, VISCOSITY_CP, DEPTH_FT, TEMPERATURE_F, CANDIDATE_COUNT, ELIGIBLE_COUNT, INSUFFICIENT_COUNT, CHOSEN_METHOD, ACTOR, RECORDED_AT)",
+      "EOR_SCREENING_CANDIDATE (CANDIDATE_ID key, RUN_ID, METHOD_CODE, STATE, DECIDING_RULE, SCORE, INCREMENTAL_RECOVERY, COST_VALUE, COST_BASIS, CHOSEN_IND) - the rule is a stored column because AC-1 requires it and a saved scheme must still show the rule it was decided under"
+    ],
+    "registration": "EnhancedRecoveryModule now registers three types; --smoke reports 389 entity types (up from 387)."
+  },
+  "constants": {
+    "where": "Beep.OilandGas.EnhancedRecovery/Data/Constants/EnhancedRecoveryConstants.cs - a nested ScreeningWindow record, a ScreeningWindows dictionary keyed by the EorMethodConstants codes, and Co2MinimumDepthFor(api)",
+    "source": "Taber, Martin & Seright, 'EOR Screening Criteria Revisited' (SPE Reservoir Engineering, August 1997), Table 3 - the recommended ranges of current projects - and, for CO2, that paper's own depth-versus-gravity table. The windows used are: water flood none; immiscible gas API >= 12 and viscosity <= 600 cp; CO2 miscible API >= 22, viscosity <= 10 cp and the gravity-banded depth (2,500 ft above 40 API, 2,800 from 32 to 39.9, 3,300 from 28 to 31.9, 4,000 from 22 to 27.9); hydrocarbon miscible API >= 23 and viscosity <= 3 cp; polymer API 15 to 40 and viscosity <= 150 cp; ASP and chemical API >= 20 and viscosity <= 35 cp; steam API 8 to 25 and viscosity <= 200,000 cp; thermal API 10 to 25 and viscosity <= 5,000 cp.",
+    "whyInTheOwner": "AC-3 requires the constants to come from EnhancedRecoveryConstants, so they were added there rather than in the desktop layer. A source-guard test asserts that EorRules.WindowOf returns exactly the owner's dictionary entry for every method, that the recovery factors equal the owner's constants, and that the page contains none of the threshold literals and no reference to the constants type at all."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reservoir/OgEorScreening.cs (EorStates, OgEorInputs, OgEorCandidate, OgEorWorkspace, OgEorSavedScheme, EorRules, IOgEorScreening, OgEorScreeningService with ScreenAsync/SaveAsync/LoadAsync and the public Judge method)",
+    "rules": "EorRules holds the method list, the display names, the window lookup, the recovery-factor lookup, the cost lookup with its basis, and the validation - all delegating to the owner's constants. The screen itself (Judge) states, in one place, which value a method needs before it can be judged (so insufficiency is precise) and how the score is computed.",
+    "page": "src/Beep.OilandGas.Desktop/Views/EorScreeningPageView.cs (route 'eorscreening': field and pool, API/viscosity/depth/temperature, Screen, the candidate grid with state, score, rule, recovery and cost, the economics panel, the recommendation, the save-as-scheme bar limited to eligible methods, and the saved-run history)",
+    "wiring": "OgBootstrapper (IOgEorScreening), OgApplication.EorScreening, catalog 'eorscreening' (OgModuleKeys.Reservoir), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/EorScreeningTests.cs (10, no database, including the constants source guard) + EorScreeningGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 901, "passed": 901, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 36, "passed": 36, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 60, "views-constructed": true, "modulesetup-summary": "28 module(s) - 389 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with EOR_SCREENING_RUN and EOR_SCREENING_CANDIDATE, seeded in EorScreeningGatewayTests",
+    "ac5_scheme": "a screen of pool P-1 in field F-1 (35 API, 2 cp, 8,000 ft) saved with CO2_MISCIBLE as the scheme stores one run row with POOL_ID, FIELD_ID, API_GRAVITY, VISCOSITY_CP, DEPTH_FT and CHOSEN_METHOD, and nine candidate rows of which exactly one carries CHOSEN_IND='Y'",
+    "rules_stored": "no candidate row has an empty DECIDING_RULE; STEAM is stored INELIGIBLE for that oil; POLYMER stores the chemical cost with the basis text 'not a cost per incremental barrel'; STEAM stores no cost at all",
+    "history": "the run reads back as one saved scheme with its pool, its three inputs, the chosen method, the eligible count and the actor; a second run for pool P-2 with a heavy oil keeps both, and CO2 miscible is then refused as that pool's scheme because it is ineligible there",
+    "history_unavailable": "dropping both tables makes LoadAsync return a workspace with HistoryFailed true, and a new screen still succeeds"
+  },
+  "gates": {
+    "AC-1 Every method states the rule that decided eligibility": "pass - every candidate carries a DecidingRule that names the state it produced, the window it applied (the owner's own Basis sentence) and the values it was applied to, for example 'ineligible: the window is steam flooding: API gravity 8 to 25 ...; API gravity 35 is above the 25 maximum'. The rule is also stored with the candidate, so a saved scheme still shows it.",
+    "AC-2 Insufficient data is distinct from ineligible": "pass - a method whose window needs a value the inputs do not carry is INSUFFICIENT_DATA, names the missing value and says it is 'not judged rather than called ineligible'; the workspace counts the three states separately, and with no viscosity at all no method is called ineligible while water flooding (which needs no property) is still judged. With neither API nor viscosity the screen refuses rather than guessing.",
+    "AC-3 Constants come from EnhancedRecoveryConstants, not from the view": "pass - all nine windows, the gravity-banded CO2 depth rule, the recovery factors and the chemical costs are read from the owner's constants; a guard test compares every window and recovery factor to the owner's dictionary and asserts the page contains none of the threshold literals and never mentions the constants type.",
+    "AC-4 The economics panel never invents a value when economics is unavailable": "pass - the panel reports the module's screening recovery factor labelled as such, and a cost only where the module states one (the chemical methods, per unit of chemical, with that basis in words). Everything else says 'unavailable', EconomicsAvailable is false, and the panel text names ECO-01 and says the figures are 'not shown rather than estimated'.",
+    "AC-5 A saved scheme links to the pool and the screening inputs": "pass - EOR_SCREENING_RUN stores POOL_ID, FIELD_ID and the four inputs beside the chosen method, and the gateway test reads them back from the row it wrote."
+  },
+  "limits": [
+    "The screen uses the module's constants and its reference sets; it does not call EnhancedRecoveryService.Advanced. Those methods are instance methods on a service that needs an IDMEEditor and take loose dictionaries, and their analyses answer different questions (waterflood performance, gas injection miscibility, chemical and thermal recovery) from the screening the feature defines. That is a deliberate scope boundary, not a substitute for wiring them.",
+    "The score is this screen's own ranking heuristic - the mean relative margin inside the window, 1 at the ideal end - and is labelled as a way to order eligible methods, not a Taber value. Methods with no numeric window (water flooding) are not scored and say 'not scored'.",
+    "The windows cover API gravity, oil viscosity and, for CO2 only, depth. Taber's table also states permeability, oil saturation, thickness and formation type; those are not screened because the feature's inputs do not include them and inventing defaults would be worse than naming the gap.",
+    "A cost per incremental barrel and an incremental NPV are not produced: the feature delegates them to ECO-01, which is not built, so the panel says so (AC-4). The chemical costs shown are the module's own constants and are per unit of chemical, not per barrel.",
+    "The incremental recovery shown is the module's screening recovery factor (% OOIP), not a forecast and not a function of the pool's OOIP - the OOIP would have to come from RES-05's reserves record, which is not built.",
+    "A scheme is refused when the chosen method is not eligible, which is stricter than the plan's command table states; it is recorded here as a decision rather than a plan requirement.",
+    "The feature's permissions (reservoir.eor.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class RA_ANL_VALID_MEAS_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String MEASUREMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MEASUREMENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MEASUREMENT_TYPEValue;
           set { SetProperty(ref  MEASUREMENT_TYPEValue, value); }
         } 
 private  System.String VALID_VALUE_TEXTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALID_VALUE_TEXT
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String VALID_VALUE_TEXTValue;
           set { SetProperty(ref  VALID_VALUE_TEXTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

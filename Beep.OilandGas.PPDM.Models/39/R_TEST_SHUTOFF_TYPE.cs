@@ -9,6 +9,7 @@ public partial class R_TEST_SHUTOFF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TEST_SHUTOFF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_SHUTOFF_TYPE
         {  
             get  

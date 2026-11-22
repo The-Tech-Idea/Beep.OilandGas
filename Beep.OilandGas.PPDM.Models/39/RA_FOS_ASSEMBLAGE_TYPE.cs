@@ -9,6 +9,7 @@ public partial class RA_FOS_ASSEMBLAGE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ASSEMBLAGE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ASSEMBLAGE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ASSEMBLAGE_TYPEValue;
           set { SetProperty(ref  ASSEMBLAGE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_VELOCITY_COMPUTE: Entity,IPPDMEntity
 {
 
 private  System.String COMPUTE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPUTE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COMPUTE_METHODValue;
           set { SetProperty(ref  COMPUTE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_HOLE_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String HOLE_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HOLE_CONDITION
         {  
             get  

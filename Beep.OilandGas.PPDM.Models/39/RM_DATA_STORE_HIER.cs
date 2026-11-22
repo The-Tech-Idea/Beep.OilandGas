@@ -9,6 +9,7 @@ public partial class RM_DATA_STORE_HIER: Entity,IPPDMEntity
 {
 
 private  System.String DATA_STORE_HIER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATA_STORE_HIER_ID
         {  
             get  

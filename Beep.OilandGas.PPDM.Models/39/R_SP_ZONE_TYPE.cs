@@ -9,6 +9,7 @@ public partial class R_SP_ZONE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ZONE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_TYPE
         {  
             get  

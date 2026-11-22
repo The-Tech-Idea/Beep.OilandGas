@@ -9,6 +9,7 @@ public partial class RA_ALIAS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ALIAS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ALIAS_TYPEValue;
           set { SetProperty(ref  ALIAS_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

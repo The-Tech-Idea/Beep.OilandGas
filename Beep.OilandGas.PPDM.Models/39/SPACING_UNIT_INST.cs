@@ -9,6 +9,7 @@ public partial class SPACING_UNIT_INST: Entity,IPPDMEntity
 {
 
 private  System.String SPACING_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPACING_UNIT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SPACING_UNIT_IDValue;
           set { SetProperty(ref  SPACING_UNIT_IDValue, value); }
         } 
 private  System.String INSTRUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_ID
         {  
             get  

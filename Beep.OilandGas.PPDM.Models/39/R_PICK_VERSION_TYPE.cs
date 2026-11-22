@@ -9,6 +9,7 @@ public partial class R_PICK_VERSION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PICK_VERSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_VERSION_TYPE
         {  
             get  

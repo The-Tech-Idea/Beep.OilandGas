@@ -351,6 +351,14 @@ private  System.String SOURCEValue;
             set { SetProperty(ref POS_OVERALLValue, value); }
         }
 
+        private System.String FLUID_TYPEValue;
+        /// <summary>The fluid the volume estimate was made for (OIL/GAS), when the table records one.</summary>
+        public System.String FLUID_TYPE
+        {
+            get { return this.FLUID_TYPEValue; }
+            set { SetProperty(ref FLUID_TYPEValue, value); }
+        }
+
     public PROSPECT_RISK_ASSESSMENT () { }
 
   }

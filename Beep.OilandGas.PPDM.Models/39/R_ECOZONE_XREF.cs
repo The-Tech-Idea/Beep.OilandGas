@@ -9,6 +9,7 @@ public partial class R_ECOZONE_XREF: Entity,IPPDMEntity
 {
 
 private  System.String ECOZONE_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECOZONE_XREF_TYPE
         {  
             get  

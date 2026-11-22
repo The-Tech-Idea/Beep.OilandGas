@@ -9,6 +9,7 @@ public partial class R_PPDM_RULE_PURPOSE: Entity,IPPDMEntity
 {
 
 private  System.String RULE_PURPOSEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_PURPOSE
         {  
             get  

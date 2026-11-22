@@ -9,6 +9,7 @@ public partial class CLASS_LEVEL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CLASSIFICATION_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLASSIFICATION_SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CLASSIFICATION_SYSTEM_IDValue;
           set { SetProperty(ref  CLASSIFICATION_SYSTEM_IDValue, value); }
         } 
 private  System.String LEVEL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEVEL_TYPE
         {  
             get  

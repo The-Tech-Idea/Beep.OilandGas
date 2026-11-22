@@ -9,6 +9,7 @@ public partial class R_BA_COMPONENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_COMP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_COMP_TYPE
         {  
             get  

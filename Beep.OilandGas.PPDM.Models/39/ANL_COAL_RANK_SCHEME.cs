@@ -9,6 +9,7 @@ public partial class ANL_COAL_RANK_SCHEME: Entity,IPPDMEntity
 {
 
 private  System.String COAL_RANK_SCHEME_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COAL_RANK_SCHEME_ID
         {  
             get  

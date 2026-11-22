@@ -9,6 +9,7 @@ public partial class PDEN_PR_STR_ALLOWABLE: Entity,IPPDMEntity
 {
 
 private  System.String PDEN_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PDEN_SUBTYPEValue;
           set { SetProperty(ref  PDEN_SUBTYPEValue, value); }
         } 
 private  System.String PDEN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PDEN_IDValue;
           set { SetProperty(ref  PDEN_IDValue, value); }
         } 
 private  System.String PDEN_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PDEN_SOURCEValue;
           set { SetProperty(ref  PDEN_SOURCEValue, value); }
         } 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String STRING_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRING_SOURCE
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String STRING_SOURCEValue;
           set { SetProperty(ref  STRING_SOURCEValue, value); }
         } 
 private  System.String STRING_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRING_ID
         {  
             get  
@@ -69,6 +75,7 @@ private  System.String STRING_IDValue;
           set { SetProperty(ref  STRING_IDValue, value); }
         } 
 private  System.Decimal PDEN_PRS_XREF_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PDEN_PRS_XREF_SEQ_NO
         {  
             get  
@@ -79,6 +86,7 @@ private  System.Decimal PDEN_PRS_XREF_SEQ_NOValue;
           set { SetProperty(ref  PDEN_PRS_XREF_SEQ_NOValue, value); }
         } 
 private  System.Decimal ALLOWABLE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ALLOWABLE_OBS_NO
         {  
             get  

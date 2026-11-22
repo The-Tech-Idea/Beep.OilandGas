@@ -9,6 +9,7 @@ public partial class RA_RIG_CODE: Entity,IPPDMEntity
 {
 
 private  System.String RIG_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RIG_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RIG_CODEValue;
           set { SetProperty(ref  RIG_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

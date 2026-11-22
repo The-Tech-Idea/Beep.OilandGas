@@ -9,6 +9,7 @@ public partial class RA_PALEO_TYPE_FOSSIL: Entity,IPPDMEntity
 {
 
 private  System.String TYPE_FOSSIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TYPE_FOSSIL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TYPE_FOSSIL_TYPEValue;
           set { SetProperty(ref  TYPE_FOSSIL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

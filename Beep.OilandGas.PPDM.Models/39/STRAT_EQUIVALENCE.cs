@@ -9,6 +9,7 @@ public partial class STRAT_EQUIVALENCE: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_UNIT_IDValue;
           set { SetProperty(ref  STRAT_UNIT_IDValue, value); }
         } 
 private  System.String EQUIV_STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIV_STRAT_NAME_SET_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String EQUIV_STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  EQUIV_STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String EQUIV_STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIV_STRAT_UNIT_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String EQUIV_STRAT_UNIT_IDValue;
           set { SetProperty(ref  EQUIV_STRAT_UNIT_IDValue, value); }
         } 
 private  System.String EQUIV_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIV_ID
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String EQUIV_IDValue;
           set { SetProperty(ref  EQUIV_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

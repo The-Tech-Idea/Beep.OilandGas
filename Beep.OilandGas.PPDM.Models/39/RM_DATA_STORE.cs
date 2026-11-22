@@ -9,6 +9,7 @@ public partial class RM_DATA_STORE: Entity,IPPDMEntity
 {
 
 private  System.String STORE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STORE_ID
         {  
             get  

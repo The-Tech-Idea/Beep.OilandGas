@@ -9,6 +9,7 @@ public partial class RA_CAT_ADDITIVE_SPEC: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_SPEC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_SPEC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ADDITIVE_SPEC_TYPEValue;
           set { SetProperty(ref  ADDITIVE_SPEC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

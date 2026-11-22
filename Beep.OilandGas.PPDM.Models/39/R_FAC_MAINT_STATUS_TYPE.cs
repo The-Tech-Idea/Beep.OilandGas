@@ -9,6 +9,7 @@ public partial class R_FAC_MAINT_STATUS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MAINTAIN_STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAINTAIN_STATUS_TYPE
         {  
             get  

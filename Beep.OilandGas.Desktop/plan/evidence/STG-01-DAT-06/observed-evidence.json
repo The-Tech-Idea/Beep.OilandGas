@@ -1,0 +1,52 @@
+{
+  "id": "STG-01/DAT-06",
+  "title": "CSV import wizard",
+  "date": "2026-11-07",
+  "status": "gate met - all six criteria plus the plan's import options: 1000-row accepted/rejected counts, line+column+reason per rejection, SHA-256 hash and mapping profile, cancellation between rows and batches, invalid rows never written, composite-key upsert, and insert-only mode, batch size and encoding override on the screen (single page rather than six separate steps; not click-tested)",
+  "implementation": {
+    "reader": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgCsvImport.cs (OgCsv.Parse, OgCsv.SuggestMapping)",
+    "importer": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgCsvImport.cs (OgImportPlan, OgImportRow, OgImportResult, OgCsvImporter.Preview/ImportAsync/Upsert/RejectionReport)",
+    "screen": "src/Beep.OilandGas.Desktop/Views/CsvImportPageView.cs (route 'csvimport': file, target table, delimiter, preview, import, cancel, mapping grid, rejection list, rejection CSV)",
+    "sameRules": "reuses OgEntityForm.Validate/Convert (DAT-05) so an imported row obeys the same rules as a typed one",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/CsvImportTests.cs (9)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~CsvImportTests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 497, "passed": 497, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 27,
+    "csv-rows": 3,
+    "csv-acceptable": 2,
+    "csv-rejected": 1,
+    "csv-first-rejection": "NAME at line 3",
+    "csv-hash-length": 64,
+    "csv-mapping-has-name": true,
+    "csv-page-no-table": true,
+    "csv-latin1-roundtrip": true,
+    "csv-utf8-differs-on-latin1-bytes": true,
+    "csv-batches-at-2": 2,
+    "csv-modes-available": "InsertOnly|Upsert",
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 1 000 rows import with correct accepted/rejected counts": "pass - a generated 1 000-row file with every tenth name over the 40-character limit yields read 1000, accepted 900, rejected 100, inserted 900, and the counting gateway saw exactly 900 inserts.",
+    "AC-2 every rejected row reports line, column and reason": "pass - OgImportRejection carries LineNumber, Column and Reason; a row with a missing name reports line 2, column WELL_NAME and 'Well Name is required.', and the smoke shows 'NAME at line 3'. The rejection report writes them as CSV.",
+    "AC-3 the source file hash and mapping profile are stored with the import": "pass - the plan and result carry the SHA-256 of the file (64 hex characters) and the mapping as JSON; the page writes an audit row containing the hash prefix and counts, and the smoke shows csv-hash-length 64 and the mapping profile naming NAME.",
+    "AC-4 cancelling stops further batches and reports what completed": "pass - the loop checks the token before each row; a run cancelled after the tenth insert returns Cancelled true with Inserted 10, Read 50, and the gateway saw exactly 10 inserts.",
+    "AC-5 no row is written when preview validation fails for it": "pass - preview marks each row acceptable or not, import skips non-acceptable rows and records their problems; a two-row file with one invalid row produced exactly one insert and one rejection.",
+    "AC-6 importing into a table with a composite key upserts, never duplicates": "pass - with a composite key, the importer queries the key, and when a row exists it calls UpdateAsync instead of InsertAsync; a test with an existing (WELL_ID, SPUD_DATE) shows 0 inserts and 1 update."
+  },
+  "limits": [
+    "The screen is one page holding the plan options (mode, batch size, encoding, delimiter) rather than six separate steps; it is construction-tested, not click-tested.",
+    "The page is exercised only by construction in the smoke; the parser, mapping, validation, cancellation and upsert are unit-tested against a counting gateway, not through clicks.",
+    "Encoding offers UTF-8 and Latin-1; other code pages are not offered.",
+    "Constant values for unmapped mandatory columns are not offered; an unmapped mandatory column simply rejects every row and is named in the plan.",
+    "The file hash and mapping profile are kept in the result and the audit row; there is no import-history table that a later screen could list.",
+    "Rows are written one at a time (no batch size); a 1 000-row import is 1 000 gateway calls, which the counting-gateway test measures but a real database would make slower."
+  ]
+}

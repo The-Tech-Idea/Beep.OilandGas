@@ -9,6 +9,7 @@ public partial class RA_SEND_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String SEND_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEND_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEND_METHODValue;
           set { SetProperty(ref  SEND_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

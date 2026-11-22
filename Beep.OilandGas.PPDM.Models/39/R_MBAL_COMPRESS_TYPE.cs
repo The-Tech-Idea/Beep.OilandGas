@@ -9,6 +9,7 @@ public partial class R_MBAL_COMPRESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String Z_FACTOR_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String Z_FACTOR_METHOD
         {  
             get  

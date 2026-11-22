@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class RESERVE_CASHFLOW : ModelEntityBase
     {
         private System.String RESERVE_CASHFLOW_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String RESERVE_CASHFLOW_ID
         {
             get { return this.RESERVE_CASHFLOW_IDValue; }

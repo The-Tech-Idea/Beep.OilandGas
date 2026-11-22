@@ -1,0 +1,61 @@
+{
+  "id": "STG-01/DAT-04",
+  "title": "PPDM table workbench",
+  "date": "2026-11-06",
+  "status": "gate met - all seven criteria: bounded server-side paging, server-side filter and sort, edit round-trip preserving untouched columns, optimistically guarded update/delete that reports a conflict, failed read as a failure, row policy predicate applied and surfaced, filtered export. Two limits are recorded: the page's Save/Delete are wired but not covered by an automated UI test, and Insert is available on the gateway only",
+  "implementation": {
+    "contracts": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgPpdmTableGateway.cs (OgQuery, OgSort, OgFilter, OgRow, IOgPpdmTableGateway, OgPpdmTableGateway)",
+    "navigation": "src/Beep.OilandGas.Desktop.Core/OgPageNavigator.cs (OgTableOpenRequest, OgPageNavigator, OgWorkbenchNavigation)",
+    "page": "src/Beep.OilandGas.Desktop/Views/TableWorkbenchPageView.cs (route 'tableworkbench': grid, filter, sort, paging, detail, export)",
+    "tree": "src/Beep.OilandGas.Desktop/Views/PpdmTreePageView.cs (OpenTableAsync / OpenSelected set the request and navigate)",
+    "shell": "src/Beep.OilandGas.Desktop/Shell/OgShellWindow.xaml.cs (ShowRoute installs the navigator handler and switches page)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/TableWorkbenchNavigationTests.cs (5), TableWorkbenchGatewayTests.cs (1 opt-in, 500-row SQLite table)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 470, "passed": 470, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test (5 opt-in)", "exit": 0, "run": 5, "passed": 5, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "table": "T_SMOKE_ROW (500 rows, 3 columns, real SQLite through BeepDM)",
+    "pageOne": { "rows": 200, "total": 500, "hasMore": true },
+    "thirdPage": { "rows": 100, "hasMore": false },
+    "filterBAND_A": { "total": 250, "allRowsMatch": true },
+    "sortIdDescending": { "first": 500, "second": 499 },
+    "oversizedPageSize": { "requested": 10000, "returned": 500, "note": "clamped to MaximumPageSize" },
+    "exportFiltered": { "lines": 252, "note": "header + 250 filtered rows + summary line; states 'of 250 matching'" },
+    "failedRead": { "table": "NO_SUCH_TABLE_FOR_SMOKE", "success": false, "rows": 0, "reference": "workbench-read-failed" },
+    "injectedTableName": { "name": "T_SMOKE_ROW; DROP TABLE T_SMOKE_ROW", "reference": "workbench-invalid-identifier" }
+  },
+  "smoke": {
+    "pages-declared": 25,
+    "ppdm-opened-workbench": true,
+    "ppdm-workbench-requested": true,
+    "ppdm-workbench-note": "Opening CAT_ADDITIVE in the workbench with filter 'CAT_ADDITIVE'.",
+    "workbench-opened-pending": true,
+    "workbench-table": "CAT_ADDITIVE",
+    "workbench-read-failed-not-empty": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 paging issues a bounded query; 10 000 rows never load at once": "pass - QueryAsync issues one SELECT with LIMIT/OFFSET, page size is clamped to 500, and a request for 10 000 returned 500. The 500-row SQLite test reads 200/200/100 across three pages.",
+    "AC-2 sorting and filtering are server-side": "pass - filters and sorts are compiled into WHERE/ORDER BY; a filter on BAND='A' returned exactly the 250 matching rows and a descending ID sort returned 500 then 499.",
+    "AC-3 an edit round-trips and preserves untouched columns": "pass - UpdateAsync writes every non-key column and guards the row on the key plus the original values of the columns written. The opt-in SQLite test edits BAND on ID 1 from B to Z, re-reads and finds BAND Z with DEPTH and ID unchanged. The page exposes Save row (COLUMN value).",
+    "AC-4 a concurrency conflict is detected and shown": "pass - the guard is a full-row match on the values read, checked before the write; when no row matches, UpdateAsync/DeleteAsync return workbench-conflict. The test reuses a stale original and asserts both the update and the delete are refused with that code while the table keeps its 500 rows, and the page turns that code into a sentence ('Somebody else changed this row...') instead of overwriting.",
+    "AC-5 a failed read is never rendered as an empty grid": "pass - the gateway reads the datasource's ErrorObject flag (RunQuery reports provider errors there instead of throwing) and returns a failure with a reference; the page sets a failed view state and the smoke shows workbench-read-failed-not-empty true for CAT_ADDITIVE (absent from the smoke database).",
+    "AC-6 row policy is applied and visible": "pass - the gateway takes an optional row predicate supplied by the client app (which owns authorization) and ANDs it into every read, so a restricted row is never fetched and the total reflects the policy. The test passes BAND = 'A' and gets exactly 250 of 500 rows, all A, with the note surfaced through PolicyNote and shown in the page's notice line.",
+    "AC-7 export respects the active filter": "pass - ExportAsync runs the same predicate and writes the filtered rows only: 250 of 500, with the file saying 'of 250 matching'."
+  },
+  "limits": [
+    "The page's Save/Delete buttons and its conflict sentence are wired and compile-verified, but no automated UI test drives a click through them; the round-trip and conflict are proven at the gateway with a real SQLite table.",
+    "Insert exists on the gateway and is tested at data level, but the page has no Add row button yet; and the app wires no row predicate today, so AC-6 is proven by test rather than by a real restricted role in the shell.",
+    "Reads are `SELECT *` with LIMIT/OFFSET and a separate COUNT; the count is a second query and is not cached.",
+    "Column names for a row come from the datasource's entity structure (refreshed once per read); a table the datasource cannot describe falls back to COLUMN_n names.",
+    "Search is matched against the metadata registry's key columns only, and is refused when the table has no recorded key.",
+    "The smoke's workbench open uses a table absent from the smoke database, so it proves the failed state rather than rendering rows; the row-rendering path is proven by the opt-in 500-row SQLite test.",
+    "The grid uses AutoGenerateColumns and is not virtualised; the detail pane is a read-only list of column values, not the DAT-05 form."
+  ]
+}

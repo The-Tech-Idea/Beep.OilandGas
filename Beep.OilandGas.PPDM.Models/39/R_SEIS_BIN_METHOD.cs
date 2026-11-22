@@ -9,6 +9,7 @@ public partial class R_SEIS_BIN_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String BIN_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BIN_METHOD
         {  
             get  

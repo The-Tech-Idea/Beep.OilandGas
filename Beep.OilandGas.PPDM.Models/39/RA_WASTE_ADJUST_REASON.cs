@@ -9,6 +9,7 @@ public partial class RA_WASTE_ADJUST_REASON: Entity,IPPDMEntity
 {
 
 private  System.String ADJUST_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADJUST_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ADJUST_REASONValue;
           set { SetProperty(ref  ADJUST_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

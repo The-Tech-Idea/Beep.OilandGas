@@ -9,6 +9,7 @@ public partial class R_LOG_ARRAY_DIMENSION: Entity,IPPDMEntity
 {
 
 private  System.String DIMENSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIMENSION
         {  
             get  

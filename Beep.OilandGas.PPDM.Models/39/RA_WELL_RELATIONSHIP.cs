@@ -9,6 +9,7 @@ public partial class RA_WELL_RELATIONSHIP: Entity,IPPDMEntity
 {
 
 private  System.String WELL_RELATIONSHIPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_RELATIONSHIP
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WELL_RELATIONSHIPValue;
           set { SetProperty(ref  WELL_RELATIONSHIPValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

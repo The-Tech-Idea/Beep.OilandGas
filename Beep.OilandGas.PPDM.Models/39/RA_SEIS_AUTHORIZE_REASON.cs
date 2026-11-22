@@ -9,6 +9,7 @@ public partial class RA_SEIS_AUTHORIZE_REASON: Entity,IPPDMEntity
 {
 
 private  System.String REASON_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REASON_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REASON_TYPEValue;
           set { SetProperty(ref  REASON_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

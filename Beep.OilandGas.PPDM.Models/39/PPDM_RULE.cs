@@ -9,6 +9,7 @@ public partial class PPDM_RULE: Entity,IPPDMEntity
 {
 
 private  System.String RULE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_ID
         {  
             get  

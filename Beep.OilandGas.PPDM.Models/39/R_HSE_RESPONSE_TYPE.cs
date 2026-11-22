@@ -9,6 +9,7 @@ public partial class R_HSE_RESPONSE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACTION_TYPE
         {  
             get  

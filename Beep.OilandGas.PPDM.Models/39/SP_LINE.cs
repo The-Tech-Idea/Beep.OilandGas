@@ -9,6 +9,7 @@ public partial class SP_LINE: Entity,IPPDMEntity
 {
 
 private  System.String LINE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LINE_ID
         {  
             get  

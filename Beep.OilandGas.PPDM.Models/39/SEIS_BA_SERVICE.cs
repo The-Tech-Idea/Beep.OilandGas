@@ -9,6 +9,7 @@ public partial class SEIS_BA_SERVICE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SET_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SET_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_SET_SUBTYPEValue;
           set { SetProperty(ref  SEIS_SET_SUBTYPEValue, value); }
         } 
 private  System.String SEIS_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SET_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SEIS_SET_IDValue;
           set { SetProperty(ref  SEIS_SET_IDValue, value); }
         } 
 private  System.String PROVIDED_BYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROVIDED_BY
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PROVIDED_BYValue;
           set { SetProperty(ref  PROVIDED_BYValue, value); }
         } 
 private  System.Decimal SERVICE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SERVICE_SEQ_NO
         {  
             get  

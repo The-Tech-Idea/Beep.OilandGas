@@ -1,0 +1,78 @@
+{
+  "id": "STG-09/ECO-02",
+  "title": "AFE management",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a supplement creates a new revision that points at the approved one while the approved row is left byte-identical; a commitment above the remaining amount is refused while one at the limit is accepted; the author is refused approval and a different approver succeeds; remaining is the amount less committed exactly; a closed AFE refuses every write; and a supplement is inert until it is itself approved.",
+  "dataModel": {
+    "decision": "AFE already existed and was registered by the ProductionAccounting module, but it held only the number, name, estimated and actual cost, a status and an approval date - no kind, author, approver, approved amount, revision chain or closure, which AC-1, AC-3 and AC-5 require. It was extended additively in a partial file. A commitment had nowhere to live at all (the AFE has no committed column and no child table), so a new AFE_COMMITMENT entity was added to the same owning module; the committed total is the sum of its rows, never a scalar that could drift from them.",
+    "addedColumns": "AFE: AFE_KIND, ENTITY_ID, AUTHOR, APPROVER, APPROVED_AMOUNT, REVISION_NO, SUPERSEDES_AFE_ID, ROOT_AFE_ID, REVISION_REASON, CLOSED_AT, CLOSED_BY, CLOSE_NOTE (the currency reuses the CURRENCY_CODE the entity already carries)",
+    "newTable": "AFE_COMMITMENT (AFE_COMMITMENT_ID key, AFE_ID, REFERENCE, AMOUNT, CURRENCY_CODE, COMMITTED_AT, ACTOR)",
+    "checkedForDuplicates": "AFE was checked for the case-only duplicate property pairs that make PIPELINE_ANALYSIS_RESULT unpublishable (WTA-03). None exists, so the unit of work maps it cleanly - proven by the gateway test writing and updating rows.",
+    "registration": "typeof(AFE_COMMITMENT) added beside AFE and AFE_LINE_ITEM in ProductionAccountingModuleSetup. --smoke now reports 33 modules and 412 entity types (up from 411)."
+  },
+  "ownerAdditions": {
+    "lifecycle": "Beep.OilandGas.ProductionAccounting/Constants/AfeLifecycle.cs - the transition list the feature's stated risk asked for. The extraction found exactly two moves in AfeService (CreateAfeAsync sets DRAFT, ApproveAfeAsync sets APPROVED) and exactly two rows in the AFE_STATUS reference seed; there is no submit, rejection, supplement or closure anywhere in the project. The full set is stated once - DRAFT, SUBMITTED, APPROVED, RETURNED, CLOSED with five transitions - and the two the owner already used are taken from AfeStatusCodes rather than respelled. A supplement is deliberately not a transition: it creates a new row (StartsRevision)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Economics/OgAfe.cs (OgAfeCommitment, OgAfeRevision, OgAfe, OgAfeEntry, OgAfeWorkspace, AfeRules, IOgAfe, OgAfeService with RaiseAsync/SubmitAsync/ApproveAsync/SupplementAsync/CommitAsync/CloseAsync/LoadAsync)",
+    "numbering": "Server-owned, as the stage requires: the screen never accepts a number, and AfeRules.NextNumber builds AFE-{year}-{next sequence} from the numbers already used in that year.",
+    "revision": "SupplementAsync reads the approved row, then inserts a NEW row with the same AFE_NUMBER, REVISION_NO + 1, SUPERSEDES_AFE_ID pointing at it and ROOT_AFE_ID preserved, in DRAFT. The approved row is not written at all - the gateway test snapshots eleven of its columns before and after and asserts they are identical. Supersession is derived by asking whether any row's SUPERSEDES_AFE_ID points at it.",
+    "commitment": "AFE_COMMITMENT rows, refused when the amount exceeds the remaining (AC-2), when the revision is not approved (AC-6) and when the AFE is closed (AC-5). Committed is the sum of the rows; remaining is the approved amount less that sum (AC-4).",
+    "approval": "ApproveAsync refuses when the actor is the row's AUTHOR (AC-3) before it checks the lifecycle, and on success records APPROVER, APPROVAL_DATE and APPROVED_AMOUNT (copied once from the estimate, never edited afterwards so a supplement cannot quietly raise it).",
+    "closure": "CloseAsync is the only move into CLOSED and refuses from any state the lifecycle does not allow; afterwards every command checks IsClosed first and refuses with afe-closed-immutable (AC-5).",
+    "page": "src/Beep.OilandGas.Desktop/Views/AfePageView.cs (route 'afe': the raise, submit/approve, supplement, commitment and closure bars, the AFE grid, the selected AFE's status/variance, the commitments and the revision chain); the lifecycle line is printed from the workspace so no state is invented",
+    "wiring": "OgBootstrapper (IOgAfe), OgApplication.Afes, catalog 'afe' (OgModuleKeys.Economics), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/AfeTests.cs (5, no database) + AfeGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1062, "passed": 1062, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 52, "passed": 52, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 76, "views-constructed": true, "modulesetup-summary": "33 module(s) - 412 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with AFE and AFE_COMMITMENT, seeded in AfeGatewayTests",
+    "ac1_immutable_revision": "the approved AFE is snapshotted across eleven columns (number, name, estimate, status, approver, approval date, approved amount, revision number, revision reason, change stamp, closure); a supplement of 1,500 against the 1,000 revision inserts a second row with REVISION_NO 2, SUPERSEDES_AFE_ID = the approved id and ROOT_AFE_ID preserved, and the snapshot afterwards is identical. This is SG-09-4.",
+    "ac2_commitment": "400 committed against 1,000 leaves 600 remaining; a 700 commitment is refused with afe-commitment-exceeds-remaining naming the 600.00 remaining; a 600 commitment at the limit is accepted and committed reads 1,000 with 0 remaining, asserted in SQL as a SUM over the commitment rows",
+    "ac3_author": "the AFE is raised by sara and approved by sara is refused with afe-author-cannot-approve naming sara; omar approves it and is recorded as the approver",
+    "ac4_remaining": "remaining is asserted both in the record (1,000 - 1,000 = 0) and against the stored SUM, and the unit test asserts an exact decimal difference with no rounding",
+    "ac5_closed": "closing the revision succeeds and records CLOSED_AT, CLOSED_BY and the note; a commitment, a second closure and a supplement against it are each refused with afe-closed-immutable",
+    "ac6_supplement_inert": "committing against the draft supplement is refused with afe-not-effective; the supplement is submitted and approved by omar, and only then does a 1,500 commitment against its 1,500 succeed",
+    "lifecycle": "approving a draft is refused with afe-transition-refused (no shortcut), and the unit test asserts the transition list has no approved-to-draft move and that closed has no available move",
+    "unavailable": "dropping AFE and AFE_COMMITMENT makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A revision never mutates the approved version": "pass - the supplement writes only a new row; the approved row's eleven-column snapshot is identical afterwards, and its supersession is derived from the new row rather than written onto it. SG-09-4.",
+    "AC-2 A commitment above the remaining amount is refused": "pass - refused with the remaining amount named, while a commitment of exactly the remaining amount is accepted; both asserted against the stored rows.",
+    "AC-3 The author cannot approve": "pass - an approval by the author is refused with afe-author-cannot-approve naming them, and a different approver succeeds and is recorded.",
+    "AC-4 Remaining = amount - committed, exactly": "pass - decimal subtraction with no rounding or reserve, asserted in the record and against the SUM of the commitment rows.",
+    "AC-5 A closed AFE is immutable": "pass - every command checks the closure first and refuses; the gateway asserts a commitment, a second closure and a supplement are all refused, and the row stays closed.",
+    "AC-6 A supplement is itself approved before it is effective": "pass - the supplement starts in draft, a commitment against it is refused as not effective, and it only becomes effective after submit and approve by a different person."
+  },
+  "engineFindings": {
+    "twoStateOwner": {
+      "where": "Beep.OilandGas.ProductionAccounting/Services/AfeService.cs and Constants/AfeStatusCodes.cs",
+      "finding": "The owner implements exactly two states and two transitions: CreateAfeAsync writes DRAFT, ApproveAfeAsync writes APPROVED. There is no submit, no rejection, no supplement and no closure, and the AFE_STATUS reference seed contains only those two rows. The feature's stated risk was accurate.",
+      "handling": "The full lifecycle was written into the owner as AfeLifecycle (the extraction the risk asked for), reusing the owner's own two codes so nothing is respelled. The owner's service is not called: it writes through a PPDMGenericRepository against a metadata-resolved type and offers no supplement or closure, so the screen uses the units of work over the same tables."
+    },
+    "noAuthorCheck": {
+      "where": "AfeService.ApproveAfeAsync",
+      "finding": "The owner's approval sets STATUS and APPROVAL_DATE and records who changed the row, but never compares that person with the creator - the author can approve their own AFE through it.",
+      "handling": "Recorded, not changed: the method is used by the API and the app's own authorization boundary is the client app (per the repo's architecture rules). ECO-02 AC-3 is enforced by the screen's service before anything is written, which the gateway test proves."
+    },
+    "noCommitments": {
+      "finding": "The AFE had no committed amount and no commitment rows, so AC-2 had nothing to be measured against; ACCOUNTING_COST records actual spend, which is a different fact.",
+      "handling": "AFE_COMMITMENT was added to the owning module and committed is always the sum of its rows."
+    }
+  },
+  "limits": [
+    "The commitment linkage is a free reference (a purchase-order or contract number), not a foreign key into ACC-05 procurement, because STG-10 has not landed. The feature allows exactly that ('accepts a manual reference until STG-10 lands').",
+    "Actual spend is the AFE's existing ACTUAL_COST column; the screen shows it in the variance panel but does not derive it from ACCOUNTING_COST rows, which ProductionAccounting writes.",
+    "The transfer action (the screen list mentions transfer) is not built: it needs a destination AFE and a cost-split rule the feature does not define, so it is not offered rather than half-wired.",
+    "A supplement may be lower than the approved amount (a de-scope); the rule only requires it to be above zero. There is no separate 'supplement amount delta' semantics - the revision states the new total, which is what an approver signs.",
+    "The revision number is per AFE number, not per well or per year; a re-raised AFE for the same work starts a new number.",
+    "No attachments, no AFE line items in the screen (AFE_LINE_ITEM is the owner's and is not surfaced here), and the detail tabs of the plan are a single page rather than tabs.",
+    "The feature's permissions (economics.afe.write/.approve/.supplement/.close) are not enforced per command: the app gates pages, and segregation of duties is enforced only by the author-versus-approver rule.",
+    "ECO-03 (investment review and handoff queue) is not started, so STG-09 is not complete."
+  ]
+}

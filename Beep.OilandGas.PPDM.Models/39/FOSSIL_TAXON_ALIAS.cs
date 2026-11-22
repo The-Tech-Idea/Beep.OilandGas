@@ -9,6 +9,7 @@ public partial class FOSSIL_TAXON_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String TAXON_LEAF_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAXON_LEAF_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TAXON_LEAF_IDValue;
           set { SetProperty(ref  TAXON_LEAF_IDValue, value); }
         } 
 private  System.String FOSSIL_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_ALIAS_ID
         {  
             get  

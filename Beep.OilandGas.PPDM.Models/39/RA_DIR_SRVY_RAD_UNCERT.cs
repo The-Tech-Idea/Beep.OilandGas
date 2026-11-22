@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_RAD_UNCERT: Entity,IPPDMEntity
 {
 
 private  System.String RAD_UNCERT_DIST_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RAD_UNCERT_DIST_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RAD_UNCERT_DIST_REASONValue;
           set { SetProperty(ref  RAD_UNCERT_DIST_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

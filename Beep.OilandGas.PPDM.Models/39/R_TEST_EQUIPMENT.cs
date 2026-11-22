@@ -9,6 +9,7 @@ public partial class R_TEST_EQUIPMENT: Entity,IPPDMEntity
 {
 
 private  System.String EQUIP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIP_TYPE
         {  
             get  

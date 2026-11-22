@@ -9,6 +9,7 @@ public partial class R_PPDM_INDEX_CATEGORY: Entity,IPPDMEntity
 {
 
 private  System.String INDEX_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INDEX_CATEGORY
         {  
             get  

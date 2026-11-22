@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Beep.OilandGas.Models.Data
@@ -6,6 +6,13 @@ namespace Beep.OilandGas.Models.Data
     public class SchemaMigrationPlanRequest : ModelEntityBase
     {
         public List<string>? ModuleIds { get; set; }
+
+    /// <summary>
+    /// Optional entity-type scope inside the selected modules. A module such as PPDM_CORE resolves to the whole PPDM
+    /// catalogue (thousands of types), so the setup applies it in bounded batches by naming the types of each batch.
+    /// Null or empty means every type the modules resolve to.
+    /// </summary>
+    public List<string>? EntityTypeNames { get; set; }
         public string ConnectionName { get; set; } = string.Empty;
         public string? SchemaName { get; set; }
         public string? TargetAssemblyName { get; set; }
@@ -14,6 +21,12 @@ namespace Beep.OilandGas.Models.Data
         public bool BackupConfirmed { get; set; }
         public bool RestoreTestEvidenceProvided { get; set; }
         public string? RestoreTestEvidence { get; set; }
+
+        /// <summary>
+        /// Who planned this migration (DAT-02). It becomes the policy approver for a plan the planner has already
+        /// approved, so a high-risk plan is not blocked by the gate its own request approved.
+        /// </summary>
+        public string? PreparedBy { get; set; }
     }
 
     public class SchemaMigrationPlanResult : ModelEntityBase

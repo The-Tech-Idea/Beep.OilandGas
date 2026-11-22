@@ -9,6 +9,7 @@ public partial class R_TREATMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TREATMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TREATMENT_TYPE
         {  
             get  

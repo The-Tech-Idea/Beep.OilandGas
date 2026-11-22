@@ -9,6 +9,7 @@ public partial class R_SW_APP_FUNCTION: Entity,IPPDMEntity
 {
 
 private  System.String SW_APP_FUNCTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APP_FUNCTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SW_APP_FUNCTIONValue;
           set { SetProperty(ref  SW_APP_FUNCTIONValue, value); }
         } 
 private  System.String SW_APP_FUNCTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APP_FUNCTION_TYPE
         {  
             get  

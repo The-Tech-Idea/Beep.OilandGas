@@ -9,6 +9,7 @@ public partial class R_ALIAS_REASON_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REASON_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REASON_TYPE
         {  
             get  

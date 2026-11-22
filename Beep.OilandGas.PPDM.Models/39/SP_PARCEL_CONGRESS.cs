@@ -9,6 +9,7 @@ public partial class SP_PARCEL_CONGRESS: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_CONGRESS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_CONGRESS_ID
         {  
             get  

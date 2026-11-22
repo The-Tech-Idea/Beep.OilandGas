@@ -9,6 +9,7 @@ public partial class RA_ECOZONE_HIER_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String HIERARCHY_LEVELValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIERARCHY_LEVEL
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HIERARCHY_LEVELValue;
           set { SetProperty(ref  HIERARCHY_LEVELValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

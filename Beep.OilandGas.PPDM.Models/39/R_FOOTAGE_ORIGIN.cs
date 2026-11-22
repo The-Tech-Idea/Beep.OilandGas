@@ -9,6 +9,7 @@ public partial class R_FOOTAGE_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String FOOTAGE_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOOTAGE_ORIGIN
         {  
             get  

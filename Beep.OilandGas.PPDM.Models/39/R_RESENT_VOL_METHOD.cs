@@ -9,6 +9,7 @@ public partial class R_RESENT_VOL_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String VOLUME_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_METHOD
         {  
             get  

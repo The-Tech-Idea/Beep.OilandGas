@@ -5,6 +5,7 @@ namespace Beep.OilandGas.Models.Data.DevelopmentPlanning;
 public partial class WELL_MAINTENANCE_PLAN : ModelEntityBase
 {
     private string MAINT_PLAN_IDValue = string.Empty;
+    [System.ComponentModel.DataAnnotations.Key]
     public string MAINT_PLAN_ID
     {
         get => MAINT_PLAN_IDValue;

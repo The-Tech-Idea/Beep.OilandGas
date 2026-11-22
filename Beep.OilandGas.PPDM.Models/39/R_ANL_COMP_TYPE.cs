@@ -9,6 +9,7 @@ public partial class R_ANL_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ANL_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_COMPONENT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SF_SURFACE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SURFACE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SURFACE_TYPE
         {  
             get  

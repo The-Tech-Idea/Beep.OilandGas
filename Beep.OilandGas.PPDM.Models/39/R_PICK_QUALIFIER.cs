@@ -9,6 +9,7 @@ public partial class R_PICK_QUALIFIER: Entity,IPPDMEntity
 {
 
 private  System.String PICK_QUALIFIERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_QUALIFIER
         {  
             get  

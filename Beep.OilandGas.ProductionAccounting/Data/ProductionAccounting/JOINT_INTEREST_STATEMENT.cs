@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class JOINT_INTEREST_STATEMENT : ModelEntityBase {
         private System.String JOINT_INTEREST_STATEMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String JOINT_INTEREST_STATEMENT_ID
         {
             get { return this.JOINT_INTEREST_STATEMENT_IDValue; }

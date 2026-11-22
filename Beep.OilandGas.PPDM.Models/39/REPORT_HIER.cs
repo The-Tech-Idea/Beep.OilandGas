@@ -9,6 +9,7 @@ public partial class REPORT_HIER: Entity,IPPDMEntity
 {
 
 private  System.String REPORT_HIERARCHY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPORT_HIERARCHY_ID
         {  
             get  

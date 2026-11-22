@@ -9,6 +9,7 @@ public partial class R_PPDM_OWNER_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String OWNER_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OWNER_ROLE
         {  
             get  

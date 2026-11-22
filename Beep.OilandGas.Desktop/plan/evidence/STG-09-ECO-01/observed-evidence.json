@@ -1,0 +1,84 @@
+{
+  "id": "STG-09/ECO-01",
+  "title": "Economic evaluation",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a flat ten-year reference case reproduces the closed-form annuity NPV (614.4567 against 614.4567105, to 1e-6) and the published four-decimal value; an IRR that does not exist reads 'undefined' and is stored with a flag rather than as 0; all money is decimal end to end, including a decimal NPV/IRR/payback engine added to the owner; a missing fiscal term blocks the run with the term named; the sensitivity re-uses the same period builder and the same NPV as the base run; and an approved evaluation records its forecast version and is then immutable.",
+  "dataModel": {
+    "decision": "ECONOMIC_ANALYSIS_RESULT and ECONOMIC_CASH_FLOW already existed and were registered by EconomicsModule, but the result held only NPV, IRR, payback and the discount rate - no scenario, no forecast version, no fiscal terms, no inputs and no approval, which AC-6 and SG-09-3 require. The result was extended additively in a partial file; the periods keep using the module's own ECONOMIC_CASH_FLOW, linked by ECONOMIC_ANALYSIS_ID.",
+    "addedColumns": "SCENARIO, FORECAST_VERSION, ENTITY_ID, CURRENCY, STATUS, VERSION, FISCAL_REGIME, ROYALTY_RATE, TAX_RATE, PERIOD_COUNT, START_YEAR, ANNUAL_VOLUME, VOLUME_OUOM, UNIT_PRICE, PRICE_OUOM, OPEX_PER_UNIT, ANNUAL_CAPEX, ESCALATION_RATE, ABANDONMENT_COST, IRR_DEFINED_IND, PEAK_FUNDING, UNDISCOUNTED_TOTAL, DRIVERS_TEXT, FISCAL_REGIME_TEXT, ACTOR, RECORDED_AT, APPROVED_BY, APPROVED_AT",
+    "checkedForDuplicates": "The entity was checked for the case-only duplicate property pairs that make PIPELINE_ANALYSIS_RESULT unpublishable (WTA-03). None exists here, so the unit of work maps it cleanly.",
+    "registration": "--smoke still reports 33 modules and 411 entity types, which is the check that this was a column extension on an already-registered table rather than a new registration."
+  },
+  "ownerAdditions": {
+    "fiscalRegime": "Beep.OilandGas.EconomicAnalysis/Data/FiscalRegime.cs - the regime shape the feature's open question asked for, because the module had none (only a bare taxRate argument on the after-tax analysis): a screening regime with a royalty on gross revenue and a tax on positive pre-tax cash flow. Every term is nullable so 0 is a stated value and null is a missing one, which is what lets a run be blocked with the term named (AC-4, SG-09-2). It says in its own description that there is no depreciation, loss carry-forward or investment credit.",
+    "decimalMoney": "Beep.OilandGas.EconomicAnalysis/Calculations/EconomicMoneyCalculator.cs - the same relations the engine documents (NPV = sum of discounted periods, IRR where that sum is zero, interpolated payback) stated in decimal, beside the double EconomicCalculator which is left untouched for its other callers. Differences are deliberate and documented: the discount factor is built by repeated decimal multiplication rather than Math.Pow, TryIrr returns false when the cash flow never changes sign (AC-2), and a payback that never happens is null rather than double.MaxValue."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Economics/OgEconomics.cs (OgEconomicPeriod, OgEconomicDriver, OgEconomicInputs, OgEconomicResult, OgEconomicPending, OgEconomicsWorkspace, EconomicRules, IOgEconomics, OgEconomicsService with EvaluateAsync/SaveAsync/ApproveAsync/LoadAsync/RetrySaveAsync and the public BuildPeriods/Build)",
+    "cashFlow": "Period 0 is the capital period (capex spent before production, so it is the only flow at t = 0); periods 1..N are the production years, with price and opex escalating by (1 + escalation)^t, royalty off gross revenue, tax on a positive pre-tax flow, and the abandonment in the last year.",
+    "irr": "Bisection between the engine's own bounds (-0.99 and 10) after checking that the flow changes sign, so the reported rate really is where the NPV is zero; no sign change means 'undefined' in the text and IRR_DEFINED_IND = 'N' on the row (AC-2).",
+    "sensitivity": "Five drivers - unit price, opex per unit, annual capex, annual volume and discount rate - each swung by 10 %. Every one calls the same BuildPeriods and the same EconomicMoneyCalculator.Npv with one input scaled (AC-5), and the list is ordered by absolute swing so the table is the tornado.",
+    "approval": "SaveAsync only ever inserts, so an approved row cannot be edited by a later save; ApproveAsync sets STATUS/APPROVED_BY/APPROVED_AT on a draft and refuses a second approval. Saving a result that is already approved is refused before it reaches the database (AC-6).",
+    "scenarios": "The scenario list is read from R_ECONOMIC_SCENARIO (active rows) on every load and an unknown scenario is refused naming the configured ones; the workspace's ComparisonText lists each evaluation with the one forecast version it used, and flags a scenario that carries two different versions (SG-09-3).",
+    "page": "src/Beep.OilandGas.Desktop/Views/EconomicEvaluationPageView.cs (route 'economics': scenario, fiscal, timing, volume and cost bars, the regime line, the answer, the cash-flow grid, the sensitivity grid, the scenario comparison and the saved evaluations)",
+    "wiring": "OgBootstrapper (IOgEconomics), OgApplication.Economics, catalog 'economics' (OgModuleKeys.Economics), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/EconomicsTests.cs (9, no database) + EconomicsGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1056, "passed": 1056, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 51, "passed": 51, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 75, "views-constructed": true, "modulesetup-summary": "33 module(s) - 411 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with R_ECONOMIC_SCENARIO, ECONOMIC_ANALYSIS_RESULT and ECONOMIC_CASH_FLOW, seeded in EconomicsGatewayTests",
+    "ac1_reference": "ten flat years of 100 at 10 % with no capex and no fiscal terms give NPV 614.4567, which is the closed-form annuity A (1 - (1 + r)^-n) / r computed independently in the test (agreement to 1e-6) and the published four-decimal value; the undiscounted total is 1,000 and nothing is ever out of pocket. This is SG-09-1.",
+    "ac2_irr": "an all-positive flow has no rate at all: Irr is null, the text says 'undefined - the cash flow never changes sign', and the stored text is 'undefined' (never '0'). A project with a 500 outflow against 100 a year returns an IRR between 14 % and 16 % whose NPV is zero to 0.01.",
+    "ac3_decimal": "the test asserts every money property of the result, the period and the driver is decimal, checks the desktop service holds no double or Math.Pow, and checks the owner's decimal engine has no method taking or returning a double.",
+    "ac4_fiscal": "royalty missing names 'royalty rate' alone; tax missing names 'tax rate'; both missing names both; a stated 0 is complete; 12.5 is refused as out of range with the 0.125 example. The gateway asserts the run writes nothing when a term is missing. This is SG-09-2.",
+    "ac5_sensitivity": "every driver's base NPV equals the run's NPV, the list is ordered by absolute swing, the price driver recomputed from BuildPeriods and EconomicMoneyCalculator.Npv equals what the run reported, and the discount driver's low and high differ (which re-applying the base rate would not show).",
+    "ac6_approval": "the saved row carries FORECAST_VERSION = 'FC-2026-01' and STATUS = 'DRAFT'; approval sets STATUS = 'APPROVED' with APPROVED_BY and APPROVED_AT, a second approval is refused with economics-already-approved, a save of the approved result is refused with economics-approved-immutable, and the row count stays 1.",
+    "sg09_3_comparison": "the scenario list comes from R_ECONOMIC_SCENARIO (BASE, BEST, WORST; an inactive STRESS row is excluded); an unknown scenario is refused naming the configured ones; the comparison states each evaluation's forecast version and flags a scenario carrying two versions.",
+    "lost_acknowledgement": "dropping both tables makes the save fail with the evaluation retained in Pending; recreating them and retrying inserts one result with its eleven cash-flow rows",
+    "history_unavailable": "dropping ECONOMIC_ANALYSIS_RESULT makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A flat cash-flow reference case matches the closed-form NPV exactly": "pass - 614.4567 against the annuity computed from (1 + r)^n in the test, agreeing to 1e-6, and against the published four-decimal value. SG-09-1.",
+    "AC-2 IRR is undefined when there is no sign change, not zero": "pass - null Irr, 'undefined' in both texts, and IRR_DEFINED_IND = 'N' on the row; a real sign change gives a rate whose NPV is zero to 0.01. SG-09-2's neighbour, asserted separately.",
+    "AC-3 All money values are decimal end to end": "pass - the decimal engine and the service hold no double, every money property is decimal, and the discount factor is built by repeated decimal multiplication.",
+    "AC-4 A missing fiscal term blocks the run with its name": "pass - the regime reports its missing terms by name, the rule returns economics-fiscal-term-missing with them in the sentence, and the gateway proves nothing is written. SG-09-2.",
+    "AC-5 Sensitivity uses the same engine as the base run": "pass - each driver calls the same BuildPeriods and the same Npv with one input scaled, and the test recomputes one driver independently to prove it.",
+    "AC-6 An approved evaluation is immutable and identifies its forecast version": "pass - the forecast version is stored and printed, approval is recorded with actor and date, a second approval and any save of an approved result are refused. SG-09-3 is the comparison half, met by the workspace's comparison text."
+  },
+  "engineFindings": {
+    "doubleEngine": {
+      "where": "Beep.OilandGas.EconomicAnalysis/Calculations/EconomicCalculator.cs",
+      "finding": "The engine computes NPV, IRR, payback and the NPV profile in double, and the stage requires that all money is decimal, never double.",
+      "handling": "A decimal engine was added beside it in the same owning project (EconomicMoneyCalculator) and the screen uses that. The double methods are untouched, because the API and the LifeCycle calculation service call them. The two are not wired together, so a caller must choose; the choice is stated in both files."
+    },
+    "irrBehaviour": {
+      "where": "EconomicCalculator.CalculateIRR",
+      "finding": "Newton-Raphson starts at 10 % and is clamped to (-0.99, 10), returning whatever rate it reached when it gives up - so a project with no sign change is reported as a rate rather than as no rate.",
+      "handling": "Not used. EconomicMoneyCalculator.TryIrr checks the sign change first and bisects, returning false when no rate exists (AC-2)."
+    },
+    "paybackSentinel": {
+      "where": "EconomicCalculator.CalculatePaybackPeriod",
+      "finding": "A project that never pays back returns double.MaxValue, which a screen can accidentally print as a number.",
+      "handling": "Not used. The decimal payback returns null and the screen prints 'never pays back within the periods evaluated'."
+    },
+    "fiscalGap": {
+      "where": "the whole module",
+      "finding": "There was no fiscal regime model: the only fiscal input anywhere is a bare taxRate argument on PerformAfterTaxAnalysisAsync, and the ERP shows no royalty, no production share and no depreciation.",
+      "handling": "The regime shape was written into the owner as FiscalRegime (the feature's open question) and is explicitly a screening model. A production-sharing or concession model with cost recovery, depreciation and loss carry-forward is the owner's to add."
+    }
+  },
+  "limits": [
+    "The fiscal model is a screening one: a royalty off gross revenue and tax on positive pre-tax cash flow. There is no depreciation schedule, loss carry-forward, investment credit, cost-recovery ceiling or PSC profit split, and the regime's own description says so on the page and in the row.",
+    "The cash flow is built from one flat annual volume with price and opex escalation, not from the RES-07 forecast's own period-by-period profile. The evaluation records the forecast version it belongs to, but the volumes are stated on the screen, and a volume-profile import is not built.",
+    "The charts are not drawn: EconomicRenderer needs the chart host these calculation screens do not have, so the cash flow and the sensitivity are a table and a ranked list rather than a plot.",
+    "The sensitivity is one-way and bounded to ±10 % on five drivers; there is no two-way matrix, no Monte Carlo and no real-options valuation surfaced, although the module has those partials.",
+    "Tax is charged on a positive pre-tax period with no carry-forward of prior losses, so a project with early losses pays more tax than a jurisdiction that allows them.",
+    "Approval does not enforce segregation of duties: the same actor may save and approve. The permission split (economics.approve) is not enforced per command because the app gates pages.",
+    "ECO-02 (AFE) and ECO-03 (investment review and handoff) are not started, so STG-09 is not complete."
+  ]
+}

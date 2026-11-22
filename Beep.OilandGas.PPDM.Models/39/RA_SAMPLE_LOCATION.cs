@@ -9,6 +9,7 @@ public partial class RA_SAMPLE_LOCATION: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_LOCATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_LOCATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SAMPLE_LOCATIONValue;
           set { SetProperty(ref  SAMPLE_LOCATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SEIS_SPECTRUM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SPECTRUM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SPECTRUM_TYPE
         {  
             get  

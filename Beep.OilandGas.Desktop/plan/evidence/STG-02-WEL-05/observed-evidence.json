@@ -1,0 +1,56 @@
+{
+  "id": "STG-02/WEL-05",
+  "title": "Stratigraphy browser",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: a three-level hierarchy with a stable order, picks whose unit comes from the reference set, overlapping picks flagged on both sides, a rename that changes display only, colour as a theme token with no colour value in the source, and picks scoped to the selected well",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Wells/OgStratigraphy.cs (OgStratUnit, OgStratNode, OgWellPick, OgStratColumn, IOgStratigraphy, OgStratigraphy, BuildHierarchy, FlagOverlaps, ColourFor)",
+    "page": "src/Beep.OilandGas.Desktop/Views/StratigraphyPageView.cs (route 'stratigraphy': Units tree with colour chip and rename, Columns grid, Well sections grid with add-pick and overlap sentence, OgStratColour)",
+    "navigation": "WellHeaderPageView has a Stratigraphy action; the page follows the shared well context",
+    "wiring": "OgBootstrapper (IOgStratigraphy), OgApplication.Stratigraphy, catalog 'stratigraphy' (en + ar)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/StratigraphyTests.cs (12, no database, incl. a source check for colour values) + StratigraphyGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~Stratigraphy", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 567, "passed": 567, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "hierarchy": "Group G1 -> Formations F1, F2 -> Members M1, M2 (levels 1/2/3), ordered by age code then name",
+    "scoping": "UWI-A returned 3 picks (then 4 after an add), UWI-B returned 1",
+    "reference_unit": "free text 'FREE TEXT' refused with stratigraphy-unit-unknown and the unit ids listed; M1 added successfully",
+    "overlap": "two picks at 1000 m are both flagged; the 1000 -> 1200 pair yields a thickness, the last pick has none",
+    "rename": "renaming F1 changed both picks' display to 'Formation One (renamed)' while their STRAT_UNIT_ID stayed F1, and the message reported '2 pick(s)'",
+    "columns": "the single STRAT_COLUMN row was listed with its name and type"
+  },
+  "smoke": {
+    "pages-declared": 33,
+    "stratigraphy-route": "stratigraphy",
+    "stratigraphy-units": 0,
+    "stratigraphy-depth": 0,
+    "stratigraphy-followed-context": true,
+    "stratigraphy-consistent-state": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 The hierarchy renders at least three levels with stable ordering": "pass - BuildHierarchy groups by GROUP_CODE and orders by ORDINAL_AGE_CODE then name; the SQLite test renders Group -> Formation -> Member (levels 1/2/3) and a second build gives the same order. A cyclic GROUP_CODE terminates instead of recursing.",
+    "AC-2 A pick carries a unit from the reference set, never free text": "pass - picks are read with STRAT_UNIT joined for their name, and AddPickAsync refuses a unit id that is not in STRAT_UNIT (stratigraphy-unit-unknown, listing the available ids). The page offers a unit picker, not a text box.",
+    "AC-3 Overlapping picks are flagged": "pass - picks at the same or a shallower top are both flagged with the peer's name and are not reordered; FlagOverlaps also marks a pick with no top as excluded from thickness. The SQLite test sees both picks at 1000 m flagged.",
+    "AC-4 Renaming a unit does not change picks, only their display": "pass - RenameUnitAsync updates only STRAT_UNIT (LONG_NAME/SHORT_NAME); picks keep STRAT_UNIT_ID and read the new name by join. The test asserts the ids are unchanged and the display name changed, and the page reports the affected pick count.",
+    "AC-5 Colour comes from the unit record or the theme, never a hardcoded hex": "pass - a unit carries a theme token (Highlight/Info/Control/Light/Window by rank; STRAT_UNIT has no colour column) and the page resolves it to SystemColors brushes. A source test asserts neither stratigraphy file contains a #RRGGBB value or rgb( ).",
+    "AC-6 Well sections are scoped to the selected well": "pass - LoadPicksAsync filters STRAT_WELL_SECTION by UWI; the SQLite test sees UWI-A's 3 picks and UWI-B's 1, and adding a pick changed only UWI-A."
+  },
+  "limits": [
+    "No lexicon overlay: the external IStratigraphicLexicon package is not referenced, so raw reference-table names are shown with a notice (the plan's 'no lexicon' state).",
+    "STRAT_UNIT has no colour column, so colour is a theme token chosen by rank; a per-unit colour would need a column or a lexicon.",
+    "Base depth and thickness are derived from the next pick's top; NET and NTG columns do not exist in STRAT_WELL_SECTION, so they are not shown.",
+    "Regional columns are listed without their unit sets because there is no column-to-unit link table in this model.",
+    "Unit editing is rename only; the hierarchy order follows ORDINAL_AGE_CODE and is not edited as a number, and drag-free reordering is not built.",
+    "Picks can be added but not edited, deleted or imported; the optional import from the plan is not built.",
+    "The page is exercised by construction and by unit/integration tests; no automated click drives the tabs."
+  ]
+}

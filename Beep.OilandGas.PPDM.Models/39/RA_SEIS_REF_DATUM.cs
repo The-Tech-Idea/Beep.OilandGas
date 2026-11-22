@@ -9,6 +9,7 @@ public partial class RA_SEIS_REF_DATUM: Entity,IPPDMEntity
 {
 
 private  System.String REFERENCE_DATUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REFERENCE_DATUM
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REFERENCE_DATUMValue;
           set { SetProperty(ref  REFERENCE_DATUMValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

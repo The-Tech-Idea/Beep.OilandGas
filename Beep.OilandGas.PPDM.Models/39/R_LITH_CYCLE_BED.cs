@@ -9,6 +9,7 @@ public partial class R_LITH_CYCLE_BED: Entity,IPPDMEntity
 {
 
 private  System.String CYCLE_BEDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CYCLE_BED
         {  
             get  

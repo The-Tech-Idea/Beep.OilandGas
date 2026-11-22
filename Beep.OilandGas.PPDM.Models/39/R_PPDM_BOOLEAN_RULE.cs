@@ -9,6 +9,7 @@ public partial class R_PPDM_BOOLEAN_RULE: Entity,IPPDMEntity
 {
 
 private  System.String BOOLEAN_RULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BOOLEAN_RULE
         {  
             get  

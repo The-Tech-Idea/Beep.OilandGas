@@ -9,6 +9,7 @@ public partial class R_INT_SET_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String INTEREST_SET_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTEREST_SET_ROLE
         {  
             get  

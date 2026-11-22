@@ -9,6 +9,7 @@ public partial class R_REPORT_HIER_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String LEVEL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEVEL_TYPE
         {  
             get  

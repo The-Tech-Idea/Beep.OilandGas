@@ -1,0 +1,30 @@
+{
+  "id": "STG-01/DAT-02",
+  "title": "Module setup over IModuleSetup — blocked",
+  "date": "2026-11-05",
+  "status": "blocked",
+  "blocker": {
+    "owner": "Beep.OilandGas.PPDM39.DataManagement",
+    "file": "Services/HSE/HSEKPIService.cs",
+    "error": "CS0535: 'HSEKPIService' does not implement interface member 'IHSEKPIService.CountIncidentsAsync(string?, DateTime?, DateTime?)'",
+    "independentReproduction": "dotnet build Beep.OilandGas.PPDM39.DataManagement\\Beep.OilandGas.PPDM39.DataManagement.csproj -c Debug",
+    "preExisting": true,
+    "cause": "The interface member returns IncidentCounts(Total, Open, Tier1..4) and needs an incident workflow state; HSE_INCIDENT (PPDM 3.9) has no status column and the class only has a private CountIncidentsAsync(fieldId, range, tier) returning int."
+  },
+  "decisionNeeded": "Which record defines an incident as open (workflow instance state, HSE_INCIDENT_CLOSURE, or an existing helper), and does 'every field' mean all ACTIVE_IND='Y' rows?",
+  "draft": [
+    "plan/pending/DAT-02/OgSetupComposition.cs",
+    "plan/pending/DAT-02/OgModuleSetupRunner.cs",
+    "plan/pending/DAT-02/OgSetupState.cs"
+  ],
+  "verifiedWhileBlocked": {
+    "build": "0 warnings / 0 errors",
+    "tests": "30/30 passed",
+    "smoke": "result: ok",
+    "note": "DAT-01 remains delivered; the tree is green with the DAT-02 reference removed."
+  },
+  "limits": [
+    "No module setup was executed; no PPDM schema was created.",
+    "The draft code has not been compiled against the owning project."
+  ]
+}

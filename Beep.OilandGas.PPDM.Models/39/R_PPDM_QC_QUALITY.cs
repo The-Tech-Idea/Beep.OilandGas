@@ -9,6 +9,7 @@ public partial class R_PPDM_QC_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String QUALITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUALITY_TYPE
         {  
             get  

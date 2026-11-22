@@ -9,6 +9,7 @@ public partial class RA_ECONOMIC_SCHEDULE: Entity,IPPDMEntity
 {
 
 private  System.String ECONOMIC_SCHEDULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECONOMIC_SCHEDULE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ECONOMIC_SCHEDULEValue;
           set { SetProperty(ref  ECONOMIC_SCHEDULEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

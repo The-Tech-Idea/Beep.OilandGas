@@ -9,6 +9,7 @@ public partial class R_MEASUREMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MEASUREMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MEASUREMENT_TYPE
         {  
             get  

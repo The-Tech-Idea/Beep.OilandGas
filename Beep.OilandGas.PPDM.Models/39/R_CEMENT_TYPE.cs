@@ -9,6 +9,7 @@ public partial class R_CEMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CEMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CEMENT_TYPE
         {  
             get  

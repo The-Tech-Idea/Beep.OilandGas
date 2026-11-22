@@ -9,6 +9,7 @@ public partial class RA_LITH_SORTING: Entity,IPPDMEntity
 {
 
 private  System.String SORTINGValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SORTING
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SORTINGValue;
           set { SetProperty(ref  SORTINGValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SEIS_PATCH: Entity,IPPDMEntity
 {
 
 private  System.String PATCH_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PATCH_ID
         {  
             get  

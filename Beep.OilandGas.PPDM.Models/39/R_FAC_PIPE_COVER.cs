@@ -9,6 +9,7 @@ public partial class R_FAC_PIPE_COVER: Entity,IPPDMEntity
 {
 
 private  System.String COVER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COVER_TYPE
         {  
             get  

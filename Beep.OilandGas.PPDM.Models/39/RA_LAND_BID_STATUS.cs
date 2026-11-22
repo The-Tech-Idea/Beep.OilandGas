@@ -9,6 +9,7 @@ public partial class RA_LAND_BID_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String LAND_BID_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_BID_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_BID_STATUSValue;
           set { SetProperty(ref  LAND_BID_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

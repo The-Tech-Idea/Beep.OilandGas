@@ -9,6 +9,7 @@ public partial class R_RMII_METADATA_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String METADATA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METADATA_TYPE
         {  
             get  

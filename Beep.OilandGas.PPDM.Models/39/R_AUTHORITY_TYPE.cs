@@ -9,6 +9,7 @@ public partial class R_AUTHORITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AUTHORITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUTHORITY_TYPE
         {  
             get  

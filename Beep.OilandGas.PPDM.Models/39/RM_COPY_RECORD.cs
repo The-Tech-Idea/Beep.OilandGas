@@ -9,6 +9,7 @@ public partial class RM_COPY_RECORD: Entity,IPPDMEntity
 {
 
 private  System.String OLD_PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OLD_PHYSICAL_ITEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OLD_PHYSICAL_ITEM_IDValue;
           set { SetProperty(ref  OLD_PHYSICAL_ITEM_IDValue, value); }
         } 
 private  System.String NEW_PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NEW_PHYSICAL_ITEM_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String NEW_PHYSICAL_ITEM_IDValue;
           set { SetProperty(ref  NEW_PHYSICAL_ITEM_IDValue, value); }
         } 
 private  System.Decimal COPY_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COPY_SEQ_NO
         {  
             get  

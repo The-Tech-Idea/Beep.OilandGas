@@ -9,6 +9,7 @@ public partial class CONT_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_IDValue;
           set { SetProperty(ref  CONTRACT_IDValue, value); }
         } 
 private  System.String REMARK_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String REMARK_IDValue;
           set { SetProperty(ref  REMARK_IDValue, value); }
         } 
 private  System.Decimal REMARK_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_SEQ_NO
         {  
             get  

@@ -1,0 +1,58 @@
+{
+  "id": "STG-05/PRD-02",
+  "title": "Field and pool register",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: every figure on the page is an argument taken from a record (the summary record has no default values, and the feature carries no demo constant); a failed read shows the failure panel and never zeroed figures; aggregates exclude rows whose unit is not recorded and say how many; the field grid pages, proven against 521 fields; and a guard test greps the feature's two source files for the Web portfolio's demo constants.",
+  "dataModel": {
+    "decision": "PRD-02 adds no table. The register is a read over the PPDM records the plan names (FIELD, POOL, PDEN_FIELD, PDEN_POOL, PDEN_WELL, PDEN_VOL_SUMMARY) plus DevelopmentPlanning's DEVELOPMENT_POOL_PLAN for the pool's drive mechanism, which PPDM's POOL does not record.",
+    "grain": {
+      "field": "FIELD row; wells from PDEN_FIELD's recorded NO_OF_OIL_WELLS + NO_OF_GAS_WELLS, falling back to the distinct UWI of the field's production entities; pools from POOL; oil/gas/water are the totals of the 30-day window ending on the as-of day (the period a register reports), and the water cut is computed from those three totals.",
+      "pool": "POOL row of the field; the pool's entities from PDEN_POOL; the rate is the pool's last reported day; the cumulative is each entity's last recorded OIL_CUM_VOLUME summed within one unit; wells are the distinct UWI of the pool's entities, falling back to PDEN_POOL's recorded counts.",
+      "trend": "12 months of oil for the field, or for the pool when one is named - a first pool in the list is not treated as a selection.",
+      "volumes": "PDEN_VOL_SUMMARY with ACTIVE_IND not 'N', a non-null VOLUME_DATE, a production activity, taking the highest AMENDMENT_SEQ_NO per entity/day/activity."
+    },
+    "reads": "FIELD, POOL, PDEN_FIELD, PDEN_POOL, PDEN_WELL, PDEN_VOL_SUMMARY, DEVELOPMENT_POOL_PLAN - all through the entity models. Nothing is written."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Production/OgFieldPoolRegister.cs (OgMonthPoint, OgPoolSummary, OgFieldSummary, OgFieldRegister, FieldRegisterRules, IOgFieldPoolRegister, OgFieldPoolRegisterService)",
+    "rules": "FieldRegisterRules states the window (30 days), the trend length (12 months), the paging bounds and page arithmetic, the uptime rule, the water-cut rule, the dominant-unit rule and the field status rule once, so the page and the tests agree.",
+    "page": "src/Beep.OilandGas.Desktop/Views/FieldPoolRegisterPageView.cs (route 'fieldsandpools': day, previous/next page, field grid with the 30-day period in its headers, pools grid, trend, detail, excluded-row note, failure panel)",
+    "wiring": "OgBootstrapper (IOgFieldPoolRegister), OgApplication.FieldPoolRegister, catalog 'fieldsandpools' (OgModuleKeys.Production), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/FieldPoolRegisterTests.cs (13, no database, including the two source guards) + FieldPoolRegisterGatewayTests.cs (1 opt-in, real SQLite over the PPDM tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 803, "passed": 803, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 28, "passed": 28, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 52, "views-constructed": true, "modulesetup-summary": "28 module(s) - 376 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD, POOL, PDEN_FIELD, PDEN_POOL, PDEN_WELL, PDEN_VOL_SUMMARY and DEVELOPMENT_POOL_PLAN, seeded in FieldPoolRegisterGatewayTests: three named fields plus 518 filler fields, three pools, four production entities, fifteen daily measurements and the rows the aggregates must exclude",
+    "ac4_paging": "521 fields read as 6 pages of 100; page 1 holds 100 fields and reads 'fields 1-100 of 521', page 6 holds 21; an index past the end (99) is clamped to 5 instead of honoured",
+    "ac1_field_figures": "Alpha reads area AREA-1, discovery 2005-03-01, first production 2026-09-17, status producing, 3 wells (2 + 1 recorded), 2 pools, oil 1,550 bbl, water 330 bbl, water cut 17.55% and uptime 50% - each from the seeded records",
+    "pre_production": "Bravo has no measurement at all: status pre_production, and oil, gas, water, water cut and first production all read an em dash rather than zero",
+    "inactive": "Charlie has measurements and ACTIVE_IND='N', so it reads its 20 bbl and the status 'inactive'",
+    "ac3_units": "the row stated in m3 and the row with no unit are excluded from the totals and counted: '2 row(s) excluded ... no unit recorded' on the field and at register level",
+    "pools": "P-1 reads reservoir STRAT-A, drive 'water drive' from DEV-04's plan row, 1 well, rate 100 bbl, cumulative 5,000 bbl; P-2 has no plan row, so its drive reads 'not recorded' while its rate (50 bbl) and cumulative (2,000 bbl) come from the measurements",
+    "trend": "12 monthly points; September 1,400 bbl (fourteen days of 100) and October 150 bbl (100 + PD-2's 50); a pre-production field's trend says no production is recorded; naming P-2 narrows the trend to 'Alpha field / Lower sand'",
+    "ac2_failed_read": "dropping PDEN_VOL_SUMMARY makes LoadAsync fail with a reference and no workspace, so the page renders the failure panel"
+  },
+  "gates": {
+    "AC-1 Every figure comes from a record (guard: no literal in the view model)": "pass - the guard test reads the service source, extracts the OgFieldSummary positional parameter list and requires it to contain no '=' (so no figure can have a default standing in for a record); the page only formats what the service passed.",
+    "AC-2 A failed read never shows zero": "pass - any read failure returns Failed with a reference and no workspace; the page renders the failed view state with empty grids and the failure sentence, proven by dropping the volume table.",
+    "AC-3 Aggregates exclude rows with unknown units and say how many": "pass - totals are summed only within the fluid's dominant unit; rows whose unit is absent or different are excluded, counted per field and summed at register level, and both the row detail and the page state the count. A field whose rows all lack a unit reports no total at all rather than zero.",
+    "AC-4 The field grid pages beyond 500 fields": "pass - the service takes a page index and size, clamps both, and returns TotalFields/PageIndex/PageSize/PageCount; the gateway test reads 521 fields across 6 pages and the last page's 21 rows.",
+    "AC-5 No demo KPI constants exist (guard test greps the feature folder)": "pass - the guard test reads both feature files and fails on 'MMBOE', '1.2B', '$1.2' or '245'; it also asserts it found exactly two files so it cannot pass vacuously."
+  },
+  "limits": [
+    "PRD-02 adds no table: it reads PPDM records plus DEV-04's plan row. The register cannot create or edit a field or pool.",
+    "'Basin' has no PPDM column. The grid column is labelled 'Area' and is populated from FIELD.AREA_ID, which is the field's recorded area, not a basin; that is stated rather than passing an area off as a basin.",
+    "Field oil/gas/water are 30-day window totals, and the grid headers say '(30 d)' so the period is visible; the water cut is computed from those same totals.",
+    "No unit conversion: a row in another unit is excluded and counted, never converted. The unit catalog is not consulted because no conversion is performed.",
+    "Well counts come from PDEN_FIELD's recorded NO_OF_OIL_WELLS + NO_OF_GAS_WELLS (falling back to the distinct UWI of the field's entities); a database that records neither reports 0, which is a real count of linked wells rather than a placeholder.",
+    "The pool's 'drive' comes from DEV-04's DEVELOPMENT_POOL_PLAN for the same POOL_ID; a pool with no plan row reads 'not recorded' instead of being guessed.",
+    "The trend is a sentence of 12 monthly points, not the planned chart control; the CG-01 chart surface is not used here.",
+    "Export (data.export) and edit field metadata (field.write) from the feature's command table are not implemented: this page is read-only. The permissions themselves are not enforced per command, because the app gates pages.",
+    "The Web asset portfolio page's hardcoded figures are not ported; gap G-07 is closed by the guard test rather than by a comment."
+  ]
+}

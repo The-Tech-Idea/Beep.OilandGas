@@ -9,6 +9,7 @@ public partial class RM_DATA_STORE_HIER_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String DATA_STORE_HIER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATA_STORE_HIER_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DATA_STORE_HIER_IDValue;
           set { SetProperty(ref  DATA_STORE_HIER_IDValue, value); }
         } 
 private  System.String HIER_LEVEL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIER_LEVEL_ID
         {  
             get  

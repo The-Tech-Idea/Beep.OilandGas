@@ -9,6 +9,7 @@ public partial class R_LITH_DISTRIBUTION: Entity,IPPDMEntity
 {
 
 private  System.String DISTRIBUTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISTRIBUTION
         {  
             get  

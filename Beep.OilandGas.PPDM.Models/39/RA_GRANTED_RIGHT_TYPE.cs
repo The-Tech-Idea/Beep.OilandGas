@@ -9,6 +9,7 @@ public partial class RA_GRANTED_RIGHT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GRANTED_RIGHT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GRANTED_RIGHT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GRANTED_RIGHT_TYPEValue;
           set { SetProperty(ref  GRANTED_RIGHT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

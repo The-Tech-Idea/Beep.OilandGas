@@ -192,7 +192,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                 decimal pAvg = (pIn + pOut) / 2m;
                 decimal z = ZFactorCalculator.CalculateBrillBeggs(pAvg, tIn, conditions.GAS_SPECIFIC_GRAVITY);
 
-                decimal n = etaP > 0.999m ? k : (k * etaP) / (k - etaP * (k - 1m));
+                decimal n = etaP > 0.999m ? k : (k * etaP) / (k * etaP - (k - 1m));
                 decimal tOut = tIn * (decimal)Math.Pow((double)r, (double)((n - 1m) / n));
                 decimal head = (z * R * tIn / mw) * (n / (n - 1m)) *
                                ((decimal)Math.Pow((double)r, (double)((n - 1m) / n)) - 1m);

@@ -9,6 +9,7 @@ public partial class SP_PARCEL_LOT: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_LOT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_LOT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARCEL_LOT_IDValue;
           set { SetProperty(ref  PARCEL_LOT_IDValue, value); }
         } 
 private  System.String PARCEL_LOT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_LOT_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PARCEL_LOT_TYPEValue;
           set { SetProperty(ref  PARCEL_LOT_TYPEValue, value); }
         } 
 private  System.String PARCEL_LOT_NUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_LOT_NUM
         {  
             get  

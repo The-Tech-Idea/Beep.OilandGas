@@ -9,6 +9,7 @@ public partial class SEIS_PROC_PLAN_PARM: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_PROC_PLAN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_PROC_PLAN_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_PROC_PLAN_IDValue;
           set { SetProperty(ref  SEIS_PROC_PLAN_IDValue, value); }
         } 
 private  System.String PROC_PLAN_STEP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROC_PLAN_STEP_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PROC_PLAN_STEP_IDValue;
           set { SetProperty(ref  PROC_PLAN_STEP_IDValue, value); }
         } 
 private  System.String PARAMETER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_ID
         {  
             get  

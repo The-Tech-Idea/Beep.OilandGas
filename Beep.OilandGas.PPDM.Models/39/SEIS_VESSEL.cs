@@ -9,6 +9,7 @@ public partial class SEIS_VESSEL: Entity,IPPDMEntity
 {
 
 private  System.String SF_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SF_SUBTYPEValue;
           set { SetProperty(ref  SF_SUBTYPEValue, value); }
         } 
 private  System.String VESSEL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VESSEL_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String VESSEL_IDValue;
           set { SetProperty(ref  VESSEL_IDValue, value); }
         } 
 private  System.Decimal VESSEL_CONFIG_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal VESSEL_CONFIG_OBS_NO
         {  
             get  

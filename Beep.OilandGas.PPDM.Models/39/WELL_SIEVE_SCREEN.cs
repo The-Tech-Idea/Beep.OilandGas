@@ -9,6 +9,7 @@ public partial class WELL_SIEVE_SCREEN: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String ANL_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String ANL_SOURCEValue;
           set { SetProperty(ref  ANL_SOURCEValue, value); }
         } 
 private  System.Decimal ANALYSIS_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ANALYSIS_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal ANALYSIS_OBS_NOValue;
           set { SetProperty(ref  ANALYSIS_OBS_NOValue, value); }
         } 
 private  System.Decimal SCREEN_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SCREEN_OBS_NO
         {  
             get  

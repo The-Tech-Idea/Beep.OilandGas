@@ -9,6 +9,7 @@ public partial class HSE_INCIDENT_EQUIP: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INCIDENT_IDValue;
           set { SetProperty(ref  INCIDENT_IDValue, value); }
         } 
 private  System.Decimal EQUIP_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal EQUIP_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal EQUIP_OBS_NOValue;
           set { SetProperty(ref  EQUIP_OBS_NOValue, value); }
         } 
 private  System.Decimal EQUIP_ROLE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal EQUIP_ROLE_OBS_NO
         {  
             get  

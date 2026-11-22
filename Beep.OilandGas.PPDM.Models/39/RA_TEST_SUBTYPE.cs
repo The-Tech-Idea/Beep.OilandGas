@@ -9,6 +9,7 @@ public partial class RA_TEST_SUBTYPE: Entity,IPPDMEntity
 {
 
 private  System.String TEST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TEST_TYPEValue;
           set { SetProperty(ref  TEST_TYPEValue, value); }
         } 
 private  System.String TEST_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_SUBTYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String TEST_SUBTYPEValue;
           set { SetProperty(ref  TEST_SUBTYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

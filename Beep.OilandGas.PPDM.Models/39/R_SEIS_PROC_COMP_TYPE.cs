@@ -9,6 +9,7 @@ public partial class R_SEIS_PROC_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROCESSING_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCESSING_COMPONENT_TYPE
         {  
             get  

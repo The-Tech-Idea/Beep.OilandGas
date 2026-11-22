@@ -9,6 +9,7 @@ public partial class RA_RETENTION_PERIOD: Entity,IPPDMEntity
 {
 
 private  System.String RETENTION_PERIODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RETENTION_PERIOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RETENTION_PERIODValue;
           set { SetProperty(ref  RETENTION_PERIODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

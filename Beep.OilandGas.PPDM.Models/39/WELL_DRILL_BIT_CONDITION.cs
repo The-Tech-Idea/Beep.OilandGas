@@ -9,6 +9,7 @@ public partial class WELL_DRILL_BIT_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String BIT_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BIT_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String BIT_SOURCEValue;
           set { SetProperty(ref  BIT_SOURCEValue, value); }
         } 
 private  System.Decimal BIT_INTERVAL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal BIT_INTERVAL_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal BIT_INTERVAL_OBS_NOValue;
           set { SetProperty(ref  BIT_INTERVAL_OBS_NOValue, value); }
         } 
 private  System.Decimal CONDITION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal CONDITION_OBS_NO
         {  
             get  

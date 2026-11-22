@@ -9,6 +9,7 @@ public partial class R_FOS_OBS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FOSSIL_OBS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FOSSIL_OBS_TYPE
         {  
             get  

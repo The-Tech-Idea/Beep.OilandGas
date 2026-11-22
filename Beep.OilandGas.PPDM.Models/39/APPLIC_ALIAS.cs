@@ -9,6 +9,7 @@ public partial class APPLIC_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String APPLICATION_IDValue;
           set { SetProperty(ref  APPLICATION_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

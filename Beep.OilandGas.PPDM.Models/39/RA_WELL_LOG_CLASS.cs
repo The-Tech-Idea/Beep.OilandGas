@@ -9,6 +9,7 @@ public partial class RA_WELL_LOG_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String WELL_LOG_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_LOG_CLASS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WELL_LOG_CLASS_IDValue;
           set { SetProperty(ref  WELL_LOG_CLASS_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_AOF_ANALYSIS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AOF_ANALYSIS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AOF_ANALYSIS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AOF_ANALYSIS_TYPEValue;
           set { SetProperty(ref  AOF_ANALYSIS_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

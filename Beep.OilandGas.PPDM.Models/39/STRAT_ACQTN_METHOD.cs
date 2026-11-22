@@ -9,6 +9,7 @@ public partial class STRAT_ACQTN_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_ACQTN_METHOD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_ACQTN_METHOD_ID
         {  
             get  

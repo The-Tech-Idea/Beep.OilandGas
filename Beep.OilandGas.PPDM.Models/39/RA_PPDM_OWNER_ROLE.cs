@@ -9,6 +9,7 @@ public partial class RA_PPDM_OWNER_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String OWNER_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OWNER_ROLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OWNER_ROLEValue;
           set { SetProperty(ref  OWNER_ROLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

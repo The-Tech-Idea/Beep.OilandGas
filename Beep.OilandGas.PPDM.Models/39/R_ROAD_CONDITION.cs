@@ -9,6 +9,7 @@ public partial class R_ROAD_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String ROAD_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROAD_CONDITION
         {  
             get  

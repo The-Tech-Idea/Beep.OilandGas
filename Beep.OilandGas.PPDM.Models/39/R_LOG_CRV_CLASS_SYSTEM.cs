@@ -9,6 +9,7 @@ public partial class R_LOG_CRV_CLASS_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_TYPE
         {  
             get  

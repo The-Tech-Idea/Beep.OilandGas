@@ -9,6 +9,7 @@ public partial class RM_ENCODING: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_ITEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PHYSICAL_ITEM_IDValue;
           set { SetProperty(ref  PHYSICAL_ITEM_IDValue, value); }
         } 
 private  System.Decimal ENCODING_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ENCODING_SEQ_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_LITH_ROCK_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ROCK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ROCK_TYPEValue;
           set { SetProperty(ref  ROCK_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

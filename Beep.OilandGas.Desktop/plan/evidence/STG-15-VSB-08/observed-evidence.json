@@ -1,0 +1,39 @@
+{
+  "id": "STG-15/VSB-08",
+  "title": "Symbol gallery and schematic editing",
+  "date": "2026-11-05",
+  "status": "gate met — catalog, filters, preview, assignment with undo, rejected custom catalog and default restore",
+  "implementation": {
+    "bridge": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgSymbolGallery.cs (rows, categories, summary, preview, assign, catalog state)",
+    "page": "src/Beep.OilandGas.Desktop/Views/SymbolGalleryPageView.cs (route 'symbols')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'symbols')",
+    "tools": "TheTechIdea.OilGas.WellSchematic — SymbolCatalog, SymbolRenderer, WellModelConverter.SymbolFor, SchematicTrack plan cache"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~SymbolGalleryTests", "exit": 0, "run": 10, "passed": 10, "failed": 0 },
+    { "cmd": "dotnet test (all)", "exit": 0, "run": 256, "passed": 256, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 12,
+    "symbols-loaded": 235,
+    "symbol-categories": 15,
+    "symbols-shown": 235
+  },
+  "gates": {
+    "AC-1 the gallery reports the loaded symbol count and categories": "pass — 235 symbols in 15 categories, counted from SymbolCatalog.Current, and reported in the summary and the smoke run",
+    "AC-2 filtering by category and by search both work": "pass — a category filter returns only that category and fewer than the whole catalog; search matches an id, a name fragment and an abbreviation case-insensitively; both filters combine; a search that matches nothing returns nothing",
+    "AC-3 an assignment change is visible on the schematic immediately": "pass — OgSymbolGallery.Assign changes the equipment's symbol id and records the previous one; after WellboreView.CommitDocumentChanges the rendered frame differs from the frame before the change (the layout is cached against the view document's revision, so an in-place edit must be committed — a real finding)",
+    "AC-4 undo restores the previous symbol": "pass — the history entry's undo action restores the previous id, and after committing and re-rendering the frame is byte-identical to the original",
+    "AC-5 an invalid custom catalog is rejected without losing the active one": "pass — a parse failure propagates to the page, which reports it and keeps the active catalog (the same instance is still in place); a catalog that parses but holds no symbols is refused with catalog-empty and the active catalog is untouched",
+    "AC-6 the default catalog is restored by an explicit action": "pass — OgSymbolCatalogState.RestoreDefault sets SymbolCatalog.Default and the source back to default; after a custom catalog of one symbol the restore returns more than 100"
+  },
+  "limits": [
+    "The assignment UI targets a component chosen from a list; select-on-the-drawing, move, resize and delete are not implemented.",
+    "There is no file picker: LoadCustom takes a path and the page exposes the method; the toolbar button for importing a file is still to come.",
+    "Assigning a symbol that the catalog does not contain is allowed by the model (the tools draw their generic symbol); the page picks from the catalog so this cannot happen through the UI.",
+    "The preview is rendered on demand for the selected row at 96x96; there is no size control.",
+    "The demo's symbol set is the tools' own 235; no customer catalog was exercised beyond a one-symbol round trip."
+  ]
+}

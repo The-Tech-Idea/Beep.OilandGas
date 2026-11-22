@@ -9,6 +9,7 @@ public partial class AREA_CONTAIN: Entity,IPPDMEntity
 {
 
 private  System.String CONTAINING_AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTAINING_AREA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTAINING_AREA_IDValue;
           set { SetProperty(ref  CONTAINING_AREA_IDValue, value); }
         } 
 private  System.String CONTAINING_AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTAINING_AREA_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CONTAINING_AREA_TYPEValue;
           set { SetProperty(ref  CONTAINING_AREA_TYPEValue, value); }
         } 
 private  System.String CONTAINED_AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTAINED_AREA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String CONTAINED_AREA_IDValue;
           set { SetProperty(ref  CONTAINED_AREA_IDValue, value); }
         } 
 private  System.String CONTAINED_AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTAINED_AREA_TYPE
         {  
             get  

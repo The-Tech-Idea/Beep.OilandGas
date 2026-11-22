@@ -9,6 +9,7 @@ public partial class R_OFFSHORE_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OFFSHORE_COMPLETION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OFFSHORE_COMPLETION_TYPE
         {  
             get  

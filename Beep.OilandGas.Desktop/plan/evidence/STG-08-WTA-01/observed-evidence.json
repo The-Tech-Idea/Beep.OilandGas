@@ -1,0 +1,70 @@
+{
+  "id": "STG-08/WTA-01",
+  "title": "Well test analysis",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a synthetic build-up generated from the published Horner relation for 50 md is analysed back to 50.0000 md and its extrapolated pressure to 3000.00 psia; the analysis type and method are tokens from WellTestAnalysisWellKnown; a missing or unusable radial-flow window is refused with the window named; the sibling tools' HornerAnalysis agrees on slope (73.17 psi/cycle) and permeability; a derivative that does not converge is printed as unusable and identifies no model; and a saved result records the window, the method and the cross-check.",
+  "dataModel": {
+    "decision": "WELL_TEST_ANALYSIS_RESULT already existed and LifeCycle's PPDMCalculationService referenced it, but no module setup registered the well-test tables, so provisioning never created them. A new WellTestAnalysisModule registers WELL_TEST_DATA, PRESSURE_TIME_POINT and WELL_TEST_ANALYSIS_RESULT; the result was extended additively with the window, the derivative verdict, the cross-check and the actor, because AC-6 needs the window and the method on the row.",
+    "addedColumns": "WINDOW_START_HOURS, WINDOW_END_HOURS, POINTS_IN_WINDOW, WINDOW_TEXT, CONVERGED_IND, DERIVATIVE_USABLE_IND, DERIVATIVE_REASON, DERIVATIVE_POINTS, CROSS_CHECK_SOURCE, CROSS_CHECK_SLOPE, ANALYSIS_SLOPE, CROSS_CHECK_PERMEABILITY, CROSS_CHECK_AGREES, CROSS_CHECK_TEXT, DATA_UNITS_TEXT, ACTOR, RECORDED_AT",
+    "registration": "WellTestAnalysisModule (order 80, no seed: R_WELL_TEST_TYPE is PPDM data-management seed data). --smoke now reports 33 modules and 409 entity types (up from 32 and 406)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/WellTest/OgWellTest.cs (WellTestAnalyses, OgWellTestReading, OgWellTestInputs, OgWellTestCrossCheck, OgWellTestResult, OgWellTestPending, OgWellTestWorkspace, WellTestRules, IOgWellTest, OgWellTestService with AnalyseAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "window": "The radial-flow window is the engineer's: the readings inside it are sliced and handed to the engine, so a result always says which part of the test it came from. A missing window, a window with no reading, a window with fewer than three readings and a backwards window are each refused with their own code and sentence (AC-3).",
+    "engineCalls": "BuildUpAnalysis.AnalyzeHorner for BUILDUP+HORNER, BuildUpAnalysis.AnalyzeMDH for BUILDUP+MDH, DrawdownAnalysis.AnalyzeDrawdown for DRAWDOWN+MDH, and DerivativeAnalysis.CalculateDerivative plus IdentifyModel for the diagnostic.",
+    "refusals": "WellTestDataValidator.FindProblem names the property at fault before anything runs; the engine's own WellTestException (a window with no straight line) is reported through the failure reporter and answered with a built sentence carrying the reference, never the exception's text.",
+    "crossCheck": "The tech tools' HornerAnalysis.Analyze is fitted to the same window readings and compared with this analysis's slope - derived from its permeability by the published relation - at 2% (AC-4, SG-08-2). It is applied only to the Horner method and says so otherwise; a cross-check that cannot run is unavailable with the reason, never silent.",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellTestPageView.cs (route 'welltest': the test, unit, window/rate, rock, fluid bars and the readings editor, then the result, the window and model, the derivative line, the cross-check and the saved analyses)",
+    "wiring": "OgBootstrapper (IOgWellTest), OgApplication.WellTests, catalog 'welltest' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellTestTests.cs (8, no database) + WellTestGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1029, "passed": 1029, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 48, "passed": 48, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 72, "views-constructed": true, "modulesetup-summary": "33 module(s) - 409 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL_TEST_ANALYSIS_RESULT, seeded in WellTestGatewayTests",
+    "ac1_reference": "nine readings generated from p = 3000 - 73.17 log10((200 + dt)/dt) - the Horner line for 50 md at q = 500 STB/d, B = 1.2, mu = 1.5 cP, h = 40 ft - are analysed back to k = 50.0000 md (exactly) and p* = 3000.00 psia; the reported slope is 73.17 psi/cycle, which is the published m = 162.6 q B mu / (k h) for that permeability",
+    "ac2_tokens": "the types are WellTestAnalysisWellKnown.AnalysisClassification's BUILDUP and DRAWDOWN and the methods are AnalysisMethod's HORNER and MDH; an unknown type is refused naming the tokens, and a DRAWDOWN with HORNER is refused saying DRAWDOWN supports MDH",
+    "ac3_window": "a null window is refused naming 'radial-flow window start'; a window of 500-600 h with no reading is refused with 'select the radial-flow window'; a window holding two readings is refused naming the minimum of three; a backwards window is refused for its bounds",
+    "ac4_cross_check": "the tools' HornerAnalysis returns slope 73.17 psi/cycle and k 50 md against this analysis's 73.17 and 50, and the stored row carries CROSS_CHECK_AGREES='Y'; for MDH the cross-check is recorded as not applied with the reason",
+    "ac5_plots": "no chart host on these screens, so the straight line, the model and the derivative verdict are printed; a source guard asserts the view references none of the engine's calculators and the service references all four",
+    "ac6_saved": "the stored row asserts ANALYSIS_TYPE='BUILDUP', ANALYSIS_METHOD='HORNER', WINDOW_START_HOURS=1, WINDOW_END_HOURS=60, POINTS_IN_WINDOW=9, CONVERGED_IND='Y', PERMEABILITY between 49.5 and 50.5, both slopes above zero, CROSS_CHECK_AGREES='Y', DERIVATIVE_USABLE_IND='Y', the units text and the actor; a drawdown stores ANALYSIS_TYPE='DRAWDOWN' with ANALYSIS_METHOD='MDH' and a null cross-check verdict",
+    "lost_acknowledgement": "dropping the table makes the save fail with the result retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping WELL_TEST_ANALYSIS_RESULT makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A reference build-up yields permeability within 1% of the published value": "pass - k = 50.0000 md against the 50 md the readings were generated from, and p* = 3000.00 psia against the 3000 psia the line was built to. This is SG-08-1.",
+    "AC-2 Analysis type and method are recorded tokens": "pass - both lists are the WellTestAnalysisWellKnown constants, the result stores the tokens, and an unsupported pairing is refused naming what the type does support.",
+    "AC-3 A missing radial-flow window is refused, not guessed": "pass - four separate refusals (missing, no reading inside, too few readings, backwards bounds) each with its own code and a sentence naming the window.",
+    "AC-4 The tools Horner agrees within tolerance or the difference is shown": "pass - the independent fitter's slope and permeability are stored beside this analysis's, the verdict is the 2% predicate applied to them, and the sentence carries both values either way. This is SG-08-2.",
+    "AC-5 Plots are drawn by WellTestRenderer": "pass with a stated substitution - the renderer needs a chart host these screens do not have, so the straight line, the identified model and the derivative verdict are printed. A source guard keeps the engine's calculators out of the view and asserts the service calls them.",
+    "AC-6 Every saved result records the flow window and the method": "pass - the window start, its end, its reading count, its rendered text and the method are columns, written on save and read back."
+  },
+  "engineFindings": {
+    "stubs": {
+      "where": "WellTestAnalysis/Services/WellTestAnalysisService.Unimplemented.cs",
+      "finding": "The feature's open question is answered by that file: type-curve matching, multi-rate analysis, deconvolution, boundary detection, reporting, plot generation and result persistence are all stubs there, while BuildUpAnalysis, DrawdownAnalysis, DerivativeAnalysis and GasWellAnalysis are real.",
+      "handling": "The screen offers only the real analyses (BUILDUP with Horner or MDH, DRAWDOWN with MDH) and lists the rest as unavailable in the workspace, so an engineer is never offered a stub."
+    },
+    "gasBuildUp": {
+      "finding": "GasWellAnalysis.AnalyzeGasBuildUp exists and works, but WellTestAnalysisWellKnown has no gas analysis-type token - only BUILDUP and DRAWDOWN - so offering it would mean inventing a token or mislabelling it as an oil build-up.",
+      "handling": "Not surfaced; recorded in the disabled list with that reason rather than hidden."
+    },
+    "engineWindow": {
+      "finding": "BuildUpAnalysis implements its own middle-time-region search (FindMiddleTimeRegion) and fits at most ten points from the end of the window it is given. It does not report which points it used.",
+      "handling": "POINTS_IN_WINDOW records the size of the window the engineer selected, not the number of points the engine's internal fit used, because the engine does not expose that. The record therefore says which part of the test was handed to the analysis; it does not claim more."
+    }
+  },
+  "limits": [
+    "No plots: WellTestRenderer and WellTestInteractionHandler need the chart host these calculation screens do not have, so the straight line, the identified model and the derivative verdict are printed rather than drawn.",
+    "The derivative is a diagnostic verdict and a count, not a series: the engine's derivative points are not stored or listed, only whether they are usable and how many were produced.",
+    "Gas build-up is not offered (no analysis-type token), and type-curve matching, multi-rate, deconvolution and boundary detection are the module's own stubs - all listed as unavailable in the workspace.",
+    "The analysis is for oil (the engine's Horner relation takes oil FVF and viscosity); a gas test uses the gas build-up path, which is not surfaced.",
+    "The result does not record the number of points the engine's internal fit used, only the window that was handed to it - see the engine finding above.",
+    "The feature's permissions (welltest.read/.write) are not enforced per command: the app gates pages.",
+    "WTA-02 (the well test register and its link) and WTA-03 (pipeline) are not started, so this result is not yet linked to a register record."
+  ]
+}

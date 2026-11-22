@@ -9,6 +9,7 @@ public partial class R_ANL_WATER_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String WATER_PROPERTYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_PROPERTY
         {  
             get  

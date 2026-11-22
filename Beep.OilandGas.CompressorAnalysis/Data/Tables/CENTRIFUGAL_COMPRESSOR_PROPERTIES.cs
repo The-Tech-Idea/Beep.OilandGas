@@ -8,6 +8,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Data
 {
     public partial class CENTRIFUGAL_COMPRESSOR_PROPERTIES : ModelEntityBase {
         private String CENTRIFUGAL_COMPRESSOR_PROPERTIES_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public String CENTRIFUGAL_COMPRESSOR_PROPERTIES_ID
         {
             get { return this.CENTRIFUGAL_COMPRESSOR_PROPERTIES_IDValue; }

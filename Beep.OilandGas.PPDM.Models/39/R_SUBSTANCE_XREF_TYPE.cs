@@ -9,6 +9,7 @@ public partial class R_SUBSTANCE_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_XREF_TYPE
         {  
             get  

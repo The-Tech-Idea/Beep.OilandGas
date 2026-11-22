@@ -9,6 +9,7 @@ public partial class RA_AIR_GAS_CODE: Entity,IPPDMEntity
 {
 
 private  System.String AIR_GAS_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AIR_GAS_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AIR_GAS_CODEValue;
           set { SetProperty(ref  AIR_GAS_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

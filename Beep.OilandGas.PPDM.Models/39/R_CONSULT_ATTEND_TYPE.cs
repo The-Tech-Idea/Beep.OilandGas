@@ -9,6 +9,7 @@ public partial class R_CONSULT_ATTEND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ATTEND_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ATTEND_TYPE
         {  
             get  

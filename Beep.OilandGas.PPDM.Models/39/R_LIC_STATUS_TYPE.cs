@@ -9,6 +9,7 @@ public partial class R_LIC_STATUS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LICENSE_STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_STATUS_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_SOURCE_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal ORIGIN_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ORIGIN_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal ORIGIN_OBS_NOValue;
           set { SetProperty(ref  ORIGIN_OBS_NOValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

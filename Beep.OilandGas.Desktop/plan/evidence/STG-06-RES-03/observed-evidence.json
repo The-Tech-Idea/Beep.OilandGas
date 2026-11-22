@@ -1,0 +1,68 @@
+{
+  "id": "STG-06/RES-03",
+  "title": "Flash calculations and the phase envelope",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the reference flash converges to vapour fraction 0.9414386 against 0.94143858 worked out by hand from Wilson's K-values, with the phase balance closing on every component; a run the solver did not converge is failed with its iteration count and shows no composition; the mole fractions must sum to one within the engine's own tolerance; the equation of state is chosen by the owner's mapping; the envelope exposes only the points that were computed and states what it left out; and the same inputs give the same output.",
+  "dataModel": {
+    "decision": "The owner's FLASH_CALCULATION_RESULT already is the flash run record - pressure, temperature, vapour and liquid fraction, the convergence flag and error, the feed, vapour, liquid and K payloads as JSON, the status, and the date. What it lacked for this feature was the model, the iteration count and the stability answer, so three nullable columns were added rather than a parallel table. Entity count stays at 387, which is the check that nothing new was registered. The owner's reference set also lacked the three outcome codes the feature names, so a FLASH_STATUS_CODE set and its three rows were seeded into FlashReferenceCodeSeed.",
+    "addedColumns": "EOS_CODE (the FLASH_EOS_MODEL code, not a free-text label), ITERATIONS (already present on the entity and reused), STABILITY_TEXT (the stability answer of a cubic-EOS run)",
+    "reusedColumns": "PRESSURE, TEMPERATURE, VAPOR_FRACTION, LIQUID_FRACTION, CONVERGED, CONVERGENCE_ERROR, FEED_COMPOSITION_JSON, VAPOR_COMPOSITION_JSON, LIQUID_COMPOSITION_JSON, K_VALUES_JSON, CALCULATION_DATE, STATUS, ERROR_MESSAGE, ROW_CREATED_BY (the actor)",
+    "engine": "FlashCalculator.PerformIsothermalFlash for the IDEAL_K path (Wilson K plus Rachford-Rice) and MultiComponentFlash.PerformEnhancedFlash for PR and SRK; PhaseEnvelope.CalculateEnvelope for the envelope. No flash or envelope arithmetic is re-implemented here - the feature's open question asked for exactly this wrapper, and no view sees the concrete engine types."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reservoir/OgFlash.cs (FlashStatusCodes, OgFlashComponent, OgFlashComponentResult, OgFlashInputs, OgFlashRun, OgEnvelopePoint, OgFlashEnvelope, OgFlashWorkspace, FlashPhaseStates, FlashRules, FlashFeedText, IOgFlash, OgFlashService with RunAsync/EnvelopeAsync/SaveAsync/LoadAsync and the FromWilson/FromCubic mappings)",
+    "rules": "FlashRules states the status codes, the feed-sum tolerance (the engine's own ConvergenceTolerance, so no second number is invented), the whole validation including the SRK_MODIFIED refusal, the phase naming and the EOS mapping call once. FlashFeedText owns the feed editor's format so what the operator's text means is testable and the page carries no parsing.",
+    "page": "src/Beep.OilandGas.Desktop/Views/FlashPageView.cs (route 'flash': the feed editor prefilled with the reference mixture, pressure and temperature, the EOS picker read from the workspace, Run and Save, the result summary with the phase name and iteration count, the failure line, the stability sentence, the composition grid, the envelope bar with its computed points and its limit, and the history grid)",
+    "wiring": "OgBootstrapper (IOgFlash), OgApplication.Flash, catalog 'flash' (OgModuleKeys.Reservoir), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/FlashTests.cs (10, no database) + FlashGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 890, "passed": 890, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 35, "passed": 35, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 59, "views-constructed": true, "modulesetup-summary": "28 module(s) - 387 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FLASH_CALCULATION_RESULT and R_FLASH_CALCULATION_REFERENCE_CODE, seeded in FlashGatewayTests",
+    "eos_from_reference": "with FLASH_EOS_MODEL rows present the workspace offers exactly IDEAL_K, PR and SRK and reports EosFromReference true; with the table empty it falls back to the mapping's four codes and says 'no FLASH_EOS_MODEL row' rather than pretending the table supplied them",
+    "ac1_reference": "the 4-component feed at 500 psia and 600 R converges in a handful of iterations to vapour fraction 0.9414386; the stored row carries STATUS SUCCESS, CONVERGED Y and ITERATIONS > 0",
+    "saved_and_reloaded": "the saved run keeps its feed (C1 0.50 at Tc 343 R), its model (IDEAL_K), its iteration count and its actor; the history reloads the four components with their K-values to 1e-6, and saving an already-saved run does not duplicate the row",
+    "cubic_path": "a PR run stores EOS_CODE PR; at these conditions the stability test answers single-phase, which is recorded as such (STABILITY_TEXT) instead of being presented as a phase split",
+    "history_unavailable": "dropping the result table makes LoadAsync return a workspace with HistoryFailed true, and a new run still succeeds"
+  },
+  "gates": {
+    "AC-1 A reference flash converges and matches the expected vapour fraction": "pass - with C1 0.50, C2 0.20, C3 0.15 and nC4 0.15 at 500 psia and 600 R, Wilson's K-values are 13.646078, 2.319017, 0.625939 and 0.186554 and the hand solution of sum z(K-1)/(1+beta(K-1)) = 0 is beta = 0.94143858. The engine returns 0.9414386 within 1e-5, its K-values match the hand values to 4 decimal places, each phase sums to one, and every component satisfies z = (1-beta)x + beta y and K = y/x.",
+    "AC-2 A non-converged run is shown as failed with the iteration count": "pass - the mapping from the engine's convergence flag is the rule under test: FromWilson with a non-converged engine result yields StatusCode CONVERGENCE_FAILED, IsFailed true, the iteration count preserved (50), no phase composition, 'not computed' for the fractions and a failure sentence naming the iteration count. The engine's own solver proved robust on every valid feed tried, so this is proven at the boundary where the honesty actually lives; that is recorded rather than claimed as a natural non-converging case.",
+    "AC-3 Mole fractions must sum to 1 within the stated tolerance": "pass - the tolerance is FlashConstants.ConvergenceTolerance (0.0001), reused from the engine rather than invented; a feed summing to 0.9 is refused with oil-property-style specificity (the sum is named), and a feed within tolerance is accepted.",
+    "AC-4 EOS names come from the mapping constants, not literals in the view": "pass - the codes come from FlashEquationOfStateMapping.ToReferenceCode (PR, SRK, SRK_MODIFIED, IDEAL_K and its documented fallback) and the offered list comes from the reference table when it has rows; the page reads the workspace and carries no code.",
+    "AC-5 The envelope never draws beyond computed points": "pass - the service filters the engine's points to those the solver converged with a positive pressure, counts the rest, and the workspace states that they are not shown; the test asserts every exposed point is a computed one and that a degenerate range is refused rather than drawn.",
+    "AC-6 Same inputs give identical output": "pass - two runs and two envelopes over the same inputs produce identical text and identical vapour fractions."
+  },
+  "engineDefects": {
+    "fixed": {
+      "where": "Beep.OilandGas.FlashCalculations/Calculations/AdvancedEOS.cs - GetBinaryInteractionParameters",
+      "finding": "The binary interaction table was built with new Dictionary<(string, string), double>(StringComparer.OrdinalIgnoreCase.GetHashCode()). The int is the dictionary's capacity, so construction threw ArgumentOutOfRangeException ('capacity') whenever that random per-process string hash came out negative or too large - which means the cubic EOS path (PR/SRK) failed intermittently, differently in each process, and the lookup was never case-insensitive either. It was found because the same feed succeeded in a probe and failed in the gateway test in a different process.",
+      "fix": "The table now takes a NamePairComparer that compares both component names with StringComparer.OrdinalIgnoreCase, which fixes both the crash and the case-insensitivity. The PR path now runs deterministically.",
+      "verification": "After the fix the PR run completes, stores EOS_CODE PR and reports its stability answer; the gateway test asserts the saved row."
+    },
+    "seed_gap": {
+      "where": "Beep.OilandGas.FlashCalculations/Data/Constants/FlashReferenceCodeSeed.cs",
+      "finding": "The feature document says the run's StatusCode comes from R_FLASH_CALCULATION_REFERENCE_CODE as SUCCESS, CONVERGENCE_FAILED and FAILED, but the seed contained no such rows - only EOS models, calculation categories, solver presets, flash specifications, phase states and property kinds.",
+      "fix": "A FLASH_STATUS_CODE reference set was added to FlashReferenceSets and the three rows were seeded, so the contract the feature states is true of the data. The desktop reads the codes from FlashStatusCodes, which mirrors those rows."
+    },
+    "capability_gap": {
+      "where": "Beep.OilandGas.FlashCalculations/Calculations/AdvancedEOS.cs - AdvancedEOS.EosType",
+      "finding": "The reference set offers SRK_MODIFIED as an EOS model, but the engine's cubic path has only PengRobinson and SoaveRedlichKwong - there is no modified alpha function.",
+      "handling": "Selecting it is refused with flash-eos-not-implemented naming AdvancedEOS.EosType, rather than silently running plain SRK under a modified label."
+    }
+  },
+  "limits": [
+    "AC-2 is proven on the mapping from the engine's convergence flag to the result the screen shows, because the engine's Rachford-Rice solver converged on every valid feed tried and no natural non-converging case was found. The screen still reports a non-converged engine result honestly if one occurs.",
+    "The phase envelope is presented as the list of computed points, not a plot: there is still no chart host for these calculation screens, so AC-5 is met by exposing only computed points and counting the ones that were not.",
+    "The separator tab from the feature's screens list is not built: FlashCalculationService.PerformMultiStageFlash exists, but it takes a FLASH_CONDITIONS per stage through the concrete service and would need its own wiring and record. The isothermal flash and the envelope are what this feature's acceptance criteria cover.",
+    "The composition import from RES-01/RES-02 is not wired: the feed comes from the editor's text. Gas and oil compositions are stored as different entities (GAS_COMPOSITION / OIL_COMPOSITION) and mapping either into a FLASH_COMPONENT feed would be its own contract.",
+    "Convergence settings are the engine's constants (FlashConstants.MaximumIterations and ConvergenceTolerance) and are not editable; the feature allows advanced settings only behind a separate permission which this app does not model.",
+    "The cubic path's own stability answer for the reference mixture is single-phase, so the two-phase example in the tests is the Wilson/Rachford-Rice path; the PR path is verified as running, storing and reporting honestly rather than as reproducing a split.",
+    "The feature's permissions (properties.flash.read/.write/.advanced) are not enforced per command: the app gates pages."
+  ]
+}

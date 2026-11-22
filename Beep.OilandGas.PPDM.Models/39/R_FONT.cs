@@ -9,6 +9,7 @@ public partial class R_FONT: Entity,IPPDMEntity
 {
 
 private  System.String FONTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FONT
         {  
             get  

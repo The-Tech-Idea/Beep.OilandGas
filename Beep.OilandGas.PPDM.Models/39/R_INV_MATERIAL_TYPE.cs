@@ -9,6 +9,7 @@ public partial class R_INV_MATERIAL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INVENTORY_MATERIAL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INVENTORY_MATERIAL_TYPE
         {  
             get  

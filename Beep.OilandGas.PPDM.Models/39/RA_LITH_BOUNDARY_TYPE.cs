@@ -9,6 +9,7 @@ public partial class RA_LITH_BOUNDARY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BOUNDARY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BOUNDARY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BOUNDARY_TYPEValue;
           set { SetProperty(ref  BOUNDARY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

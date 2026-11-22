@@ -1,0 +1,98 @@
+{
+  "id": "STG-18/REL-01",
+  "title": "Packaging and installer",
+  "date": "2026-11-09",
+  "status": "gate met for what a build can prove, with AC-1 recorded as the owner's clean-VM step: a per-user install and uninstall carry the contract; the health page checks every required runtime asset through the thing that needs it and prints what stops working without it; no path the application resolves is beside the executable, in the install folder, in ProgramData or in the roaming profile during use; removing the data root needs the exact sentence that names the failure store and the logs; and an upgrade plan names what it keeps and writes nothing.",
+  "dataModel": {
+    "read": "The installed assemblies (embedded resources and static catalogs) through the engine's own APIs, the install folder, and the per-user data root.",
+    "written": "<data root>/Diagnostics/installation.json (the version this installation recorded) and <data root>/Diagnostics/installation-report.json (the verify command's report). Nothing is written beside the executable, in the install folder, in ProgramData or - during use - in the roaming profile.",
+    "noTable": "REL-01 introduces no table. An installation is files and folders.",
+    "ownerChange": "None. REL-01 has no owner project; it reads the engine's catalogs and resources and writes only under the data root."
+  },
+  "rules": {
+    "assets": "AC-3: every asset is asked of the thing that needs it rather than of a list of file names - CountryPresets.Codes, SymbolCatalog.Default.Symbols, MappingProfile.BuiltInNames, LithologyLibrary.Default.Definitions, LithologyStandards, the embedded TheTechIdea.OilGas.Wellbore.Data.WMM2025.COF resource, WellboreEnvironment.Template() and JsonSchema(), the engine's own validation of its defaults, and OgBundledDrivers.AssemblyAnchors. Only the executable and the native Skia library are checked as files, because only they really ship as files.",
+    "consequence": "Every asset carries the sentence a person needs when it is missing - 'every chart, well view, map and PDF export fails to draw' for the native renderer, 'survey azimuths are not corrected for magnetic declination, so well positions drift' for the geomagnetic model - because a checklist without consequences is a list of names.",
+    "optional": "The permits PDF renderer (wkhtmltopdf) is not part of this build. It is listed as an optional asset with the consequence 'the permits PDF export is not available in this build', so its absence is reported and is not a fault. Calling it required would have marked every installation unhealthy.",
+    "location": "AC-2: the data root and the install folder are checked as an asset of their own - a data root inside the install folder (or the reverse) fails with the reason, because an uninstall would then remove customer data with the program.",
+    "uninstall": "AC-4: the page and uninstall.ps1 both refuse unless the exact sentence 'REMOVE <data root>' was typed; the refusal names the failure store (Diagnostics/failures.db), the logs (Logs) and the path. The warning printed beside the inventory says the install folder is not touched and there is no undo.",
+    "upgrade": "AC-5: the version record lives under the data root (Diagnostics/installation.json). The plan reports fresh, repair or upgrade by comparing it with the running version, lists the parts of the data root that exist and must survive, and writes nothing - asserted by comparing setup.json's bytes and timestamp before and after.",
+    "perUser": "AC-6: app.manifest requests asInvoker, both folders are under LOCALAPPDATA, and the scripts take no path from ProgramData or from the machine-wide data folder."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Release/OgInstallation.cs (OgAssetKind, OgAssetRequirement, OgInstallAsset, OgInstallReport, OgDataRootInventory, OgPurgeResult, OgUpgradePlan, OgInstallRecord, OgInstallProbe, OgInstallRules, IOgInstallation, OgInstallationService with CheckAsync/InventoryAsync/PurgeDataRootAsync/PlanUpgradeAsync/RecordAsync/WriteReportAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/InstallationPageView.cs (route 'installation', Administration module: Verify installation and Write the report, the asset grid with the consequence column, the two folders, the upgrade plan and record, the data-root inventory with the exact sentence to type, and the remove command)",
+    "installer": "installer/install.ps1 (per-user install from a published payload, refuses a payload without the native renderer, names an existing installation as an upgrade, records the version, writes the uninstaller) and installer/uninstall.ps1 (program files go; the data root stays unless -RemoveDataRoot and the exact sentence are both given; refuses while the application runs), with installer/README.md mapping each criterion to its evidence",
+    "wiring": "OgBootstrapper (IOgInstallation with a probe naming AppContext.BaseDirectory, OgPaths.DataRoot, OgPaths.ProductVersion and Environment.ProcessPath), OgApplication.Installation, catalog 'installation' (OgModuleKeys.Administration, AdministrationRoles), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/InstallationTests.cs (9, no data root of the customer's) + InstallationGatewayTests.cs (1 opt-in over a data root of its own)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1502, "passed": 1502, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 101, "passed": 101, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 124, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0, "skin-contrast-failures": 66 }
+  ],
+  "integration": {
+    "assets": "the check reports every embedded asset present, with the engine's own sizes behind them: the country presets, the schematic symbols (the smoke run shows 235), the mapping profiles, the lithology definitions and both standards, the embedded WMM2025 coefficient file, the environment template and schema, and the engine's defaults passing its own validation",
+    "files": "the executable and libSkiaSharp.dll are found in the build output; the permits renderer is reported as 'not installed' and is not counted as missing",
+    "guardThatCanFail": "the same check pointed at an empty folder reports the executable and the native renderer MISSING, the report is unhealthy, and the missing text names each asset with its consequence - so the check is not a rubber stamp",
+    "location": "a data root inside the install folder makes the location asset fail with 'writes would land in the install folder, where an uninstall removes them'; the report's LocationSound is false and the location text says so in capitals",
+    "uninstall": "an inventory of a used data root reports the file count, the size, the failure store and its files, the log folder and its files; six different wrong confirmations (empty, 'yes', 'REMOVE', another path, the bare path) are all refused with the token in the sentence, and nothing is deleted; the exact sentence removes the root, reports the file count and leaves a sibling folder untouched",
+    "upgrade": "a fresh data root reports 'fresh install'; recording the version needs an actor and writes Diagnostics/installation.json; the same version reads as 'a repair, not an upgrade'; a newer version reads as 'upgrade from 1.0.0 to 1.1.0'; setup.json's bytes and timestamp are unchanged throughout; a corrupt record is reported and treated as fresh",
+    "report": "Verify installation writes Diagnostics/installation-report.json under the data root - never beside the executable - and its JSON carries the version, the two folders, the healthy flag and every asset with its requirement, presence, count, source and consequence",
+    "paths": "every path the application resolves (failure store, logs, environment, local database, credentials, exports, setup, skin, smoke result, benchmark and soak reports, module-setup state, outbox, licence and its settings) is asserted under OgPaths.DataRoot and outside the install folder, and the two folders are asserted separate"
+  },
+  "gates": {
+    "AC-1 A clean Windows VM installs, launches and completes the setup wizard": "NOT RUN HERE - this is the owner's step and the feature says a developer machine is not evidence. What the build contributes: install.ps1 publishes-to-install in one command, refuses an incomplete payload, and the application's setup wizard is the existing first-run gate (smoke: setup-gate-first-run RunSetup, administrator-created, setup-round-trip, ready).",
+    "AC-2 No file is written beside the executable, in the install folder, under ProgramData or in the roaming profile during use": "pass - every path OgPaths resolves is asserted under the data root and outside the install folder; the health check refuses a data root inside the install folder; the scripts take no path from ProgramData; and the one write outside the per-user folders is the install-time Start-menu shortcut, which is stated and is removed by the uninstall.",
+    "AC-3 Every required asset is present and reported": "pass - fourteen assets checked through the engine, each with its source, its count and its consequence; a deliberately empty install folder proves the check can fail.",
+    "AC-4 Uninstall removes program files and leaves the data root by default; removing it requires an explicit choice naming the failure store and the logs": "pass - refused without the exact sentence, with the store and the logs named; removed with it; the sibling folder untouched; the uninstall script prints the same names and keeps the root by default.",
+    "AC-5 An upgrade preserves the data root and the setup state": "pass - fresh, repair and upgrade are distinguished from the record under the data root; the plan writes nothing and setup.json is byte-identical afterwards.",
+    "AC-6 A non-admin user can install and run": "pass for the build's part - app.manifest requests asInvoker, both folders are the user's own, and no script asks for elevation. Launching it as a standard user on a clean machine is part of AC-1's owner step."
+  },
+  "engineFindings": {
+    "halfTheChecklistIsEmbeddedNotFiled": {
+      "where": "TheTechIdea.OilGas.Wellbore.Data (WMM2025.COF as a manifest resource, CountryPresets, the environment template and schema), WellSchematic (SymbolCatalog), Wellbore.Loaders (MappingProfile), Wellbore (lithology)",
+      "finding": "The plan's checklist calls the WMM2025 coefficient file, the country presets, the symbol catalogs, the mapping profiles and the lithology standards assets to verify as files. In this build they are compiled in or embedded: the coefficient file is a manifest resource the engine streams, and the rest are static catalogs.",
+      "handling": "Each is checked through the API that consumes it, and the page prints which assets are embedded and which are files. A file check would have reported a complete installation as broken."
+    },
+    "theDriversAreCompiledIn": {
+      "where": "src/Beep.OilandGas.Desktop.Data/Drivers/OgBundledDrivers.cs",
+      "finding": "The checklist expects a ConnectionDrivers folder of assemblies. There is none: the driver assemblies are referenced and registered from OgBundledDrivers.AssemblyAnchors.",
+      "handling": "The asset checks that the anchors resolve and their assemblies are loaded, which is the thing that actually has to be true for the local database to open."
+    },
+    "fgdcLoadsAsNullByDesign": {
+      "where": "TheTechIdea.OilGas.Wellbore/Lithology/LithologyStandards.cs",
+      "finding": "LithologyStandards.Load('FGDC') returns null on purpose - FGDC's numbers are part of the embedded library, so there is nothing extra to load - while GOST 21.302-2013 is a separate embedded layer. A first version asked Load() for every built-in name and reported the standards MISSING on a complete installation.",
+      "handling": "The check asks for what is genuinely loadable (the GOST layer) plus the library's own definitions, and a unit test pins both facts. The finding is recorded because the shape invites the mistake."
+    },
+    "thereIsNoWkhtmltopdfInThisBuild": {
+      "where": "the desktop's project references",
+      "finding": "Beep.OilandGas.PermitsAndApplications.Pdf.Wkhtmltopdf is not among this solution's projects and no renderer binary ships, so the permits PDF export cannot work.",
+      "handling": "Listed as an optional asset with that consequence, reported as 'not installed' rather than MISSING. Marking it required would have made every installation unhealthy for a feature that is not shipped."
+    },
+    "theShortcutIsOneWriteOutsideTheFolders": {
+      "where": "installer/install.ps1",
+      "finding": "A Start-menu shortcut necessarily lives under %APPDATA%, which is the roaming profile - so a claim that nothing outside the two per-user folders is ever written would be false.",
+      "handling": "It is named as the installer's single write outside them, is removable with -NoShortcut, and the uninstall removes it. The application itself writes nothing there during use, which is what AC-2 asks about."
+    },
+    "theFirstScriptSentenceWasNotTrue": {
+      "finding": "A first version of install.ps1 closed with 'Nothing was written to Program Files, ProgramData or the roaming profile' while creating the shortcut in %APPDATA%. The guard test caught the contradiction by asserting the sentence and the shortcut path together.",
+      "handling": "The closing sentence now says what happened - the program files and the data root are per-user, the only other write is the shortcut - and the README's table names the shortcut as its own row."
+    },
+    "aRuleTypeCannotAnswerTheCatchAnalyzer": {
+      "finding": "Counting the files in a folder needs a try/catch for each unreadable file, and BEEP0003 requires every catch to report - which a static rules type has no reporter to do.",
+      "handling": "The tree walk moved into the service, where a per-file refusal is reported and the consequence ('the size shown is a lower bound') is the one the person choosing to delete the folder needs."
+    }
+  },
+  "limits": [
+    "AC-1 is not claimed: a clean Windows VM is the owner's step, and the feature itself says a developer machine is not evidence. This record states what the build contributes and no more.",
+    "The installer is a per-user PowerShell script rather than an MSI or MSIX package: it is readable, it is the contract the page shows, and a guard test holds it - but it has no repair entry in Add/Remove Programs, no upgrade code and no per-machine option.",
+    "The application is unsigned, so SmartScreen shows an unknown publisher until a code-signing certificate exists; the feature lists this as an open question and it remains open.",
+    "The permits PDF renderer is not shipped, so that asset is reported as not installed; if it is ever bundled, its redistribution terms must be checked first.",
+    "The data-root removal deletes the tree and reports the count: it does not offer to keep individual parts (the failure store alone, the exports alone).",
+    "The upgrade plan reads the record and the folders; it does not migrate anything. An upgrade's actual migration is the module-setup runner's job, and the plan only guarantees that it will not be the thing that loses the data.",
+    "The health check names the version from the assembly's own version, which is what MinVer stamped at build time; a version baked into the installer is recorded separately and the two can differ if a payload is replaced by hand.",
+    "The shortcut location is fixed to the current user's Start menu; there is no per-machine shortcut and no desktop shortcut.",
+    "The page's data-root inventory is measured on demand; a folder being written to by another copy of the application can change between the inventory and the removal."
+  ]
+}

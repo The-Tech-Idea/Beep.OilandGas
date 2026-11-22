@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class JOIB_LINE_ITEM : ModelEntityBase {
         private System.String JOIB_LINE_ITEM_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String JOIB_LINE_ITEM_ID
         {
             get { return this.JOIB_LINE_ITEM_IDValue; }

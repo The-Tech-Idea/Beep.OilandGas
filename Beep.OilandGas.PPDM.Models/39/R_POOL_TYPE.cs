@@ -9,6 +9,7 @@ public partial class R_POOL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String POOL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_TYPE
         {  
             get  

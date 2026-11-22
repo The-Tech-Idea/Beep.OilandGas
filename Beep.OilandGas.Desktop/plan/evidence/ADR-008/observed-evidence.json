@@ -1,0 +1,20 @@
+{
+  "id": "ADR-008",
+  "title": "How the desktop consumes OilandGasTools",
+  "date": "2026-11-05",
+  "status": "accepted",
+  "probe": {
+    "question": "Are the 13 TheTechIdea.OilGas.* packages published or available in a local feed?",
+    "nugetOrg": "404 for all 13 package ids (wellbore, wellbore.data, wellbore.loaders, wellschematic, welllogs, mapping, integrity, drilling, production, training, dataai, configtool, wellbore.setup)",
+    "localCache": "no thetechidea.oilgas* folder in %USERPROFILE%/.nuget/packages",
+    "localFeed": "no OilGas .nupkg under ..\\LocalNugetFiles or OilandGasTools\\artifacts",
+    "siblingCheckout": "present at ..\\..\\..\\OilandGasTools"
+  },
+  "decision": "ProjectReference into the sibling checkout, with the root exposed as the OilGasToolsRoot property (default ..\\..\\..\\OilandGasTools). A missing checkout fails the build with an explicit message.",
+  "consequences": [
+    "The desktop build requires the OilandGasTools checkout; the error message names the property to set.",
+    "The tools' MinVer runs during our build and needs git on PATH. When git is unavailable, build with -p:SkipMinVer=true; versioning of the tools checkout is its own repository's concern.",
+    "SkiaSharp is pinned to 4.154.0 (ADR-001) at the desktop level, overriding the tools' 4.150.1."
+  ],
+  "verifiedBy": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true → 0 warnings / 0 errors, including the WellTools project that references TheTechIdea.OilGas.Wellbore"
+}

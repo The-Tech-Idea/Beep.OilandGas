@@ -9,6 +9,7 @@ public partial class R_TRACE_HEADER_FORMAT: Entity,IPPDMEntity
 {
 
 private  System.String HEADER_FORMATValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HEADER_FORMAT
         {  
             get  

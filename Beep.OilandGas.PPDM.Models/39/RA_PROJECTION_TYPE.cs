@@ -9,6 +9,7 @@ public partial class RA_PROJECTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROJECTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECTION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROJECTION_TYPEValue;
           set { SetProperty(ref  PROJECTION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

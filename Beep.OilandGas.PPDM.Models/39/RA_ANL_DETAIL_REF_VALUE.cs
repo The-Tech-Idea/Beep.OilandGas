@@ -9,6 +9,7 @@ public partial class RA_ANL_DETAIL_REF_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String REFERENCE_VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REFERENCE_VALUE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REFERENCE_VALUE_TYPEValue;
           set { SetProperty(ref  REFERENCE_VALUE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

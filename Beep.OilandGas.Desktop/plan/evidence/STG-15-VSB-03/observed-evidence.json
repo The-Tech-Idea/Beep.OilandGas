@@ -1,0 +1,82 @@
+{
+  "id": "STG-15/VSB-03",
+  "title": "Wellbore composite view",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-7 met: a well read from its own records renders with a depth track and a completion-interval data track; 20 000 samples render inside the measured budget; the cursor readout names the interval at a depth; a marker can be added, undone and redone; mapping warnings are shown without blocking the view; the depth unit follows the environment and switches without losing position; and the plot stays left-to-right in an RTL session.",
+  "blockerResolution": {
+    "recordedBlocker": "VSB-03 AC-1 was recorded as blocked on \"real PPDM data\": the page drew the tools' demo documents and said so.",
+    "whatWasActuallyMissing": "Not sample data from the user, but the product's read path: nothing in the desktop read a well from the database into a document. The database side was available all along - WELL, WELLBORE and WELL_COMPLETION are declared by the owner, and WELL_COMPLETION carries real TOP_DEPTH/BASE_DEPTH intervals per UWI.",
+    "decision": "AC-1 is met from the database: the well's identity and total depth come from WELL/WELLBORE, and its recorded completion intervals are the depth-indexed data that becomes an interval track. No demo curve is presented as real data."
+  },
+  "dataModel": {
+    "read": "WELL (UWI, WELL_NAME, BASE_DEPTH), WELLBORE (UWI, WELLBORE_ID, TOTAL_DEPTH) and WELL_COMPLETION (UWI, TOP_DEPTH, BASE_DEPTH, TOP_DEPTH_OUOM, COMPLETION_TYPE) through the same unit of work every screen uses. Nothing was created and nothing was written.",
+    "document": "The document is built from the owner's Wellbore package types - WellboreDocument, DepthTrack, IntervalTrack and DepthInterval - so the page draws exactly what the renderer expects and the readout uses the track's own intervals.",
+    "theGapThatRemains": "WELL_LOG, WELL_LOG_CURVE and WELL_LOG_AXIS_COORD record log headers and index coordinates but no measured curve values, and the LAS path is file-based rather than stored. So no curve track can be drawn from this schema, and the view says so in a warning instead of plotting a demo curve."
+  },
+  "rules": {
+    "axis": "The axis runs from zero to the recorded total depth. When no total depth is recorded it ends at the deepest recorded interval, and that is stated as a warning rather than passed off as the well's depth.",
+    "unit": "The unit comes from the recorded UOM (ft/F => feet, otherwise metres); a completion recorded in a different unit is drawn and warned about rather than silently converted.",
+    "intervals": "Inactive completions are not drawn, a zero-thickness interval is refused with a warning, and the interval text is the recorded completion type.",
+    "refusals": "An unknown well, a missing identity, and a well with no depth-indexed data are each refused with their own code; the last one deliberately does not draw a bare axis."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellboreSource.cs (OgWellboreTrack, OgWellboreView with HasDepthAndDataTrack and ReadoutAt, WellboreSourceRules, IOgWellboreSource, OgWellboreSource)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellboreDemoView.cs - a well picker and \"Load well from database\" beside the existing template, marker, annotation and unit controls; a refused read states its reason and leaves the template on screen",
+    "wiring": "OgBootstrapper (IOgWellboreSource), OgApplication.WellboreSource; the Data project now references TheTechIdea.OilGas.Wellbore",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellboreSourceTests.cs (7, no database) + WellboreSourceGatewayTests.cs (1 opt-in, real SQLite over three tables)"
+  },
+  "scaleContext": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellboreSource.cs (OgWellboreTrack, OgWellboreView, WellboreSourceRules, IOgWellboreSource, OgWellboreSource)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellboreDemoView.cs (well picker, \"Load well from database\", the warnings line, and the readout that now answers for database intervals too)",
+    "wiring": "OgBootstrapper (IOgWellboreSource), OgApplication.WellboreSource; the Data project gained the TheTechIdea.OilGas.Wellbore reference",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellboreSourceTests.cs (7, no database) + WellboreSourceGatewayTests.cs (1 opt-in, real SQLite over three tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1310, "passed": 1310, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 81, "passed": 81, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 104, "modulesetup-summary": "33 module(s) - 436 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL, WELLBORE and WELL_COMPLETION. Three wells: one with a 2500 m total depth and three completions (two active, one inactive); one with no total depth and a single 2000-2100 ft completion; one with a total depth and no completion.",
+    "ac1_render": "W-1 draws a depth track and a Completion interval track with two intervals (1000-1010 m PERFORATED, 1500-1520 m OPEN_HOLE) on an axis of 0-2500 m; the inactive 2000 m completion is not drawn",
+    "ac3_readout": "the readout at 1005 m names the Completion track and PERFORATED; at 200 m it says nothing is recorded at that depth",
+    "ac5_warnings": "the view always carries the warning that the recorded log tables hold no measured curve values, and W-2 carries the additional warning that its axis ends at the deepest interval because no total depth is recorded",
+    "axis": "W-2's axis ends at 2100 ft from its single interval",
+    "refusals": "W-3 has no depth-indexed data and is refused with wellbore-source-no-depth-data; W-404 is unknown; a blank identity is refused before any read",
+    "failure": "dropping WELL_COMPLETION fails the read with no view"
+  },
+  "gates": {
+    "AC-1 A real well from the database renders with a depth track and at least one data track": "pass - the document is built from WELL/WELLBORE/WELL_COMPLETION rows and asserts a depth track plus a completion interval track, with the interval values read back.",
+    "AC-2 20 000 samples render without freezing the UI": "pass from VSB-01/VSB-02's recorded performance evidence (decimation 41.7:1 measured in the smoke run, under budget).",
+    "AC-3 Cursor readout reports values for each visible track": "pass - the readout answers with the interval at the depth, from the same intervals the track draws.",
+    "AC-4 A marker can be added, undone and redone": "pass from VSB-02's recorded editing evidence; the page still routes every edit through WellboreView.",
+    "AC-5 Mapping warnings are visible without blocking the view": "pass - the warnings line is printed above the canvas and the view still draws.",
+    "AC-6 The depth unit follows the environment and switches without losing position": "pass from VSB-02; the database path takes its unit from the recorded UOM.",
+    "AC-7 RTL does not mirror the depth plot": "pass from VSB-02's recorded decision (geological plot stays LTR)."
+  },
+  "engineFindings": {
+    "blockerWasAReadPathNotData": {
+      "finding": "The blocker said the feature needed 'real PPDM data'. The database side was available: WELL, WELLBORE and WELL_COMPLETION are declared and carry real depths. What was missing was the desktop's read path - nothing mapped a database well into a WellboreDocument.",
+      "handling": "OgWellboreSource reads the three tables and builds the document with the owner's own DepthTrack and IntervalTrack types; the page offers it beside the template."
+    },
+    "noCurveValueStore": {
+      "where": "Beep.OilandGas.PPDM.Models/39/WELL_LOG.cs, WELL_LOG_CURVE.cs, WELL_LOG_AXIS_COORD.cs",
+      "finding": "The log chain records headers, curve metadata and index coordinates, but no measured value per sample; the LAS path is file-based. So a curve track cannot be drawn from the database, which is why the original decision to draw demos was recorded.",
+      "handling": "The view draws what the schema does hold - completion intervals - and states in a warning that no curve track exists because there is no value store. Inventing a row-per-sample PPDM table was left to the owner rather than guessed here."
+    },
+    "twoNamespacesForTracks": {
+      "finding": "DepthTrack, IntervalTrack and DepthInterval live in the TheTechIdea.OilGas.Wellbore namespace even though their file sits in a Tracks folder, so the folder-based using directive does not compile.",
+      "handling": "The service imports the package namespace only; the file records it so the next reader does not repeat the mistake."
+    }
+  },
+  "limits": [
+    "No curve track: the schema has no measured-value store, so the data track is the completion intervals. A well with no completion has a depth track and no data track and is refused with that reason rather than drawn empty.",
+    "One wellbore per well is read (the first WELLBORE row for the UWI); a sidetrack or a second bore is not offered yet.",
+    "The depth unit is taken from the recorded UOM and not converted between feet and metres; a mismatched interval is drawn as recorded and warned about.",
+    "Completion interval text is the recorded COMPLETION_TYPE only; a description or the stratigraphic unit is not shown on the track.",
+    "The screenshot evidence the feature asks for was not captured: the automated run proves the document, the tracks and the readout, not the pixels.",
+    "Markers and annotations are still held in the document and not persisted, as recorded for VSB-02.",
+    "The axis starts at zero rather than at a recorded top depth, because the owner records only a total depth."
+  ]
+}

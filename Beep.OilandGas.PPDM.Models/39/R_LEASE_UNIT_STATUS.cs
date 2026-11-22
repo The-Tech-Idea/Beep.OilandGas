@@ -9,6 +9,7 @@ public partial class R_LEASE_UNIT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String LEASE_UNIT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEASE_UNIT_STATUS
         {  
             get  

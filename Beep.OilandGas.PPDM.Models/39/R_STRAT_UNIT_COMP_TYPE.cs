@@ -9,6 +9,7 @@ public partial class R_STRAT_UNIT_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_UNIT_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_COMPONENT_TYPE
         {  
             get  

@@ -17,6 +17,11 @@ public static class FlashReferenceCodeSeed
         yield return new SeedRow(FlashReferenceSets.EosModel, "SRK_MODIFIED", "Modified SRK (custom alpha)");
         yield return new SeedRow(FlashReferenceSets.EosModel, "IDEAL_K", "Ideal K-value / simplified vapor-liquid split");
 
+        // Run outcome codes: the three the feature document names.
+        yield return new SeedRow(FlashReferenceSets.StatusCode, "SUCCESS", "The flash converged and its result is valid");
+        yield return new SeedRow(FlashReferenceSets.StatusCode, "CONVERGENCE_FAILED", "The solver did not converge; the result is not valid");
+        yield return new SeedRow(FlashReferenceSets.StatusCode, "FAILED", "The run failed before or during the solve");
+
         yield return new SeedRow(FlashReferenceSets.CalculationCategory, "ISOTHERMAL_FLASH", "Isothermal flash (PT specified)");
         yield return new SeedRow(FlashReferenceSets.CalculationCategory, "MULTISTAGE_FLASH", "Multi-stage separator train flash");
         yield return new SeedRow(FlashReferenceSets.CalculationCategory, "PHASE_ENVELOPE", "Phase envelope / quality trace support");

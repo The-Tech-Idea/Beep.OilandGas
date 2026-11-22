@@ -9,6 +9,7 @@ public partial class RM_THESAURUS: Entity,IPPDMEntity
 {
 
 private  System.String THESAURUS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_ID
         {  
             get  

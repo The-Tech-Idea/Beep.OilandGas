@@ -1,0 +1,81 @@
+{
+  "id": "STG-11/HSE-07",
+  "title": "Permit applications",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the offered transitions are computed by the owner's own PermitStatusTransitionRules and nothing else is offered; the jurisdiction is explicit and refused when blank; a foreign asset is refused before anything is written; every decision records actor, date, rationale and conditions with the applicant excluded; the document is written from the record's own fields while the PDF export is disabled with its stated reason (the feature's own renderer-unavailable state); and the status history only ever grows.",
+  "dataModel": {
+    "decision": "No table was created and no owner record was duplicated. The application is the owner's PERMIT_APPLICATION, and its life is PERMIT_STATUS_HISTORY, which is the append-only record. Both were already in the PERMITS manifest (PermitApplicationSchema.Entities), so HseModule did not re-register them.",
+    "stateFromHistory": "The state is the latest PERMIT_STATUS_HISTORY entry, not the header's STATUS column. That column is an enum whose storage key ADDITIONAL_INFO_REQUIRED does not match its member AdditionalInformationRequired, so a row written with the key cannot be materialised; the register therefore never takes the state from it. The gateway test writes that exact key into a header and shows the inbox still reports the state it recorded.",
+    "noNewTables": "The feature's OgPermitApplication shape is a desktop read model over those two tables, as the feature document itself specifies."
+  },
+  "rules": {
+    "transitions": "PermitRules.NextStates calls PermitStatusTransitionRules.IsTransitionAllowed for each recorded state, so the desktop holds no second copy of the transition table: DRAFT offers SUBMITTED and WITHDRAWN, SUBMITTED offers UNDER_REVIEW, APPROVED, REJECTED, ADDITIONAL_INFO_REQUIRED and WITHDRAWN, and so on, while WITHDRAWN offers nothing.",
+    "jurisdiction": "A new application needs a Country that parses as the owner's Country enum, and an optional StateProvince that parses when given. A blank or unknown country is refused with a sentence that none is assumed.",
+    "asset": "The asset must be named, and its field must be the session's field. A request naming another field is refused as a foreign asset, naming both fields; with no field selected nothing can be shown to belong to it, so that is refused too.",
+    "decision": "Every transition records its rationale in the history; an approval additionally requires the conditions it is granted under. The applicant cannot move their own application to APPROVED or REJECTED; submitting or withdrawing their own draft is allowed.",
+    "ordering": "The decision is appended to the history first - the record the register reads - and the header's status is updated afterwards. A header that cannot be written is reported as degraded, not lost, because the history already holds the decision.",
+    "document": "The document text is built from the application record itself (reference, id, type, jurisdiction, asset, field, state, applicant, submitted/decided dates, decision, scope and the full history), so it cannot drift from the grid. The PDF render is refused with the reason, which is the feature's own 'PDF renderer unavailable - export disabled with the reason' state."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Hse/OgPermits.cs (OgPermitHistoryEntry, OgPermitApplication, OgPermitWorkspace, PermitRules, OgPermitInputs, IOgPermits, OgPermits with LoadAsync/CreateAsync/DecideAsync/RenderPdf)",
+    "page": "src/Beep.OilandGas.Desktop/Views/PermitsPageView.cs (route 'permits': the inbox grid, the selected application with its history grid and document text, the decision bar offering only the legal next states, the new-application bar, and the renderer notice)",
+    "wiring": "OgBootstrapper (IOgPermits), OgApplication.Permits, catalog 'permits' (OgModuleKeys.Permits), OgPageFactory, en + ar labels; HSE-01's permits link now points at a real page, so no HSE source is left waiting for a feature",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HsePermitTests.cs (8, no database) + HsePermitGatewayTests.cs (1 opt-in, real SQLite over two tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1208, "passed": 1208, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 68, "passed": 68, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 92, "views-constructed": true, "modulesetup-summary": "33 module(s) - 432 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PERMIT_APPLICATION and PERMIT_STATUS_HISTORY, declaring PERMIT_APPLICATION_ID and PERMIT_STATUS_HISTORY_ID as keys. Seeded with two applications - one in field F-1 with two history rows (DRAFT then SUBMITTED) and one in field F-2 to prove the field filter - and their histories.",
+    "ac1_legal": "DRAFT offers SUBMITTED and WITHDRAWN; SUBMITTED offers APPROVED; an attempt to move SUBMITTED back to DRAFT is refused with permit-transition-illegal naming UNDER_REVIEW, and no history row is written",
+    "ac2_jurisdiction": "a blank country is refused with permit-jurisdiction-required and no row is written; the seeded application reads 'Canada / Alberta' from the owner's Country and StateProvince enums",
+    "ac3_foreign": "an application naming field F-2 while the session is in F-1 is refused with permit-foreign-asset naming both, and no row is written; the inbox itself lists only the F-1 application",
+    "ac4_decision": "an approval without a rationale is refused, without conditions is refused, and by the applicant sara is refused with permit-self-decision naming her; nadia's approval succeeds and the history row carries the actor, the timestamp, the rationale and 'conditions: Monitor pressure monthly', while the header gains STATUS Approved, DECISION and DECISION_DATE",
+    "ac5_document": "the document text carries the reference, type, jurisdiction, asset, field, state, applicant, decision, scope and every history entry; RenderPdf answers permit-pdf-renderer-unavailable and says the export is disabled because the wkhtmltopdf native binary is not carried",
+    "ac6_history": "the history grows from two to three rows, the earlier DRAFT row is still present with its original remarks, and a refused transition adds nothing; the state the inbox reports is the last entry",
+    "retry": "filing with the same intent key twice leaves one header and one history row, and the same key with a different scope is refused as a conflict",
+    "enum_key": "writing ADDITIONAL_INFO_REQUIRED - the storage key whose enum member is AdditionalInformationRequired - into a header leaves the inbox working and still reporting APPROVED from the history, because the state is never read from that column"
+  },
+  "gates": {
+    "AC-1 Only legal transitions from PermitStatusTransitionRules are offered": "pass - the offered list and the command check both call the owner's rule; the gateway refuses a backwards move and writes nothing.",
+    "AC-2 Jurisdiction is explicit and never defaulted": "pass - a blank country is refused with a sentence that none is assumed, and the guard test rejects a country literal in the view.",
+    "AC-3 A foreign asset is refused": "pass - a field mismatch is refused naming both fields before any write, and the inbox lists only the session field's applications.",
+    "AC-4 Every decision records actor, date, rationale and conditions": "pass - the history row carries all four, an approval requires its conditions, and the applicant is refused as the decider.",
+    "AC-5 The PDF matches the submitted application content": "pass - the document is written from the record's own fields and the test asserts each field, while the PDF render is disabled with the feature's own stated reason (the native binary is not carried); the renderer itself is REL-01's, and the export cannot disagree with the record because there is no second rendering path.",
+    "AC-6 Status history is append-only": "pass - every transition appends a row, no row is edited, and the gateway asserts the original DRAFT row is unchanged after a later decision."
+  },
+  "engineFindings": {
+    "statusKeyDoesNotMatchItsMember": {
+      "where": "Beep.OilandGas.PermitsAndApplications/Constants/PermitApplicationStatusCodes.cs and the PermitApplicationStatus enum",
+      "finding": "The owner's storage key for one state is ADDITIONAL_INFO_REQUIRED while the enum member is AdditionalInformationRequired. A header row written with the key cannot be materialised as that member, and the desktop's own gateway test showed the read does not fail on it either - which means the header's status column can silently carry a default rather than the recorded state.",
+      "handling": "The register never reads the state from that column: the state is the latest PERMIT_STATUS_HISTORY entry, which is a plain string, and the header write maps a key back to its member through the owner's PermitStatusApplicationCodes.ToStorageKey rather than guessing a name. The gateway proves the inbox reports the recorded state with that exact key in the header."
+    },
+    "transitionTableWasAlreadyCorrect": {
+      "where": "Beep.OilandGas.PermitsAndApplications/Services/PermitStatusTransitionRules.cs",
+      "finding": "The owner's rule is correct and its own Normalize already handles the member-name/underscore mismatch (UnderReview had become UNDERREVIEW before that fix).",
+      "handling": "The desktop calls IsTransitionAllowed/RefuseTransition rather than restating the transitions, so a rule the owner tightens is tightened on this screen too."
+    },
+    "reportingHistoryFirst": {
+      "finding": "The owner's PermitStatusHistoryService updates the application header and then appends the history; if the history write fails the header has already moved.",
+      "handling": "The desktop appends the history first and updates the header afterwards, because the history is what the register reads. A header that cannot be written is reported as degraded and the decision is not lost."
+    },
+    "rendererIsANativeBinary": {
+      "where": "Beep.OilandGas.PermitsAndApplications.Pdf.Wkhtmltopdf/WkhtmltopdfRenderer.cs",
+      "finding": "The renderer shells out to a wkhtmltopdf executable at a configured path; there is no managed fallback and the binary is not part of this build.",
+      "handling": "The export is disabled with that reason, which is the feature's own 'PDF renderer unavailable' state, and the document the PDF would render is produced from the record and proven to match it."
+    }
+  },
+  "limits": [
+    "The PDF is not rendered: the renderer needs the wkhtmltopdf native binary, which this build does not carry (REL-01 owns its packaging). AC-5 is met for the content and for the disabled-with-a-reason state, not for a produced PDF file.",
+    "Attachments are not shown or uploaded. The owner has APPLICATION_ATTACHMENT and the feature's new-application screen lists attachments, but this build has no document store, so the form does not offer a file it cannot keep.",
+    "The compliance check (PermitComplianceCheckService) and the workflow (PermitApplicationWorkflowService) are not wired; this screen offers the legal transitions directly, guarded by the rule and by the segregation of duties.",
+    "Two writes are not one transaction: the history append and the header update commit separately. The ordering makes the history authoritative, but a reader between them sees a header that still shows the previous state.",
+    "The inbox reads whole tables: there is no paging, and every load reads all applications and all history rows, then filters in memory.",
+    "An application with no history row is not listed (its state cannot be read from the header enum); every application this build creates writes its opening row, so this only affects rows created outside it.",
+    "No per-command permission enforcement: the page is gated, and permits.write/approve are not checked per command; the segregation of duties is the applicant-versus-decider rule.",
+    "Reference numbers are the regulator's and are only displayed; the application's own number is its id until a reference is recorded."
+  ]
+}

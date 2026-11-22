@@ -9,6 +9,7 @@ public partial class R_ANL_ELEMENT_VALUE_CODE: Entity,IPPDMEntity
 {
 
 private  System.String VALUE_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALUE_CODE
         {  
             get  

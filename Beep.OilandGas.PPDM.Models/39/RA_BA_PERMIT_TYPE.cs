@@ -9,6 +9,7 @@ public partial class RA_BA_PERMIT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PERMIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERMIT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PERMIT_TYPEValue;
           set { SetProperty(ref  PERMIT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_DIST_REF_PT: Entity,IPPDMEntity
 {
 
 private  System.String DISTANCE_REF_POINTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISTANCE_REF_POINT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DISTANCE_REF_POINTValue;
           set { SetProperty(ref  DISTANCE_REF_POINTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

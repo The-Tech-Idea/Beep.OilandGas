@@ -9,6 +9,7 @@ public partial class R_ACCOUNT_PROC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACCOUNT_PROC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCOUNT_PROC_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_INTERP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INTERP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTERP_TYPE
         {  
             get  

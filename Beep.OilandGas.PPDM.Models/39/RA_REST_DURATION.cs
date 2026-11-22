@@ -9,6 +9,7 @@ public partial class RA_REST_DURATION: Entity,IPPDMEntity
 {
 
 private  System.String REST_DURATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REST_DURATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REST_DURATION_TYPEValue;
           set { SetProperty(ref  REST_DURATION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

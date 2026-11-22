@@ -1,4 +1,4 @@
-using Beep.OilandGas.Models.Data.Company;
+﻿using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.DrillingAndConstruction.Models;
 using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
@@ -29,7 +29,30 @@ namespace Beep.OilandGas.DrillingAndConstruction.Modules
             typeof(DRILLING_FLUID),
             typeof(DRILLING_BIT),
             typeof(CASING_PROGRAM),
+            // ENG-06: a directional well plan - its tie-on, target, method and the outcome the stations produced.
+            typeof(WELL_PLAN),
+            // ENG-07: a recorded torque-and-drag run - the scenario, the friction factors and the answer.
+            typeof(TORQUE_DRAG_RUN),
+            // ENG-08: a recorded hydraulics run - the mud, the rate, the sections and the ECD it produced.
+            typeof(HYDRAULICS_RUN),
+            // ENG-09: the activity lines of a daily report - the operation code, the footage and the non-productive cause
+            // the performance analysis is driven by.
+            typeof(DEVELOPMENT_REPORT_ACTIVITY),
             typeof(CEMENT_JOB),
+            // DEV-05: the plan-stage program, its hole sections, design-check statuses and review history.
+            typeof(DEVELOPMENT_DRILLING_PROGRAM),
+            typeof(DRILLING_PROGRAM_SECTION),
+            typeof(DRILLING_PROGRAM_CHECK),
+            typeof(DRILLING_PROGRAM_REVIEW),
+            // DEV-06: the plan-stage execution, its daily reports, responsibility periods and NPT reference set.
+            typeof(DEVELOPMENT_DRILLING_EXECUTION),
+            typeof(DEVELOPMENT_DAILY_REPORT),
+            typeof(DEVELOPMENT_REPORT_RESPONSIBILITY),
+            typeof(R_DRILLING_NPT_CODE),
+            // DEV-07: completion tests, the submission and its decision/acceptance, and the evidence items.
+            typeof(DEVELOPMENT_COMPLETION_TEST),
+            typeof(DEVELOPMENT_COMPLETION_SUBMISSION),
+            typeof(DEVELOPMENT_COMPLETION_EVIDENCE),
         };
 
         private readonly PPDMReferenceDataSeeder _referenceSeeder;

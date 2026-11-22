@@ -9,6 +9,7 @@ public partial class WELL_LOG: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String WELL_LOG_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_LOG_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String WELL_LOG_IDValue;
           set { SetProperty(ref  WELL_LOG_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PPDM_PROC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROCEDURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCEDURE_TYPE
         {  
             get  

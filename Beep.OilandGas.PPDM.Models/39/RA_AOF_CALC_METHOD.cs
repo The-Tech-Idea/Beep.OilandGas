@@ -9,6 +9,7 @@ public partial class RA_AOF_CALC_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String AOF_CALCULATE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AOF_CALCULATE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AOF_CALCULATE_METHODValue;
           set { SetProperty(ref  AOF_CALCULATE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

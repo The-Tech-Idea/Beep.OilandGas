@@ -9,6 +9,7 @@ public partial class INSTRUMENT_AREA: Entity,IPPDMEntity
 {
 
 private  System.String INSTRUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INSTRUMENT_IDValue;
           set { SetProperty(ref  INSTRUMENT_IDValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

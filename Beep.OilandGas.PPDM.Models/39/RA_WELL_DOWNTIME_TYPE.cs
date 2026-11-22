@@ -9,6 +9,7 @@ public partial class RA_WELL_DOWNTIME_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DOWNTIME_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DOWNTIME_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DOWNTIME_TYPEValue;
           set { SetProperty(ref  DOWNTIME_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class EQUIPMENT_SPEC: Entity,IPPDMEntity
 {
 
 private  System.String EQUIPMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIPMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EQUIPMENT_IDValue;
           set { SetProperty(ref  EQUIPMENT_IDValue, value); }
         } 
 private  System.String SPEC_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_SET_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SPEC_SET_IDValue;
           set { SetProperty(ref  SPEC_SET_IDValue, value); }
         } 
 private  System.String SPEC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SPEC_TYPEValue;
           set { SetProperty(ref  SPEC_TYPEValue, value); }
         } 
 private  System.String SPEC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_ID
         {  
             get  

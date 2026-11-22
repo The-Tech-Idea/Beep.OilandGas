@@ -9,6 +9,7 @@ public partial class INTEREST_SET: Entity,IPPDMEntity
 {
 
 private  System.String INTEREST_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTEREST_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INTEREST_SET_IDValue;
           set { SetProperty(ref  INTEREST_SET_IDValue, value); }
         } 
 private  System.Decimal INTEREST_SET_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal INTEREST_SET_SEQ_NO
         {  
             get  

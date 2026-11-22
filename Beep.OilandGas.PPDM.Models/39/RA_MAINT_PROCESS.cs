@@ -9,6 +9,7 @@ public partial class RA_MAINT_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String MAINTAIN_PROCESSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAINTAIN_PROCESS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MAINTAIN_PROCESSValue;
           set { SetProperty(ref  MAINTAIN_PROCESSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

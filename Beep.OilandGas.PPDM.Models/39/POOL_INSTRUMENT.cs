@@ -9,6 +9,7 @@ public partial class POOL_INSTRUMENT: Entity,IPPDMEntity
 {
 
 private  System.String INSTRUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INSTRUMENT_IDValue;
           set { SetProperty(ref  INSTRUMENT_IDValue, value); }
         } 
 private  System.String POOL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_ID
         {  
             get  

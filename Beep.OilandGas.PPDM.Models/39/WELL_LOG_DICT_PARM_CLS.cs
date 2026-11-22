@@ -9,6 +9,7 @@ public partial class WELL_LOG_DICT_PARM_CLS: Entity,IPPDMEntity
 {
 
 private  System.String DICTIONARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DICTIONARY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DICTIONARY_IDValue;
           set { SetProperty(ref  DICTIONARY_IDValue, value); }
         } 
 private  System.String PARAMETER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PARAMETER_IDValue;
           set { SetProperty(ref  PARAMETER_IDValue, value); }
         } 
 private  System.String PARAMETER_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_CLASS_ID
         {  
             get  

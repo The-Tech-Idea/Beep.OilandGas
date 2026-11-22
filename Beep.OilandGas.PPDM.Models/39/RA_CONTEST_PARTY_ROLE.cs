@@ -9,6 +9,7 @@ public partial class RA_CONTEST_PARTY_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String PARTY_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARTY_ROLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARTY_ROLEValue;
           set { SetProperty(ref  PARTY_ROLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

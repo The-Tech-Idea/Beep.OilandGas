@@ -25,7 +25,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// Period Closing Service - Manages month-end and year-end close procedures.
     /// Validates period readiness, closes periods, and tracks unreconciled items.
     /// </summary>
-    public class PeriodClosingService : IPeriodClosingService
+    public partial class PeriodClosingService : IPeriodClosingService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;

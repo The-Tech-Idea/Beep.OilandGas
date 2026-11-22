@@ -9,6 +9,7 @@ public partial class RA_DRILL_STAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STATISTIC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATISTIC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STATISTIC_TYPEValue;
           set { SetProperty(ref  STATISTIC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

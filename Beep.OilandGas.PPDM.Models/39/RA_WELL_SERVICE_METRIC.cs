@@ -9,6 +9,7 @@ public partial class RA_WELL_SERVICE_METRIC: Entity,IPPDMEntity
 {
 
 private  System.String SERVICE_METRICValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SERVICE_METRIC
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SERVICE_METRICValue;
           set { SetProperty(ref  SERVICE_METRICValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

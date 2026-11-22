@@ -9,6 +9,7 @@ public partial class RA_TEST_RECOV_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String RECOVERY_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECOVERY_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RECOVERY_METHODValue;
           set { SetProperty(ref  RECOVERY_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

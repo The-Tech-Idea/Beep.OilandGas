@@ -9,6 +9,7 @@ public partial class RA_EMPLOYEE_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String EMPLOYEE_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EMPLOYEE_POSITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EMPLOYEE_POSITIONValue;
           set { SetProperty(ref  EMPLOYEE_POSITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

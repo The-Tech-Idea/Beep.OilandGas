@@ -9,6 +9,7 @@ public partial class WELL_LOG_DICTIONARY: Entity,IPPDMEntity
 {
 
 private  System.String DICTIONARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DICTIONARY_ID
         {  
             get  

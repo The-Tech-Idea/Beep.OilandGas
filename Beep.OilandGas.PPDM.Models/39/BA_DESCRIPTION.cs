@@ -9,6 +9,7 @@ public partial class BA_DESCRIPTION: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.String DESCRIPTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESCRIPTION_ID
         {  
             get  

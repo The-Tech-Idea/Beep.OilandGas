@@ -9,6 +9,7 @@ public partial class RA_ECOZONE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ECOZONE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECOZONE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ECOZONE_TYPEValue;
           set { SetProperty(ref  ECOZONE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

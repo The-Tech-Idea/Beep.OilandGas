@@ -9,6 +9,7 @@ public partial class R_COLLAR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COLLAR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLLAR_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class INSTRUMENT: Entity,IPPDMEntity
 {
 
 private  System.String INSTRUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_TUBING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TUBING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TUBING_TYPE
         {  
             get  

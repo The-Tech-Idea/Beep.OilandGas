@@ -9,6 +9,7 @@ public partial class R_ADDRESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ADDRESS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDRESS_TYPE
         {  
             get  

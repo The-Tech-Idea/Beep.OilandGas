@@ -9,6 +9,7 @@ public partial class R_LOCATION_QUALIFIER: Entity,IPPDMEntity
 {
 
 private  System.String LOCATION_QUALIFIERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOCATION_QUALIFIER
         {  
             get  

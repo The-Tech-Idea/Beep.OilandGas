@@ -1,0 +1,84 @@
+{
+  "id": "STG-10/ACC-02",
+  "title": "Period close and ledger",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-7 met: an unbalanced journal is refused with its exact imbalance and direction; posting is a transition of the row that already exists and a duplicate reference is refused, so no second entry can appear; a write into a closed period is refused naming the period; the author cannot post their own journal; the trial balance is shown with its two totals and theirs agree, with each row carrying the journal lines behind it; and reopening records actor, reason and time.",
+  "orderNote": "ACC-02 was implemented before ACC-01. The stage documents ACC-01's dependency as 'ACC-02 shell' and its purpose as a dashboard of queues and balances that only ACC-02 (and ACC-03/ACC-05) create, so a dashboard built first would have nothing to show and nothing to verify; the stage's own sequencing section also runs ACC-02 -> ACC-03 -> ACC-04. Every exit-gate item SG-10-1..SG-10-4 lives in ACC-02.",
+  "dataModel": {
+    "decision": "The ledger's tables already exist and are registered by the ProductionAccounting financial manifest - GL_ACCOUNT, JOURNAL_ENTRY, JOURNAL_ENTRY_LINE - together with the accounting project's COMPANY_LEDGER_PERIOD, which its own PeriodClosingService documents as the owner of the company/book period records. No new table was needed: JOURNAL_ENTRY was extended additively with the posting audit, the period code and the reversal link; COMPANY_LEDGER_PERIOD with the close and reopen audit.",
+    "addedColumns": "JOURNAL_ENTRY: AUTHOR, POSTED_BY, POSTED_AT, PERIOD_CODE, REVERSAL_OF_ENTRY_ID, REVERSED_AT. COMPANY_LEDGER_PERIOD: CLOSED_BY, CLOSED_AT, REOPENED_BY, REOPENED_AT, REOPEN_REASON, CLOSE_NOTE.",
+    "checkedForDuplicates": "Both entities were checked for the case-only duplicate property pairs that make PIPELINE_ANALYSIS_RESULT unpublishable (WTA-03). JOURNAL_ENTRY has two families of names (ENTRY_DATE and JOURNAL_DATE) but no case-only collision, so the unit of work maps it - proven by the gateway writing and updating rows.",
+    "registration": "--smoke still reports 33 modules and 412 entity types, which is the check that this was a column extension on already-registered tables rather than a new registration."
+  },
+  "ownerAdditions": {
+    "codes": "Beep.OilandGas.Accounting/Constants/LedgerCodes.cs - the journal statuses the owner's own workflow already uses (DRAFT, APPROVED, REJECTED, POSTED, and the REVERSED the desk adds), the three period states, the balance rule (Imbalance = debit - credit, exactly) and the period code of a date. It exists so the screen cannot invent a second vocabulary and so the imbalance has one definition."
+  },
+  "openQuestion": {
+    "question": "Two period-close services exist (accounting and production); which owns the lock?",
+    "answer": "The accounting one. Its own header says it 'owns native company/book period records and controlled period operations', and its transitions are the ones that write COMPANY_LEDGER_PERIOD.STATUS. The ProductionAccounting PeriodClosingService validates month-end readiness and tracks unreconciled items - a production close, not the ledger lock. A write is therefore checked against COMPANY_LEDGER_PERIOD, which is what this feature does.",
+    "recorded": "in LedgerCodes' remarks and in the feature document"
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgLedger.cs (OgLedgerContext, OgJournalLineInput, OgJournalInputs, OgJournalLine, OgJournal, OgTrialBalanceRow, OgPeriod, OgLedgerWorkspace, LedgerRules, IOgLedger, OgLedgerService with CreateJournalAsync/PostAsync/ReverseAsync/ClosePeriodAsync/ReopenPeriodAsync/LoadAsync)",
+    "balance": "Totals are summed from the lines in decimal; the refusal is computed before anything is read or written and names the amount and the side it is on (AC-1, SG-10-1). A line may carry a debit or a credit but not both, and neither may be negative.",
+    "duplicate": "Two guards: creating a second journal with the same source and reference is refused naming the existing entry, and posting is a status transition on the row that exists - so a second post attempt refuses with 'already posted' and cannot create a second entry (AC-2, SG-10-2).",
+    "periodLock": "Every create, post and reverse reads COMPANY_LEDGER_PERIOD for the entry's period code and refuses when the state is not OPEN, naming the period (AC-3, SG-10-3). A journal's period is created on demand as OPEN when its first entry is written, so a period exists to be closed.",
+    "sod": "The journal records its AUTHOR at creation; PostAsync refuses when the poster is the author (AC-4, SG-10-4). This is the app's own enforcement - the accounting owner's services are metadata-driven and its own claim store is in another project.",
+    "trialBalance": "Built from posted, non-reversed journals for the period, grouped by account number, each row carrying the lines that make it up; the totals are shown beside them and the close refuses while they disagree (AC-5, AC-7).",
+    "periodClose": "Close refuses while the period holds draft journals or its trial balance disagrees, then records CLOSED_BY/CLOSED_AT and an optional note; reopen requires a reason and records REOPENED_BY/REOPENED_AT/REOPEN_REASON (AC-6).",
+    "reversal": "ReverseAsync posts a counter-entry with the sides swapped, linked by REVERSAL_OF_ENTRY_ID, and marks the original REVERSED - which the trial balance then excludes, so a reversal nets to nothing.",
+    "page": "src/Beep.OilandGas.Desktop/Views/LedgerPageView.cs (route 'ledger': the entry bar and line editor, create/post/reverse, the period close and reopen with their reason, the journal grid, the selected journal's lines, the trial balance with its total line, the drill-down grid and the period grid)",
+    "wiring": "OgBootstrapper (IOgLedger), OgApplication.Ledger, catalog 'ledger' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/LedgerTests.cs (6, no database) + LedgerGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1076, "passed": 1076, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 54, "passed": 54, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 78, "views-constructed": true, "modulesetup-summary": "33 module(s) - 412 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with GL_ACCOUNT, JOURNAL_ENTRY, JOURNAL_ENTRY_LINE and COMPANY_LEDGER_PERIOD, seeded in LedgerGatewayTests",
+    "ac1_unbalanced": "a journal of 1,000 debit against 900 credit is refused with 'a 100.00 excess on the debit side' and writes no row; the balance rule is asserted at the decimal boundary too (1,234.56 against 1,234.55 is unbalanced). This is SG-10-1.",
+    "ac2_duplicate": "a second journal with the same source and reference is refused naming the existing entry and the journal count stays at 1; posting a posted journal is refused with 'already posted' and the count of POSTED rows stays at 1. This is SG-10-2.",
+    "ac3_closedPeriod": "the March period is closed, then a journal dated in March is refused with ledger-period-closed naming 2026-03, and the journal count stays at 1. This is SG-10-3.",
+    "ac4_author": "the journal is written by sara; posting by sara is refused with ledger-author-cannot-post naming her, and no POSTED row exists until omar posts it. This is SG-10-4.",
+    "ac5_trialBalance": "after posting, the 2026-03 trial balance reads debit 1,000 and credit 1,000 and the sentence says they are equal; the close refuses while drafts remain or the totals disagree.",
+    "ac6_reopen": "reopening without a reason is refused; with a reason the row records REOPENED_BY='omar', a non-null REOPENED_AT and the reason, while CLOSED_BY='sara' and CLOSED_AT stay as they were - each asserted in SQL.",
+    "ac7_drillDown": "the cash row carries its journal line and the revenue row carries its own, and the page's drill-down grid is bound to the selected trial-balance row's Lines.",
+    "reversal": "reversing a posted 400 journal creates a REVERSAL entry with the sides swapped and the link back to the original, marks the original REVERSED with REVERSED_AT, and the counter-entry balances.",
+    "unavailable": "dropping the journal tables makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 An unbalanced journal is refused with the imbalance": "pass - the imbalance is debit less credit in decimal, the refusal names the amount and the side, and nothing is written. SG-10-1.",
+    "AC-2 A duplicate posting does not create a second entry": "pass - the duplicate reference is refused at creation and the second posting is refused as already posted; both leave the row count at one. SG-10-2.",
+    "AC-3 A write into a closed period is refused and names the period": "pass - create, post and reverse each check the period state first and the refusal carries the period code. SG-10-3.",
+    "AC-4 The author cannot post their own journal": "pass - the author is recorded at creation and refused as poster, with a different controller posting it. SG-10-4.",
+    "AC-5 Trial balance debit equals credit for every period shown": "pass - totals are summed from the posted lines and asserted equal, and the close refuses while they disagree.",
+    "AC-6 Reopening records actor, reason and time": "pass - a reason is required and the actor, time and reason are written; the close record is left intact.",
+    "AC-7 Drill-down reaches the journal lines": "pass - every trial-balance row carries the lines behind it and the page binds the drill-down grid to them."
+  },
+  "engineFindings": {
+    "twoCloseServices": {
+      "finding": "The open question was real: two PeriodClosingService classes exist with the same name in different namespaces, one in Accounting and one in ProductionAccounting.",
+      "handling": "Read both headers and their state writers: the accounting one owns COMPANY_LEDGER_PERIOD and its transitions; the production one validates readiness. The lock is therefore the accounting period row, and that is what this feature checks. Recorded in LedgerCodes and the feature document."
+    },
+    "guardedOwnerTransitions": {
+      "finding": "The accounting period transitions are guarded by intent ids, an authority JSON and a state-history JSON with size checks; they are built for the company/book workflow the app has not set up, and are not callable with a simple period code.",
+      "handling": "The desktop writes its own period rows in the same table with an authority note naming the app and the actor, and states that the owner's guarded engine remains the company workflow's. The close and reopen audit this feature needs is on the row."
+    },
+    "noJournalStatusConstants": {
+      "finding": "No journal status constants existed; the values DRAFT/APPROVED/REJECTED/POSTED are string literals inside JournalEntryService's workflow source.",
+      "handling": "LedgerCodes states them once, taken from those literals, and adds REVERSED for the reversal; the desktop holds no status string of its own (a source guard asserts it)."
+    }
+  },
+  "limits": [
+    "The period lock is per period code, not per company and book: the desktop app has one company and one book, so the row carries the session's company and book but the checks match on the code.",
+    "The chart of accounts, the financial statements and the cost-centre dimensions are not built. Accounts are read (seeded or existing rows) and the trial balance is derived; the P&L, balance sheet and cash flow are ACC-02's later tabs and are not offered rather than faked.",
+    "There is no journal edit: a draft is created, posted or left; changing one means reversing or re-entering it. That is deliberate, but it means a typo in a draft is fixed by creating a new draft.",
+    "Segregation of duties is the author-versus-poster rule only; the FinancialOperationClaimStore and SodConflictDetector are in the Repository project and are not consulted, so a role-based conflict beyond authorship is not detected.",
+    "Approval state (APPROVED/REJECTED) is part of the owner's vocabulary and is shown, but there is no approve/reject command in this feature: the desk posts a draft directly.",
+    "All amounts round-trip through SQLite as REAL, so the gateway asserts to 1e-3 rather than bit-exactly; the stage's SG-10-9 (no precision loss) is a separate gate item and is not claimed here.",
+    "ACC-01 (dashboard), ACC-03..ACC-08 are not started, so STG-10 is not complete."
+  ]
+}

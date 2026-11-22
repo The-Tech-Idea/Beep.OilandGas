@@ -9,6 +9,7 @@ public partial class R_OFFSHORE_AREA_CODE: Entity,IPPDMEntity
 {
 
 private  System.String OFFSHORE_AREA_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OFFSHORE_AREA_CODE
         {  
             get  

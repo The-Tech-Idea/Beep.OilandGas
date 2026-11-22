@@ -9,6 +9,7 @@ public partial class LEGAL_GEODETIC_LOC: Entity,IPPDMEntity
 {
 
 private  System.String LEGAL_GEODETIC_LOC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEGAL_GEODETIC_LOC_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LEGAL_GEODETIC_LOC_IDValue;
           set { SetProperty(ref  LEGAL_GEODETIC_LOC_IDValue, value); }
         } 
 private  System.String LOCATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOCATION_TYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LOCATION_TYPEValue;
           set { SetProperty(ref  LOCATION_TYPEValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

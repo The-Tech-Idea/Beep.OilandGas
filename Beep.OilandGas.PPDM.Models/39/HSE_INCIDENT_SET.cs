@@ -9,6 +9,7 @@ public partial class HSE_INCIDENT_SET: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_SET_ID
         {  
             get  

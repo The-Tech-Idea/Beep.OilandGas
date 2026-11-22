@@ -9,6 +9,7 @@ public partial class R_APPLIC_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_STATUS
         {  
             get  

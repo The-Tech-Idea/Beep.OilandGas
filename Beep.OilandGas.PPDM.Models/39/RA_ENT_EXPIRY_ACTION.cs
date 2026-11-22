@@ -9,6 +9,7 @@ public partial class RA_ENT_EXPIRY_ACTION: Entity,IPPDMEntity
 {
 
 private  System.String EXPIRY_ACTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EXPIRY_ACTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EXPIRY_ACTIONValue;
           set { SetProperty(ref  EXPIRY_ACTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

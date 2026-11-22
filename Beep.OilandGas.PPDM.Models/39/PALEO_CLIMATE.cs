@@ -9,6 +9,7 @@ public partial class PALEO_CLIMATE: Entity,IPPDMEntity
 {
 
 private  System.String CLIMATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLIMATE_ID
         {  
             get  

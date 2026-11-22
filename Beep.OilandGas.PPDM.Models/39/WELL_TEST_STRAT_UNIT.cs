@@ -9,6 +9,7 @@ public partial class WELL_TEST_STRAT_UNIT: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String TEST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String TEST_TYPEValue;
           set { SetProperty(ref  TEST_TYPEValue, value); }
         } 
 private  System.String RUN_NUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RUN_NUM
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String RUN_NUMValue;
           set { SetProperty(ref  RUN_NUMValue, value); }
         } 
 private  System.String TEST_NUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_NUM
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String TEST_NUMValue;
           set { SetProperty(ref  TEST_NUMValue, value); }
         } 
 private  System.String STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID
         {  
             get  
@@ -69,6 +75,7 @@ private  System.String STRAT_UNIT_IDValue;
           set { SetProperty(ref  STRAT_UNIT_IDValue, value); }
         } 
 private  System.String STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID
         {  
             get  

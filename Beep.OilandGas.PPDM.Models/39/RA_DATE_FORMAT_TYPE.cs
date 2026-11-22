@@ -9,6 +9,7 @@ public partial class RA_DATE_FORMAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DATA_STORE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATA_STORE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DATA_STORE_TYPEValue;
           set { SetProperty(ref  DATA_STORE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

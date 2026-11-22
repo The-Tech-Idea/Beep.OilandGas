@@ -9,6 +9,7 @@ public partial class R_ONTOGENY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ONTOGENY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ONTOGENY_TYPE
         {  
             get  

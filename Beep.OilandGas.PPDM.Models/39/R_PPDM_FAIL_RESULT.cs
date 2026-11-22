@@ -9,6 +9,7 @@ public partial class R_PPDM_FAIL_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String RULE_FAIL_RESULTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_FAIL_RESULT
         {  
             get  

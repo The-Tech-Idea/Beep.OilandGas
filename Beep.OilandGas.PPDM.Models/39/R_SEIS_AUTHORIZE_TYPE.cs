@@ -9,6 +9,7 @@ public partial class R_SEIS_AUTHORIZE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AUTHORIZE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUTHORIZE_TYPE
         {  
             get  

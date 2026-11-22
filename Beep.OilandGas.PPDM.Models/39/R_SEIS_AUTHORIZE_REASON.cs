@@ -9,6 +9,7 @@ public partial class R_SEIS_AUTHORIZE_REASON: Entity,IPPDMEntity
 {
 
 private  System.String REASON_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REASON_TYPE
         {  
             get  

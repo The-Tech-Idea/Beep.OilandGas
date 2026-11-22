@@ -1,0 +1,75 @@
+{
+  "id": "STG-10/ACC-01",
+  "title": "Accounting dashboard",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-5 met: a balance whose records could not be read is null and prints the reason rather than a zero; every queue count is computed from the same records and predicates the queue's own page lists, and the gateway test compares each count with that service's own workspace; the period strip is the session's period with its blocking draft journals; a queue whose permission the account does not hold is withheld and says which permission, and a failed permission lookup is called unknown rather than denied; and the refresh stamp is printed whether the read worked or not.",
+  "dataModel": {
+    "decision": "Nothing was added. The dashboard is a read model over the seven accounting features ACC-02..ACC-08 built this stage, so it composes their services instead of re-querying their tables: a count therefore comes from exactly the records - and the same predicates on those records - that the queue's own page lists.",
+    "tablesReadIndirectly": "AR_INVOICE, AR_INVOICE_LINE, AR_CREDIT_MEMO, AR_RECEIPT, AR_PAYMENT (ACC-03, ACC-04); PURCHASE_ORDER, PO_LINE_ITEM, PO_RECEIPT, AP_INVOICE, AP_INVOICE_LINE, AP_PAYMENT, AP_PAYMENT_RUN, ACCOUNTING_METHOD, AFE_COMMITMENT (ACC-05); JOURNAL_ENTRY, JOURNAL_ENTRY_LINE, COMPANY_LEDGER_PERIOD (ACC-02); TAX_TRANSACTION, DEFERRED_TAX_BALANCE, GOVERNMENTAL_TAX_DATA (ACC-08); ROYALTY_CALCULATION, ROYALTY_DEDUCTIONS, OWNERSHIP_INTEREST, JOINT_INTEREST_STATEMENT, JIB_CHARGE, JIB_CREDIT, COST_ALLOCATION (ACC-07); INVENTORY_ITEM, INVENTORY_TRANSACTION, INVENTORY_RESERVATION (ACC-06).",
+    "oneDirectRead": "The cash position is the only figure computed here rather than read from a service: GL_ACCOUNT's OPENING_BALANCE for the configured cash account (1000) plus the posted movements on that account taken from the ledger workspace's own lines - because the ledger service reports a period's trial balance, not a position across periods. The account number is DefaultGlAccounts.Cash, not a literal on the screen."
+  },
+  "openQuestion": {
+    "question": "The Web dashboard is an AdminWorkspace shell; decide how the dashboard source queue relates to the process definitions (ACCT_*).",
+    "answer": "The queue is built from the feature registers, not from process-definition instances. Each of the seven features already exposes its own records and their states (a draft invoice, an invoice awaiting approval, a match exception, a draft receipt, unapplied cash, an unposted journal, unposted tax, an unposted bill, a payable royalty, an open stock hold), and those are the facts a person acts on. Building the queue from the ACCT_* process definitions would have meant a second source for the same count and a dependency on process instances this app does not create, so it was not done; the queue keys are stable strings ('ap-open', 'tax-unposted', ...) and each states the permission that opens the corresponding page.",
+    "recorded": "in the service remarks, the page remarks, the feature document and this evidence"
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgAccountingDashboard.cs (OgDashboardContext, OgAccountingKpis, OgDashboardQueue, OgDashboardAttention, OgDashboardPeriod, OgAccountingDashboard, DashboardRules, IOgAccountingDashboard, OgAccountingDashboardService)",
+    "composition": "OgAccountingDashboardService takes the seven service interfaces (IOgRevenue, IOgReceivable, IOgPayables, IOgLedger, IOgTax, IOgRoyalties, IOgWarehouse), a data-source factory for the cash read, and the failure reporter. Each read is checked for success, for a value, and for that workspace's own HistoryFailed flag; a source that fails contributes a reason to the failures list and null to every figure derived from it.",
+    "ac1Nullable": "Every money figure and the unposted count are nullable. A null prints 'unavailable - <the reason>' and never '0.00'; a genuine zero prints 0.00. The Overdue figure needs both sides, so it is null unless both the sales and supplier registers were read.",
+    "ac2Queues": "Twelve queue panels: sales invoices awaiting issue, sales invoices awaiting approval, supplier invoices open, match exceptions awaiting approval, purchase orders awaiting approval, receipts awaiting posting, receipts with unapplied cash, journals not posted, tax computations not posted, joint-interest bills not posted, royalties payable, and open stock reservations. Every count is the same predicate over the same workspace the page binds.",
+    "ac3Period": "The period strip uses the session's PeriodId, not the latest period in the database. It reports the ledger period's state and the number of draft journals in that period that block its close; a missing period says no ledger period exists rather than showing zero blocking items.",
+    "ac4Permissions": "DashboardRules.Access returns shown plus a reason. SystemAdmin and a held permission are shown; a permission set that is valid but lacks the right is withheld naming it; a permission set whose lookup failed (PermissionSourceAvailable false) is withheld and the reason says it is unknown, not denied. A withheld queue hides its count ('(withheld)') instead of showing an empty panel.",
+    "ac5Refresh": "The dashboard carries RefreshedAt, stamped per load, and RefreshedText always prints it - with '(the refresh failed)' appended when the read failed. A queue whose records could not be read is shown with '(not read)' and the reason, never as an empty queue.",
+    "page": "src/Beep.OilandGas.Desktop/Views/AccountingDashboardPageView.cs (route 'accounting': the refresh stamp, the notice, the period strip, the balances line, the cash line with its opening-plus-movement breakdown, the failure line, the queue grid and its sentences, the withheld list with each reason, and the attention grid)",
+    "wiring": "OgBootstrapper (IOgAccountingDashboard with all seven services), OgApplication.AccountingDashboard, catalog 'accounting' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/AccountingDashboardTests.cs (9, no database) + AccountingDashboardGatewayTests.cs (1 opt-in, real SQLite over 31 tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1143, "passed": 1143, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 61, "passed": 61, "failed": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~Stg10DecimalRoundTripTests", "exit": 0, "run": 1, "passed": 1, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 85, "views-constructed": true, "modulesetup-summary": "33 module(s) - 418 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the 31 tables the seven composed services read, seeded with three sales invoices (two issued, one draft), a receipt with 300 unapplied, three supplier invoices (one open, one paid, one match exception), a draft purchase order, one draft and one posted journal with a 250 cash debit, two 2026 ledger periods, and empty tax, royalty and warehouse registers",
+    "ac1_balances": "Open AR 2,500 (1,000 + 1,500, the draft excluded); Open AP 3,700 (3,000 + 700); Overdue 4,000 (a past-due sales invoice plus a past-due supplier invoice); one unposted journal; cash 5,250 = 5,000 opening + 250 posted movement - each asserted as an exact decimal.",
+    "ac2_composition": "the gateway loads all seven services directly and asserts every one of the twelve queue counts equals the same predicate over that service's own workspace (IsDraft, IsIssued and not IsApproved, !IsPaid, NeedsExceptionApproval, order IsDraft, receipt IsDraft, Unapplied > 0, journal IsDraft, !IsPosted, CanPay, HoldsStock), and that the two balances equal the sums of those workspaces.",
+    "ac3_period": "the session period 2026-11 is reported open with one draft journal blocking its close and the name November 2026 in the sentence; after the period row is set to CLOSED the strip reads 'closed'.",
+    "ac4_withheld": "with a valid Viewer permission set that does not hold accounting.tax.post, the tax queue is withheld, its count is null and its count text '(withheld)', and the reason names accounting.tax.post; with a permission set whose lookup failed the reason says it is unknown, not denied.",
+    "ac5_refresh": "the refresh stamp is non-empty and reads 'last refreshed ...' on a successful load, and the unit test asserts '(the refresh failed)' is appended when the read failed.",
+    "ac1_failure": "dropping AR_INVOICE, AR_INVOICE_LINE and AR_CREDIT_MEMO leaves OpenAr null with 'unavailable' in its text and no '0.00', makes Overdue null because it needs both sides, keeps OpenAp at 3,700 and the unposted count at 1, and shows the sales queue with '(not read)' and 'the records could not be read' rather than as an empty queue; the failure text names 'the sales invoices'.",
+    "defect_found": "the first unit run failed on two real messaging defects: a shown queue whose count could not be read said 'nothing awaiting you' (indistinguishable from an empty queue), and the cash breakdown repeated the currency ('5,000.00 USD ... 250.00 USD USD'). Both were corrected; a shown-but-unread queue now prints '(not read)' and its reason, and the breakdown prints each amount once with a single currency."
+  },
+  "gates": {
+    "AC-1 A figure whose source failed is unavailable, never zero": "pass - every money figure and the unposted count are nullable; null prints the reason and never 0.00, and the gateway proves it by dropping the sales tables.",
+    "AC-2 Queue counts agree with the page they link to": "pass - the dashboard calls each service and applies the same predicate the page applies, and the gateway compares all twelve counts against those workspaces.",
+    "AC-3 The period strip is the session's period": "pass - the session period code is used, its state and blocking draft-journal count are reported, and a missing period says so.",
+    "AC-4 A queue without its permission is withheld with the reason": "pass - withheld names the permission, a failed lookup is called unknown rather than denied, and the count is hidden rather than shown empty.",
+    "AC-5 The page shows the last-refreshed time": "pass - the stamp is carried per load and printed whether the read worked or failed."
+  },
+  "engineFindings": {
+    "noDashboardServiceToReuse": {
+      "where": "Beep.OilandGas.Accounting/Services/DashboardService.cs",
+      "finding": "The owner has a DashboardService, but it aggregates its own KPI shapes over the accounting tables and knows nothing about the revenue, receivable, payables, tax, royalty, warehouse and ledger registers this stage's features actually write.",
+      "handling": "The dashboard composes the seven desktop services built on those registers instead of calling the owner's aggregator, because AC-2 requires the count to match the page it links to. The choice is recorded rather than presented as reuse."
+    },
+    "noProcessInstances": {
+      "finding": "The feature suggests building the queue from ACCT_* process definitions, but this app creates no process instances for them.",
+      "handling": "The queue is built from the records' own states, which are the facts a person acts on; the ACCT_* definitions are not used, and the reason is stated."
+    },
+    "twoQueueMessagingDefects": {
+      "finding": "A queue whose records could not be read was reported with the same sentence as an empty queue ('nothing awaiting you'), and the cash breakdown appended the currency twice.",
+      "handling": "Both were caught by the unit test and corrected: an unread queue now prints '(not read)' plus the reason, and the cash breakdown prints 'opening X + posted movement Y CUR' once."
+    }
+  },
+  "limits": [
+    "The cash position includes no bank reconciliation and no unpresented-cheque adjustment: it is the chart's opening balance plus posted journal lines on account 1000.",
+    "The dashboard reads the whole of each register on every refresh (the services' own LoadAsync), so its cost grows with the registers; there is no paging or cached projection.",
+    "Attention is capped at 25 rows by DashboardRules.AttentionLimit and says nothing about how many were left out, so a long list is truncated without a count.",
+    "The queues are fixed in code; an operator cannot add, reorder or hide a queue, and the permission each one names is a string the page gate does not itself enforce (the app gates pages, as recorded in the other ACC features).",
+    "There is no drill-through: a queue row states its count and reason but does not open the corresponding page, so the link is the navigation menu rather than the row.",
+    "The dashboard is read-only and writes nothing, so it has no posting, no audit trail of its own and no SoD rule."
+  ]
+}

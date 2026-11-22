@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class AMORTIZATION_SPLIT : ModelEntityBase {
         private string AMORTIZATION_SPLIT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string AMORTIZATION_SPLIT_ID
         {
             get { return this.AMORTIZATION_SPLIT_IDValue; }

@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class UNIT_OPERATING_AGREEMENT : ModelEntityBase {
         private System.String UNIT_OPERATING_AGREEMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String UNIT_OPERATING_AGREEMENT_ID
         {
             get { return this.UNIT_OPERATING_AGREEMENT_IDValue; }

@@ -9,6 +9,7 @@ public partial class R_BA_CREW_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CREW_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_TYPE
         {  
             get  

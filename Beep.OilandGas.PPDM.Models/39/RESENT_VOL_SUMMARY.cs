@@ -9,6 +9,7 @@ public partial class RESENT_VOL_SUMMARY: Entity,IPPDMEntity
 {
 
 private  System.String RESENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESENT_IDValue;
           set { SetProperty(ref  RESENT_IDValue, value); }
         } 
 private  System.String RESERVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESERVE_CLASS_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String RESERVE_CLASS_IDValue;
           set { SetProperty(ref  RESERVE_CLASS_IDValue, value); }
         } 
 private  System.String PRODUCT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRODUCT_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PRODUCT_TYPEValue;
           set { SetProperty(ref  PRODUCT_TYPEValue, value); }
         } 
 private  System.String SUMMARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUMMARY_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String SUMMARY_IDValue;
           set { SetProperty(ref  SUMMARY_IDValue, value); }
         } 
 private  System.Decimal SUMMARY_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SUMMARY_OBS_NO
         {  
             get  

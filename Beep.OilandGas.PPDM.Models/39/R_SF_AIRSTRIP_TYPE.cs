@@ -9,6 +9,7 @@ public partial class R_SF_AIRSTRIP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AIRSTRIP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AIRSTRIP_TYPE
         {  
             get  

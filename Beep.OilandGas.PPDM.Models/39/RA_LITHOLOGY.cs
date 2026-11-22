@@ -9,6 +9,7 @@ public partial class RA_LITHOLOGY: Entity,IPPDMEntity
 {
 
 private  System.String LITHOLOGYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITHOLOGY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LITHOLOGYValue;
           set { SetProperty(ref  LITHOLOGYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_PUBLICATION_NAME: Entity,IPPDMEntity
 {
 
 private  System.String PUBLICATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PUBLICATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PUBLICATIONValue;
           set { SetProperty(ref  PUBLICATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

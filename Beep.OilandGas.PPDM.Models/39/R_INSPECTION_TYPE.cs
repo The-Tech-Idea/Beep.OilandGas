@@ -9,6 +9,7 @@ public partial class R_INSPECTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INSPECTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSPECTION_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class REPORT_HIER_LEVEL: Entity,IPPDMEntity
 {
 
 private  System.String REPORT_HIERARCHY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPORT_HIERARCHY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String REPORT_HIERARCHY_IDValue;
           set { SetProperty(ref  REPORT_HIERARCHY_IDValue, value); }
         } 
 private  System.String COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_ID
         {  
             get  

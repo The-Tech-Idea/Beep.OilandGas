@@ -9,6 +9,7 @@ public partial class R_SAMPLE_PHASE: Entity,IPPDMEntity
 {
 
 private  System.String PHASE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHASE_TYPE
         {  
             get  

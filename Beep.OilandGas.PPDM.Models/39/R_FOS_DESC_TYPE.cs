@@ -9,6 +9,7 @@ public partial class R_FOS_DESC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DESCRIPTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESCRIPTION_TYPE
         {  
             get  

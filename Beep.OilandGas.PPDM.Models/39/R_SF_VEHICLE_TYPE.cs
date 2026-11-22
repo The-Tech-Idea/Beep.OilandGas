@@ -9,6 +9,7 @@ public partial class R_SF_VEHICLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VEHICLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VEHICLE_TYPE
         {  
             get  

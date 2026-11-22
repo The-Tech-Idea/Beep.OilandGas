@@ -9,6 +9,7 @@ public partial class R_ROLL_ALONG_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ROLL_ALONG_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROLL_ALONG_METHOD
         {  
             get  

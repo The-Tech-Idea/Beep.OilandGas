@@ -9,6 +9,7 @@ public partial class RA_INTERP_ORIGIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ORIGIN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ORIGIN_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ORIGIN_TYPEValue;
           set { SetProperty(ref  ORIGIN_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

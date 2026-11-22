@@ -1,0 +1,94 @@
+{
+  "id": "STG-10/ACC-08",
+  "title": "Tax workbench",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: every computation stores its jurisdiction, the rate as a fraction, the rate's effective date and the record it came from, plus the basis it applied to; a jurisdiction with no rate, or a rate that only takes effect after the period, is refused by name; a provision is refused while its fiscal year is incomplete; posting writes exactly one journal per computation and adopts it on retry; the rate table is read-only on the screen and rates are never entered there; and the author cannot post their own computation.",
+  "dataModel": {
+    "decision": "The owner already had the rate table (GOVERNMENTAL_TAX_DATA) and the tax record (TAX_TRANSACTION), and DEFERRED_TAX_BALANCE for the deferred position - but only the rate table was registered in the module, so the two records the workbench actually writes were not part of the module at all. Registering an existing owner table is the additive fix, and that is what was done: no table was created and no owner table was duplicated.",
+    "registered": "TAX_TRANSACTION and DEFERRED_TAX_BALANCE added to ProductionAccountingModuleSetup beside GOVERNMENTAL_TAX_DATA. --smoke now reports 33 modules and 418 entity types (up from 416), which is the two registrations.",
+    "addedColumns": "TAX_TRANSACTION: TAX_RATE, TAX_BASIS, BASIS_TEXT, RATE_EFFECTIVE_DATE, RATE_SOURCE, PERIOD_FROM, PERIOD_TO, FISCAL_YEAR, CURRENCY_CODE, STATUS, AUTHOR, JOURNAL_ENTRY_ID, POSTED_BY, POSTED_AT.",
+    "noRateTableAdded": "No new rate table was introduced. The corporate rate is read from the owner's existing remark contract (see the engine findings), because the owner already declares the key for it and inventing a column would have created a second source of truth for one number."
+  },
+  "openQuestion": {
+    "question": "The Web tax workbench is a shell with no behavioural precedent; design from TaxProvisionService and ProductionTaxService and record the mapping.",
+    "answer": "The mapping is done from the two owner services. ProductionTaxService supplies the production-tax shape: a TAX_TRANSACTION per assessment, the rate normalisation (>1 means percentage points), and the REMARK key=value contract that carries the jurisdiction. TaxProvisionService supplies the provision shape: a TAX_TRANSACTION for the current provision, income tax expense against income tax payable, and a DEFERRED_TAX_BALANCE per period end whose movement against the prior balance is what posts. This feature reproduces both, adds the period and rate evidence the owner does not store, and refuses what the owner allows (a rate of zero, a provision on an open year, a posting by the preparer).",
+    "recorded": "in TaxMath's remarks, the service's remarks, the feature document and this evidence"
+  },
+  "ownerAdditions": {
+    "math": "Beep.OilandGas.ProductionAccounting/Calculations/TaxMath.cs - the rate normalisation the owner already implements (above 1 is a percentage, at or below 1 is a fraction, zero is no rate), the tax on a basis, the deferred movement against a prior balance, and TaxRemark: the reader for the owner's GOVERMENTAL_TAX_DATA.REMARK key=value contract, sharing ProductionTaxRemarkKeys so the keys cannot be respelled.",
+    "codes": "Beep.OilandGas.ProductionAccounting/Constants/TaxComputationCodes.cs - the four computation kinds (the owner's own SEVERANCE and AD_VALOREM plus the PROVISION_CURRENT and PROVISION_DEFERRED it did not have), the two statuses, and the predicate that says which kinds are provisions - the ones the fiscal-year gate applies to.",
+    "accounts": "Beep.OilandGas.Accounting/Constants/TaxPostingCodes.cs - the accounts, taken from DefaultGlAccounts: income tax expense 6150 against income tax payable 2101 (the owner's own TaxProvisionService posting), deferred tax asset 1160 and liability 2102 for the movement, and the production-tax pair from the operating expense 6001 and payables 2000 accounts, with the reason for that choice stated."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgTax.cs (OgTaxContext, OgTaxJurisdiction, OgTaxInputs, OgTaxComputation, OgDeferredBalance, OgTaxWorkspace, TaxRules, IOgTax, OgTaxService with ComputeAsync/PostAsync/LoadAsync and the public static IncompleteFiscalYear)",
+    "rates": "The rate for a jurisdiction is resolved from GOVERNMENTAL_TAX_DATA rows whose REMARK names it (JURISDICTION=...), read on every computation. A provision takes the corporate rate from the owner's own DEFERRED_TAX_RATE remark key; a severance or ad valorem tax takes its own column. The row that supplies the rate also supplies the effective date, so the two can never come from different rows, and the row id and key are stored in RATE_SOURCE so a reviewer can find the record.",
+    "rateRefusals": "A jurisdiction with no rate row is refused naming it; a row with no rate for the kind is refused with 'rates are configuration'; a rate whose effective date is after the period end is refused naming both dates. All three before anything is written.",
+    "fiscalYear": "A provision requires every month of its fiscal year to have a ledger period and every month before the period-end month to be closed or locked. The period-end month itself may be open, because the provision is one of that month's closing entries - see the engine findings for why the stricter rule was wrong.",
+    "money": "Gross revenue x rate for a production tax; taxable income x rate for a current provision; and for a deferred provision the movement in the closing balances against the prior period end, which is what charges income tax expense - so a re-estimate for the same period posts its movement, not the whole balance again.",
+    "posting": "One balanced journal per computation with a reference derived from its id, at the configured accounts, and the computation is then marked POSTED with the journal, actor and time. A deferred computation also writes its closing DEFERRED_TAX_BALANCE row, which is what the next movement measures against.",
+    "page": "src/Beep.OilandGas.Desktop/Views/TaxPageView.cs (route 'tax': the jurisdiction, kind and period bar with the basis and closing deferred balances, the compute and post actions, the fiscal-year state, the read-only rate table, the computation grid and the selected computation's rate line, posting preview and journal, and the deferred balances carried)",
+    "wiring": "OgBootstrapper (IOgTax), OgApplication.Tax, catalog 'tax' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/TaxTests.cs (9, no database) + TaxGatewayTests.cs (1 opt-in, real SQLite over seven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1132, "passed": 1132, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 60, "passed": 60, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 84, "views-constructed": true, "modulesetup-summary": "33 module(s) - 418 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with GOVERNMENTAL_TAX_DATA, TAX_TRANSACTION, DEFERRED_TAX_BALANCE, COMPANY_LEDGER_PERIOD (twelve 2026 months), GL_ACCOUNT, JOURNAL_ENTRY and JOURNAL_ENTRY_LINE, seeded with a TX row (7.5 % severance, 1.5 % ad valorem, 21 % income in its remark), an OK row with no income rate and an NM row effective 2027-01-01",
+    "ac1_names_its_basis": "a severance computation on 10,000 gross at 7.5 % stores TAX_AMOUNT 750, TAX_RATE 0.075, TAX_BASIS 10000, the jurisdiction TX, a non-null RATE_EFFECTIVE_DATE and a RATE_SOURCE beginning 'GOVERNMENTAL_TAX_DATA' - all asserted in SQL - and the record reports NamesItsBasis true.",
+    "ac2_missing_rate": "a jurisdiction with no rate row at all is refused with tax-unknown-jurisdiction naming it; OK, whose row carries no provision rate, is refused with tax-no-rate; NM, whose rate starts 2027-01-01, is refused with tax-rate-not-effective naming that date and the period end. Nothing is written in any case.",
+    "ac3_fiscal_year": "a current provision is refused with tax-fiscal-year-incomplete naming 2026-01 while the year is open; after every month before the period-end month is closed the same provision computes 21,000 on 100,000 at 21 %. This is SG-10-8.",
+    "ac4_one_journal": "posting the provision writes one entry of 21,000 - income tax expense 6150 against income tax payable 2101 - and posting again writes none; after clearing the journal link by hand the retry adopts the entry it already wrote.",
+    "ac5_rates_never_entered": "the view binds the read-only rate table and has no rate field of any kind; the unit test asserts the absence of every rate input and that the view never names GOVERNMENTAL_TAX_DATA, and the service only ever reads that table.",
+    "ac6_author": "the provision was computed by sara and a posting by sara is refused with tax-author-cannot-post naming her; nadia posts it and is recorded.",
+    "deferred_movement": "a first deferred provision closing a 5,000 liability posts 5,000 - expense 6150 against deferred tax liability 2102 - and writes the balance row; a second closing 6,000 posts only the 1,000 movement, because the prior balance is the one at or before that period end.",
+    "nothing_to_compute": "a computation that comes to nothing is refused with tax-nothing-to-post rather than storing a zero row.",
+    "unavailable": "dropping the computation and rate tables makes LoadAsync return a workspace with HistoryFailed true."
+  },
+  "gates": {
+    "AC-1 A computation names its jurisdiction, rate and effective date": "pass - all four are stored on the row and asserted in SQL, and the record's NamesItsBasis reports false if any is missing, so a row cannot look complete without them.",
+    "AC-2 A missing rate blocks the computation": "pass - no row, no rate for the kind, and a rate effective after the period are three separate refusals, each naming the jurisdiction and, for the last, both dates.",
+    "AC-3 Provision refuses when the fiscal year is incomplete": "pass - the gate is a missing month or an open month before the period-end month, named in the refusal; SG-10-8's criterion.",
+    "AC-4 Posting creates exactly one journal per computation": "pass - one entry per computation with a reference derived from its id, a second post writes none, and a retry adopts the first.",
+    "AC-5 Rates are never entered on this screen": "pass - the rate table is displayed read-only, the view has no rate input and never names the table, and the service only reads it.",
+    "AC-6 Author cannot post their own computation": "pass - the author is refused before anything is written and a different controller posts it."
+  },
+  "engineFindings": {
+    "twoOwnerServicesDifferentJobs": {
+      "where": "Beep.OilandGas.ProductionAccounting/Services/ProductionTaxService.cs and Beep.OilandGas.Accounting/Services/TaxProvisionService.cs",
+      "finding": "The two tax services cover different halves and neither is a superset. ProductionTaxService computes severance and ad valorem from GOVERNMENTAL_TAX_DATA and writes a TAX_TRANSACTION per assessment, normalising a rate above 1 as a percentage. TaxProvisionService writes a current provision as a TAX_TRANSACTION posted to income tax expense against income tax payable, and a deferred position as a DEFERRED_TAX_BALANCE whose movement against the prior balance posts.",
+      "handling": "Both behaviours are reproduced rather than chosen between: the workbench has four kinds, two of them the production taxes and two the provisions, and the deferred provision uses the owner's movement-against-prior rule so a re-estimate posts its delta."
+    },
+    "ratesLiveInTheRemarkContract": {
+      "where": "GOVERNMENTAL_TAX_DATA and ProductionTaxRemarkKeys",
+      "finding": "The rate table has severance and ad valorem columns but no jurisdiction column and no corporate rate column. The owner carries both in the REMARK column as key=value tokens (JURISDICTION=..., DEFERRED_TAX_RATE=..., PROPERTY_ID=...) and parses them with ProductionTaxRemarkKeys.",
+      "handling": "The same contract is read, with the same keys and separators, so no column was invented and there is one source of truth. The oddity is recorded: the corporate rate's key is named DEFERRED_TAX_RATE even though the current provision uses it too, and every computation stores the exact key in RATE_SOURCE so the reader can see that."
+    },
+    "fiscalYearGateConflict": {
+      "finding": "The first implementation of SG-10-8 required all twelve months, including the period-end month, to be closed. That made a year-end provision impossible to post: the computation lands in the year it provides for, and the ledger refuses a write into a closed period - the gateway test failed with 'Period 2026-12 is closed, so the computation cannot be posted into it'.",
+      "handling": "The gate now requires every month to exist and every month before the period-end month to be closed, leaving the period-end month open because the provision is one of that month's closing entries. Whether the posting period accepts a write remains the ledger's own rule, so a locked book still refuses the posting and says so. Both rules are documented on the method."
+    },
+    "deferredPriorBalance": {
+      "finding": "Measuring the prior deferred balance as strictly before the period end meant a re-estimate for the same period measured against nothing and posted the whole balance again (6,000 rather than the 1,000 movement).",
+      "handling": "The prior is the latest balance at or before the period end, so a re-estimate measures against the balance it replaces. The unit test states the rule and the gateway asserts both the 5,000 first post and the 1,000 second."
+    },
+    "recordsWereNotRegistered": {
+      "finding": "TAX_TRANSACTION and DEFERRED_TAX_BALANCE existed in the owner but were absent from the module's entity list, so the module did not provision tables for the two records the workbench writes.",
+      "handling": "Both registered; smoke moved from 416 to 418 entity types."
+    }
+  },
+  "limits": [
+    "The fiscal year is assumed to be the calendar year, because the owner has no fiscal-calendar table; a non-calendar year would need one and the assumption is stated on the gate.",
+    "The corporate rate is the owner's single DEFERRED_TAX_RATE remark key, applied to both the current and the deferred provision. There is no separate current-tax rate, no rate by taxable-income band, no minimum tax and no R&D or investment allowance.",
+    "Taxable income is stated on the screen; it is not derived from the revenue and cost records, and the owner's TaxProvisionService has no income computation to reuse.",
+    "The deferred provision takes the closing asset and liability as stated and posts the movement; the temporary differences behind them are not modelled per difference (the owner has a TrackTemporaryDifference path that is not used here).",
+    "TAX_RETURN, TAX_ADJUSTMENT, TAX_WITHHOLDING and the owner's ETR reconciliation are not surfaced: the workbench computes and posts, it does not file a return, adjust a prior year or reconcile the effective rate.",
+    "The rate table is displayed but cannot be maintained here - by design (AC-5) - so a new jurisdiction or year is configured outside this screen, and no rate-history editor is offered.",
+    "The posting preview prints the accounts and amounts it will use but does not render the full journal before posting.",
+    "The feature's permissions (accounting.tax.read/.post) are not enforced per command: the app gates pages, and segregation of duties is the author-versus-poster rule.",
+    "ACC-01 is still not started, so STG-10 is not complete; SG-10-9 (decimal round-trip precision across persistence) is a stage-level item and is not claimed by this feature."
+  ]
+}

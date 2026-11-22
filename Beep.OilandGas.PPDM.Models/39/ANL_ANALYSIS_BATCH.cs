@@ -9,6 +9,7 @@ public partial class ANL_ANALYSIS_BATCH: Entity,IPPDMEntity
 {
 
 private  System.String BATCH_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BATCH_ID
         {  
             get  

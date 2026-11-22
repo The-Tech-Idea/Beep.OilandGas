@@ -9,6 +9,7 @@ public partial class RA_WEATHER_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String WEATHER_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WEATHER_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WEATHER_CONDITIONValue;
           set { SetProperty(ref  WEATHER_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

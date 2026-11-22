@@ -9,6 +9,7 @@ public partial class R_APPLIC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_TYPE
         {  
             get  

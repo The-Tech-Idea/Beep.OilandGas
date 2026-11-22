@@ -9,6 +9,7 @@ public partial class RA_PRESERVE_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String PRESERVATION_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRESERVATION_QUALITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PRESERVATION_QUALITYValue;
           set { SetProperty(ref  PRESERVATION_QUALITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

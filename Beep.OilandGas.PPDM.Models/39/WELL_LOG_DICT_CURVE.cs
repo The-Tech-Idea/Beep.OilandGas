@@ -9,6 +9,7 @@ public partial class WELL_LOG_DICT_CURVE: Entity,IPPDMEntity
 {
 
 private  System.String DICTIONARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DICTIONARY_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DICTIONARY_IDValue;
           set { SetProperty(ref  DICTIONARY_IDValue, value); }
         } 
 private  System.String DICT_CURVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DICT_CURVE_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_RATE_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String RATE_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RATE_CONDITIONValue;
           set { SetProperty(ref  RATE_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

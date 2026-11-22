@@ -9,6 +9,7 @@ public partial class SUBSTANCE_COMPOSITION: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SUBSTANCE_IDValue;
           set { SetProperty(ref  SUBSTANCE_IDValue, value); }
         } 
 private  System.String SUB_SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUB_SUBSTANCE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SUB_SUBSTANCE_IDValue;
           set { SetProperty(ref  SUB_SUBSTANCE_IDValue, value); }
         } 
 private  System.Decimal COMPOSITION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPOSITION_OBS_NO
         {  
             get  

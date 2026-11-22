@@ -1,0 +1,59 @@
+{
+  "id": "STG-02/WEL-03",
+  "title": "Wellbore management",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: the list is only the selected well's bores, a wellbore cannot exist without its well, deleting a bore with linked surveys is refused with the count, a total depth carries its unit (and disables survey screens without one), and a sidetrack records its parent",
+  "dataModel": {
+    "decision": "The codebase had no WELLBORE entity (no class, no PPDM metadata entry, no well/BAL column), so the owner table was added with the user's approval.",
+    "tables": "Beep.OilandGas.LifeCycle/Data/Tables/WELLBORE.cs and WELLBORE_SURVEY.cs, registered in Modules/LifeCycleModule.cs so module setup creates them",
+    "keys": "WELLBORE (UWI, WELLBORE_ID); WELLBORE_SURVEY (UWI, WELLBORE_ID, SURVEY_ID, SOURCE)",
+    "verified": "LIFECYCLE module setup applied and the SQLite database contains both tables with those keys (plus the common columns the module adds)"
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellbores.cs (OgWellboreSummary, OgWellboreRequest, IOgWellbores, OgWellbores)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellboresPageView.cs (route 'wellbores': grid, parent/child tree, detail, depth-unit chip, create, delete)",
+    "navigation": "WellHeaderPageView has a Wellbores action; the page opens the well in the shared context",
+    "wiring": "OgBootstrapper (IOgWellbores), OgApplication.Wellbores, catalog 'wellbores' (en + ar)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellboreTests.cs (8, no database) + WellboreGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~Wellbore", "exit": 0, "run": 9, "passed": 9, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 545, "passed": 545, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "OG_RUN_SETUP_PERF=1 (scope LIFECYCLE)", "exit": 0, "schema": "applied for 1 module, 0.2 min" },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "ac1_filter": "UWI-A listed 2 (then 3) bores and UWI-B 1; every row carried its own well",
+    "ac2_parent": "creating under UWI-MISSING refused with wellbore-parent-well-missing",
+    "ac3_surveys": "deleting WB-1 with one linked survey refused with wellbore-has-surveys and '1 survey(s) linked'",
+    "ac4_depth": "WB-1 showed '3000 m' with SurveyEnabled true; WB-2 (no unit) showed '(unit unspecified)' and SurveyEnabled false",
+    "ac5_sidetrack": "SIDETRACK without a parent refused with wellbore-parent-required; unknown parent refused with wellbore-parent-unknown; with parent WB-1 created and listed with ParentId WB-1",
+    "other_rules": "duplicate refused, a bore with a child refused, the last bore of a well refused, a leaf without surveys deleted"
+  },
+  "smoke": {
+    "pages-declared": 31,
+    "wellbores-route": "wellbores",
+    "wellbores-no-context": true,
+    "wellbores-followed-context": true,
+    "wellbores-fails-cleanly-without-table": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 The list only contains wellbores of the selected well": "pass - ListAsync filters WELLBORE by UWI in SQL; the SQLite test seeds two wells and asserts each list contains only its own bores.",
+    "AC-2 A wellbore cannot exist without a parent well": "pass - CreateAsync refuses when the well row does not exist (wellbore-parent-well-missing); the table key includes UWI, so a row cannot be stored without one.",
+    "AC-3 Deleting a wellbore with surveys is refused with the count": "pass - the delete counts WELLBORE_SURVEY rows for the bore; with one link it refused with wellbore-has-surveys and the sentence 'has 1 survey(s) linked'. Removing the link and the child lets the delete succeed.",
+    "AC-4 Total depth carries a unit": "pass - TOTAL_DEPTH and TOTAL_DEPTH_OUOM are stored together; the summary exposes DepthText ('3000 m') and SurveyEnabled false with 'unit unspecified' when the unit is missing.",
+    "AC-5 A sidetrack records its parent explicitly": "pass - SIDETRACK/REDRILL without a parent is refused; a parent must exist on the same well; a sidetrack created with parent WB-1 is listed with ParentId WB-1 and appears under it in the tree."
+  },
+  "limits": [
+    "WELLBORE and WELLBORE_SURVEY are a new LifeCycle-owned model (approved), not PPDM 3.9 tables; an existing database needs the LIFECYCLE module applied again to gain them.",
+    "Nothing populates WELLBORE_SURVEY yet - the survey pages (VSB-07, ENG-01) will - so today AC-3 blocks a delete only when a link has been created.",
+    "The page creates and deletes; it does not edit an existing bore's name/depth/parent (the plan's list is met, but editing is a later step).",
+    "Spud date and surface coordinates are accepted by the service but have no editor on the page yet.",
+    "Depth unit is free text (m/ft/...), not a reference list.",
+    "The page is exercised by construction and by unit/integration tests; no automated click drives the grid or tree."
+  ]
+}

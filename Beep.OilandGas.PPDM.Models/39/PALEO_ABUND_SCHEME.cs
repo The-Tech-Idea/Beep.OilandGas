@@ -9,6 +9,7 @@ public partial class PALEO_ABUND_SCHEME: Entity,IPPDMEntity
 {
 
 private  System.String SCHEME_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCHEME_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SCHEME_IDValue;
           set { SetProperty(ref  SCHEME_IDValue, value); }
         } 
 private  System.String ABUND_QUALIFIER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ABUND_QUALIFIER_ID
         {  
             get  

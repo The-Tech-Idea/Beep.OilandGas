@@ -9,6 +9,7 @@ public partial class R_WATER_DATUM: Entity,IPPDMEntity
 {
 
 private  System.String WATER_DATUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_DATUM
         {  
             get  

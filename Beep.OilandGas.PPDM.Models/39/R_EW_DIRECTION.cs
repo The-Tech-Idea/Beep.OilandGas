@@ -9,6 +9,7 @@ public partial class R_EW_DIRECTION: Entity,IPPDMEntity
 {
 
 private  System.String EW_DIRECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EW_DIRECTION
         {  
             get  

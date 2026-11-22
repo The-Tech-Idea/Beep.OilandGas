@@ -9,6 +9,7 @@ public partial class R_STREAMER_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String STREAMER_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STREAMER_POSITION
         {  
             get  

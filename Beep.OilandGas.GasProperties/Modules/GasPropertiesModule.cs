@@ -8,7 +8,7 @@ public sealed class GasPropertiesModule : IModuleSetup
     public string ModuleId => "GAS_PROPERTIES";
     public string ModuleName => "Gas Properties";
     public int Order => 72;
-    public IReadOnlyList<Type> EntityTypes { get; } = new[] { typeof(GAS_COMPOSITION), typeof(GAS_COMPOSITION_COMPONENT) };
+    public IReadOnlyList<Type> EntityTypes { get; } = new[] { typeof(GAS_COMPOSITION), typeof(GAS_COMPOSITION_COMPONENT), typeof(GAS_PROPERTY_RUN) };
     public Task<ModuleSetupResult> SeedAsync(string connectionName, string userId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

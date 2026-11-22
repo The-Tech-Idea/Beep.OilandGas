@@ -415,7 +415,10 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
 
             // Non-zero BIP table (symmetric): component name pairs → kij value
             // Source: Knapp et al. (1982), modified by Whitson and Brulé (2000).
-            var table = new Dictionary<(string, string), double>(StringComparer.OrdinalIgnoreCase.GetHashCode())
+            // A pair comparer, not a capacity: the previous form passed a string's hash code as the dictionary's
+            // capacity, so construction threw ArgumentOutOfRangeException ("capacity") whenever that random per-process
+            // value came out negative or too large, and the lookup was never case-insensitive either.
+            var table = new Dictionary<(string, string), double>(NamePairComparer.Instance)
             {
                 [("N2",  "CH4")]  = 0.031,  [("CH4", "N2")]  = 0.031,
                 [("N2",  "C2H6")] = 0.050,  [("C2H6","N2")]  = 0.050,
@@ -440,6 +443,21 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             }
 
             return kij;
+        }
+
+        /// <summary>Compares a pair of component names case-insensitively, for the binary interaction table.</summary>
+        private sealed class NamePairComparer : IEqualityComparer<(string, string)>
+        {
+            public static readonly NamePairComparer Instance = new();
+
+            public bool Equals((string, string) x, (string, string) y) =>
+                StringComparer.OrdinalIgnoreCase.Equals(x.Item1, y.Item1)
+                && StringComparer.OrdinalIgnoreCase.Equals(x.Item2, y.Item2);
+
+            public int GetHashCode((string, string) obj) =>
+                HashCode.Combine(
+                    StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Item1 ?? string.Empty),
+                    StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Item2 ?? string.Empty));
         }
     }
 }

@@ -9,6 +9,7 @@ public partial class RA_REPORT_HIER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String HIERARCHY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIERARCHY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HIERARCHY_TYPEValue;
           set { SetProperty(ref  HIERARCHY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -1,0 +1,52 @@
+{
+  "id": "STG-05/PRD-01",
+  "title": "Daily operations centre",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: a failed read renders the failure panel and never a page of zero cards; a day with no measured row is 'not yet reported' and is distinguishable from zero production; every volume carries its unit and a row in another unit is named rather than converted; the completeness indicator counts the field's active wells that did not report; and top movers are hidden with a reason until seven days of history exist.",
+  "dataModel": {
+    "decision": "PRD-01 adds no table. The day it shows is PPDM measurement, and PPDM already owns it: PDEN_VOL_SUMMARY carries OIL_VOLUME/GAS_VOLUME/WATER_VOLUME with their OUOMs, a real VOLUME_DATE and an AMENDMENT_SEQ_NO, and PDEN_WELL links the production entity to the well. Writing a second volume table would duplicate the interchange record the plan names as the source, so the feature reads it through its entity models and writes nothing.",
+    "grain": "PDEN_VOL_SUMMARY per production entity (PDEN_ID), per VOLUME_DATE (calendar day) and per ACTIVITY_TYPE, taking the highest AMENDMENT_SEQ_NO so an amendment supersedes the original. The stage document warned that this table's semantics vary per installation; the rule above is the one this screen applies, and every row it drops is counted and named on the page rather than silently ignored.",
+    "scope": "the field's wells from WELL.ASSIGNED_FIELD; the entities from PDEN_WELL.PRIMARY_UWI; volumes in a 30-day window ending on the selected day.",
+    "reads": "FIELD, WELL, PDEN_WELL, PDEN_VOL_SUMMARY (through UnitofWork reads over the entity models).",
+    "notBuiltHere": "deferment (PRD-03), allocation (PRD-04), reconciliation (PRD-05) and intervention (PRD-06) are named on the page as not yet available rather than shown as zero."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Production/OgOperationsCentre.cs (OgProductionDay, OgWellDay, OgMover, OgProductionAlert, OperationsCentreRules, OgOperationsCentre, IOgOperationsCentre, OgOperationsCentreService)",
+    "rules": "OperationsCentreRules states the window (30 days), the history a mover needs (7 days), the production-vs-injection rule, the water-cut rule (same unit only), the dominant-unit rule and the volume formatter once, so the page and the tests agree.",
+    "page": "src/Beep.OilandGas.Desktop/Views/OperationsCentrePageView.cs (route 'operations': day picker, KPI line, completeness, 30-day strip, wells grid, no-measurement grid, top-mover grid, excluded-row detail)",
+    "wiring": "OgBootstrapper (IOgOperationsCentre), OgApplication.OperationsCentre, catalog 'operations' (OgModuleKeys.Production), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/OperationsCentreTests.cs (14, no database) + OperationsCentreGatewayTests.cs (1 opt-in, real SQLite over the PPDM tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 789, "passed": 789, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 27, "passed": 27, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 51, "views-constructed": true, "modulesetup-summary": "28 module(s) - 376 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the PPDM FIELD, WELL, PDEN_WELL and PDEN_VOL_SUMMARY tables, seeded in OperationsCentreGatewayTests: two fields, four wells (one in another field), three production entities, an original and an amended measurement, an injection row, an undated row, a row in m3 and seven days of history",
+    "amendment": "the day's oil is 170 bbl: the amended PD-1 row (120 bbl) supersedes its original (100 bbl) and PD-2 adds 50 bbl; the superseded row is counted and named",
+    "ac1_failed_read": "dropping PDEN_VOL_SUMMARY makes LoadAsync fail with a reference and no workspace, so the page renders the failure panel instead of zero cards",
+    "ac2_not_yet": "a day 60 days before the data reads 'no production is recorded for this field in the last 30 day(s)', the oil reads 'not yet reported' and completeness reads 'no data for the day, so completeness is not known'; a day inside the window with no row reads 'not yet reported for ...'",
+    "ac3_units": "oil is summed only in bbl and the m3 row is named in NotComparable ('1 oil row(s) not in bbl'); the water cut is 30.61% because oil and water are both bbl, and a mismatched unit produces a sentence instead of a number",
+    "ac4_completeness": "the field has three active wells; WELL-3 did not report, so one alert is listed, the completeness sentence reads '1 of 3 active well(s) have no measurement', and WELL-9 (another field) is neither in the day nor in the count",
+    "ac5_movers": "WELL-1 has seven days of history at 100 bbl and reports 120 bbl on the day: the top-mover panel is shown with +20 bbl over 7 days; WELL-2 has no history and is left out",
+    "exclusions": "one injection row and one row without a volume date are excluded and counted in the detail line"
+  },
+  "gates": {
+    "AC-1 A failed read renders the failure panel, not zeros": "pass - the service returns Failed with a failure reference and no workspace on any read error, the page shows the failed view state, and the gateway test proves it by dropping the volume table.",
+    "AC-2 'Not yet reported' is distinguishable from zero production": "pass - a day with no row has Reported=false and reads 'not yet reported' in every volume, while a reported day with zero volumes reads '0 bbl'; the header distinguishes reported, not yet reported for a day in a window with data, and no data at all.",
+    "AC-3 Volumes carry a unit and are converted only through the catalog": "pass - every volume is formatted with its OUOM and '(unit not recorded)' when absent; totals are summed only within the fluid's dominant unit and a row in another unit is named as not comparable. No conversion is performed, so nothing claims one.",
+    "AC-4 The completeness indicator counts wells missing data": "pass - the count is the field's active wells minus the wells with a measurement that day, named individually in the alert grid and counted in the completeness sentence.",
+    "AC-5 Top movers requires at least 7 days of history": "pass - a well with fewer than seven prior days of its own history is excluded, and when no well qualifies the panel is hidden with the reason; the gateway test reads the +20 bbl change for the one qualifying well."
+  },
+  "limits": [
+    "PRD-01 adds no table: it reads PPDM PDEN_VOL_SUMMARY/PDEN_WELL/WELL/FIELD. The stage document's warning that PDEN_VOL_SUMMARY semantics vary per installation is answered by stating the grain on the page and in this evidence, not by normalising the source: rows the rule excludes (injection, undated, superseded amendment, another unit) are counted and named.",
+    "Volumes are not converted. The unit catalog exists but this screen performs no conversion, so a field whose wells report in different units shows each unit and refuses to add across them rather than converting silently.",
+    "The deferred-volume KPI, the downtime table and the allocated-versus-measured comparison are named as not yet available (PRD-03 and PRD-04) and are never rendered as zero. PRD-01 therefore meets its own ACs but SG-05-1's sibling items (SG-05-2..SG-05-6) belong to PRD-03..PRD-05 and are not claimed here.",
+    "Top movers compare each well's day against the mean of its previous up-to-seven days of oil volume; the feature's 'previous 7-day average' is implemented as the mean of the last seven recorded days, not a fixed calendar window, because a well's data can skip a day.",
+    "The volume strip is a sentence of the 30 days rather than a chart control: the plan's VolumeStrip control is not built, so the numbers and the unreported days are shown as text.",
+    "The feature's permissions (production.read, wells.read, production.deferment.read) are not enforced per command: the app gates pages, not commands.",
+    "The Web's field overview was substituted in its own tests, so its data behaviour is not treated as verified here; this screen is designed from the PPDM contract as the feature document instructs."
+  ]
+}

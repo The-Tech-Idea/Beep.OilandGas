@@ -9,6 +9,7 @@ public partial class R_FONT_EFFECT: Entity,IPPDMEntity
 {
 
 private  System.String FONT_EFFECTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FONT_EFFECT
         {  
             get  

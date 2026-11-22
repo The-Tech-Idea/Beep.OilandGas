@@ -9,6 +9,7 @@ public partial class R_PARCEL_LOT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_LOT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_LOT_TYPE
         {  
             get  

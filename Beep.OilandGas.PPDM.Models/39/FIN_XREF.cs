@@ -9,6 +9,7 @@ public partial class FIN_XREF: Entity,IPPDMEntity
 {
 
 private  System.String FINANCE_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FINANCE_ID1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FINANCE_ID1Value;
           set { SetProperty(ref  FINANCE_ID1Value, value); }
         } 
 private  System.String FINANCE_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FINANCE_ID2
         {  
             get  

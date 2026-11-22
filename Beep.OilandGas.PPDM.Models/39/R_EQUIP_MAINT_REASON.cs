@@ -9,6 +9,7 @@ public partial class R_EQUIP_MAINT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String MAINT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAINT_REASON
         {  
             get  

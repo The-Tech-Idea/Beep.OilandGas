@@ -9,6 +9,7 @@ public partial class RA_INV_MATERIAL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INVENTORY_MATERIAL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INVENTORY_MATERIAL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INVENTORY_MATERIAL_TYPEValue;
           set { SetProperty(ref  INVENTORY_MATERIAL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

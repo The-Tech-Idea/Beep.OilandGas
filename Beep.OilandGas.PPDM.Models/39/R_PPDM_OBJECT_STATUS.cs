@@ -9,6 +9,7 @@ public partial class R_PPDM_OBJECT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String OBJECT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBJECT_STATUS
         {  
             get  

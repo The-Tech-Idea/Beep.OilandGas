@@ -9,6 +9,7 @@ public partial class RA_TIMEZONE: Entity,IPPDMEntity
 {
 
 private  System.String TIMEZONEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TIMEZONE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TIMEZONEValue;
           set { SetProperty(ref  TIMEZONEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

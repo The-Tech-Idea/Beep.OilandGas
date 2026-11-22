@@ -9,6 +9,7 @@ public partial class PROJECT_STEP_XREF: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROJECT_IDValue;
           set { SetProperty(ref  PROJECT_IDValue, value); }
         } 
 private  System.String STEP_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_ID1
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STEP_ID1Value;
           set { SetProperty(ref  STEP_ID1Value, value); }
         } 
 private  System.String STEP_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_ID2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String STEP_ID2Value;
           set { SetProperty(ref  STEP_ID2Value, value); }
         } 
 private  System.Decimal XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_OBS_NO
         {  
             get  

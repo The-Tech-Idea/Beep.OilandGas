@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String DIR_SURVEY_CLASSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIR_SURVEY_CLASS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DIR_SURVEY_CLASSValue;
           set { SetProperty(ref  DIR_SURVEY_CLASSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

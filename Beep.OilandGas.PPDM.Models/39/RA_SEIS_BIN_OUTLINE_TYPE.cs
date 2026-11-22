@@ -9,6 +9,7 @@ public partial class RA_SEIS_BIN_OUTLINE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BIN_OUTLINE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BIN_OUTLINE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BIN_OUTLINE_TYPEValue;
           set { SetProperty(ref  BIN_OUTLINE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

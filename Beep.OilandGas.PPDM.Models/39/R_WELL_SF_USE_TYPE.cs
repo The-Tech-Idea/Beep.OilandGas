@@ -9,6 +9,7 @@ public partial class R_WELL_SF_USE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SF_USE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_USE_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_STRAT_FLD_NODE_LOC: Entity,IPPDMEntity
 {
 
 private  System.String NODE_LOC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NODE_LOC_TYPE
         {  
             get  

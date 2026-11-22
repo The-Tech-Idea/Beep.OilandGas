@@ -9,6 +9,7 @@ public partial class RA_PLOT_SYMBOL: Entity,IPPDMEntity
 {
 
 private  System.String PLOT_SYMBOLValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLOT_SYMBOL
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PLOT_SYMBOLValue;
           set { SetProperty(ref  PLOT_SYMBOLValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

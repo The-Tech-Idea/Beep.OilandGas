@@ -9,6 +9,7 @@ public partial class RA_FOS_TAXON_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String TAXON_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAXON_GROUP
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TAXON_GROUPValue;
           set { SetProperty(ref  TAXON_GROUPValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

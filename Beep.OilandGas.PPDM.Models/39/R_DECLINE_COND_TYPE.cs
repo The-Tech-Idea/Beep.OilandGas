@@ -9,6 +9,7 @@ public partial class R_DECLINE_COND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONDITION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONDITION_TYPE
         {  
             get  

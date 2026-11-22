@@ -9,6 +9,7 @@ public partial class RA_RIG_MAST: Entity,IPPDMEntity
 {
 
 private  System.String MAST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAST_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MAST_TYPEValue;
           set { SetProperty(ref  MAST_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

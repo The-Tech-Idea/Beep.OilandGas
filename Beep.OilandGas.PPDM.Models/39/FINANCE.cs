@@ -9,6 +9,7 @@ public partial class FINANCE: Entity,IPPDMEntity
 {
 
 private  System.String FINANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FINANCE_ID
         {  
             get  

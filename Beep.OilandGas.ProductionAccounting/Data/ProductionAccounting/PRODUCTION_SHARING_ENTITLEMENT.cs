@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class PRODUCTION_SHARING_ENTITLEMENT : ModelEntityBase
     {
         private string PSA_ENTITLEMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string PSA_ENTITLEMENT_ID
         {
             get { return this.PSA_ENTITLEMENT_IDValue; }

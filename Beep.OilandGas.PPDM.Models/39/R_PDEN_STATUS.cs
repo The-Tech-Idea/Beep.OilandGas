@@ -9,6 +9,7 @@ public partial class R_PDEN_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String PDEN_STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_STATUS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PDEN_STATUS_TYPEValue;
           set { SetProperty(ref  PDEN_STATUS_TYPEValue, value); }
         } 
 private  System.String PDEN_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_STATUS
         {  
             get  

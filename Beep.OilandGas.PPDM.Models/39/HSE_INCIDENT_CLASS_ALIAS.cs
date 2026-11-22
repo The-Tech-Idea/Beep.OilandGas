@@ -9,6 +9,7 @@ public partial class HSE_INCIDENT_CLASS_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_CLASS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INCIDENT_CLASS_IDValue;
           set { SetProperty(ref  INCIDENT_CLASS_IDValue, value); }
         } 
 private  System.Decimal ALIAS_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ALIAS_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RM_PHYSICAL_ITEM: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_ITEM_ID
         {  
             get  

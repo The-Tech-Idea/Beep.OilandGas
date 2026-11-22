@@ -1,0 +1,65 @@
+{
+  "id": "STG-01/DAT-08",
+  "title": "Versioning, access audit and sync",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met and durable: versions, the read audit and the audit chain live in the local SQLite file (a second store instance reads back what the first wrote), the workbench and the entity form append a version and a chain entry on every save and delete, and a broken chain blocks those writes until a named acknowledgement is made on the governance page",
+  "implementation": {
+    "contracts": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgGovernance.cs (IOgVersionStore, IOgAccessAudit, IOgAuditChain, OgChainGate)",
+    "versions": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgGovernance.cs (OgRowVersion, OgVersionStore.Record/History/Restore)",
+    "accessAudit": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgGovernance.cs (OgAccessAuditEntry, OgAccessAuditQuery, OgAccessAudit.Record/Query/ToCsv)",
+    "sync": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgGovernance.cs (OgSyncState, OgSyncStatus.Describe/Badge, OgSyncConflict, OgSyncConflicts.Resolve/Unresolved)",
+    "chain": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgGovernance.cs (OgAuditChainEntry, OgChainCheck, OgChainAcknowledgement, OgAuditChain.Append/Verify/Tamper/WritesAllowed)",
+    "durableStore": "src/Beep.OilandGas.Desktop/Diagnostics/SqliteGovernanceStore.cs (ROW_VERSION, ACCESS_AUDIT, AUDIT_CHAIN tables in the failure/audit SQLite file; typed value envelopes so a decimal stays a decimal and a date stays a date)",
+    "callers": "Views/TableWorkbenchPageView.cs (read audit on every successful read; version + chain entry on save/delete; gate before either write) and Views/EntityFormPageView.cs (gate, then version + chain entry on save)",
+    "page": "src/Beep.OilandGas.Desktop/Views/GovernancePageView.cs (route 'governance': sync status + conflicts, access audit with filter and export, chain verify/acknowledge)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/GovernanceTests.cs (7, in-memory) and SqliteGovernanceStoreTests.cs (8, SQLite round trips)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~GovernanceTests|FullyQualifiedName~SqliteGovernanceStoreTests", "exit": 0, "run": 15, "passed": 15, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 519, "passed": 519, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 29,
+    "gov-history": 3,
+    "gov-restored-from": true,
+    "gov-history-unchanged": "Alpha",
+    "gov-audit-export-rows": 1,
+    "gov-audit-excludes-other": true,
+    "gov-sync-distinct": true,
+    "gov-conflict-choice-required": "conflict-choice-required",
+    "gov-conflict-resolved": "KeepLocal",
+    "gov-chain-intact": true,
+    "gov-chain-broken-at": 1,
+    "gov-writes-blocked": true,
+    "gov-writes-reopened": true,
+    "gov-page-constructed": "NeverRun",
+    "gov-durable-versions": true,
+    "gov-durable-audit": true,
+    "gov-durable-chain": true,
+    "gov-reopened-history": 1,
+    "gov-reopened-value": "Alpha",
+    "gov-reopened-audit": 1,
+    "gov-reopened-chain-intact": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 a restore creates a new version and never modifies history": "pass - Record appends version numbers; Restore copies the chosen version's values into a new version with RestoredFrom set. A test restores version 1 after version 2 exists and asserts three entries numbered 1, 2, 3 with the first still holding its original value; the SQLite test reads the same history back through a second store instance; the smoke shows gov-history 3, gov-restored-from true, gov-history-unchanged Alpha and gov-reopened-history 1 after reopening the file.",
+    "AC-2 access audit records reader, table, filter and row count": "pass - Record takes reader, table, filter and row count and writes them to ACCESS_AUDIT. Tests assert all four on one entry, in memory and from the database; the workbench now records the signed-in reader and the active filter on every successful read.",
+    "AC-3 never-run and last-failed are visually and semantically distinct": "pass - OgSyncState has three values, Describe returns a different sentence for each and Badge returns 'never run' / 'in step' / 'last run failed', so the state is not colour alone. Tests assert distinct sentences and badges; the smoke shows gov-sync-distinct true.",
+    "AC-4 sync conflicts require explicit resolution": "pass - Resolve refuses a null choice (conflict-choice-required) and a blank actor (conflict-actor-required) and returns the conflict with both recorded. The page resolves only the selected conflict and audits sync.resolve; the smoke shows the refusal code and KeepLocal.",
+    "AC-5 audit export matches the on-screen filter exactly": "pass - Query and ToCsv take the same OgAccessAuditQuery, so the CSV is built from the rows the grid shows. The database test filters three reads by table and asserts two rows with the other table absent, and adds reader and time-window filters; the smoke exports one row and asserts the other table is not in the file.",
+    "AC-6 a broken audit chain is reported and blocks writes to governed tables until acknowledged": "pass - each entry hashes the previous hash and the SQLite store verifies the hash format written by the in-memory algorithm (a test compares them). Verify names the broken entry, WritesAllowed refuses while broken, an acknowledgement for a different entry does not help, and a named acknowledgement of the actual break re-opens writes. OgChainGate is the shared place that acknowledgement lives, so acknowledging on the governance page re-opens writes; the workbench save/delete and the form save consult it and refuse while the chain is broken. The smoke shows gov-writes-blocked true and gov-writes-reopened true."
+  },
+  "limits": [
+    "Sync is modelled, not performed: there is no push/pull client, no queue and no conflict detection from a real remote; conflicts have to be supplied (the page exposes SetConflicts).",
+    "The page is construction-tested by the smoke; the governance rules are unit-tested but no click-through drives its buttons. The workbench and form callers are likewise covered by unit tests and construction, not by a click.",
+    "The chain grows only where a caller appends: the workbench save/delete and the form save append, but a new write path that forgets to append is still invisible. A central write interceptor would close that.",
+    "Row history is recorded for workbench saves/deletes and form saves with the string values the form/page holds; there is no automatic change capture at the datasource level.",
+    "The export writes CSV; there is no signed or tamper-evident export, and no pagination of a very large access audit.",
+    "The durable store is one file per installation and is not compacted; nothing prunes old versions or audit rows yet."
+  ]
+}

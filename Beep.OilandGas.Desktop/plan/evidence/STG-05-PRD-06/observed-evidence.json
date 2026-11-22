@@ -1,0 +1,65 @@
+{
+  "id": "STG-05/PRD-06",
+  "title": "Intervention decisions and engineer workspace",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: a diagnosis without evidence says 'insufficient data' and names what is missing; every option states its basis (test, analogue or model) and an option without one is refused; an estimated gain carries its unit; a decision records its rationale, owner and target date; and a work order carries the decision it was raised from and cannot be raised twice, including the case where the creation is not acknowledged and is retried.",
+  "dataModel": {
+    "decision": "PRD-06 needed its own records: no table in the repository holds an intervention decision, its candidate options or a method code book. All three were added to the ProductionOperations module that already owns the deferment (PRD-03) records, because the diagnosis reads that module's evidence and the decision belongs to the same production operations surface.",
+    "tables": [
+      "INTERVENTION_DECISION (DECISION_ID key, FIELD_ID, WELL_ID, CHOSEN_OPTION_ID, RATIONALE, OWNER, TARGET_DATE, STATE, WORK_ORDER_REF, WORK_ORDER_AT, WORK_ORDER_BY, ACTOR, RECORDED_AT) - WORK_ORDER_REF is the column that makes 'one work order per decision' a single-row check (AC-5)",
+      "INTERVENTION_OPTION (OPTION_ID key, DECISION_ID, WELL_ID, METHOD, ESTIMATED_GAIN, GAIN_OUOM, ESTIMATED_COST, CURRENCY, RISK, BASIS, BASIS_TEXT, CHOSEN_IND) - the candidates are rows, so the basis and the gain unit are columns that validation can refuse (AC-2, AC-3) and the options that were not chosen stay on the record",
+      "R_INTERVENTION_METHOD (METHOD_CODE key, METHOD_NAME, CATEGORY, LIFT_RELATED_IND, ACTIVE_IND) - the method code book; deliberately not seeded, because the methods are the operating company's data"
+    ],
+    "registration": "FacilityManagementModuleSetup registers the three types; --smoke now reports 386 entity types (up from 383).",
+    "evidenceSources": {
+      "rate": "PPDM PDEN_VOL_SUMMARY through PDEN_WELL: the well's last reported day against the mean of up to seven recorded days before it, taking the highest AMENDMENT_SEQ_NO per entity/day/activity and production rows only (the same grain as PRD-01)",
+      "deferment": "PRODUCTION_DEFERMENT rows of PRD-03 with END_AT null",
+      "variance": "RECONCILIATION_VARIANCE rows of PRD-05 with MATERIAL_IND = 'Y' in the workspace's month, joined on the well dimension",
+      "status": "the latest PPDM WELL_STATUS row per well (WEL-04 owns changing it)"
+    }
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Production/OgInterventions.cs (OgInterventionEvidence, OgInterventionWell, OgInterventionOption, OgInterventionDecision, OgInterventionOptionValues, OgInterventionDecisionValues, OgInterventionPendingWorkOrder, OgInterventionWorkspace, InterventionRules, IOgInterventions, OgInterventionService with LoadAsync/RecordDecisionAsync/CreateWorkOrderAsync/RetryWorkOrderAsync)",
+    "rules": "InterventionRules states the three bases, the three risk levels, the seven-day history requirement, the whole validation (well, options, method in the set, no duplicate method, basis, gain unit, non-negative gain/cost, risk level, chosen option, rationale, owner, target date), the confidence rule (a quarter per evidenced check, capped at a half on a conflict) and the lift sentence once, so the page and the tests agree.",
+    "page": "src/Beep.OilandGas.Desktop/Views/InterventionsPageView.cs (route 'interventions': well grid with rate/average/change/diagnosis/confidence, the diagnosis panel with evidence, confidence and missing items, the candidate-option builder and grid, the decision bar with chosen option/rationale/owner/target, the decisions grid, the work-order bar with create and retry, and the method reference)",
+    "wiring": "OgBootstrapper (IOgInterventions), OgApplication.Interventions, catalog 'interventions' (OgModuleKeys.Production), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/InterventionTests.cs (15, no database) + InterventionGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 857, "passed": 857, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 32, "passed": 32, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 56, "views-constructed": true, "modulesetup-summary": "28 module(s) - 386 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the PPDM WELL, WELL_STATUS, PDEN_WELL and PDEN_VOL_SUMMARY tables, PRODUCTION_DEFERMENT (PRD-03), RECONCILIATION_VARIANCE (PRD-05) and the three new tables, seeded in InterventionGatewayTests",
+    "ac1_insufficient": "WELL-2 has no measurement and no status: its diagnosis reads 'insufficient data: no measured volume for the well; no status recorded ...', with no evidence and 0% confidence, while every other check is named as missing too",
+    "ac1_evidence": "WELL-1 reads rate 60 bbl against an average of 100 bbl over 7 days (a 40 bbl fall), plus its open EQ-FAIL deferment, plus a material variance at MEASURED of -40 bbl in 2026-10, plus its producing status - four evidenced checks, 100% confidence, three flags",
+    "conflict": "WELL-3 is recorded SUSPENDED yet measured 100 bbl against an average of 50: both sides are shown, the diagnosis says the evidence conflicts, nothing is resolved automatically and the confidence is capped at 50%",
+    "methods": "the workspace offers ACIDIZE, ESP and GAS_LIFT and excludes the inactive RETIRED code; an empty reference set reports MethodReferenceMissing and refuses every decision with intervention-method-reference-missing",
+    "ac2_basis": "an option with no basis is refused with intervention-basis-required, an unknown basis with intervention-basis-invalid, and the chosen GAS_LIFT row stores BASIS=TEST with its BASIS_TEXT ('the gas lift valve test on WELL-7')",
+    "ac3_gain": "an option with a gain and no unit is refused with intervention-gain-unit-required; the stored chosen option reads '120 bbl'",
+    "ac4_decision": "a decision with a blank rationale is refused with intervention-rationale-required; the recorded decision stores owner 'sara', the target date, both candidate options and exactly one CHOSEN_IND='Y' row (verified by counting the table)",
+    "ac5_workorder": "creating the work order 'WO-0001' moves the decision to ACTED and its link reads 'decision <id> -> work order WO-0001'; a second attempt is refused with intervention-work-order-exists naming WO-0001 and the decision count stays 1",
+    "ac5_lost": "a SQLite trigger blocked the update that records the work order: the call failed, Pending was set with the decision id and 'WO-0002', a re-read showed the decision still DECIDED with no work order, and after the trigger was dropped RetryWorkOrderAsync recorded it once (2 decisions in total)",
+    "failed_read": "dropping INTERVENTION_OPTION makes LoadAsync fail with a reference and no workspace"
+  },
+  "gates": {
+    "AC-1 A diagnosis without evidence says 'insufficient data'": "pass - the diagnosis carries its evidence items, its missing items and its confidence; with no evidence at all the text reads 'insufficient data' followed by the missing checks, and the gateway test reads that on a well with no measurement and no status.",
+    "AC-2 Each option states its basis (test, analogue, model)": "pass - BASIS is a required column restricted to TEST, ANALOGUE and MODEL, BASIS_TEXT names the evidence, validation refuses a missing or unknown basis (which is what makes an option without a basis unselectable), and the page refuses to add one.",
+    "AC-3 Estimated gain carries a unit": "pass - a gain with no GAIN_OUOM is refused with intervention-gain-unit-required, a negative gain is refused, and every gain is printed through the shared formatter so it always shows its unit.",
+    "AC-4 A decision records rationale and owner": "pass - validation refuses a blank rationale or owner (and a missing target date), both are stored, and the decision grid and detail print the owner, target and rationale.",
+    "AC-5 A work order carries the decision and cannot be created twice": "pass - the work order reference is recorded on the decision row, the record exposes the pair ('decision <id> -> work order <ref>'), a second creation is refused with intervention-work-order-exists, and a creation that is not acknowledged is retained in Pending and retried unchanged."
+  },
+  "limits": [
+    "The work order itself belongs to WRK-01, which is not built. This screen records the reference the decision was raised under and refuses a second one; it does not create a WORK_ORDER row.",
+    "The study action from the screens section (an LFT-01 study) is not built either. When the chosen method's reference row says LIFT_RELATED_IND='Y' the page states that a lift-method recommendation belongs to LFT-01 and that this screen records the decision rather than computing a design.",
+    "The feature's open question about LiftRecommendationCard is answered as: nothing is computed on the client here. The external packages Vogel and DeclineFitter are not used, because no lift recommendation is computed at all; when LFT-01 exists it is the owner of that calculation.",
+    "The confidence is a stated rule (a quarter per evidenced check, capped at a half on a conflict), not a statistical or model-derived score; the plan asks for confidence to be shown without defining how it is computed.",
+    "The diagnosis is a read of the records PRD-01, PRD-03, PRD-05 and WEL-04 already wrote. It adds no new measurement and takes no second opinion about a volume: a well with no measurement genuinely has no rate evidence.",
+    "A material variance is evidence of a gap, not of its cause, so it is recorded as neutral evidence and does not by itself make a well 'underperforming' - the flag for it names the variance, not a conclusion.",
+    "The option list is per decision; re-deciding a well creates a second decision rather than amending the first, so the history of what was decided is kept.",
+    "The feature's permissions (production.read, production.intervention.write, work.write) are not enforced per command: the app gates pages.",
+    "The three new tables need the ProductionOperations module applied again on an existing database."
+  ]
+}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -71,9 +71,10 @@ namespace Beep.OilandGas.GasLift.Calculations
                                              wellProperties.WELL_DEPTH;
                 decimal valveTemperature = wellProperties.WELLHEAD_TEMPERATURE + temperatureGradient * valveDepth;
 
-                // Calculate Z-factor at valve conditions
+                // Calculate Z-factor at valve conditions. The valve temperature is Fahrenheit and the correlation
+                // takes Rankine, so it is converted here.
                 decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                    openingPressure, valveTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
+                    openingPressure, valveTemperature + 459.67m, wellProperties.GAS_SPECIFIC_GRAVITY);
 
                 // Design valve port size
                 decimal portSize = CalculateValvePortSize(

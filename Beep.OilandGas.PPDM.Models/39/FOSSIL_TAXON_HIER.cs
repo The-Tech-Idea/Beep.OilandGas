@@ -9,6 +9,7 @@ public partial class FOSSIL_TAXON_HIER: Entity,IPPDMEntity
 {
 
 private  System.String PARENT_TAXON_LEAF_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARENT_TAXON_LEAF_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARENT_TAXON_LEAF_IDValue;
           set { SetProperty(ref  PARENT_TAXON_LEAF_IDValue, value); }
         } 
 private  System.String CHILD_TAXON_LEAF_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHILD_TAXON_LEAF_ID
         {  
             get  

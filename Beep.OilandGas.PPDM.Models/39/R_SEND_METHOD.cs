@@ -9,6 +9,7 @@ public partial class R_SEND_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String SEND_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEND_METHOD
         {  
             get  

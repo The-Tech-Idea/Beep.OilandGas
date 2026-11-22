@@ -9,6 +9,7 @@ public partial class R_COORD_CAPTURE: Entity,IPPDMEntity
 {
 
 private  System.String CAPTURE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAPTURE_METHOD
         {  
             get  

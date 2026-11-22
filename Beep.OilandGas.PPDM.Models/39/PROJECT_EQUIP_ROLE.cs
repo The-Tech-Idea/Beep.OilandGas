@@ -9,6 +9,7 @@ public partial class PROJECT_EQUIP_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROJECT_IDValue;
           set { SetProperty(ref  PROJECT_IDValue, value); }
         } 
 private  System.Decimal EQUIPMENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal EQUIPMENT_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal EQUIPMENT_OBS_NOValue;
           set { SetProperty(ref  EQUIPMENT_OBS_NOValue, value); }
         } 
 private  System.String EQUIPMENT_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIPMENT_ROLE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String EQUIPMENT_ROLEValue;
           set { SetProperty(ref  EQUIPMENT_ROLEValue, value); }
         } 
 private  System.Decimal ROLE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ROLE_SEQ_NO
         {  
             get  

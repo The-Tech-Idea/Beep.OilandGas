@@ -9,6 +9,7 @@ public partial class EQUIPMENT_USE_STAT: Entity,IPPDMEntity
 {
 
 private  System.String EQUIPMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIPMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EQUIPMENT_IDValue;
           set { SetProperty(ref  EQUIPMENT_IDValue, value); }
         } 
 private  System.String SPEC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPEC_ID
         {  
             get  

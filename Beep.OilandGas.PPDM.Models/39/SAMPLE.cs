@@ -9,6 +9,7 @@ public partial class SAMPLE: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_LAND_LESSOR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LAND_LESSOR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_LESSOR_TYPE
         {  
             get  

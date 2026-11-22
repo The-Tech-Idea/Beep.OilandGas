@@ -9,6 +9,7 @@ public partial class STRAT_WELL_INTERP_AGE: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String STRAT_UNIT_IDValue;
           set { SetProperty(ref  STRAT_UNIT_IDValue, value); }
         } 
 private  System.String INTERP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTERP_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String INTERP_IDValue;
           set { SetProperty(ref  INTERP_IDValue, value); }
         } 
 private  System.String AGE_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AGE_SOURCE
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String AGE_SOURCEValue;
           set { SetProperty(ref  AGE_SOURCEValue, value); }
         } 
 private  System.String AGE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AGE_ID
         {  
             get  

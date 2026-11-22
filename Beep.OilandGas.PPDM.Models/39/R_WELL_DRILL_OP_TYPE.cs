@@ -9,6 +9,7 @@ public partial class R_WELL_DRILL_OP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DRILL_OP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILL_OP_TYPE
         {  
             get  

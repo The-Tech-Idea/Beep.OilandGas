@@ -9,6 +9,7 @@ public partial class R_ENT_EXPIRY_ACTION: Entity,IPPDMEntity
 {
 
 private  System.String EXPIRY_ACTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EXPIRY_ACTION
         {  
             get  

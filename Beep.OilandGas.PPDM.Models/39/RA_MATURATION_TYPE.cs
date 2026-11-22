@@ -9,6 +9,7 @@ public partial class RA_MATURATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MATURATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MATURATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MATURATION_TYPEValue;
           set { SetProperty(ref  MATURATION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

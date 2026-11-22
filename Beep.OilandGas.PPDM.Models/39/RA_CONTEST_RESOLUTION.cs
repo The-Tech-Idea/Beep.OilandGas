@@ -9,6 +9,7 @@ public partial class RA_CONTEST_RESOLUTION: Entity,IPPDMEntity
 {
 
 private  System.String RESOLUTION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESOLUTION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESOLUTION_METHODValue;
           set { SetProperty(ref  RESOLUTION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

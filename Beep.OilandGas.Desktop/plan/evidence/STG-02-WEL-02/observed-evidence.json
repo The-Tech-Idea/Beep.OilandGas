@@ -1,0 +1,57 @@
+{
+  "id": "STG-02/WEL-02",
+  "title": "Well header and business associates",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: an edit round-trips and leaves untouched columns alone (a stale edit is a conflict), a conflicting identifier is not auto-chosen and the explicit choice is recorded, a location edit requires and records the coordinate system, participant changes record actor and date, the operator cannot be removed, and status is never written here",
+  "implementation": {
+    "contracts": "src/Beep.OilandGas.Desktop.Data/Wells/OgWellHeader.cs (OgWellHeader, OgWellIdentifier, OgWellParticipant, OgWellHeaderBundle, IOgWellHeader, OgWellHeaderService)",
+    "notes": "src/Beep.OilandGas.Desktop/Diagnostics/OgWellHeaderNotesStore.cs (coordinate system per well and explicit identifier choices, with actor and time, under <data>/Wells/well-header-notes.json)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellHeaderPageView.cs (route 'well': Identity / Location / Classification / Dates / Participants / Identifiers tabs, save, add/remove participant, resolve identifier)",
+    "navigation": "Views/WellSearchPageView.cs now opens the header after setting the shared well context",
+    "wiring": "OgBootstrapper (IOgWellHeader, OgWellHeaderNotesStore), OgApplication.WellHeader/WellHeaderNotes, catalog 'well' (en + ar)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellHeaderTests.cs (6, no database) + WellHeaderGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~WellHeader", "exit": 0, "run": 7, "passed": 7, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 536, "passed": 536, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "database": "SQLite WELL, WELL_XREF, WELL_BA_SERVICE and BUSINESS_ASSOCIATE",
+    "edit_round_trip": "name and KB changed; government id, operator, latitude and final TD unchanged after reload",
+    "concurrency": "the same edit against the stale original is refused with well-header-conflict",
+    "status": "changing CURRENT_STATUS in the header left the stored value 'ACTIVE'",
+    "participant": "added BA-2 with ROW_CHANGED_BY 'sara' and a ROW_CHANGED_DATE; removed again successfully",
+    "operator": "removing BA-1 (the operator) is refused with well-operator-required",
+    "ambiguity": "two API xrefs loaded as conflicting; ApiNumber null; AmbiguousTypes ['API']"
+  },
+  "smoke": {
+    "pages-declared": 30,
+    "well-header-route": "well",
+    "well-header-status-readonly": true,
+    "well-header-fails-cleanly-without-row": true,
+    "well-header-location-system": "EPSG:4326",
+    "well-header-location-actor": "smoke-admin",
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 An edit round-trips and preserves untouched columns": "pass - SaveAsync writes only the columns that differ and guards the UPDATE on the values the header was read with. The SQLite test changes name and KB, reloads, and asserts government id, operator, latitude and final TD are unchanged; replaying the same edit with the stale original returns well-header-conflict.",
+    "AC-2 A conflicting identifier is refused for automatic selection and must be resolved explicitly": "pass - identifiers are grouped by type; two API rows with different values mark the type conflicting, ChosenIdentifier returns null for it, the header's HasAmbiguousIdentifiers is true and AmbiguousTypes is ['API']. The page shows the banner and no auto value; a chosen identifier is recorded (UWI, type, value, actor, time) and read back by a new store instance.",
+    "AC-3 Location edits record the coordinate system used": "pass - a latitude/longitude change without a coordinate system is refused with well-coordinate-system-required; a change with one records OgWellLocationRecord(uwi, system, actor, at) in the notes file and writes a well.location audit row. The smoke reads EPSG:4326 back with actor smoke-admin.",
+    "AC-4 Participant changes record actor and date": "pass - adding a participant writes ROW_CREATED_BY/DATE and ROW_CHANGED_BY/DATE; the SQLite test reads them back as 'sara' and a non-empty date, and the page writes a well.participant.add audit row.",
+    "AC-5 Removing the operator is refused": "pass - clearing the operator on save is refused with well-operator-required, and removing the participant row whose business associate id equals WELL.OPERATOR is refused with the same code; another participant is removed successfully.",
+    "AC-6 Status cannot be changed here (only in WEL-04)": "pass - CURRENT_STATUS is never part of the UPDATE; a header edited with Status='SUSPENDED' left the stored value 'ACTIVE'. The page renders status as a label with the sentence that WEL-04 changes it, and the smoke asserts StatusIsReadOnly."
+  },
+  "limits": [
+    "The coordinate system is recorded in the per-user notes file and the audit trail, because the PPDM WELL table has no coordinate-system column; it is not written into the well row.",
+    "A concurrency conflict is reported with a sentence telling the person to reload; the side-by-side original/current diff from the plan is not built.",
+    "The unsaved-changes navigation guard is not built.",
+    "A missing location shows a warning sentence; the map/survey pages do not consume the flag yet (they are not built).",
+    "Participants are added and removed with an id and a description; the role/interest model from the plan is not present in WELL_BA_SERVICE, so the description carries the role and no interest is stored.",
+    "The header edits identity (name, government id, field, operator), location (coordinates, elevations, TD) only; classification, dates and identifiers are read-only here.",
+    "The page is exercised by construction and by unit/integration tests; no automated click drives the tabs."
+  ]
+}

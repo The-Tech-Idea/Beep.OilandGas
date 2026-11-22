@@ -9,6 +9,7 @@ public partial class RA_DEDUCT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DEDUCT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEDUCT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DEDUCT_TYPEValue;
           set { SetProperty(ref  DEDUCT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

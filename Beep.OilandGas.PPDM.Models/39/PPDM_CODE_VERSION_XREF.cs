@@ -9,6 +9,7 @@ public partial class PPDM_CODE_VERSION_XREF: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SYSTEM_IDValue;
           set { SetProperty(ref  SYSTEM_IDValue, value); }
         } 
 private  System.String TABLE_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TABLE_NAME
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String TABLE_NAMEValue;
           set { SetProperty(ref  TABLE_NAMEValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal VERSION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal VERSION_OBS_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal VERSION_OBS_NOValue;
           set { SetProperty(ref  VERSION_OBS_NOValue, value); }
         } 
 private  System.String SYSTEM_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_ID2
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String SYSTEM_ID2Value;
           set { SetProperty(ref  SYSTEM_ID2Value, value); }
         } 
 private  System.String TABLE_NAME2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TABLE_NAME2
         {  
             get  
@@ -69,6 +75,7 @@ private  System.String TABLE_NAME2Value;
           set { SetProperty(ref  TABLE_NAME2Value, value); }
         } 
 private  System.String SOURCE2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE2
         {  
             get  
@@ -79,6 +86,7 @@ private  System.String SOURCE2Value;
           set { SetProperty(ref  SOURCE2Value, value); }
         } 
 private  System.Decimal VERSION_OBS_NO2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal VERSION_OBS_NO2
         {  
             get  

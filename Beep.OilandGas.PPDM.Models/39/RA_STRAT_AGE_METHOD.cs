@@ -9,6 +9,7 @@ public partial class RA_STRAT_AGE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_AGE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_AGE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_AGE_METHODValue;
           set { SetProperty(ref  STRAT_AGE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

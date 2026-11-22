@@ -9,6 +9,7 @@ public partial class REPORT_HIER_DESC: Entity,IPPDMEntity
 {
 
 private  System.String HIERARCHY_TYPE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIERARCHY_TYPE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HIERARCHY_TYPE_IDValue;
           set { SetProperty(ref  HIERARCHY_TYPE_IDValue, value); }
         } 
 private  System.Decimal LEVEL_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal LEVEL_SEQ_NO
         {  
             get  

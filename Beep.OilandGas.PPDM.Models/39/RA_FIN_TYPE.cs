@@ -9,6 +9,7 @@ public partial class RA_FIN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FIN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIN_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FIN_TYPEValue;
           set { SetProperty(ref  FIN_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

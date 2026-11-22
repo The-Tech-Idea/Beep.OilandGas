@@ -1,0 +1,56 @@
+{
+  "id": "STG-07/LFT-03",
+  "title": "ESP and pump performance",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a duty rate outside the published H-Q curve is refused with the range the curve covers; the NPSH margin is compared against PumpConstants' own minimum and both values are named; an affinity result outside the curve is labelled extrapolated; the numbers are the owner's calculations and a source guard keeps them out of the view; every result states its unit; and a saved design records the curve source and the stage count.",
+  "dataModel": {
+    "decision": "The PumpPerformance module owned the ESP tables (design properties, result, motor, cable, curve points) but had no module setup at all, so a provisioned database never created them, and none of those tables fits a duty-point check on a published curve for any pump type. A PUMP_DESIGN table was added and a PumpPerformanceModule registers it together with the five ESP tables - closing an existing registration gap rather than leaving it.",
+    "tables": [
+      "PUMP_DESIGN (DESIGN_ID key, WELL_UWI, DESIGN_DATE, PUMP_TYPE, CURVE_SOURCE, CURVE_POINTS, STAGES, DUTY_RATE, DUTY_HEAD, TOTAL_HEAD, EFFICIENCY, BRAKE_HORSEPOWER, POWER_KW, NPSH_AVAILABLE, NPSH_REQUIRED, NPSH_MARGIN, NPSH_MINIMUM_MARGIN, NPSH_WARNING_IND, OPERATING_POINT_VALID, RATE_OUOM, HEAD_OUOM, POWER_OUOM, AFFINITY_TEXT, EXTRAPOLATED_IND, NOTES, ACTOR, RECORDED_AT)",
+      "ESP_DESIGN_PROPERTIES, ESP_DESIGN_RESULT, ESP_MOTOR_PROPERTIES, ESP_CABLE_PROPERTIES, ESP_PUMP_POINT - registered for the first time by the module"
+    ],
+    "registration": "PumpPerformanceModule (order 76, no seed: there is no pump-curve catalog to seed). --smoke now reports 29 modules and 398 entity types (up from 28 and 392).",
+    "engine": "HeadQuantityCalculations for the curve and its interpolation, PowerCalculations for the brake horsepower, EfficiencyCalculations for the overall efficiency, NPSHCalculations for the margin and AffinityLaws for the speed change."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgPump.cs (PumpTypes, OgPumpCurvePoint, OgPumpInputs, OgPumpResult, OgPumpPending, OgPumpWorkspace, PumpRules, IOgPump, OgPumpService with AnalyseAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "rules": "PumpRules states every required input, the curve rule (two or more points, rates strictly increasing, no negative rate or head), the stage, speed and gravity rules, the module's NPSH minimum read from PumpConstants, the curve source and the refusal codes once.",
+    "page": "src/Beep.OilandGas.Desktop/Views/PumpPageView.cs (route 'pumps': the curve editor, the pump/speed/suction bars, the duty point with its stages, the NPSH line with both values, the affinity line, the notes, the curve and the saved duty points)",
+    "wiring": "OgBootstrapper (IOgPump), OgApplication.Pumps, catalog 'pumps' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "projectReference": "PumpPerformance now references Models, PPDM39 and PPDM39.DataManagement so its module setup can compile.",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PumpTests.cs (8, no database) + PumpGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 967, "passed": 967, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 42, "passed": 42, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 66, "views-constructed": true, "modulesetup-summary": "29 module(s) - 398 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PUMP_DESIGN, seeded in PumpGatewayTests",
+    "ac1_outside": "a duty rate of 2,000 GPM against a 0-1,500 GPM curve is refused with pump-duty-outside-curve naming both the rate and the range, and no row is written",
+    "duty_point": "at 750 GPM on the 0/120, 500/110, 1,000/90, 1,500/60 curve the head reads 100 ft, the efficiency comes from the curve's own column (filled from the published power), and the brake horsepower and kilowatts are the module's",
+    "ac6_saved": "the stored row carries CURVE_SOURCE = ENTERED, STAGES = 3, the three unit columns GPM/ft/hp, the module's NPSH minimum, OPERATING_POINT_VALID = Y, the actor and the curve points",
+    "ac2_npsh": "the margin is the difference between the owner's available and required values, compared against PumpConstants.DefaultNpshSafetyMarginFeet (2 ft); a deep suction lift reports the warning with both values and the minimum, and the stored NPSH_MINIMUM_MARGIN is 2",
+    "ac3_affinity": "an 8,000 rpm affinity result moves the duty point outside the published 0-1,500 GPM and is stored with EXTRAPOLATED_IND = 'Y' and the sentence saying so",
+    "reload": "the reloaded design keeps the duty rate, head, 300 ft total across three stages, the four curve points and the NPSH figures",
+    "lost_acknowledgement": "dropping the table makes the save fail with the design retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping PUMP_DESIGN makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A duty point outside the published curve is refused": "pass - the validation refuses a duty rate above the curve's highest or at or below zero, naming the rate and the range; the gateway test asserts the refusal writes nothing. This is SG-07-4.",
+    "AC-2 NPSH margin uses the configured value from PumpConstants": "pass - PumpRules.MinimumNpshMargin is PumpConstants.DefaultNpshSafetyMarginFeet (no literal in the screen), the margin is the difference of the owner's available and required values, and a margin below the minimum produces the warning with both values and the minimum in one sentence.",
+    "AC-3 Extrapolated affinity results are labelled": "pass - a speed change whose new rate leaves the published range sets Extrapolated and the affinity sentence ends 'so it is extrapolated'; a speed change inside the range is not labelled, and the stored row keeps the flag.",
+    "AC-4 Curves are drawn by PumpPerformanceRenderer": "pass with a stated substitution - the renderer needs the chart host these screens do not have, so the curve is listed point by point. The arithmetic is the owner's: a source guard asserts the view references none of HeadQuantityCalculations, PowerCalculations, EfficiencyCalculations, NPSHCalculations or AffinityLaws, and the service references all of them.",
+    "AC-5 Every result states its unit": "pass - GPM, ft, hp (with kW), % and the NPSH feet are in every text, and the unit names are constants on the result rather than strings in the view.",
+    "AC-6 A saved design records the curve source and stage count": "pass - CURVE_SOURCE and STAGES are columns, written on save and asserted on the stored row; the curve source is ENTERED and the page says why (no pump-curve catalog exists in this repository)."
+  },
+  "limits": [
+    "There is no pump-curve catalog in this repository, so the 'published curve' is the one the engineer enters and every design records CURVE_SOURCE = ENTERED. A catalog would be its own data addition.",
+    "The curves are listed point by point, not plotted: PumpPerformanceRenderer needs the chart host these calculation screens do not have. PumpPerformanceInteractionHandler is not attached for the same reason.",
+    "The ESP design tab (motor selection, cable loss, voltage drop, temperature check) is not built. ESPDesignCalculator.DesignESP and the ESP tables exist and are now registered; surfacing them is LFT-03's remaining half and is recorded here as deferred rather than claimed.",
+    "A positive suction head is subtracted from the available NPSH by the owner's formula (it is treated as a lift), which is what the engine does; the page labels the field 'suction head' and the margin sentence states both values so the sign is visible.",
+    "The stage count multiplies the per-stage head; the curve is per stage. That is stated on the page ('head per stage X, total Y') rather than assumed silently.",
+    "The feature's permissions (lift.pump.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

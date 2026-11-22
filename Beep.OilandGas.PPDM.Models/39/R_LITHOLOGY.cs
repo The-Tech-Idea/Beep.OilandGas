@@ -9,6 +9,7 @@ public partial class R_LITHOLOGY: Entity,IPPDMEntity
 {
 
 private  System.String LITHOLOGYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITHOLOGY
         {  
             get  

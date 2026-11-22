@@ -9,6 +9,7 @@ public partial class RA_OIL_VALUE_CODE: Entity,IPPDMEntity
 {
 
 private  System.String OIL_VALUE_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OIL_VALUE_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OIL_VALUE_CODEValue;
           set { SetProperty(ref  OIL_VALUE_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

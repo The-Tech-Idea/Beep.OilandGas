@@ -9,6 +9,7 @@ public partial class RA_DECLINE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DECLINE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DECLINE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DECLINE_TYPEValue;
           set { SetProperty(ref  DECLINE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

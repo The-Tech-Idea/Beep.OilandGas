@@ -9,6 +9,7 @@ public partial class RA_LOG_TOOL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LOG_TOOL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOG_TOOL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LOG_TOOL_TYPEValue;
           set { SetProperty(ref  LOG_TOOL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

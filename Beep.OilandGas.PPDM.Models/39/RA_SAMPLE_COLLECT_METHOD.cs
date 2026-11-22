@@ -9,6 +9,7 @@ public partial class RA_SAMPLE_COLLECT_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String COLLECT_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLLECT_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COLLECT_METHODValue;
           set { SetProperty(ref  COLLECT_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

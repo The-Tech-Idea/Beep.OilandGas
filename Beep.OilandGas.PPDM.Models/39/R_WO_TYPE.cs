@@ -9,6 +9,7 @@ public partial class R_WO_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WORK_ORDER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WORK_ORDER_TYPE
         {  
             get  

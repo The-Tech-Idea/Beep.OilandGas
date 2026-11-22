@@ -9,6 +9,7 @@ public partial class WELL_LICENSE_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String WELL_LIC_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_LIC_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String WELL_LIC_SOURCEValue;
           set { SetProperty(ref  WELL_LIC_SOURCEValue, value); }
         } 
 private  System.String LICENSE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String LICENSE_IDValue;
           set { SetProperty(ref  LICENSE_IDValue, value); }
         } 
 private  System.String REMARK_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String REMARK_IDValue;
           set { SetProperty(ref  REMARK_IDValue, value); }
         } 
 private  System.Decimal REMARK_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REMARK_SEQ_NO
         {  
             get  

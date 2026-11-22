@@ -9,6 +9,7 @@ public partial class R_LITH_ABUNDANCE: Entity,IPPDMEntity
 {
 
 private  System.String ABUNDANCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ABUNDANCE
         {  
             get  

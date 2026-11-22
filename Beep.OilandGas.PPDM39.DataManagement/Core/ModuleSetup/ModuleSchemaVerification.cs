@@ -1,4 +1,4 @@
-using Beep.OilandGas.Models.Data.Company;
+﻿using Beep.OilandGas.Models.Data.Company;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +14,20 @@ public sealed class ModuleSchemaMismatchException(string message) : InvalidOpera
 
 public static class ModuleSchemaVerification
 {
+    /// <summary>
+    /// How the generated models are read into an <see cref="EntityStructure"/> - once, for both the migration that
+    /// creates the schema and this verification that checks it.
+    /// </summary>
+    /// <remarks>
+    /// The PPDM models are generated into a project with Nullable enabled but carry no annotations, so a
+    /// <c>System.String</c> reads as non-nullable and every text column would be NOT NULL. These are data columns that
+    /// may be empty (REMARK is the first one a seed hit), so nullable-reference honouring is off; a <c>[Key]</c> is
+    /// still NOT NULL because the attribute sets that explicitly. Using one instance here and in
+    /// <c>PPDM39SetupService</c> is what stops the created table and the verified expectation drifting apart.
+    /// </remarks>
+    public static TheTechIdea.Beep.Editor.EntityReadOptions ModelReadOptions { get; } =
+        new() { HonorNullableReferenceTypes = false };
+
     public static void Verify(IDMEEditor editor, IDataSource source, IReadOnlyList<Type> entityTypes)
     {
         if (entityTypes.Count == 0)
@@ -21,7 +35,10 @@ public static class ModuleSchemaVerification
         ModuleSchemaBoundary.Validate(entityTypes);
         foreach (var type in entityTypes)
         {
-            var expected = editor.classCreator.ConvertToEntityStructure(type)
+            // Read the expectation exactly as the migration read it, or a nullable column is reported as a mismatch.
+            var expected = (editor.classCreator is TheTechIdea.Beep.Tools.ClassCreator concrete
+                    ? concrete.ConvertToEntityStructure(type, ModelReadOptions)
+                    : editor.classCreator.ConvertToEntityStructure(type))
                 ?? throw new InvalidOperationException($"Cannot resolve schema metadata for '{type.Name}'.");
             // A new structure prevents cached, pre-execution fields from satisfying verification.
             var actual = source.GetEntityStructure(new EntityStructure

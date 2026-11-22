@@ -9,6 +9,7 @@ public partial class RA_TEST_PERIOD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TEST_PERIOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_PERIOD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TEST_PERIOD_TYPEValue;
           set { SetProperty(ref  TEST_PERIOD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_SEIS_SEGMENT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SEGMENT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SEGMENT_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_SEGMENT_REASONValue;
           set { SetProperty(ref  SEIS_SEGMENT_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

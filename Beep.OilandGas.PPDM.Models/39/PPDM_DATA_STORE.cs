@@ -9,6 +9,7 @@ public partial class PPDM_DATA_STORE: Entity,IPPDMEntity
 {
 
 private  System.String UOM_SYSTEMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UOM_SYSTEM
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UOM_SYSTEMValue;
           set { SetProperty(ref  UOM_SYSTEMValue, value); }
         } 
 private  System.String NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NAME
         {  
             get  

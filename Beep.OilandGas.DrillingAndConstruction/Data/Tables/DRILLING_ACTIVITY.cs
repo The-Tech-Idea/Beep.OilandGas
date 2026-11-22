@@ -10,6 +10,7 @@ namespace Beep.OilandGas.Models.Data.DrillingAndConstruction
     public partial class DRILLING_ACTIVITY : ModelEntityBase
     {
         private System.String ACTIVITY_IDValue = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String ACTIVITY_ID
         {
             get { return this.ACTIVITY_IDValue; }

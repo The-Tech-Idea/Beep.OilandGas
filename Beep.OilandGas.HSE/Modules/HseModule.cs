@@ -1,4 +1,4 @@
-using Beep.OilandGas.PPDM39.Core;
+﻿using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.ModuleSetup;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
+using Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.HSE.Modules
 {
@@ -17,7 +18,35 @@ namespace Beep.OilandGas.HSE.Modules
     public sealed class HseModule : ModuleSetupBase
     {
         // The incident command binds to PPDM_CORE; its private intent is migrated by CorePpdmModule.
-        private static readonly IReadOnlyList<Type> _entityTypes = Array.Empty<Type>();
+        //
+        // HSE-01 and HSE-02 read these records: an incident with its detail (type and severity), its field/facility/
+        // jurisdiction component and its status history; an obligation; and the PROJECT family that carries a HAZOP study
+        // or a corrective action with its steps and statuses. They are declared here, in the module that owns HSE, so a
+        // desktop document provisions the tables its own HSE screens read - the PPDM foundation declares none of its own.
+        private static readonly IReadOnlyList<Type> _entityTypes =
+        [
+            typeof(HSE_INCIDENT),
+            typeof(HSE_INCIDENT_DETAIL),
+            typeof(HSE_INCIDENT_COMPONENT),
+            // HSE-03: the cause chain, and the business associates (owner and verifier) on a corrective-action step.
+            typeof(HSE_INCIDENT_CAUSE),
+            typeof(PROJECT_STEP_BA),
+            // HSE-04: the study's field context and the node-to-action link.
+            typeof(PROJECT_COMPONENT),
+            typeof(PROJECT_STEP_XREF),
+            // HSE-05: the compliance register.
+            typeof(OBLIGATION),
+            typeof(OBLIGATION_COMPONENT),
+            // HSE-06: the production entities and their recorded volume dispositions the emissions report is built from. The
+            // shared factor catalog, the company's selection and the company environment are owned by SystemSetupModule.
+            typeof(PDEN),
+            typeof(PDEN_VOL_DISPOSITION),
+            typeof(HSE_INCIDENT_RESPONSE),
+            typeof(OBLIGATION),
+            typeof(PROJECT),
+            typeof(PROJECT_STEP),
+            typeof(PROJECT_STATUS),
+        ];
 
         private readonly PPDMReferenceDataSeeder _referenceSeeder;
 

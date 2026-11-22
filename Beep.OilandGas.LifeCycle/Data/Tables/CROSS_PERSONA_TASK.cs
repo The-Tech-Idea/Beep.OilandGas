@@ -34,8 +34,14 @@ public class CROSS_PERSONA_TASK : ModelEntityBase
     /// <summary>Task status: PENDING, IN_PROGRESS, COMPLETED, DISMISSED.</summary>
     public string TASK_STATUS { get; set; } = "PENDING";
 
-    /// <summary>When the task is due (from SLA).</summary>
+    /// <summary>When the task is due (from SLA), stored as UTC.</summary>
     public DateTime? DUE_DATE { get; set; }
+
+    /// <summary>
+    /// 'Y' only when the deadline's time zone is confirmed (WFL-05 AC-2). An unconfirmed timestamp is shown with a
+    /// warning and is never counted as overdue.
+    /// </summary>
+    public string? DUE_CONFIRMED_IND { get; set; }
 
     /// <summary>Entity context: what this task is about.</summary>
     public string? ENTITY_TYPE { get; set; }

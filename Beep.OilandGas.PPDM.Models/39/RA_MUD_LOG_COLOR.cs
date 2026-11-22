@@ -9,6 +9,7 @@ public partial class RA_MUD_LOG_COLOR: Entity,IPPDMEntity
 {
 
 private  System.String MUD_LOG_COLORValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUD_LOG_COLOR
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MUD_LOG_COLORValue;
           set { SetProperty(ref  MUD_LOG_COLORValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

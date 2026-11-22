@@ -9,6 +9,7 @@ public partial class WELL_LOG_DGTZ_CURVE: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String CURVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CURVE_IDValue;
           set { SetProperty(ref  CURVE_IDValue, value); }
         } 
 private  System.String DIGITAL_CURVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIGITAL_CURVE_ID
         {  
             get  

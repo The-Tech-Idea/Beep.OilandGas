@@ -9,6 +9,7 @@ public partial class R_FAULT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FAULT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FAULT_TYPE
         {  
             get  

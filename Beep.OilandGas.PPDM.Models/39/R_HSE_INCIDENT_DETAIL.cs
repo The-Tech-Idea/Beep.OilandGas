@@ -9,6 +9,7 @@ public partial class R_HSE_INCIDENT_DETAIL: Entity,IPPDMEntity
 {
 
 private  System.String DETAIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DETAIL_TYPE
         {  
             get  

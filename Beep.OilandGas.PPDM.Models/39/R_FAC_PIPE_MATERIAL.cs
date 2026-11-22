@@ -9,6 +9,7 @@ public partial class R_FAC_PIPE_MATERIAL: Entity,IPPDMEntity
 {
 
 private  System.String PIPELINE_MATERIALValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PIPELINE_MATERIAL
         {  
             get  

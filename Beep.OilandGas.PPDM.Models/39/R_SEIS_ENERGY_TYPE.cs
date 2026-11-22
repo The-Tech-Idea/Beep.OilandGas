@@ -9,6 +9,7 @@ public partial class R_SEIS_ENERGY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_ENERGY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_ENERGY_TYPE
         {  
             get  

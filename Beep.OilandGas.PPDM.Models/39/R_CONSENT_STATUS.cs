@@ -9,6 +9,7 @@ public partial class R_CONSENT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_STATUS
         {  
             get  

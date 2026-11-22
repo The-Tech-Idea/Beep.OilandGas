@@ -9,6 +9,7 @@ public partial class RA_FIN_COST_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COST_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COST_TYPEValue;
           set { SetProperty(ref  COST_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

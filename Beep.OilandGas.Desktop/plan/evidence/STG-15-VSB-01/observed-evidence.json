@@ -1,0 +1,35 @@
+{
+  "id": "STG-15/VSB-01",
+  "title": "SkiaSharp view host control",
+  "date": "2026-11-05",
+  "status": "gate met",
+  "implementation": {
+    "renderer": "src/Beep.OilandGas.Desktop.WellTools/Hosting/ViewSurfaceRenderer.cs",
+    "host": "src/Beep.OilandGas.Desktop.WellTools/Hosting/SkiaViewSurfaceHost.cs",
+    "keyMap": "ViewKeyMap (dictionary, not a switch — BEEP0002 forbids a default arm over Key)",
+    "accessibility": "SkiaViewSurfaceHostAutomationPeer + SurfaceAccessibleItemPeer",
+    "path": "SKSurface -> SKBitmap (Bgra8888, premul) -> byte[] -> WriteableBitmap (Pbgra32) -> Image"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter ViewSurfaceInteractionTests|ViewSurfaceHostTests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test (all)", "exit": 0, "run": 64, "passed": 64, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "gates": {
+    "AC-1 paint": "pass — Rendering_a_surface_produces_a_bgra_frame (200x120, stride 800, DrawContent ran once)",
+    "AC-2 mouse": "pass — A_pointer_event_reaches_the_surface_in_surface_coordinates + Move_up_and_wheel_are_forwarded",
+    "AC-3 wheel": "pass — Move_up_and_wheel_are_forwarded",
+    "AC-4 keys": "pass — A_key_event_reaches_the_surface_with_its_modifiers + Every_documented_key_maps_to_a_surface_key (F5 not invented)",
+    "AC-5 pinch/pan": "pass — A_pinch_reaches_the_surface_with_its_scale, A_two_finger_pan_is_converted_to_surface_units; the host enables manipulation and forwards ManipulationDelta to HandlePinch / HandleTwoFingerPan",
+    "AC-6 invalidated": "pass — An_invalidated_surface_causes_exactly_one_redraw (RenderCount +1, no batching)",
+    "AC-7 contained failure": "pass — A_render_failure_is_reported_and_contained (Redraw false, one reported failure, no escaping exception, RenderCount 0)",
+    "AC-8 accessibility": "pass — The_host_exposes_the_surfaces_accessible_name_and_children (peer created, name 'Probe view', 2 children 'Depth' and 'Gamma ray'); control is Focusable/IsTabStop",
+    "device scale": "pass — A_device_scaled_render_keeps_input_in_surface_coordinates (scale 2: 400x300 bitmap, surface 200x150, (40,30)->(20,15))"
+  },
+  "limits": [
+    "Touch manipulation was exercised through the renderer, not by injecting a real ManipulationDelta into the control; the host override itself is unproven by automation.",
+    "The per-frame pixel copy (SKBitmap -> byte[] -> WriteableBitmap) is not measured; that belongs to REL-04.",
+    "Only the WPF host is verified; no screenshot or screen-reader pass was run against a real window."
+  ]
+}

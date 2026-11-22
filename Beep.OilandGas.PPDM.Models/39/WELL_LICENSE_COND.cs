@@ -9,6 +9,7 @@ public partial class WELL_LICENSE_COND: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String LICENSE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LICENSE_IDValue;
           set { SetProperty(ref  LICENSE_IDValue, value); }
         } 
 private  System.String WELL_LIC_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_LIC_SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String WELL_LIC_SOURCEValue;
           set { SetProperty(ref  WELL_LIC_SOURCEValue, value); }
         } 
 private  System.String CONDITION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONDITION_ID
         {  
             get  

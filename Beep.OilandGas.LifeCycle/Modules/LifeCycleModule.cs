@@ -1,4 +1,4 @@
-using Beep.OilandGas.PPDM39.Core;
+﻿using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -44,6 +44,9 @@ public sealed class LifeCycleModule : ModuleSetupBase
         // ── Lifecycle tracking tables ──────────────────────────────────────
         typeof(FIELD_PHASE),
         typeof(RESERVOIR_STATUS),
+        // RES-05: the reserves entries (append-only revisions) and the disclosure record.
+        typeof(RESERVE_ENTRY),
+        typeof(RESERVE_DISCLOSURE),
         typeof(ABANDONMENT_STATUS),
         typeof(DECOMMISSIONING_STATUS),
         // ── Workflow engine tables ─────────────────────────────────────────
@@ -55,9 +58,26 @@ public sealed class LifeCycleModule : ModuleSetupBase
         // ── Decommissioning & environmental tables ─────────────────────────
         typeof(ENVIRONMENTAL_RESTORATION),
         typeof(DECOMMISSIONING_COST),
+        // WTA-02: the well test register (the PPDM WELL_TEST table stays the owner of the test itself).
+        typeof(WELL_TEST_REGISTER),
         // ── Lifecycle reference LOV table ──────────────────────────────────
         typeof(R_LIFECYCLE_STATE_REFERENCE),
         // ── Phase 2: Workflow engine enhancement tables ───────────────────
+        // WFL-06: the durable record of a configuration change - actor, reason and the value it replaced.
+        typeof(WORKFLOW_CONFIGURATION_CHANGE),
+        // ENG-01: a saved anti-collision run, with the model, sigma and environment it was made under.
+        typeof(ANTICOLLISION_RUN),
+        // ENG-03: a recorded caliper interpretation and one row per joint, so a wall-loss figure stays auditable
+        // after the wall basis or the damage classes have moved on.
+        typeof(MFC_RESULT),
+        typeof(MFC_JOINT),
+        // ENG-04: the annuli of a well with their screening inputs, and every recorded casing-pressure test with
+        // the classification it produced.
+        typeof(WELL_ANNULUS),
+        typeof(CASING_PRESSURE_TEST),
+        // ENG-05: the barrier set the integrity category is read from, and each recorded assessment.
+        typeof(WELL_BARRIER),
+        typeof(INTEGRITY_ASSESSMENT),
         typeof(DELEGATION_OF_AUTHORITY),
         typeof(WORKFLOW_VERSION),
         typeof(WORKFLOW_DEPENDENCY),
@@ -69,6 +89,12 @@ public sealed class LifeCycleModule : ModuleSetupBase
         typeof(SOD_RULE),
         typeof(SOD_CONFLICT),
         typeof(COMPENSATING_CONTROL),
+        // WEL-03: the wellbores of a well and their surveys.
+        typeof(WELLBORE),
+        typeof(WELLBORE_SURVEY),
+        // EXP-05: the drilling proposal and its append-only gate decisions.
+        typeof(WELL_PROGRAM),
+        typeof(WELL_PROGRAM_DECISION),
     };
 
     private readonly ILifeCycleSeedService? _seedService;

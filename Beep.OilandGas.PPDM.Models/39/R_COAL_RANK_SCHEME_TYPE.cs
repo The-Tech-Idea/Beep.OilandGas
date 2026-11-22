@@ -9,6 +9,7 @@ public partial class R_COAL_RANK_SCHEME_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COAL_RANK_SCHEME_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COAL_RANK_SCHEME_TYPE
         {  
             get  

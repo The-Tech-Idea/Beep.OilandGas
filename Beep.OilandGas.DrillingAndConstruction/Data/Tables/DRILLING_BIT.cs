@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.DrillingAndConstruction
     public partial class DRILLING_BIT : ModelEntityBase
     {
         private System.String BIT_IDValue = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String BIT_ID
         {
             get { return this.BIT_IDValue; }

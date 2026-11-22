@@ -9,6 +9,7 @@ public partial class R_SEIS_BIN_OUTLINE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BIN_OUTLINE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BIN_OUTLINE_TYPE
         {  
             get  

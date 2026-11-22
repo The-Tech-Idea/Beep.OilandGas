@@ -9,6 +9,7 @@ public partial class RA_PLATFORM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PLATFORM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLATFORM_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PLATFORM_TYPEValue;
           set { SetProperty(ref  PLATFORM_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

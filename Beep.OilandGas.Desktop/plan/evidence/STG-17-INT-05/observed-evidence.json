@@ -1,0 +1,89 @@
+{
+  "id": "STG-17/INT-05",
+  "title": "Setup session wizard and country environments",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: a country preset produces an environment the engine's own validation accepts; a data source is tested and its result recorded with the loader's warnings; a mapping proposal is shown and only written when it is accepted, and an acceptance the engine does not offer is refused; coverage is reported per source with an explicit unknown when it cannot be computed; a hand-over is refused while a verification case fails; and a failed save leaves the environment as it was, byte for byte.",
+  "dataModel": {
+    "read": "Nothing from a database: the setup engine works on the customer's environment folder - environment.json, the company lexicon, the component-symbol map and the tool-model folder.",
+    "written": "The application's own environments file, <data root>/Wellbore/environment.json - the file OgWellboreLifetime loads. The wizard is therefore the UI over the running configuration rather than a second copy of it, and after every write the page asks the host to re-read it (OgApplication.ReloadWellboreEnvironment).",
+    "noTable": "INT-05 introduces no table: the environment is customer data under the data root, as the stage's own rule says. The opt-in test drives the real engine against a temporary company folder for that reason.",
+    "noOwnerChange": "No change was needed in TheTechIdea.OilGas.Wellbore.Setup: SetupSession already exposes the steps, the source test, the coverage, the suggestions, the acceptance, the verification and the hand-over. The desktop adds the file location, the hand-over gate and the vocabulary mapping."
+  },
+  "rules": {
+    "states": "The engine judges a step rather than tracking a cursor and reports three states. They are named in the plan's vocabulary: Done is Done, NeedsAttention is Blocked with the engine's own detail as the reason, and NotStarted is NotStarted. InProgress is the plan's fourth state and is never produced by the engine - it belongs to a screen that tracks which step a person is on, and is recorded as such rather than fabricated.",
+    "steps": "The page shows the engine's own steps - country, sources, codes, equipment, stratigraphy, lithology, logs, units, tubulars, surveys, verification - with their states and the engine's detail. The feature's twelve-step list maps onto them: its 'Company' is the engine's 'Country and company' step, and its 'Coverage' is computed per source by Coverage(name) rather than being a step of its own.",
+    "create": "A create is refused when an environment already exists, with the engine's own rule made explicit: open it and change it, so the settings the application loads cannot be split between two files.",
+    "value": "A setting's value is written as JSON when it is shaped like JSON and as text when it is not, so a company name never goes near the parser. A blank value removes the setting and lets the preset show through. A value that is shaped like JSON but is not valid JSON is written as text and reported - a person's typing, not a fault.",
+    "sourceTest": "AC-2: the test result is what the workspace shows whether the source loaded or not, and the loader's own warnings travel with it - the source is never silently dropped because it loaded with warnings.",
+    "suggestion": "AC-3 is enforced at two points: computing the proposals writes nothing at all (asserted byte for byte), and accepting re-reads the engine's current proposals and refuses an acceptance it does not offer, so what is applied is what the engine proposed rather than what a screen remembered.",
+    "coverage": "AC-4: a coverage that cannot be computed is reported as unknown with the reason, never as zero problems. A missing table file is not that case - the CSV source reads a missing file as an empty table - so the unknown case is a source kind the environment cannot open.",
+    "handover": "AC-5: the hand-over runs the verification itself rather than trusting a screen, and refuses while any case fails, naming the failing cases. Only then does it write the archive through the engine's own SaveConfiguration.",
+    "saveFailure": "AC-6: a session is opened from the file for every command and never held, so a failed write cannot leave a mutated session behind - and the test proves the file is byte-identical after a refused save.",
+    "actor": "Every write requires an actor. The environment file has no place for one, so the actor is recorded in the application's audit trail (settings.wellbore.setup / settings.wellbore.handover) - stated rather than left to be assumed."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Interop/OgWellboreSetup.cs (OgCountryOption, OgSetupStep, OgSourceReport, OgCoverageReport, OgSetupSuggestion, OgVerificationRow, OgSetupWorkspace, OgSetupRules, IOgWellboreSetup, OgWellboreSetupService with CountriesAsync/LoadAsync/CreateAsync/SetAsync/AddSourceAsync/RemoveSourceAsync/TestSourceAsync/CoverageAsync/SuggestAsync/AcceptAsync/VerifyAsync/HandoverAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellboreSetupPageView.cs (route 'wellboresetup': the country and company bar, the engine's step grid, the source bar and definition box, the source and coverage text, the proposal grid with its accept command, the setting editor, the validation text, the verification grid and the hand-over bar)",
+    "wiring": "OgBootstrapper (IOgWellboreSetup, pointed at OgPaths.WellboreEnvironmentPath), OgApplication.WellboreSetup, catalog 'wellboresetup' (OgModuleKeys.Interop), OgPageFactory, en + ar labels; the Data project now references TheTechIdea.OilGas.Wellbore.Setup",
+    "correction": "INT-04's page was filed under OgModuleKeys.Data when it was the first interop feature; with INT-05 beside it both now sit under OgModuleKeys.Interop, and INT-04's evidence record was corrected to say so.",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellboreSetupTests.cs (5, no files) + WellboreSetupGatewayTests.cs (1 opt-in, the real engine against a temporary company folder)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1424, "passed": 1424, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 92, "passed": 92, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 115, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "folder": "A temporary company folder with environment.json, a CSV source folder (wells, hole_sections, strings, components, tops, survey) and a hand-over archive folder.",
+    "ac1_preset": "the country list offers the presets (62 shipped, 40+ asserted), 'NO' creates environment.json with company 'Probe Energy', the workspace reports Country NO and the preset's name, and Validate() returns nothing - the engine's own acceptance of what the preset produced",
+    "ac2_source": "a csv source named Wells loads; the recorded result carries the counts and the loader's own warnings, including \"strings.kind: value 'Casing' does not map to StringKind\" and the WI001 identifier warning",
+    "ac3_suggestion": "after a component row whose unit column reads 'ftt', the engine proposes a unit mapping; computing the proposals leaves environment.json byte-identical; an acceptance of a target the engine does not offer is refused and the file is untouched; accepting the offered proposal writes the alias and the warning says it was applied because it was accepted",
+    "ac4_coverage": "coverage for Wells reports the well count and the unresolved values (a string kind, a component type, a lithology and a top name), and coverage for a source whose kind the environment cannot open is reported as unknown with the reason",
+    "ac5_handover": "a verification case expecting 99 metres for 1 foot fails, and the hand-over is refused with the case named and nothing written into the archive; with the case removed the hand-over writes environment.json and the report's other files",
+    "ac6_save": "with environment.json read-only, a Set fails, says the previous environment is unchanged, and the file is byte-identical afterwards; the next read still reports the company name",
+    "refusals": "a command with no environment, a second create, a definition that is not JSON (with the shape a definition takes), an unknown source for coverage, an unknown suggestion, and a blank actor on a write, a source or a hand-over are each refused with their own sentence",
+    "bugFound": "the first version of LoadAsync built the workspace without opening the file, so the page would have reported 'no environment yet' over an existing one - the opt-in test caught it when the company name came back null after a reload"
+  },
+  "gates": {
+    "AC-1 A country preset produces an environment that SetupSession.Validate() accepts": "pass - created from NO and the engine's own Validate() returned nothing, which the workspace reports as its validation sentence.",
+    "AC-2 A data source can be tested and its result recorded": "pass - the test result is on the workspace with its counts and warnings, and a failing source would be recorded with its error rather than thrown away.",
+    "AC-3 Mapping suggestions are never applied without explicit acceptance": "pass - computing them writes nothing; an unoffered acceptance is refused; the offered one is applied only by the accept command.",
+    "AC-4 Coverage is shown per source, with an explicit unknown when it cannot be computed": "pass - the known case reports wells and unresolved values; the unopenable source reports unknown with its reason.",
+    "AC-5 Handover is refused while verification has outstanding failures": "pass - refused with the failing case named and no archive written; allowed once nothing fails, and the page disables the command until then.",
+    "AC-6 A failed save leaves the previous environment intact": "pass - refused save on a read-only file leaves the file byte-identical, via a session that is never held between commands."
+  },
+  "engineFindings": {
+    "threeStatesNotFour": {
+      "where": "TheTechIdea.OilGas.Wellbore.Setup/SetupSession.cs (SetupStepState)",
+      "finding": "The plan's contract names four step states (NotStarted / InProgress / Done / Blocked); the engine has three and judges a step rather than tracking a cursor.",
+      "handling": "Done and NotStarted map one to one, NeedsAttention becomes Blocked with the engine's detail as the reason, and InProgress is recorded as the page's state, not the engine's, rather than being invented from a rule."
+    },
+    "elevenStepsNotTwelve": {
+      "finding": "The feature lists twelve wizard steps; the engine reports eleven, because 'Company' is part of its 'Country and company' step and 'Coverage' is a per-source computation (Coverage(name)) rather than a step.",
+      "handling": "The page shows the engine's steps as they are and offers coverage per source, so the numbering difference is visible rather than papered over."
+    },
+    "noActorInTheEnvironment": {
+      "finding": "Every write needs an actor, and neither environment.json nor the engine's other files has a field for one.",
+      "handling": "The actor is required by the service and recorded in the application's audit trail; the evidence says so instead of implying the file carries it."
+    },
+    "coverageOfAMissingFileIsZero": {
+      "finding": "A CSV source whose table file is missing reads as an empty table, so its coverage is a clean zero rather than an error - which would make 'coverage unknown' unreachable through that path.",
+      "handling": "The unknown case is a source kind the environment cannot open, which is a genuine failure to compute, and the test uses that rather than a deleted file."
+    },
+    "similarityThreshold": {
+      "finding": "The suggestion matcher keeps candidates scoring at least 0.5, so a three-letter unit typo like 'mtr' against 'm' scores 0.27 and proposes nothing - a proposal needs a near miss, not a guess.",
+      "handling": "The fixture uses a one-letter miss on a two-letter symbol ('ftt'), which is what the engine will propose for; recorded here because it explains why some unresolved values produce no suggestion at all."
+    }
+  },
+  "limits": [
+    "The dedicated editors the screen describes for stratigraphy, lithology, logs, units, tubulars and component symbols are not built: those steps show the engine's state and detail, and any setting the engine can set is reachable through the path-and-value editor, with the proposal/accept command covering the units, mnemonics, codes and lexicon areas the engine proposes for.",
+    "InProgress is never shown: the engine does not track a cursor, so a step is judged rather than started.",
+    "One environment per installation: the wizard edits the file the application loads, so a second customer would need a second data root. Selecting between several company files is not offered.",
+    "The hand-over runs the engine's verification cases only. A person's own checks are not recorded, and the archive is the engine's SaveConfiguration folder with no signature or version stamp beyond what it writes.",
+    "A source test reads a well from the source; with no well id it takes the first, which may not be the one a person had in mind.",
+    "Coverage scans up to the engine's own 500-well default; a larger field is not paged or completed in the background.",
+    "The wizard writes on every change with no undo: the engine's own transaction is one file write, and a person who wants a previous state needs the archived copy.",
+    "No paging on the step, proposal or verification grids: they are as long as the engine's answer."
+  ]
+}

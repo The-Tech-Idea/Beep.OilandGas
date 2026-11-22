@@ -9,6 +9,7 @@ public partial class RA_MUD_COLLECT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String MUD_COLLECT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUD_COLLECT_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MUD_COLLECT_REASONValue;
           set { SetProperty(ref  MUD_COLLECT_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SAMPLE_DESC_CODE: Entity,IPPDMEntity
 {
 
 private  System.String DESCRIPTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESCRIPTION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DESCRIPTION_TYPEValue;
           set { SetProperty(ref  DESCRIPTION_TYPEValue, value); }
         } 
 private  System.String DESCRIPTION_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESCRIPTION_CODE
         {  
             get  

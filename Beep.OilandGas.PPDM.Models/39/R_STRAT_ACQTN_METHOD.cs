@@ -9,6 +9,7 @@ public partial class R_STRAT_ACQTN_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ACQTN_METHOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACQTN_METHOD_TYPE
         {  
             get  

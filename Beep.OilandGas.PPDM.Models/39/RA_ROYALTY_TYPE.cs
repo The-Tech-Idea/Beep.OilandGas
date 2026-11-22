@@ -9,6 +9,7 @@ public partial class RA_ROYALTY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ROYALTY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROYALTY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ROYALTY_TYPEValue;
           set { SetProperty(ref  ROYALTY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

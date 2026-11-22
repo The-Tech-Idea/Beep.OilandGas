@@ -9,6 +9,7 @@ public partial class R_INFORMATION_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String INFORMATION_PROCESSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFORMATION_PROCESS
         {  
             get  

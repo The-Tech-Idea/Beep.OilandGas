@@ -9,6 +9,7 @@ public partial class R_NS_START_LINE: Entity,IPPDMEntity
 {
 
 private  System.String NS_START_LINEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NS_START_LINE
         {  
             get  

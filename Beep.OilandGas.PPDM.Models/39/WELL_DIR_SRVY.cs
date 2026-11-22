@@ -9,6 +9,7 @@ public partial class WELL_DIR_SRVY: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SURVEY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SURVEY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SURVEY_IDValue;
           set { SetProperty(ref  SURVEY_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

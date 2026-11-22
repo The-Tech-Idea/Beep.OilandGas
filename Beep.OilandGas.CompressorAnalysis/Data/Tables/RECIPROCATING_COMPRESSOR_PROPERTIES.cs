@@ -8,6 +8,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Data
 {
     public partial class RECIPROCATING_COMPRESSOR_PROPERTIES : ModelEntityBase {
         private String RECIPROCATING_COMPRESSOR_PROPERTIES_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public String RECIPROCATING_COMPRESSOR_PROPERTIES_ID
         {
             get { return this.RECIPROCATING_COMPRESSOR_PROPERTIES_IDValue; }

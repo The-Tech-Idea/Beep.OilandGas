@@ -9,6 +9,7 @@ public partial class R_PPDM_OBJECT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OBJECT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBJECT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PLATFORM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PLATFORM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLATFORM_TYPE
         {  
             get  

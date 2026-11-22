@@ -9,6 +9,7 @@ public partial class R_LOG_TOOL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LOG_TOOL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOG_TOOL_TYPE
         {  
             get  

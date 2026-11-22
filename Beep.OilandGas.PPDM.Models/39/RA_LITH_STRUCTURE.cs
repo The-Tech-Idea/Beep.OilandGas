@@ -9,6 +9,7 @@ public partial class RA_LITH_STRUCTURE: Entity,IPPDMEntity
 {
 
 private  System.String STRUCTUREValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRUCTURE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRUCTUREValue;
           set { SetProperty(ref  STRUCTUREValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_ANL_FORMULA_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FORMULA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FORMULA_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FORMULA_TYPEValue;
           set { SetProperty(ref  FORMULA_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

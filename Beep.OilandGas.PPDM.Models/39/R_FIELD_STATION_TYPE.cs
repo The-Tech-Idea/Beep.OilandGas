@@ -9,6 +9,7 @@ public partial class R_FIELD_STATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_STATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_STATION_TYPE
         {  
             get  

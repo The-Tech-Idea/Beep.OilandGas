@@ -9,6 +9,7 @@ public partial class R_SEIS_PROC_STEP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STEP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_TYPE
         {  
             get  

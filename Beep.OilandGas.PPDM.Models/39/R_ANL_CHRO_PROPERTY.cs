@@ -9,6 +9,7 @@ public partial class R_ANL_CHRO_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String CHRO_PROPERTY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHRO_PROPERTY_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_FACILITY_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String FACILITY_CLASS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_CLASS_TYPE
         {  
             get  

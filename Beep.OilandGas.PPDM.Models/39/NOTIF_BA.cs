@@ -9,6 +9,7 @@ public partial class NOTIF_BA: Entity,IPPDMEntity
 {
 
 private  System.String NOTIFICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NOTIFICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String NOTIFICATION_IDValue;
           set { SetProperty(ref  NOTIFICATION_IDValue, value); }
         } 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  

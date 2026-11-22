@@ -9,6 +9,7 @@ public partial class R_REPEAT_STRAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REPEAT_STRAT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPEAT_STRAT_TYPE
         {  
             get  

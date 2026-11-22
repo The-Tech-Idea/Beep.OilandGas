@@ -9,6 +9,7 @@ public partial class FIELD: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_ID
         {  
             get  

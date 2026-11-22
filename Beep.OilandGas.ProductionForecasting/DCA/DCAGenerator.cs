@@ -255,6 +255,350 @@ namespace Beep.OilandGas.DCA
             return parameters;
         }
         /// <summary>
+        /// The outcome of <see cref="TryFitDecline"/>: the Arps parameters, the fit quality and the predicted rates.
+        /// </summary>
+        /// <param name="Qi">Initial rate.</param>
+        /// <param name="Di">Initial nominal decline rate, per day.</param>
+        /// <param name="B">The decline exponent the fit settled on.</param>
+        /// <param name="RSquared">Coefficient of determination in ln(rate) space.</param>
+        /// <param name="DiPerDay">True when <paramref name="Di"/> is per day.</param>
+        /// <param name="Predicted">The model's rate at each observation.</param>
+        /// <param name="PointsUsed">How many observations went into the fit.</param>
+        /// <param name="PinnedAtMinimum">The best b the data allows is at or below <c>minimumB</c>.</param>
+        /// <param name="PinnedAtMaximum">The best b the data allows is at or above <c>maximumB</c> - the fit is unbounded.</param>
+        public readonly record struct ArpsFit(
+            double Qi,
+            double Di,
+            double B,
+            double RSquared,
+            bool DiPerDay,
+            double[] Predicted,
+            int PointsUsed,
+            bool PinnedAtMinimum,
+            bool PinnedAtMaximum);
+
+        /// <summary>
+        /// Fits an Arps decline (qi, Di, b) to rate-time observations, holding b inside the bounds the caller states and
+        /// reporting whether the data wanted to leave them.
+        /// </summary>
+        /// <remarks>
+        /// For a fixed b the model is linear: <c>q^-b = qi^-b (1 + b Di t)</c>, so qi and Di come from an exact ordinary
+        /// least-squares line of <c>q^-b</c> on <c>t</c> (<c>b = 0</c> is the exponential case, linear in <c>ln q</c>).
+        /// b itself is then found by a golden-section search on the sum of squared <c>ln(rate)</c> residuals, restricted
+        /// to <c>[minimumB, maximumB]</c>. A result pinned at <c>maximumB</c> means the data wanted a b the caller does
+        /// not allow, which is what lets a screen refuse an unbounded fit instead of reporting the bound as an answer.
+        /// <para>
+        /// <c>FitCurve</c> is unchanged and keeps its signature; this method is the bounded, self-checking form a caller
+        /// that must show a refusal should use.
+        /// </para>
+        /// </remarks>
+        public static bool TryFitDecline(
+            IReadOnlyList<double> productionData,
+            IReadOnlyList<DateTime> timeData,
+            decimal minimumB,
+            decimal maximumB,
+            out ArpsFit fit)
+        {
+            if (productionData == null)
+                throw new ArgumentNullException(nameof(productionData));
+
+            if (timeData == null)
+                throw new ArgumentNullException(nameof(timeData));
+
+            if (productionData.Count != timeData.Count)
+            {
+                throw new Exceptions.InvalidDataException(
+                    $"Production data length ({productionData.Count}) must match time data length ({timeData.Count}).");
+            }
+
+            if (minimumB < 0m || maximumB > 1m || maximumB <= minimumB)
+            {
+                throw new Exceptions.InvalidDataException(
+                    $"The decline exponent bounds must satisfy 0 <= minimumB < maximumB <= 1; got {minimumB} and {maximumB}.");
+            }
+
+            fit = default;
+
+            if (productionData.Count < 2)
+            {
+                return false;
+            }
+
+            // Work in days from the first observation, so qi is the rate at that observation.
+            var origin = timeData[0];
+            var times = timeData.Select(date => (date - origin).TotalDays).ToArray();
+
+            if (productionData.Any(rate => rate <= 0.0) || times.Any(time => time < 0.0))
+            {
+                return false;
+            }
+
+            var low = (double)minimumB;
+            var high = (double)maximumB;
+
+            // At b -> 0 the q^-b transform loses all precision, so a b this small is the exponential case exactly.
+            const double exponentialThreshold = 1e-6;
+
+            double Sse(double b)
+            {
+                var candidate = b <= exponentialThreshold ? 0.0 : b;
+
+                if (!TryLinearFit(productionData, times, candidate, out var qi, out var di) || qi <= 0.0 || di < 0.0)
+                {
+                    return double.PositiveInfinity;
+                }
+
+                var total = 0.0;
+
+                for (var index = 0; index < productionData.Count; index++)
+                {
+                    var predicted = Rate(qi, di, times[index], candidate);
+
+                    if (predicted <= 0.0 || double.IsNaN(predicted) || double.IsInfinity(predicted))
+                    {
+                        return double.PositiveInfinity;
+                    }
+
+                    var residual = Math.Log(productionData[index]) - Math.Log(predicted);
+                    total += residual * residual;
+                }
+
+                return total;
+            }
+
+            // Golden-section search for b inside the caller's bounds.
+            const double ratio = 0.6180339887498949;
+            var left = low;
+            var right = high;
+            var x1 = right - ratio * (right - left);
+            var x2 = left + ratio * (right - left);
+            var f1 = Sse(x1);
+            var f2 = Sse(x2);
+
+            for (var iteration = 0; iteration < 80 && right - left > 1e-9; iteration++)
+            {
+                if (f1 < f2)
+                {
+                    right = x2;
+                    x2 = x1;
+                    f2 = f1;
+                    x1 = right - ratio * (right - left);
+                    f1 = Sse(x1);
+                }
+                else
+                {
+                    left = x1;
+                    x1 = x2;
+                    f1 = f2;
+                    x2 = left + ratio * (right - left);
+                    f2 = Sse(x2);
+                }
+            }
+
+            // The optimum is whichever of the search result and the two bounds has the smallest residual: a search
+            // restricted to an interval reports a bound when the data wants to leave it, and that has to be exact.
+            var bestB = (left + right) / 2.0;
+            var bestSse = Sse(bestB);
+
+            foreach (var boundary in new[] { low, high })
+            {
+                var boundarySse = Sse(boundary);
+
+                if (boundarySse < bestSse)
+                {
+                    bestSse = boundarySse;
+                    bestB = boundary;
+                }
+            }
+
+            if (bestB <= exponentialThreshold)
+            {
+                bestB = 0.0;
+            }
+
+            if (!TryLinearFit(productionData, times, bestB, out var bestQi, out var bestDi))
+            {
+                return false;
+            }
+
+            if (bestQi <= 0.0 || bestDi < 0.0)
+            {
+                return false;
+            }
+
+            var predictedValues = new double[productionData.Count];
+
+            for (var index = 0; index < productionData.Count; index++)
+            {
+                predictedValues[index] = Rate(bestQi, bestDi, times[index], bestB);
+            }
+
+            var mean = productionData.Average(rate => Math.Log(rate));
+            var ssTotal = productionData.Sum(rate => Math.Pow(Math.Log(rate) - mean, 2));
+            var ssResidual = productionData
+                .Select((rate, index) => Math.Pow(Math.Log(rate) - Math.Log(predictedValues[index]), 2))
+                .Sum();
+
+            // A b within 1e-6 of a bound is the data asking for a value outside it, not a value at it.
+            var pinTolerance = 1e-6;
+
+            fit = new ArpsFit(
+                bestQi,
+                bestDi,
+                bestB,
+                ssTotal > 1e-12 ? 1.0 - ssResidual / ssTotal : 1.0,
+                true,
+                predictedValues,
+                productionData.Count,
+                bestB <= low + pinTolerance,
+                bestB >= high - pinTolerance);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Fits qi and Di with b held at the caller's value - the fixed-b form of <see cref="TryFitDecline"/>, for a
+        /// screen that offers exponential (b = 0), harmonic (b = 1) or a hyperbolic fit at a b the engineer chose.
+        /// </summary>
+        public static bool TryFitDeclineAtB(
+            IReadOnlyList<double> productionData,
+            IReadOnlyList<DateTime> timeData,
+            decimal b,
+            out ArpsFit fit)
+        {
+            if (productionData == null)
+                throw new ArgumentNullException(nameof(productionData));
+
+            if (timeData == null)
+                throw new ArgumentNullException(nameof(timeData));
+
+            if (productionData.Count != timeData.Count)
+            {
+                throw new Exceptions.InvalidDataException(
+                    $"Production data length ({productionData.Count}) must match time data length ({timeData.Count}).");
+            }
+
+            if (b < 0m || b > 1m)
+            {
+                throw new Exceptions.InvalidDataException(
+                    $"The decline exponent must be between 0 and 1 inclusive; got {b}.");
+            }
+
+            fit = default;
+
+            if (productionData.Count < 2 ||
+                productionData.Any(rate => rate <= 0.0))
+            {
+                return false;
+            }
+
+            var origin = timeData[0];
+            var times = timeData.Select(date => (date - origin).TotalDays).ToArray();
+
+            if (times.Any(time => time < 0.0))
+            {
+                return false;
+            }
+
+            var exponent = (double)b;
+
+            if (!TryLinearFit(productionData, times, exponent, out var qi, out var di) || qi <= 0.0 || di < 0.0)
+            {
+                return false;
+            }
+
+            var predicted = new double[productionData.Count];
+
+            for (var index = 0; index < productionData.Count; index++)
+            {
+                predicted[index] = Rate(qi, di, times[index], exponent);
+            }
+
+            var mean = productionData.Average(rate => Math.Log(rate));
+            var ssTotal = productionData.Sum(rate => Math.Pow(Math.Log(rate) - mean, 2));
+            var ssResidual = productionData
+                .Select((rate, index) => Math.Pow(Math.Log(rate) - Math.Log(predicted[index]), 2))
+                .Sum();
+
+            fit = new ArpsFit(
+                qi,
+                di,
+                exponent,
+                ssTotal > 1e-12 ? 1.0 - ssResidual / ssTotal : 1.0,
+                true,
+                predicted,
+                productionData.Count,
+                false,
+                false);
+
+            return true;
+        }
+
+        /// <summary>The exact least-squares qi and Di for one candidate b (see <see cref="TryFitDecline"/>).</summary>
+        private static bool TryLinearFit(
+            IReadOnlyList<double> productionData,
+            IReadOnlyList<double> times,
+            double b,
+            out double qi,
+            out double di)
+        {
+            qi = 0.0;
+            di = 0.0;
+
+            var transformed = new double[productionData.Count];
+
+            for (var index = 0; index < productionData.Count; index++)
+            {
+                transformed[index] = b == 0.0
+                    ? Math.Log(productionData[index])
+                    : Math.Pow(productionData[index], -b);
+            }
+
+            var meanTime = times.Average();
+            var meanValue = transformed.Average();
+
+            var sxx = 0.0;
+            var sxy = 0.0;
+
+            for (var index = 0; index < times.Count; index++)
+            {
+                var dx = times[index] - meanTime;
+                sxx += dx * dx;
+                sxy += dx * (transformed[index] - meanValue);
+            }
+
+            if (sxx <= 1e-15)
+            {
+                return false;
+            }
+
+            var slope = sxy / sxx;
+            var intercept = meanValue - slope * meanTime;
+
+            if (b == 0.0)
+            {
+                qi = Math.Exp(intercept);
+                di = -slope;
+            }
+            else
+            {
+                if (intercept <= 0.0)
+                {
+                    return false;
+                }
+
+                qi = Math.Pow(intercept, -1.0 / b);
+                di = slope / (b * intercept);
+            }
+
+            return !double.IsNaN(qi) && !double.IsNaN(di) && !double.IsInfinity(qi) && !double.IsInfinity(di);
+        }
+
+        /// <summary>The Arps rate at one time; b = 0 is exponential and b = 1 harmonic, as the same relation.</summary>
+        private static double Rate(double qi, double di, double time, double b) =>
+            b == 0.0 ? qi * Math.Exp(-di * time) : qi / Math.Pow(1.0 + b * di * time, 1.0 / b);
+
+        /// <summary>
         /// Fits a decline curve to production data using custom basis functions and initial parameter guess.
         /// </summary>
         /// <param name="productionData">List of production rate values.</param>

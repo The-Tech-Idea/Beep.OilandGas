@@ -9,6 +9,7 @@ public partial class R_CONTEST_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTEST_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTEST_COMPONENT_TYPE
         {  
             get  

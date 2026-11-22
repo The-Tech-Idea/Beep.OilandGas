@@ -9,6 +9,7 @@ public partial class SEIS_GROUP_COMP: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_GROUP_SET_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_GROUP_SET_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_GROUP_SET_SUBTYPEValue;
           set { SetProperty(ref  SEIS_GROUP_SET_SUBTYPEValue, value); }
         } 
 private  System.String SEIS_GROUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_GROUP_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SEIS_GROUP_IDValue;
           set { SetProperty(ref  SEIS_GROUP_IDValue, value); }
         } 
 private  System.String INPUT_SEIS_SET_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INPUT_SEIS_SET_SUBTYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String INPUT_SEIS_SET_SUBTYPEValue;
           set { SetProperty(ref  INPUT_SEIS_SET_SUBTYPEValue, value); }
         } 
 private  System.String INPUT_SEIS_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INPUT_SEIS_SET_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String INPUT_SEIS_SET_IDValue;
           set { SetProperty(ref  INPUT_SEIS_SET_IDValue, value); }
         } 
 private  System.String COMPONENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_ID
         {  
             get  

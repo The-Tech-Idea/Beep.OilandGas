@@ -9,6 +9,7 @@ public partial class R_PAL_SUM_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PALEO_SUMMARY_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PALEO_SUMMARY_COMPONENT_TYPE
         {  
             get  

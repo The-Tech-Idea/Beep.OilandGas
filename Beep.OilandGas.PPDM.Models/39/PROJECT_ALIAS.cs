@@ -9,6 +9,7 @@ public partial class PROJECT_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROJECT_IDValue;
           set { SetProperty(ref  PROJECT_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

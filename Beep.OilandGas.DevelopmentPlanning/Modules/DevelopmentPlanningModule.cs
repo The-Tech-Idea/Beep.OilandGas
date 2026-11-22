@@ -1,4 +1,4 @@
-using Beep.OilandGas.PPDM39.Core;
+﻿using Beep.OilandGas.PPDM39.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -30,6 +30,24 @@ namespace Beep.OilandGas.DevelopmentPlanning.Modules
             typeof(WELL_MAINTENANCE_PLAN),
             typeof(WELL_SERVICE_JOB),
             typeof(R_DEVELOPMENT_PLANNING_REFERENCE_CODE),
+            // DEV-02: the wizard draft, append-only baselines and review decisions.
+            typeof(FDP_DRAFT),
+            typeof(FDP_BASELINE),
+            typeof(FDP_REVIEW),
+            // DEV-03: the versioned well design, its casing outline and the recorded casing checks.
+            typeof(DEVELOPMENT_WELL_DESIGN),
+            typeof(DEVELOPMENT_CASING_STRING),
+            typeof(DEVELOPMENT_CASING_CHECK),
+            // ENG-02: a casing-design run and one verdict per section per load case, which is what makes a check
+            // reproducible and lets a failure be traced to the section and case that caused it.
+            typeof(CASING_DESIGN_RUN),
+            typeof(CASING_DESIGN_VERDICT),
+            // DEV-04: each pool's plan numbers and its facility routing.
+            typeof(DEVELOPMENT_POOL_PLAN),
+            // DEV-08: the facility's construction milestones, their evidence and the handover to operations.
+            typeof(FACILITY_MILESTONE),
+            typeof(FACILITY_MILESTONE_EVIDENCE),
+            typeof(FACILITY_HANDOVER),
         };
 
         public DevelopmentPlanningModule(ModuleSetupContext context)

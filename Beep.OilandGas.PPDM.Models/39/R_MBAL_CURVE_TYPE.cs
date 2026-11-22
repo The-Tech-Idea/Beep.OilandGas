@@ -9,6 +9,7 @@ public partial class R_MBAL_CURVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CURVE_FIT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CURVE_FIT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_STRAT_COLUMN_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_COLUMN_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_COLUMN_TYPE
         {  
             get  

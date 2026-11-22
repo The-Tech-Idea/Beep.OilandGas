@@ -9,6 +9,7 @@ public partial class PPDM_DOMAIN: Entity,IPPDMEntity
 {
 
 private  System.String DOMAINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DOMAIN
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SEIS_INSP_COMPONENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_INSP_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_INSP_COMPONENT_TYPE
         {  
             get  

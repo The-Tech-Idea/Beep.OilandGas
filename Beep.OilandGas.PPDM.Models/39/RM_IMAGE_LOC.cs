@@ -9,6 +9,7 @@ public partial class RM_IMAGE_LOC: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_ITEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PHYSICAL_ITEM_IDValue;
           set { SetProperty(ref  PHYSICAL_ITEM_IDValue, value); }
         } 
 private  System.String LOG_SECTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOG_SECTION_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LOG_SECTION_IDValue;
           set { SetProperty(ref  LOG_SECTION_IDValue, value); }
         } 
 private  System.String POSITION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POSITION_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_ECOZONE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ECOZONE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECOZONE_TYPE
         {  
             get  

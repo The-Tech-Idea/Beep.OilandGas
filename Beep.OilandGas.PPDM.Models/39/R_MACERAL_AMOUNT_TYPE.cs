@@ -9,6 +9,7 @@ public partial class R_MACERAL_AMOUNT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MACERAL_AMOUNT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MACERAL_AMOUNT_TYPE
         {  
             get  

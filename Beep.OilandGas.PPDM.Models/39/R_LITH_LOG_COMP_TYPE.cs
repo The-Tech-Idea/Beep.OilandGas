@@ -9,6 +9,7 @@ public partial class R_LITH_LOG_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LITH_LOG_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITH_LOG_COMPONENT_TYPE
         {  
             get  

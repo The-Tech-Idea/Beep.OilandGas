@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String DIR_SURVEY_CLASSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIR_SURVEY_CLASS
         {  
             get  

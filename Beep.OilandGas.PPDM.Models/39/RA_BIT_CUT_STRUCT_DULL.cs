@@ -9,6 +9,7 @@ public partial class RA_BIT_CUT_STRUCT_DULL: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_STRUCTURE_MDCValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_STRUCTURE_MDC
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CUTTING_STRUCTURE_MDCValue;
           set { SetProperty(ref  CUTTING_STRUCTURE_MDCValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

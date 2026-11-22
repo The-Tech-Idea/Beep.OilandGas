@@ -9,6 +9,7 @@ public partial class RA_BHP_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String BHP_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BHP_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BHP_METHODValue;
           set { SetProperty(ref  BHP_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.WorkOrder;
 
 /// <summary>Work-order execution permit proposal and its original issue intent; regulatory filings are separate.</summary>
 [Table("WORK_ORDER_EXECUTION_PERMIT")]
-public sealed class WORK_ORDER_EXECUTION_PERMIT : ModelEntityBase
+public sealed partial class WORK_ORDER_EXECUTION_PERMIT : ModelEntityBase
 {
     [Key,Required,MaxLength(128)] public string PERMIT_ID {get;set;}=string.Empty;
     [Required,MaxLength(128)] public string TENANT_ID {get;set;}=string.Empty;

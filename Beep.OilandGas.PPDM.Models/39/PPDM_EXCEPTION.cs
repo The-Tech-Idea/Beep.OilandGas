@@ -9,6 +9,7 @@ public partial class PPDM_EXCEPTION: Entity,IPPDMEntity
 {
 
 private  System.String PE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PE_ID
         {  
             get  

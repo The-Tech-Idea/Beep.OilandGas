@@ -9,6 +9,7 @@ public partial class R_FOS_TAXON_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String TAXON_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAXON_GROUP
         {  
             get  

@@ -9,6 +9,7 @@ public partial class PPDM_VOL_MEAS_CONV: Entity,IPPDMEntity
 {
 
 private  System.String VOLUME_REGIME_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_REGIME_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VOLUME_REGIME_IDValue;
           set { SetProperty(ref  VOLUME_REGIME_IDValue, value); }
         } 
 private  System.String CONVERSION_QUANTITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONVERSION_QUANTITY
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CONVERSION_QUANTITYValue;
           set { SetProperty(ref  CONVERSION_QUANTITYValue, value); }
         } 
 private  System.Decimal CONVERSION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal CONVERSION_OBS_NO
         {  
             get  

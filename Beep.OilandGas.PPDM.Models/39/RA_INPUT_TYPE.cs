@@ -9,6 +9,7 @@ public partial class RA_INPUT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INPUT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INPUT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INPUT_TYPEValue;
           set { SetProperty(ref  INPUT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

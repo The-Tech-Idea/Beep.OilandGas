@@ -9,6 +9,7 @@ public partial class RA_ADDITIVE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ADDITIVE_METHODValue;
           set { SetProperty(ref  ADDITIVE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

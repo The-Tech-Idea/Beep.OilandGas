@@ -9,6 +9,7 @@ public partial class R_SOURCE: Entity,IPPDMEntity
 {
 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

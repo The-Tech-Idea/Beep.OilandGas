@@ -9,6 +9,7 @@ public partial class RA_DIGITAL_FORMAT: Entity,IPPDMEntity
 {
 
 private  System.String DIGITAL_FORMATValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIGITAL_FORMAT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DIGITAL_FORMATValue;
           set { SetProperty(ref  DIGITAL_FORMATValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

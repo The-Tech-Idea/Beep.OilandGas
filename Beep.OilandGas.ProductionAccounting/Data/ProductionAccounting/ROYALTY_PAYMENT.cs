@@ -16,6 +16,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         public string JOURNAL_ENTRY_ID { get => JOURNAL_ENTRY_IDValue; set => SetProperty(ref JOURNAL_ENTRY_IDValue, value); }
 
         private System.String ROYALTY_PAYMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String ROYALTY_PAYMENT_ID
         {
             get { return this.ROYALTY_PAYMENT_IDValue; }

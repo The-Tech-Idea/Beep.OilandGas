@@ -9,6 +9,7 @@ public partial class RA_FAC_PIPE_MATERIAL: Entity,IPPDMEntity
 {
 
 private  System.String PIPELINE_MATERIALValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PIPELINE_MATERIAL
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PIPELINE_MATERIALValue;
           set { SetProperty(ref  PIPELINE_MATERIALValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

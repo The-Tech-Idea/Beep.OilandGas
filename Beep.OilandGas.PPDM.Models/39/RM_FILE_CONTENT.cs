@@ -9,6 +9,7 @@ public partial class RM_FILE_CONTENT: Entity,IPPDMEntity
 {
 
 private  System.String FILE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FILE_ID
         {  
             get  

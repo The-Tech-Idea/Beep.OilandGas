@@ -9,6 +9,7 @@ public partial class RA_CS_TRANSFORM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TRANSFORM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSFORM_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TRANSFORM_TYPEValue;
           set { SetProperty(ref  TRANSFORM_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

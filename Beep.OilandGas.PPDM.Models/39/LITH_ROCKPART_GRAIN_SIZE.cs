@@ -9,6 +9,7 @@ public partial class LITH_ROCKPART_GRAIN_SIZE: Entity,IPPDMEntity
 {
 
 private  System.String LITHOLOGY_LOG_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITHOLOGY_LOG_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LITHOLOGY_LOG_IDValue;
           set { SetProperty(ref  LITHOLOGY_LOG_IDValue, value); }
         } 
 private  System.String LITH_LOG_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITH_LOG_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LITH_LOG_SOURCEValue;
           set { SetProperty(ref  LITH_LOG_SOURCEValue, value); }
         } 
 private  System.Decimal DEPTH_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal DEPTH_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal DEPTH_OBS_NOValue;
           set { SetProperty(ref  DEPTH_OBS_NOValue, value); }
         } 
 private  System.String SCALE_SCHEMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCALE_SCHEME
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String SCALE_SCHEMEValue;
           set { SetProperty(ref  SCALE_SCHEMEValue, value); }
         } 
 private  System.String ROCK_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_TYPE
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String ROCK_TYPEValue;
           set { SetProperty(ref  ROCK_TYPEValue, value); }
         } 
 private  System.Decimal ROCK_TYPE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ROCK_TYPE_OBS_NO
         {  
             get  
@@ -69,6 +75,7 @@ private  System.Decimal ROCK_TYPE_OBS_NOValue;
           set { SetProperty(ref  ROCK_TYPE_OBS_NOValue, value); }
         } 
 private  System.String ROCKPART_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCKPART_NAME
         {  
             get  
@@ -79,6 +86,7 @@ private  System.String ROCKPART_NAMEValue;
           set { SetProperty(ref  ROCKPART_NAMEValue, value); }
         } 
 private  System.String GRAIN_SIZEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GRAIN_SIZE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_EQUIP_USE_STAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String EQUIP_USE_STAT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIP_USE_STAT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EQUIP_USE_STAT_TYPEValue;
           set { SetProperty(ref  EQUIP_USE_STAT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

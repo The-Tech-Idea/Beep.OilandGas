@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class ACTUAL_DELIVERY : ModelEntityBase {
         private System.String ACTUAL_DELIVERY_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String ACTUAL_DELIVERY_ID
         {
             get { return this.ACTUAL_DELIVERY_IDValue; }

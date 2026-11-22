@@ -9,6 +9,7 @@ public partial class RA_LOCATION_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String LOCATION_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOCATION_QUALITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LOCATION_QUALITYValue;
           set { SetProperty(ref  LOCATION_QUALITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class CAT_EQUIPMENT: Entity,IPPDMEntity
 {
 
 private  System.String CATALOGUE_EQUIP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATALOGUE_EQUIP_ID
         {  
             get  

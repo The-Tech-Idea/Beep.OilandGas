@@ -9,6 +9,7 @@ public partial class R_CUTTING_FLUID: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_FLUIDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_FLUID
         {  
             get  

@@ -1,0 +1,109 @@
+{
+  "id": "STG-12/DEC-03",
+  "title": "Facility decommissioning and cost estimation",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the total is the escalated base plus its contingency, computed in decimal and shown step by step; a revision appends and leaves the version it replaces untouched; the restoration record has its own state and only gates the facility's completion; the provision preview names the accounting period and says ACC-02 owns the posting; the currency is required on every amount; and an approval records the actor, the date and the conditions, with the author refused as the approver.",
+  "dataModel": {
+    "newInTheOwningModule": "The owner held only the facility's current estimated and actual cost on DECOMMISSIONING_STATUS, which can never hold a previous version. AC-2 requires that a revision not mutate the one it replaces, so DECOMMISSIONING_COST_REVISION is a new table in Beep.OilandGas.Decommissioning (revision number, previous revision, reason, line items as JSON, base, escalation rate and years, contingency, total, currency, status DRAFT/APPROVED, author, approved by/date/conditions), declared by DecommissioningModule - whose planned schema grew from five tables to six (smoke 434 -> 435 entity types).",
+    "plannedDateClosed": "DECOMMISSIONING_STATUS gained additive PLANNED_DATE, PLANNED_BY and DECOMMISSIONING_METHOD on the owner's own partial class. This closes DEC-01's remaining recorded gap: a facility's planned year and overdue can now be read from the record, and DEC-01 reads them.",
+    "currentFigures": "The status row's ESTIMATED_COST and COST_CURRENCY are the current revision's total and currency - the figure DEC-01 already reads - rather than a second, separately maintained number; each save appends a status row carrying the plan and that figure."
+  },
+  "rules": {
+    "arithmetic": "Total = (base x escalation) + contingency. The base is the sum of the line items; escalation composes multiplicatively, (1 + rate) applied once per whole year with any fractional year applied as its own fraction; the contingency is a percentage of the escalated base. Money is rounded once, at each shown figure, to the minor unit with MidpointRounding.AwayFromZero. With no escalation period the total is base + contingency and the steps say so, which is the feature's own 'missing escalation basis' state.",
+    "revision": "Saving an estimate always creates a new revision with the next number, the previous revision's id and, from the second on, a required reason. No other row is written to: the earlier revision's base, total, author and status are left as they were, which the gateway asserts in SQL.",
+    "approval": "An approval is refused when the revision is already approved, when the conditions are blank, and when the approver is the revision's author. It records the approver, the timestamp and the conditions.",
+    "currency": "The currency is required and nothing is assumed: the page does not pre-fill it, the rate, the period or the contingency, because the repository holds no configured defaults for them.",
+    "restoration": "An environmental restoration record is written into the owner's ENVIRONMENTAL_RESTORATION with the facility as its site, and it keeps its own status and certification. A facility completion is refused while any of its restoration records is open, and a restoration completing does not move the facility's own state - which the gateway asserts before allowing the completion."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.Decommissioning/Data/Tables/DECOMMISSIONING_COST_REVISION.cs, DECOMMISSIONING_STATUS.Planning.cs (additive partial), DecommissioningModule entity list",
+    "service": "src/Beep.OilandGas.Desktop.Data/Decommissioning/OgFacilityCost.cs (OgCostLine, OgCostComputation, OgCostRevision, OgFacilityScope, OgFacilityWorkspace, FacilityCostRules, IOgFacilityCost, OgFacilityCostService with LoadAsync/SaveEstimateAsync/ApproveAsync/PlanRestorationAsync/CompleteRestorationAsync/CompleteFacilityAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/FacilityCostPageView.cs (route 'facilitycost': the facility and plan bar, the completion checklist, the estimate steps and provision preview, the estimate inputs, the revision grid with its approve bar, the restoration grid with plan/complete bars, the completion bar and the gated links)",
+    "wiring": "OgBootstrapper (IOgFacilityCost), OgApplication.FacilityCost, catalog 'facilitycost' (OgModuleKeys.Decommissioning), OgPageFactory, en + ar labels; DEC-01's facility and cost links now point at this page and DEC-01 reads the facility planned date",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/FacilityCostTests.cs (7, no database) + FacilityCostGatewayTests.cs (1 opt-in, real SQLite over three tables)",
+    "arithmeticNote": "An estimate of base 1,000,000 at 3 % for two years with 10 % contingency reads 1,060,900.00 escalated, 106,090.00 contingency and 1,166,990.00 total, with each step printed."
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0,
+      "warnings": "owner-project analyzer warnings only"
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 1231,
+      "passed": 1231,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 71,
+      "passed": 71,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 95,
+      "views-constructed": true,
+      "modulesetup-summary": "33 module(s) - 435 entity type(s)",
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0
+    }
+  ],
+  "integration": {
+    "database": "SQLite with DECOMMISSIONING_STATUS (including the added planning columns), DECOMMISSIONING_COST_REVISION and ENVIRONMENTAL_RESTORATION, keyed as the owner declares them.",
+    "ac1_total": "an estimate of ENGINEERING 400,000 + REMOVAL 600,000 at 3 % for 2 years and 10 % contingency reads base 1,000,000.00, escalated 1,060,900.00, contingency 106,090.00 and total 1,166,990.00 USD, with every step in the text",
+    "ac1_noBasis": "with no escalation period the escalated figure is the base, the total is base + contingency and the steps say 'no escalation basis' and '(base + contingency only)'",
+    "ac2_revision": "the second revision (base 1,200,000, reason 'Scope grew after the site survey.') records the first revision's id as its predecessor; the first revision's row still reads BASE_COST 1000000, TOTAL_COST 1166990, AUTHOR sara and STATUS DRAFT",
+    "ac2_reason": "a third revision without a reason is refused with facilitycost-reason-required and no row is written",
+    "ac5_currency": "an estimate with a blank currency is refused with facilitycost-currency-required; the page pre-fills the currency, the rate, the period and the contingency with nothing",
+    "ac6_approval": "approving as the author is refused, with blank conditions is refused, and by nadia with conditions succeeds: STATUS APPROVED, APPROVED_BY nadia, APPROVED_DATE set and the conditions recorded",
+    "ac4_provision": "the preview reads 'provision preview 1166990.00 USD for period 2027-03' and says ACC-02 owns the posting; the period comes from the planned date",
+    "ac3_restoration": "a completion with no restoration is refused naming that; planning a SOIL restoration leaves the completion refused because the record is not complete; completing it with evidence certifies it and still leaves the facility's own state PLANNED; the completion then succeeds and appends a COMPLETED status row",
+    "failure": "a service without a connection returns no workspace, and dropping a table fails the read rather than showing an empty estimate"
+  },
+  "gates": {
+    "AC-1 Total = (base x escalation) + contingency, decimal, step by step": "pass - the arithmetic is decimal and checked, the steps are on the record and the gateway asserts the four figures of a real estimate.",
+    "AC-2 A revision never mutates a prior version": "pass - each save appends a revision with its predecessor recorded, and the gateway asserts the earlier row's figures and status are unchanged (SG-12-3).",
+    "AC-3 Restoration state is independent of facility state": "pass - the restoration keeps its own status and certification, completion is gated on it, and the facility's own state is still PLANNED after the restoration completes (SG-12-4).",
+    "AC-4 A provision preview links to the accounting period": "pass - the preview names the amount, the period derived from the planned date, and that ACC-02 owns the posting.",
+    "AC-5 Currency is explicit on every amount": "pass - the currency is required, every amount prints with it, and the page supplies no default.",
+    "AC-6 Approval records actor, date and conditions": "pass - all three are stored, and the author cannot approve."
+  },
+  "engineFindings": {
+    "noCostRevisionTable": {
+      "where": "Beep.OilandGas.Decommissioning",
+      "finding": "The status table holds one estimated and one actual figure for a facility. It cannot hold a previous version, so the stage's AC-2 could not be met from it.",
+      "handling": "DECOMMISSIONING_COST_REVISION is a new table in the owning module, with the line items as JSON on the revision; the status row carries the current figure so DEC-01's cost reading is unchanged."
+    },
+    "costContractsWereTransient": {
+      "where": "Beep.OilandGas.Decommissioning/Data/Contracts",
+      "finding": "DecommissioningCostRequest/Response, FacilityDecommissioningRequest and EnvironmentalRestorationRequest are transient DTOs for the in-memory analysis service, not persisted shapes; there was no cost estimate to read back.",
+      "handling": "The plan's own contract (OgDecomCost's lines/base/escalation/contingency/total/currency/revision) is implemented as the revision record and computed in the service, not persisted as a serialized DTO."
+    },
+    "escalationDefaultsAbsent": {
+      "finding": "The stage's open question warned that escalation and contingency defaults may not exist in the repository, and they do not.",
+      "handling": "Every input is required explicitly: the currency, the rate, the period and the contingency are not pre-filled, the service refuses a blank currency and out-of-range values, and the 'missing escalation basis' case is labelled rather than silently assumed to be zero escalation."
+    },
+    "checklistReadAsADefectAfterCompletion": {
+      "finding": "The first checklist included the 'already completed' refusal, which a finished facility would display as a cross.",
+      "handling": "A completed facility's checklist states its outcome; the block remains for the second-completion refusal, which the gateway asserts."
+    }
+  },
+  "limits": [
+    "There is no escalation or contingency default and no configured minimum contingency: the stage's warning that they may not exist held, so values are required from the operator and only the arithmetic bounds (0-100 % contingency, 0-1 escalation rate) are enforced. The feature's 'contingency below the configured minimum -> warning' state therefore has no configured minimum to compare against and is not implemented.",
+    "The line items are stored as JSON on the revision rather than as their own table, so they are not queryable or referencable from other modules - a deliberate bound, since nothing else reads them.",
+    "The provision preview is a sentence: nothing is recognised in the ledger and no accounting period record is read; ACC-02 owns the posting, and the period is derived from the planned date.",
+    "Restoration records are matched to a facility by SITE_ID, the owner's only link, so a site whose id is not the facility id will not appear here.",
+    "A facility completion requires every restoration record for the site to be complete and certified, but it does not require an approved cost estimate, because the feature states no such rule.",
+    "The writes are not one transaction: the revision and the status row commit separately, so a failed status write leaves a revision that DEC-01's cost strip does not yet show.",
+    "There is no escalation basis configuration per currency or jurisdiction, and no revision comparison view beyond the grid.",
+    "No per-command permission enforcement: the page is gated, and decommissioning.cost.write/.approve are not checked per command beyond the author-approver segregation."
+  ]
+}

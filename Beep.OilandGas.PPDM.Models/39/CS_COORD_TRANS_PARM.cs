@@ -9,6 +9,7 @@ public partial class CS_COORD_TRANS_PARM: Entity,IPPDMEntity
 {
 
 private  System.String TRANSFORM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSFORM_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TRANSFORM_TYPEValue;
           set { SetProperty(ref  TRANSFORM_TYPEValue, value); }
         } 
 private  System.String PARAMETER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_ID
         {  
             get  

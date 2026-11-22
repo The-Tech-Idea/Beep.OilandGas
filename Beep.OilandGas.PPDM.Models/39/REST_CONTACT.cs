@@ -9,6 +9,7 @@ public partial class REST_CONTACT: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESTRICTION_IDValue;
           set { SetProperty(ref  RESTRICTION_IDValue, value); }
         } 
 private  System.Decimal RESTRICTION_VERSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal RESTRICTION_VERSION
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal RESTRICTION_VERSIONValue;
           set { SetProperty(ref  RESTRICTION_VERSIONValue, value); }
         } 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.Decimal CONTACT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal CONTACT_OBS_NO
         {  
             get  

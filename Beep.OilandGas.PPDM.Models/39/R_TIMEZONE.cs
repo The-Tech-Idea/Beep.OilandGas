@@ -9,6 +9,7 @@ public partial class R_TIMEZONE: Entity,IPPDMEntity
 {
 
 private  System.String TIMEZONEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TIMEZONE
         {  
             get  

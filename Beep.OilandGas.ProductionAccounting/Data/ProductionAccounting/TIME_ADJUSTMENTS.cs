@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class TIME_ADJUSTMENTS : ModelEntityBase {
         private System.String TIME_ADJUSTMENTS_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String TIME_ADJUSTMENTS_ID
         {
             get { return this.TIME_ADJUSTMENTS_IDValue; }

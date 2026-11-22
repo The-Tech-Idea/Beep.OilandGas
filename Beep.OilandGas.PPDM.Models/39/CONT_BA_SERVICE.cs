@@ -9,6 +9,7 @@ public partial class CONT_BA_SERVICE: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_IDValue;
           set { SetProperty(ref  CONTRACT_IDValue, value); }
         } 
 private  System.String PROVIDED_BYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROVIDED_BY
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PROVIDED_BYValue;
           set { SetProperty(ref  PROVIDED_BYValue, value); }
         } 
 private  System.Decimal SERVICE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SERVICE_SEQ_NO
         {  
             get  

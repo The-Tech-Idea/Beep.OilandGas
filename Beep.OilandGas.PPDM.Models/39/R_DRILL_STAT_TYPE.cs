@@ -9,6 +9,7 @@ public partial class R_DRILL_STAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STATISTIC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATISTIC_TYPE
         {  
             get  

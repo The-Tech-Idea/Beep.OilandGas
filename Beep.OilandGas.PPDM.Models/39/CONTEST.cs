@@ -9,6 +9,7 @@ public partial class CONTEST: Entity,IPPDMEntity
 {
 
 private  System.String CONTEST_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTEST_ID
         {  
             get  

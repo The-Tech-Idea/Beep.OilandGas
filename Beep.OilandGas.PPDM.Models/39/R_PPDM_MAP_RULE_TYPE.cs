@@ -9,6 +9,7 @@ public partial class R_PPDM_MAP_RULE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MAP_RULE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAP_RULE_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_RIG_DRAWWORKS: Entity,IPPDMEntity
 {
 
 private  System.String DRAWWORKS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRAWWORKS_TYPE
         {  
             get  

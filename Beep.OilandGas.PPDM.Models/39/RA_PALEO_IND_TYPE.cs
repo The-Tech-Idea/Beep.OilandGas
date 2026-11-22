@@ -9,6 +9,7 @@ public partial class RA_PALEO_IND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INDICATOR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INDICATOR_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INDICATOR_TYPEValue;
           set { SetProperty(ref  INDICATOR_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

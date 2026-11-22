@@ -9,6 +9,7 @@ public partial class R_ANL_STEP_XREF: Entity,IPPDMEntity
 {
 
 private  System.String STEP_XREF_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STEP_XREF_REASON
         {  
             get  

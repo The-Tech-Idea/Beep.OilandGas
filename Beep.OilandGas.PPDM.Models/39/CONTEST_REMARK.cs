@@ -9,6 +9,7 @@ public partial class CONTEST_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String CONTEST_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTEST_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTEST_IDValue;
           set { SetProperty(ref  CONTEST_IDValue, value); }
         } 
 private  System.String REMARK_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_ID
         {  
             get  

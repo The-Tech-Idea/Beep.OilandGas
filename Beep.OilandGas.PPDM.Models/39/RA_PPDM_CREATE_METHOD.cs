@@ -9,6 +9,7 @@ public partial class RA_PPDM_CREATE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CREATE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREATE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CREATE_METHODValue;
           set { SetProperty(ref  CREATE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

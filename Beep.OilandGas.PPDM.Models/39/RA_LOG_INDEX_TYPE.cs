@@ -9,6 +9,7 @@ public partial class RA_LOG_INDEX_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INDEX_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INDEX_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INDEX_TYPEValue;
           set { SetProperty(ref  INDEX_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

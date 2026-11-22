@@ -1,0 +1,58 @@
+{
+  "id": "STG-04/DEV-05",
+  "title": "Drilling program authoring and review",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: a program cannot be submitted with an incomplete section or an incomplete well design; the three design checks exist as 'not run' and never read as passed; the author cannot review their own program; a revision appends a version and leaves the approved one untouched; every depth and diameter carries its unit; and the total is the sum of the section costs. A failed check is recorded and does not block the submit, and a lost acknowledgement is retained for retry.",
+  "dataModel": {
+    "decision": "The module's DRILLING_PROGRAM is the funded company program: its schema marks an AFE id, an investment handoff id and the bounded original draft proof as required, and DrillingOperationService reads that row set by AFE. Writing a plan-stage program there was tried first and the framework refused it ('AFE_ID: The AFE_ID field is required', and the same for the handoff, the outcome revision and the draft proof), and inventing those ids would fabricate a funding reference. DEV-05 therefore owns a separate plan-stage program record in the same module.",
+    "tables": [
+      "DEVELOPMENT_DRILLING_PROGRAM (PROGRAM_ID key, LINEAGE_ID, VERSION, COMPANY_ID, FDP_ID, FDP_BASELINE_ID, FIELD_ID, WELL_ID, DESIGN_ID, PROGRAM_NAME, DESCRIPTION_OBJECTIVE, STATE, PLANNED_MEASURED_DEPTH, PLANNED_TRUE_VERTICAL_DEPTH, DEPTH_OUOM, PLANNED_DURATION_DAYS, CURRENCY) - the plan-stage program; a revision appends a row with a higher VERSION and the same LINEAGE_ID",
+      "DRILLING_PROGRAM_SECTION (SECTION_ID key, PROGRAM_ID, SECTION_SEQ, SECTION_NAME, HOLE_SIZE + OUOM, TOP_MD, BOTTOM_MD, DEPTH_OUOM, CASING_OD + OUOM, MUD_WEIGHT + OUOM, DURATION_DAYS, COST, COST_CURRENCY) - the hole sections; CASING_PROGRAM remains the detailed casing record",
+      "DRILLING_PROGRAM_CHECK (CHECK_ID key, PROGRAM_ID, CHECK_NAME, STATUS, REFERENCE, NOTE, CHECKED_BY, CHECKED_AT) - three rows written at creation as NOT_RUN",
+      "DRILLING_PROGRAM_REVIEW (REVIEW_ID key, PROGRAM_ID, PROGRAM_VERSION, DECISION, COMMENTS, REVIEWER, REVIEWED_AT) - append-only review history"
+    ],
+    "registration": "DrillingAndConstructionSetupModule registers the four types; --smoke now reports 366 entity types (up from 362).",
+    "fundedRowSet": "DRILLING_PROGRAM, CASING_PROGRAM, CEMENT_JOB, DRILLING_FLUID and DRILLING_BIT are untouched by this feature."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgDrillingProgram.cs (OgDrillCheck, OgDrillSection, OgDrillReview, OgDrillProgram, OgDrillProgramWorkspace, OgWellDesignOption, OgDrillProgramValues, OgDrillSectionValues, OgDrillDecision, OgDrillSubmit, IOgDrillingPrograms, OgDrillProgramService with MissingItems/ValidateProgram/ValidateSection/CreateAsync/SaveHeaderAsync/SaveSectionAsync/RecordCheckAsync/SubmitAsync/ReviewAsync/ReviseAsync/LoadVersionsAsync/RetrySubmitAsync)",
+    "designGate": "The submit reads the current DEV-03 design for the well and applies OgWellDesignService.ToWell(...).MissingItems (the DEV-03 rule, made public for this use), so an incomplete design blocks the submit with the same item names DEV-03 uses.",
+    "page": "src/Beep.OilandGas.Desktop/Views/DrillingProgramPageView.cs (route 'drillingprogram': designed-well picker, program grid, header fields, hole-section grid and editor, checks panel, review panel, version history)",
+    "wiring": "OgBootstrapper (IOgDrillingPrograms), OgApplication.DrillingPrograms, catalog 'drillingprogram' (OgModuleKeys.Development), OgPageFactory, en + ar labels; DEV-01's drilling-program link now resolves",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DrillingProgramTests.cs (10, no database) + DrillingProgramGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 735, "passed": 735, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 23, "passed": 23, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 47, "views-constructed": true, "modulesetup-summary": "28 module(s) - 366 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD_DEVELOPMENT_PLAN, FDP_BASELINE, DEVELOPMENT_WELL_DESIGN, DEVELOPMENT_CASING_STRING, DEVELOPMENT_CASING_CHECK, DEVELOPMENT_DRILLING_PROGRAM, DRILLING_PROGRAM_SECTION, DRILLING_PROGRAM_CHECK and DRILLING_PROGRAM_REVIEW, seeded in DrillingProgramGatewayTests",
+    "ac2_not_run": "a newly created program has exactly three checks (HYDRAULICS, TORQUE_DRAG, CASING_DESIGN) and every one reports IsRun=false and StatusText 'not run'; recording HYDRAULICS as NOT_RUN again still leaves all three not run",
+    "ac1_section": "submitting with no section is refused with drill-program-section-required; a section with no duration is refused with drill-program-section-incomplete and the message names 'duration'",
+    "ac6_total": "two sections at 400,000 and 900,000 produce TotalCost 1,300,000 with TotalIsComplete true; a section without a cost produces a 'partial' total that says a section has no cost",
+    "checks": "HYDRAULICS recorded PASS with reference 'eng-hydraulics' reads as passed while TORQUE_DRAG stays not run; TORQUE_DRAG recorded FAIL sets AnyCheckFailed and the submit still succeeds (a failed check is recorded, not blocking)",
+    "ac3_author": "the author reviewing their own submitted program is refused with drill-program-author-cannot-approve; the reviewer 'reviewer' then approves and one review row is recorded",
+    "ac4_revision": "ReviseAsync writes version 2 in state DRAFT with the same LINEAGE_ID and two copied sections; its checks are all NOT_RUN; the version history still shows version 1 as APPROVED with its two sections and its passed hydraulic check",
+    "designGate": "a program created for the design with no casing outline is refused at submit with drill-program-design-incomplete, and the message names 'Casing scheme' - DEV-03's own wording",
+    "lost_ack": "a SQLite trigger made the submit update fail: the submit was refused and retained in Pending, the version was still DRAFT on re-read, and after the trigger was dropped the retry submitted the same program"
+  },
+  "gates": {
+    "AC-1 A program cannot be submitted with an incomplete section": "pass - SubmissionGaps names 'no hole section is recorded' and each incomplete section with its missing fields; the submit refuses with section-required or section-incomplete and writes nothing.",
+    "AC-2 Design checks that were not run are shown as not run": "pass - the three checks are written as NOT_RUN at creation and AnyCheckFailed/StatusText never turn NOT_RUN into a pass; the gateway test proves a fresh program has no run check.",
+    "AC-3 The author cannot approve": "pass - ReviewAsync compares the program's ROW_CREATED_BY with the reviewer and refuses with drill-program-author-cannot-approve; the gateway test proves the refusal and that another reviewer can approve.",
+    "AC-4 A revision never mutates the approved version": "pass - ReviseAsync appends a new row with VERSION+1 and the same LINEAGE_ID, copying sections and resetting checks; the version history reads version 1 back as APPROVED with its own sections and check results.",
+    "AC-5 Depths and diameters always carry units": "pass - the program header requires a depth unit when a depth is recorded, and a section requires its hole/depth/casing/mud units whenever the value is present; each is a named refusal (drill-program-unit-required / drill-program-depth-unit-required).",
+    "AC-6 Total cost equals the sum of section costs": "pass - TotalCost is Sections.Sum(Cost) and TotalIsComplete requires a cost on every section; a cost needs the program's currency, so the sum is never taken across currencies."
+  },
+  "limits": [
+    "The three design checks are recorded, not computed: hydraulics, torque & drag and casing design belong to ENG-07, ENG-08 and ENG-02, which are not built. The panel shows 'not run' with a reference field for the detailed result and never fabricates a pass.",
+    "The plan-stage program is not copied into the funded DRILLING_PROGRAM row set, and this screen does not read that row set: the company program is created from the plan by the module's own funding flow once the AFE and handoff exist.",
+    "A failed check is recorded and shown to the reviewer but does not block the submit, exactly as the feature doc's state table says; blocking on failures is a policy this document does not give.",
+    "Section sequence numbers are authored; a gap in the sequence is allowed (the grid orders by the number), and the checks that intervals abut or overlap are not made.",
+    "Trajectory stations, hydraulics and torque & drag results are not displayed; their screens are STG-16 and are not built.",
+    "The feature doc's per-command permissions (drilling.program.write / .submit / .approve) are not enforced: the app gates pages, not commands.",
+    "The four new tables (and the module's entity list) need the DRILLING_EXECUTION module applied again on an existing database."
+  ]
+}

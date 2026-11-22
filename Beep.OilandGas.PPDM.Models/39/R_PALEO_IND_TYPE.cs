@@ -9,6 +9,7 @@ public partial class R_PALEO_IND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INDICATOR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INDICATOR_TYPE
         {  
             get  

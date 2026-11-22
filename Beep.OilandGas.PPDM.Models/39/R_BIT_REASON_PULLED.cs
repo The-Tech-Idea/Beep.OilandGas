@@ -9,6 +9,7 @@ public partial class R_BIT_REASON_PULLED: Entity,IPPDMEntity
 {
 
 private  System.String REASON_PULLEDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REASON_PULLED
         {  
             get  

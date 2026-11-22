@@ -9,6 +9,7 @@ public partial class RA_SHUTIN_PRESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SHUTIN_PRESSURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SHUTIN_PRESSURE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SHUTIN_PRESSURE_TYPEValue;
           set { SetProperty(ref  SHUTIN_PRESSURE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

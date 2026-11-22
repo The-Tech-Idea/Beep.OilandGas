@@ -9,6 +9,7 @@ public partial class RA_CONT_EXTEND_COND: Entity,IPPDMEntity
 {
 
 private  System.String EXTENSION_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EXTENSION_CONDITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EXTENSION_CONDITIONValue;
           set { SetProperty(ref  EXTENSION_CONDITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

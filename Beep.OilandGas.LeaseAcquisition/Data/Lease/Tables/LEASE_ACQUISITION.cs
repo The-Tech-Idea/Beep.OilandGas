@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.Lease
     public partial class LEASE_ACQUISITION : ModelEntityBase
     {
         private String LEASE_ACQUISITION_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public String LEASE_ACQUISITION_ID
         {
             get { return this.LEASE_ACQUISITION_IDValue; }

@@ -9,6 +9,7 @@ public partial class WELL_NODE_STRAT_UNIT: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String STRAT_UNIT_IDValue;
           set { SetProperty(ref  STRAT_UNIT_IDValue, value); }
         } 
 private  System.String INTERP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTERP_ID
         {  
             get  

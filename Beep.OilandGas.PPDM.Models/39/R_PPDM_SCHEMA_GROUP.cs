@@ -9,6 +9,7 @@ public partial class R_PPDM_SCHEMA_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String SCHEMA_GROUP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCHEMA_GROUP_TYPE
         {  
             get  

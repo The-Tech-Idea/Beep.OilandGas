@@ -9,6 +9,7 @@ public partial class RESTRICTION: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESTRICTION_IDValue;
           set { SetProperty(ref  RESTRICTION_IDValue, value); }
         } 
 private  System.Decimal RESTRICTION_VERSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal RESTRICTION_VERSION
         {  
             get  

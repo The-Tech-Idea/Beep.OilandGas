@@ -9,6 +9,7 @@ public partial class R_VERTICAL_DATUM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VERTICAL_DATUM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VERTICAL_DATUM_TYPE
         {  
             get  

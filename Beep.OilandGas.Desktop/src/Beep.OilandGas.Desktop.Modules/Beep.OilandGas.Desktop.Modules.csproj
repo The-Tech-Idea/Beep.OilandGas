@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>TheTechIdea.Beep.OilandGas.Desktop.Modules</RootNamespace>
+    <AssemblyName>TheTechIdea.Beep.OilandGas.Desktop.Modules</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Core\Beep.OilandGas.Desktop.Core.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.Desktop.Controls\Beep.OilandGas.Desktop.Controls.csproj" />
+  </ItemGroup>
+
+</Project>

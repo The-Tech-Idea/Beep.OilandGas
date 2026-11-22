@@ -9,6 +9,7 @@ public partial class FIELD_INSTRUMENT: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FIELD_IDValue;
           set { SetProperty(ref  FIELD_IDValue, value); }
         } 
 private  System.String INSTRUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_ID
         {  
             get  

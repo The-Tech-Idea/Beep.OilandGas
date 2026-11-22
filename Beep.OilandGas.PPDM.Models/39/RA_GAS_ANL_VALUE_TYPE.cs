@@ -9,6 +9,7 @@ public partial class RA_GAS_ANL_VALUE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GAS_ANL_VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GAS_ANL_VALUE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GAS_ANL_VALUE_TYPEValue;
           set { SetProperty(ref  GAS_ANL_VALUE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

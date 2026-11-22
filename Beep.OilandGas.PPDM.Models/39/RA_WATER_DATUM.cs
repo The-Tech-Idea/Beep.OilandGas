@@ -9,6 +9,7 @@ public partial class RA_WATER_DATUM: Entity,IPPDMEntity
 {
 
 private  System.String WATER_DATUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_DATUM
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WATER_DATUMValue;
           set { SetProperty(ref  WATER_DATUMValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

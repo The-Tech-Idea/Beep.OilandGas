@@ -9,6 +9,7 @@ public partial class ANL_CALC_FORMULA: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATE_METHOD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATE_METHOD_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CALCULATE_METHOD_IDValue;
           set { SetProperty(ref  CALCULATE_METHOD_IDValue, value); }
         } 
 private  System.Decimal FORMULA_PART_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal FORMULA_PART_OBS_NO
         {  
             get  

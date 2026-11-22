@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class INTERNAL_CONTROL_RULE : ModelEntityBase {
         private System.String INTERNAL_CONTROL_RULE_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String INTERNAL_CONTROL_RULE_ID
         {
             get { return this.INTERNAL_CONTROL_RULE_IDValue; }

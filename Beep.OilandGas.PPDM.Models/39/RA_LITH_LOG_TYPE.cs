@@ -9,6 +9,7 @@ public partial class RA_LITH_LOG_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LITH_LOG_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITH_LOG_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LITH_LOG_TYPEValue;
           set { SetProperty(ref  LITH_LOG_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

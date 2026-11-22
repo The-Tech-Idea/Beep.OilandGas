@@ -173,7 +173,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                 decimal z = ZFactorCalculator.CalculateBrillBeggs(pAvg, tIn, gamma);
 
                 // Polytropic exponent
-                decimal n = etaP > 0.999m ? k : (k * etaP) / (k - etaP * (k - 1m));
+                decimal n = etaP > 0.999m ? k : (k * etaP) / (k * etaP - (k - 1m));
 
                 // Discharge temperature
                 decimal tOut = tIn * (decimal)Math.Pow((double)stageRatio, (double)((n - 1m) / n));

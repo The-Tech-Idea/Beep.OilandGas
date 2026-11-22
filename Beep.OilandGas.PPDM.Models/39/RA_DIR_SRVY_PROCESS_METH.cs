@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_PROCESS_METH: Entity,IPPDMEntity
 {
 
 private  System.String PROCESS_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCESS_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROCESS_METHODValue;
           set { SetProperty(ref  PROCESS_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

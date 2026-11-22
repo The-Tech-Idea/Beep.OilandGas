@@ -9,6 +9,7 @@ public partial class WELL_DRILL_STATISTIC: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.Decimal PERIOD_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PERIOD_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal PERIOD_OBS_NOValue;
           set { SetProperty(ref  PERIOD_OBS_NOValue, value); }
         } 
 private  System.String STATISTIC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATISTIC_TYPE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String STATISTIC_TYPEValue;
           set { SetProperty(ref  STATISTIC_TYPEValue, value); }
         } 
 private  System.Decimal STATISTIC_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STATISTIC_OBS_NO
         {  
             get  

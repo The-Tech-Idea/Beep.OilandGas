@@ -9,6 +9,7 @@ public partial class SP_PARCEL_NORTH_SEA: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_NORTH_SEA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_NORTH_SEA_ID
         {  
             get  

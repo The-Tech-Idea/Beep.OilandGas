@@ -9,6 +9,7 @@ public partial class R_NODE_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String NODE_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NODE_POSITION
         {  
             get  

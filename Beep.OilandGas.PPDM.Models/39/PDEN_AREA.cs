@@ -9,6 +9,7 @@ public partial class PDEN_AREA: Entity,IPPDMEntity
 {
 
 private  System.String PDEN_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PDEN_SUBTYPEValue;
           set { SetProperty(ref  PDEN_SUBTYPEValue, value); }
         } 
 private  System.String PDEN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PDEN_IDValue;
           set { SetProperty(ref  PDEN_IDValue, value); }
         } 
 private  System.String PDEN_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PDEN_SOURCEValue;
           set { SetProperty(ref  PDEN_SOURCEValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

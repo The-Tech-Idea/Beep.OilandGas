@@ -9,6 +9,7 @@ public partial class RA_STRAT_INTERP_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_INTERPRET_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_INTERPRET_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_INTERPRET_METHODValue;
           set { SetProperty(ref  STRAT_INTERPRET_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

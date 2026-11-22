@@ -9,6 +9,7 @@ public partial class R_OBLIG_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OBLIG_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBLIG_XREF_TYPE
         {  
             get  

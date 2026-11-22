@@ -22,4 +22,10 @@ public static class FlashReferenceSets
 
     /// <summary>Derived PVT property categories (Z, density, enthalpy proxy).</summary>
     public const string PropertyKind = "FLASH_PROPERTY_KIND";
+
+    /// <summary>
+    /// Outcome codes a flash run records. The feature document names SUCCESS, CONVERGENCE_FAILED and FAILED as coming
+    /// from <c>R_FLASH_CALCULATION_REFERENCE_CODE</c>; this set is what makes that true.
+    /// </summary>
+    public const string StatusCode = "FLASH_STATUS_CODE";
 }

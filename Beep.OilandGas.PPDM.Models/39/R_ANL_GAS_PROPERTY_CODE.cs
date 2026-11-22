@@ -9,6 +9,7 @@ public partial class R_ANL_GAS_PROPERTY_CODE: Entity,IPPDMEntity
 {
 
 private  System.String ANALYSIS_PROPERTYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANALYSIS_PROPERTY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ANALYSIS_PROPERTYValue;
           set { SetProperty(ref  ANALYSIS_PROPERTYValue, value); }
         } 
 private  System.String PROPERTY_VALUE_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROPERTY_VALUE_CODE
         {  
             get  

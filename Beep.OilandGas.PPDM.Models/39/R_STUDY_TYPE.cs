@@ -9,6 +9,7 @@ public partial class R_STUDY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STUDY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STUDY_TYPE
         {  
             get  

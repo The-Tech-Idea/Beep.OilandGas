@@ -9,6 +9,7 @@ public partial class R_ANL_EQUIP_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String ANL_EQUIP_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ANL_EQUIP_ROLE
         {  
             get  

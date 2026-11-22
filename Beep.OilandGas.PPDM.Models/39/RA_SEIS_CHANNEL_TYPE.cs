@@ -9,6 +9,7 @@ public partial class RA_SEIS_CHANNEL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CHANNEL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHANNEL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CHANNEL_TYPEValue;
           set { SetProperty(ref  CHANNEL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

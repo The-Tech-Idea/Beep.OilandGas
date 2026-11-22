@@ -1,0 +1,103 @@
+{
+  "id": "STG-17/INT-03",
+  "title": "OSDU export and ingest",
+  "date": "2026-11-09",
+  "status": "gate met for what a build can prove - AC-2..AC-6 are unchanged and pass, and the screen's remaining behaviour is now implemented: the Export tab selects the record kinds, an invalid record refuses the export and is named, the send commands are offered only when the plan can be sent (with the reason when they are not), and a reconciliation is accepted or rejected only by a person, recorded and audited, never merged. AC-1 is envelope-valid only because the OSDU JSON schemas are not shipped; that validation remains the owner's item, and the token stays session-only",
+  "implementation": {
+    "bridge": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgOsduWorkspace.cs (OgOsduProblem, OgOsduPlan, OgOsduBatch/Result, OgOsduCandidate, ExampleWell)",
+    "page": "src/Beep.OilandGas.Desktop/Views/OsduInteropPageView.cs (route 'osdu')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'osdu', module 'interop')",
+    "tools": "TheTechIdea.OilGas.Wellbore.Loaders — OsduExport; TheTechIdea.OilGas.DataAI — OsduIngest.Plan/SendAsync, WellReconciliation.Propose",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/OsduInteropTests.cs (8)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 1522,
+      "passed": 1522,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 102,
+      "passed": 102,
+      "failed": 0
+    },
+    {
+      "cmd": "dotnet test --filter FullyQualifiedName~OsduInteropTests",
+      "exit": 0,
+      "run": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 125,
+      "osdu-exported": true,
+      "osdu-records": 3,
+      "osdu-batches": 3,
+      "osdu-dry-run": true,
+      "osdu-token-rejected": true,
+      "osdu-sent": true,
+      "osdu-reconciled": true,
+      "osdu-candidates": 1,
+      "osdu-token-leaked": false,
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0
+    }
+  ],
+  "smoke": {
+    "pages-declared": 19,
+    "osdu-exported": true,
+    "osdu-records": 3,
+    "osdu-batches": 3,
+    "osdu-dry-run": true,
+    "osdu-token-rejected": true,
+    "osdu-sent": true,
+    "osdu-reconciled": true,
+    "osdu-candidates": 1,
+    "osdu-token-leaked": false
+  },
+  "gates": {
+    "AC-1 export produces schema-valid JSON for each selected record kind": "partial - the export produces Wellbore, WellboreTrajectory and WellLog records that carry the envelope the platform refuses without (partition-prefixed id, kind authority:source:entity:major.minor.patch, non-empty acl viewers/owners, non-empty legal tags, a data object), and Validate() names the record that breaks a rule. The OSDU JSON schemas are not shipped in this repository, so full schema validation is not performed.",
+    "AC-2 ingest reports per-batch outcomes and retries only failed batches": "pass - a 3-batch run (batch size 1) with batch 2 answering 500 reports Accepted 1 / Rejected 1 / NotSent 1; RetryFailedAsync makes exactly 2 requests (batches 2 and 3), reports the original indices [2, 3] and ends with 2 accepted.",
+    "AC-3 a reconciliation is never applied automatically": "pass - Reconcile returns deterministic candidate pairs with score, reasons and conflicts, leaves the input well headers untouched, and exposes no merge path; accepting a match needs the crosswalk store (DAT-02).",
+    "AC-4 tokens never appear in logs or error text": "pass - the token is passed to SendAsync only. A test with 'eyJ-probe-token-value' asserts it is absent from the result summary and from every batch error; the smoke run prints osdu-token-leaked False.",
+    "AC-5 a dry run sends nothing": "pass - Plan is pure: a counting handler records 0 calls across Plan and the dry-run page path, and 3 calls for a send. A plan with no osduStorageUrl is refused before the first request (0 calls).",
+    "AC-6 an expired token produces a distinguishable failure": "pass - a 401/403 marks the batch TokenRejected, OgOsduResult.TokenExpired is true and Describe() says the token was rejected; this is separate from an unreachable endpoint, and the page tells the person to sign in again rather than retrying.",
+    "AC-1 Export produces schema-valid JSON for each selected record kind": "partial - records are produced per selected kind with the envelope the platform refuses without (partition-prefixed id, kind, acl, legal, data), and an export that would break it is refused naming the record. The OSDU JSON schemas are not shipped, so \"schema-valid\" cannot be proven here and remains the owner's item."
+  },
+  "security": {
+    "token": "used for the Authorization header only; never stored, audited or echoed",
+    "persistence": "none - a DPAPI secret store does not exist (ADR-014 chose a one-way derivation for sign-in)"
+  },
+  "limits": [
+    "Ingestion was exercised against stub HTTP handlers, not a live OSDU environment.",
+    "The token is not persisted; it is re-entered each session.",
+    "Export selects a fixed example well; there is no multi-well picker.",
+    "Accepting a reconciliation is not implemented (the crosswalk needs DAT-02).",
+    "The smoke run drives the bridge's send directly because the page's Send is UI-thread asynchronous; the page's send path itself was not driven headlessly.",
+    "AC-1's schema validation needs the OSDU JSON schemas checked in (or a CI step against them); the envelope checks here are not that validation.",
+    "The token is still session-only: a DPAPI secret store does not exist (ADR-014 chose a one-way derivation for sign-in, which cannot be reused for an outbound token).",
+    "Ingestion has not been run against a live OSDU environment - the acceptance test uses a stub HTTP handler, as the feature's risk note requires.",
+    "The well selection is still the example well: the page exports the well it has, and a multi-well picker over the database is not implemented.",
+    "Accepting a reconciliation records the decision and audits it; it does not write the crosswalk, which is a persisted record (DAT-02)."
+  ],
+  "delivered20261109": {
+    "recordKinds": "OgOsduRecordKind names the three kinds with the platform's own ids; Records(model, kinds) filters to the selection and Export(model, kinds) writes only those, so a person can export a WellLog without the other two. Nothing selected is nothing exported, and the export says so instead of quietly sending everything.",
+    "refusal": "Export refuses when Validate finds a problem and names the record and the rule - \"The export is refused: N record(s) would be invalid - <id>: no legal tags ... The file is not written\" - the feature's schema-invalid-record state, so the platform never receives a file this build could have caught.",
+    "sendGating": "Send and Retry are enabled only when the plan can be sent, and the notice carries the plan's own reasons - which is how the \"endpoint not configured\" state now appears, since dataai.osduStorageUrl is the plan's first problem.",
+    "reconciliation": "Accept selected / Reject selected record a decision (who, what, when) and write one audit row; nothing merges, and the page says the crosswalk a merge would write is a persisted record (DAT-02). The decision path is reached only from those two buttons - the reconcile run itself records nothing.",
+    "growingScope": "The Export tab lists the kinds and the token, the reconciliation row sits under the candidates, and the decisions are shown with the audit sentence beneath them."
+  }
+}

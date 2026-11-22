@@ -9,6 +9,7 @@ public partial class RA_NORTH: Entity,IPPDMEntity
 {
 
 private  System.String NORTH_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NORTH_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String NORTH_TYPEValue;
           set { SetProperty(ref  NORTH_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

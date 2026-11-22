@@ -172,6 +172,139 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         }
 
         /// <summary>
+        /// Finds where the inflow and outflow curves actually cross, and reports whether they do.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="FindOperatingPoint"/> returns the closest pair of points between the two curves, which is a number
+        /// even when the curves never meet - a well whose outflow exceeds the inflow at every rate comes back with an
+        /// operating point it does not have. This method answers the question the screen has to answer: it interpolates
+        /// both curves onto a common rate grid, looks for a sign change of (inflow pressure - outflow pressure), and
+        /// bisects it. When there is no crossing it returns false and no rate, so a caller can say "no intersection"
+        /// rather than printing a zero.
+        /// </remarks>
+        /// <param name="iprCurve">The inflow curve, with the flowing bottomhole pressure at each rate.</param>
+        /// <param name="vlpCurve">The outflow curve, with the required bottomhole pressure at each rate.</param>
+        /// <param name="flowRate">The operating rate when the curves cross.</param>
+        /// <param name="bottomholePressure">The pressure at the operating rate.</param>
+        /// <returns>True when the curves cross inside the range both curves cover.</returns>
+        public static bool TryFindOperatingPoint(
+            List<IPRPoint> iprCurve,
+            List<VLPPoint> vlpCurve,
+            out decimal flowRate,
+            out decimal bottomholePressure)
+        {
+            if (iprCurve == null || iprCurve.Count < 2)
+            {
+                throw RefusalException.Invalid("An IPR curve with at least two points is required.");
+            }
+
+            if (vlpCurve == null || vlpCurve.Count < 2)
+            {
+                throw RefusalException.Invalid("A VLP curve with at least two points is required.");
+            }
+
+            flowRate = 0m;
+            bottomholePressure = 0m;
+
+            var inflow = iprCurve
+                .OrderBy(point => point.FlowRate)
+                .Select(point => (Rate: point.FlowRate, Pressure: point.FlowingBottomholePressure))
+                .ToList();
+
+            var outflow = vlpCurve
+                .OrderBy(point => point.FlowRate)
+                .Select(point => (Rate: point.FlowRate, Pressure: point.RequiredBottomholePressure))
+                .ToList();
+
+            // Only the range both curves describe can hold a crossing.
+            var low = Math.Max(inflow[0].Rate, outflow[0].Rate);
+            var high = Math.Min(inflow[^1].Rate, outflow[^1].Rate);
+
+            if (high <= low)
+            {
+                return false;
+            }
+
+            double Difference(double rate) => Interpolate(inflow, rate) - Interpolate(outflow, rate);
+
+            const int scan = 200;
+            var previousRate = low;
+            var previous = Difference(previousRate);
+
+            for (var index = 1; index <= scan; index++)
+            {
+                var rate = low + (high - low) * index / scan;
+                var current = Difference(rate);
+
+                if (previous == 0.0)
+                {
+                    flowRate = (decimal)previousRate;
+                    bottomholePressure = (decimal)Interpolate(inflow, previousRate);
+                    return true;
+                }
+
+                if (Math.Sign(previous) != Math.Sign(current))
+                {
+                    var left = previousRate;
+                    var right = rate;
+
+                    for (var iteration = 0; iteration < 60; iteration++)
+                    {
+                        var middle = (left + right) / 2.0;
+
+                        if (Math.Sign(Difference(middle)) == Math.Sign(previous))
+                        {
+                            left = middle;
+                        }
+                        else
+                        {
+                            right = middle;
+                        }
+                    }
+
+                    var crossing = (left + right) / 2.0;
+
+                    flowRate = (decimal)crossing;
+                    bottomholePressure = (decimal)Interpolate(inflow, crossing);
+                    return true;
+                }
+
+                previousRate = rate;
+                previous = current;
+            }
+
+            return false;
+        }
+
+        /// <summary>Straight-line interpolation on a rate-ordered curve; clamps at both ends.</summary>
+        private static double Interpolate(IReadOnlyList<(double Rate, double Pressure)> curve, double rate)
+        {
+            if (rate <= curve[0].Rate)
+            {
+                return curve[0].Pressure;
+            }
+
+            for (var index = 1; index < curve.Count; index++)
+            {
+                if (rate <= curve[index].Rate)
+                {
+                    var span = curve[index].Rate - curve[index - 1].Rate;
+
+                    if (span <= 0.0)
+                    {
+                        return curve[index].Pressure;
+                    }
+
+                    var fraction = (rate - curve[index - 1].Rate) / span;
+
+                    return curve[index - 1].Pressure + fraction * (curve[index].Pressure - curve[index - 1].Pressure);
+                }
+            }
+
+            return curve[^1].Pressure;
+        }
+
+        /// <summary>
         /// Calculates multiple operating points for sensitivity analysis.
         /// </summary>
         /// <param name="baseConditions">Base operating conditions.</param>

@@ -9,6 +9,7 @@ public partial class R_RIG_MAST: Entity,IPPDMEntity
 {
 
 private  System.String MAST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAST_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_MEDIA_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MEDIA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MEDIA_TYPE
         {  
             get  

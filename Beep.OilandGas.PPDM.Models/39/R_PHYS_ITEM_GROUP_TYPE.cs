@@ -9,6 +9,7 @@ public partial class R_PHYS_ITEM_GROUP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_TYPE
         {  
             get  

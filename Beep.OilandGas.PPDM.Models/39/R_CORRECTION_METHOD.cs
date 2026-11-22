@@ -9,6 +9,7 @@ public partial class R_CORRECTION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CORRECTION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORRECTION_METHOD
         {  
             get  

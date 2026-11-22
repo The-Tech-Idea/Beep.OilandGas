@@ -9,6 +9,7 @@ public partial class R_WELL_PROFILE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_PROFILE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_PROFILE_TYPE
         {  
             get  

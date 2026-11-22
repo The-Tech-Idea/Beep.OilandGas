@@ -9,6 +9,7 @@ public partial class SEIS_PATCH_DESC: Entity,IPPDMEntity
 {
 
 private  System.String PATCH_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PATCH_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PATCH_IDValue;
           set { SetProperty(ref  PATCH_IDValue, value); }
         } 
 private  System.String PATCH_DESC_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PATCH_DESC_ID
         {  
             get  

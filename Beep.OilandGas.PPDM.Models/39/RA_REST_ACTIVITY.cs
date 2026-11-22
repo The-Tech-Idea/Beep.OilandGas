@@ -9,6 +9,7 @@ public partial class RA_REST_ACTIVITY: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTED_ACTIVITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTED_ACTIVITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESTRICTED_ACTIVITYValue;
           set { SetProperty(ref  RESTRICTED_ACTIVITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

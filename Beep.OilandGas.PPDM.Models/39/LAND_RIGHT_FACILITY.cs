@@ -9,6 +9,7 @@ public partial class LAND_RIGHT_FACILITY: Entity,IPPDMEntity
 {
 
 private  System.String LAND_RIGHT_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_RIGHT_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_RIGHT_SUBTYPEValue;
           set { SetProperty(ref  LAND_RIGHT_SUBTYPEValue, value); }
         } 
 private  System.String LAND_RIGHT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_RIGHT_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LAND_RIGHT_IDValue;
           set { SetProperty(ref  LAND_RIGHT_IDValue, value); }
         } 
 private  System.String FACILITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String FACILITY_IDValue;
           set { SetProperty(ref  FACILITY_IDValue, value); }
         } 
 private  System.String FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FACILITY_TYPE
         {  
             get  

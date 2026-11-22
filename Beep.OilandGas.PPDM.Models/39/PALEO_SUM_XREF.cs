@@ -9,6 +9,7 @@ public partial class PALEO_SUM_XREF: Entity,IPPDMEntity
 {
 
 private  System.String PALEO_SUMMARY_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PALEO_SUMMARY_ID1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PALEO_SUMMARY_ID1Value;
           set { SetProperty(ref  PALEO_SUMMARY_ID1Value, value); }
         } 
 private  System.String PALEO_SUMMARY_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PALEO_SUMMARY_ID2
         {  
             get  

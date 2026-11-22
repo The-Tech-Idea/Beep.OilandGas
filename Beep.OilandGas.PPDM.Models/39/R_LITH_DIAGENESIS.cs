@@ -9,6 +9,7 @@ public partial class R_LITH_DIAGENESIS: Entity,IPPDMEntity
 {
 
 private  System.String DIAGENESIS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIAGENESIS_TYPE
         {  
             get  

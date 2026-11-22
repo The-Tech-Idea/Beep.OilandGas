@@ -9,6 +9,7 @@ public partial class R_SEIS_GROUP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_GROUP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_GROUP_TYPE
         {  
             get  

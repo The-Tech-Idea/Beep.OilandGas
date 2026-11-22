@@ -9,6 +9,7 @@ public partial class RA_CORE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CORE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CORE_TYPEValue;
           set { SetProperty(ref  CORE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

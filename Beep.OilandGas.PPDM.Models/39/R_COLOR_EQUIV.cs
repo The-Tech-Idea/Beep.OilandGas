@@ -9,6 +9,7 @@ public partial class R_COLOR_EQUIV: Entity,IPPDMEntity
 {
 
 private  System.String COLOR_1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLOR_1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COLOR_1Value;
           set { SetProperty(ref  COLOR_1Value, value); }
         } 
 private  System.String COLOR_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLOR_2
         {  
             get  

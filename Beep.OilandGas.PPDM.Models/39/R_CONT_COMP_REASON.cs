@@ -9,6 +9,7 @@ public partial class R_CONT_COMP_REASON: Entity,IPPDMEntity
 {
 
 private  System.String REASON_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REASON_TYPE
         {  
             get  

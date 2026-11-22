@@ -9,6 +9,7 @@ public partial class R_SEIS_LIC_DUE_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String DUE_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DUE_CONDITION
         {  
             get  

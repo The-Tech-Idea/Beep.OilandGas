@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.DevelopmentPlanning
     public partial class DEVELOPMENT_COSTS : ModelEntityBase
     {
         private System.String? DEVELOPMENT_COST_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String DEVELOPMENT_COST_ID
         {
             get { return this.DEVELOPMENT_COST_IDValue ?? string.Empty; }

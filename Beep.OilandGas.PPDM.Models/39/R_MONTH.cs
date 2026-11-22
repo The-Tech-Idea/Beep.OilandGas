@@ -9,6 +9,7 @@ public partial class R_MONTH: Entity,IPPDMEntity
 {
 
 private  System.String MONTHValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MONTH
         {  
             get  

@@ -1,0 +1,34 @@
+{
+  "id": "STG-00/FND-02",
+  "title": "Service composition and access modes",
+  "date": "2026-11-05",
+  "status": "gate met - resolution, audited switch, health states, the IDMEEditor guard, and a business read whose failure states are distinct from an empty result",
+  "implementation": {
+    "contracts": "src/Beep.OilandGas.Desktop.Core/ServiceAccess.cs (OgAccessPreference, OgResolvedAccess, OgAccessHealth, OgServiceAccessSettings, IOgServiceAccess, OgAccessResolver)",
+    "service": "src/Beep.OilandGas.Desktop/Services/OgServiceAccess.cs",
+    "wiring": "src/Beep.OilandGas.Desktop/Bootstrapping/OgBootstrapper.cs, Bootstrapping/OgApplication.cs (Access)",
+    "indicator": "src/Beep.OilandGas.Desktop/Shell/OgShellWindow.xaml.cs (status chip: mode · access · user)",
+    "paths": "src/Beep.OilandGas.Desktop/Bootstrapping/OgPaths.cs (LocalDatabaseDirectory, LocalDatabasePath)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~ServiceAccessTests", "exit": 0, "run": 21, "passed": 21, "failed": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~RemoteReadTests", "exit": 0, "run": 8, "passed": 8, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 435, "passed": 435, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "gates": {
+    "AC-1 Auto chooses Remote only when base URL and token are both usable": "pass — four combinations in The_resolution_rule_covers_every_combination, including 'URL but no token' falling through to Local",
+    "AC-2 Auto chooses Local when no API is configured and a local connection exists": "pass — and 'connection but no database file' falls through to NotConfigured",
+    "AC-3 a failed remote read is a failed state, not an empty result": "pass - OgRemoteReader performs the first business read (api/wells/comparison-fields) and returns an outcome: NotConfigured (no request sent), Unauthorized (401/403, sign in and do not retry), ServerError (5xx), Unreachable (no answer, reported by reference), InvalidPayload (2xx with an empty or unreadable body) and Ok (a list, including an empty one). Tests cover each state with a stub handler; the smoke run shows NotConfigured with the sentence \"No company API is configured\" and an audited api.read row.",
+    "AC-4 no type outside .Data references IDMEEditor": "pass — guard No_type_outside_the_data_project_references_IDMEEditor; only OgBeepHost and OgConnectionCatalog match (both in .Data)",
+    "AC-5 mode changes are audited with actor and previous/new mode": "pass — Changing_the_mode_is_audited_with_the_previous_and_the_new_mode asserts one access.switch row with previous=Local and preference=Remote; the actor comes from OgRuntimeContext via the pipeline",
+    "AC-6 health distinguishes unreachable, unauthorised and database-missing": "pass — Health_distinguishes_an_answer_from_a_refusal covers 200/204 (Ok), 401/403 (Unauthorized), 500/404 (Unreachable); the local cases cover missing (DatabaseMissing) and present (Ok); a handler that cannot connect is reported and answered as Unreachable"
+  },
+  "limits": [
+    "The remote read/DTO-parity probe in the plan's §8 was not run: there is no ApiService business endpoint yet and no DTO to compare.",
+    "The health window from the indicator's menu is not built; the mode is shown in the status chip and health is reachable through IOgServiceAccess only.",
+    "The API base URL and token are not yet supplied from configuration or FND-07; the registration passes null/false, so a fresh installation resolves to Local or NotConfigured, which is truthful.",
+    "No connection string or secret is held by OgServiceAccessSettings — only a 'token exists' flag."
+  ]
+}

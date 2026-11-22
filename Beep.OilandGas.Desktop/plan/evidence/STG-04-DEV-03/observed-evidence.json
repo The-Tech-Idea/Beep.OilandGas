@@ -1,0 +1,54 @@
+{
+  "id": "STG-04/DEV-03",
+  "title": "Development well design",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: a design is created from a scheduled well so it is scoped to that well's plan and field; a target depth without its unit is refused; the casing check validates the design's inputs and records a result linked to the design version, passing or failing; an incomplete design cannot be approved and the refusal names every missing item; a revision appends a version and retains the previous one.",
+  "dataModel": {
+    "decision": "DevelopmentPlanning had no well-design persistence: the schedule row carries only the well, target reservoir, AFE cost and dates. DEV-03's own contract and acceptance criteria were implemented as three DevelopmentPlanning-owned tables, registered in DevelopmentPlanningModule, following the FDP_DRAFT/FDP_BASELINE (DEV-02) pattern.",
+    "tables": [
+      "DEVELOPMENT_WELL_DESIGN (DESIGN_ID key, SCHEDULE_ID, FDP_ID, FIELD_ID, PLANNED_WELL_ID, WELL_NAME, VERSION, CURRENT_IND, DESIGN_STATE, OBJECTIVE, TARGET_FORMATION, TARGET_DEPTH, DEPTH_OUOM, TRAJECTORY_INTENT, COMPLETION_CONCEPT, RISK_TEXT, ESTIMATED_COST, COST_CURRENCY, SPUD_WINDOW_START/END, APPROVED_BY/AT, REVISION_REASON, ACTOR, RECORDED_AT) - versioned; a revision appends and marks the previous row not current",
+      "DEVELOPMENT_CASING_STRING (CASING_STRING_ID key, DESIGN_ID, STRING_ORDER, STRING_NAME, OD, WEIGHT, GRADE, SET_DEPTH, DEPTH_OUOM) - the design's casing outline, which is the check's input",
+      "DEVELOPMENT_CASING_CHECK (CHECK_ID key, DESIGN_ID, OUTCOME, FINDINGS_TEXT, CHECKED_BY, CHECKED_AT) - the recorded, design-linked check result"
+    ],
+    "registration": "Beep.OilandGas.DevelopmentPlanning/Modules/DevelopmentPlanningModule.cs registers the three types; --smoke now reports 361 entity types (up from 358)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgWellDesign.cs (OgCasingString, OgCasingCheck, OgDevelopmentWell, OgWellDesignValues, OgCasingStringRequest, OgDesignSchedule, OgWellDesignWorkspace, OgWellDesignDetail, IOgWellDesign, OgWellDesignService with MissingItems/CheckCasing/Validate/CreateAsync/SaveAsync/ApproveAsync/ReviseAsync/AddCasingStringAsync/RunCasingCheckAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellDesignPageView.cs (route 'welldesign': scheduled-well picker, design grid, design fields, casing grid, add string, check, approve, cost revision)",
+    "wiring": "OgBootstrapper (IOgWellDesign), OgApplication.WellDesign, catalog 'welldesign' (OgModuleKeys.Development), OgPageFactory, en + ar labels",
+    "consistencyFix": "DEV-01's source list and plan-attention route now point at the real pages: 'fdpreview' became 'fdpwizard' (DEV-02's route) and 'welldesign' lost its ArrivesWith placeholder, so the workspace links resolve.",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellDesignTests.cs (10, no database) + WellDesignGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 711, "passed": 711, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 21, "passed": 21, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 45, "views-constructed": true, "modulesetup-summary": "28 module(s) - 361 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD_DEVELOPMENT_PLAN, DEVELOPMENT_WELL_SCHEDULE, DEVELOPMENT_WELL_DESIGN, DEVELOPMENT_CASING_STRING and DEVELOPMENT_CASING_CHECK, seeded in WellDesignGatewayTests",
+    "ac1_scope": "CreateAsync('SCH-1') produces a design whose FDP_ID='FDP-1' and FIELD_ID='F-1' come from the schedule, and target formation and AFE cost are carried over; a second design for SCH-1 is refused with well-design-exists",
+    "ac1_field_match": "SCH-3 sits in field F-1 but its plan FDP-2 is in field F-2; CreateAsync is refused with well-design-field-mismatch, and the workspace does not offer that schedule",
+    "ac2_unit": "SaveAsync with target depth 2400 and no unit is refused with well-design-depth-unit-required; with unit 'm' it is stored and the design shows '2400 m'",
+    "ac3_check": "with no casing the check is refused with well-design-casing-required; after three consistent strings the check records PASS with a finding that names what was verified; adding a fourth string set shallower than the third makes the next check record FAIL with 'not deeper'",
+    "ac4_incomplete": "approving before the casing outline exists is refused with well-design-incomplete and the message names 'Casing scheme'",
+    "ac5_version": "ReviseAsync writes version 2 with the new cost 14.25, copies the four casing strings, and marks version 1 CURRENT_IND='N'; version 1 is still readable at cost 12.5 and is not current",
+    "locked": "after approval a further SaveAsync on that version is refused with well-design-locked",
+    "workspace": "before any design the workspace lists two designable schedules and neither SCH-OTHER (another field) nor SCH-3 (plan/field mismatch); after the revision it shows one current design at version 2, approved, and one remaining undesigned schedule"
+  },
+  "gates": {
+    "AC-1 A development well is scoped to one plan and one field": "pass - the design takes its plan and field from the scheduled well and a schedule whose plan belongs to another field is refused; one design per scheduled well; the workspace filters by field and plan.",
+    "AC-2 Target depth carries a unit": "pass - OgWellDesignService.Validate refuses a depth above zero without a unit, the entity stores DEPTH_OUOM beside TARGET_DEPTH, and HasDepth requires both; the gateway test proves the refusal and the stored value.",
+    "AC-3 The casing check passes its inputs and returns a linked result": "pass - CheckCasing verifies the outline (name, OD, grade, set depth, unit, unit agreement, increasing set depths, nothing set below the target depth) and RunCasingCheckAsync records PASS or FAIL in DEVELOPMENT_CASING_CHECK with DESIGN_ID pointing at the version it checked.",
+    "AC-4 An incomplete design blocks drilling program authoring with named missing items": "pass - MissingItems returns the eight named gaps, CanAuthorProgram is false while any is missing, approval is refused with the list, and DEV-05's authoring screen can call the same rule (that screen does not exist yet).",
+    "AC-5 Cost revisions are versioned": "pass - ReviseAsync appends a new row with a higher VERSION and CURRENT_IND='Y', marks the previous row 'N', copies the casing outline, and stores the reason; the old version remains readable."
+  },
+  "limits": [
+    "The casing check is an input/consistency check, not a design calculation. Burst, collapse and tension ratings belong to ENG-02 (not built), and the page says so rather than implying a rating was computed.",
+    "The schematic preview is represented by the recorded gate and its reason ('disabled: no casing string is recorded yet'); no schematic is rendered on this page. The renderer exists in the WellTools project and can be wired when DEV-05 needs it.",
+    "Trajectory is recorded as intent text only; well-plan geometry, survey uncertainty and anti-collision are ENG-01/ENG-06 and are not attempted here.",
+    "The runtime permission names in the feature doc (development.welldesign.write / .approve, engineering.casing.read) are not enforced by this page: the app's role model gates pages, not per-command permissions, and the feature doc's permissions are a future RBAC addition.",
+    "The design copies target formation, AFE cost, currency and the planned dates from the schedule at creation only; schedule changes afterwards do not rewrite the design.",
+    "The new tables need the DEVELOPMENT_PLANNING module applied again on an existing database to be created."
+  ]
+}

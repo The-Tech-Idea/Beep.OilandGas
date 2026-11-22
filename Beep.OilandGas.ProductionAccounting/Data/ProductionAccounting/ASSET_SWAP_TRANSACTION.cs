@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class ASSET_SWAP_TRANSACTION : ModelEntityBase
     {
         private string ASSET_SWAP_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string ASSET_SWAP_ID
         {
             get { return this.ASSET_SWAP_IDValue; }

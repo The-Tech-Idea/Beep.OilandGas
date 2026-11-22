@@ -9,6 +9,7 @@ public partial class PPDM_VOL_MEAS_USE: Entity,IPPDMEntity
 {
 
 private  System.String VOLUME_REGIME_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_REGIME_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VOLUME_REGIME_IDValue;
           set { SetProperty(ref  VOLUME_REGIME_IDValue, value); }
         } 
 private  System.Decimal REGIME_USE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REGIME_USE_OBS_NO
         {  
             get  

@@ -10,6 +10,7 @@ public partial class STRAT_UNIT: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID
         {  
             get  
@@ -20,6 +21,7 @@ private  System.String STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_UNIT_ID
         {  
             get  

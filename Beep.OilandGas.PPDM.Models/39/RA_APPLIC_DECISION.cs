@@ -9,6 +9,7 @@ public partial class RA_APPLIC_DECISION: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_DECISIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_DECISION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String APPLICATION_DECISIONValue;
           set { SetProperty(ref  APPLICATION_DECISIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

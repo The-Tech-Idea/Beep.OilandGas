@@ -9,6 +9,7 @@ public partial class SF_RESTRICTION: Entity,IPPDMEntity
 {
 
 private  System.String SF_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SF_SUBTYPEValue;
           set { SetProperty(ref  SF_SUBTYPEValue, value); }
         } 
 private  System.String SUPPORT_FACILITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUPPORT_FACILITY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SUPPORT_FACILITY_IDValue;
           set { SetProperty(ref  SUPPORT_FACILITY_IDValue, value); }
         } 
 private  System.String RESTRICTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String RESTRICTION_IDValue;
           set { SetProperty(ref  RESTRICTION_IDValue, value); }
         } 
 private  System.Decimal RESTRICTION_VERSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal RESTRICTION_VERSION
         {  
             get  

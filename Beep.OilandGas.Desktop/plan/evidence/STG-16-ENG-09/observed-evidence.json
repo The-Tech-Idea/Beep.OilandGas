@@ -1,0 +1,94 @@
+{
+  "id": "STG-16/ENG-09",
+  "title": "Drilling performance",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: the time-depth curve ends at the deepest depth the daily report headers record, and a disagreement is stated rather than smoothed; the non-productive time adds up exactly by cause; a line with no cause is its own visible bucket; a CSV line with an unrecognised operation code is rejected with its line number while the rest is imported; every offset row comes from the same analysis as the well's own; and the export is the grid's rows and the cause table, field for field.",
+  "dataModel": {
+    "read": "DEVELOPMENT_DAILY_REPORT (DEV-06) for the report periods, the depth at each end and the cost, and the added DEVELOPMENT_REPORT_ACTIVITY for the lines, joined on WELL_ID and REPORT_ID.",
+    "addedTable": "DEVELOPMENT_REPORT_ACTIVITY in DrillingAndConstruction, registered in DrillingAndConstructionSetupModule: the parent report, the well, start and end, the IADC operation code, the depths, the description, the non-productive flag and its cause, the actor and the time.",
+    "why": "The daily report records a shift - its period, the depth at each end and its cost - and records no operation code and no non-productive cause. The owner's DrillingPerformance.Analyze is driven by exactly those two, so without the line table the analysis had nothing to read and every heading on the screen would have been an empty table.",
+    "openQuestionAnswered": "The feature's open question - 'DrillingPerformance.FromCsv expects a specific column set; document it in section 4 before building the importer UI' - is answered by documenting the layout as a constant the importer and the page both use ('start, end, code, depth_from, depth_to, description, npt - ISO dates, invariant numbers, one header line'), and by a unit test that reads a CSV through the owner's parser and asserts the columns land where the documentation says."
+  },
+  "rules": {
+    "analysis": "The analysis is the tools' DrillingPerformance.Analyze: the time-depth curve with one point per line, hours per operation code, the non-productive hours from the line's own flag or the configured NPT codes, the on-bottom rate of penetration as footage over drilling-code hours, and its own notes for overlaps, gaps and unknown codes. The desktop supplies the lines and derives what the owner does not.",
+    "causes": "A non-productive line is grouped by its recorded cause, and a line with no cause is grouped under 'unclassified' - the feature's own word - rather than being spread across the causes that have one. The cause totals therefore add up to the owner's non-productive hours, which the gateway asserts.",
+    "runs": "The owner reports one on-bottom rate for the well. The per-interval rate the feature asks for is one row per drilling run: consecutive drilling-code lines, with the footage and the hours between them, so the interval is a recorded one rather than a band size this build invented.",
+    "cost": "There is no recorded non-productive cost anywhere, so the cost impact is each report's recorded cost apportioned by hours, and the page says so in the same sentence that shows the figure. A report with no cost apportions nothing rather than a guessed rate.",
+    "curve": "AC-1 compares the owner's curve against the deepest DEPTH_END the report headers record. When they differ the difference is named on the page and in the warnings; when they agree the page says the curve ends at the depth the reports record.",
+    "incomplete": "A report is incomplete when its period is not recorded or its lines do not cover the period. The workspace counts them and names them, and the totals sentence says the figures are partial - the feature's 'partial day data' state.",
+    "import": "The owner's parser reads the CSV; a line whose code is not in drilling.operationCodes is rejected with its line number and the rest is imported. The line numbers come from the same acceptance test the owner applies, matched by code in order, so a rejected row in the middle does not cost the rows after it their numbers. A CSV of nothing but bad lines is refused outright and writes nothing.",
+    "offsets": "AC-5 is structural: every row of the comparison - this well and each offset - comes from the same LoadAsync, so the definitions of days, depth, non-productive share and rate of penetration cannot differ between them. An offset with no line is listed and says so rather than being dropped.",
+    "export": "AC-6: the row export is built from the same list the grid binds and the cause export from the same list the summary shows, so a row cannot differ from what is on screen."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.DrillingAndConstruction/Data/Tables/DEVELOPMENT_REPORT_ACTIVITY.cs and Modules/DrillingAndConstructionSetupModule.cs (table registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgDrillingPerformance.cs (OgTimeDepthPoint, OgNptCause, OgRopInterval, OgCodeTime, OgReportLine, OgOffsetRow, OgCsvRejection, OgCsvImport, OgPerformanceWorkspace, OgPerformanceRules, IOgDrillingPerformance, OgDrillingPerformanceService with LoadAsync/ImportCsvAsync/OffsetsAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/DrillingPerformancePageView.cs (route 'drillingperformance': the well bar, the owner's TimeDepthView in the Skia host, the cause table, the runs, the time per operation, the cost sentence, the line grid, the offset comparison, the CSV box and the export)",
+    "wiring": "OgBootstrapper (IOgDrillingPerformance), OgApplication.DrillingPerformance, catalog 'drillingperformance' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DrillingPerformanceTests.cs (10, no database) + DrillingPerformanceGatewayTests.cs (1 opt-in, real SQLite over the report and line tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1406, "passed": 1406, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 90, "passed": 90, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 113, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with DEVELOPMENT_DAILY_REPORT and DEVELOPMENT_REPORT_ACTIVITY. W-1 has four daily reports - three with periods covering 12 hours each and one draft with no period at all - and six activity lines: 6 h drilling 1000-1250 m, 6 h tripping, 8 h of a pump failure flagged non-productive, 4 h drilling 1250-1400 m, 4 h of a rig repair flagged non-productive with no cause, and 8 h drilling 1400-1500 m. W-2 has one report and two lines; W-3 has nothing.",
+    "ac1_curve": "the curve ends at 1500 m, which is the deepest DEPTH_END the four reports record, and the page prints that sentence; a mismatch would name both figures and the difference",
+    "ac2_causes": "36 reported hours with 12 non-productive, and the two causes sum to exactly those 12 hours - pump failure 8 h and unclassified 4 h",
+    "ac3_unclassified": "the rig-repair line has no cause, so it appears as 'unclassified' with its 4 hours, is named in the warnings, and carries its own row in the cause export",
+    "ac4_csv": "a three-line CSV whose third line uses code '99' imports two lines and rejects that one as 'line 4' with the reason; a CSV of nothing but bad codes is refused and writes nothing, leaving the two imported lines in place",
+    "ac5_offsets": "the W-1 row equals W-1's own analysis to six decimals (days, depth, non-productive hours and percentage, rate of penetration), and W-2's row is its own numbers - 300 m drilled over 12 hours at 25 m/h with no non-productive time - which is what makes the comparison shared rather than copied",
+    "ac6_export": "the row export is the grid's headers plus one line per row, and the cause export is the cause table's headers plus one line per cause, both asserted field by field",
+    "rate": "the on-bottom rate is 500 m over 18 drilling hours, and the three runs read 250 m in 6 h, 150 m in 4 h and 100 m in 8 h",
+    "cost": "the three submitted reports record 240000 USD, of which 53 333 for the pump failure and 20 000 for the unclassified repair, apportioned by hours and said to be",
+    "partial": "the draft report with no period is counted and named (R-4), and the totals sentence says the figures are partial",
+    "empty": "a well with no line reads as an empty analysis whose sentence points at the daily reports rather than showing zeros as a result",
+    "failure": "dropping DEVELOPMENT_REPORT_ACTIVITY fails the read with no analysis"
+  },
+  "gates": {
+    "AC-1 Time-depth curve matches the sum of the daily reports": "pass - the curve's last depth is compared with the deepest report header, and the page prints either the agreement or the difference.",
+    "AC-2 NPT totals equal the sum of causes plus unclassified": "pass - asserted to six decimals on a fixture where the two causes are unequal.",
+    "AC-3 Unclassified NPT is visible, not hidden": "pass - its own bucket with its own hours, fraction, line count, cost share, warning and export row.",
+    "AC-4 CSV import rejects unrecognised codes with line numbers": "pass - rejected as line 4 with the code named, the other lines imported, and an all-bad file refused.",
+    "AC-5 Offset comparison uses the same metric definitions": "pass - every row comes from the same analysis, and the well's own row is asserted equal to its standalone analysis.",
+    "AC-6 Export matches the screen": "pass - both exports are built from the collections the screen binds, asserted by header and by row count and content."
+  },
+  "engineFindings": {
+    "theDailyReportHasNoCodeOrCause": {
+      "where": "Beep.OilandGas.DrillingAndConstruction/Data/Tables/DEVELOPMENT_DAILY_REPORT.cs",
+      "finding": "DEV-06 records a shift: its period, the depth at each end, its cost, its state and its author. It records no IADC operation code and no non-productive cause - the two fields DrillingPerformance.Analyze reads - so the analysis could not be run at all from the existing records.",
+      "handling": "DEVELOPMENT_REPORT_ACTIVITY was added in the owning module and registered, with the report as its parent. The existing table is untouched, so every DEV-06 flow keeps working."
+    },
+    "noNptCostExists": {
+      "finding": "The report records a daily cost, and nothing records what a non-productive hour cost. The feature asks for a cost impact.",
+      "handling": "The cost impact is the report's recorded cost apportioned by hours, and the sentence that shows it says so. A report with no cost apportions nothing rather than a rate this build invented."
+    },
+    "theOwnerGivesOneRateNotIntervals": {
+      "finding": "Analyze returns one on-bottom rate for the whole report; the feature asks for a rate by interval, by bit and by formation.",
+      "handling": "One row per drilling run - consecutive drilling-code lines with their footage and hours - which is an interval the report actually records. A rate by bit and by formation is not offered, because a report line carries neither a bit nor a formation."
+    },
+    "lineNumbersWithoutProvenance": {
+      "finding": "FromCsv returns the activities but not the line each came from, so a code that is not configured could not be reported against its line.",
+      "handling": "The importer applies the owner's own acceptance test to the raw lines and matches the accepted rows by code in order, so the number is the reader's number. Where a row cannot be matched the rejection says 'line unknown' rather than a wrong line."
+    },
+    "dateDependentTestsBrokeTheSuite": {
+      "where": "test/Beep.OilandGas.Desktop.Tests/MaintenancePlanTests.cs and MaintenanceGatewayTests.cs",
+      "finding": "Two tests pinned the as-of date to 2026-11-08 while the code reads the clock, so they passed on the day they were written and failed the next morning - which is exactly what happened when this feature was verified on 2026-11-09.",
+      "handling": "Both fixtures now take their date from DateTime.UtcNow.Date and the gateway's SQL date filter is built from it, so the assertions still test the same behaviour and can no longer rot. Recorded here because the failure was not this feature's."
+    }
+  },
+  "limits": [
+    "A rate of penetration by bit and by formation is not offered: a report line records neither a bit nor a formation, and inventing a grouping would not be this data.",
+    "The per-interval rate is per drilling run - consecutive drilling-code lines - not per fixed depth band, because the band size would be a number this build chose.",
+    "The cost impact is an apportionment of the recorded daily cost by hours, not a recorded non-productive cost, which exists nowhere in the data.",
+    "Non-productive time is taken from the line's own flag or from drilling.nptCodes, which ships empty; a well whose lines carry no flag therefore reports no non-productive time.",
+    "The importer attaches a line to the daily report whose period contains its start; a line outside every recorded period is stored as UNATTACHED and counted, rather than being dropped or attached to a report it does not belong to.",
+    "The importer writes lines only - it does not create or edit daily reports, which stay DEV-06's.",
+    "A line whose code is rejected is not written at all, so a partially-rejected CSV imports the accepted lines and leaves the rest for correction; there is no dry-run preview.",
+    "The time-depth chart is the owner's TimeDepthView, so its interaction is the owner's: no zoom, cursor readout or export of its own.",
+    "The offset comparison compares wells named by hand on the page; there is no saved offset set or field-wide grouping.",
+    "No paging: each read loads the report and line tables whole and filters in memory."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class RA_RECORDER_POSITION: Entity,IPPDMEntity
 {
 
 private  System.String RECORDER_POSITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORDER_POSITION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RECORDER_POSITIONValue;
           set { SetProperty(ref  RECORDER_POSITIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

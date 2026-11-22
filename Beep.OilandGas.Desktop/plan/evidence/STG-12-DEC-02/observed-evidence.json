@@ -1,0 +1,80 @@
+{
+  "id": "STG-12/DEC-02",
+  "title": "Well plug and abandonment",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: completion is refused unless every barrier the owner's template requires has its own verified evidence; the required set is read from the owner's permanent-abandonment template rather than written in the view; an open leak path blocks completion until it is addressed; a depth is recorded and shown with its unit; the page says the schematic is a visual aid and not the evidence; and a closure records the actor, the date and what was verified, with the planner and the evidence recorder kept out of it.",
+  "dataModel": {
+    "newInTheOwningModule": "The owner held no barrier record and no leak-path record: ABANDONMENT_STATUS carried the state and the plug-back depth, and a barrier set existed only in memory derived from a schematic. A barrier that cannot be recorded cannot be verified, so the plan's own contracts were implemented in Beep.OilandGas.Decommissioning: ABANDONMENT_BARRIER (envelope, type, top/base depth, depth unit, verification method, evidence reference, verified by/date/flag) and ABANDONMENT_LEAK_PATH (description, status, how/by/date addressed). Both are declared by DecommissioningModule, which now plans five tables.",
+    "plannedDate": "ABANDONMENT_STATUS gained two additive columns - PLANNED_DATE and PLANNED_BY - on the owner's own partial class. This closes DEC-01's recorded gap: a well's planned year and overdue can now be read from the record, and DEC-01 was updated to read them. DECOMMISSIONING_STATUS (facilities) still records no planned date, which DEC-03 owns.",
+    "requiredBarriers": "The required set comes from JsonBarrierTemplates.BuiltIn.Templates[\"permanentAbandonment\"] - its plug envelopes (deep: Primary, Secondary; surface: Environmental) and the per-plug element types (CEMENT_PLUG, CASING_CEMENT, IN_SITU_FORMATION). An element rule the template guards with a 'when' condition depends on a schematic document this build does not hold, so those are marked conditional instead of being required outright; each refusal names what the template requires in the empty envelope."
+  },
+  "rules": {
+    "plan": "Planning needs a well, a planned date and at least one barrier. Each barrier needs its type, and a recorded interval needs both depths, its unit, and a base below its top. The plan appends a PLANNED status row carrying the planned date and who planned it, and writes each barrier as planned and unflagged.",
+    "evidence": "A barrier is verified only by its evidence: an empty evidence reference is refused before anything is written, and a barrier marked executed without one does not count and is named in the checklist. Verification records the method, the reference, who verified it and when.",
+    "completion": "Completion is refused, with every reason at once, when any required envelope has no verified-and-evidenced barrier, when a barrier claims execution without evidence, when nothing is planned, when a leak path is open, or when the programme is already complete. A closed programme's checklist states the outcome rather than showing a defect.",
+    "closure": "A closure requires its rationale, is refused for the person who planned the programme and for anyone who recorded a barrier's evidence, and appends a COMPLETED status row with the actor, the timestamp and a verification remark - the row DEC-01 reads as the well's current state.",
+    "schematic": "The schematic notice is a constant on the record: the abandonment schematic is a visual aid and is not the barrier evidence."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.Decommissioning/Data/Tables/ABANDONMENT_BARRIER.cs, ABANDONMENT_LEAK_PATH.cs, ABANDONMENT_STATUS.Planning.cs (additive partial), DecommissioningModule entity list",
+    "service": "src/Beep.OilandGas.Desktop.Data/Decommissioning/OgWellPa.cs (OgRequiredBarrier, OgAbandonmentBarrier, OgLeakPath, OgWellPa, WellPaRules, OgBarrierInput, IOgWellPa, OgWellPaService with LoadAsync/PlanAsync/VerifyBarrierAsync/AddLeakPathAsync/AddressLeakPathAsync/CloseAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellPaPageView.cs (route 'wellpa': the well and planned-date bar, the completion checklist, the barrier grid with its verify bar, the required-by-template grid, the leak-path grid with add/address, the closure bar and the schematic notice)",
+    "wiring": "OgBootstrapper (IOgWellPa), OgApplication.WellPa, catalog 'wellpa' (OgModuleKeys.Decommissioning), OgPageFactory, en + ar labels; DEC-01's well P&A link now points at a real page",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellPaTests.cs (7, no database) + WellPaGatewayTests.cs (1 opt-in, real SQLite over three tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1223, "passed": 1223, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 70, "passed": 70, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 94, "views-constructed": true, "modulesetup-summary": "33 module(s) - 434 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with ABANDONMENT_STATUS (including the added planned columns), ABANDONMENT_BARRIER and ABANDONMENT_LEAK_PATH, keyed as the owner declares them.",
+    "plan": "planning for WELL-1 on 2027-03-15 with three cement plugs - Primary 2500-2560 m, Secondary 1500-1560 m, Environmental 300-360 m - appends a PLANNED row that stores the planned date and planner, and writes three planned barriers; the depth reads back as '2500 - 2560 m'",
+    "ac2_template": "the page's required grid is bound to the programme's required set, which is the owner's template; closing after only the Primary barrier is verified is refused and names the Secondary and Environmental envelopes while naming the required type",
+    "ac1_evidence": "verifying with a blank evidence reference is refused with wellpa-evidence-required and no barrier row is marked verified; with an evidence reference the barrier records the reference, the verifier and the timestamp",
+    "ac3_leak": "an open leak path ('Annulus pressure at the casing shoe') blocks the closure until it is addressed with how it was addressed, by whom and when",
+    "ac4_depth": "a barrier with depths but no unit is refused with wellpa-depth-unit-required, and the stored barrier keeps its unit and shows it",
+    "ac5_schematic": "the schematic notice is printed on the page and is the record's own constant, and the barrier evidence is the barrier's own reference",
+    "ac6_closure": "closing as the planner sara is refused, closing as the evidence recorder omar is refused, and closing as nadia succeeds: the status row carries STATUS COMPLETED, VERIFIED_BY nadia and a verification timestamp, the PLANNED row is still present, and a second closure is refused as already completed",
+    "dec01_link": "the completed well is what DEC-01 reads, and DEC-01 now takes the planned year from the PLANNED_DATE the plan wrote (verified by the smoke landing page count and DEC-01's unit tests over the new wording)"
+  },
+  "gates": {
+    "AC-1 Completion is refused without evidence for every required barrier": "pass - the checklist and the command use the same rule, an unevidenced execution is named, and the gateway refuses the close until all three envelopes are verified with references.",
+    "AC-2 Required barriers come from BarrierTemplates.PermanentAbandonment, not the view": "pass - the required set is read from the owner's embedded permanent-abandonment template (envelopes and per-plug element types); the test asserts the envelopes and that a cement plug is required unconditionally, and the page binds the workspace's set.",
+    "AC-3 An unaddressed leak path blocks completion": "pass - an open path is its own refusal naming the path, and addressing it clears the block.",
+    "AC-4 Depths carry units": "pass - a depth without a unit is refused at planning, both ends are required, and the stored depth is shown with its unit.",
+    "AC-5 The schematic is a visual aid, not the evidence; say so": "pass - the constant is on the record and printed on the page, and a barrier counts by its own evidence reference.",
+    "AC-6 Closure records actor, date and verification": "pass - the completed status row carries the actor, the timestamp and a verification remark, and the planner and evidence recorder are refused as the closer."
+  },
+  "engineFindings": {
+    "noBarrierOrLeakPathTable": {
+      "where": "Beep.OilandGas.Decommissioning",
+      "finding": "The owner's decommissioning module declared three tables - the two status tables and the reference set - and no barrier or leak-path record. The feature's barrier evidence and leak paths had nowhere to be stored, so neither could be verified or refused.",
+      "handling": "Both are implemented as the plan's own contracts in the owning module and declared by DecommissioningModule. The smoke module plan moved from 432 to 434 entity types."
+    },
+    "templateNeedsASchematic": {
+      "where": "TheTechIdea.OilGas.WellSchematic/Barriers.cs",
+      "finding": "BarrierTemplates.PermanentAbandonment takes a WellSchematicDocument and derives the barrier set from its cement plugs, so it cannot be called without a schematic; the template definition it builds from is embedded and readable.",
+      "handling": "The required envelopes and element types are read from the embedded permanent-abandonment template, and the rules it guards with a 'when' condition are marked conditional because their condition is evaluated against a schematic this build does not hold."
+    },
+    "noPlannedDateWasTheRecordedGap": {
+      "finding": "DEC-01 recorded that neither status table carried a planned date, so planned year and overdue had no source.",
+      "handling": "DEC-02 adds PLANNED_DATE and PLANNED_BY to ABANDONMENT_STATUS additively and records them when a programme is planned; DEC-01 now reads them for wells. The facility side still has none, which DEC-03 owns."
+    },
+    "checklistReadAsADefectAfterClosure": {
+      "finding": "The first version's checklist included the 'already completed' refusal, so a finished abandonment displayed a cross against it.",
+      "handling": "A completed programme's checklist states the outcome, while the block remains for the second-closure refusal; the gateway asserts both."
+    }
+  },
+  "limits": [
+    "The barrier set is the template's envelopes and element types, not a jurisdiction-specific rule: the stage's open question says those rules belong in configuration, and this build has no barrier-rule configuration, so the template is the only source.",
+    "A conditional element (the casing cement behind a plug, the formation at its base) cannot be proven present or absent without a schematic document, so it is marked conditional and never required outright. The well P&A screen therefore requires one verified barrier per envelope, not the full element list.",
+    "There is no schematic preview on this screen: the well schematic renderer belongs to VSB, so the page states what the schematic is instead of drawing it.",
+    "The programme is one per well (WA-<well>); a well cannot have two concurrent abandonment programmes, and re-planning appends a new PLANNED status row while barriers are keyed so a re-plan does not duplicate them.",
+    "The writes are not one transaction: the status row and the barriers commit separately, so a failed barrier write leaves a planned status with fewer barriers than requested - which the checklist then reports.",
+    "Barrier evidence is a reference string; there is no evidence file store, so 'evidence' means a recorded reference to a report, log or ticket.",
+    "Leak paths are free text with an addressed state; there is no leak-path analysis engine in this build (the owner's LeakPathAnalysis is not referenced).",
+    "No per-command permission enforcement: the page is gated, and decommissioning.wellpa.write/.close are not checked per command beyond the segregation of duties."
+  ]
+}

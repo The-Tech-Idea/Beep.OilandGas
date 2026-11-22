@@ -9,6 +9,7 @@ public partial class R_TRANS_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String TRANSACTION_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSACTION_STATUS
         {  
             get  

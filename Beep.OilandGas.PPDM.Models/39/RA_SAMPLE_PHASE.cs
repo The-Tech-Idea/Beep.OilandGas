@@ -9,6 +9,7 @@ public partial class RA_SAMPLE_PHASE: Entity,IPPDMEntity
 {
 
 private  System.String PHASE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHASE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PHASE_TYPEValue;
           set { SetProperty(ref  PHASE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

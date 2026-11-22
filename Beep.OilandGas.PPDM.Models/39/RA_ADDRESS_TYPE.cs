@@ -9,6 +9,7 @@ public partial class RA_ADDRESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ADDRESS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDRESS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ADDRESS_TYPEValue;
           set { SetProperty(ref  ADDRESS_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

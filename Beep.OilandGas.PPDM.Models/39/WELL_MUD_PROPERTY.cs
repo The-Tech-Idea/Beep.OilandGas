@@ -9,6 +9,7 @@ public partial class WELL_MUD_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_ANALYSIS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_ANALYSIS_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SAMPLE_ANALYSIS_IDValue;
           set { SetProperty(ref  SAMPLE_ANALYSIS_IDValue, value); }
         } 
 private  System.String SAMPLE_ANALYSIS_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_ANALYSIS_SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SAMPLE_ANALYSIS_SOURCEValue;
           set { SetProperty(ref  SAMPLE_ANALYSIS_SOURCEValue, value); }
         } 
 private  System.Decimal PROPERTY_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PROPERTY_OBS_NO
         {  
             get  

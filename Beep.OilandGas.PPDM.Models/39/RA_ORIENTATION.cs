@@ -9,6 +9,7 @@ public partial class RA_ORIENTATION: Entity,IPPDMEntity
 {
 
 private  System.String ORIENTATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ORIENTATION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ORIENTATIONValue;
           set { SetProperty(ref  ORIENTATIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class AP_CREDIT_MEMO : ModelEntityBase {
         private System.String AP_CREDIT_MEMO_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String AP_CREDIT_MEMO_ID
         {
             get { return this.AP_CREDIT_MEMO_IDValue; }

@@ -9,6 +9,7 @@ public partial class RA_VSP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VSP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VSP_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VSP_TYPEValue;
           set { SetProperty(ref  VSP_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

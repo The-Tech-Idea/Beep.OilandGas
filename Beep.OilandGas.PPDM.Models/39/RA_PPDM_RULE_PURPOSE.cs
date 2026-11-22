@@ -9,6 +9,7 @@ public partial class RA_PPDM_RULE_PURPOSE: Entity,IPPDMEntity
 {
 
 private  System.String RULE_PURPOSEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_PURPOSE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RULE_PURPOSEValue;
           set { SetProperty(ref  RULE_PURPOSEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

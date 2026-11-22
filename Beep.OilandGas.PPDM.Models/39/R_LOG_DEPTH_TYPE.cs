@@ -9,6 +9,7 @@ public partial class R_LOG_DEPTH_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DEPTH_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEPTH_TYPE
         {  
             get  

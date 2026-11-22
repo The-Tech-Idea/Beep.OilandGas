@@ -9,6 +9,7 @@ public partial class RA_MBAL_COMPRESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String Z_FACTOR_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String Z_FACTOR_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String Z_FACTOR_METHODValue;
           set { SetProperty(ref  Z_FACTOR_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

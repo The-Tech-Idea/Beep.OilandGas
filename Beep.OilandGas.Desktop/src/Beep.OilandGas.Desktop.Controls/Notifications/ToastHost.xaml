@@ -1,0 +1,73 @@
+<UserControl x:Class="TheTechIdea.Beep.OilandGas.Desktop.Controls.Notifications.ToastHost"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:notifications="clr-namespace:TheTechIdea.Beep.OilandGas.Desktop.Controls.Notifications"
+             xmlns:controls="clr-namespace:TheTechIdea.Beep.OilandGas.Desktop.Controls"
+             HorizontalAlignment="Right"
+             VerticalAlignment="Bottom"
+             IsHitTestVisible="True">
+
+    <UserControl.Resources>
+        <controls:TokenBrushConverter x:Key="TokenBrush" />
+        <controls:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <ItemsControl x:Name="ToastList" Width="380">
+        <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type notifications:ToastItem}">
+                <Border Margin="0,0,0,8"
+                        Padding="12,10"
+                        CornerRadius="{DynamicResource BeepCornerRadius}"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource BeepBorderBrush}"
+                        Background="{Binding SurfaceKey, Converter={StaticResource TokenBrush}}"
+                        AutomationProperties.LiveSetting="{Binding LiveSetting}"
+                        AutomationProperties.Name="{Binding TitleText}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding Glyph}"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="18"
+                                   Margin="0,1,10,0"
+                                   VerticalAlignment="Top"
+                                   Foreground="{Binding AccentKey, Converter={StaticResource TokenBrush}}" />
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Style="{DynamicResource OgHeadingText}"
+                                       FontSize="{DynamicResource BeepBodyFontSize}"
+                                       Text="{Binding TitleText}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Style="{DynamicResource OgCaptionText}"
+                                       Margin="0,2,0,0"
+                                       Text="{Binding Text}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Style="{DynamicResource OgCaptionText}"
+                                       FontFamily="{DynamicResource BeepMonoFontFamily}"
+                                       Margin="0,6,0,0"
+                                       Text="{Binding Reference, StringFormat=Reference: {0}}"
+                                       Visibility="{Binding HasReference, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
+
+                        <Button Grid.Column="2"
+                                Content="&#xE711;"
+                                FontFamily="Segoe MDL2 Assets"
+                                Width="24"
+                                Height="24"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                VerticalAlignment="Top"
+                                AutomationProperties.Name="Dismiss"
+                                Click="OnDismissClick" />
+                    </Grid>
+                </Border>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+</UserControl>

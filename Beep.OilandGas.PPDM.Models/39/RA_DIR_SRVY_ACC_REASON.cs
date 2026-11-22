@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_ACC_REASON: Entity,IPPDMEntity
 {
 
 private  System.String ACCURACY_PROBLEM_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCURACY_PROBLEM_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACCURACY_PROBLEM_REASONValue;
           set { SetProperty(ref  ACCURACY_PROBLEM_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_PERFORATION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String PERFORATION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERFORATION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PERFORATION_METHODValue;
           set { SetProperty(ref  PERFORATION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

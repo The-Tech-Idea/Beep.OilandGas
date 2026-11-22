@@ -9,6 +9,7 @@ public partial class RA_WASTE_MATERIAL: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_MATERIALValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_MATERIAL
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WASTE_MATERIALValue;
           set { SetProperty(ref  WASTE_MATERIALValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

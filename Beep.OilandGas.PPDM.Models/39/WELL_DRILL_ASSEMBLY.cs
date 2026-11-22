@@ -9,6 +9,7 @@ public partial class WELL_DRILL_ASSEMBLY: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String ASSEMBLY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ASSEMBLY_ID
         {  
             get  

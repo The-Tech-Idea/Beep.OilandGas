@@ -9,6 +9,7 @@ public partial class R_ROAD_TRAFFIC_FLOW_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TRAFFIC_FLOW_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRAFFIC_FLOW_TYPE
         {  
             get  

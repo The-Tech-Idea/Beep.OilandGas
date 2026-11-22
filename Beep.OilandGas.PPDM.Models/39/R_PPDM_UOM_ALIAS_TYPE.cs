@@ -9,6 +9,7 @@ public partial class R_PPDM_UOM_ALIAS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String UOM_ALIAS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UOM_ALIAS_TYPE
         {  
             get  

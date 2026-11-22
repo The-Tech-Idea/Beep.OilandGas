@@ -9,6 +9,7 @@ public partial class RA_CUTTING_FLUID: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_FLUIDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_FLUID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CUTTING_FLUIDValue;
           set { SetProperty(ref  CUTTING_FLUIDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

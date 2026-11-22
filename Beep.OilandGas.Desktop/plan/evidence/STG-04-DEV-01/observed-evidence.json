@@ -1,0 +1,46 @@
+{
+  "id": "STG-04/DEV-01",
+  "title": "Development workspace",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-4 met: counts come from the plan, schedule, facility and cost records and a failed read is a failure rather than zeroes; attention is derived from the review window and from a scheduled well without an approved program; each source link is decided by the page guard; and the landing route is the development persona's configured route.",
+  "dataModel": {
+    "tables": "FIELD_DEVELOPMENT_PLAN, DEVELOPMENT_WELL_SCHEDULE, FACILITY_INVESTMENT and DEVELOPMENT_COSTS, owned by DevelopmentPlanning; DRILLING_PROGRAM is read from DrillingAndConstruction only for the attention strip.",
+    "noNewTables": "DEV-01 is a read-only landing; it adds no table and no column. The four plan/schedule/facility/cost tables already exist and are registered by the DEVELOPMENT_PLANNING module."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgDevelopmentWorkspace.cs (OgDevelopmentCounts, OgDevelopmentSpend, OgDevelopmentLink, OgDevelopmentAttention, OgDevelopmentSnapshot, IOgDevelopmentWorkspace, OgDevelopmentWorkspace.CountPlans/PlanAttention/ProgramAttention/BuildLinks/SumSpend)",
+    "page": "src/Beep.OilandGas.Desktop/Views/DevelopmentWorkspacePageView.cs (route 'development': KPI line, plans-by-state grid, spend, source buttons, attention strip)",
+    "wiring": "OgBootstrapper (IOgDevelopmentWorkspace), OgApplication.DevelopmentWorkspace, catalog 'development' (OgModuleKeys.Development), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DevelopmentWorkspaceTests.cs (8, no database) + DevelopmentWorkspaceGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 691, "passed": 691, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 19, "passed": 19, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 43, "views-constructed": true, "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD_DEVELOPMENT_PLAN, DEVELOPMENT_WELL_SCHEDULE, FACILITY_INVESTMENT, DEVELOPMENT_COSTS and DRILLING_PROGRAM, seeded in DevelopmentWorkspaceGatewayTests",
+    "ac1_counts": "F-1 shows 3 plans (APPROVED 1, DRAFT 2), 1 well planned, 1 drilling, 1 facility in construction and spend 115 USD + 20 EUR; a cost row dated after the as-of date is excluded and a null-total row is summed from its components",
+    "ac2_attention": "FDP-2 (submitted 61 days ago, DRAFT) is a PLAN_REVIEW item; WELL-1 (PLANNED, no approved program) is a PROGRAM_MISSING item; WELL-2's approved program and the completed WELL-3 are not attention",
+    "ac3_links": "with the gate allowing only 'wells', the wells link is available and fdpreview/welldesign/facilities/drillingprogram/construction are unavailable with the feature that adds them named",
+    "ac4_route": "OgPersonaLanding.RouteFor('/lifecycle/development/dashboard') is 'development', the catalog knows 'development', and the factory builds the page",
+    "field_scope": "loading with no field shows both fields (4 plans); loading F-1 shows 3",
+    "attention_unavailable": "after dropping DRILLING_PROGRAM the workspace still reads: AttentionAvailable=false, the note is set, plan attention remains, and program attention is absent rather than claiming every well is missing a program",
+    "failed_read": "after dropping FIELD_DEVELOPMENT_PLAN the workspace returns a failed result with a reference and no snapshot, never zero counts"
+  },
+  "gates": {
+    "AC-1 Counts come from records; a failed read is never zero": "pass - every KPI is a Count or Sum over the read rows; the gateway test drops the plan table and sees a failure with no snapshot, and the unit test proves no connection is a failure rather than zeros.",
+    "AC-2 Attention items are derived from dates, not stored flags": "pass - a submitted unapproved plan is attention only once it is past the 30-day review window; a scheduled (not finished) well with no approved program is attention. No attention flag is written.",
+    "AC-3 Each source link is independently gated": "pass - BuildLinks calls the supplied page guard per route and gives the feature that adds an unavailable page; the gateway and unit tests both prove the per-route answer.",
+    "AC-4 The landing route matches the persona's configured route": "pass - the RBAC seed route '/lifecycle/development/dashboard' maps to 'development', which is a declared catalog route and is built by the page factory."
+  },
+  "limits": [
+    "FIELD_DEVELOPMENT_PLAN has no review-date column, so 'past their review date' is implemented as a submitted plan older than the 30-day review window and still not APPROVED; the window is a constant (ReviewWindowDays) and is stated rather than stored.",
+    "The 'facilities in construction' count is derived from PLANNED_START_DATE and PLANNED_COMPLETION_DATE, not from an investment-phase code.",
+    "Spend is TOTAL_DEVELOPMENT_COSTS (or the four cost components when the total is null) for cost rows dated on or before the asOf date, grouped by currency; the MM unit is the entity's own.",
+    "The source pages for DEV-02..DEV-05 and DEV-08 do not exist yet, so those links are shown unavailable with the feature that adds them; 'wells' is the only available source in this build.",
+    "The development persona's landing is the 'development' route when the persona mapping selects it; the app's role table still maps DrillingEngineer to wellpath and has no separate DevelopmentPlanner role, which is FND-07's policy to change.",
+    "The drilling-program table is read for the strip only; when it is absent the strip is hidden with a note rather than failing the workspace."
+  ]
+}

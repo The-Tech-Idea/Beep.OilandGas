@@ -9,6 +9,7 @@ public partial class R_AUTHOR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AUTHOR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUTHOR_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_WATER_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String WATER_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_CONDITION
         {  
             get  

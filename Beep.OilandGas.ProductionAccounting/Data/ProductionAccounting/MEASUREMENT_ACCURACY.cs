@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class MEASUREMENT_ACCURACY : ModelEntityBase {
         private System.String MEASUREMENT_ACCURACY_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String MEASUREMENT_ACCURACY_ID
         {
             get { return this.MEASUREMENT_ACCURACY_IDValue; }

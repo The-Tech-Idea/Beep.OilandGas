@@ -1,0 +1,137 @@
+{
+  "id": "STG-19/SETUP-COMPANY-DATABASE",
+  "title": "First-run setup for a company database, with the company settings, module set and environment stored in the database for every user",
+  "date": "2026-11-09",
+  "status": "delivered beyond the 130-feature plan - the plan count is unchanged and this capability is recorded in addition to it",
+  "scope": [
+    "the first-run wizard mirrors the ERP's six steps and hosts the shared connection catalogue, connection editor and the two downloaders",
+    "two deployments: a local database file on this workstation, or a company database on a server",
+    "a company database keeps its settings in the database (BEEPSETTINGS), prepared by the system administrator, read by every user at start",
+    "settings are one JSON row per document: the company record, the PPDM module set, and the Oil & Gas environment",
+    "only the SystemAdmin prepares and changes them; every other user reads them",
+    "the SECURITY module now runs in the desktop setup, so the company database gets the USER/ROLE/PERMISSION tables and its default roles"
+  ],
+  "implementation": {
+    "settingsEntity": "Beep.OilandGas.Models/Data/Security/BEEPSETTINGS.cs",
+    "settingsStore": "src/Beep.OilandGas.Desktop.Data/Settings/OgSharedSetup.cs",
+    "settingsService": "src/Beep.OilandGas.Desktop.Data/Settings/OgSharedSetupService.cs",
+    "connectionRemoteAndAdopt": "src/Beep.OilandGas.Desktop.Data/Connections/OgConnectionCatalog.cs (EnsureRemoteAsync, AdoptAsync, ProvidersAsync)",
+    "wizard": "src/Beep.OilandGas.Desktop/Setup/FirstRunWindow.cs",
+    "catalogChoices": "src/Beep.OilandGas.Desktop/Setup/OgSetupCatalog.cs",
+    "setupRecord": "src/Beep.OilandGas.Desktop/Setup/OgSetupStore.cs",
+    "startupLoad": "src/Beep.OilandGas.Desktop/App.xaml.cs (LoadSettingsAsync before sign-in), Bootstrapping/OgApplication.cs",
+    "sessionFollowsSettings": "src/Beep.OilandGas.Desktop/Security/OgSignInService.cs (BuildSession, Adopt)",
+    "deploymentAwareRepair": "src/Beep.OilandGas.Desktop/Services/OgRepairService.cs",
+    "environmentFromDatabase": "src/Beep.OilandGas.Desktop.WellTools/Environment/OgWellboreEnvironment.cs (LoadSharedDocument), Services/OgWellboreLifetime.cs",
+    "adminEdit": "src/Beep.OilandGas.Desktop/Views/SettingsView.cs, Views/OgCompanySettingsWindow.cs",
+    "rbacInSetup": "src/Beep.OilandGas.Desktop.Data/Setup/OgSetupComposition.cs (SECURITY discovered, IDefaultSecuritySeedService registered)",
+    "databaseIdentity": "src/Beep.OilandGas.Desktop.Data/Security/OgDatabaseIdentity.cs",
+    "passwordPolicy": "src/Beep.OilandGas.Desktop.Core/OgPasswordPolicy.cs (one rule for the workstation store and a company account)"
+  },
+  "table": {
+    "name": "BEEPSETTINGS",
+    "columns": "SETTINGS_ID (PK), SETTINGS_JSON (1 MB), REVISION, PREVIOUS_REVISION, INTENT_ID, UPDATED_BY, UPDATED_UTC + the ModelEntityBase audit columns",
+    "rows": [
+      "COMPANY",
+      "TOOLS_ENVIRONMENT",
+      "MODULES"
+    ],
+    "created_by": "the first administrator's setup run, through the engine's schema provider from the entity class (no statement text in the desktop)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0
+    },
+    {
+      "cmd": "dotnet test src/Beep.OilandGas.Desktop.slnx -c Debug --no-build",
+      "exit": 0,
+      "run": 1532,
+      "passed": 1532,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "dotnet test --filter FullyQualifiedName~SharedSetupIntegrationTests",
+      "exit": 0,
+      "run": 4,
+      "passed": 4
+    },
+    {
+      "cmd": "dotnet test --filter FullyQualifiedName~DatabaseIdentityTests",
+      "exit": 0,
+      "run": 5,
+      "passed": 5
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok"
+    }
+  ],
+  "smoke": {
+    "result": "ok",
+    "pages-declared": 125,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0,
+    "skin-contrast-failures": 0,
+    "toolboxes-missing": 0,
+    "wellbore-findings": 0
+  },
+  "tests": [
+    {
+      "name": "SharedSetupIntegrationTests.The_company_record_is_created_by_the_first_run_and_a_stale_write_is_refused",
+      "proves": "a database with no settings table says so and reading does not create it; the first save creates BEEPSETTINGS and records the company; a second workstation writing with the revision it did not see is refused (settings-record-changed); the administrator who did read it can change it"
+    },
+    {
+      "name": "SharedSetupIntegrationTests.The_module_set_and_the_environment_document_round_trip",
+      "proves": "the module set and the shared environment document survive a real database round trip"
+    },
+    {
+      "name": "SharedSetupIntegrationTests.An_installation_document_that_cannot_be_read_is_refused_rather_than_half_applied",
+      "proves": "an unreadable or blank company document is 'not recorded', is recorded as a degraded failure, and is never adopted as a company with empty values"
+    },
+    {
+      "name": "SharedSetupIntegrationTests.The_module_document_survives_a_document_a_later_build_may_write",
+      "proves": "an unknown module document reads as an empty set instead of throwing"
+    },
+    {
+      "name": "SourceGuardTests.Company_settings_are_one_database_table_and_only_the_system_administrator_prepares_them",
+      "proves": "the table is BEEPSETTINGS, the settings page gate is Permissions.IsSystemAdmin, and the setup composition discovers SECURITY and registers its seed service"
+    },
+    {
+      "name": "DatabaseIdentityTests.An_administrator_is_created_in_the_database_and_can_sign_in_with_the_roles_it_grants",
+      "proves": "the wizard creates the account in the company database; the stored password is a pbkdf2-sha256 envelope and never the password; signing in returns the Administrator role read from USER_ROLE"
+    },
+    {
+      "name": "DatabaseIdentityTests.A_wrong_password_and_an_unknown_user_get_the_same_sentence_and_no_session",
+      "proves": "the sign-in screen cannot enumerate accounts"
+    },
+    {
+      "name": "DatabaseIdentityTests.A_seeded_principal_is_not_a_login_account",
+      "proves": "the security module's seeded principals ('seeded-no-login') never authenticate"
+    },
+    {
+      "name": "DatabaseIdentityTests.Creating_a_second_account_with_the_same_name_is_refused",
+      "proves": "a workstation joining an existing company does not recreate the administrator"
+    },
+    {
+      "name": "DatabaseIdentityTests.The_password_policy_is_one_rule_for_every_account_store",
+      "proves": "the workstation and the company database hold an account to the same rule"
+    }
+  ],
+  "limits": [
+    "there is no enterprise server in this environment, so a server connection (EnsureRemoteAsync) is compiled and reviewed but not exercised against SQL Server, PostgreSQL or Oracle",
+    "the company account is created with the security module's own business associate (BEEP_USER_SYSTEM), because that is the principal the seeded roles belong to; per-company business associates and a user-management screen are not built yet",
+    "the environment document stored in TOOLS_ENVIRONMENT names the country preset and unit system rather than a resolved copy: the presets ship with the application, so the document records the choice and the engine supplies the values (a resolved copy measured 1.2 MB and would drift from the shipped presets)",
+    "the wizard's own text is English, like the window it replaces; the settings it writes are culture-aware and the interface language is applied from the record"
+  ],
+  "orderOfEvents": [
+    "the workstation holds only machine facts: which deployment and which connection (setup.json + the encrypted connection definition)",
+    "before anybody signs in, no company setting is read",
+    "sign-in for a company deployment is against the company database USER table (PBKDF2-SHA256 verifier) and the roles come from USER_ROLE/ROLE",
+    "only after a successful sign-in are the company settings (BEEPSETTINGS) and the shared environment read, and the role set applied to the session",
+    "the shell opens with that company and that user's rights"
+  ]
+}

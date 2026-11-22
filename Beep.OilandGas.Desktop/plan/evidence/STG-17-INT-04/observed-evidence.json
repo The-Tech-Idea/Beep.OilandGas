@@ -1,0 +1,92 @@
+{
+  "id": "STG-17/INT-04",
+  "title": "EDM, CSV and XLSX mapping profiles",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: a CSV folder and an EDM export both load into the canonical WellModel through a profile; a required field the profile does not map fails the test with the entity and the field named; a built-in cannot be overwritten in place and an invalid profile is refused with the previous version retained; the written data is re-read through the same profile before the export is reported as done; and the workbook carries one sheet per entity.",
+  "dataModel": {
+    "read": "Nothing from a database: a mapped import is file-to-file. The profiles are JSON files, and the sources are a CSV folder (one file per table), a Landmark EDM XML export, or an Excel workbook.",
+    "stored": "Customer profiles live as <key>.profile.json under the application's profiles folder (<data root>/MappingProfiles), which is the stage's own rule - 'profile JSON is stored under the data root and versioned with the environment'. They are written through a temporary file and moved into place, so a failed write cannot leave half a profile behind.",
+    "noTable": "INT-04 introduces no table: the feature maps files into the canonical model and writes them back out, so there is nothing to record in a row. This is why the opt-in test drives the real service against real files rather than opening SQLite - recorded here so the absent gateway is a decision, not an omission.",
+    "ownerChanges": "Two additive changes in TheTechIdea.OilGas.Wellbore.Loaders: EntityMap gained a Required list (with unknown required names caught by Validate), and XlsxWriter gained a multi-sheet Write overload that the single-sheet call now delegates to, so the pay-summary export keeps its behaviour and one writer remains."
+  },
+  "rules": {
+    "mapping": "The mapping is the tools' MappedWellDataProvider driven by a MappingProfile; the sources are the tools' CsvTabularSource, EdmXmlTabularSource and ExcelTabularSource. The desktop implements no part of the mapping.",
+    "required": "AC-3 is checked two ways, because a blank identity can arrive from either direction: a required field the profile does not map (not in Fields, not a formula, not in the vertical property table) is named with its entity; and a required field that is mapped to a column the file does not carry is named with the column too.",
+    "entities": "Every entity the profile declares is reported with its table, whether the file has it, and its row count. An entity the file does not carry is reported per entity - it does not fail the whole test - but the well entity is the exception: with no well row there is nothing to load, and that is stated.",
+    "builtIn": "AC-4 is enforced before anything is written: a name that matches a built-in is refused with the sentence to save a copy instead. The list then shows both the built-in and the copy, distinguished by the flag.",
+    "invalid": "An invalid profile is refused twice over: JSON that does not parse, and JSON that parses but does not hold together structurally. Neither is written, so the version already on disk is what stays - the feature's own state.",
+    "roundTrip": "AC-5 is measured on every export rather than asserted: the model is written, then re-read through the same profile and compared (well name and UWI, the entity counts, each hole section's bottom and each string's outside diameter), and a mismatch fails the export with the first difference named.",
+    "xlsx": "AC-6: one sheet per table the profile writes, in table order, with the sheet name made unique and legal. The sheets read back as tables of the same names, which is what makes the XLSX round trip run through the same comparison as the CSV one.",
+    "overwrite": "An export that would replace files refuses and lists them until the confirmation is given; nothing is written before that.",
+    "key": "A profile has a key (the built-in or file name) and a display name. The key is what the list, the test and the save all use, because the built-ins' own names are sentences ('CSV well exchange (TheTechIdea OilGas)') - using the display name as a key would have made the built-ins unreachable."
+  },
+  "implementation": {
+    "owner": "TheTechIdea.OilGas.Wellbore.Loaders/Tabular/MappingProfile.cs (EntityMap.Required, validated) and Tabular/XlsxWriter.cs (multi-sheet overload; the single-sheet call delegates)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Interop/OgMappingProfiles.cs (OgProfileSummary, OgEntityReport, OgMappingTest, OgWriteBack, OgWriteBackRequest, OgMappingRules, IOgMappingProfiles, OgMappingProfilesService with ListAsync/LoadAsync/TestAsync/SaveAsync/WriteBackAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/MappingProfilesPageView.cs (route 'mappingprofiles': the profile list, the selected profile's detail, the source and well bar, the entity report, the model preview, the write-back bar with its workbook and overwrite choices, and the profile JSON box)",
+    "wiring": "OgBootstrapper (IOgMappingProfiles, with the profiles folder taken from OgPaths.DataRoot), OgApplication.MappingProfiles, catalog 'mappingprofiles' (OgModuleKeys.Interop), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/MappingProfileTests.cs (11, file-based, including the ported EDM fixture) + MappingProfileGatewayTests.cs (1 opt-in, driving the whole service against real CSV, EDM and XLSX files)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1418, "passed": 1418, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 91, "passed": 91, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 114, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "files": "A CSV folder with wells, hole_sections, strings, tops and survey files; a Landmark EDM export with CD_WELL, CD_WELLBORE, CD_HOLE_SECT, CD_WELLBORE_FORMATION and CD_DEFINITIVE_SURVEY_STATION elements; a customer profiles folder; and output folders for the CSV and the workbook.",
+    "ac1_csv": "the built-in 'csv' profile reads the folder into a model with name 'Demo 1', UWI 30/1-A, TD 8500 ft, 3 hole sections, 2 strings, 2 survey stations and the Hod top at 7500 ft",
+    "ac2_edm": "the built-in 'edm' profile reads the export into a model with name 'Demo-9', 3 hole sections, 2 strings, the Hod top at 6800 ft and survey stations at 0 and 3000 ft; the load's own warning that the casing role is not in the export is shown rather than hidden",
+    "ac3_required": "a copy of the profile that declares 'uwi' required and drops its mapping fails the test with \"well: the required field 'uwi' is not mapped\", names the same field in the problems text, and loads no model",
+    "ac4_builtin": "saving the built-in 'csv' name is refused with 'cannot be overwritten' and no file appears in the profiles folder; saving the same JSON as 'csv-company' succeeds, is listed as custom, and tests through the copy",
+    "ac4_invalid": "saving '{ not json' as 'company' is refused and the file on disk is byte-identical afterwards; a structurally broken profile is refused too",
+    "ac5_csv": "the write-back writes wells, hole_sections, strings, tops and survey, then re-reads them through the same profile and reports 'reloads identically'; the comparison is shown to be real by a unit test that drops a hole section and gets a difference named",
+    "ac5_xlsx": "the workbook carries one sheet per table (asserted against the table count and a floor of five) and reloads through the same profile with the same hole-section count",
+    "ac6_sheets": "the workbook's xl/worksheets parts equal the number of tables written, so no entity is silently folded into another's sheet",
+    "overwrite": "with files already present the export refuses, names them and leaves the existing file untouched; with the confirmation it writes",
+    "entities": "the CSV fixture has no components or intervals, so those two entities are reported as 'not in the file' while the test still passes - the feature's per-entity reporting",
+    "refusals": "a blank profile name, a blank source, an unknown source kind, a source that does not exist, an unknown profile and a blank actor are each refused with their own sentence"
+  },
+  "gates": {
+    "AC-1 A CSV file maps into the canonical WellModel via a profile": "pass - the built-in CSV profile loads a folder into a model, asserted on the identity, the depth and every entity count.",
+    "AC-2 An EDM XML file loads the documented entities": "pass - the ported EDM fixture loads through the EDM profile with the vendor's own element names and the expected sections, strings, top and survey.",
+    "AC-3 An unmapped required field fails the test with the field named": "pass - refused naming the entity and the field, and the mapped-but-absent-column case is named with the column as well.",
+    "AC-4 A built-in profile cannot be overwritten in place": "pass - refused with the instruction to save a copy, nothing written; the copy saves and is listed beside the built-in; invalid JSON leaves the previous version byte-identical.",
+    "AC-5 Write-back reloads identically through the same profile": "pass - measured on every export by re-reading and comparing, for the CSV folder and the workbook, and the comparison is shown to detect a change.",
+    "AC-6 XLSX export produces one sheet per entity": "pass - the sheet parts equal the table count, and the workbook reads back into the same tables."
+  },
+  "engineFindings": {
+    "noRequiredConcept": {
+      "where": "TheTechIdea.OilGas.Wellbore.Loaders/Tabular/MappingProfile.cs (EntityMap)",
+      "finding": "A profile could map a field and could default a unit, but could not say that a field must exist. Without that, a source missing a well's identity loads a record with a blank name and nothing fails - which is what AC-3 exists to prevent.",
+      "handling": "EntityMap gained a Required list, additive and empty by default so every existing profile is unchanged; Validate catches a required name that is not a canonical field."
+    },
+    "oneSheetOnly": {
+      "where": "TheTechIdea.OilGas.Wellbore.Loaders/Tabular/XlsxWriter.cs",
+      "finding": "The writer produced exactly one sheet per workbook, and AC-6 needs one per entity.",
+      "handling": "A multi-sheet Write overload was added and the single-sheet call now delegates to it, so the pay-summary export is the same code path and there is still one writer. Sheet names are cleaned and made unique, because a duplicate name makes a reader drop a sheet silently."
+    },
+    "keyIsNotTheDisplayName": {
+      "finding": "The built-in profiles' Name is a sentence - 'CSV well exchange (TheTechIdea OilGas)' - while the name that resolves a profile is its file key 'csv'. A first version of the summary carried only the profile's Name, so the page would have asked for a profile that does not exist by that name.",
+      "handling": "The summary carries the key and the name, the list sorts and the page selects by the key, and the label shows the name beside it when the two differ."
+    },
+    "noProfileUsageRecord": {
+      "finding": "The feature's screen lists a 'last used' column, and the application keeps no record of when a profile was used - nothing writes one.",
+      "handling": "The list shows the profiles, their entities, their field counts and whether they are valid; a last-used stamp is left out and recorded as a limit rather than invented from the file's timestamp, which says when it was edited, not when it was used."
+    },
+    "theRoundTripNeededADefinition": {
+      "finding": "'Reloads identically' is a claim until something compares. The tools' writer and reader are a matched pair by design, so a comparison that checks nothing would always pass.",
+      "handling": "The comparison names what it checks - the well name and UWI, six entity counts, each hole section's bottom and each string's outside diameter - and a unit test drops a section to prove the comparison fails when it should."
+    }
+  },
+  "limits": [
+    "The list does not show a last-used column: the application keeps no record of profile use, and a file's timestamp says when it was edited, not when it was used.",
+    "A profile is tested against a file the person names; there is no browsing dialog, and the source kinds are the three the tester reads (CSV folder, EDM XML, Excel workbook).",
+    "The write-back exports the well that was tested from the same file - it is not an export of the application's own database wells. Exporting from the database would be a mapping out of PPDM, which is INT-02/INT-03's direction of travel.",
+    "The round trip compares the fields listed in the evidence, not every column: a profile that loses an unmapped extra column would not be caught by it.",
+    "Vendor datasource plugin DLLs (IDataSourceFactory) are not loaded from a folder here; the feature's own open question - whether the desktop ships a plugin folder - is left to REL-01 as the document says.",
+    "A built-in profile cannot be edited at all: changing one means saving a copy under a new name. There is no in-place edit-and-revert.",
+    "The profile editor is the JSON box: the per-field editor the screen describes is not built, so a mapping is authored as JSON and validated on save rather than through a field-by-field grid.",
+    "No paging: the list reads every profile file in the folder on each refresh."
+  ]
+}

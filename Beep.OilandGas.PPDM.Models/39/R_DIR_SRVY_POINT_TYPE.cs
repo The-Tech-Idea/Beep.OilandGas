@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_POINT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String POINT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POINT_TYPE
         {  
             get  

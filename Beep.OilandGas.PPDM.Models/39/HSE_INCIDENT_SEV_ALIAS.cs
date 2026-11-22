@@ -9,6 +9,7 @@ public partial class HSE_INCIDENT_SEV_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INCIDENT_SET_IDValue;
           set { SetProperty(ref  INCIDENT_SET_IDValue, value); }
         } 
 private  System.String INCIDENT_TYPE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_TYPE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String INCIDENT_TYPE_IDValue;
           set { SetProperty(ref  INCIDENT_TYPE_IDValue, value); }
         } 
 private  System.String INCIDENT_SEVERITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_SEVERITY_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String INCIDENT_SEVERITY_IDValue;
           set { SetProperty(ref  INCIDENT_SEVERITY_IDValue, value); }
         } 
 private  System.String SEVERITY_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEVERITY_ALIAS_ID
         {  
             get  

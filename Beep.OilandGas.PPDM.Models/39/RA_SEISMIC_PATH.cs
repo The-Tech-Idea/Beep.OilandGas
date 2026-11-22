@@ -9,6 +9,7 @@ public partial class RA_SEISMIC_PATH: Entity,IPPDMEntity
 {
 
 private  System.String SEISMIC_PATHValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEISMIC_PATH
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEISMIC_PATHValue;
           set { SetProperty(ref  SEISMIC_PATHValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

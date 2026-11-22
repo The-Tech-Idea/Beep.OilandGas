@@ -9,6 +9,7 @@ public partial class R_EQUIP_REMOVE_REASON: Entity,IPPDMEntity
 {
 
 private  System.String REMOVE_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMOVE_REASON
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SEIS_INTERP_SURFACE: Entity,IPPDMEntity
 {
 
 private  System.String SURFACE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SURFACE_ID
         {  
             get  

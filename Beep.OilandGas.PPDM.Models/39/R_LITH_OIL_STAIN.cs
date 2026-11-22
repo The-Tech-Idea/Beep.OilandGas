@@ -9,6 +9,7 @@ public partial class R_LITH_OIL_STAIN: Entity,IPPDMEntity
 {
 
 private  System.String OIL_STAINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OIL_STAIN
         {  
             get  

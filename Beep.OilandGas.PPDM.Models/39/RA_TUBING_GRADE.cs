@@ -9,6 +9,7 @@ public partial class RA_TUBING_GRADE: Entity,IPPDMEntity
 {
 
 private  System.String TUBING_GRADEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TUBING_GRADE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TUBING_GRADEValue;
           set { SetProperty(ref  TUBING_GRADEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SEIS_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_STATUS
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_SP_POINT_VERSION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VERSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VERSION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VERSION_TYPEValue;
           set { SetProperty(ref  VERSION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_ANL_FORMULA_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FORMULA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FORMULA_TYPE
         {  
             get  

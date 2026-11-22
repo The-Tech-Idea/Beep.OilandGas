@@ -9,6 +9,7 @@ public partial class R_BA_CREW_OVERHEAD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OVERHEAD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OVERHEAD_TYPE
         {  
             get  

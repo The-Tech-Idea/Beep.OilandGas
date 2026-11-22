@@ -9,6 +9,7 @@ public partial class PROD_LEASE_UNIT: Entity,IPPDMEntity
 {
 
 private  System.String LEASE_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LEASE_UNIT_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_PPDM_GROUP_USE: Entity,IPPDMEntity
 {
 
 private  System.String GROUP_USEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String GROUP_USE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String GROUP_USEValue;
           set { SetProperty(ref  GROUP_USEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

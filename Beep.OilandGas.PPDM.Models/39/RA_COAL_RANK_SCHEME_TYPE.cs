@@ -9,6 +9,7 @@ public partial class RA_COAL_RANK_SCHEME_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COAL_RANK_SCHEME_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COAL_RANK_SCHEME_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COAL_RANK_SCHEME_TYPEValue;
           set { SetProperty(ref  COAL_RANK_SCHEME_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

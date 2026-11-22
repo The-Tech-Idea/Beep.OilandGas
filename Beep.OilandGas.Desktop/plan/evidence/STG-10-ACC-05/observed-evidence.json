@@ -1,0 +1,83 @@
+{
+  "id": "STG-10/ACC-05",
+  "title": "Payables and procurement",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a receipt that would take the cumulative received quantity past the order is refused naming the excess; a price outside the recorded tolerance becomes an exception that needs an independent approval rather than a silent pass; a duplicate supplier invoice number is refused; a commitment above the AFE remaining is refused with all three amounts named; a whole payment run posts exactly one journal and a retry neither duplicates it nor pays twice; and the author cannot approve their own order, exception or run.",
+  "dataModel": {
+    "decision": "The owner already had every record a three-way match needs - PURCHASE_ORDER, PO_LINE_ITEM, PO_RECEIPT (with ACCEPTED_QUANTITY and RECEIPT_STATUS), AP_INVOICE, AP_INVOICE_LINE (already carrying PURCHASE_ORDER_ID and PO_LINE_ITEM_ID) and AP_PAYMENT - all registered. Nothing was duplicated: the tables were extended additively where a column was genuinely missing, and one header was added for the payment run because AP_PAYMENT is one amount against one invoice and AC-5's 'exactly one journal entry' had nowhere to live.",
+    "addedTable": "AP_PAYMENT_RUN (AP_PAYMENT_RUN_ID key, RUN_NUMBER, RUN_DATE, TOTAL_AMOUNT, CURRENCY_CODE, PAYMENT_METHOD, STATUS, AUTHOR, APPROVED_BY, APPROVED_AT, JOURNAL_ENTRY_ID, POSTED_BY, POSTED_AT, RETURN_REASON, the owner tenant/company/book)",
+    "addedColumns": "PURCHASE_ORDER: AUTHOR, APPROVED_BY, APPROVED_AT, AFE_ID, CLOSED_AT. AP_INVOICE: AUTHOR, PURCHASE_ORDER_ID, AFE_ID, SUBTOTAL_AMOUNT, TAX_AMOUNT, MATCH_STATE, MATCH_EXCEPTIONS_TEXT, MATCH_POLICY_ID, EXCEPTION_APPROVED_BY, EXCEPTION_APPROVED_AT. AP_PAYMENT: RUN_ID.",
+    "checkedForDuplicates": "Every entity was checked for the case-only duplicate property pairs that make PIPELINE_ANALYSIS_RESULT unpublishable (WTA-03). None of these has one, proven by the gateway writing and updating rows in all of them.",
+    "registration": "typeof(AP_PAYMENT_RUN) added beside the other payables tables in ProductionAccountingModuleSetup. --smoke now reports 33 modules and 415 entity types (up from 414)."
+  },
+  "ownerAdditions": {
+    "codes": "Beep.OilandGas.Accounting/Constants/ProcurementCodes.cs - the procure-to-pay vocabulary the project did not name: the three order states (reusing the owner's own 'DRAFT'), the receipt states (reusing 'RECEIVED'), the four match states, the five exception kinds with the sentence each prints, which match states authorise payment, the four run states, the payment methods and the two accounts a payment touches (from DefaultGlAccounts).",
+    "match": "Beep.OilandGas.Accounting/Calculations/ThreeWayMatch.cs - the match itself. Tolerances are percentages of the recorded basis, which is the shape the owner's CompanyMatchingPolicyRules already uses, and the comparison is the owner's own scaled-integer arithmetic copied from APInvoiceFinancialReview.MatchingPolicy - nothing is divided, so no rounding decides a tolerance. It is deliberately stricter than the owner's policy check in two ways it states: an invoice above what was actually RECEIVED is an exception even inside the ordered quantity (the owner's own comment admits it does not consider 'accepted receipt capacity'), and the two quantity ceilings are reported as separate kinds so a reviewer sees which one was passed."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgPayables.cs (OgPayableContext, OgOrderLineInput, OgOrderInputs, OgOrderLine, OgPurchaseOrder, OgInvoiceLineInput, OgSupplierInvoiceInputs, OgInvoiceLine, OgApInvoice, OgPaymentRun, OgPayablesWorkspace, PayableRules, IOgPayables, OgPayablesService with RaiseOrderAsync/ApproveOrderAsync/ReceiveAsync/CaptureAsync/ApproveExceptionAsync/ProposeRunAsync/ReviewRunAsync/PostRunAsync/LoadAsync and the public static MatchInvoice)",
+    "policy": "The tolerances are the owner's recorded matching policy - ACCOUNTING_METHOD rows whose METHOD_TYPE is AP_MATCHING and whose status is APPROVED - read through the owner's own parser. Exactly one must cover the invoice's currency and date, which is the owner's rule ('no newest-row fallback is applied'); when none does, the capture is refused naming whether it found none, several overlapping, or one that cannot be read. A malformed policy row is reported with a failure reference and skipped, so one corrupt row neither silently guesses nor takes the page down.",
+    "receipt": "ReceiveAsync refuses unless the order is approved, then checks the cumulative accepted quantity against the ordered quantity before writing anything (AC-1). Rejected quantities are stored but never counted as received, so a rejection cannot be invoiced against.",
+    "match": "MatchInvoice compares each invoice line with its order line: ordered quantity and price from the order, received quantity summed from the PO_RECEIPT rows, invoiced quantity and price from the invoice line. Currency is checked once for the invoice. A non-PO invoice is marked NON_PO rather than passed silently.",
+    "commitment": "A capture with an AFE checks the invoice subtotal against the AFE's approved amount less the commitments already recorded (the same AFE_COMMITMENT rows ECO-02 writes), refuses above the remainder naming all three amounts (AC-4), and on success writes the commitment so the authorisation shows what this invoice commits.",
+    "run": "ProposeRunAsync selects the invoices that are payable (matched, approved-exception or non-PO) and due on or before the date, refuses when there are none and when they span currencies, then writes one AP_PAYMENT_RUN header and one AP_PAYMENT per invoice. ReviewRunAsync records the approval or a reasoned return. PostRunAsync writes one journal - payables debit, cash credit - at most, using a reference derived from the run id, then reduces each invoice and marks the payments and the run posted.",
+    "idempotency": "The run's journal reference is 'PAYRUN-' + the run id, which exists before any numbering, so a retry after a lost acknowledgement adopts the entry; and an invoice already at a zero balance is skipped when applying the run, so the retry cannot pay it twice. The gateway test clears the run's journal link and status by hand and re-posts.",
+    "page": "src/Beep.OilandGas.Desktop/Views/PayablesPageView.cs (route 'payables': the order bar with its line editor, approve and receive; the invoice bar with its line editor, capture and exception approval; the run bar with propose, approve, return and post; the order, invoice and run grids and the selected order's lines, the invoice's match and exceptions, and the run's journal)",
+    "wiring": "OgBootstrapper (IOgPayables), OgApplication.Payables, catalog 'payables' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PayablesTests.cs (13, no database) + PayablesGatewayTests.cs (1 opt-in, real SQLite over 14 tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1103, "passed": 1103, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 57, "passed": 57, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 81, "views-constructed": true, "modulesetup-summary": "33 module(s) - 415 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with PURCHASE_ORDER, PO_LINE_ITEM, PO_RECEIPT, AP_INVOICE, AP_INVOICE_LINE, AP_PAYMENT, AP_PAYMENT_RUN, ACCOUNTING_METHOD, AFE, AFE_COMMITMENT, GL_ACCOUNT, JOURNAL_ENTRY, JOURNAL_ENTRY_LINE and COMPANY_LEDGER_PERIOD, seeded with a USD policy at 5 %/5 % and a 200,000 AFE",
+    "ac1_receipt": "an order for 100 casing at 50 and 200 cement at 20 is raised and approved; receiving 150 against the 100-unit line is refused with '50 more than was ordered', no PO_RECEIPT row is written, receiving exactly 100 succeeds, and one more is refused again. This is SG-10-6.",
+    "ac2_tolerance": "an invoice at 60 against an ordered 50 (20 %) with a 5 % policy is stored as EXCEPTION with the price exception recorded in MATCH_EXCEPTIONS_TEXT, is not payable, and becomes EXCEPTION_APPROVED with the approver and time only after an independent approval. A correctly priced invoice matches and is payable.",
+    "ac3_duplicate": "capturing SUP-1001 twice is refused as a duplicate naming the existing invoice, and the invoice count stays at one.",
+    "ac4_commitment": "the 200,000 AFE carries 5,000 then 8,000 committed; a 200,000 invoice line is refused with '192,000.00 left ... after 8,000.00 committed', and no invoice is written.",
+    "ac5_one_journal": "a run over the two due invoices (6,000 and 3,000) posts one JOURNAL_ENTRY of 9,000 with two lines - payables 2,000 debit and cash 1,000 credit - and both invoices become PAID with a zero balance; posting again writes no second journal.",
+    "ac6_author": "sara raises the order, captures the invoices and proposes the run; approving the order, approving the exception and approving the run are each refused with payable-author-cannot-approve naming her, and omar/nadia perform them instead.",
+    "lost_ack": "the run's JOURNAL_ENTRY_ID and POSTED_* are cleared and its status reset to APPROVED by hand; re-posting finds the journal by its PAYRUN- reference, and both invoices keep their paid amounts and zero balances.",
+    "non_po": "an invoice with no order is stored as NON_PO, is payable, and carries no exception - the owner's separate-review rule rather than a silent pass.",
+    "nothing_due": "a run date before every invoice's due date is refused with payable-run-nothing-due.",
+    "policy_absent": "the unit test asserts that a match with no recorded tolerance yields a NO_MATCHING_POLICY exception instead of assuming one; the gateway refuses the capture outright when no policy covers the currency and date.",
+    "unavailable": "dropping AP_PAYMENT and AP_PAYMENT_RUN makes LoadAsync return a workspace with HistoryFailed true."
+  },
+  "gates": {
+    "AC-1 A receipt above the order is refused": "pass - the cumulative accepted quantity is checked before writing, the refusal names the excess and the order, and no receipt row is written. SG-10-6.",
+    "AC-2 A price outside tolerance becomes an exception": "pass - the recorded policy's percentage is applied with the owner's exact arithmetic, the exception is stored with its three quantities and the tolerance, and the invoice cannot be paid until someone else approves it.",
+    "AC-3 A duplicate invoice number is refused": "pass - the supplier's number per vendor is the identity, the refusal names the existing capture, and no second invoice is written.",
+    "AC-4 A commitment above the AFE remaining is refused": "pass - checked against the same AFE_COMMITMENT rows ECO-02 maintains, with the approved amount, the committed amount and the remainder all named.",
+    "AC-5 Payments create exactly one journal entry": "pass - one entry for the whole run, balanced by construction, with a reference that makes a retry adopt it rather than duplicate it.",
+    "AC-6 Author cannot approve their own exception or payment": "pass - enforced for the order, the match exception and the run, each before anything is written, and each proven by a refusal followed by a different actor's success."
+  },
+  "engineFindings": {
+    "tolerancePolicy": {
+      "where": "Beep.OilandGas.Models/Data/Accounting/APInvoiceFinancialReview.MatchingPolicy.cs and CompanyMatchingPolicyReview.cs",
+      "finding": "The owner does have a matching policy - per company, currency and effective window, with quantity and price tolerances as percentages - but it requires an approved ACCOUNTING_METHOD row with command/approval evidence, and its own text warns it compares against the full ordered quantity and 'not remaining PO balance, accepted receipt capacity or consumption by other invoices'.",
+      "handling": "The policy rows are read with the owner's own parser and exactly one must apply, per the owner's rule. The match adds the received-quantity ceiling the owner's comment says it omits, and states that in its own remarks. A malformed policy row is reported with a reference and skipped rather than guessed at."
+    },
+    "noPaymentRun": {
+      "finding": "AP_PAYMENT is one amount against one invoice, so a run settling several invoices had no header and AC-5's single journal had nowhere to live.",
+      "handling": "AP_PAYMENT_RUN added as the header; AP_PAYMENT gained RUN_ID and keeps its meaning as one allocation of the run."
+    },
+    "unitOfWorkUpdate": {
+      "finding": "UnitofWork.Update locates a row through the unit's own read buffer, so reading with ReadAllAsync and updating through a fresh unit throws 'Object not found' (first seen in ACC-04).",
+      "handling": "Every write in this feature reads through the unit that performs it - the invoice application in the run and the per-line receipt and commitment writes included."
+    }
+  },
+  "limits": [
+    "The owner's stronger correction and variance workflows (APInvoiceCorrectionEditor, the variance proposal/decision JSON columns, the receipt-allocation cycle) are not surfaced: this feature records an exception and its approval, not the full correction cycle that produces a revised invoice.",
+    "The match compares the invoice against the ordered and received quantities per line; it does not net off quantities already invoiced by other invoices, so two invoices each within the ordered quantity can together exceed it - the owner's own policy comment flags the same gap.",
+    "A payment run pays one currency. Mixed-currency due invoices are refused rather than converted, because no exchange rate is stated anywhere in this path.",
+    "There is no partial payment of an invoice inside a run: an invoice that is due is paid in full or excluded.",
+    "The AFE commitment is written on capture and is not released if the invoice is later voided - there is no void command here, so that path does not exist yet.",
+    "Tax is a stated amount on the invoice, not computed from codes; withholding and multi-rate taxes are absent (ACC-08 owns tax).",
+    "The purchase order cannot be amended after approval; a short order is addressed by raising a second order rather than by a supplement (the refusal says so).",
+    "The feature's permissions (accounting.payable.write/.approve/.pay) are not enforced per command: the app gates pages, and segregation of duties is the author-versus-approver rule only.",
+    "ACC-01 and ACC-06..ACC-08 are not started, so STG-10 is not complete."
+  ]
+}

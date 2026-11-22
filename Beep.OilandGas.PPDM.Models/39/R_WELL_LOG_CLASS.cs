@@ -9,6 +9,7 @@ public partial class R_WELL_LOG_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String WELL_LOG_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_LOG_CLASS_ID
         {  
             get  

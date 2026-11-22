@@ -9,6 +9,7 @@ public partial class R_ADDITIVE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_METHOD
         {  
             get  

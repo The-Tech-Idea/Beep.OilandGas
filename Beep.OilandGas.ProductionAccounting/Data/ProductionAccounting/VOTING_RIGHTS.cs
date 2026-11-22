@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class VOTING_RIGHTS : ModelEntityBase {
         private System.String VOTING_RIGHTS_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String VOTING_RIGHTS_ID
         {
             get { return this.VOTING_RIGHTS_IDValue; }

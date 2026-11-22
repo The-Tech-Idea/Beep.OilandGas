@@ -9,6 +9,7 @@ public partial class R_ACCESS_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String ACCESS_CONDITION_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCESS_CONDITION_CODE
         {  
             get  

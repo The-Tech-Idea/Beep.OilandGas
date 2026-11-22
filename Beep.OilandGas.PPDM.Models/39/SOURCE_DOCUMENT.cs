@@ -9,6 +9,7 @@ public partial class SOURCE_DOCUMENT: Entity,IPPDMEntity
 {
 
 private  System.String SOURCE_DOCUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE_DOCUMENT_ID
         {  
             get  

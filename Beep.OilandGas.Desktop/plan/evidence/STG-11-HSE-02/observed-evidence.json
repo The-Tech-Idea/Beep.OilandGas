@@ -1,0 +1,83 @@
+{
+  "id": "STG-11/HSE-02",
+  "title": "Incident management",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a report needs its type, tier, jurisdiction, field and an ISO 8601 timestamp with an explicit offset, and a local time without one is refused; no jurisdiction is ever defaulted and the view may not name a country; a company or field change during a read clears the rows and discards the response, and a superseded load is discarded the same way; a null population is a refusal rather than an empty register; a state change is refused because the workflow engine is not wired; and the state filter offers exactly the recorded IncidentState values.",
+  "dataModel": {
+    "decision": "No table was created and no owner record was duplicated. The owner's incident schema already has the shape the report needs: HSE_INCIDENT for the header, HSE_INCIDENT_DETAIL for the type and severity, HSE_INCIDENT_COMPONENT for the field, facility, jurisdiction and location, and HSE_INCIDENT_RESPONSE for the state history. HSE_INCIDENT_COMPONENT also carries FACILITY_ID and PROJECT_ID, so neither a facility column nor a link to the corrective actions had to be invented.",
+    "registration": "HSE_INCIDENT_DETAIL and HSE_INCIDENT_COMPONENT added to HseModule's entity list beside HSE_INCIDENT and HSE_INCIDENT_RESPONSE from HSE-01. --smoke moved from 423 to 425 entity types.",
+    "noNewTables": "The feature's OgIncident and OgIncidentReport shapes are desktop read and command models over those four owner tables, as the feature document itself specifies."
+  },
+  "rules": {
+    "report": "A report writes four rows: the HSE_INCIDENT header (date, description), a REPORT detail row (type, severity), a primary component row (field, facility, jurisdiction, location) and the first STATUS response (REPORTED). Immediate actions and people involved are written as further detail rows typed ACTION and PEOPLE; they are observations on the same incident, not new tables.",
+    "idempotency": "The incident id is derived from the caller's intent key (INC-<intent>), a key that exists before anything is written, so a report retried after a lost acknowledgement finds its own header. A retry with different content under the same key is refused as a conflict rather than overwriting, and a retry after a partial write completes the missing detail, component or status row.",
+    "timestamp": "The occurred-at value must match ^yyyy-MM-ddTHH:mm(:ss(.fff)?)?(Z|±hh:mm)$ and parse as a DateTimeOffset; the instant is stored in UTC and the register shows it in UTC and in the company zone from the session.",
+    "jurisdiction": "The jurisdiction is required and never defaulted. The validation names the missing value and the view may not contain a country name (guard test).",
+    "scope": "A load captures the company and field it started under and re-reads the session's scope after the rows are read; a difference, or a newer load having started, returns a stated refusal with no rows. The page clears its grid on that refusal.",
+    "population": "A null result from a read is a refusal (the register is not shown as empty), and a read that throws fails with no rows at all.",
+    "transition": "A state change is refused with a stated reason because WFL-01/WFL-02 are not wired; nothing is written, and the page shows the reason instead of offering the command.",
+    "states": "The state filter and the strip use the owner's IncidentState values and nothing else; an unknown filter value is refused and the refusal lists the recorded ones."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Hse/OgIncidents.cs (OgHseScope, OgIncident, OgIncidentReport, OgIncidentFilter, OgIncidentWorkspace, IncidentRules, IOgIncidents, OgIncidents with BeginLoad/IsCurrent/LoadAsync/ReportAsync/TransitionAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/IncidentsPageView.cs (route 'incidents': the report bar with its ISO timestamp and explicit jurisdiction, the filters, the register grid with number, UTC and company-zone time, type, tier, severity, field, facility, jurisdiction, state, investigator and open actions, the selected incident, and the workflow-block notice)",
+    "wiring": "OgBootstrapper (IOgIncidents), OgApplication.Incidents, catalog 'incidents' (OgModuleKeys.Hse), OgPageFactory, en + ar labels; HSE-01's incidents link no longer says 'arrives with HSE-02' and is now gated like the other existing pages",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HseIncidentTests.cs (10, no database) + HseIncidentGatewayTests.cs (1 opt-in, real SQLite over seven tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1163, "passed": 1163, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 63, "passed": 63, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 87, "views-constructed": true, "modulesetup-summary": "33 module(s) - 425 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with HSE_INCIDENT, HSE_INCIDENT_DETAIL, HSE_INCIDENT_COMPONENT, HSE_INCIDENT_RESPONSE, PROJECT, PROJECT_STEP and PROJECT_STATUS, seeded with two incidents (one reported with an investigator and an open corrective action, one closed), their details, components and status history",
+    "register": "the grid reads one incident per header: type SPILL, tier TIER_2 shown as 'Serious / recordable', field F-1, facility FAC-1, jurisdiction TX, state REPORTED, investigator sara and one open action from the linked corrective-action project; the closed incident has no open action",
+    "ac1_timestamp": "2026-11-08T10:00:00Z and 2026-11-08T13:00:00+03:00 are accepted and stored as the same instant in UTC; '2026-11-08T10:00:00' with no offset is refused with incident-timestamp-needs-offset and nothing is written",
+    "ac2_jurisdiction": "a blank jurisdiction is refused with incident-jurisdiction-required and the sentence 'None is assumed from the field, the company or the browser'; the stored value is exactly the reported 'ND'; the guard test rejects any country literal in the view",
+    "ac3_scope": "a load whose current-scope delegate returns F-1 and then F-2 fails with incident-scope-changed and no rows; a load whose version was superseded by a newer BeginLoad fails the same way",
+    "ac4_population": "CheckPopulation(null) returns incident-population-null; dropping HSE_INCIDENT_DETAIL makes the read fail with no rows rather than an empty register",
+    "ac5_workflow": "TransitionAsync answers incident-workflow-not-wired, the status-history row count is unchanged and the incident keeps its recorded state; the page prints the same sentence instead of offering the command",
+    "ac6_states": "the filter offers the seven IncidentState values; filtering CLOSED returns the one closed incident, and a made-up state is refused with the recorded list",
+    "report": "a complete report writes the header, the REPORT detail row, the ACTION and PEOPLE detail rows, the component carrying field, facility and jurisdiction, and the REPORTED status row - all asserted in SQL; the incident reads back with every grid field",
+    "retry": "reporting the same intent twice leaves one header and one status row; the same intent with a different description is refused as a conflict; deleting the status row by hand and re-reporting recreates it without a second header",
+    "filters": "state, tier, type and from-date filters each narrow the register as expected"
+  },
+  "gates": {
+    "AC-1 Reporting requires type, tier, jurisdiction and an ISO timestamp with an offset": "pass - all five are validated before any write, the timestamp regex requires an offset, and the refused and accepted cases are asserted in the unit and gateway tests.",
+    "AC-2 No jurisdiction defaults to any country": "pass - a blank jurisdiction is refused with a sentence that says none is assumed, and a guard test rejects country names in the view.",
+    "AC-3 A company/field change during a read clears rows and discards the late response": "pass - the scope is re-read after the rows and a difference (or a superseded load version) returns a refusal with no rows; the page clears the grid.",
+    "AC-4 A null population is refused, not shown as empty": "pass - CheckPopulation refuses null, and a failed read carries no rows at all.",
+    "AC-5 State changes go through the workflow, not a direct update": "pass - the command is refused with incident-workflow-not-wired and writes nothing.",
+    "AC-6 Status filter offers only recorded IncidentState values": "pass - the list is the owner's constants, an unknown value is refused, and the page binds the workspace's list."
+  },
+  "engineFindings": {
+    "incidentReportIsFourTables": {
+      "where": "Beep.OilandGas.ApiService/Services/IncidentReportSchema.cs",
+      "finding": "The API's own schema validator shows the canonical shape: the header, a detail row carrying INCIDENT_TYPE_ID and INCIDENT_SEVERITY_ID, a component row carrying FIELD_ID, FACILITY_ID, JURISDICTION and the location remark, and a status response. The desktop writes exactly that rather than inventing a flat incident table.",
+      "handling": "The report command writes those four rows and the register reads them back; the mapping is stated on the service."
+    },
+    "latestDetailBlankedTheType": {
+      "finding": "The first read model took the incident's latest detail row for its type and severity. A report with immediate actions or people writes later detail rows, so the PEOPLE row became 'latest' and the type came back empty - the gateway test failed with Expected 'SPILL', Actual ''.",
+      "handling": "The read now takes the latest detail row that actually carries a type, falling back to the latest row; a later note can no longer blank the incident's type. Recorded because it is exactly the sort of defect a screen cannot show."
+    },
+    "fieldScopingIsNowEnforcedForTheRead": {
+      "finding": "HSE-01 recorded that no FIELD scoping or load revalidation existed because its tables carry no FIELD column. The incident component does carry FIELD_ID, so the register can be scoped and the scope can be revalidated.",
+      "handling": "The scope (company and field) is captured at the start, re-read after the rows, and a difference discards them. The company id is part of the scope identity but is not a row filter, because these PPDM tables carry no company column - that half of the gap remains."
+    },
+    "stateIsStillAHistory": {
+      "finding": "An incident has no status column; the state is the latest STATUS response, as HSE-01 found.",
+      "handling": "The register reads it the same way, and the report writes its first response rather than a status column."
+    }
+  },
+  "limits": [
+    "Edit (hse.incident.write) is not built. The feature lists it as a command but no acceptance criterion covers it, and editing a reported incident needs the audit and correction rules HSE-03 introduces; the report and the register are the 1.0 surface.",
+    "Attachments are not stored: no document store exists in this app, and the report contract carries no attachment field. The dialog does not offer one rather than accepting a file it cannot keep.",
+    "The register reads the local owner tables, not the company API. AC-4's 'null population from API' is therefore proven on the read helper and on a failed table read, not against a live HTTP population.",
+    "The company id is part of the load's scope identity but not a row filter, because HSE_INCIDENT and its detail/component tables carry no company column; field scoping and revalidation are enforced.",
+    "A report is not one transaction across four tables: each row is committed by its own unit of work, so a failure can leave a partial report. The intent key makes the retry complete the missing rows and the test proves that, but a reader between the two states would see an incomplete incident.",
+    "The incident 'number' is the incident id (INC-<intent>), because the owner's header has no separate number column.",
+    "Tier is read from INCIDENT_SEVERITY_ID, which is where the owner's API stores the tier; the register shows it as both the tier and its severity name, because the owner holds one severity id rather than two fields.",
+    "State changes, investigation assignment and closure are refused or absent until WFL-01/WFL-02 and HSE-03 land."
+  ]
+}

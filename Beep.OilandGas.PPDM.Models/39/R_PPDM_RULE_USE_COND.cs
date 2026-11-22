@@ -9,6 +9,7 @@ public partial class R_PPDM_RULE_USE_COND: Entity,IPPDMEntity
 {
 
 private  System.String USE_CONDITION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String USE_CONDITION_TYPE
         {  
             get  

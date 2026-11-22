@@ -9,6 +9,7 @@ public partial class RA_ENCODING_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ENCODING_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENCODING_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ENCODING_TYPEValue;
           set { SetProperty(ref  ENCODING_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

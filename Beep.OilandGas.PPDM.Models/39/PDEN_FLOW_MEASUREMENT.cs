@@ -9,6 +9,7 @@ public partial class PDEN_FLOW_MEASUREMENT: Entity,IPPDMEntity
 {
 
 private  System.String PDEN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PDEN_IDValue;
           set { SetProperty(ref  PDEN_IDValue, value); }
         } 
 private  System.String PDEN_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SUBTYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PDEN_SUBTYPEValue;
           set { SetProperty(ref  PDEN_SUBTYPEValue, value); }
         } 
 private  System.String PDEN_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PDEN_SOURCEValue;
           set { SetProperty(ref  PDEN_SOURCEValue, value); }
         } 
 private  System.String PRODUCT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRODUCT_TYPE
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String PRODUCT_TYPEValue;
           set { SetProperty(ref  PRODUCT_TYPEValue, value); }
         } 
 private  System.Decimal AMENDMENT_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal AMENDMENT_SEQ_NO
         {  
             get  
@@ -59,6 +64,7 @@ private  System.Decimal AMENDMENT_SEQ_NOValue;
           set { SetProperty(ref  AMENDMENT_SEQ_NOValue, value); }
         } 
 private  System.String PERIOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERIOD_TYPE
         {  
             get  
@@ -69,6 +75,7 @@ private  System.String PERIOD_TYPEValue;
           set { SetProperty(ref  PERIOD_TYPEValue, value); }
         } 
 private  System.Decimal MEASUREMENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal MEASUREMENT_OBS_NO
         {  
             get  

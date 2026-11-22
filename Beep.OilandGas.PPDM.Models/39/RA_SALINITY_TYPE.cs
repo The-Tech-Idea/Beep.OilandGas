@@ -9,6 +9,7 @@ public partial class RA_SALINITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SALINITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SALINITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SALINITY_TYPEValue;
           set { SetProperty(ref  SALINITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

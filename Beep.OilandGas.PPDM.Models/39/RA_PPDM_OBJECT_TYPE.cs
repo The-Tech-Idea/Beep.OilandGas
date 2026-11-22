@@ -9,6 +9,7 @@ public partial class RA_PPDM_OBJECT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OBJECT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OBJECT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OBJECT_TYPEValue;
           set { SetProperty(ref  OBJECT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

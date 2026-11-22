@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class DEPLETION_ROLLFORWARD : ModelEntityBase {
         private System.String DEPLETION_ROLLFORWARD_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String DEPLETION_ROLLFORWARD_ID
         {
             get { return this.DEPLETION_ROLLFORWARD_IDValue; }

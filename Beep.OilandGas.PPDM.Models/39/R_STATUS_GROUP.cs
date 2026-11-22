@@ -9,6 +9,7 @@ public partial class R_STATUS_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String STATUS_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS_GROUP
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_WELL_ACT_TYPE_EQUIV: Entity,IPPDMEntity
 {
 
 private  System.String EQUIV_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIV_TYPE
         {  
             get  

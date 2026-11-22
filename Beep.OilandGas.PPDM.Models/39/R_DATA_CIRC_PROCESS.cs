@@ -9,6 +9,7 @@ public partial class R_DATA_CIRC_PROCESS: Entity,IPPDMEntity
 {
 
 private  System.String DATA_CIRC_PROCESSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DATA_CIRC_PROCESS
         {  
             get  

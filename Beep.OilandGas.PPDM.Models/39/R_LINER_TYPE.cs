@@ -9,6 +9,7 @@ public partial class R_LINER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LINER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LINER_TYPE
         {  
             get  

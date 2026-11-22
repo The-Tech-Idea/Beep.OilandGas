@@ -9,6 +9,7 @@ public partial class RA_SF_ELECTRIC_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ELECTRIC_FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ELECTRIC_FACILITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ELECTRIC_FACILITY_TYPEValue;
           set { SetProperty(ref  ELECTRIC_FACILITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

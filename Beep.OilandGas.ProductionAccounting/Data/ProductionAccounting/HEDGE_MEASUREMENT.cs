@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class HEDGE_MEASUREMENT : ModelEntityBase
     {
         private string HEDGE_MEASUREMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string HEDGE_MEASUREMENT_ID
         {
             get { return this.HEDGE_MEASUREMENT_IDValue; }

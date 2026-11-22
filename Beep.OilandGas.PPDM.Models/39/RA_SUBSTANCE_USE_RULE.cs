@@ -9,6 +9,7 @@ public partial class RA_SUBSTANCE_USE_RULE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_USE_RULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_USE_RULE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SUBSTANCE_USE_RULEValue;
           set { SetProperty(ref  SUBSTANCE_USE_RULEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

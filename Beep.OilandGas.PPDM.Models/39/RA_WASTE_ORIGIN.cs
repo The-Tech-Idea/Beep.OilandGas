@@ -9,6 +9,7 @@ public partial class RA_WASTE_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_ORIGIN
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WASTE_ORIGINValue;
           set { SetProperty(ref  WASTE_ORIGINValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

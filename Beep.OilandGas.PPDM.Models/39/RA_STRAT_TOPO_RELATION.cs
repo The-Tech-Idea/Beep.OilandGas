@@ -9,6 +9,7 @@ public partial class RA_STRAT_TOPO_RELATION: Entity,IPPDMEntity
 {
 
 private  System.String TOPO_RELATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TOPO_RELATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TOPO_RELATION_TYPEValue;
           set { SetProperty(ref  TOPO_RELATION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

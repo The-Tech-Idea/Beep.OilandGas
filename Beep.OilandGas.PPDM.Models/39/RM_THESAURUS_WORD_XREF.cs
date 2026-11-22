@@ -9,6 +9,7 @@ public partial class RM_THESAURUS_WORD_XREF: Entity,IPPDMEntity
 {
 
 private  System.String THESAURUS_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_ID1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String THESAURUS_ID1Value;
           set { SetProperty(ref  THESAURUS_ID1Value, value); }
         } 
 private  System.String THESAURUS_WORD_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_WORD_ID1
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String THESAURUS_WORD_ID1Value;
           set { SetProperty(ref  THESAURUS_WORD_ID1Value, value); }
         } 
 private  System.String THESAURUS_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_ID2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String THESAURUS_ID2Value;
           set { SetProperty(ref  THESAURUS_ID2Value, value); }
         } 
 private  System.String THESAURUS_WORD_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_WORD_ID2
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String THESAURUS_WORD_ID2Value;
           set { SetProperty(ref  THESAURUS_WORD_ID2Value, value); }
         } 
 private  System.Decimal XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal XREF_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_CORE_SOLVENT: Entity,IPPDMEntity
 {
 
 private  System.String CORE_SOLVENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_SOLVENT
         {  
             get  

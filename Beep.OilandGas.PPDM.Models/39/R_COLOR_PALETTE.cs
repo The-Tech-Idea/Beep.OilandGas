@@ -9,6 +9,7 @@ public partial class R_COLOR_PALETTE: Entity,IPPDMEntity
 {
 
 private  System.String COLOR_PALETTEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLOR_PALETTE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_STRAT_ACQTN_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String ACQTN_METHOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACQTN_METHOD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACQTN_METHOD_TYPEValue;
           set { SetProperty(ref  ACQTN_METHOD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_COMPLETION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COMPLETION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPLETION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COMPLETION_TYPEValue;
           set { SetProperty(ref  COMPLETION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

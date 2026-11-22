@@ -9,6 +9,7 @@ public partial class R_CLIMATE: Entity,IPPDMEntity
 {
 
 private  System.String CLIMATE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CLIMATE_TYPE
         {  
             get  

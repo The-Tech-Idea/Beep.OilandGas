@@ -9,6 +9,7 @@ public partial class CAT_ADDITIVE_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String CATALOGUE_ADDITIVE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CATALOGUE_ADDITIVE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CATALOGUE_ADDITIVE_IDValue;
           set { SetProperty(ref  CATALOGUE_ADDITIVE_IDValue, value); }
         } 
 private  System.String CAT_ADDITIVE_ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAT_ADDITIVE_ALIAS_ID
         {  
             get  

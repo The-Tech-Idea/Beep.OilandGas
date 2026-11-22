@@ -1,0 +1,86 @@
+{
+  "id": "STG-03a/LSE-03",
+  "title": "Lease financials and lifecycle",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met. AC-3 is now met through the WFL-05 task inbox: its gateway test loads the expiring LSE-03 projection as a LEASE_EXPIRY task with the lease route.",
+  "dataModel": {
+    "decision": "The LeaseAcquisition financial and lifecycle partials return hard-coded projections and there was no persistence for terms, obligations, payments or lifecycle events. The plan's own contract (OgLeaseTerms, NRI arithmetic) and AC-4/AC-5 were implemented as four LeaseAcquisition-owned tables, registered in the module.",
+    "tables": [
+      "LEASE_TERM (TERM_ID key, LEASE_ID, TERM_TYPE, EFFECTIVE_DATE, EXPIRY_DATE, BONUS_AMOUNT, BONUS_CURRENCY, ROYALTY_RATE, NET_REVENUE_INTEREST, OVERRIDING_ROYALTY, BURDENS_TEXT, RATIONALE, ACTOR, RECORDED_AT) - append-only; a renewal appends and deactivates, never deletes",
+      "LEASE_OBLIGATION (OBLIGATION_ID key, LEASE_ID, OBLIGATION_TYPE, DESCRIPTION, DUE_DATE, MINIMUM_SPEND, CURRENCY, ACTOR, RECORDED_AT) - rental / minimum-spend commitments; overdue is computed",
+      "LEASE_PAYMENT (PAYMENT_ID key, LEASE_ID, OBLIGATION_ID, PAID_AT, AMOUNT, CURRENCY, KIND, REFERENCE, ACTOR, RECORDED_AT)",
+      "LEASE_LIFECYCLE (EVENT_ID key, LEASE_ID, EVENT, EFFECTIVE_DATE, RATIONALE, ACTOR, RECORDED_AT) - append-only RENEWED / RELINQUISHED / EXPIRED events"
+    ],
+    "registration": "Beep.OilandGas.LeaseAcquisition/Modules/LeaseAcquisitionModule.cs registers the four types; the module summary now reports 355 entity types."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lease/OgLeaseFinancials.cs (OgLeaseBurden, OgLeaseTerms, OgLeaseNri, OgLeaseObligation, OgLeasePayment, OgLeaseLifecycleEntry, OgLeaseFinancialSummary, OgLeaseExpiryBucket, OgLeaseFinancialDetail, OgLeaseExpiryTask, OgLeaseRenewal, IOgLeaseFinancials, OgLeaseFinancialService)",
+    "page": "src/Beep.OilandGas.Desktop/Views/LeaseFinancialsPageView.cs (route 'leasefinancials': financial grid, terms card, obligations, payments, term history, lifecycle; edit terms, record obligation/payment, renew, relinquish, expire, retry)",
+    "wiring": "OgBootstrapper (IOgLeaseFinancials), OgApplication.LeaseFinancials, catalog 'leasefinancials' (OgModuleKeys.Lease), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/LeaseFinancialTests.cs (11, no database) + LeaseFinancialGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "exit": 0,
+      "errors": 0,
+      "warnings": "owner-project analyzer warnings only"
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 682,
+      "passed": 682,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 18,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 42,
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0,
+      "modulesetup-summary": "28 module(s) - 355 entity type(s)"
+    },
+    {
+      "cmd": "source guard: The_desktop_data_layer_contains_no_sql_statement_text",
+      "exit": 0,
+      "offenders": 0
+    }
+  ],
+  "integration": {
+    "database": "SQLite with LEASE_ACQUISITION plus LEASE_TERM, LEASE_OBLIGATION, LEASE_PAYMENT and LEASE_LIFECYCLE, seeded in LeaseFinancialGatewayTests",
+    "register": "one lease for F-1 expiring 2026-07-15 (44 days from 2026-06-01, Expiring); the bucket '31-60 days' holds it; one obligation is overdue",
+    "detail": "royalty 0.125, NRI 0.775, ORR 0.05, one burden 'landowner 5%', two obligations (O-1 overdue 31 days), one payment, one term",
+    "ac1_refused": "SaveTerms with a supplied NRI of 0.9 is refused with lease-financial-nri-unrepresentable; no term is written",
+    "ac2_precision": "the royalty text is the fraction at eight places (0.12500000 / 12.5%); a rate with more than eight places or outside [0,1] is refused by OgLeaseNri",
+    "ac4_renewal": "SaveTerms appends an AMENDED term and deactivates the original; Renew appends a RENEWAL term, leaves both older terms in the table, updates LEASE_ACQUISITION.LEASE_EXPIRATION to 2027-07-15 and appends RENEWED to LEASE_LIFECYCLE",
+    "ac5_overdue": "O-1 (due 2026-05-01) is overdue 31 days at 2026-06-01; a payment that references O-1 makes it paid and the re-read detail reports 0 overdue. O-2 (due 2026-07-01) is not overdue",
+    "ac3_projection": "ExpiringTasksAsync(asOf) returns L-1 with bucket '31-60 days' and route 'leasefinancials'; the task inbox itself is WFL-05 and is not built",
+    "lost_ack": "a SQLite trigger made the LEASE_TERM insert fail; the renewal was refused and retained (Pending with the same rationale), no term was added; after the trigger was dropped, RetryAsync appended the term and the acquisition row expired 2028-07-15",
+    "lifecycle": "RelinquishAsync appends RELINQUISHED and leaves the four terms intact"
+  },
+  "gates": {
+    "AC-1 NRI arithmetic refuses an unrepresentable result": "pass - OgLeaseNri derives NRI = 1 - royalty - ORR - burdens, refuses a total above gross for a normal lease, refuses a supplied NRI that differs from the derivation by more than 1e-8, and lets only NET_PROFIT types record it directly. The SQLite test proves the refusal and that nothing was written.",
+    "AC-2 Royalty rate is stored as a fraction with an explicit precision": "pass - the rate is a decimal fraction validated to at most 8 places and rendered as '0.12500000' / '12.5%'; the test covers the precision and range refusals.",
+    "AC-3 Expiring leases appear in the task inbox (WFL-05)": "pass - OgLeaseFinancialService.ExpiringTasksAsync produces the 30/60/90 projection and the WFL-05 inbox merges it as a LEASE_EXPIRY task with route leasefinancials; TaskInboxGatewayTests proves the lease L-1 appears in the inbox with a present source. The inbox is WFL-05 and is now built (evidence STG-14-WFL-05).",
+    "AC-4 Renewal creates a new term and retains the old one": "pass - SaveTerms and Renew append a LEASE_TERM and deactivate the previous one; the SQLite test sees every earlier expiry still present (the 2026-07-15 terms remain after the 2027 and 2028 renewals) and the acquisition row follows the active term.",
+    "AC-5 Overdue obligations are computed from dates and shown, not stored": "pass - overdue = due date before asOf and no payment references the obligation; the test proves 31 days overdue, the clearing payment, and that the future O-2 is not overdue. No status column is written."
+  },
+  "limits": [
+    "AC-3 is consumed by the WFL-05 task inbox (route tasks); the inbox is a separate feature and its evidence records the merge. The persona landing map is unchanged (FND-07 policy).",
+    "The rental schedule is the set of obligations of type RENTAL; there is no separate rental table, because AC-5 treats obligations and rentals the same way (a due date, an amount and a computed overdue state).",
+    "The screen does not post accounting journals: the boundary with ACC-07 is respected by reading and writing lease financials only, and LeaseAccountingService is not called.",
+    "A write result is computed at today's date (the page always passes today); a caller that needs a historical view re-reads LoadDetailAsync with its own asOf, as the gateway test does.",
+    "The new tables need the LEASE_ACQUISITION module applied again on an existing database to be created.",
+    "Overriding royalty and burdens live on LEASE_TERM, not on LEASE_ACQUISITION (the acquisition row has no columns for them); an opportunity with no term shows no ORR/burdens."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class PPDM_SW_APPLIC_COMP: Entity,IPPDMEntity
 {
 
 private  System.String SW_APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SW_APPLICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SW_APPLICATION_IDValue;
           set { SetProperty(ref  SW_APPLICATION_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

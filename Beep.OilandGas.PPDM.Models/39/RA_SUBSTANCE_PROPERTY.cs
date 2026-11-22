@@ -9,6 +9,7 @@ public partial class RA_SUBSTANCE_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_PROPERTYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_PROPERTY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SUBSTANCE_PROPERTYValue;
           set { SetProperty(ref  SUBSTANCE_PROPERTYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class FINANCIAL_REPORT : ModelEntityBase {
         private System.String FINANCIAL_REPORT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String FINANCIAL_REPORT_ID
         {
             get { return this.FINANCIAL_REPORT_IDValue; }

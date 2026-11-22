@@ -9,6 +9,7 @@ public partial class RA_PPDM_SYSTEM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PPDM_SYSTEM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PPDM_SYSTEM_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PPDM_SYSTEM_TYPEValue;
           set { SetProperty(ref  PPDM_SYSTEM_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

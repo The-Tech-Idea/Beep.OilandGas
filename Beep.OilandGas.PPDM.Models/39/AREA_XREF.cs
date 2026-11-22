@@ -9,6 +9,7 @@ public partial class AREA_XREF: Entity,IPPDMEntity
 {
 
 private  System.String AREA_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AREA_ID1Value;
           set { SetProperty(ref  AREA_ID1Value, value); }
         } 
 private  System.String AREA_TYPE1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE1
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String AREA_TYPE1Value;
           set { SetProperty(ref  AREA_TYPE1Value, value); }
         } 
 private  System.String AREA_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String AREA_ID2Value;
           set { SetProperty(ref  AREA_ID2Value, value); }
         } 
 private  System.String AREA_TYPE2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE2
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String AREA_TYPE2Value;
           set { SetProperty(ref  AREA_TYPE2Value, value); }
         } 
 private  System.Decimal AREA_XREF_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal AREA_XREF_OBS_NO
         {  
             get  

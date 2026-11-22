@@ -9,6 +9,7 @@ public partial class R_PPDM_RULE_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String RULE_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_STATUS
         {  
             get  

@@ -9,6 +9,7 @@ public partial class BA_CREW: Entity,IPPDMEntity
 {
 
 private  System.String CREW_COMPANY_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_COMPANY_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CREW_COMPANY_BA_IDValue;
           set { SetProperty(ref  CREW_COMPANY_BA_IDValue, value); }
         } 
 private  System.String CREW_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_ID
         {  
             get  

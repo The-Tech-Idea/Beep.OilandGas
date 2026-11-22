@@ -9,6 +9,7 @@ public partial class RA_PPDM_QC_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String QC_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QC_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String QC_STATUSValue;
           set { SetProperty(ref  QC_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

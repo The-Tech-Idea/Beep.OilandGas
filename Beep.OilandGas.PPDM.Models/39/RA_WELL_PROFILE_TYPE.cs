@@ -9,6 +9,7 @@ public partial class RA_WELL_PROFILE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_PROFILE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_PROFILE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WELL_PROFILE_TYPEValue;
           set { SetProperty(ref  WELL_PROFILE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

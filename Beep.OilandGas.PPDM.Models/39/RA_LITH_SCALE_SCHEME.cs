@@ -9,6 +9,7 @@ public partial class RA_LITH_SCALE_SCHEME: Entity,IPPDMEntity
 {
 
 private  System.String SCALE_SCHEMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCALE_SCHEME
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SCALE_SCHEMEValue;
           set { SetProperty(ref  SCALE_SCHEMEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

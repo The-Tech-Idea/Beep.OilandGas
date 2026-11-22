@@ -9,6 +9,7 @@ public partial class REST_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTION_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_CLASS_ID
         {  
             get  

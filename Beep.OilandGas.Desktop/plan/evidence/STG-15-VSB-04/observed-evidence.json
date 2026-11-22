@@ -1,0 +1,44 @@
+{
+  "id": "STG-15/VSB-04",
+  "title": "Well log view",
+  "date": "2026-11-05",
+  "status": "gate met - triple combo, curve list, undoable shift and splice, crossplots, image/cement tracks, and a real lithology-standard fill change",
+  "implementation": {
+    "workspace": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgLogWorkspace.cs (OgLogCurveRow, OgLogEditing, OgLogEditHistory, OgLogCrossplots, OgLogAvailability, OgLogStandards, OgLogDemo)",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellLogPageView.cs (route 'logs')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'logs')",
+    "templates": "WellLogTemplates.CreateTripleComboDemo / WellLogDocuments.FromModel",
+    "analysis": "TheTechIdea.OilGas.WellLogs — CurveEditing, Crossplots, CementEvaluation (unused by this slice)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~WellLogViewTests", "exit": 0, "run": 19, "passed": 19, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 346, "passed": 346, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 20,
+    "views-constructed": true,
+    "logs-page-curves": 4,
+    "logs-page-summary": "Triple Combo Composite · 6 tracks · 4 curves · 8200-8300 ft",
+    "log-standards": "FGDC | GOST 21.302-2013 | Sample company standard (demo)",
+    "log-standard-active-sample": "sample-company.lithology.json",
+    "log-standard-fill-changed": true,
+    "log-standard-fill-restored": true
+  },
+  "gates": {
+    "AC-1 a triple-combo log opens with GR, resistivity and porosity tracks": "pass — the demo document has 6 tracks and the test asserts a GR mnemonic, a resistivity mnemonic (RES/RT/ILD) and a porosity mnemonic (POR/NPHI/RHOB/PHI) are present; the smoke run lists 4 curves",
+    "AC-2 a lithology standard changes the fill patterns and states which standard is active": "pass - the fills come from LithologyLibrary, layered by resources.lithologyStandards. OgLogStandards offers FGDC, GOST 21.302-2013 and a sample company standard; applying the sample changes the drawing for sand and the rendered frame, and restoring FGDC returns it byte-for-byte. GOST is reported as names-only (its shipped file has no drawings). The page states the active standard.",
+    "AC-3 a depth shift is undoable and recorded in history": "pass — OgLogEditing.Shift moves the curve through CurveEditing.Shift, records one history entry with the before/after interval, refuses a zero shift and a shift outside the axis range, and Undo restores the original depths",
+    "AC-4 a splice records both source and target intervals": "pass — OgLogEditing.Splice uses CurveEditing.Splice, replaces both curves with the result, records source (upper curve, top→splice) and target (lower curve, splice→bottom), and Undo restores both in their original positions",
+    "AC-5 crossplots are produced by Crossplots, not re-implemented": "pass — OgLogCrossplots calls the tools' Crossplots.DensityNeutron / Pickett and the test asserts the panel type is TheTechIdea.OilGas.WellLogs.CrossplotPanel with a non-empty point cloud; the one Pickett warning is the tools' informational 'density porosity computed' note, asserted as such",
+    "AC-6 image log and cement bond tracks render when data exists, and say no data when not": "pass - OgLogDemo.WithImageAndCement builds a document with an 8-column image log (60 rows) and the tools' cement presentation (CBL, bond index, bond flags: 3 tracks). Availability now detects them by track type and curve mnemonic rather than by a name fragment, so the exact no-data sentences disappear when the tracks exist and remain for the plain triple combo. A non-empty frame renders through the same ViewSurfaceRenderer the host uses; the smoke run reports logs-image-tracks 1, logs-cement-tracks 3 and both present sentences."
+  },
+  "limits": [
+    "The log is the tools' demo document plus a deterministic demo model; no PPDM log was read (DAT-02, G-08).",
+    "The shift/splice buttons act on the first curve(s); there is no curve selection UI yet.",
+    "AC-2 uses a sample company standard, clearly labelled a demo; GOST 21.302-2013 ships names only (its drawings must be supplied as overrides), and the NCS lexicon is a stratigraphic standard, not a fill layer.",
+    "Crossplot rendering is exercised as data (points/warnings), not as a drawn window.",
+    "The page was constructed by the smoke run, not driven by a user."
+  ]
+}

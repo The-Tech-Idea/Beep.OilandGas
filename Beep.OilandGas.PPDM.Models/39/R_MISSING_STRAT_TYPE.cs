@@ -9,6 +9,7 @@ public partial class R_MISSING_STRAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MISSING_STRAT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MISSING_STRAT_TYPE
         {  
             get  

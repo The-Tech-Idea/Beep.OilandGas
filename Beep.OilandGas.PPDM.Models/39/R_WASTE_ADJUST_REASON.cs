@@ -9,6 +9,7 @@ public partial class R_WASTE_ADJUST_REASON: Entity,IPPDMEntity
 {
 
 private  System.String ADJUST_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADJUST_REASON
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RESENT_ECO_VOLUME: Entity,IPPDMEntity
 {
 
 private  System.String RESENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESENT_IDValue;
           set { SetProperty(ref  RESENT_IDValue, value); }
         } 
 private  System.String RESERVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESERVE_CLASS_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String RESERVE_CLASS_IDValue;
           set { SetProperty(ref  RESERVE_CLASS_IDValue, value); }
         } 
 private  System.String ECONOMICS_RUN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECONOMICS_RUN_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String ECONOMICS_RUN_IDValue;
           set { SetProperty(ref  ECONOMICS_RUN_IDValue, value); }
         } 
 private  System.String PRODUCT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRODUCT_TYPE
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String PRODUCT_TYPEValue;
           set { SetProperty(ref  PRODUCT_TYPEValue, value); }
         } 
 private  System.Decimal SUMMARY_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SUMMARY_OBS_NO
         {  
             get  

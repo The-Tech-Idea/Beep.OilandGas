@@ -1,0 +1,93 @@
+{
+  "id": "STG-16/ENG-03",
+  "title": "Metal loss and re-rating",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the joints are the tools' own analysis of the measured caliper radii, so the wall loss is computed rather than stored; the damage classes are the configured ones and their absence is stated instead of invented; the re-rating uses the measured wall and names its load case; remaining life is projected only from a dated earlier inspection at the same depth and a configured damage limit; the export is the grid's rows; and a recorded result keeps the log, the fingers, the wall basis and the classes that produced it.",
+  "dataModel": {
+    "read": "WELL_TUBULAR for the nominal pipe (outside and inside diameter, grade, weight, hanger top and shoe) and WELL_DIR_SRVY_STATION for the survey the collapse load is taken at.",
+    "openQuestionAnswered": "The feature's open question - that the analysis needs a log set with the right curves, and that the import path must land first - is answered by reading the caliper file with the same LAS reader INT-01 uses. No second import path was built and no manual joint table was needed, because the reader already produces the LogSet the analysis consumes.",
+    "addedTables": "MFC_RESULT (the run: log name and reference, joint source, fingers, wall basis, damage classes as JSON, load case, worst joint and worst penetration, failed joints) and MFC_JOINT (one row per joint: measured wall loss, damage class, and the re-rating at the wall used) in LifeCycle, registered in LifeCycleModule. The owner computes the interpretation in memory and keeps nothing, so without them a wall-loss figure could not be audited after the settings moved on.",
+    "untouched": "WELL_TUBULAR and WELL_DIR_SRVY_STATION are read; the caliper file is read-only. Nothing in the owner's tables was altered."
+  },
+  "rules": {
+    "measurement": "The joint statistics are the tools' MfcAnalysis: penetration = (2 RADMAX - ID) / (OD - ID), remaining wall = (OD - 2 RADMAX) / 2 at the nominal OD, areal metal loss from the finger areas, all on the caliper's own index. The desktop shows them and records them; it does not re-derive them.",
+    "nominalPipe": "The nominal pipe comes from the recorded tubular rows, not from a typed wall: MfcAnalysis picks the innermost string with an outside and inside diameter covering each depth, so a joint is measured against what the well actually holds.",
+    "joints": "Joints are found by the tools' rule - given boundaries, the CCL above its configured threshold, or one segment per nominal pipe interval. Which of the three was used is recorded, because the three are not the same evidence.",
+    "damage": "A joint's damage class is the class the configured settings assign by penetration. The classes ship empty in the owner's environment, so with none configured the joint is unclassified and the page says that a class name would be an invented threshold.",
+    "rerating": "The re-rating is the tools' Rerating.Rerate: the API 5C3 burst, collapse and tension at the wall used (minimum wall by default, or the uniform average wall), with the evacuation gradient at the joint, the surface test pressure and the buoyed string weight below the joint.",
+    "utilisation": "Allowed load = resistance / the configured design factor; utilisation = load / allowed, so above 1 does not pass. The same relation ENG-02 uses, and the factors are the same configured ones.",
+    "remainingLife": "A rate of loss needs two dated inspections whose deepest penetration is at the same depth; a projection additionally needs a configured damage limit to project to. Without either, the sentence says which is missing and no number is shown. A joint already at or past the limit is given zero years rather than a negative one.",
+    "records": "The joint rows are committed before the result header, so a result whose detail failed to save cannot claim a finding it cannot show."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.LifeCycle/Data/Tables/MFC_RESULT.cs, MFC_JOINT.cs and Modules/LifeCycleModule.cs (both registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgMetalLoss.cs (OgTubularString, OgJointResult, OgRerateResult, OgRemainingLife, OgMetalLossWorkspace, MetalLossRules, IOgMetalLoss, OgMetalLossService with LoadAsync/AnalyseAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/MetalLossPageView.cs (route 'metalloss': the well bar, the log and load case, the strings, the joint grid, the worst joint, the re-rating grid, the remaining-life basis, the damage-class note, the warnings and the export)",
+    "wiring": "OgBootstrapper (IOgMetalLoss), OgApplication.MetalLoss, catalog 'metalloss' (OgModuleKeys.Wells), OgPageFactory, en + ar labels; the Data project now references TheTechIdea.OilGas.Integrity and TheTechIdea.OilGas.Wellbore.Loaders",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/MetalLossTests.cs (11, no database) + MetalLossGatewayTests.cs (1 opt-in, real SQLite over four tables plus a generated caliper LAS file)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1346, "passed": 1346, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 84, "passed": 84, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 107, "modulesetup-summary": "33 module(s) - 441 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL_TUBULAR, WELL_DIR_SRVY_STATION, MFC_RESULT and MFC_JOINT. One 7 in x 6 in 47 lb/ft L80 production string from 1 000 to 1 010 ft, a vertical survey over the same interval, and a generated LAS 2.0 caliper file with eight RAD curves at a 3.1 in radius on a 0.5 ft index.",
+    "ac1_measurement": "the analysis returns one joint over 1 000-1 010 ft with maximum penetration 0.2 and minimum remaining wall 0.4 in of a 0.5 in nominal wall - exactly (2 x 3.1 - 6) / (7 - 6) and (7 - 2 x 3.1) / 2 - and the areal metal loss is the tool's own figure for the same radii",
+    "ac2_classes": "with the owner's default settings the joint has no damage class and the page prints that none is configured; after configuring Moderate at 10 % and Severe at 50 % the same joint is classified Moderate, and the classes are recorded with the run as JSON",
+    "ac3_rerating": "the joint is re-rated at the measured 0.4 in wall: burst 8 000 psi, tension 664 000 lbf, collapse computed at that wall; the burst case at a 5 000 psi test allows 6 400 psi (8 000 / 1.25), so its utilisation is 0.78125 and it passes",
+    "ac4_remaining_life": "one inspection gives no basis; a first result edited to 0.15 penetration a year earlier gives a rate of 0.05 of the wall a year against a 50 % limit and about six years; with the limit lowered to 10 % the same joint is already past it and zero years are reported, never a negative figure",
+    "ac5_export": "the CSV header names every column and has one row per joint, with the damage class quoted (empty when unclassified) and the verdict on each row",
+    "ac6_record": "the result row carries the log name and file reference, joint source 'intervals', the eight finger mnemonics, wall basis 'minimumWall', the classes as JSON, the load case and the worst joint; the joint row carries the measured figures and the re-rated resistances",
+    "states": "a caliper file with two finger curves is refused as uncovered because the analysis cannot run below four; a well naming no identity, a missing file and a missing actor are each refused with their own code; a well with no tubular record reads as an empty record with the reason",
+    "failure": "dropping MFC_JOINT fails the read with no workspace"
+  },
+  "gates": {
+    "AC-1 Joint wall loss matches a reference MFC dataset": "pass - the fixture is exact by construction (eight identical radii on a known OD/ID), and the penetration, remaining wall and areal loss are asserted to four decimal places against the closed-form values.",
+    "AC-2 Damage classes come from the tool settings": "pass - default empty gives no class and a stated reason; a configured class is applied by penetration and recorded with the run.",
+    "AC-3 Re-rating uses the measured wall and states the load case": "pass - the wall used, the three resistances and the three loads are recorded, and the re-rating rows name BURST, COLLAPSE or TENSION with their unit.",
+    "AC-4 Remaining life is only projected when a basis is recorded": "pass - no earlier inspection, a moved depth, no limit, zero loss and an exceeded limit are each stated rather than projected.",
+    "AC-5 CSV export matches the grid": "pass - one row per joint from the same collection the grid binds, asserted field by field.",
+    "AC-6 A saved result links to the log set and joint definition used": "pass - the log name, file reference, joint source and finger list are on the result row and asserted in SQL."
+  },
+  "engineFindings": {
+    "noResultStore": {
+      "where": "TheTechIdea.OilGas.Integrity (MfcAnalysis, Rerating)",
+      "finding": "The interpretation exists only as an in-memory MfcResult; nothing in either repository keeps a joint's wall loss, the wall basis or the damage classes it was judged against.",
+      "handling": "MFC_RESULT and MFC_JOINT were added in LifeCycle and registered, storing the measured figures, the re-rated resistances and the rules as they were applied."
+    },
+    "nominalPipeComesFromTheWellsOwnRecord": {
+      "where": "Beep.OilandGas.PPDM.Models/39/WELL_TUBULAR.cs",
+      "finding": "The caliper analysis needs the nominal OD and ID per depth, and the operational tubular record carries both - so no wall has to be typed in or derived from a catalogue for this feature.",
+      "handling": "The strings are built from WELL_TUBULAR (with its recorded weight, which the tension load needs) and handed to the tool; a well with no tubular row reads as an empty record and says why it cannot be measured."
+    },
+    "damageClassesShipEmpty": {
+      "finding": "The owner's integrity settings ship with no damage classes because they are company practice, so every joint is unclassified until an operator configures them.",
+      "handling": "The page states that no class is configured rather than assigning a band; the class list is recorded with each run so a later configuration does not rewrite what an inspection concluded."
+    },
+    "noNoiseThreshold": {
+      "finding": "The feature asks for noisy data to be flagged per joint with the deviation, but the owner configures no noise threshold and the analysis produces no noise statistic - only the tool eccentricity per sample.",
+      "handling": "No joint is flagged as noisy, because a threshold would have to be invented; the limit is recorded rather than a flag that means nothing."
+    },
+    "tensionNeededTheRecordedWeight": {
+      "finding": "The first gateway run produced burst and collapse re-ratings but no tension row: the tools compute the tension load only from a recorded nominal weight, and the model had none.",
+      "handling": "WELL_TUBULAR's TUBING_WEIGHT is now carried into the string the tools see, so the tension load and its verdict exist when the record holds a weight."
+    },
+    "worstDepthIsTheFirstSample": {
+      "finding": "With every caliper sample reading the same penetration the tool reports the worst at the first sample, not the middle of the joint - a first assertion expected the joint's middle.",
+      "handling": "The expectation follows the recorded sample, and the remaining-life comparison between two runs uses the same depth on both sides, which is what the basis rule requires."
+    }
+  },
+  "limits": [
+    "The analysis needs at least four finger curves in the file; fewer is refused as uncovered rather than measured from a partial tool.",
+    "Joints are found automatically (the CCL threshold is unset by default, so one segment per nominal pipe interval); a manual joint table is not offered.",
+    "Noisy data is not flagged: the owner configures no noise threshold and produces no noise statistic, so only the per-joint figures are shown.",
+    "A wall-loss track overlay on the schematic is not drawn here - the corrosion track belongs to the schematic view (VSB-05) and this page shows the numbers.",
+    "The re-rating uses the same three simple load cases as ENG-02 and the same configured design factors; no per-joint load case is offered.",
+    "The remaining-life rate compares the worst joint of two runs at the same depth; it does not follow each joint between inspections, so a different joint becoming worst changes the basis rather than the rate.",
+    "An external-corrosion caliper cannot see outside wall loss, which the owner's remaining-wall formula states; the figures are inner-wall measurements.",
+    "The LAS reader expects the caliper curves to be radii in inches; a file in another diameter unit is converted by the tool, and a unit that is not a length is refused by it.",
+    "No paging: each read loads the tables whole and filters in memory."
+  ]
+}

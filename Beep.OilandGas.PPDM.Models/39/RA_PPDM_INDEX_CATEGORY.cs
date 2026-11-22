@@ -9,6 +9,7 @@ public partial class RA_PPDM_INDEX_CATEGORY: Entity,IPPDMEntity
 {
 
 private  System.String INDEX_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INDEX_CATEGORY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INDEX_CATEGORYValue;
           set { SetProperty(ref  INDEX_CATEGORYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

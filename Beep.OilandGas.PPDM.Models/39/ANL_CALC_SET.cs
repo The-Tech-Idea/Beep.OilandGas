@@ -9,6 +9,7 @@ public partial class ANL_CALC_SET: Entity,IPPDMEntity
 {
 
 private  System.String CALC_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALC_SET_ID
         {  
             get  

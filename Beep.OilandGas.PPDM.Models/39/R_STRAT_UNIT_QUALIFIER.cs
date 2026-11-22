@@ -9,6 +9,7 @@ public partial class R_STRAT_UNIT_QUALIFIER: Entity,IPPDMEntity
 {
 
 private  System.String QUALIFIERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUALIFIER
         {  
             get  

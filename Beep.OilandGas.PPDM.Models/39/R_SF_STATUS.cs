@@ -9,6 +9,7 @@ public partial class R_SF_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS
         {  
             get  

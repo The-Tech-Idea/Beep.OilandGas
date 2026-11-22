@@ -9,6 +9,7 @@ public partial class R_RIG_GENERATOR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PLANT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PLANT_TYPE
         {  
             get  

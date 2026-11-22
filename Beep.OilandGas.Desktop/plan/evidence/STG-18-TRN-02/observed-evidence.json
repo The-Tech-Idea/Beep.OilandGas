@@ -1,0 +1,86 @@
+{
+  "id": "STG-18/TRN-02",
+  "title": "Courses, scoring and results ledger",
+  "date": "2026-11-09",
+  "status": "gate met - AC-1..AC-6 met: the attempt policy changes the recorded result because the engine counts a different attempt; 'not attempted' is worded apart from 'failed' rather than shown as a zero; a ledger write failure is shown with the marking and marked not recorded; an attempt is stamped with the versions of the scenario and course files it was scored against; the cohort pass rate is passed divided by attempted; and every result is looked up per trainee so one trainee's attempts never overwrite another's.",
+  "dataModel": {
+    "read": "The scenario and course files the runner already reads, and the results ledger - a JSON file under the data root, the same one TRN-01 writes.",
+    "written": "The ledger only: the attempt with its answers, per-question scores and the two version stamps. No table, and no second store.",
+    "ownerChange": "One additive change in TheTechIdea.OilGas.Training: Attempt was made partial and Results.Versions.cs adds two nullable members, ScenarioVersion and CourseVersion, so an attempt can record which files it was scored against. A ledger written before this still reads - an attempt without a stamp is simply one recorded before it existed.",
+    "openQuestionAnswered": "The feature's open question - 'ResultsLedger storage location is unclear; confirm it is file-based and record the path' - is answered: the engine stores nothing itself and its own remark says where it lives is the host's decision, so the path is <data root>/Training/results.json, printed on the page beside whether it exists and whether it can be read and written."
+  },
+  "rules": {
+    "policy": "AC-1: the policy is the engine's. ResultsLedger.Counted picks the first, best or latest attempt of a scenario and CourseResult is computed from the counted attempts, so changing training.attemptPolicy changes the recorded result because a different attempt is counted - the page re-implements none of it. The gateway test records a second, worse attempt and asserts the counted score follows latest, best and first in turn.",
+    "notAttempted": "AC-2: CourseResult reports an unattempted course as a zero score, which reads exactly like a failure. The page words the three cases apart - 'not attempted', 'in progress', and then PASSED / NOT PASSED (or 'complete · no pass mark') - and the gateway asserts the words before anything is recorded.",
+    "writeFailure": "AC-3: the marking is the engine's and it is shown whatever happens to the file. A write that throws is reported at Error and the result carries Recorded false with the reference, and the page prints 'NOT RECORDED' with the reason. The ledger's writability is also probed on load, so the page says the ledger cannot be written before an attempt is lost to it.",
+    "versions": "AC-4: a scenario and a course are files with no version field, so the stamp is a fingerprint of the file's content - SHA-256, first sixteen hex characters. That makes a corrected answer key or a reordered course a different version against the attempt that used the older one, which is what 'stored with the versions' can mean without inventing a field the authors do not set.",
+    "cohort": "AC-5: the cohort comes from ResultsLedger.Course(course, scenarios) - the engine's own function, once per trainee - and the pass rate is passed divided by attempted, null when nothing was attempted rather than zero.",
+    "perTrainee": "AC-6: every lookup is by trainee name and the ledger appends rather than replaces, so two trainees on one scenario are two rows; the gateway records a second trainee and asserts both rows and that the first trainee's attempt count is unchanged.",
+    "weakest": "The weakest scenarios are the five lowest mean fractions over every recorded attempt, with the number of attempts and how many were fully correct beside them - the engine has no such view, so it is computed here from the recorded per-question results."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Training/OgTrainingCourses.cs (OgCourseRow, OgCourseProgress, OgCourseResult, OgCohortRow, OgWeakScenario, OgLedgerStatus, OgCoursesWorkspace, OgCourseRecording, OgCourseRules, IOgTrainingCourses, OgTrainingCoursesService with LoadAsync/RecordAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/TrainingCoursesPageView.cs (route 'courses': the trainee bar, the course grid, the selected course's scenario progress, the trainee's results, the cohort with its pass rate, the weakest scenarios, the ledger's state, the folder's problems, and the recording bar with the shared answer entry)",
+    "wiring": "OgBootstrapper (IOgTrainingCourses, reading the same folder and ledger TRN-01 uses), OgApplication.TrainingCourses, catalog 'courses' (OgModuleKeys.Training), OgPageFactory, en + ar labels",
+    "sharedEntry": "The answer entry moved from the scenarios page into OgTrainingRules.Answers, so the runner and the course page cannot disagree about what a trainee wrote; the runner's page method now delegates to it.",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/TrainingCourseTests.cs (6, no writes to the app's data root) + TrainingCourseGatewayTests.cs (1 opt-in, the whole service against the tools' sample pack and a real ledger file)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1468, "passed": 1468, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 97, "passed": 97, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 120, "modulesetup-summary": "33 module(s) - 449 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "toolboxes-missing": 0, "wellbore-findings": 0 }
+  ],
+  "integration": {
+    "files": "The tools' own sample pack and one ledger file under a temporary folder. No database is opened anywhere in this feature.",
+    "ac1_policy": "a course is taken scenario by scenario and passed; a second, worse attempt of its first scenario is then recorded, and the counted score follows the policy - latest takes the worse attempt, best keeps the better one, first keeps the original - with the later attempts still recorded in every case",
+    "ac2_notAttempted": "before anything is recorded the course's result reads 'not attempted' and every scenario in it reads 'not attempted'; once some but not all are done it reads 'in progress · n of m point(s)'; a complete course reads PASSED / NOT PASSED, or 'complete · no pass mark' when the course and the toolbox set none",
+    "ac3_write": "with the ledger's folder replaced by a file, recording still returns the marking (score equal to the maximum for a correct attempt) with Recorded false and a write failure recorded, and the loaded workspace reports the ledger as NOT WRITABLE",
+    "ac4_versions": "every recorded attempt carries the scenario file's fingerprint and the course file's, asserted against OgCourseRules.VersionOf for both, and the ledger read back from disk still holds them; rewriting a file changes its version and identical content keeps it",
+    "ac5_cohort": "the cohort holds one row per trainee who has an attempt in a course, each row's rate is passed ÷ offered, and the workspace's overall rate equals OgCourseRules.PassRate(total passed, total offered); the weakest list is ordered by mean fraction",
+    "ac6_trainees": "a second trainee recording the same scenario adds their own row; the first trainee's attempt count and result are unchanged, and the cohort lists both",
+    "refusals": "a blank trainee, a blank scenario, a blank course, an unknown course, a scenario the course does not contain and an incomplete attempt are each refused with their own sentence; the incomplete attempt leaves the ledger byte-identical",
+    "ledger": "the ledger is created by the first record (it does not exist beforehand), and its path, existence and read/write state are reported"
+  },
+  "gates": {
+    "AC-1 The attempt policy changes the recorded result exactly as documented": "pass - asserted by recording a worse second attempt and reading the counted score under latest, best and first.",
+    "AC-2 'Not attempted' is distinct from 'failed'": "pass - three verdicts with their own words, asserted before any attempt and again after a partial and a complete course.",
+    "AC-3 A ledger write failure is visible, not silent": "pass - the marking survives, Recorded is false with the reference, the page prints NOT RECORDED, and the ledger's unwritability is reported on load.",
+    "AC-4 Scores are stored with the course and scenario versions": "pass - both stamps are on the stored attempt and read back from the file; the version is a content fingerprint, stated as such because the engine has no version field.",
+    "AC-5 Cohort pass rate equals passed ÷ attempted": "pass - the engine's own course result per trainee, and the rate asserted against passed ÷ offered both per row and overall.",
+    "AC-6 Results are per trainee and never overwrite another trainee's row": "pass - two trainees on one scenario give two rows, with the first trainee's counts unchanged."
+  },
+  "engineFindings": {
+    "noVersionField": {
+      "where": "TheTechIdea.OilGas.Training/Results.cs (Attempt) and Scenario.cs / Course.cs",
+      "finding": "An attempt records the course id and the scenario id but no version of either, and neither a scenario file nor a course file has a version property at all - so a score could not say which answer key it was earned against.",
+      "handling": "Attempt was made partial and two nullable members were added in the owner module (ScenarioVersion, CourseVersion). The version is the SHA-256 of the file's content, first sixteen hex characters: a corrected key is then a different version against the attempt that used the older one. The alternative - a declared version the authors must remember to bump - would have depended on discipline rather than on the file."
+    },
+    "aZeroScoreIsBoth": {
+      "finding": "CourseResult scores an unattempted course as zero, which is also what a failed attempt scores, and CourseResult.Passed is null both when the course is incomplete and when there is no pass mark.",
+      "handling": "The page decides the wording from Attempted, Completed and Passed together, so 'not attempted', 'in progress', PASSED, NOT PASSED and 'no pass mark' are five distinct sentences - the engine's numbers are not re-derived, only read correctly."
+    },
+    "theCohortIsOneCall": {
+      "finding": "ResultsLedger.Course(course, scenarios) already returns the result of every trainee with an attempt in a course, so a cohort is not a second computation over the attempts.",
+      "handling": "The cohort rows are built from that function, and the pass rate is summed from the rows it returns - which is why the rate agrees with the engine's own verdicts rather than with a parallel count."
+    },
+    "aDirectoryAtTheLedgerPathDidNotFailTheWrite": {
+      "finding": "Building the AC-3 test, a directory placed at the ledger's own path did not make the write fail on this machine - the attempt came back as recorded. That path was not characterised further, so it is not relied on.",
+      "handling": "The test blocks the ledger's *folder* instead (a file where the folder should be), which fails both creating the folder and writing the file deterministically. Recorded here because a reader of the test would otherwise wonder why it is done that way."
+    },
+    "thePolicyIsTheEngineNotThePage": {
+      "finding": "The plan's states describe the policy as if the page applied a rule ('policy = best: the latest attempt does not lower the recorded result'). In the engine the policy selects which attempt is counted, and everything else follows from that.",
+      "handling": "The page states the policy and marks the counting attempt; it applies no rule of its own. The gateway test proves the effect by changing the setting and re-reading the counted score, which is what an administrator changing training.attemptPolicy would do."
+    }
+  },
+  "limits": [
+    "The version is a fingerprint of the file's content, not a declared version: an edit that changes only whitespace changes it too, and there is no way to say 'same exercise, new revision' short of the content being equal.",
+    "The course page records the course's first unanswered scenario in order, so taking a course is sequential; choosing an arbitrary scenario to attempt is the scenarios page's job (TRN-01).",
+    "The answer entry is the shared text format from TRN-01 (one line per question), not a widget per question type.",
+    "The cohort is built from the trainees who have attempts in the courses that are loaded; a trainee with no attempt in any course is not listed, and there is no separate register of trainees.",
+    "The weakest scenarios rank every recorded attempt across all courses together, with no filter by course or date; the first five are shown.",
+    "The ledger is one JSON file under the data root with no locking: two copies of the application writing at once is last-writer-wins.",
+    "The engine's CSV exports of the ledger (AttemptsCsv, QuestionsCsv) are not offered here; the page shows the results, the cohort and the weakest scenarios and leaves the export to the reporting work.",
+    "Permissions: the page is gated by the application's own module permission like every other page; the plan's separate training.read and training.admin commands are not split into two gates in this build."
+  ]
+}

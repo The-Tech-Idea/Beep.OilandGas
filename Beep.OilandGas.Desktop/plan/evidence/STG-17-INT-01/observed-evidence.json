@@ -1,0 +1,49 @@
+{
+  "id": "STG-17/INT-01",
+  "title": "LAS and DLIS import/export",
+  "date": "2026-11-06",
+  "status": "gate met - LAS 2.0/3.0 load and export with the tools' compliance checker, DLIS frames with array-channel warnings, decimation and encoding reported",
+  "implementation": {
+    "bridge": "src/Beep.OilandGas.Desktop.WellTools/Bridging/OgLasWorkspace.cs (OgLasPreview, OgLasImport, OgDlisImport, ExampleLas)",
+    "page": "src/Beep.OilandGas.Desktop/Views/LasInteropPageView.cs (route 'las')",
+    "catalog": "src/Beep.OilandGas.Desktop.Core/OgModuleCatalog.cs (route 'las', module 'interop')",
+    "tools": "TheTechIdea.OilGas.Wellbore.Loaders — LasReader, LasWriter, Las3Writer/Las3Checker, DlisReader",
+    "reference": "src/Beep.OilandGas.Desktop.WellTools/Beep.OilandGas.Desktop.WellTools.csproj (project reference to the Loaders, ADR-008)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/LasInteropTests.cs (11), DlisFixture.cs (RP66 v1 fixture ported from the tools' DlisTests)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warningsOurProjects": 0, "errorsOurProjects": 0, "note": "The newly referenced Wellbore.Loaders emits four CA2263 warnings in its own project on a clean compile; none are in a Beep.OilandGas.Desktop path." },
+    { "cmd": "dotnet test --filter FullyQualifiedName~LasInteropTests", "exit": 0, "run": 11, "passed": 11, "failed": 0 },
+    { "cmd": "dotnet test (all) x2", "exit": 0, "run": 310, "passed": 310, "failed": 0, "skipped": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 17,
+    "las-standard": "LAS 2.0",
+    "las-encoding": "utf-8",
+    "las-curves": "GR,RHOB",
+    "las-rows": 9,
+    "las-imported": true,
+    "las-exported": true,
+    "las-reload-standard": "LAS 3.0",
+    "las-reload-rows": 9,
+    "las-las3-findings": 0,
+    "las-decimated": true,
+    "las-decimation-note": "Decimated: 9 source row(s) shown as 4 (2.3:1)."
+  },
+  "gates": {
+    "AC-1 a LAS 2.0 file loads, assigns curves, and produces a log set": "pass - the example file loads as 'LAS 2.0' with 2 curves (GR, RHOB), 9 rows, depth index in metres, and the model converts to a drawable WellboreDocument with a GR curve.",
+    "AC-2 a LAS 3.0 file passes Las3Checker and round-trips byte-compatibly in structure": "pass - an export as 3.0 passes Las3Checker with zero findings, and A_las_2_file_does_not_pass_the_las_3_checker proves the checker is not vacuous. Structure round-trips: same curve list, row count, index range and values.",
+    "AC-3 a DLIS file loads frames as log sets and reports array channels as warnings": "pass - the RP66 v1 fixture has one frame with scalar DEPT/GR and a dimension-3 WAVE channel; the loader produces one log set containing GR and warns 'frame MAIN: array channels not loaded as curves: WAVE'. The fixture is ported from the tools' own DlisTests so it is a real file, not a mock.",
+    "AC-4 a decimated load states the ratio": "pass - a bounded load returns Decimated true with 'Decimated: 9 source row(s) shown as 4 (2.3:1).'; the smoke run prints the same sentence.",
+    "AC-5 encoding is shown and overridable": "pass - a detected read reports utf-8; an explicit windows-1252 override is honoured and reported, with the same row count.",
+    "AC-6 an export produces a file that reloads identically": "pass - export to disk, reload from disk: standard LAS 3.0, same 9 rows, same curve list, values equal; Las3Checker on the written file is empty."
+  },
+  "limits": [
+    "The import is session-only: PPDM persistence is DAT-02, and the page states it.",
+    "The curve mapping step (source -> target profile) is not built; LAS mnemonics are used as they arrive.",
+    "Only LAS 2.0 and 3.0 are written; DLIS is read-only because the tools ship no writer.",
+    "The page was constructed by the smoke run and driven through Example/Import/Export; it was not clicked through in a shown window.",
+    "The Wellbore.Loaders project emits four CA2263 warnings of its own on a clean compile; the desktop's projects remain at zero warnings."
+  ]
+}

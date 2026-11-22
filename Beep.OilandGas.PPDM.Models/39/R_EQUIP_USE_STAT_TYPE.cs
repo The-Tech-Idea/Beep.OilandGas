@@ -9,6 +9,7 @@ public partial class R_EQUIP_USE_STAT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String EQUIP_USE_STAT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIP_USE_STAT_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SEIS_VELOCITY_INTERVAL: Entity,IPPDMEntity
 {
 
 private  System.String INTERVAL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTERVAL_ID
         {  
             get  

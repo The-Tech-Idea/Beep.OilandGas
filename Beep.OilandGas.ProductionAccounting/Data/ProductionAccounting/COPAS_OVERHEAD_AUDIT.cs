@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class COPAS_OVERHEAD_AUDIT : ModelEntityBase {
         private string COPAS_OVERHEAD_AUDIT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string COPAS_OVERHEAD_AUDIT_ID
         {
             get { return this.COPAS_OVERHEAD_AUDIT_IDValue; }

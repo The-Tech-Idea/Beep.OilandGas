@@ -9,6 +9,7 @@ public partial class RA_STRAT_EQUIV_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_EQUIVALENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_EQUIVALENCE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_EQUIVALENCE_TYPEValue;
           set { SetProperty(ref  STRAT_EQUIVALENCE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

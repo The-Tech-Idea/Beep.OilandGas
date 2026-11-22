@@ -9,6 +9,7 @@ public partial class Z_PRODUCT_COMPOSITION: Entity,IPPDMEntity
 {
 
 private  System.String CONVERSION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONVERSION_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_NORTH: Entity,IPPDMEntity
 {
 
 private  System.String NORTH_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NORTH_TYPE
         {  
             get  

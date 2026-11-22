@@ -9,6 +9,7 @@ public partial class R_PRESERVE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PRESERVATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRESERVATION_TYPE
         {  
             get  

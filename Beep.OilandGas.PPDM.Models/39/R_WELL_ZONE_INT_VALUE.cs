@@ -9,6 +9,7 @@ public partial class R_WELL_ZONE_INT_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String VALUE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALUE_TYPE
         {  
             get  

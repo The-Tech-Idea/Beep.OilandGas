@@ -9,6 +9,7 @@ public partial class R_BIT_BEARING_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String BEARING_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BEARING_CONDITION
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_EQUIP_BA_ROLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ROLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROLE_TYPE
         {  
             get  

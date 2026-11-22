@@ -9,6 +9,7 @@ public partial class PPDM_MAP_LOAD_ERROR: Entity,IPPDMEntity
 {
 
 private  System.String MAP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAP_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MAP_IDValue;
           set { SetProperty(ref  MAP_IDValue, value); }
         } 
 private  System.String LOAD_PROCESS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LOAD_PROCESS_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String LOAD_PROCESS_IDValue;
           set { SetProperty(ref  LOAD_PROCESS_IDValue, value); }
         } 
 private  System.String ERROR_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ERROR_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PERFORATION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String PERFORATION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERFORATION_METHOD
         {  
             get  

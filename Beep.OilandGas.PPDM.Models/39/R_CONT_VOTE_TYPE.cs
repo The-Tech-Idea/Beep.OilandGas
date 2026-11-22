@@ -9,6 +9,7 @@ public partial class R_CONT_VOTE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VOTE_PROCEDURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOTE_PROCEDURE_TYPE
         {  
             get  

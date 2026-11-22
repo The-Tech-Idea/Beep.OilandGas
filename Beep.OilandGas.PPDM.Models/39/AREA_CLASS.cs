@@ -9,6 +9,7 @@ public partial class AREA_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String AREA_ID_PARENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID_PARENT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AREA_ID_PARENTValue;
           set { SetProperty(ref  AREA_ID_PARENTValue, value); }
         } 
 private  System.String AREA_TYPE_PARENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE_PARENT
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String AREA_TYPE_PARENTValue;
           set { SetProperty(ref  AREA_TYPE_PARENTValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String AREA_TYPEValue;
           set { SetProperty(ref  AREA_TYPEValue, value); }
         } 
 private  System.String AREA_HIERARCHY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_HIERARCHY_ID
         {  
             get  

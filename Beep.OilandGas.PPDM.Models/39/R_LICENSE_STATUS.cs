@@ -9,6 +9,7 @@ public partial class R_LICENSE_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String LICENSE_STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_STATUS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LICENSE_STATUS_TYPEValue;
           set { SetProperty(ref  LICENSE_STATUS_TYPEValue, value); }
         } 
 private  System.String LICENSE_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_STATUS
         {  
             get  

@@ -9,6 +9,7 @@ public partial class WELL_CORE_SAMPLE_ANAL: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String CORE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String CORE_IDValue;
           set { SetProperty(ref  CORE_IDValue, value); }
         } 
 private  System.Decimal ANALYSIS_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ANALYSIS_OBS_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal ANALYSIS_OBS_NOValue;
           set { SetProperty(ref  ANALYSIS_OBS_NOValue, value); }
         } 
 private  System.String SAMPLE_NUMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_NUM
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String SAMPLE_NUMValue;
           set { SetProperty(ref  SAMPLE_NUMValue, value); }
         } 
 private  System.Decimal SAMPLE_ANALYSIS_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SAMPLE_ANALYSIS_OBS_NO
         {  
             get  

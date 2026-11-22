@@ -9,6 +9,7 @@ public partial class R_LR_TERMIN_REQMT: Entity,IPPDMEntity
 {
 
 private  System.String TERMINATION_REQMTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TERMINATION_REQMT
         {  
             get  

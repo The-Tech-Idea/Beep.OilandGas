@@ -9,6 +9,7 @@ public partial class ANL_VALID_TABLE_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_SET_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String METHOD_SET_IDValue;
           set { SetProperty(ref  METHOD_SET_IDValue, value); }
         } 
 private  System.String METHOD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String METHOD_IDValue;
           set { SetProperty(ref  METHOD_IDValue, value); }
         } 
 private  System.String PPDM_SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PPDM_SYSTEM_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PPDM_SYSTEM_IDValue;
           set { SetProperty(ref  PPDM_SYSTEM_IDValue, value); }
         } 
 private  System.String PPDM_TABLE_NAMEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PPDM_TABLE_NAME
         {  
             get  

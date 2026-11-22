@@ -1,0 +1,53 @@
+{
+  "id": "STG-01/DAT-07",
+  "title": "Data quality review",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met and the journal is durable: a finding carries table/key/column/rule, a table with no rules is distinguished from one with no findings, a failed run keeps the last successful timestamp in the SQLite journal, resolving records the actor and refuses an empty one, and the severity order is the enum numbers and stable across runs",
+  "implementation": {
+    "rules": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgDataQuality.cs (OgQualitySeverity, OgQualityRuleKind, OgQualityRule, OgQualityReviewer.RulesFor)",
+    "run": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgDataQuality.cs (OgQualityFinding, OgQualityRun.Describe, OgQualityReviewer.Run/Ordered)",
+    "journal": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgDataQuality.cs (IOgQualityJournal, OgQualityJournal in memory) + src/Beep.OilandGas.Desktop/Diagnostics/SqliteGovernanceStore.cs (QUALITY_RUN table, durable)",
+    "resolution": "src/Beep.OilandGas.Desktop.Data/Ppdm/OgDataQuality.cs (OgQualityResolution, OgQualityReviewer.Resolve)",
+    "page": "src/Beep.OilandGas.Desktop/Views/DataQualityPageView.cs (route 'dataquality': table, run checks, findings grid worst-first, resolve, export CSV)",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DataQualityTests.cs (7)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "dotnet test --filter FullyQualifiedName~DataQualityTests|FullyQualifiedName~SqliteGovernanceStoreTests", "exit": 0, "run": 15, "passed": 15, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 519, "passed": 519, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "smoke": {
+    "pages-declared": 28,
+    "quality-findings": 3,
+    "quality-first-severity": "Critical",
+    "quality-first-rule": "duplicate-key",
+    "quality-first-key": "1",
+    "quality-no-rules": false,
+    "quality-has-findings": true,
+    "quality-journal-kept": true,
+    "quality-durable-journal": true,
+    "quality-durable-kept": true,
+    "quality-resolved-actor": "smoke-admin",
+    "quality-page-constructed": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 a finding carries table, key, column and rule": "pass - OgQualityFinding has Table, Key, Column, Rule and Severity; a test asserts all five on a required-field finding, and the smoke shows the first finding as Critical / duplicate-key / key 1.",
+    "AC-2 a table with no rules is distinguished from a table with no findings": "pass - OgQualityRun.HasRules and HasFindings are separate, and Describe() says either 'No quality rules apply to this table.' or '... rule(s) ran over ... row(s) with no findings.' A test asserts both sentences; the smoke shows a no-rules run with HasRules false while the real run has findings.",
+    "AC-3 findings retain their last-run timestamp when a run fails": "pass - IOgQualityJournal.Record only advances the timestamp for a successful run; a test records success then a failed run and asserts the timestamp is unchanged, a database test reopens the store and asserts the same timestamp survives the process, and the smoke shows quality-journal-kept, quality-durable-journal and quality-durable-kept all true.",
+    "AC-4 resolving a finding records the actor": "pass - OgQualityReviewer.Resolve returns an OgQualityResolution with FindingId, Actor, Note and ResolvedAtUtc, trims the actor and refuses a blank one with quality-actor-required. The page writes a data.quality.resolve audit row carrying the actor, and the smoke shows quality-resolved-actor smoke-admin.",
+    "AC-5 severity ordering is stable and documented": "pass - OgQualitySeverity declares Critical = 0, High = 1, Medium = 2, Low = 3 and its doc comment states that the numbers are the sort order and part of the contract; Ordered sorts by severity then column, rule and key, and a test asserts the exact order twice on identical input."
+  },
+  "limits": [
+    "The page is construction-tested by the smoke; the rule engine, ordering, journal and resolution are unit-tested, but no click-through exists.",
+    "Rules are generated from the table's form (duplicate key, required, number/date shape, length). There is no rule editor, no per-table rule library and no persistence of rules.",
+    "An out-of-range rule exists in the engine and is exercised by the ordering test, but nothing generates one from metadata (there are no range constraints in the registry yet).",
+    "Checks read one bounded page (500 rows) per run, so a run reports on a sample and says so; there is no full-table scan.",
+    "Resolutions are held in the page's list and written to the audit log; the findings themselves are not persisted, so a resolved finding comes back on the next run and only the last successful run timestamp survives a restart.",
+    "The quality journal is durable but the findings are regenerated on every run; there is no finding id that a person could reference later, and no history of previous runs.",
+    "Orphan-key checks against a related table are not implemented; the engine has no rule kind for them."
+  ]
+}

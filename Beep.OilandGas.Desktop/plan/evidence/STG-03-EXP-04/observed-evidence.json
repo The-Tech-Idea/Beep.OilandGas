@@ -1,0 +1,58 @@
+{
+  "id": "STG-03/EXP-04",
+  "title": "Seismic surveys, lines and processing",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: the survey register carries the acquisition state from the recorded dates and the processing state from the reference code, lines are scoped to the selected survey, the \"no data loading\" notice is a constant the page always shows, a survey without coordinates disables the map and says why, and processing states are reference codes with their labels (a code outside the reference table is named as such)",
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Exploration/OgSeismicRegister.cs (OgSeismicLine, OgSeismicProcessing, OgSeismicSurvey, IOgSeismicRegister, OgSeismicRegister, KindOf, NoDataLoadingNotice)",
+    "page": "src/Beep.OilandGas.Desktop/Views/SeismicPageView.cs (route 'seismic': survey grid, selected-survey lines, processing panel, extent map, always-visible notice)",
+    "wiring": "OgBootstrapper (IOgSeismicRegister), OgApplication.SeismicRegister, catalog 'seismic' (OgModuleKeys.Exploration), factory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/SeismicRegisterTests.cs (16, no database) + SeismicRegisterGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 0, "errors": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~SeismicRegister", "exit": 0, "run": 17, "passed": 17, "failed": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 636, "passed": 636, "failed": 0, "skipped": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.LifeCycle.Tests", "exit": 0, "run": 13, "passed": 13, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.PPDM39.Tests", "exit": 0, "run": 39, "passed": 39, "failed": 0 },
+    { "cmd": "dotnet test Beep.OilandGas.ProspectIdentification.Tests", "exit": 0, "run": 26, "passed": 26, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok" }
+  ],
+  "integration": {
+    "database": "SQLite SEIS_ACQTN_SURVEY, SEIS_SET_STATUS, R_SEIS_STATUS, SEIS_SET_COMPONENT, SEIS_PROC_SET, R_SEIS_PROC_STATUS and SEIS_LINE",
+    "scope": "FIELD-1 returned two surveys; the third in another field was absent",
+    "acquisition": "S-1 (start 2026-01-10, completed 2026-02-20) reads 'acquired'; S-2 with no dates reads 'planned'",
+    "survey_status": "S-1 reads 'Final (FINAL)' from SEIS_SET_STATUS joined to R_SEIS_STATUS; S-2 has no status row and reads 'no status recorded'",
+    "processing_state": "S-1's run PS-1 reads 'Final (FINAL)' with company 'Vendor Co'; S-2's run PS-2 carries code DRAFTING, which R_SEIS_PROC_STATUS does not hold, and reads 'DRAFTING (not in the reference table)'",
+    "geometry": "S-1's processing run records lat 26.1..26.4, long 50.1..50.6, so its extent is available; S-2 has no bounds and the page says the map is disabled because no coordinates are recorded",
+    "lines": "S-1 returned LINE-A and LINE-B (both SurveyId S-1); S-2 returned LINE-C; a survey with no lines is an empty list, not a failure",
+    "failed_read": "with SEIS_ACQTN_SURVEY dropped the survey read fails with a reference and no list"
+  },
+  "smoke": {
+    "pages-declared": 38,
+    "views-constructed": true,
+    "seismic-route": "seismic",
+    "seismic-notice-always": true,
+    "seismic-consistent-state": true,
+    "seismic-map-disabled-without-selection": true,
+    "accessibility-unnamed-count": 0,
+    "accessibility-untabbable-count": 0
+  },
+  "gates": {
+    "AC-1 Surveys list with acquisition and processing state": "pass - the grid shows name, kind, area, start, completed, the acquisition state derived from START_DATE/COMPLETED_DATE (planned / acquiring / acquired) and the processing state resolved from the latest processing run. The SQLite test sees 'acquired' with 'Final (FINAL)' for S-1 and 'planned' with 'DRAFTING (not in the reference table)' for S-2; the unit test covers all three acquisition states.",
+    "AC-2 Lines are scoped to the selected survey": "pass - LoadLinesAsync filters SEIS_LINE by SEIS_ACQTN_SURVEY_ID and the page drops any row that names another survey (and says how many it dropped). The SQLite test gets two lines for S-1 and one for S-2, each carrying its own survey id.",
+    "AC-3 The \"no data loading\" notice is always visible": "pass - OgSeismicRegister.NoDataLoadingNotice is a constant and the page sets it before any read and never clears it, including on failure; the smoke compares the page's notice with the constant and reports true.",
+    "AC-4 A survey without coordinates disables the map and states why": "pass - HasGeometry is true only when a processing run records a valid latitude/longitude box (min <= max on both axes); otherwise MapReason says 'No coordinates are recorded for this survey, so the map is disabled.' The SQLite test checks both cases, the unit test checks a crossed box is not geometry, and the page draws the box only when it exists.",
+    "AC-5 Processing state uses reference codes, not free text": "pass - the processing state is SEIS_PROC_SET.PROCESS_STATUS resolved through R_SEIS_PROC_STATUS for its label and displayed as 'Label (CODE)'; a code with no reference row is shown as 'CODE (not in the reference table)' rather than being replaced or dropped. The unit test covers the resolved, unresolved and missing cases."
+  },
+  "limits": [
+    "SEIS_LINE has no direction, length or shot-count column, so those three fields are null and the page states that; the plan's line contract is only partly supported by this model.",
+    "The map shows the extent recorded on a processing run (SEIS_PROC_SET's min/max latitude/longitude) as a box on a canvas. It is not a map, has no basemap or coordinate transformation, and does not draw line traces; SEIS_BIN_OUTLINE stores eastings/northings, which are not converted.",
+    "Processing runs are linked to a survey through SEIS_SET_COMPONENT.SEIS_ACT_SEIS_SET_ID; a database that links sets another way shows no processing for the survey.",
+    "Survey status comes from SEIS_SET_STATUS; a survey with no status row reads 'no status recorded' rather than inheriting a processed state.",
+    "The acquisition state is derived from the dates, because SEIS_ACQTN_SURVEY has no status column.",
+    "Processing steps (SEIS_PROC_STEP) and deliverables are not read; the panel lists the processing sets only.",
+    "Surveys are read for the signed-in field by AREA_ID; a survey whose AREA_ID names something else is not shown for that field.",
+    "The page is exercised by construction (the smoke builds every catalog page and audits it) and by unit/integration tests; no automated click drives the grids."
+  ]
+}

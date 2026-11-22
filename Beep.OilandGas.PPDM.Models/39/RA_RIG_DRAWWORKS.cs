@@ -9,6 +9,7 @@ public partial class RA_RIG_DRAWWORKS: Entity,IPPDMEntity
 {
 
 private  System.String DRAWWORKS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRAWWORKS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DRAWWORKS_TYPEValue;
           set { SetProperty(ref  DRAWWORKS_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

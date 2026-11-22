@@ -9,6 +9,7 @@ public partial class RA_CORE_SOLVENT: Entity,IPPDMEntity
 {
 
 private  System.String CORE_SOLVENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_SOLVENT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CORE_SOLVENTValue;
           set { SetProperty(ref  CORE_SOLVENTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

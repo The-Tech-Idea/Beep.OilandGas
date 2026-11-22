@@ -9,6 +9,7 @@ public partial class RA_PDEN_AMEND_REASON: Entity,IPPDMEntity
 {
 
 private  System.String AMEND_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AMEND_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AMEND_REASONValue;
           set { SetProperty(ref  AMEND_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

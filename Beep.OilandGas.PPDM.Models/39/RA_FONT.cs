@@ -9,6 +9,7 @@ public partial class RA_FONT: Entity,IPPDMEntity
 {
 
 private  System.String FONTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FONT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String FONTValue;
           set { SetProperty(ref  FONTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

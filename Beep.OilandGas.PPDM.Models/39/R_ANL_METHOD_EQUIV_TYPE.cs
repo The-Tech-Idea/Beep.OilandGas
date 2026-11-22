@@ -9,6 +9,7 @@ public partial class R_ANL_METHOD_EQUIV_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_EQUIV_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_EQUIV_TYPE
         {  
             get  

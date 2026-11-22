@@ -9,6 +9,7 @@ public partial class RA_IMAGE_CALIBRATE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CALIBRATE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALIBRATE_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CALIBRATE_METHODValue;
           set { SetProperty(ref  CALIBRATE_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

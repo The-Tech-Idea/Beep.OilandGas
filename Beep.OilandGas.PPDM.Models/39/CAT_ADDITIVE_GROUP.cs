@@ -9,6 +9,7 @@ public partial class CAT_ADDITIVE_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String ADDITIVE_GROUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ADDITIVE_GROUP_ID
         {  
             get  

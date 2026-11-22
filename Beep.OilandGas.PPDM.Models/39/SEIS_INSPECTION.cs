@@ -9,6 +9,7 @@ public partial class SEIS_INSPECTION: Entity,IPPDMEntity
 {
 
 private  System.String INSPECTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSPECTION_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_FAC_LIC_EXTEND_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LICENSE_EXTENSION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_EXTENSION_TYPE
         {  
             get  

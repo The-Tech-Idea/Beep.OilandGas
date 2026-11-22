@@ -9,6 +9,7 @@ public partial class R_ECONOMIC_METRIC: Entity,IPPDMEntity
 {
 
 private  System.String ECONOMIC_METRICValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ECONOMIC_METRIC
         {  
             get  

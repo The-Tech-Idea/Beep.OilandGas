@@ -9,6 +9,7 @@ public partial class R_PPDM_CREATE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CREATE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREATE_METHOD
         {  
             get  

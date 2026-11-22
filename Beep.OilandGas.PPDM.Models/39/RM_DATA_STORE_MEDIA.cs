@@ -9,6 +9,7 @@ public partial class RM_DATA_STORE_MEDIA: Entity,IPPDMEntity
 {
 
 private  System.String STORE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STORE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STORE_IDValue;
           set { SetProperty(ref  STORE_IDValue, value); }
         } 
 private  System.Decimal STRUCTURE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal STRUCTURE_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal STRUCTURE_OBS_NOValue;
           set { SetProperty(ref  STRUCTURE_OBS_NOValue, value); }
         } 
 private  System.Decimal MEDIA_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal MEDIA_OBS_NO
         {  
             get  

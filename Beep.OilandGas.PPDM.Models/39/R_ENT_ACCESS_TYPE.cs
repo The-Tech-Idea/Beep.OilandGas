@@ -9,6 +9,7 @@ public partial class R_ENT_ACCESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ACCESS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCESS_TYPE
         {  
             get  

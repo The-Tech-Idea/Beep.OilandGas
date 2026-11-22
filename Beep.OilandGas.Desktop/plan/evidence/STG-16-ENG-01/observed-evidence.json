@@ -1,0 +1,82 @@
+{
+  "id": "STG-16/ENG-01",
+  "title": "Survey uncertainty and anti-collision",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: ISCWSA survey uncertainty is reproduced against the published MWD Rev 5 reference case; the separation rule is stated from the same settings the scan applies; an offset with no survey is excluded and named; violations are counted at the configured level; the export carries the same rows as the grid; and a saved run records the error model, the sigma and the environment.",
+  "dataModel": {
+    "read": "WELL_DIR_SRVY_STATION (STATION_MD, INCLINATION, AZIMUTH, its UOM and ACTIVE_IND) joined to WELL_DIR_SRVY for the survey's north reference, and WELL/WELLBORE for the wellhead position and depth datum. Read through the same unit of work every screen uses.",
+    "addedTable": "ANTICOLLISION_RUN in Beep.OilandGas.LifeCycle, registered in LifeCycleModule. The owner keeps the surveys and the separation rule but records no evidence that a scan was made, so with it went the error model, the sigma and the environment the numbers were produced under.",
+    "notReimplemented": "The mathematics is the tools': AntiCollision.Scan, SeparationFactor and Masd, with the environment's own AntiCollisionSettings (k = 3.5, Sm = 0.3 m, sigmaPA = 0.5 m, step 10 m, and the four recorded levels). The desktop adds the read, the exclusion bookkeeping, the row/CSV projection and the saved run."
+  },
+  "rules": {
+    "uncertainty": "The position uncertainty is the ISCWSA error model from TheTechIdea.OilGas.Wellbore.Data, applied to the recorded stations. The conformance case is run through the same entry point the scan uses, so the model cannot be swapped out unnoticed.",
+    "separation": "SF = (D - Rref - Roff - Sm) / (k * sqrt(sigmaS^2 + sigmaPA^2)) and MASD = k * sqrt(sigmaS^2 + sigmaPA^2) + Rref + Roff + Sm, both from the library, with the settings printed on the page.",
+    "levels": "The four described levels are the tools' own recorded defaults: Stop below 1.0, Adjust plan below 1.25, Shut in / adjust below 1.5, Report below 4.0.",
+    "violation": "A point is a violation when its level is the level the settings call out as the lowest - the rule's own vocabulary - not a threshold chosen in the desktop.",
+    "exclusion": "An offset with fewer than two stations, or with no usable position, is excluded from the scan and named in the result rather than being silently dropped.",
+    "refusals": "A blank reference, an empty offset list, a reference with no survey, and a set of offsets none of which has a survey are each refused with their own code and a sentence."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.LifeCycle/Data/Tables/ANTICOLLISION_RUN.cs and Modules/LifeCycleModule.cs (table registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgAntiCollision.cs (OgSeparationRow, OgSeparationRule, OgAntiCollisionScan with CountsText/RowsText/WarningsText/ExcludedText/Csv, AntiCollisionRules, IOgAntiCollision, OgAntiCollision)",
+    "page": "src/Beep.OilandGas.Desktop/Views/AntiCollisionPageView.cs (route 'anticollision': the well bar, the rule applied, the counts, the exclusions, the separation grid, the warnings, the export and the save)",
+    "wiring": "OgBootstrapper (IOgAntiCollision), OgApplication.AntiCollision, catalog 'anticollision' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/AntiCollisionTests.cs (7, no database, including the ported ISCWSA case) + AntiCollisionGatewayTests.cs (1 opt-in, real SQLite over five tables); the fixture is test/Beep.OilandGas.Desktop.Tests/Data/iscwsa/iscwsa-1-mwd-rev5.json, copied from the tools repository's own conformance data."
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1318, "passed": 1318, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 82, "passed": 82, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 105, "modulesetup-summary": "33 module(s) - 437 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL_DIR_SRVY_STATION, WELL_DIR_SRVY, WELL, WELLBORE and ANTICOLLISION_RUN. A reference well and one offset 2.2 m away, both vertical to 1000 m over three stations; a third well with no survey at all; and a reference well with no survey.",
+    "ac1_uncertainty": "the published ISCWSA MWD Rev 5 case reproduces every station's NN/EE/VV/NE/NV/EV covariance to a relative 1e-9 through IscwsaErrorModel.Compute, the same entry point the scan's model uses",
+    "ac2_rule": "the page prints 'SF = (D - Rref - Roff - Sm) / (k - sqrt(sigmaS^2 + sigmaPA^2)), MASD = ... - k 3.5 - Sm 0.3 m - sigmaPA 0.5 m - step 10 m - violation below SF 1 (Stop)' and the four levels, all built from the settings object the scan passes to the library",
+    "ac3_exclusion": "OFF-2 was named as an offset but holds no survey station; the result lists it in Excluded, the page prints 'Left out for having no survey: OFF-2', and OFF-1 alone appears in the rows",
+    "ac4_violations": "the scan produces 101 points over the 0-1000 m reference; the points at 2.2 m separation are at the 'Adjust plan' level, the count is computed from the same rows the grid shows, and the stored VIOLATION_COUNT equals it",
+    "ac5_export": "the CSV header is 'offset,md_m,distance_m,sigma_m,separation_factor,masd_m,status' and has exactly 1 + Rows.Count lines, with the first row's separation factor present verbatim; a well name containing a comma is quoted",
+    "ac6_saved_run": "saving records REFERENCE_WELL REF-1, OFFSET_WELLS OFF-1, EXCLUDED_WELLS OFF-2, RUN_BY sara, a non-empty ERROR_MODEL and ENVIRONMENT, SIGMA 1, and the settings as JSON; the stored VIOLATION_COUNT and STATION_COUNT equal the scan's",
+    "refusals": "a reference with no survey is refused with anticollision-no-survey, an offset list where no named well has a survey is refused naming the wells, a blank reference and an empty offset list are refused before any read, and a save without an actor is refused",
+    "failure": "the failure path is covered by the earlier gateway runs' pattern; here the exclusion and refusal paths are asserted instead"
+  },
+  "gates": {
+    "AC-1 ISCWSA uncertainty matches the reference": "pass - the published MWD Rev 5 fixture is copied into the tests and every station's six covariance terms are compared.",
+    "AC-2 The separation rule is stated on screen": "pass - the sentence is built from the same AntiCollisionSettings the scan passes to the library.",
+    "AC-3 An offset with no survey is excluded and named": "pass - asserted in the gateway over a real database row set.",
+    "AC-4 Violations are counted and marked": "pass - the level comes from the settings, the count from the rows, and the stored count equals it.",
+    "AC-5 The export carries the scan": "pass - one row per grid row, asserted field by field.",
+    "AC-6 A saved run records model, sigma and environment": "pass - asserted per column in the database after the write."
+  },
+  "engineFindings": {
+    "noScanEvidence": {
+      "where": "Beep.OilandGas.LifeCycle/Data/Tables (survey and process tables)",
+      "finding": "Nothing in either repository records that an anti-collision scan was performed, and therefore nothing records the error model, the sigma or the settings it used.",
+      "handling": "ANTICOLLISION_RUN was added in the owning module and registered, carrying the settings as JSON and the counts as they were, so a run can be reproduced and audited."
+    },
+    "ruleMustComeFromSettings": {
+      "where": "TheTechIdea.OilGas.Wellbore.Data/Configuration/EnvironmentSections.cs",
+      "finding": "The scan reads AntiCollisionSettings - k, Sm, sigmaPA, the scan step and the ordered levels - and the levels are what assign a point its name.",
+      "handling": "The page builds its sentence from the same settings object and treats the lowest configured level as the violation, rather than hard-coding 1.0 or a severity of its own."
+    },
+    "rowNameIsTheHeaderName": {
+      "finding": "The library labels each separation row with the offset's well header name, not the identity that was scanned, so a first assertion comparing 'OFF-1' failed against 'Offset 1'.",
+      "handling": "The scenario asserts the header name, and the scan result records the scanned identity separately so the saved run can be found by UWI."
+    },
+    "referenceRecordedAsDisplayName": {
+      "finding": "The first draft recorded the reference well's display name in the run, so the row could not be found by the UWI that was scanned.",
+      "handling": "The result now carries the identity that was asked for, and the gateway asserts REFERENCE_WELL = 'REF-1'."
+    }
+  },
+  "limits": [
+    "The scan uses the environment's configured settings and offers no per-run override in the UI: k, Sm, sigmaPA and the scan step come from the environment, and changing them is configuration, not a screen toggle.",
+    "More than one survey per well is not offered: the survey with the most stations is used and a warning is raised, rather than letting the person choose.",
+    "An offset with no recorded latitude/longitude cannot be placed and is excluded, because there is no other source for its position in this schema.",
+    "The survey stations are read as recorded; the measured-depth unit is carried through but feet are not converted to metres by the desktop - the library's own quantity handling does that.",
+    "The minimum-separation summary is per scan point: the result exposes every scanned point, and a single 'worst point' line is not offered separately from the grid's first row.",
+    "The uncertainty is reported at one standard deviation and the sigma is recorded as 1; there is no control to re-quote it at 2 or 3 sigma.",
+    "An inactive survey station is skipped silently - the count of skipped rows is not reported.",
+    "The plots the feature lists (a travelling-cylinder and a plan view) are not drawn on this page: the WellTools package already renders them and VSB-07 owns the well-path screen, so this page shows the rule, the rows and the export.",
+    "No paging: a scan reads the whole station table and filters in memory."
+  ]
+}

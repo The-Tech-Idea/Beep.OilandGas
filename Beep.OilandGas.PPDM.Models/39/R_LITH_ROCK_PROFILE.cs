@@ -9,6 +9,7 @@ public partial class R_LITH_ROCK_PROFILE: Entity,IPPDMEntity
 {
 
 private  System.String ROCK_PROFILEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_PROFILE
         {  
             get  

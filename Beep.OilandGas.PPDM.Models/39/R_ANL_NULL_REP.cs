@@ -9,6 +9,7 @@ public partial class R_ANL_NULL_REP: Entity,IPPDMEntity
 {
 
 private  System.String NULL_REPRESENTATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NULL_REPRESENTATION
         {  
             get  

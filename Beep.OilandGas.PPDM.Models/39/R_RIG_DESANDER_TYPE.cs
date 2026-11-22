@@ -9,6 +9,7 @@ public partial class R_RIG_DESANDER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DESANDER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESANDER_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_BH_PRESS_TEST_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BH_PRESSURE_TEST_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BH_PRESSURE_TEST_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BH_PRESSURE_TEST_TYPEValue;
           set { SetProperty(ref  BH_PRESSURE_TEST_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

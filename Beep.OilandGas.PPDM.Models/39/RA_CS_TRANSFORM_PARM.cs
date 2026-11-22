@@ -9,6 +9,7 @@ public partial class RA_CS_TRANSFORM_PARM: Entity,IPPDMEntity
 {
 
 private  System.String TRANSFORM_PARMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRANSFORM_PARM
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TRANSFORM_PARMValue;
           set { SetProperty(ref  TRANSFORM_PARMValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

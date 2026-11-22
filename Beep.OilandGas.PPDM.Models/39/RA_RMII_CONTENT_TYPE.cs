@@ -9,6 +9,7 @@ public partial class RA_RMII_CONTENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RMII_CONTENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RMII_CONTENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RMII_CONTENT_TYPEValue;
           set { SetProperty(ref  RMII_CONTENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

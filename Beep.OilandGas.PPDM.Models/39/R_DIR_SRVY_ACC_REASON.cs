@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_ACC_REASON: Entity,IPPDMEntity
 {
 
 private  System.String ACCURACY_PROBLEM_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACCURACY_PROBLEM_REASON
         {  
             get  

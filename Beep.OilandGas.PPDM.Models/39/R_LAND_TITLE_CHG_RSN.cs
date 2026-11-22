@@ -9,6 +9,7 @@ public partial class R_LAND_TITLE_CHG_RSN: Entity,IPPDMEntity
 {
 
 private  System.String LAND_TITLE_CHANGE_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_TITLE_CHANGE_REASON
         {  
             get  

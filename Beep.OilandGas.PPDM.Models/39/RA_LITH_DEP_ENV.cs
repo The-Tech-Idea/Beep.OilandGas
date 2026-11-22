@@ -9,6 +9,7 @@ public partial class RA_LITH_DEP_ENV: Entity,IPPDMEntity
 {
 
 private  System.String DEPOSITIONAL_ENVIRONMENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEPOSITIONAL_ENVIRONMENT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DEPOSITIONAL_ENVIRONMENTValue;
           set { SetProperty(ref  DEPOSITIONAL_ENVIRONMENTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

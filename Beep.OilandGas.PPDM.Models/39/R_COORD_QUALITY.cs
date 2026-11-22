@@ -9,6 +9,7 @@ public partial class R_COORD_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String COORDINATE_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COORDINATE_QUALITY
         {  
             get  

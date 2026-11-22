@@ -9,6 +9,7 @@ public partial class R_LITH_ROCK_MATRIX: Entity,IPPDMEntity
 {
 
 private  System.String ROCK_MATRIXValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ROCK_MATRIX
         {  
             get  

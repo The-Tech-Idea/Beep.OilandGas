@@ -9,6 +9,7 @@ public partial class R_POROSITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String POROSITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POROSITY_TYPE
         {  
             get  

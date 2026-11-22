@@ -9,6 +9,7 @@ public partial class BA_CONSORTIUM_SERVICE: Entity,IPPDMEntity
 {
 
 private  System.String CONSORTIUM_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSORTIUM_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSORTIUM_BA_IDValue;
           set { SetProperty(ref  CONSORTIUM_BA_IDValue, value); }
         } 
 private  System.String PROVIDED_BYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROVIDED_BY
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PROVIDED_BYValue;
           set { SetProperty(ref  PROVIDED_BYValue, value); }
         } 
 private  System.Decimal SERVICE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SERVICE_SEQ_NO
         {  
             get  

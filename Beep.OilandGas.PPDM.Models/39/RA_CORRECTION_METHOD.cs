@@ -9,6 +9,7 @@ public partial class RA_CORRECTION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CORRECTION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORRECTION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CORRECTION_METHODValue;
           set { SetProperty(ref  CORRECTION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

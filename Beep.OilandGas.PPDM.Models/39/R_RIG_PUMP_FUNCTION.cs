@@ -9,6 +9,7 @@ public partial class R_RIG_PUMP_FUNCTION: Entity,IPPDMEntity
 {
 
 private  System.String PUMP_FUNCTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PUMP_FUNCTION
         {  
             get  

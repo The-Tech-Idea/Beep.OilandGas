@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class PROVED_RESERVES : ModelEntityBase
     {
         private System.String RESERVES_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String RESERVES_ID
         {
             get { return this.RESERVES_IDValue; }

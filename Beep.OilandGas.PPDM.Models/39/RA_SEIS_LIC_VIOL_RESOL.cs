@@ -9,6 +9,7 @@ public partial class RA_SEIS_LIC_VIOL_RESOL: Entity,IPPDMEntity
 {
 
 private  System.String RESOLVE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESOLVE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESOLVE_TYPEValue;
           set { SetProperty(ref  RESOLVE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

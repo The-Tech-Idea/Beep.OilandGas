@@ -32,18 +32,23 @@ namespace Beep.OilandGas.LifeCycle.Services.WellLifecycle
         private readonly string _connectionName;
         private readonly ILogger<WellLifecycleService>? _logger;
 
-        // Well state machine
-        private readonly Dictionary<string, List<string>> _allowedTransitions = new Dictionary<string, List<string>>
-        {
-            { "PLANNED", new List<string> { "DRILLING", "REJECTED" } },
-            { "DRILLING", new List<string> { "COMPLETED", "REJECTED" } },
-            { "COMPLETED", new List<string> { "PRODUCING", "REJECTED" } },
-            { "PRODUCING", new List<string> { "WORKOVER", "SUSPENDED", "ABANDONED" } },
-            { "WORKOVER", new List<string> { "PRODUCING", "ABANDONED" } },
-            { "SUSPENDED", new List<string> { "PRODUCING", "ABANDONED" } },
-            { "ABANDONED", new List<string>() }, // Terminal state
-            { "REJECTED", new List<string>() } // Terminal state
-        };
+
+        /// <summary>
+        /// The one well state machine: the legal next state(s) of each state. It is public so a screen refuses the same
+        /// transition this service would refuse, instead of holding a second copy of the rule (WEL-04).
+        /// </summary>
+        public static IReadOnlyDictionary<string, IReadOnlyList<string>> AllowedTransitions { get; } =
+            new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "PLANNED", new[] { "DRILLING", "REJECTED" } },
+                { "DRILLING", new[] { "COMPLETED", "REJECTED" } },
+                { "COMPLETED", new[] { "PRODUCING", "REJECTED" } },
+                { "PRODUCING", new[] { "WORKOVER", "SUSPENDED", "ABANDONED" } },
+                { "WORKOVER", new[] { "PRODUCING", "ABANDONED" } },
+                { "SUSPENDED", new[] { "PRODUCING", "ABANDONED" } },
+                { "ABANDONED", Array.Empty<string>() },
+                { "REJECTED", Array.Empty<string>() },
+            };
 
         public WellLifecycleService(
             IDMEEditor editor,
@@ -106,8 +111,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellLifecycle
                     currentState = "PLANNED";
                 }
 
-                return _allowedTransitions.ContainsKey(currentState)
-                    ? _allowedTransitions[currentState]
+                return AllowedTransitions.ContainsKey(currentState)
+                    ? AllowedTransitions[currentState].ToList()
                     : new List<string>();
             }
             catch (Exception ex)
@@ -286,12 +291,12 @@ namespace Beep.OilandGas.LifeCycle.Services.WellLifecycle
 
         private bool CanTransition(string fromState, string toState)
         {
-            if (!_allowedTransitions.ContainsKey(fromState))
+            if (!AllowedTransitions.ContainsKey(fromState))
             {
                 return false;
             }
 
-            return _allowedTransitions[fromState].Contains(toState);
+            return AllowedTransitions[fromState].Contains(toState);
         }
 
         private async Task UpdateWellStatusAsync(string wellId, string newState, string userId)

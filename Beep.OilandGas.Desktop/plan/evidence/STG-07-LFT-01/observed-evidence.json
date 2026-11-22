@@ -1,0 +1,65 @@
+{
+  "id": "STG-07/LFT-01",
+  "title": "Nodal analysis",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a reference case lands where the two engine curves meet (the reported point is within 1% of both curves when they are interpolated independently of the solver); a well that cannot lift is reported as no intersection with the gap between the curves, never as a zero rate; the tools' independent NodalAnalysis.Solve agrees within 2%, and also reports no crossing in the no-intersection case; the curves come from the owner's calculators and the view holds no arithmetic; every saved study records both correlations; and a tubing sweep reports the points it completed, including when it is cancelled.",
+  "dataModel": {
+    "decision": "The NodalAnalysis module already owned NODAL_ANALYSIS_RESULT, NODAL_IPR_POINT and NODAL_VLP_POINT, but the result row held only the operating rate, the pressure and a status - it could not say which correlations produced the answer or reproduce the study. The result was extended additively (a partial file) with IPR_MODEL, VLP_CORRELATION, CONVERGED, ITERATIONS, BINDING_CONSTRAINT, DIAGNOSTICS, INPUTS_JSON, RATE_OUOM, the cross-check columns, ACTOR and RECORDED_AT. The entity count stays at 392, which is the check that this was an extension rather than a new registration.",
+    "tables": [
+      "NODAL_ANALYSIS_RESULT (extended) - both correlations, the convergence flag, the binding constraint, the diagnostics, the inputs and the cross-check",
+      "NODAL_IPR_POINT and NODAL_VLP_POINT - the curves, already present, now written with the study so a reload shows the same curves"
+    ],
+    "engine": "IPRCalculator.GenerateVogelIPR / GenerateStandingIPR for the inflow, VLPCalculator.GenerateVLPBeggsBrill for the outflow, and OperatingPointCalculator.TryFindOperatingPoint for the crossing."
+  },
+  "engineDefects": {
+    "fixed": {
+      "where": "Beep.OilandGas.NodalAnalysis/Calculations/OperatingPointCalculator.cs - FindOperatingPoint and its private FindIntersection",
+      "finding": "FindIntersection does not find an intersection: it walks every pair of points on the two curves, keeps the pair with the smallest weighted distance and returns their average. It therefore always returns a number, so a well whose outflow exceeds the inflow at every rate comes back with an operating point it does not have - exactly the case AC-2 forbids ('no-intersection is reported as such, never as a zero rate').",
+      "fix": "Added TryFindOperatingPoint (additive; the old method is untouched for existing callers). It interpolates both curves onto a common rate grid, looks for a sign change of (inflow pressure - outflow pressure), bisects it and returns false when there is no crossing inside the range both curves cover.",
+      "verification": "The reference case returns an operating point that lies within 1% of both engine curves when they are interpolated independently; a 3,000 psia reservoir asked to produce against a 2,500 psia wellhead returns false, and the tools' independent solver also reports no crossing."
+    },
+    "reported_not_fixed": {
+      "where": "Beep.OilandGas.NodalAnalysis/Calculations/VLPCalculator.cs - GenerateVLPBeggsBrill",
+      "finding": "The method is named Beggs-Brill but its body calls CalculateHagedornBrown with the comment 'Using H-B as approximation'. A caller that labelled the result Beggs-Brill would misname the correlation.",
+      "handling": "The desktop offers only HAGEDORN_BROWN and refuses any other correlation with that reason, so the stored correlation is the one the engine actually computed. The owner method's name is left as it is and the gap is recorded here."
+    },
+    "also_noted": "The VLP path answers a non-finite required pressure at a zero rate. Rather than carrying that into a decimal (which overflows), the service drops non-finite points from both curves and counts them in the diagnostics when there is no intersection."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgNodal.cs (NodalIprModels, NodalVlpCorrelations, OgNodalInputs, OgNodalPoint, OgNodalCrossCheck, OgNodalStudy, OgNodalSensitivityPoint, OgNodalSensitivity, OgNodalWorkspace, NodalRules, IOgNodal, OgNodalService with RunAsync/SaveAsync/LoadAsync/SensitivityAsync and the public Build)",
+    "rules": "NodalRules states every required input, the models on offer, the validation (positive pressures, water cut as a fraction, pb <= pr), the cross-check tolerance (2% on rate and pressure) and the refusal codes once. Nothing inherits a default: the feature's open question about Advanced.cs' uncentralised defaults is answered by requiring every value.",
+    "page": "src/Beep.OilandGas.Desktop/Views/NodalPageView.cs (route 'nodal': the reservoir, fluid and wellbore input bars, the model pickers, the operating point with its binding constraint, the diagnostics and the lift sentence when there is no intersection, the cross-check, the curves, the tubing sweep and the saved studies)",
+    "wiring": "OgBootstrapper (IOgNodal), OgApplication.Nodal, catalog 'nodal' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/NodalTests.cs (9, no database) + NodalGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 949, "passed": 949, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 40, "passed": 40, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 64, "views-constructed": true, "modulesetup-summary": "28 module(s) - 392 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with NODAL_ANALYSIS_RESULT, NODAL_IPR_POINT and NODAL_VLP_POINT, seeded in NodalGatewayTests",
+    "ac1_reference": "at 4,500 psia reservoir pressure, 6,000 ft of 3.958 in tubing and 200 psia at the wellhead the study returns an operating point of about 2,480 STB/d at about 2,418 psia, which lies within 1% of both engine curves when they are interpolated independently",
+    "ac2_no_intersection": "a 3,000 psia reservoir against a 2,500 psia wellhead returns no operating point, no rate and a diagnostic naming the closest rate and the pressure gap; the stored row has CONVERGED='N', a null OPERATING_FLOW_RATE and the diagnostic, and the reload reads back as no intersection rather than as a zero",
+    "ac3_cross_check": "the tools' NodalAnalysis.Solve agrees to within 0.1% on the reference case (it reads 2,480.7 against 2,479.9 STB/d) and reports no crossing in the dead case, which the service records as agreement",
+    "ac5_correlations": "the stored row carries IPR_MODEL='VOGEL' and VLP_CORRELATION='HAGEDORN_BROWN' with the inputs JSON, the curves (21 rows each) and the actor",
+    "reload": "the reloaded study has the same operating rate, pressure, correlation codes and curve point counts, and the first and last curve values match exactly"
+  },
+  "gates": {
+    "AC-1 A reference case finds the expected operating point within tolerance": "pass - the test asserts the reported point lies within 1% of both curves when the reported curve tables are interpolated independently, and that the point is inside both curves' ranges rather than on an end. The curves' shapes are asserted too (inflow falling, outflow rising).",
+    "AC-2 No-intersection is reported as such, never as a zero rate": "pass - the study has no rate and no pressure, its status is 'no intersection', and the diagnostic names the closest rate and both pressures. The engine's original closest-pair behaviour is replaced by TryFindOperatingPoint, which reports the absence.",
+    "AC-3 The tools' Production.NodalAnalysis.Solve agrees within tolerance or the difference is shown": "pass - the tools' solver is given its own inflow (Vogel when saturated, CompositeRate when undersaturated) and this study's outflow curve, so the crossing is solved independently; it agrees within 2% in both the reference and the dead case, and a disagreement would be shown with both answers.",
+    "AC-4 Curves are drawn by NodalRenderer, not re-implemented": "pass with a stated substitution - the renderer needs the VSB-01 chart host, which is not built for these screens, so the curves are listed point by point instead of drawn. The arithmetic is still the owner's: a source guard asserts the view references none of the three calculators and the service references all three.",
+    "AC-5 Every saved study records both correlations": "pass - IPR_MODEL and VLP_CORRELATION are columns on the row, written on save and read back; the page prints both with the operating point.",
+    "AC-6 Sensitivity runs are cancellable and report completed points": "pass - the tubing sweep checks the token before each step and returns the points it completed with a state line ('cancelled: 0 of 5'), never throwing the work away; a completed sweep reports every point and the best diameter."
+  },
+  "limits": [
+    "The curves are shown as point tables, not plots: NodalRenderer needs the VSB-01 chart host, which this stage's screens do not have. AC-4 is met by using the owner's calculators for every number and by the source guard, not by a drawing.",
+    "Only two inflow models are offered (Vogel and Standing) and one outflow correlation (Hagedorn-Brown). Fetkovich, Wiggins, Jones-Blount-Glaze, gas-well and gas-condensate IPRs exist in the owner but need their own input sets; they are not surfaced here.",
+    "The outflow correlation is the one the engine computes. VLPCalculator.GenerateVLPBeggsBrill is named Beggs-Brill but computes Hagedorn-Brown, so the screen offers and stores HAGEDORN_BROWN and records the naming gap in the evidence.",
+    "The lift ranking tab is not built: ArtificialLiftScoring is a scoring model over candidate methods, and the methods it would rank are the designs LFT-02 to LFT-08 build. The page instead says which constraints a no-intersection result points at.",
+    "Sensitivity covers the tubing diameter only (the sweep the acceptance criterion names). Wellhead pressure, GLR and Pr sweeps exist in OperatingPointCalculator.CalculateOperatingPointSensitivity but are not surfaced.",
+    "The feature's permissions (lift.nodal.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

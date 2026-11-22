@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Beep.OilandGas.CompressorAnalysis.Data;
 using Beep.OilandGas.GasProperties.Calculations;
 
@@ -115,8 +115,13 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             decimal k = SPECIFIC_HEAT_RATIO;
             decimal etaP = POLYTROPIC_EFFICIENCY;
 
-            // Polytropic exponent
-            decimal n = (k * etaP) / (k - etaP * (k - 1m));
+            // Polytropic exponent, from n/(n-1) = k/(k-1) * eta_p:
+            //   n = k * eta_p / (k * eta_p - (k - 1))
+            // The denominator was (k - eta_p * (k - 1)), which for k = 1.3 and eta_p = 0.75 gives n = 0.907 - an
+            // exponent below 1, meaning the gas cools as it is compressed. The head then came from two negative
+            // factors and the discharge temperature was clamped back to the suction temperature, so the interstage
+            // temperature check could never fire (LFT-08).
+            decimal n = (k * etaP) / (k * etaP - (k - 1m));
 
             // Compression ratio
             decimal compressionRatio = DISCHARGE_PRESSURE / SUCTION_PRESSURE;
@@ -205,7 +210,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
 
             decimal k = SPECIFIC_HEAT_RATIO;
             decimal etaP = POLYTROPIC_EFFICIENCY;
-            decimal n = (k * etaP) / (k - etaP * (k - 1m));
+            decimal n = (k * etaP) / (k * etaP - (k - 1m));
 
             decimal dischargeTemperature = SUCTION_TEMPERATURE *
                                          (decimal)Math.Pow((double)compressionRatio, (double)((n - 1m) / n));
@@ -318,7 +323,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                 //   H = (Z*R*T1/MW) * (n/(n-1)) * [(P2/P1)^((n-1)/n) - 1]
                 //   Invert: (P2/P1) = (1 + H*MW*(n-1)/(Z*R*T1*n))^(n/(n-1))
                 decimal k = compressorProperties.SPECIFIC_HEAT_RATIO;
-                decimal n = (k * eta) / (k - eta * (k - 1m));
+                decimal n = (k * eta) / (k * eta - (k - 1m));
                 decimal mw = conditions.GAS_SPECIFIC_GRAVITY * 28.9645m;
                 decimal z = ZFactorCalculator.CalculateBrillBeggs(
                     conditions.SUCTION_PRESSURE, conditions.SUCTION_TEMPERATURE,

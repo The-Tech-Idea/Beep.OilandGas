@@ -9,6 +9,7 @@ public partial class SEIS_RECVR_SETUP: Entity,IPPDMEntity
 {
 
 private  System.String ACQTN_DESIGN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACQTN_DESIGN_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ACQTN_DESIGN_IDValue;
           set { SetProperty(ref  ACQTN_DESIGN_IDValue, value); }
         } 
 private  System.String RCVR_SETUP_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RCVR_SETUP_ID
         {  
             get  

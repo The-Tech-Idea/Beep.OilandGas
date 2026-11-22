@@ -9,6 +9,7 @@ public partial class R_CONDITION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONDITION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONDITION_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_BLOWOUT_FLUID: Entity,IPPDMEntity
 {
 
 private  System.String BLOWOUT_FLUIDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BLOWOUT_FLUID
         {  
             get  

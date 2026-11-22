@@ -9,6 +9,7 @@ public partial class RA_CLASS_DESC_PROPERTY: Entity,IPPDMEntity
 {
 
 private  System.String DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DESC_TYPEValue;
           set { SetProperty(ref  DESC_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

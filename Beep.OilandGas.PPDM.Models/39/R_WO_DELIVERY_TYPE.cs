@@ -9,6 +9,7 @@ public partial class R_WO_DELIVERY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DELIVERY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DELIVERY_TYPE
         {  
             get  

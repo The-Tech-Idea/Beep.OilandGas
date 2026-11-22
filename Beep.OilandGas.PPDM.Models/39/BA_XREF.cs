@@ -9,6 +9,7 @@ public partial class BA_XREF: Entity,IPPDMEntity
 {
 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.String NEW_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NEW_BA_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String NEW_BA_IDValue;
           set { SetProperty(ref  NEW_BA_IDValue, value); }
         } 
 private  System.Decimal BA_XREF_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal BA_XREF_SEQ_NO
         {  
             get  

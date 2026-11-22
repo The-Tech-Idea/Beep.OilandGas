@@ -1,0 +1,94 @@
+{
+  "id": "STG-04/DEV-06",
+  "title": "Drilling execution and daily reports",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met and verified on a clean solution build: a second report or submission for the same date+shift is refused; a submitted report is read-only and a correction is a new revision with its reason while the original stays submitted; a lost acknowledgement leaves the report a draft and retries; a transfer records actor, receiver and reason and disables the previous holder; an NPT line needs a code from the reference set; and a break in the depth chain is flagged, never corrected.",
+  "dataModel": {
+    "decision": "The module's DRILLING_OPERATION and DRILLING_DAILY_REPORT are the company execution records: their schemas require the program review instance, the execution-start proof, the recorder role/persona and the bounded original report proof, none of which a plan-stage execution has. The feature therefore owns the plan-stage execution tables in the same module, the same way DEV-05 owns the plan-stage program, and reuses DRILLING_ACTIVITY for the 24-hour breakdown because that table has no required governance columns.",
+    "tables": [
+      "DEVELOPMENT_DRILLING_EXECUTION (EXECUTION_ID key, PROGRAM_ID, FIELD_ID, WELL_ID, COMPANY_ID, STATUS, PROGRAM_VERSION, SPUD_DATE) - depth, current activity and cost are derived from the reports, never stored",
+      "DEVELOPMENT_DAILY_REPORT (REPORT_ID key, EXECUTION_ID, PROGRAM_ID, WELL_ID, REPORT_DATE, SHIFT, REVISION, CORRECTS_REPORT_ID, CORRECTION_REASON, PERIOD_START/END, DEPTH_START/END, DEPTH_OUOM, COST, CURRENCY, HSE_EVENTS, PERSONNEL, EQUIPMENT, STATE, AUTHOR, SUBMITTED_BY/AT)",
+      "DEVELOPMENT_REPORT_RESPONSIBILITY (RESPONSIBILITY_ID key, EXECUTION_ID, ASSIGNED_TO, ROLE, FROM_AT, TO_AT, REASON, ACTOR, CURRENT_IND) - append-only periods; a transfer closes the open one",
+      "R_DRILLING_NPT_CODE (NPT_CODE key, NPT_NAME, CATEGORY, ACTIVE_IND) - the reference set AC-5 requires; not seeded, because the code book belongs to the operating company",
+      "DRILLING_ACTIVITY - reused for the breakdown (DDR_ID = the report id, DURATION_HOURS, ACTIVITY_CODE, NPT_IND, NPT_CODE_IADC, DEPTH_AT_START_MD)"
+    ],
+    "registration": "DrillingAndConstructionSetupModule registers the four new types; --smoke now reports 370 entity types (up from 366)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgDrillingExecution.cs (OgDailyActivity, OgDailyReport, OgResponsibility, OgExecutionHeader, OgTimeDepthPoint, OgExecutionProgramOption, OgExecutionWorkspace, OgDailyReportValues, OgDailyActivityValues, OgReportSubmit, IOgDrillingExecution, OgDrillingExecutionService with ValidateReport/ValidateActivity/DepthFlag/StartAsync/CreateReportAsync/SaveReportAsync/AddActivityAsync/SubmitReportAsync/ReviseReportAsync/TransferResponsibilityAsync/RetrySubmitAsync)",
+    "designGate": "StartAsync refuses a program whose state is not APPROVED or APPROVED_WITH_COMMENTS (DEV-05's state).",
+    "page": "src/Beep.OilandGas.Desktop/Views/DrillingExecutionPageView.cs (route 'drillingexecution': approved-program picker, execution picker, header and derived depth/cost, daily report grid and editor, activity/NPT line panel, correction panel, responsibility transfer panel, time-depth points)",
+    "wiring": "OgBootstrapper (IOgDrillingExecution), OgApplication.DrillingExecution, catalog 'drillingexecution' (OgModuleKeys.Development), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DrillingExecutionTests.cs (8, no database) + DrillingExecutionGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    {
+      "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1",
+      "when": "17:32, after restoring the files a concurrent bulk write had reverted",
+      "exit": 0,
+      "errors": 0
+    },
+    {
+      "cmd": "dotnet test (desktop, all)",
+      "exit": 0,
+      "run": 744,
+      "passed": 744,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests",
+      "exit": 0,
+      "run": 24,
+      "passed": 24,
+      "failed": 0
+    },
+    {
+      "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke",
+      "exit": 0,
+      "result": "ok",
+      "pages-declared": 48,
+      "views-constructed": true,
+      "modulesetup-summary": "28 module(s) - 370 entity type(s)",
+      "accessibility-unnamed-count": 0,
+      "accessibility-untabbable-count": 0
+    }
+  ],
+  "integration": {
+    "database": "SQLite with DEVELOPMENT_DRILLING_PROGRAM, DEVELOPMENT_DRILLING_EXECUTION, DEVELOPMENT_DAILY_REPORT, DRILLING_ACTIVITY, DEVELOPMENT_REPORT_RESPONSIBILITY and R_DRILLING_NPT_CODE, seeded in DrillingExecutionGatewayTests",
+    "approvedOnly": "only the APPROVED program is offered to run; starting the DRAFT program is refused with drill-execution-program-not-approved",
+    "ac1_duplicate": "a second report for the same date and shift is refused with drill-execution-duplicate-period; submitting the same report a second time is refused and its state stays submitted",
+    "ac2_correction": "a submitted report refuses SaveReportAsync (drill-execution-report-locked); ReviseReportAsync with no reason is refused, and with a reason writes revision 2 in DRAFT that carries CORRECTS_REPORT_ID, the reason and both activity lines, while the original stays submitted at its original end depth",
+    "ac3_lostAck": "a SQLite trigger made the submit update fail: the submit was refused, Pending was set, and a re-read showed the report still a draft; after the trigger was dropped the retry submitted the same report id",
+    "ac4_transfer": "transferring to omar records ACTOR=sara and REASON='night shift handover'; the open sara period gains TO_AT and CURRENT_IND='N'; the previous holder is then refused a new report with drill-execution-not-responsible while omar succeeds; transferring to the current holder is refused with drill-execution-same-holder",
+    "ac5_npt": "an NPT line with no code is refused (npt-code-required), a code not in the reference set is refused (npt-code-unknown), a known code is accepted; after the reference rows are removed the workspace reports NptReferenceMissing and an NPT line is refused with npt-reference-missing",
+    "ac6_depth": "the day-1 day report (0 -> 500) and night report (500 -> 900) are not flagged; the day-2 report starting at 950 instead of 900 is flagged with both numbers, and nothing was corrected",
+    "derived": "the report derives metres drilled (250 m), NPT hours (4 h from two lines) and its line count; the header shows a partial cost-to-date when a report has no cost"
+  },
+  "gates": {
+    "AC-1 A daily report cannot be submitted twice for the same date and shift": "pass - creation refuses a second report for the period and a second submission of the same report is refused; the submit also refuses when another report for the period is already submitted.",
+    "AC-2 A submitted report is read-only; correction is a new revision with a reason": "pass - SaveReportAsync and AddActivityAsync refuse a submitted report; ReviseReportAsync requires a reason, writes the next revision as a draft with CORRECTS_REPORT_ID, and leaves the submitted report untouched.",
+    "AC-3 A lost acknowledgement retains the original and does not show success": "pass - a failed submit leaves the report a draft, sets Pending, and the retry sends the same report; proven with a forced database failure.",
+    "AC-4 Responsibility transfer is recorded with actor, receiver and reason": "pass - the open period is closed and a new one opened with ACTOR, REASON and FROM_AT, and the previous holder can no longer create or submit a report.",
+    "AC-5 NPT requires a reason code from the reference set": "pass - ValidateActivity accepts an NPT line only with a code the reference table holds, names the unknown code, and refuses the line entirely when the reference set is empty.",
+    "AC-6 Depth at start equals the previous report's depth at end, or the discrepancy is flagged": "pass - DepthFlag compares the start with the previous report's end (tolerance 0.005) and the report carries the message with both numbers; the chain is computed over the report order.",
+    "Dev-05 gate": "pass (supporting) - an execution can only start from an approved program, so an unapproved program cannot be run."
+  },
+  "limits": [
+    "The incident above is recorded so the repository state is understood: a concurrent bulk write reverted earlier work at 17:01:38 and it was restored. If it recurs, check `--smoke`'s `modulesetup-summary` entity count (it must be 370) and the DAT-02 governance note in the progress log.",
+    "A clean solution build is currently blocked by a concurrent, unfinished edit in Beep.OilandGas.PPDM39.DataManagement/Services/HSE (HSEKPIService.cs and HSEIncidentRules.cs at 17:01:38; the rules file no longer has the Count method that HSEIncidentCountsTests references). Those files are not part of this feature and were not modified here. The desktop projects built cleanly at 17:01 before that edit, and the tests above ran against those assemblies.",
+    "The time-depth chart is a series of points with a sentence saying the ENG-09 chart is not built; there is no chart control yet.",
+    "NPT codes are not seeded: the IADC/company code book is data the operator supplies. Until rows exist, the page states that no code is recorded and refuses NPT lines.",
+    "The activity breakdown records one interval per line with hours, code, NPT flag and depth; it does not verify that a day's lines total 24 hours, and it does not derive the interval start/end from the shift boundaries beyond the report period start.",
+    "Cost to date is the sum of the reports' costs; a report without a cost makes it explicitly partial.",
+    "The module's company execution record (DRILLING_OPERATION) is neither read nor written: the company flow starts it once the program review and execution-start gate are met.",
+    "The feature doc's per-command permissions are not enforced (the app gates pages, not commands).",
+    "The four new tables need the DRILLING_EXECUTION module applied again on an existing database."
+  ],
+  "incident": {
+    "what": "A bulk write at 17:01:38 reverted a set of files to an older state while this feature was being finished: it removed the DEV-06 module registrations, the DEV-05/04/03/02 registrations, the LSE/EXP/WEL registrations, DUE_CONFIRMED_IND, FACILITY_INVESTMENT.PLAN_VERSION, PROSPECT_RISK_ASSESSMENT.FLUID_TYPE, WellLifecycleService.AllowedTransitions, SchemaMigrationPlanRequest.PreparedBy, PPDM39SetupService's governance handling and Trace, and it left HSEKPIService without the CountIncidentsAsync the interface requires and PeriodClosingService without `partial`.",
+    "effect": "The solution build failed and the module-setup count fell from 370 to 343 entity types (registered tables would no longer have been created).",
+    "repair": "Every reverted item was re-applied (registrations in the four owning modules, the five model/service members, the HSE count method and `Count` rule following the interface doc and HSEIncidentCountsTests, and `partial` on PeriodClosingService). The smoke count is back to 370.",
+    "note": "None of the reverted files were deleted or rewritten by this feature before the revert; the repair restores the state the earlier features recorded."
+  }
+}

@@ -9,6 +9,7 @@ public partial class R_TEST_RECOV_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String RECOVERY_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECOVERY_METHOD
         {  
             get  

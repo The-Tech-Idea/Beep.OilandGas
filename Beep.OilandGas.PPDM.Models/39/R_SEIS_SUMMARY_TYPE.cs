@@ -9,6 +9,7 @@ public partial class R_SEIS_SUMMARY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SUMMARY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUMMARY_TYPE
         {  
             get  

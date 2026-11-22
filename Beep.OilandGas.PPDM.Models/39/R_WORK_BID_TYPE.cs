@@ -9,6 +9,7 @@ public partial class R_WORK_BID_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WORK_BID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WORK_BID_TYPE
         {  
             get  

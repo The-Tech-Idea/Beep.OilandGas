@@ -1,0 +1,85 @@
+{
+  "id": "STG-16/ENG-04",
+  "title": "Casing pressure and MAASP",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the classification names the API RP 90 class and prints the rule the owner's diagnostic produced; MAWOP and MAASP are shown per annulus with their governing term and every limit with its basis; a pressure above the MAASP is CRITICAL whatever the class says; a test with no valve-closed time is accepted and marked incomplete; the trend is the recorded tests only; and every threshold comes from the configured settings.",
+  "dataModel": {
+    "read": "WELL_TUBULAR for the strings that bound each annulus (OD, ID, grade, weight, top, shoe), WELL_DIR_SRVY_STATION for the shoe TVD the formation limit needs, and the well's recorded pressure tests.",
+    "addedTables": "WELL_ANNULUS (name, the two strings that bound it, fluid, fluid density, shoe fracture gradient, wellhead rating, any recorded MAASP/MAWOP, notes) and CASING_PRESSURE_TEST (bleed start, valve-closed time, duration, readings as JSON, temperature, bleed-off text, the class, the rule, the action, the severity, the limits it was judged against, the exceedance, complete flag, actor, time) in LifeCycle, registered in LifeCycleModule. The tools name annuli from the strings that reach surface, but the fluid, the fracture gradient, the wellhead rating and any MAASP set by integrity engineering are operator data with nowhere to live - and nothing recorded a casing-pressure test at all.",
+    "openQuestionAnswered": "The feature's open question - 'API RP 90 class thresholds must live in CasingPressureSettings; verify they are configurable' - is answered: they do and they are. DiagnosticThreshold (100 psig), BleedHours (24), BuildUpHours (24), ZeroTolerance (0 psi), the MAWOP fractions (0.5 of the casing, 0.8 of the next outer casing, 0.3 of the outermost, 0.75 of the inner collapse) and the MAASP deratings (0.8 burst, 1.0 collapse) are all settings. The gateway changes the diagnostic threshold to 50 psi for one run and the same 60 psi test then classifies as above the threshold, which proves nothing in the desktop keeps its own copy."
+  },
+  "rules": {
+    "mawop": "The MAWOP is the owner's API RP 90 rule (BSEE NTL 2009-G01): the least of the casing MIYP fraction, the next outer casing's MIYP fraction (or the outermost fraction when there is no next outer casing) and the inner string's collapse fraction, with the MIYP and collapse values from CasingDesign at the recorded pipe. The governing term is named and every term is listed with its value.",
+    "maasp": "The MAASP is the owner's screening - outer casing burst times the derating, inner string collapse times the derating, the formation at the outer shoe from the fracture gradient less the annulus fluid gradient over the shoe TVD, and the wellhead rating - with the lowest limit governing. Each limit is shown with the arithmetic behind it. The screening is a flag, not a design, which the owner's own comment states and the page repeats.",
+    "classification": "The class is the state the owner's diagnostic reports: BELOW THRESHOLD when the initial pressure is not above the diagnostic threshold, SUSTAINED when the pressure rebuilt after bleed-down, NOT SUSTAINED when it did not. The rule is the diagnostic's own summary sentence, so the class and the sentence cannot disagree.",
+    "severity": "AC-3: the highest of the initial and build-up pressures decides. Above the MAASP is CRITICAL with the exceedance in psi, whatever the class says - including a below-threshold reading; otherwise a sustained pressure or a departure is WARNING, and a clean test is INFO.",
+    "action": "The action follows the severity first and then the class: reduce the pressure below the MAASP and re-test; or - for sustained pressure - monitor with a risk assessment, which API RP 90 calls for rather than an automatic shutdown; or continue to monitor.",
+    "incomplete": "A test with no valve-closed time (or one that closes before it opens) is accepted, stored and marked incomplete, with the class UNCLASSIFIED and the reason: without a bleed-down window nothing is judged. No classification is invented from a single reading.",
+    "trend": "The history is the recorded tests for the annulus in bleed-start order, and the current pressure is the latest recorded test's maximum - never an interpolation or an estimate.",
+    "basis": "The MAWOP and MAASP are computed on read rather than stored on the annulus, so a change to a grade, a derating or a recorded rating is reflected; each test stores the limits it was judged against, so a past conclusion is not rewritten."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.LifeCycle/Data/Tables/WELL_ANNULUS.cs, CASING_PRESSURE_TEST.cs and Modules/LifeCycleModule.cs (both registered)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Engineering/OgCasingPressure.cs (OgPressureReading, OgClassification, OgAnnulusView, OgPressureTestRow, OgCasingPressureWorkspace, CasingPressureRules, IOgCasingPressure, OgCasingPressureService with LoadAsync/RecordTestAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/CasingPressurePageView.cs (route 'casingpressure': the well and annulus bar, the annulus summary, the limits with their terms, the classification, the history grid, the test recorder and the readings box)",
+    "wiring": "OgBootstrapper (IOgCasingPressure), OgApplication.CasingPressure, catalog 'casingpressure' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/CasingPressureTests.cs (8, no database) + CasingPressureGatewayTests.cs (1 opt-in, real SQLite over four tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1355, "passed": 1355, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 85, "passed": 85, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 108, "modulesetup-summary": "33 module(s) - 443 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL_TUBULAR, WELL_DIR_SRVY_STATION, WELL_ANNULUS and CASING_PRESSURE_TEST. A 9 5/8 in 47 lb/ft L80 casing to 10 000 ft and a 4.5 in 12.6 lb/ft L80 tubing to 9 500 ft; annulus A between them with gas at 9 ppg, a 1.0 psi/ft fracture gradient at the outer shoe and a 5 000 psi wellhead rating; annulus B whose inner string does not exist.",
+    "ac2_mawop": "annulus A gives three MAWOP terms - 50% of the casing MIYP = 3 435 psi, 30% of it (outermost casing) = 2 061 psi and 75% of the tubing collapse = 5 625 psi - and the governing value is 2 061 psi, named as the outermost term",
+    "ac2_maasp": "the screening gives four limits with their arithmetic - outer casing burst 5 496 psi (6 870 x 0.8), inner string collapse 7 500 psi, formation at the outer shoe 5 325 psi ((1.0 - 0.4675) psi/ft x 10 000 ft) and the wellhead rating 5 000 psi - and the lowest, the wellhead, governs",
+    "ac1_class": "a 1 200 psi test that bled to zero in six minutes and did not rebuild is classified NOT SUSTAINED with the rule sentence 'not sustained (no build-up after bleed-down) - meets the API RP 90 criteria', INFO, and the action 'the pressure did not rebuild after the bleed-down: continue to monitor'",
+    "ac3_critical": "a test at the MAASP plus 100 psi is CRITICAL with an exceedance of 100 psi and the action to reduce the pressure below the MAASP before continuing; the annulus state then reads 'above the MAASP by 100 psi'",
+    "ac4_incomplete": "a test with no valve-closed time is accepted and stored with COMPLETE 'N', CLASS UNCLASSIFIED, a null duration and the rule that without a valve-closed time nothing is judged",
+    "ac5_trend": "the history is exactly the recorded tests, in bleed-start order, and the current pressure is the latest test's maximum",
+    "ac6_thresholds": "with the diagnostic threshold moved to 50 psi for one run, a 60 psi test classifies as above the threshold (NOT SUSTAINED); with the shipped 100 psi the same 60 psi test is BELOW THRESHOLD and its action is to monitor",
+    "states": "annulus B cannot be screened because its inner string is not in the model, so its MAWOP is null, its limits text says which input is missing and recording a test on it is refused with that sentence; a well with no tubular record has no annulus and says why; an unknown annulus name is refused",
+    "failure": "dropping CASING_PRESSURE_TEST fails the read with no workspace"
+  },
+  "gates": {
+    "AC-1 Classification names the API RP 90 class and the deciding rule": "pass - the class is the diagnostic's state and the rule is its own summary sentence, asserted against the sentence text.",
+    "AC-2 MAWOP and MAASP are shown per annulus with their basis": "pass - the governing term is named and every term and limit is listed with its value and arithmetic.",
+    "AC-3 Pressure above MAASP is critical, never a warning": "pass - asserted for a clean test and for a below-threshold test, with the exceedance computed.",
+    "AC-4 A test missing duration is marked incomplete": "pass - accepted, stored, COMPLETE 'N', class UNCLASSIFIED with the reason.",
+    "AC-5 The trend uses recorded tests only": "pass - the history is the recorded rows in order and the current pressure is the latest maximum.",
+    "AC-6 Every threshold comes from settings, not literals": "pass - the diagnostic threshold, bleed hours, build-up window, zero tolerance, MAWOP fractions and MAASP deratings are all settings, and changing one changes the classification."
+  },
+  "engineFindings": {
+    "noAnnulusOrTestStore": {
+      "where": "TheTechIdea.OilGas.Integrity and TheTechIdea.OilGas.WellSchematic",
+      "finding": "The tools name annuli from the strings that reach surface and compute MAWOP and MAASP from them, but neither repository records an annulus's fluid, fracture gradient, wellhead rating or a single casing-pressure test.",
+      "handling": "WELL_ANNULUS and CASING_PRESSURE_TEST were added in LifeCycle and registered. The readings are kept as JSON on the test because they are one ordered series belonging to it, re-read whole when classified."
+    },
+    "maaspNeedsRatingsTheTubularRecordLacks": {
+      "where": "Beep.OilandGas.PPDM.Models/39/WELL_TUBULAR.cs",
+      "finding": "The screening reads an outer casing burst rating and an inner string collapse rating from the recorded attributes, and WELL_TUBULAR records neither - it records the pipe, from which they can be computed.",
+      "handling": "The ratings are computed with CasingDesign from the recorded pipe and supplied as the attributes the screening reads, so the basis string shows the psi value and the derating. Recorded as a limit: the screening is on computed API 5C3 ratings, not on a rating the manufacturer recorded."
+    },
+    "severityIsNotTheClass": {
+      "finding": "The owner's diagnostic reports whether the criteria were met; it has no notion of a safety severity, and the feature states that a pressure above the MAASP is critical rather than a warning.",
+      "handling": "Severity is the desktop's rule, kept separate from the class and stated in words: above the MAASP is CRITICAL with the exceedance, a sustained pressure or a departure is WARNING, anything else INFO."
+    },
+    "annulusIdentity": {
+      "finding": "The tools match annuli to strings by string id, so a recorded annulus has to reference the exact id the model gives a tubular row - and the tubular key is four columns, not one.",
+      "handling": "The id is the tubular key itself (UWI|SOURCE|TUBING_TYPE|OBS_NO), exposed as CasingPressureRules' sibling helper so a recorded annulus and the model cannot disagree."
+    }
+  },
+  "limits": [
+    "The MAASP is the owner's screening estimate, not a design calculation: it is a surface-point simplification and ISO 16530-1 / API RP 90 require a full analysis. The page states this with the basis of every limit.",
+    "The screening's two pipe terms use API 5C3 ratings computed from the recorded pipe, because the tubular record carries no manufacturer ratings; a recorded rating would supersede them and is not read.",
+    "A test is recorded with its readings as a series, but the page takes them as text ('time, pressure, unit' per line) rather than an editable grid: a mistyped line is refused with the line named rather than silently dropped.",
+    "The annulus schematic overlay the feature lists is not drawn here - the schematic belongs to VSB-05, which renders annuli from the same records.",
+    "The trend is a list of recorded tests with their class, not a plotted pressure chart with the threshold line; the chart control exists (RPT) but is not wired into this page.",
+    "Annuli are only those recorded in WELL_ANNULUS; when none is recorded the owner's identification over surface-reaching strings is used, and the page says the fluid, fracture gradient and wellhead rating are unknown, so MAASP has only the pipe limits.",
+    "A test's temperature is recorded but not used in any calculation: the screening does not model thermal effects.",
+    "The build-up window and the zero tolerance come from settings; a test whose readings do not span them is classified on what it has, which the rule sentence makes explicit.",
+    "No paging: each read loads the four tables whole and filters in memory."
+  ]
+}

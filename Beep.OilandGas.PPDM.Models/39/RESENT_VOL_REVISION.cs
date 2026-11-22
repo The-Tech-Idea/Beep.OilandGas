@@ -9,6 +9,7 @@ public partial class RESENT_VOL_REVISION: Entity,IPPDMEntity
 {
 
 private  System.String RESENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESENT_IDValue;
           set { SetProperty(ref  RESENT_IDValue, value); }
         } 
 private  System.String RESERVE_CLASS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESERVE_CLASS_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String RESERVE_CLASS_IDValue;
           set { SetProperty(ref  RESERVE_CLASS_IDValue, value); }
         } 
 private  System.String REVISION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REVISION_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String REVISION_IDValue;
           set { SetProperty(ref  REVISION_IDValue, value); }
         } 
 private  System.Decimal REVISION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal REVISION_OBS_NO
         {  
             get  

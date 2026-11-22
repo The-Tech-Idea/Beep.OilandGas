@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class IMBALANCE_STATEMENT : ModelEntityBase {
         private System.String IMBALANCE_STATEMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String IMBALANCE_STATEMENT_ID
         {
             get { return this.IMBALANCE_STATEMENT_IDValue; }

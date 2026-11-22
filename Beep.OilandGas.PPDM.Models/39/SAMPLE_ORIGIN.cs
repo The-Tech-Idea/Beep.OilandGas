@@ -9,6 +9,7 @@ public partial class SAMPLE_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SAMPLE_IDValue;
           set { SetProperty(ref  SAMPLE_IDValue, value); }
         } 
 private  System.Decimal COLLECTION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COLLECTION_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_TRACE_HEADER_FORMAT: Entity,IPPDMEntity
 {
 
 private  System.String HEADER_FORMATValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HEADER_FORMAT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String HEADER_FORMATValue;
           set { SetProperty(ref  HEADER_FORMATValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

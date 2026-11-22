@@ -9,6 +9,7 @@ public partial class SP_DESC_XREF: Entity,IPPDMEntity
 {
 
 private  System.String SPATIAL_DESCRIPTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPATIAL_DESCRIPTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SPATIAL_DESCRIPTION_IDValue;
           set { SetProperty(ref  SPATIAL_DESCRIPTION_IDValue, value); }
         } 
 private  System.Decimal SPATIAL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SPATIAL_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal SPATIAL_OBS_NOValue;
           set { SetProperty(ref  SPATIAL_OBS_NOValue, value); }
         } 
 private  System.String SPATIAL_DESCRIPTION_ID_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPATIAL_DESCRIPTION_ID_2
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SPATIAL_DESCRIPTION_ID_2Value;
           set { SetProperty(ref  SPATIAL_DESCRIPTION_ID_2Value, value); }
         } 
 private  System.Decimal SPATIAL_OBS_NO_2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SPATIAL_OBS_NO_2
         {  
             get  

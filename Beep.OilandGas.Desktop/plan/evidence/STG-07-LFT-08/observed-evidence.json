@@ -1,0 +1,67 @@
+{
+  "id": "STG-07/LFT-08",
+  "title": "Compressor analysis",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a reference centrifugal duty reproduces the staged head and motor power, recomputed independently from the polytropic relations with only the Z-factor taken from the module; the staging applies the module's interstage temperature and per-stage ratio limits and the recommendation is the fewest stages that satisfies both; an infeasible machine lists every reason and presents no power figure; the kinds and analysis tokens come from CompressorAnalysisWellKnown; power carries its unit; and a saved result records its kind, staging and efficiency.",
+  "dataModel": {
+    "decision": "COMPRESSOR_POWER_RESULT already existed and was registered by CompressorAnalysisModule with the power, the heads, the ratio and the efficiencies - but no kind, no staging, no feasibility and no actor, which AC-6 and AC-3 require. It was extended additively in a partial file; the module's own registration and its six entity types are untouched, so the entity count stays 406.",
+    "addedColumns": "KIND, STAGES, STAGE_RATIO, MAX_STAGE_TEMPERATURE_R, STAGE_TEMPERATURE_LIMIT_R, STAGE_RATIO_LIMIT, FEASIBLE_IND, REASONS, POWER_ACHIEVED_IND, INLET_PRESSURE_PSIA, OUTLET_PRESSURE_PSIA, INLET_TEMPERATURE_R, GAS_FLOW_MSCFD, GAS_SPECIFIC_GRAVITY, SURGE_MARGIN, HEAD_OUOM, POWER_OUOM, ACTOR, RECORDED_AT",
+    "stagingLimits": "Beep.OilandGas.CompressorAnalysis/Data/CompressorStagingLimits.cs - the engine's own documented staging defaults (6 stages, ratio 4.0, 660 R = 200 F) named once, with Plan() and Judge() delegating to MultistageCompressor. They are named because a screen has to print the limit it refused against, and a caller repeating the literals could print a different one than the engine applied.",
+    "registration": "--smoke still reports 32 modules and 406 entity types, which is the check that this was a column extension on already-registered tables."
+  },
+  "engineDefects": {
+    "fixed": {
+      "where": "Beep.OilandGas.CompressorAnalysis - CentrifugalCompressorCalculator (polytropic head and discharge temperature), MultistageCompressor.AnalyzeMultistage, CompressorOptimization",
+      "finding": "The polytropic exponent was computed as n = k*eta / (k - eta*(k-1)) in four places. For natural gas (k = 1.3) at a polytropic efficiency of 0.75 that gives n = 0.907 - an exponent below 1, which means the gas cools as it is compressed. The consequences were visible from the desk: the centrifugal discharge temperature came out equal to the suction temperature (the method clamps with Math.Max(suction, discharge), so it silently returned the suction value), the head was built from two negative factors - n/(n-1) = -9.75 and (r^((n-1)/n) - 1) = -0.106 - that happened to multiply to a positive number of the wrong magnitude, and the interstage temperature check could therefore never fire on the centrifugal path, which is exactly what AC-2 depends on.",
+      "fix": "The textbook relation n/(n-1) = k/(k-1) * eta_p, i.e. n = k*eta/(k*eta - (k-1)), in all four places. The isentropic special case (eta >= 0.999 giving n = k) is unchanged.",
+      "verification": "At 300 to 900 psia from 100 F with k = 1.3 and eta = 0.75 the single-stage discharge temperature is now 784.8 R (325 F) instead of 559.7 R, and the staged plan rejects one and two stages (784.8 R and 686.4 R, both above the 660 R limit) and recommends three (648.8 R). The head and power are recomputed independently in the test from n, H = Z R T/MW * n/(n-1) * (r^((n-1)/n) - 1) and BHP = W H / 33000 / eta with the engine's own Z, and agree within 1%."
+    },
+    "noted": {
+      "where": "CompressorAnalysisService and the reciprocating calculator",
+      "finding": "The reciprocating calculator hard-codes the compressor efficiency at 0.85 and the specific heat ratio at 1.3 regardless of the machine ('Typical for reciprocating'), and the service uses table-name literals COMPRESSOR_DESIGN and COMPRESSOR_PERFORMANCE.",
+      "handling": "The screen passes the reciprocating properties the entity carries (cylinder, stroke, speed, cylinders, volumetric efficiency, clearance) and reports the efficiency the engine returns rather than assuming one; the table-name literals are not used at all, which answers the feature's open question by not replicating them."
+    }
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgCompressor.cs (CompressorKinds, OgCompressorInputs, OgCompressorStage, OgCompressorResult, OgCompressorPending, OgCompressorWorkspace, CompressorRules, IOgCompressor, OgCompressorService with AnalyseAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "centrifugal": "The staged machine is what the module's staging calculator describes, so its result is the answer: the sum of the stage polytropic heads, the total motor horsepower, the total kW, the polytropic efficiency times the mechanical efficiency and the real final discharge temperature. A stage count the caller fixes is judged against the same limits rather than assumed acceptable.",
+    "reciprocating": "ReciprocatingCompressorCalculator.CalculatePower for the adiabatic head and power, with the discharge temperature reported but not judged - see the limits.",
+    "reasons": "The overall ratio against the module's own maximum (CompressorConstants.MaximumCompressionRatio = 10), the per-stage ratio against 4.0, the hottest stage against 660 R, and an overall efficiency at or below zero. An infeasible machine's power is null and POWER_ACHIEVED_IND is 'N', so a refusal never reads as an answer.",
+    "page": "src/Beep.OilandGas.Desktop/Views/CompressorPageView.cs (route 'compressor': the machine, duty, gas, efficiency and reciprocating bars, the result line, the staging line in both temperature units, the staging grid, the reasons panel and the saved results)",
+    "wiring": "OgBootstrapper (IOgCompressor), OgApplication.Compressors, catalog 'compressor' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/CompressorTests.cs (9, no database) + CompressorGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1020, "passed": 1020, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 47, "passed": 47, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 71, "views-constructed": true, "modulesetup-summary": "32 module(s) - 406 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with COMPRESSOR_POWER_RESULT (the extended shape), seeded in CompressorGatewayTests",
+    "ac1_reference": "a 5 MMscf/d centrifugal duty from 300 to 900 psia at 100 F (k 1.3, eta_p 0.75) is staged in 3 stages with a summed head of 51,229 ft-lbf/lbm and 375.8 hp (280.4 kW); the test recomputes both from the polytropic relations with the engine's Z and agrees within 1%",
+    "ac2_staging": "the plan rejects 1 stage (784.8 R) and 2 stages (686.4 R) against the 660 R interstage limit and recommends 3 (648.8 R); every allowed option is inside both limits, every rejected one outside at least one, and the chosen count is the fewest allowed",
+    "ac3_infeasible": "a fixed single stage at a ratio of 12 is refused with three reasons - the per-stage ratio of 12 against 4, the stage temperature of 1,202.2 R against 660 R, and the overall ratio of 12 against the module's maximum of 10 - with no power figure, and the stored row has FEASIBLE_IND='N', POWER_ACHIEVED_IND='N', MOTOR_HORSEPOWER=0 and both reason fragments",
+    "ac4_tokens": "the kinds are CompressorAnalysisWellKnown.CompressorType's CENTRIFUGAL and RECIPROCATING and the analysis types are its POWER, PRESSURE and EFFICIENCY; an unknown kind is refused naming the tokens; a source guard keeps both tokens out of the view and asserts no COMPRESSOR_DESIGN or COMPRESSOR_PERFORMANCE literal appears",
+    "ac5_units": "power is reported as hp with the kW equivalent, head as ft-lbf/lbm, efficiency as a percentage and the discharge temperature in both R and F; the units are stored on the row",
+    "ac6_saved": "the stored row asserts KIND='CENTRIFUGAL', STAGES=3, the stage ratio and hottest stage, both limits, FEASIBLE_IND='Y', POWER_ACHIEVED_IND='Y', the efficiency, the ratio, the head, the power and the units; a reciprocating row stores KIND='RECIPROCATING' with no stage count and no interstage limit",
+    "lost_acknowledgement": "dropping the table makes the save fail with the result retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping COMPRESSOR_POWER_RESULT makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A reference centrifugal case reproduces head and power within tolerance": "pass - the test recomputes the staged polytropic head and the motor horsepower from n = k*eta/(k*eta-(k-1)), H = Z R T/MW * n/(n-1) * (r^((n-1)/n)-1) and BHP = W H/33000/eta using only the engine's Z-factor, and agrees with the result within 1%; the same test asserts compression heats the gas, which the earlier exponent broke.",
+    "AC-2 Staging respects the interstage temperature limit": "pass - CompressorStagingLimits.Plan uses the engine's own 660 R and 4.0 limits, the chosen stage count is the fewest allowed, every allowed option is inside both limits and every rejected one outside at least one, and the limit is printed in R and F with the result.",
+    "AC-3 Infeasibility lists every reason": "pass - a fixed single stage at a ratio of 12 reports all three reasons (per-stage ratio, stage temperature, overall ratio), the panel prints each one, and the result carries no power figure at all.",
+    "AC-4 Analysis and type tokens come from CompressorAnalysisWellKnown": "pass - the kind and analysis-type lists are that type's constants, an unknown kind is refused naming them, and a source guard asserts the view holds no token literal and no table-name literal.",
+    "AC-5 Power carries a unit": "pass - hp with the kW equivalent, ft-lbf/lbm for head, % for efficiency, and R with F for the discharge temperature; the units are stored on the row.",
+    "AC-6 Saved results record type, staging and efficiency": "pass - KIND, STAGES, STAGE_RATIO, MAX_STAGE_TEMPERATURE_R, both limits and OVERALL_EFFICIENCY are written and asserted in SQL, for a centrifugal and a reciprocating machine."
+  },
+  "limits": [
+    "No interstage temperature limit is applied to a reciprocating machine: the module states 660 R only for its centrifugal staging plan, and a reciprocating discharge of 261.5 F at a ratio of 3 - ordinary by API 618 practice - would be refused by that limit. The discharge temperature is reported and not judged; inventing a threshold would have been worse than leaving it out.",
+    "The reciprocating calculator hard-codes a 0.85 compressor efficiency and a 1.3 specific heat ratio internally, so the screen's efficiency inputs affect the centrifugal path only. The screen reports the efficiency the engine returns.",
+    "The staging plan searches up to six stages, which is the engine's own default; a duty needing more is refused with that reason rather than extrapolated.",
+    "The surge margin column exists on the record but the engine's surge calculation is not surfaced: it needs a manufacturer's curve this repository does not have.",
+    "The gas composition is a single specific gravity, which is what both calculators take; no composition-based Z or k is offered.",
+    "The feature's permissions (lift.compressor.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

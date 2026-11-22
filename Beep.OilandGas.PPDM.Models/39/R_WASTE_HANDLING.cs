@@ -9,6 +9,7 @@ public partial class R_WASTE_HANDLING: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_HANDLING_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_HANDLING_METHOD
         {  
             get  

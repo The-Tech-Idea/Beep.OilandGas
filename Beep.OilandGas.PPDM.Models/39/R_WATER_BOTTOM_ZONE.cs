@@ -9,6 +9,7 @@ public partial class R_WATER_BOTTOM_ZONE: Entity,IPPDMEntity
 {
 
 private  System.String WATER_BOTTOM_ZONEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WATER_BOTTOM_ZONE
         {  
             get  

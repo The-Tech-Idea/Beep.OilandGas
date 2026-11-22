@@ -9,6 +9,7 @@ public partial class R_MUNICIPALITY: Entity,IPPDMEntity
 {
 
 private  System.String MUNICIPALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MUNICIPALITY
         {  
             get  

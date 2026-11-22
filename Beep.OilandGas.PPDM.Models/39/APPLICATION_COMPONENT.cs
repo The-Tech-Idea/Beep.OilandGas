@@ -9,6 +9,7 @@ public partial class APPLICATION_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String APPLICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String APPLICATION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String APPLICATION_IDValue;
           set { SetProperty(ref  APPLICATION_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

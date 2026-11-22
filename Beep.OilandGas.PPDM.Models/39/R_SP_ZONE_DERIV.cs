@@ -9,6 +9,7 @@ public partial class R_SP_ZONE_DERIV: Entity,IPPDMEntity
 {
 
 private  System.String ZONE_DERIVATION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_DERIVATION_METHOD
         {  
             get  

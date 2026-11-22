@@ -9,6 +9,7 @@ public partial class REPORT_HIER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String HIERARCHY_TYPE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIERARCHY_TYPE_ID
         {  
             get  

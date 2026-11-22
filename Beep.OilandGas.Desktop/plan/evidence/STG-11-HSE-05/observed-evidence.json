@@ -1,0 +1,75 @@
+{
+  "id": "STG-11/HSE-05",
+  "title": "Compliance calendar and obligations",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: due dates come from the recorded CRITICAL_DATE and are never interpreted; a missing one reads unscheduled and is never overdue; the jurisdiction is explicit and refused when blank; an obligation cannot be fulfilled without components or with a required one outstanding; the report process says no regulator delivery is established and refuses to pretend; and the calendar and the list count the same rows.",
+  "dataModel": {
+    "decision": "No table was created. The owner already holds the register in OBLIGATION and its components in OBLIGATION_COMPONENT. Three additive columns were needed because the feature's contract has parts the PPDM tables lack: OBLIGATION gained FIELD_ID and JURISDICTION (the owner's compliance service filters on a FIELD_ID it assumes exists and reads a JURISDICTION_CODE the table does not have), and OBLIGATION_COMPONENT gained REQUIRED_IND.",
+    "registration": "OBLIGATION and OBLIGATION_COMPONENT added to HseModule. --smoke moved from 429 to 430 entity types, so one of the two was already declared by another module and both are now in the HSE module's list.",
+    "mapping": "The kind is OBLIGATION_TYPE, the due date CRITICAL_DATE (with EXPIRY_DATE as the recorded fallback), the description DESCRIPTION, fulfilment FULFILLED_IND and FULFILLED_DATE, and a waiver the REMARK prefixed 'WAIVED: '. Components carry their name in DESCRIPTION, their requirement in REQUIRED_IND, their fulfilment in FULFILLED_IND/FULFILLED_DATE and their evidence in FULFILLED_REMARK."
+  },
+  "rules": {
+    "state": "Fulfilled and waived are recorded facts and win over the date; otherwise a recorded due date in the past is OVERDUE, today or later is PENDING, and no due date at all is UNSCHEDULED - never overdue. No legal deadline is interpreted and no date is inferred from a period, a frequency or a jurisdiction.",
+    "jurisdiction": "Required on creation; a blank one is refused with 'None is assumed from the field, the company or a default country'. A stored blank reads 'not specified'.",
+    "components": "An obligation is created with at least one component, because one without could never be fulfilled. Fulfilment requires every required component to be fulfilled, and the refusal names those still outstanding; optional components may remain open.",
+    "waiver": "A waiver requires its reason, which is kept as its own record ('WAIVED: <reason>') rather than overwriting the obligation's description.",
+    "report": "The report process is an internal request, and this build has no workflow engine and no regulator channel. The constant sentence and the refusal both say that no regulator delivery is established."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Hse/OgCompliance.cs (OgObligationComponent, OgObligation, OgCalendarDay, OgComplianceWorkspace, ComplianceRules, IOgCompliance, OgCompliance with LoadAsync/CreateAsync/FulfilComponentAsync/FulfilAsync/WaiveAsync/RequestReportAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/CompliancePageView.cs (route 'compliance': the field and month filter, the month's day grid, the obligation grid, the selected obligation and its components, fulfilment and waiver bars, the create bar, and the report-process sentence)",
+    "wiring": "OgBootstrapper (IOgCompliance), OgApplication.Compliance, catalog 'compliance' (OgModuleKeys.Hse), OgPageFactory, en + ar labels; HSE-01's compliance link now points at a real page",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/HseComplianceTests.cs (7, no database) + HseComplianceGatewayTests.cs (1 opt-in, real SQLite over two tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1189, "passed": 1189, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 66, "passed": 66, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 90, "views-constructed": true, "modulesetup-summary": "33 module(s) - 430 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with OBLIGATION and OBLIGATION_COMPONENT, declaring the composite keys the PPDM metadata uses (OBLIGATION_ID,OBLIGATION_SEQ_NO and the component's observation), seeded relative to today: one overdue with two components, one due in ten days, one fulfilled, one waived by its remark, one with no due date, and one on another field",
+    "ac1_dates": "the overdue obligation reads its recorded CRITICAL_DATE (today minus one) and is OVERDUE; nothing is derived from a period or a frequency",
+    "ac2_unscheduled": "the obligation with no due date reads UNSCHEDULED, has a null due date, says 'unscheduled' and is not counted as overdue",
+    "ac3_jurisdiction": "a stored null jurisdiction reads 'not specified'; creating with a blank jurisdiction is refused with compliance-jurisdiction-required and no row is written; a created obligation stores exactly the jurisdiction given (WY)",
+    "ac4_fulfilment": "fulfilling the obligation with no components is refused with compliance-no-components; fulfilling the one with two components while both are open is refused with compliance-components-outstanding naming 'Fee paid'; after each component is fulfilled with its evidence the obligation can be fulfilled, and FULFILLED_IND/FULFILLED_DATE are stored",
+    "ac5_report": "the report process answers compliance-report-not-wired with 'No regulator delivery is established'; the page prints the same sentence as a constant",
+    "ac6_counts": "the calendar's due and overdue totals equal the count of unfulfilled, unwaived obligations whose recorded dates fall in the month (computed in the test from the same dates), and the list's per-state counts match the seeded rows",
+    "waiver": "a waiver without a reason is refused; with one the remark starts 'WAIVED: Regulator confirmed' and the state reads WAIVED",
+    "field": "loading F-2 returns only the other field's obligation",
+    "unavailable": "dropping OBLIGATION_COMPONENT makes the load fail with no rows rather than an empty register"
+  },
+  "gates": {
+    "AC-1 Due dates come from records; no legal interpretation": "pass - the due date is the recorded CRITICAL_DATE, displayed as it is, and no deadline is computed from a rule, period or jurisdiction.",
+    "AC-2 A missing due date is unscheduled, not overdue": "pass - the state is a separate value, the due text says 'unscheduled', and the calendar skips it.",
+    "AC-3 Jurisdiction is explicit and never defaulted": "pass - creation refuses a blank one with a sentence that none is assumed, and a stored blank reads 'not specified'.",
+    "AC-4 An obligation without components cannot be fulfilled": "pass - refused, and a required component outstanding is named before anything is written.",
+    "AC-5 The report process states no regulator delivery": "pass - the constant and the refusal both say it, and nothing is written.",
+    "AC-6 The calendar and list agree on counts": "pass - both are built from the same rows and the gateway compares the calendar's totals with the recorded dates."
+  },
+  "engineFindings": {
+    "complianceServiceTargetsColumnsThatDoNotExist": {
+      "where": "Beep.OilandGas.PPDM39.DataManagement/Services/Compliance/ComplianceService.cs",
+      "finding": "The owner's compliance service builds an OBLIGATION row and maps it back by column names the PPDM table does not have - OBLIG_TYPE, OBLIG_STATUS, DUE_DATE, JURISDICTION_CODE, FULFILL_DATE, FIELD_ID - and reads them through a reflection helper that returns empty for a missing property. Its reads would therefore silently produce blank obligations rather than failing.",
+      "handling": "The desktop maps the columns that exist (OBLIGATION_TYPE, CRITICAL_DATE, DESCRIPTION, FULFILLED_IND/FULFILLED_DATE, REMARK) and adds the two the feature needs and the table lacked - FIELD_ID and JURISDICTION - as additive columns, so the owner service's own intent becomes expressible. Recorded rather than copied."
+    },
+    "noStatusColumn": {
+      "finding": "OBLIGATION has no status column; the owner's model carries one that the table does not. Its state can only be derived from the recorded fulfilment, the waiver remark and the due date.",
+      "handling": "The state is derived once in ComplianceRules.StateOf, and the UNSCHEDULED value is added to the owner's vocabulary for the case the owner's model cannot represent."
+    },
+    "componentRequirementWasMissing": {
+      "finding": "OBLIGATION_COMPONENT has no way to say whether a component is required, so 'all required components fulfilled' could not be expressed.",
+      "handling": "An additive REQUIRED_IND column, read as required when null so existing rows stay meaningful."
+    }
+  },
+  "limits": [
+    "The calendar is a list of the month's days with their due and overdue counts, not a graphical month grid: the desktop has no calendar control in this build, so the substitution is stated rather than pretending a month view exists.",
+    "Payments are not surfaced. The owner has OBLIG_PAYMENT and the feature's detail panel mentions payments and history, but this screen shows the obligation, its due date, its state and its components only.",
+    "There is no history of state changes: fulfilment and waiver are recorded on the row, and a previous state is not kept.",
+    "The report process cannot be started: the workflow engine (WFL-01/WFL-02) is not wired, so the command is refused and says so. The internal process request is not stored anywhere.",
+    "A waiver is a remark prefix, not a separate record with its own actor and timestamp beyond the row's audit columns.",
+    "The obligation kind list is the owner's own enumerated set; a jurisdiction the list does not name cannot be expressed as a kind, and the page does not let one be typed.",
+    "The writes are not one transaction: the obligation and its components commit separately, so a failure can leave an obligation with fewer components than intended; the create command refuses without components, so the failure mode is a partial set, not an empty one.",
+    "No per-command permission enforcement: the page is gated, and compliance.read/.write/.report are not checked per command."
+  ]
+}

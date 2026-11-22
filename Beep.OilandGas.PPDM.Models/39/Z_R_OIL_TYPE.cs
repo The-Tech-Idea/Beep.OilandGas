@@ -9,6 +9,7 @@ public partial class Z_R_OIL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OIL_TYPE
         {  
             get  

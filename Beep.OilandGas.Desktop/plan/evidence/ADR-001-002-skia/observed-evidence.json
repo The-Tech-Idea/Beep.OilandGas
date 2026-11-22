@@ -1,0 +1,40 @@
+{
+  "id": "ADR-001/ADR-002",
+  "title": "SkiaSharp unification and the WPF host control",
+  "date": "2026-11-05",
+  "sdk": "10.0.403",
+  "adr001": {
+    "decision": "Unify on SkiaSharp 4.154.0 and retire SkiaSharp.Svg in favour of Svg.Skia",
+    "probe": {
+      "location": "%TEMP%\\opencode\\adr001",
+      "targetFramework": "net10.0",
+      "packages": ["SkiaSharp 4.154.0", "Svg.Skia 5.2.3"],
+      "result": "Build succeeded; runtime output: skia-version 4.154.0.0, picture ok, pixel #ff0b6e4f, rendered True"
+    },
+    "finding": "Svg.Skia 5.2.3 restores and references against SkiaSharp 4.154.0 without a version conflict, parses an SVG and paints the exact expected pixel.",
+    "status": "accepted"
+  },
+  "adr002": {
+    "probeA": {
+      "location": "%TEMP%\\opencode\\adr002",
+      "targetFramework": "net10.0-windows",
+      "packages": ["SkiaSharp 4.154.0", "SkiaSharp.Views.WPF 4.154.0"],
+      "result": "Build succeeded, 0 errors, but NU1701: SkiaSharp.Views.WPF 4.154.0 was restored using .NETFramework 4.6.1–4.8.1 assets, not the net10.0-windows target. OpenTK 3.3.1 / OpenTK.GLWpfControl 3.3.0 arrive with the same warning."
+    },
+    "probeB": {
+      "location": "%TEMP%\\opencode\\adr002b",
+      "targetFramework": "net10.0-windows",
+      "packages": ["SkiaSharp 4.154.0"],
+      "result": "Runtime output: skia 4.154.0.0, bitmap 64x64 Bgra32, fallback-host ok"
+    },
+    "decision": "Do not use SkiaSharp.Views.WPF. Implement SkiaViewSurfaceHost as SKSurface/SKBitmap -> WriteableBitmap -> Image, refreshed on ViewSurface.Invalidated.",
+    "reason": "The only .NET WPF asset for this package is .NET Framework; running net4x WPF assemblies inside a net10.0 host is an unquantified runtime risk, and the package drags OpenTK. The managed fallback needs no extra package and was proven at runtime.",
+    "impact": "VSB-01 stays as specified (Draw / Invalidated / HandleMouse* / HandleKey / HandlePinch) but the implementation is WriteableBitmap-based, not SKElement-based. No other feature changes.",
+    "status": "accepted"
+  },
+  "limits": [
+    "The probes run outside the desktop solution; they prove package compatibility and the render path, not the final control's input forwarding or performance.",
+    "Only one SVG was rendered; complex gradients/patterns were not exercised.",
+    "ADR-008 (how OilandGasTools is consumed) remains open and still blocks STG-15."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class R_ANL_MISSING_REP: Entity,IPPDMEntity
 {
 
 private  System.String MISSING_REPRESENTATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MISSING_REPRESENTATION
         {  
             get  

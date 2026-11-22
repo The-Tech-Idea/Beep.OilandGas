@@ -1,0 +1,83 @@
+{
+  "id": "STG-13/WRK-03",
+  "title": "Maintenance plans and inspections",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: the next due date is last done plus the frequency in its unit and is never stored; an inspection with findings cannot close without a correctly linked corrective action; a generated job records the plan it came from and the date it was generated; the compliance state is derived from the computed date; a frequency always carries its unit and a unit never stands alone; and every recorded change names its actor and date.",
+  "dataModel": {
+    "owner": "The plan record is the owner's WELL_MAINTENANCE_PLAN in DevelopmentPlanning, the inspections are PPDM's WORK_ORDER_INSPECTION, and the generated jobs are WELL_SERVICE_JOB. The stage's open question - which project owns the plan record - is answered by keeping it where the owner already keeps it and adding only the schedule.",
+    "additive": "WELL_MAINTENANCE_PLAN already carried the asset, type, status, priority and a planned window but no frequency at all, so FREQUENCY, FREQUENCY_UNIT, LAST_DONE_DATE, TASK_LIST and the edit actor/date were added on its own partial class. WELL_SERVICE_JOB had no link back to the plan, so MAINT_PLAN_ID and GENERATED_ON were added the same way. Next due and compliance are computed, never columns.",
+    "link": "An inspection's linked action is the corrective-action PROJECT reachable through the work order's WORK_ORDER_COMPONENT.PROJECT_ID - the same link HSE-03 and WRK-02 use, so no second action table was invented."
+  },
+  "rules": {
+    "nextDue": "NextDue(lastDone, frequency, unit) adds the frequency in DAY, WEEK (x7), MONTH or YEAR; a missing frequency, unit or last done returns null rather than a date invented from today.",
+    "compliance": "Compliance(nextDue, isScheduled, asOf) is 'overdue' before today, 'due' on the day, 'current' after it and 'not scheduled' when the plan has no schedule; days overdue are computed for the chip.",
+    "frequency": "A frequency requires its unit and a unit requires a positive frequency; both must use one of DAY, WEEK, MONTH or YEAR, and anything else is refused with the list.",
+    "generation": "GenerateJobAsync refuses a plan that is current or not scheduled, naming its next due date, and records MAINT_PLAN_ID and GENERATED_ON on the job with the planned start at the due date.",
+    "closure": "An inspection whose notes record findings (or whose result is FAIL) cannot be recorded as closed unless the work order has a corrective action linked; a clean result is recorded directly.",
+    "actor": "Every write records its actor and its timestamp: the plan's schedule edit, the job's creator and generation date, and the inspection's inspector and inspected-at."
+  },
+  "implementation": {
+    "owner": "Beep.OilandGas.DevelopmentPlanning/Data/Tables/WELL_MAINTENANCE_PLAN.Schedule.cs and WELL_SERVICE_JOB.Generation.cs (additive partials; both classes were already partial)",
+    "service": "src/Beep.OilandGas.Desktop.Data/Work/OgMaintenance.cs (OgMaintenancePlan, OgServiceJob, OgInspectionRow, OgMaintenanceWorkspace, WorkMaintenanceRules, IOgMaintenance, OgMaintenanceService with LoadAsync/EditPlanAsync/GenerateJobAsync/RecordInspectionAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/MaintenancePageView.cs (route 'maintenance': the asset filter, the counts, the plan grid with its schedule editor and the generate command, the job grid, the inspection grid with its result bar)",
+    "wiring": "OgBootstrapper (IOgMaintenance), OgApplication.Maintenance, catalog 'maintenance' (OgModuleKeys.Work), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/MaintenancePlanTests.cs (6, no database) + MaintenanceGatewayTests.cs (1 opt-in, real SQLite over six tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1254, "passed": 1254, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 74, "passed": 74, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 98, "views-constructed": true, "modulesetup-summary": "33 module(s) - 435 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with WELL_MAINTENANCE_PLAN, WELL_SERVICE_JOB, WORK_ORDER_INSPECTION, WORK_ORDER, WORK_ORDER_COMPONENT and PROJECT. One plan on UWI-1 every 30 days last done 2026-10-01, one work order with one close-out inspection, and a corrective-action project that can be linked.",
+    "ac1_nextDue": "the plan's next due reads 2026-10-31 from last done plus 30 days, and the state is overdue against 2026-11-08 with the days overdue in the text",
+    "ac5_unit": "saving 7 without a unit is refused with maintenance-frequency-unit-required and the stored frequency stays 30",
+    "ac3_job": "generating from the overdue plan writes a job with MAINT_PLAN_ID 'PLAN-1', GENERATED_ON 2026-11-08 and the actor; after rescheduling to every 7 days from 2026-11-05 the plan is current and generation is refused with maintenance-not-due",
+    "ac2_findings": "recording a FAIL with findings is refused with maintenance-findings-need-action until a corrective-action project is linked to the work order; a clean PASS is recorded with its inspector and timestamp",
+    "ac4_compliance": "compliance is recomputed on every read from the computed date; nothing is stored",
+    "ac6_actor": "the plan edit records SCHEDULE_EDITED_BY, the job records its creator and generation date, and the inspection records its inspector and inspected-at",
+    "failure": "a service without a connection returns no workspace, and the page's failed branch clears all three grids"
+  },
+  "gates": {
+    "AC-1 Next due is last done plus frequency and unit": "pass - computed for DAY, WEEK, MONTH and YEAR and null without a schedule.",
+    "AC-2 An inspection with findings cannot close without linked actions": "pass - refused with the reason, then allowed once a corrective action is linked to the work order.",
+    "AC-3 A generated job references its plan and the generation date": "pass - both columns written and asserted in SQL.",
+    "AC-4 Compliance state is derived, not stored": "pass - computed on every read from the computed due date.",
+    "AC-5 Frequency always carries a unit": "pass - a frequency without a unit, a unit without a frequency and an unknown unit are all refused.",
+    "AC-6 Every recorded action names its actor and date": "pass - the plan edit, the generated job and the inspection all record both."
+  },
+  "engineFindings": {
+    "planRecordHadNoFrequency": {
+      "where": "Beep.OilandGas.DevelopmentPlanning/Data/Tables/WELL_MAINTENANCE_PLAN.cs",
+      "finding": "The owner's plan records the asset, maintenance type, status, priority and a planned window - and no frequency, unit, last done or tasks, so 'next due' had no recorded source.",
+      "handling": "The schedule is added on the plan's own partial class; the owner's columns are untouched, and a plan without a schedule reads 'not scheduled' rather than being given one."
+    },
+    "jobHadNoPlanLink": {
+      "finding": "WELL_SERVICE_JOB records the asset and a job status but nothing that says which plan produced it.",
+      "handling": "MAINT_PLAN_ID and GENERATED_ON are additive columns; a job raised by hand simply has no plan id."
+    },
+    "inspectionHasNoDueDate": {
+      "finding": "WORK_ORDER_INSPECTION records the result, the notes, the inspector and when it was inspected, but no due date - the due date belongs to the work order.",
+      "handling": "The inspection's due date is the linked WORK_ORDER.DUE_DATE, and an inspection with no work order shows none."
+    },
+    "requiredInspectionColumns": {
+      "finding": "WORK_ORDER_INSPECTION marks JURISDICTION and REQUIREMENT_ACTOR required, so an update of a seeded row without them fails validation.",
+      "handling": "The update preserves the recorded values and the gateway test seeds them; a real inspection always has them because the owner's write path sets them."
+    },
+    "generationDateFormat": {
+      "finding": "A date-only predicate on GENERATED_ON matched nothing because the provider stores a datetime.",
+      "handling": "The test compares with a date prefix; the stored value is a date at midnight."
+    }
+  },
+  "limits": [
+    "The plan's tasks are a free-text list, not structured task rows with their own skills and materials as the feature's editor describes; there is no task table in the owner's schema.",
+    "There is no frequency tolerance window: the feature mentions one, but nothing in the owner's records defines it, so none is invented and a plan is due on its due date.",
+    "An inspection's 'findings' are its RESULT_NOTES text; the owner records no finding rows, so a finding cannot be individually tracked.",
+    "The linked action is a corrective-action project reached through the work order component; the desktop does not confirm that the action addresses this inspection's finding, only that one is linked to the work order.",
+    "A generated job is a single record with the plan's due date as its planned window; there is no scheduling or resource assignment, which the stage places elsewhere.",
+    "The inspection list is filtered by the asset through its work order's component, so an inspection whose work order has no component is not shown for a filtered asset.",
+    "No per-command permission enforcement: the page is gated, and work.maintenance.write/generate and work.inspection.write are not checked per command.",
+    "The page has one plan editor, one generate command and one inspection bar rather than the Web's recorded-work, evidence, asset-return and closure panels; those panels are deferred."
+  ]
+}

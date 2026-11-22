@@ -9,6 +9,7 @@ public partial class R_SAMPLE_FRACTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_FRACTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_FRACTION_TYPE
         {  
             get  

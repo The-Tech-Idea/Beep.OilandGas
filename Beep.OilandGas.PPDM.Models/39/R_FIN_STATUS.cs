@@ -9,6 +9,7 @@ public partial class R_FIN_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String FIN_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIN_STATUS
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PPDM_QC_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String QC_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QC_STATUS
         {  
             get  

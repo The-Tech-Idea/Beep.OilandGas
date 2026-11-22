@@ -9,6 +9,7 @@ public partial class PPDM_RULE_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String RULE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RULE_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RULE_IDValue;
           set { SetProperty(ref  RULE_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

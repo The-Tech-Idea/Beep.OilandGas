@@ -9,6 +9,7 @@ public partial class RA_FAC_PIPE_COVER: Entity,IPPDMEntity
 {
 
 private  System.String COVER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COVER_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COVER_TYPEValue;
           set { SetProperty(ref  COVER_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

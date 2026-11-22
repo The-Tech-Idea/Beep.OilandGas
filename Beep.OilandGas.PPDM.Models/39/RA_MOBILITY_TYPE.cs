@@ -9,6 +9,7 @@ public partial class RA_MOBILITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MOBILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MOBILITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MOBILITY_TYPEValue;
           set { SetProperty(ref  MOBILITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

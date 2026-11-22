@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.DrillingAndConstruction
     public partial class CASING_PROGRAM : ModelEntityBase
     {
         private System.String CASING_IDValue = string.Empty;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String CASING_ID
         {
             get { return this.CASING_IDValue; }

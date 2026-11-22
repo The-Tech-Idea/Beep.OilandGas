@@ -9,6 +9,7 @@ public partial class R_RIG_SUBSTRUCTURE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTRUCTURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTRUCTURE_TYPE
         {  
             get  

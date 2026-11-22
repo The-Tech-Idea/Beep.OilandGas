@@ -9,6 +9,7 @@ public partial class R_CONSULT_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_XREF_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_DIRECTION: Entity,IPPDMEntity
 {
 
 private  System.String DIRECTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIRECTION
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DIRECTIONValue;
           set { SetProperty(ref  DIRECTIONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

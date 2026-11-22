@@ -9,6 +9,7 @@ public partial class R_LAND_REF_NUM_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LAND_REF_NUM_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_REF_NUM_TYPE
         {  
             get  

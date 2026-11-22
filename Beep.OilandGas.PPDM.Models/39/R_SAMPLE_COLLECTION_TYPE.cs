@@ -9,6 +9,7 @@ public partial class R_SAMPLE_COLLECTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String COLLECTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COLLECTION_TYPE
         {  
             get  

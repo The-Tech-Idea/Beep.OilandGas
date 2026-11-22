@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class LEASE_EXPIRY_EVENT : ModelEntityBase {
         private string LEASE_EXPIRY_EVENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string LEASE_EXPIRY_EVENT_ID
         {
             get { return this.LEASE_EXPIRY_EVENT_IDValue; }

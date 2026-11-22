@@ -9,6 +9,7 @@ public partial class RA_OFFSHORE_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String OFFSHORE_COMPLETION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OFFSHORE_COMPLETION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String OFFSHORE_COMPLETION_TYPEValue;
           set { SetProperty(ref  OFFSHORE_COMPLETION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

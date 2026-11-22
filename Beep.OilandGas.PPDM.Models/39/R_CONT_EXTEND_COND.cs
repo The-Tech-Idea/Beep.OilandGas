@@ -9,6 +9,7 @@ public partial class R_CONT_EXTEND_COND: Entity,IPPDMEntity
 {
 
 private  System.String EXTENSION_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EXTENSION_CONDITION
         {  
             get  

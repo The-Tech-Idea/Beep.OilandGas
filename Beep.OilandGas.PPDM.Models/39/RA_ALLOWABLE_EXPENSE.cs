@@ -9,6 +9,7 @@ public partial class RA_ALLOWABLE_EXPENSE: Entity,IPPDMEntity
 {
 
 private  System.String ALLOWABLE_EXPENSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALLOWABLE_EXPENSE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ALLOWABLE_EXPENSE_TYPEValue;
           set { SetProperty(ref  ALLOWABLE_EXPENSE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

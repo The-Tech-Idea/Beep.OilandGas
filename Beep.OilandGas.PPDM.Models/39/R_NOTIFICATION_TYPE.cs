@@ -9,6 +9,7 @@ public partial class R_NOTIFICATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String NOTIFICATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NOTIFICATION_TYPE
         {  
             get  

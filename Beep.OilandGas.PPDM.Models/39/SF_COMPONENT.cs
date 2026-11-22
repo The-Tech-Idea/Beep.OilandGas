@@ -9,6 +9,7 @@ public partial class SF_COMPONENT: Entity,IPPDMEntity
 {
 
 private  System.String SF_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SF_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SF_SUBTYPEValue;
           set { SetProperty(ref  SF_SUBTYPEValue, value); }
         } 
 private  System.String SUPPORT_FACILITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUPPORT_FACILITY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SUPPORT_FACILITY_IDValue;
           set { SetProperty(ref  SUPPORT_FACILITY_IDValue, value); }
         } 
 private  System.String USE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String USE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String USE_IDValue;
           set { SetProperty(ref  USE_IDValue, value); }
         } 
 private  System.Decimal COMPONENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPONENT_OBS_NO
         {  
             get  

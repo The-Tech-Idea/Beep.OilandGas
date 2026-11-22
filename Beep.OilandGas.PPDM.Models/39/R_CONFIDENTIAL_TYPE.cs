@@ -9,6 +9,7 @@ public partial class R_CONFIDENTIAL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONFIDENTIAL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONFIDENTIAL_TYPE
         {  
             get  

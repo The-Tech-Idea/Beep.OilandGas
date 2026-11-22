@@ -9,6 +9,7 @@ public partial class BA_EMPLOYEE: Entity,IPPDMEntity
 {
 
 private  System.String EMPLOYER_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EMPLOYER_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EMPLOYER_BA_IDValue;
           set { SetProperty(ref  EMPLOYER_BA_IDValue, value); }
         } 
 private  System.String EMPLOYEE_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EMPLOYEE_BA_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String EMPLOYEE_BA_IDValue;
           set { SetProperty(ref  EMPLOYEE_BA_IDValue, value); }
         } 
 private  System.Decimal EMPLOYEE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal EMPLOYEE_OBS_NO
         {  
             get  

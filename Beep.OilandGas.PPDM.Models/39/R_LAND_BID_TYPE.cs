@@ -9,6 +9,7 @@ public partial class R_LAND_BID_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String LAND_BID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_BID_TYPE
         {  
             get  

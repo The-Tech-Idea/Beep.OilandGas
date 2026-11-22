@@ -9,6 +9,7 @@ public partial class RA_BA_LIC_VIOLATION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VIOLATION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VIOLATION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VIOLATION_TYPEValue;
           set { SetProperty(ref  VIOLATION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

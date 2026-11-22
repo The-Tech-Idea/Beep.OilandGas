@@ -9,6 +9,7 @@ public partial class R_CONSENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONSENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSENT_TYPE
         {  
             get  

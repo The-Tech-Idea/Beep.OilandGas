@@ -9,6 +9,7 @@ public partial class SEIS_ACQTN_SURVEY: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SET_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SET_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_SET_SUBTYPEValue;
           set { SetProperty(ref  SEIS_SET_SUBTYPEValue, value); }
         } 
 private  System.String SEIS_ACQTN_SURVEY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_ACQTN_SURVEY_ID
         {  
             get  

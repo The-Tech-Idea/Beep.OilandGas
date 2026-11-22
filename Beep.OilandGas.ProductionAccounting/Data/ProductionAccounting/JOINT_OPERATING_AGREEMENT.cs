@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class JOINT_OPERATING_AGREEMENT : ModelEntityBase {
         private System.String JOA_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String JOA_ID
         {
             get { return this.JOA_IDValue; }

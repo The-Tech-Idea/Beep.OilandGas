@@ -9,6 +9,7 @@ public partial class FOSSIL_TAXON_LEAF: Entity,IPPDMEntity
 {
 
 private  System.String TAXON_LEAF_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAXON_LEAF_ID
         {  
             get  

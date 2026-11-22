@@ -9,6 +9,7 @@ public partial class R_RESENT_CONFIDENCE: Entity,IPPDMEntity
 {
 
 private  System.String CONFIDENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONFIDENCE_TYPE
         {  
             get  

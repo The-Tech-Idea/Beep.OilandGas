@@ -9,6 +9,7 @@ public partial class R_FIN_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FIN_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIN_XREF_TYPE
         {  
             get  

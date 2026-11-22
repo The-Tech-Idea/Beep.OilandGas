@@ -9,6 +9,7 @@ public partial class BA_CREW_MEMBER: Entity,IPPDMEntity
 {
 
 private  System.String CREW_COMPANY_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_COMPANY_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CREW_COMPANY_BA_IDValue;
           set { SetProperty(ref  CREW_COMPANY_BA_IDValue, value); }
         } 
 private  System.String CREW_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CREW_IDValue;
           set { SetProperty(ref  CREW_IDValue, value); }
         } 
 private  System.Decimal MEMBER_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal MEMBER_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal MEMBER_OBS_NOValue;
           set { SetProperty(ref  MEMBER_OBS_NOValue, value); }
         } 
 private  System.String CREW_MEMBER_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CREW_MEMBER_BA_ID
         {  
             get  

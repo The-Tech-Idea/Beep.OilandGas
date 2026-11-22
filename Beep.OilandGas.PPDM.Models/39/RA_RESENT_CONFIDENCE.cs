@@ -9,6 +9,7 @@ public partial class RA_RESENT_CONFIDENCE: Entity,IPPDMEntity
 {
 
 private  System.String CONFIDENCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONFIDENCE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONFIDENCE_TYPEValue;
           set { SetProperty(ref  CONFIDENCE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

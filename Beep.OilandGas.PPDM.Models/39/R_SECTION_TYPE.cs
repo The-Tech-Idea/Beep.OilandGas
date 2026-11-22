@@ -9,6 +9,7 @@ public partial class R_SECTION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SECTION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SECTION_TYPE
         {  
             get  

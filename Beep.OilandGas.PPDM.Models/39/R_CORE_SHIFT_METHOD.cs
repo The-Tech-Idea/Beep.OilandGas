@@ -9,6 +9,7 @@ public partial class R_CORE_SHIFT_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CORE_SHIFT_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORE_SHIFT_METHOD
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PPDM_DEFAULT_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String DEFAULT_VALUE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEFAULT_VALUE_METHOD
         {  
             get  

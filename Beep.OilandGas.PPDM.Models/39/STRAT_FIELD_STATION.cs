@@ -9,6 +9,7 @@ public partial class STRAT_FIELD_STATION: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_STATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_STATION_ID
         {  
             get  

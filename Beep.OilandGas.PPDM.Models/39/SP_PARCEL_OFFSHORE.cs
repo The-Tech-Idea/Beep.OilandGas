@@ -9,6 +9,7 @@ public partial class SP_PARCEL_OFFSHORE: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_OFFSHORE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_OFFSHORE_ID
         {  
             get  

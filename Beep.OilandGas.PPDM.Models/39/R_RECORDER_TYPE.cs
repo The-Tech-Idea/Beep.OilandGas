@@ -9,6 +9,7 @@ public partial class R_RECORDER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RECORDER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORDER_TYPE
         {  
             get  

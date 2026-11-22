@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class PARTICIPATING_AREA : ModelEntityBase {
         private System.String PARTICIPATING_AREA_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String PARTICIPATING_AREA_ID
         {
             get { return this.PARTICIPATING_AREA_IDValue; }

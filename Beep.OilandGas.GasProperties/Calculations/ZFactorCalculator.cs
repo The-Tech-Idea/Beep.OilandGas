@@ -162,10 +162,47 @@ namespace Beep.OilandGas.GasProperties.Calculations
         /// <param name="temperature">Temperature in Rankine.</param>
         /// <param name="specificGravity">Gas specific gravity (relative to air).</param>
         /// <returns>Z-factor (dimensionless).</returns>
-        public static decimal CalculateStandingKatz(
+        /// <summary>
+        /// Dranchuk-Abou-Kassem coefficients (Dranchuk &amp; Abou-Kassem, 1975), the correlation the Standing-Katz
+        /// method implements.
+        /// </summary>
+        private static readonly decimal[] Dak =
+        [
+            0.3265m, -1.0700m, -0.5339m, 0.01569m, -0.05165m,
+            0.5475m, -0.7361m, 0.1844m, 0.1056m, 0.6134m, 0.7210m,
+        ];
+
+        /// <summary>The lowest pseudo-reduced temperature DAK is defined for.</summary>
+        public const decimal DAKMinimumPseudoReducedTemperature = 1.0m;
+
+        /// <summary>The highest pseudo-reduced temperature DAK is defined for.</summary>
+        public const decimal DAKMaximumPseudoReducedTemperature = 3.0m;
+
+        /// <summary>The highest pseudo-reduced pressure DAK is defined for.</summary>
+        public const decimal DAKMaximumPseudoReducedPressure = 30m;
+
+        /// <summary>
+        /// Calculates the Standing-Katz Z-factor through the Dranchuk-Abou-Kassem equation, reporting whether the
+        /// equation actually converged.
+        /// </summary>
+        /// <remarks>
+        /// The equation is
+        /// <c>Z = 1 + (A1 + A2/T + A3/T^3 + A4/T^4 + A5/T^5) r + (A6 + A7/T + A8/T^2) r^2
+        /// - A9 (A7/T + A8/T^2) r^5 + A10 (1 + A11 r^2) (r^2/T^3) e^(-A11 r^2)</c>
+        /// with <c>r = 0.27 Ppr / (Z Tpr)</c>, solved by successive substitution.
+        /// <para>
+        /// <c>CalculateStandingKatz</c> has always returned a number and clamped it to 0.1..2.0, which meant a
+        /// non-converging case (for example Tpr = 1.5, Ppr = 3.0 with this file's previous iteration) came back as
+        /// exactly 2.0 - a number that reads like a result. This method is the honest form: it returns false when the
+        /// equation does not converge or the point is outside the correlation's range, so a caller that must show a
+        /// failure (RES-01) can. <c>CalculateStandingKatz</c> keeps its old shape for existing callers.
+        /// </para>
+        /// </remarks>
+        public static bool TryCalculateStandingKatz(
             decimal pressure,
             decimal temperature,
-            decimal specificGravity)
+            decimal specificGravity,
+            out decimal zFactor)
         {
             if (pressure <= 0)
                 throw RefusalException.Invalid("Pressure must be greater than zero.");
@@ -176,70 +213,98 @@ namespace Beep.OilandGas.GasProperties.Calculations
             if (specificGravity <= 0)
                 throw RefusalException.Invalid("Specific gravity must be greater than zero.");
 
-            // Calculate pseudo-critical properties
             decimal pseudoCriticalPressure = 756.8m - 131.0m * specificGravity - 3.6m * specificGravity * specificGravity;
             decimal pseudoCriticalTemperature = 169.2m + 349.5m * specificGravity - 74.0m * specificGravity * specificGravity;
 
-            // Calculate pseudo-reduced properties
             decimal pseudoReducedPressure = pressure / pseudoCriticalPressure;
             decimal pseudoReducedTemperature = temperature / pseudoCriticalTemperature;
 
-            // Dranchuk-Abu-Kassem correlation (approximation of Standing-Katz)
-            decimal t = 1.0m / pseudoReducedTemperature;
-            decimal A1 = 0.3265m;
-            decimal A2 = -1.0700m;
-            decimal A3 = -0.5339m;
-            decimal A4 = 0.01569m;
-            decimal A5 = -0.05165m;
-            decimal A6 = 0.5475m;
-            decimal A7 = -0.7361m;
-            decimal A8 = 0.1844m;
-            decimal A9 = 0.1056m;
-            decimal A10 = 0.6134m;
-            decimal A11 = 0.7210m;
-
-            // Solve for density using Newton-Raphson
-            decimal rhoR = 0.27m * pseudoReducedPressure / pseudoReducedTemperature; // Initial guess
-            decimal rhoROld = 0m;
-            int iterations = 0;
-            const int maxIterations = 100;
-            const decimal tolerance = 0.0001m;
-
-            while (Math.Abs(rhoR - rhoROld) > tolerance && iterations < maxIterations)
+            // Outside this range the correlation is not defined, and a number would be a fabrication.
+            if (pseudoReducedTemperature <= DAKMinimumPseudoReducedTemperature
+                || pseudoReducedTemperature > DAKMaximumPseudoReducedTemperature
+                || pseudoReducedPressure <= 0m
+                || pseudoReducedPressure > DAKMaximumPseudoReducedPressure)
             {
-                rhoROld = rhoR;
-                decimal rhoR2 = rhoR * rhoR;
-                decimal rhoR4 = rhoR2 * rhoR2;
-                decimal rhoR5 = rhoR4 * rhoR;
-
-                decimal f = 1.0m + A1 * rhoR + A2 * rhoR + A3 * rhoR2 + A4 * rhoR4 + A5 * rhoR5 +
-                           (A6 + A7 * rhoR + A8 * rhoR2) * rhoR2 * (decimal)Math.Exp((double)(-A9 * rhoR2)) -
-                           A10 * (1.0m + A11 * rhoR2) * rhoR2 * (decimal)Math.Exp((double)(-A11 * rhoR2)) -
-                           0.27m * pseudoReducedPressure / (pseudoReducedTemperature * rhoR);
-
-                decimal df = A1 + 2.0m * A3 * rhoR + 4.0m * A4 * rhoR2 * rhoR + 5.0m * A5 * rhoR4 +
-                            (2.0m * A6 * rhoR + 3.0m * A7 * rhoR2 + 4.0m * A8 * rhoR2 * rhoR) * (decimal)Math.Exp((double)(-A9 * rhoR2)) -
-                            (A6 + A7 * rhoR + A8 * rhoR2) * rhoR2 * 2.0m * A9 * rhoR * (decimal)Math.Exp((double)(-A9 * rhoR2)) -
-                            A10 * (2.0m * A11 * rhoR) * (decimal)Math.Exp((double)(-A11 * rhoR2)) +
-                            A10 * (1.0m + A11 * rhoR2) * rhoR2 * 2.0m * A11 * rhoR * (decimal)Math.Exp((double)(-A11 * rhoR2)) +
-                            0.27m * pseudoReducedPressure / (pseudoReducedTemperature * rhoR * rhoR);
-
-                if (Math.Abs(df) < 0.0001m)
-                    break;
-
-                rhoR = rhoR - f / df;
-
-                if (rhoR < 0.001m)
-                    rhoR = 0.001m;
-                if (rhoR > 3.0m)
-                    rhoR = 3.0m;
-
-                iterations++;
+                zFactor = 0m;
+                return false;
             }
 
-            decimal zFactor = 0.27m * pseudoReducedPressure / (pseudoReducedTemperature * rhoR);
+            decimal inverseT = 1.0m / pseudoReducedTemperature;
 
-            return Clamp(zFactor, 0.1m, 2.0m); // Clamp to reasonable range
+            decimal z = 1.0m;
+            var converged = false;
+
+            for (var iteration = 0; iteration < 100; iteration++)
+            {
+                decimal reducedDensity = 0.27m * pseudoReducedPressure / (z * pseudoReducedTemperature);
+
+                if (reducedDensity <= 0m)
+                {
+                    break;
+                }
+
+                decimal next = DAKZAt(reducedDensity, inverseT);
+
+                if (next <= 0m)
+                {
+                    break;
+                }
+
+                if (Math.Abs(next - z) <= 0.0000001m)
+                {
+                    z = next;
+                    converged = true;
+                    break;
+                }
+
+                z = next;
+            }
+
+            zFactor = z;
+            return converged;
+        }
+
+        /// <summary>The Dranchuk-Abou-Kassem right-hand side at one reduced density.</summary>
+        private static decimal DAKZAt(decimal reducedDensity, decimal inverseT)
+        {
+            decimal a1 = Dak[0], a2 = Dak[1], a3 = Dak[2], a4 = Dak[3], a5 = Dak[4];
+            decimal a6 = Dak[5], a7 = Dak[6], a8 = Dak[7], a9 = Dak[8], a10 = Dak[9], a11 = Dak[10];
+
+            decimal t2 = inverseT * inverseT;
+            decimal t3 = t2 * inverseT;
+            decimal t4 = t3 * inverseT;
+            decimal t5 = t4 * inverseT;
+
+            decimal r = reducedDensity;
+            decimal r2 = r * r;
+            decimal r5 = r2 * r2 * r;
+
+            return 1.0m
+                   + (a1 + a2 * inverseT + a3 * t3 + a4 * t4 + a5 * t5) * r
+                   + (a6 + a7 * inverseT + a8 * t2) * r2
+                   - a9 * (a7 * inverseT + a8 * t2) * r5
+                   + a10 * (1.0m + a11 * r2) * (r2 * t3) * (decimal)Math.Exp((double)(-a11 * r2));
+        }
+
+        /// <summary>
+        /// Calculates Z-factor using the Standing-Katz correlation (Dranchuk-Abou-Kassem).
+        /// </summary>
+        /// <param name="pressure">Pressure in psia.</param>
+        /// <param name="temperature">Temperature in Rankine.</param>
+        /// <param name="specificGravity">Gas specific gravity (relative to air).</param>
+        /// <returns>Z-factor (dimensionless), clamped to 0.1..2.0 as this method always has.</returns>
+        /// <remarks>
+        /// Kept for callers that must have a number. A caller that must distinguish a non-converged point should call
+        /// <see cref="TryCalculateStandingKatz"/> instead.
+        /// </remarks>
+        public static decimal CalculateStandingKatz(
+            decimal pressure,
+            decimal temperature,
+            decimal specificGravity)
+        {
+            TryCalculateStandingKatz(pressure, temperature, specificGravity, out var zFactor);
+
+            return Clamp(zFactor <= 0m ? 0.1m : zFactor, 0.1m, 2.0m);
         }
 
         private static decimal Clamp(decimal value, decimal min, decimal max)

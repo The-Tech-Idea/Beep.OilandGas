@@ -9,6 +9,7 @@ public partial class RA_ANL_VALID_PROBLEM: Entity,IPPDMEntity
 {
 
 private  System.String PROBLEM_RESULT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROBLEM_RESULT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROBLEM_RESULT_TYPEValue;
           set { SetProperty(ref  PROBLEM_RESULT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

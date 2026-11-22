@@ -9,6 +9,7 @@ public partial class R_SAMPLE_SHAPE: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_SHAPE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_SHAPE_TYPE
         {  
             get  

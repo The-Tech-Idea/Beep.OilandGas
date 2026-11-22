@@ -9,6 +9,7 @@ public partial class R_PERIOD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PERIOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERIOD_TYPE
         {  
             get  

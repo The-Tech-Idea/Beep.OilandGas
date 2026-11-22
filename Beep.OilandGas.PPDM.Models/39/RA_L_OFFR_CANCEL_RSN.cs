@@ -9,6 +9,7 @@ public partial class RA_L_OFFR_CANCEL_RSN: Entity,IPPDMEntity
 {
 
 private  System.String LAND_OFFR_CANCEL_RSNValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_OFFR_CANCEL_RSN
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LAND_OFFR_CANCEL_RSNValue;
           set { SetProperty(ref  LAND_OFFR_CANCEL_RSNValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

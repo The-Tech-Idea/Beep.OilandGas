@@ -9,6 +9,7 @@ public partial class R_INSP_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String INSPECTION_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSPECTION_STATUS
         {  
             get  

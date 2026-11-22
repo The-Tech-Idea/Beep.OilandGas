@@ -9,6 +9,7 @@ public partial class PALEO_CONFIDENCE: Entity,IPPDMEntity
 {
 
 private  System.String CONFIDENCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONFIDENCE_ID
         {  
             get  

@@ -10,6 +10,7 @@ public partial class STRAT_COLUMN: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_COLUMN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_COLUMN_ID
         {  
             get  
@@ -20,6 +21,7 @@ private  System.String STRAT_COLUMN_IDValue;
           set { SetProperty(ref  STRAT_COLUMN_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

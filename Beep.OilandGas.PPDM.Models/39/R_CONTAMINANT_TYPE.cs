@@ -9,6 +9,7 @@ public partial class R_CONTAMINANT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTAMINANT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTAMINANT_TYPE
         {  
             get  

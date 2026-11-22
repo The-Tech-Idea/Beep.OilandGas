@@ -9,6 +9,7 @@ public partial class R_ITEM_CATEGORY: Entity,IPPDMEntity
 {
 
 private  System.String ITEM_CATEGORYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ITEM_CATEGORY
         {  
             get  

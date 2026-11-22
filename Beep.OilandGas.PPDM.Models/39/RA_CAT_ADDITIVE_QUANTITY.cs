@@ -9,6 +9,7 @@ public partial class RA_CAT_ADDITIVE_QUANTITY: Entity,IPPDMEntity
 {
 
 private  System.String QUANTITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUANTITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String QUANTITY_TYPEValue;
           set { SetProperty(ref  QUANTITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

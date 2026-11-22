@@ -9,6 +9,7 @@ public partial class R_ANL_TOLERANCE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TOLERANCE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TOLERANCE_TYPE
         {  
             get  

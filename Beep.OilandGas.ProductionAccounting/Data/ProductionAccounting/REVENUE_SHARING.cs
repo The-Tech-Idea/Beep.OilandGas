@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class REVENUE_SHARING : ModelEntityBase {
         private System.String REVENUE_SHARING_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String REVENUE_SHARING_ID
         {
             get { return this.REVENUE_SHARING_IDValue; }

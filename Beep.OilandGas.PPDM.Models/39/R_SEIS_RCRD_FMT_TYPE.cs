@@ -9,6 +9,7 @@ public partial class R_SEIS_RCRD_FMT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_RCRD_FMT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_RCRD_FMT_TYPE
         {  
             get  

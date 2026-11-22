@@ -9,6 +9,7 @@ public partial class RA_CONT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONTRACT_STATUSValue;
           set { SetProperty(ref  CONTRACT_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

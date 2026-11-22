@@ -9,6 +9,7 @@ public partial class R_POOL_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String POOL_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POOL_STATUS
         {  
             get  

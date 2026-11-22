@@ -9,6 +9,7 @@ public partial class R_LITH_BOUNDARY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BOUNDARY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BOUNDARY_TYPE
         {  
             get  

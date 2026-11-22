@@ -9,6 +9,7 @@ public partial class RA_WASTE_FACILITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_FACILITY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WASTE_FACILITY_TYPEValue;
           set { SetProperty(ref  WASTE_FACILITY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

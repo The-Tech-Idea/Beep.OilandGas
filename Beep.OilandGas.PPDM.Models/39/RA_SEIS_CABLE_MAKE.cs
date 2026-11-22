@@ -9,6 +9,7 @@ public partial class RA_SEIS_CABLE_MAKE: Entity,IPPDMEntity
 {
 
 private  System.String CABLE_MAKEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CABLE_MAKE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CABLE_MAKEValue;
           set { SetProperty(ref  CABLE_MAKEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

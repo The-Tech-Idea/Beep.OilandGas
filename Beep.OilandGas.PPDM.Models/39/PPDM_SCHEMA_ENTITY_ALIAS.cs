@@ -9,6 +9,7 @@ public partial class PPDM_SCHEMA_ENTITY_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String SYSTEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SYSTEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SYSTEM_IDValue;
           set { SetProperty(ref  SYSTEM_IDValue, value); }
         } 
 private  System.String SCHEMA_ENTITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SCHEMA_ENTITY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SCHEMA_ENTITY_IDValue;
           set { SetProperty(ref  SCHEMA_ENTITY_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

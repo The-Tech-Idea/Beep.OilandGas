@@ -9,6 +9,7 @@ public partial class R_PROJECT_ALIAS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROJ_ALIAS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJ_ALIAS_TYPE
         {  
             get  

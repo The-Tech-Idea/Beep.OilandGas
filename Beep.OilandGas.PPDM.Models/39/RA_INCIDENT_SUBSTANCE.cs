@@ -9,6 +9,7 @@ public partial class RA_INCIDENT_SUBSTANCE: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_SUBSTANCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_SUBSTANCE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INCIDENT_SUBSTANCEValue;
           set { SetProperty(ref  INCIDENT_SUBSTANCEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

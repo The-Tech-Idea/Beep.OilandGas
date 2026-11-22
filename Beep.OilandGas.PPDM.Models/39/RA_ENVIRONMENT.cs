@@ -9,6 +9,7 @@ public partial class RA_ENVIRONMENT: Entity,IPPDMEntity
 {
 
 private  System.String ENVIRONMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENVIRONMENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ENVIRONMENT_TYPEValue;
           set { SetProperty(ref  ENVIRONMENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

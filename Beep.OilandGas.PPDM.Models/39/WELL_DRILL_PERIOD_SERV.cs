@@ -9,6 +9,7 @@ public partial class WELL_DRILL_PERIOD_SERV: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.Decimal PERIOD_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal PERIOD_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal PERIOD_OBS_NOValue;
           set { SetProperty(ref  PERIOD_OBS_NOValue, value); }
         } 
 private  System.String PROVIDED_BYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROVIDED_BY
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PROVIDED_BYValue;
           set { SetProperty(ref  PROVIDED_BYValue, value); }
         } 
 private  System.Decimal SERVICE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SERVICE_SEQ_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal SERVICE_SEQ_NOValue;
           set { SetProperty(ref  SERVICE_SEQ_NOValue, value); }
         } 
 private  System.Decimal SEGMENT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SEGMENT_OBS_NO
         {  
             get  

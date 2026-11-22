@@ -9,6 +9,7 @@ public partial class R_EQUIP_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String STATUS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STATUS_TYPEValue;
           set { SetProperty(ref  STATUS_TYPEValue, value); }
         } 
 private  System.String EQUIP_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIP_STATUS
         {  
             get  

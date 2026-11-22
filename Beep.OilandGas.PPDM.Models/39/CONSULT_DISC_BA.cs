@@ -9,6 +9,7 @@ public partial class CONSULT_DISC_BA: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSULT_IDValue;
           set { SetProperty(ref  CONSULT_IDValue, value); }
         } 
 private  System.String DISCUSSION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DISCUSSION_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String DISCUSSION_IDValue;
           set { SetProperty(ref  DISCUSSION_IDValue, value); }
         } 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  

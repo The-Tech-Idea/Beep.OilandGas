@@ -9,6 +9,7 @@ public partial class RA_LOG_POSITION_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String POSITION_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POSITION_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String POSITION_TYPEValue;
           set { SetProperty(ref  POSITION_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

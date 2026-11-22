@@ -9,6 +9,7 @@ public partial class R_METHOD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String METHOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String METHOD_TYPE
         {  
             get  

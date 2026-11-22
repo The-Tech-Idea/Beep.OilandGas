@@ -9,6 +9,7 @@ public partial class RA_AUTHOR_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AUTHOR_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUTHOR_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String AUTHOR_TYPEValue;
           set { SetProperty(ref  AUTHOR_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

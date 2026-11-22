@@ -9,6 +9,7 @@ public partial class R_WASTE_FACILITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WASTE_FACILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WASTE_FACILITY_TYPE
         {  
             get  

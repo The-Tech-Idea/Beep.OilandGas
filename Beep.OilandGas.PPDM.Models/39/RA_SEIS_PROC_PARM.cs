@@ -9,6 +9,7 @@ public partial class RA_SEIS_PROC_PARM: Entity,IPPDMEntity
 {
 
 private  System.String PARAMETER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARAMETER_TYPEValue;
           set { SetProperty(ref  PARAMETER_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

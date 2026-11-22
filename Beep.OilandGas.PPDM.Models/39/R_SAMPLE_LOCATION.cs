@@ -9,6 +9,7 @@ public partial class R_SAMPLE_LOCATION: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_LOCATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_LOCATION
         {  
             get  

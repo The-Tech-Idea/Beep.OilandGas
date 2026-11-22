@@ -9,6 +9,7 @@ public partial class R_INST_DETAIL_CODE: Entity,IPPDMEntity
 {
 
 private  System.String INSTRUMENT_DETAIL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_DETAIL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INSTRUMENT_DETAIL_TYPEValue;
           set { SetProperty(ref  INSTRUMENT_DETAIL_TYPEValue, value); }
         } 
 private  System.String INSTRUMENT_DETAIL_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_DETAIL_CODE
         {  
             get  

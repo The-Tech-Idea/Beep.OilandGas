@@ -9,6 +9,7 @@ public partial class R_OBLIG_CALC_POINT: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATION_POINTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATION_POINT
         {  
             get  

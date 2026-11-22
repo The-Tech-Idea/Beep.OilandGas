@@ -9,6 +9,7 @@ public partial class RA_CONT_VOTE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String VOTE_PROCEDURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOTE_PROCEDURE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VOTE_PROCEDURE_TYPEValue;
           set { SetProperty(ref  VOTE_PROCEDURE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

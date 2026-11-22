@@ -9,6 +9,7 @@ public partial class RA_LR_SIZE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SIZE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SIZE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SIZE_TYPEValue;
           set { SetProperty(ref  SIZE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

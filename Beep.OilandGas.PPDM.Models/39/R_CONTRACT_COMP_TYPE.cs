@@ -9,6 +9,7 @@ public partial class R_CONTRACT_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONTRACT_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONTRACT_COMPONENT_TYPE
         {  
             get  

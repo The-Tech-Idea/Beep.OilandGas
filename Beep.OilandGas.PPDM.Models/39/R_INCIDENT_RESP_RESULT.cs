@@ -9,6 +9,7 @@ public partial class R_INCIDENT_RESP_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String RESPONSE_RESULTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESPONSE_RESULT
         {  
             get  

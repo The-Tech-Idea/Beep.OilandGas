@@ -9,6 +9,7 @@ public partial class R_ANL_PARAMETER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PARAMETER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_TYPE
         {  
             get  

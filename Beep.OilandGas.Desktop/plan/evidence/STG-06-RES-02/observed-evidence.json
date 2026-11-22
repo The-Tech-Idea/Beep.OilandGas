@@ -1,0 +1,49 @@
+{
+  "id": "STG-06/RES-02",
+  "title": "Oil properties (black-oil screening)",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-5 met: the reference case reproduces Pb 2896.78 psia, Rs 625.56 scf/STB and Bo 1.32759 within half a percent of values worked out by hand from the published Standing and Beggs-Robinson relations; a result outside the correlation's stated range is returned and marked rather than refused; a gas gravity is never applied silently, because either it is typed or the default is accepted explicitly and recorded as accepted; the screening banner is written once in the page's constructor and no branch can clear it; and every saved result keeps its inputs and its correlation.",
+  "dataModel": {
+    "decision": "The feature names OIL_PROPERTY_RESULT as its persistence, and that table already exists in the owning OilProperties module and already holds the concept: pressure, temperature, Bo, saturated viscosity, density, the correlation and the date. It was missing exactly what AC-2, AC-3 and AC-5 need - the inputs (API gravity, gas gravity), the bubble point, the solution GOR, the dead-oil viscosity, the flag that the default gas gravity was accepted, and the out-of-range mark with its reasons. Adding a parallel table would have duplicated the owner's record for the same concept, so the owner's table was extended additively with nullable columns instead. Entity count is unchanged at 387, which is the check that this was an extension and not a new registration.",
+    "addedColumns": "API_GRAVITY, GAS_SPECIFIC_GRAVITY, GAS_GRAVITY_ASSUMED_IND, SOLUTION_GOR, BUBBLE_POINT_PRESSURE, DEAD_OIL_VISCOSITY, OUTSIDE_RANGE_IND, RANGE_NOTES (all nullable except the two indicator columns, which default to 'N')",
+    "reusedColumns": "PRESSURE (psia), TEMPERATURE (degF), FORMATION_VOLUME_FACTOR (Bo), VISCOSITY (saturated), DENSITY, CORRELATION_METHOD, CALCULATION_DATE, ROW_CREATED_BY (the actor)",
+    "engine": "OilPropertyCalculator is called directly: CalculateBubblePointPressure_Standing, CalculateSolutionGOR_Standing, CalculateOilFVF_Standing, CalculateDeadOilViscosity_BeggsRobinson, CalculateSaturatedViscosity_BeggsRobinson. No correlation is re-implemented on the desktop side."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Reservoir/OgOilProperties.cs (OilCorrelations, OilUnits, OgOilPropertyInputs, OgOilPropertyResult, OgOilPropertyWorkspace, OilPropertyRules, IOgOilProperties, OgOilPropertiesService with RunAsync/SaveAsync/LoadAsync)",
+    "rules": "OilPropertyRules states the screening banner sentence, the missing-input list, the validation, the bubble-point consistency code and the range check against the owner's own OilPropertyConstants once, so the page and the tests agree. OilCorrelations answers the feature's open question: the correlation name is a constant on a shared type, not a literal in the view.",
+    "page": "src/Beep.OilandGas.Desktop/Views/OilPropertiesPageView.cs (route 'oilproperties': the always-present banner, API, gas gravity with an explicit 'accept the default' checkbox, temperature and unit, pressure, Rs, the correlation name, Run and Save, the results line, the range sentence, and a history grid whose selection reloads the inputs)",
+    "wiring": "OgBootstrapper (IOgOilProperties), OgApplication.OilProperties, catalog 'oilproperties' (OgModuleKeys.Reservoir), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/OilPropertiesTests.cs (10, no database, including the banner source guard) + OilPropertiesGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 879, "passed": 879, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 34, "passed": 34, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 58, "views-constructed": true, "modulesetup-summary": "28 module(s) - 387 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the extended OIL_PROPERTY_RESULT, seeded in OilPropertiesGatewayTests",
+    "ac5_save": "a screening of 35 API oil, gas gravity 0.65, 200 degF, Rs 600 scf/STB at 3000 psia is saved by 'sara' and read back with its API, gas gravity, pressure, temperature, correlation and actor; the stored bubble point matches the computed one within 0.01 psia",
+    "ac3_default": "the same screening with no gas gravity runs only when the default is accepted explicitly, and the stored row then carries GAS_GRAVITY_ASSUMED_IND='Y' with gas gravity 0.65 and the sentence 'the default, accepted explicitly'; a typed 0.7 with the box still ticked is recorded as not assumed",
+    "ac2_range": "40 API, gas gravity 0.8, 250 degF, Rs 4000 at 12000 psia gives a bubble point above the correlation's recorded maximum and a Bo above 3.0: the result is returned in full, marked outside range, and the stored row carries OUTSIDE_RANGE_IND='Y' with its notes",
+    "history": "the three saved runs reload with their figures intact (bubble point within 0.01 psia, Bo within 1e-6); saving an already-saved result does not duplicate the row",
+    "history_unavailable": "dropping the table makes LoadAsync return a workspace with HistoryFailed=true and the screening banner still present, and a new run still succeeds"
+  },
+  "gates": {
+    "AC-1 A reference case reproduces Pb, Rs and Bo within tolerance": "pass - 35 API, gas gravity 0.65, 200 degF, Rs 600 scf/STB gives Pb 2896.7799 psia, Rs at 3000 psia 625.5567 scf/STB, Bo 1.327592 rb/STB, dead viscosity 1.7854 cp and saturated viscosity 0.5139 cp; the expected values are worked out by hand from the published relations (the arithmetic is shown in the test) and asserted within half a percent. The same physical case entered in Rankine gives the same answer.",
+    "AC-2 Results outside the correlation's validity range are marked": "pass - the bubble point, Bo and both viscosities are checked against the owner's own OilPropertyConstants bounds; a breach adds a named note and sets OutsideRange without withholding any value, and the mark and its notes are stored.",
+    "AC-3 A default gas gravity is never applied silently": "pass - a missing gas gravity is a missing input (the run button is disabled with it named) and the service refuses with oil-property-gas-gravity-required; it is used only when UseDefaultGasGravity is set, and the result then says so, records the flag and prints 'the default, accepted explicitly'.",
+    "AC-4 The screening banner is present on every state": "pass - the sentence is a constant on OilPropertyRules, the page creates its banner from it once in the constructor, and a source-guard test asserts exactly one such construction and no '_banner.Text =' assignment anywhere, so no success, refusal or failure branch can blank it. The workspace carries the same banner, including when the history is unavailable.",
+    "AC-5 Every saved result records inputs and correlation": "pass - the extended OIL_PROPERTY_RESULT stores API gravity, gas gravity (and whether it was assumed), pressure, temperature, Rs, Pb, Bo, both viscosities, density, the correlation, the range mark and the actor, and the gateway test reads them back."
+  },
+  "limits": [
+    "Density is computed as 62.4 * Go / Bo from the owner's WaterDensity constant; the feature does not ask for it but the extended entity already had the column and a screening result is more useful with it.",
+    "Compressibility is left null: the feature lists it among the results, but the oil calculators expose no compressibility relation and inventing one would be a second implementation.",
+    "The Bo-and-Rs-vs-pressure chart from the feature's screens list is not drawn: there is still no chart host for these calculation screens (the plan's CurveCanvas control does not exist), which is the same limit RES-01 carries.",
+    "The composition-based screening path (OilPropertiesService.CompositionScreening, OIL_COMPOSITION) is not offered: this screen is the black-oil path the feature's inputs describe (API or density, gas gravity, temperature, pressure, Rs).",
+    "The bubble-point consistency rule is the state table's own: pressure below the computed bubble point is refused with both numbers, because free gas then exists and the saturated Rs/Bo relations do not describe the oil. The feature names this case without defining the reciprocal rule for an undersaturated pressure, so no correction above the bubble point is applied.",
+    "The feature's permissions (properties.oil.read, properties.oil.write) are not enforced per command: the app gates pages.",
+    "The correlation name is a constant on OilCorrelations rather than a reference-code row, because there is no R_OIL_CORRELATION table in this repository - the same limit RES-01 records for gas."
+  ]
+}

@@ -9,6 +9,7 @@ public partial class R_SEIS_PARM_ORIGIN: Entity,IPPDMEntity
 {
 
 private  System.String PARAMETER_ORIGINValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_ORIGIN
         {  
             get  

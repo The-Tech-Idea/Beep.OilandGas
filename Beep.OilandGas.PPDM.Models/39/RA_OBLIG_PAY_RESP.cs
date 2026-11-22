@@ -9,6 +9,7 @@ public partial class RA_OBLIG_PAY_RESP: Entity,IPPDMEntity
 {
 
 private  System.String PAYMENT_RESPONSIBILITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYMENT_RESPONSIBILITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PAYMENT_RESPONSIBILITYValue;
           set { SetProperty(ref  PAYMENT_RESPONSIBILITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

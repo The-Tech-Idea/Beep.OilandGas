@@ -9,6 +9,7 @@ public partial class RA_VESSEL_SIZE: Entity,IPPDMEntity
 {
 
 private  System.String VESSEL_SIZEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VESSEL_SIZE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VESSEL_SIZEValue;
           set { SetProperty(ref  VESSEL_SIZEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

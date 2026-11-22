@@ -1,0 +1,57 @@
+{
+  "id": "STG-08/WTA-02",
+  "title": "Well test register",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a registered test belongs to exactly one well through a natural key that begins with it and may carry several analyses through each analysis's TEST_ID (SG-08-4); the test types and result codes are validated against R_WELL_TEST_TYPE and R_TEST_RESULT; a duplicate well+date+type is refused against the stored rows; a test with no result code reads as pending and never as a failure; every rate, pressure and duration carries its unit; and a test with a linked analysis cannot be deleted while one without can.",
+  "dataModel": {
+    "decision": "PPDM's WELL_TEST is the owner's table for the test and already carries the date, type, duration and result code, so the register does not duplicate it. What the app adds - who recorded it, the result and duration in the register's own terms, the unit-bearing rates and the remarks - lives in a new LifeCycle-owned WELL_TEST_REGISTER row that identifies its test by the PPDM natural key (UWI + TEST_TYPE + RUN_NUM + TEST_NUM), because WELL_TEST has no surrogate key for a unit of work to address. The link runs the other way: WTA-01's WELL_TEST_ANALYSIS_RESULT.TEST_ID holds the same key, so one test has several analyses and each analysis belongs to exactly one test.",
+    "tables": [
+      "WELL_TEST_REGISTER (REGISTER_ID key, TEST_KEY, WELL_UWI, TEST_TYPE, RUN_NUM, TEST_NUM, TEST_DATE, DURATION, DURATION_OUOM, RESULT_CODE, PRODUCTION_METHOD, REMARKS, OIL_RATE/OUOM, GAS_RATE/OUOM, FLOWING_PRESSURE/OUOM, ACTOR, RECORDED_AT)",
+      "read: R_WELL_TEST_TYPE and R_TEST_RESULT (the codes), WELL_TEST_ANALYSIS_RESULT (the link)"
+    ],
+    "registration": "WELL_TEST_REGISTER was added to LifeCycleModule's entity list rather than creating a 34th module, because LifeCycle already owns this domain. --smoke now reports 33 modules and 410 entity types (up from 33 and 409)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/WellTest/OgWellTestRegister.cs (OgWellTestSummary, OgWellTestEntry, OgWellTestRegisterWorkspace, WellTestRegisterRules, IOgWellTestRegister, OgWellTestRegisterService with LoadAsync/SaveAsync/DeleteAsync)",
+    "link": "The register's TEST_KEY is UWI|TEST_TYPE|RUN_NUM|TEST_NUM; it is stored on the register row and matched against each analysis's TEST_ID, so a test's analysis count is a count of analyses pointing at it.",
+    "codes": "The type and result lists are read from R_WELL_TEST_TYPE and R_TEST_RESULT (active rows only) every time the workspace loads - the feature's open question about R_TEST_RESULT content is answered by reading it, and an empty table refuses registration with 'seed the reference table first' rather than accepting any code.",
+    "duplicate": "A second test for the same well, date and type is refused naming the date and the existing register id; an edit of the same row is not a duplicate.",
+    "delete": "DeleteAsync counts the analyses linked to the test first and refuses while any exist, naming the count.",
+    "page": "src/Beep.OilandGas.Desktop/Views/WellTestRegisterPageView.cs (route 'welltestregister': the identify/run/result/conditions bars, the registered-tests grid, the selected-test summary and an edit action that keeps the same row)",
+    "wiring": "OgBootstrapper (IOgWellTestRegister), OgApplication.WellTestRegister, catalog 'welltestregister' (OgModuleKeys.Wells), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/WellTestRegisterTests.cs (7, no database) + WellTestRegisterGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1037, "passed": 1037, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 49, "passed": 49, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 73, "views-constructed": true, "modulesetup-summary": "33 module(s) - 410 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with R_WELL_TEST_TYPE, R_TEST_RESULT, WELL_TEST_REGISTER and a minimal WELL_TEST_ANALYSIS_RESULT, seeded in WellTestRegisterGatewayTests",
+    "ac1_one_well": "a registered test stores WELL_UWI='WELL-1' with TEST_KEY='WELL-1|BUILDUP|1|1'; the same row is found by the key, and the key changes when the well or the type changes, so a test cannot belong to two wells. This is SG-08-4's first half.",
+    "ac1_several_analyses": "linking one analysis row whose TEST_ID is the test key makes the register read HasAnalysis true with a count of 1, and the count is derived from the analyses rather than stored - so a second analysis would read 2.",
+    "ac2_codes": "the workspace offers BUILDUP and DRAWDOWN from R_WELL_TEST_TYPE and FAILED and OK from R_TEST_RESULT; 'ISOCHRONAL' is refused naming the reference table and writing nothing",
+    "ac3_duplicate": "a second BUILDUP for the same well and date is refused with welltest-register-duplicate naming the date and leaving the row count at 1; a DRAWDOWN on the same date is accepted",
+    "ac4_pending": "a test with no result code reads StatusText 'pending result' and PendingResult true, and the stored RESULT_CODE is null; a test with a code reads the code and its reference long name",
+    "ac5_units": "the row stores OIL_RATE 1200 with OIL_RATE_OUOM bbl/d, GAS_RATE 900 with Mscf/d, FLOWING_PRESSURE 2400 with psia and DURATION 24 with h, and the page prints each with its unit; a value without a unit is refused",
+    "ac6_delete": "deleting the test that has an analysis is refused with welltest-register-analysis-linked and leaves both rows; deleting the analysis-free test succeeds and the row is gone",
+    "unavailable": "dropping the register table makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A test links to exactly one well and may link to several analyses": "pass - the natural key begins with the well and the register holds one WELL_UWI; the analysis count is read from the analyses whose TEST_ID is that key, so the multiplicity is on the analysis side. SG-08-4.",
+    "AC-2 Test type and result codes come from reference tables": "pass - both lists are read from R_WELL_TEST_TYPE and R_TEST_RESULT on every load, an unknown code is refused naming the table, and an empty table refuses with the instruction to seed it.",
+    "AC-3 A duplicate well+date+type is refused": "pass - refused against the stored rows with the date and the existing id named, while a different type on the same date is accepted and an edit of the same row is not treated as a duplicate.",
+    "AC-4 Pending result is distinct from failed": "pass - an absent or blank code is 'pending result' and never contains the word fail; a recorded code is shown with the reference long name, so a failure is expressed by the code itself.",
+    "AC-5 Rates and pressures carry units": "pass - the row stores each value with its OUOM and the page prints each with its unit; a value without a unit, or a duration without one of h/min/d, is refused.",
+    "AC-6 Deleting a test with analyses is refused": "pass - the delete counts the linked analyses first and refuses naming them, and the unanalysed test deletes cleanly."
+  },
+  "limits": [
+    "The register reads its reference codes from R_WELL_TEST_TYPE and R_TEST_RESULT as the feature asks; this repository's PPDM seeders supply them, and the gateway test seeds them by hand, so an unseeded database cannot register a test.",
+    "The PPDM WELL_TEST table itself is not written by this feature: the register row is the app's record, joined to WELL_TEST by the natural key. A test imported into PPDM without a register row does not appear on this screen until it is registered, and the screen says 'No well test is registered yet.' rather than showing a partial list.",
+    "Results are joined by TEST_KEY, so an analysis that predates this feature (its TEST_ID empty or holding another form of id) is not counted; the count reflects the link this feature establishes.",
+    "CSV import of tests (the plan's DAT-06 profile) is not built; the register is entered on the page.",
+    "The feature's permissions (welltest.register.write/.delete) are not enforced per command: the app gates pages.",
+    "WTA-03 (pipeline analysis and integrity) is still not started, so STG-08 is not complete."
+  ]
+}

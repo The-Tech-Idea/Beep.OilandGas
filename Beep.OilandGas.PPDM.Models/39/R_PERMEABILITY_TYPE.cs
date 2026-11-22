@@ -9,6 +9,7 @@ public partial class R_PERMEABILITY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PERMEABILITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERMEABILITY_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_BA_SERVICE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BA_SERVICE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_SERVICE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BA_SERVICE_TYPEValue;
           set { SetProperty(ref  BA_SERVICE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

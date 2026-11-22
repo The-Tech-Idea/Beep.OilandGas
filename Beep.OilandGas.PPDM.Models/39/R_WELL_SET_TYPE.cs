@@ -9,6 +9,7 @@ public partial class R_WELL_SET_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WELL_SET_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WELL_SET_TYPE
         {  
             get  

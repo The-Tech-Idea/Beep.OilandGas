@@ -9,6 +9,7 @@ public partial class R_PPDM_AUDIT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String AUDIT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AUDIT_REASON
         {  
             get  

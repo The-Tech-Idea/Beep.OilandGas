@@ -9,6 +9,7 @@ public partial class PPDM_PROPERTY_SET: Entity,IPPDMEntity
 {
 
 private  System.String PROPERTY_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROPERTY_SET_ID
         {  
             get  

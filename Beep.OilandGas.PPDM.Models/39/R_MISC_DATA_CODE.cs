@@ -9,6 +9,7 @@ public partial class R_MISC_DATA_CODE: Entity,IPPDMEntity
 {
 
 private  System.String MISC_DATA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MISC_DATA_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MISC_DATA_TYPEValue;
           set { SetProperty(ref  MISC_DATA_TYPEValue, value); }
         } 
 private  System.String MISC_DATA_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MISC_DATA_CODE
         {  
             get  

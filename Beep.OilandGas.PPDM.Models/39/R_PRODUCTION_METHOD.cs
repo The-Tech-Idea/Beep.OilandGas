@@ -9,6 +9,7 @@ public partial class R_PRODUCTION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String PRODUCTION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRODUCTION_METHOD
         {  
             get  

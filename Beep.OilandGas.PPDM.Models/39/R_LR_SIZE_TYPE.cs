@@ -9,6 +9,7 @@ public partial class R_LR_SIZE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SIZE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SIZE_TYPE
         {  
             get  

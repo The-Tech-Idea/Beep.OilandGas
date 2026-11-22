@@ -9,6 +9,7 @@ public partial class R_RATE_SCHEDULE: Entity,IPPDMEntity
 {
 
 private  System.String RATE_SCHEDULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RATE_SCHEDULE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SP_ZONE_SUBSTANCE: Entity,IPPDMEntity
 {
 
 private  System.String SPATIAL_DESCRIPTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPATIAL_DESCRIPTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SPATIAL_DESCRIPTION_IDValue;
           set { SetProperty(ref  SPATIAL_DESCRIPTION_IDValue, value); }
         } 
 private  System.Decimal SPATIAL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SPATIAL_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal SPATIAL_OBS_NOValue;
           set { SetProperty(ref  SPATIAL_OBS_NOValue, value); }
         } 
 private  System.String MINERAL_ZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MINERAL_ZONE_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String MINERAL_ZONE_IDValue;
           set { SetProperty(ref  MINERAL_ZONE_IDValue, value); }
         } 
 private  System.String SUBSTANCE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_ID
         {  
             get  

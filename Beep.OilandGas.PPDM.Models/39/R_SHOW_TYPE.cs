@@ -9,6 +9,7 @@ public partial class R_SHOW_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SHOW_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SHOW_TYPE
         {  
             get  

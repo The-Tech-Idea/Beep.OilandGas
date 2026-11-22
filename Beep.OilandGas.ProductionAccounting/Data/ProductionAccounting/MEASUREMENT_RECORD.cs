@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class MEASUREMENT_RECORD : ModelEntityBase {
         private System.String MEASUREMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String MEASUREMENT_ID
         {
             get { return this.MEASUREMENT_IDValue; }

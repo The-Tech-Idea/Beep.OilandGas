@@ -9,6 +9,7 @@ public partial class SP_PARCEL: Entity,IPPDMEntity
 {
 
 private  System.String SPATIAL_DESCRIPTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SPATIAL_DESCRIPTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SPATIAL_DESCRIPTION_IDValue;
           set { SetProperty(ref  SPATIAL_DESCRIPTION_IDValue, value); }
         } 
 private  System.Decimal SPATIAL_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SPATIAL_OBS_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal SPATIAL_OBS_NOValue;
           set { SetProperty(ref  SPATIAL_OBS_NOValue, value); }
         } 
 private  System.String PARCEL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_ID
         {  
             get  

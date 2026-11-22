@@ -9,6 +9,7 @@ public partial class RA_TEST_RESULT: Entity,IPPDMEntity
 {
 
 private  System.String TEST_RESULTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TEST_RESULT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TEST_RESULTValue;
           set { SetProperty(ref  TEST_RESULTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

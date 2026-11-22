@@ -9,6 +9,7 @@ public partial class PDEN_VOL_SUMMARY: Entity,IPPDMEntity
 {
 
 private  System.String PDEN_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PDEN_SUBTYPEValue;
           set { SetProperty(ref  PDEN_SUBTYPEValue, value); }
         } 
 private  System.String PDEN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PDEN_IDValue;
           set { SetProperty(ref  PDEN_IDValue, value); }
         } 
 private  System.String PERIOD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERIOD_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PERIOD_IDValue;
           set { SetProperty(ref  PERIOD_IDValue, value); }
         } 
 private  System.String PDEN_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SOURCE
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String PDEN_SOURCEValue;
           set { SetProperty(ref  PDEN_SOURCEValue, value); }
         } 
 private  System.String VOLUME_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_METHOD
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String VOLUME_METHODValue;
           set { SetProperty(ref  VOLUME_METHODValue, value); }
         } 
 private  System.String ACTIVITY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ACTIVITY_TYPE
         {  
             get  
@@ -69,6 +75,7 @@ private  System.String ACTIVITY_TYPEValue;
           set { SetProperty(ref  ACTIVITY_TYPEValue, value); }
         } 
 private  System.String PERIOD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PERIOD_TYPE
         {  
             get  
@@ -79,6 +86,7 @@ private  System.String PERIOD_TYPEValue;
           set { SetProperty(ref  PERIOD_TYPEValue, value); }
         } 
 private  System.Decimal AMENDMENT_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal AMENDMENT_SEQ_NO
         {  
             get  

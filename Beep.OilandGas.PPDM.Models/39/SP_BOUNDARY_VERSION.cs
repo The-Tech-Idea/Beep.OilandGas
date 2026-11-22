@@ -9,6 +9,7 @@ public partial class SP_BOUNDARY_VERSION: Entity,IPPDMEntity
 {
 
 private  System.String POLYGON_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POLYGON_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String POLYGON_IDValue;
           set { SetProperty(ref  POLYGON_IDValue, value); }
         } 
 private  System.Decimal POINT_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal POINT_SEQ_NO
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal POINT_SEQ_NOValue;
           set { SetProperty(ref  POINT_SEQ_NOValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal VERSION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal VERSION_OBS_NO
         {  
             get  

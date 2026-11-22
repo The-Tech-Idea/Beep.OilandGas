@@ -9,6 +9,7 @@ public partial class SOURCE_DOC_BIBLIO: Entity,IPPDMEntity
 {
 
 private  System.String SOURCE_DOCUMENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE_DOCUMENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SOURCE_DOCUMENT_IDValue;
           set { SetProperty(ref  SOURCE_DOCUMENT_IDValue, value); }
         } 
 private  System.Decimal BIBLIO_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal BIBLIO_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class CS_ELLIPSOID: Entity,IPPDMEntity
 {
 
 private  System.String ELLIPSOID_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ELLIPSOID_ID
         {  
             get  

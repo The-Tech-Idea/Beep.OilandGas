@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SURVEY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SURVEY_TYPE
         {  
             get  

@@ -1,4 +1,4 @@
-using Beep.OilandGas.Models.Data.WorkOrder;
+﻿using Beep.OilandGas.Models.Data.WorkOrder;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.ProductionAccounting.Models;
@@ -82,6 +82,13 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
             typeof(ALLOCATION_DETAIL),
             typeof(ALLOCATION_REPORT_SUMMARY),
             typeof(ALLOCATION_RESULT),
+            // PRD-04: the workbench's own run and its rows (unit, residual, method, override, state, hash).
+            typeof(ALLOCATION_RUN),
+            typeof(ALLOCATION_RUN_ROW),
+            // PRD-05: the reconciliation variance reasons, their code book and the open/closed month marker.
+            typeof(RECONCILIATION_VARIANCE),
+            typeof(R_RECONCILIATION_REASON),
+            typeof(RECONCILIATION_PERIOD),
             typeof(AVAILS_ALLOCATION),
             typeof(JOIB_ALLOCATION),
             typeof(LEASE_ALLOCATION_DATA),
@@ -98,6 +105,19 @@ namespace Beep.OilandGas.ProductionAccounting.Modules
             // ── AFE & approval tables ──────────────────────────────────────────────────
             typeof(AFE),
             typeof(AFE_LINE_ITEM),
+            // ECO-02: the commitments made against an AFE, one row each.
+            typeof(AFE_COMMITMENT),
+            // ACC-03: the sales-invoice lines, so a line can be traced to its volume.
+            typeof(AR_INVOICE_LINE),
+            // ACC-04: the cash receipt the allocations hang from.
+            typeof(AR_RECEIPT),
+            // ACC-05: the payment run that settles several supplier invoices with one journal.
+            typeof(AP_PAYMENT_RUN),
+            // ACC-06: the stock reservations that hold quantity for a document.
+            typeof(INVENTORY_RESERVATION),
+            // ACC-08: the tax computations and the deferred-tax balance the tax workbench reads and writes.
+            typeof(TAX_TRANSACTION),
+            typeof(DEFERRED_TAX_BALANCE),
             typeof(APPROVAL_WORKFLOW),
             // ── Cost tables ────────────────────────────────────────────────────────────
             typeof(COPAS_OVERHEAD_AUDIT),

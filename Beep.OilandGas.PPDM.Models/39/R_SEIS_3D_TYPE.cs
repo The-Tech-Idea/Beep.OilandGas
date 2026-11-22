@@ -9,6 +9,7 @@ public partial class R_SEIS_3D_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SEISMIC_3D_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEISMIC_3D_TYPE
         {  
             get  

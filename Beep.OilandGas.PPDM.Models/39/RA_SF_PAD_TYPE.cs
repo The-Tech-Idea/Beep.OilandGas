@@ -9,6 +9,7 @@ public partial class RA_SF_PAD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAD_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PAD_TYPEValue;
           set { SetProperty(ref  PAD_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

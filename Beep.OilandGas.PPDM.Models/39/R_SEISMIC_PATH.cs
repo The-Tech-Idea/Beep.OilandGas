@@ -9,6 +9,7 @@ public partial class R_SEISMIC_PATH: Entity,IPPDMEntity
 {
 
 private  System.String SEISMIC_PATHValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEISMIC_PATH
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_TAX_CREDIT_CODE: Entity,IPPDMEntity
 {
 
 private  System.String TAX_CREDIT_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TAX_CREDIT_CODE
         {  
             get  

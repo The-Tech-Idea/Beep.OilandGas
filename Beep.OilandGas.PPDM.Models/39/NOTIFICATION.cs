@@ -9,6 +9,7 @@ public partial class NOTIFICATION: Entity,IPPDMEntity
 {
 
 private  System.String NOTIFICATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String NOTIFICATION_ID
         {  
             get  

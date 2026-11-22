@@ -9,6 +9,7 @@ public partial class RA_WELL_CIRC_PRESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CIRC_PRESSURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CIRC_PRESSURE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CIRC_PRESSURE_TYPEValue;
           set { SetProperty(ref  CIRC_PRESSURE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_STRAT_CORR_CRITERIA: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_CORRELATION_CRITERIAValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_CORRELATION_CRITERIA
         {  
             get  

@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class JOINT_INTEREST_BILL : ModelEntityBase {
         private String JIB_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public String JIB_ID
         {
             get { return this.JIB_IDValue; }

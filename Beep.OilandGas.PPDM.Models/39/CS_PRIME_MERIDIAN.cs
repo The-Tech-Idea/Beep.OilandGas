@@ -9,6 +9,7 @@ public partial class CS_PRIME_MERIDIAN: Entity,IPPDMEntity
 {
 
 private  System.String PRIME_MERIDIAN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRIME_MERIDIAN_ID
         {  
             get  

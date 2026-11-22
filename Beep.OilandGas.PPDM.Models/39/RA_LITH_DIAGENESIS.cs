@@ -9,6 +9,7 @@ public partial class RA_LITH_DIAGENESIS: Entity,IPPDMEntity
 {
 
 private  System.String DIAGENESIS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DIAGENESIS_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DIAGENESIS_TYPEValue;
           set { SetProperty(ref  DIAGENESIS_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

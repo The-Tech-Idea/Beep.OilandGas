@@ -9,6 +9,7 @@ public partial class R_AIRCRAFT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AIRCRAFT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AIRCRAFT_TYPE
         {  
             get  

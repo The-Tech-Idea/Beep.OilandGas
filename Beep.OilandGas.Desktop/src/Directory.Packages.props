@@ -1,0 +1,42 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <!-- BeepDM: rewritten to source ProjectReferences by ../Directory.Build.targets. -->
+    <PackageVersion Include="TheTechIdea.Beep.DataManagementEngine" Version="3.1.1" />
+    <PackageVersion Include="TheTechIdea.Beep.DataManagementModels" Version="3.1.1" />
+    <PackageVersion Include="TheTechIdea.Beep.RDBDataSource" Version="2.1.1" />
+    <!-- Pin the native SQLite bundle above the version with GHSA-2m69-gcr7-jv3q. -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
+    <!-- ADR-001: one SkiaSharp version for the whole desktop and the OilandGasTools checkout. -->
+    <PackageVersion Include="SkiaSharp" Version="4.154.0" />
+    <!--
+      ADR-001: Beep.OilandGas.Models still declares SkiaSharp.Svg 1.60.0 for one SVG helper it owns.
+      The desktop references Models for the chart contracts, so the package is pinned here and its assets
+      are excluded at the consuming project: one SkiaSharp (4.154.0) at runtime, and the retired helper is
+      never compiled or loaded by the desktop.
+    -->
+    <PackageVersion Include="SkiaSharp.Svg" Version="1.60.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+  </ItemGroup>
+
+</Project>

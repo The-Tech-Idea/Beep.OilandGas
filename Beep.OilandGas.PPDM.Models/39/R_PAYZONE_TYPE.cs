@@ -9,6 +9,7 @@ public partial class R_PAYZONE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PAYZONE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYZONE_TYPE
         {  
             get  

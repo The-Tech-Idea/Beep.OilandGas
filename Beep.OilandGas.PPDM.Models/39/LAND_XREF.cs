@@ -9,6 +9,7 @@ public partial class LAND_XREF: Entity,IPPDMEntity
 {
 
 private  System.String PARENT_LAND_RIGHT_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARENT_LAND_RIGHT_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARENT_LAND_RIGHT_SUBTYPEValue;
           set { SetProperty(ref  PARENT_LAND_RIGHT_SUBTYPEValue, value); }
         } 
 private  System.String CHILD_LAND_RIGHT_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHILD_LAND_RIGHT_SUBTYPE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String CHILD_LAND_RIGHT_SUBTYPEValue;
           set { SetProperty(ref  CHILD_LAND_RIGHT_SUBTYPEValue, value); }
         } 
 private  System.String PARENT_LAND_RIGHT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARENT_LAND_RIGHT_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PARENT_LAND_RIGHT_IDValue;
           set { SetProperty(ref  PARENT_LAND_RIGHT_IDValue, value); }
         } 
 private  System.String CHILD_LAND_RIGHT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHILD_LAND_RIGHT_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String CHILD_LAND_RIGHT_IDValue;
           set { SetProperty(ref  CHILD_LAND_RIGHT_IDValue, value); }
         } 
 private  System.Decimal LR_XREF_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal LR_XREF_SEQ_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SEIS_VELOCITY: Entity,IPPDMEntity
 {
 
 private  System.String VELOCITY_VOLUME_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VELOCITY_VOLUME_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String VELOCITY_VOLUME_IDValue;
           set { SetProperty(ref  VELOCITY_VOLUME_IDValue, value); }
         } 
 private  System.String VOLUME_POINTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VOLUME_POINT
         {  
             get  

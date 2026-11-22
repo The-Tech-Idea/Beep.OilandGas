@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SURVEY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SURVEY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SURVEY_TYPEValue;
           set { SetProperty(ref  SURVEY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

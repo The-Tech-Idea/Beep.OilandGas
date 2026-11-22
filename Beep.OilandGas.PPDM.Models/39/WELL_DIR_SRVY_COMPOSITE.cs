@@ -9,6 +9,7 @@ public partial class WELL_DIR_SRVY_COMPOSITE: Entity,IPPDMEntity
 {
 
 private  System.String COMPOSITE_UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPOSITE_UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COMPOSITE_UWIValue;
           set { SetProperty(ref  COMPOSITE_UWIValue, value); }
         } 
 private  System.String COMPOSITE_SURVEY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPOSITE_SURVEY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String COMPOSITE_SURVEY_IDValue;
           set { SetProperty(ref  COMPOSITE_SURVEY_IDValue, value); }
         } 
 private  System.String COMPOSITE_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPOSITE_SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String COMPOSITE_SOURCEValue;
           set { SetProperty(ref  COMPOSITE_SOURCEValue, value); }
         } 
 private  System.Decimal COMPOSITE_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal COMPOSITE_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_TUBING_GRADE: Entity,IPPDMEntity
 {
 
 private  System.String TUBING_GRADEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TUBING_GRADE
         {  
             get  

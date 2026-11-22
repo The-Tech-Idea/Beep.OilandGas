@@ -9,6 +9,7 @@ public partial class R_SEIS_CHANNEL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CHANNEL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHANNEL_TYPE
         {  
             get  

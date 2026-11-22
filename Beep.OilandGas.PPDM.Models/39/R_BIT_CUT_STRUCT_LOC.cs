@@ -9,6 +9,7 @@ public partial class R_BIT_CUT_STRUCT_LOC: Entity,IPPDMEntity
 {
 
 private  System.String CUTTING_STRUCTURE_LOCValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CUTTING_STRUCTURE_LOC
         {  
             get  

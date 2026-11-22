@@ -9,6 +9,7 @@ public partial class SP_ZONE_DEFINITION: Entity,IPPDMEntity
 {
 
 private  System.String ZONE_DEFINITION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_DEFINITION_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_STATUS_GROUP: Entity,IPPDMEntity
 {
 
 private  System.String STATUS_GROUPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STATUS_GROUP
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STATUS_GROUPValue;
           set { SetProperty(ref  STATUS_GROUPValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

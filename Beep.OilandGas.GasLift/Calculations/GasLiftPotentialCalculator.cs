@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -49,6 +49,13 @@ namespace Beep.OilandGas.GasLift.Calculations
                 decimal productionRate = CalculateProductionRate(
                     wellProperties, gasInjectionRate);
 
+                // An injection rate that produces nothing has no gas-liquid ratio to report, and dividing by it threw.
+                // It is left out of the curve rather than recorded as a point with a meaningless ratio.
+                if (productionRate <= 0m)
+                {
+                    continue;
+                }
+
                 // Calculate gas-liquid ratio
                 decimal totalGasRate = (decimal)(wellProperties.GAS_OIL_RATIO * productionRate / 1000m + gasInjectionRate);
                 decimal gasLiquidRatio = totalGasRate * 1000m / productionRate;
@@ -66,10 +73,15 @@ namespace Beep.OilandGas.GasLift.Calculations
                 });
             }
 
-            // Find optimal point (maximum production rate)
+            // Find optimal point (maximum production rate); with no usable point there is no recommendation.
             var optimalPoint = result.PERFORMANCE_POINTS
                 .OrderByDescending(p => p.ProductionRate)
-                .First();
+                .FirstOrDefault();
+
+            if (optimalPoint is null)
+            {
+                return result;
+            }
 
             result.OPTIMAL_GAS_INJECTION_RATE = optimalPoint.GasInjectionRate;
             result.MAXIMUM_PRODUCTION_RATE = optimalPoint.ProductionRate;
@@ -141,9 +153,14 @@ namespace Beep.OilandGas.GasLift.Calculations
             decimal averagePressure = (decimal)((wellProperties.WELLHEAD_PRESSURE + wellProperties.BOTTOM_HOLE_PRESSURE) / 2m);
             decimal averageTemperature = (decimal)((wellProperties.WELLHEAD_TEMPERATURE + wellProperties.BOTTOM_HOLE_TEMPERATURE) / 2m);
 
+            // The well's temperatures are Fahrenheit (the entity's own unit, and the one the other gas lift
+            // calculations convert from). The Z-factor correlation, and the gas-law terms below, take Rankine - passing
+            // Fahrenheit here made CalculateBrillBeggs refuse every ordinary well ("temperature is too low").
+            decimal averageTemperatureRankine = averageTemperature + 459.67m;
+
             // Calculate Z-factor
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, averageTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
+                averagePressure, averageTemperatureRankine, wellProperties.GAS_SPECIFIC_GRAVITY);
 
             // Calculate fluid density with gas
             decimal oilDensity = (decimal)(141.5m / (131.5m + wellProperties.GAS_SPECIFIC_GRAVITY) * 62.4m);
@@ -152,11 +169,11 @@ namespace Beep.OilandGas.GasLift.Calculations
 
             // Gas density
             decimal gasDensity = (decimal)((averagePressure * wellProperties.GAS_SPECIFIC_GRAVITY * 28.9645m) /
-                                (zFactor * 10.7316m * averageTemperature));
+                                (zFactor * 10.7316m * averageTemperatureRankine));
 
             // Total gas rate
             decimal totalGasRate = (decimal)(wellProperties.GAS_OIL_RATIO * productionRate / 1000m + gasInjectionRate);
-            decimal gasVolumeFactor = totalGasRate * zFactor * averageTemperature / (averagePressure * 5.614m);
+            decimal gasVolumeFactor = totalGasRate * zFactor * averageTemperatureRankine / (averagePressure * 5.614m);
 
             // Mixture density
             decimal mixtureDensity = (liquidDensity + gasDensity * gasVolumeFactor) / (1.0m + gasVolumeFactor);

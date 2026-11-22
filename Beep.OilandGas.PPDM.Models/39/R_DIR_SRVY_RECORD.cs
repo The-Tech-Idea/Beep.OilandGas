@@ -9,6 +9,7 @@ public partial class R_DIR_SRVY_RECORD: Entity,IPPDMEntity
 {
 
 private  System.String RECORD_MODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORD_MODE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class ANL_CALC_EQUIV: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATE_METHOD_ID1Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATE_METHOD_ID1
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CALCULATE_METHOD_ID1Value;
           set { SetProperty(ref  CALCULATE_METHOD_ID1Value, value); }
         } 
 private  System.String CALCULATE_METHOD_ID2Value; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATE_METHOD_ID2
         {  
             get  

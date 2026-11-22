@@ -9,6 +9,7 @@ public partial class R_IMAGE_CALIBRATE_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String CALIBRATE_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALIBRATE_METHOD
         {  
             get  

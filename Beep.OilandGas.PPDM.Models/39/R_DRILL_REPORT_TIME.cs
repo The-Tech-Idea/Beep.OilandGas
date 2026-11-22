@@ -9,6 +9,7 @@ public partial class R_DRILL_REPORT_TIME: Entity,IPPDMEntity
 {
 
 private  System.String REPORT_TIME_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REPORT_TIME_TYPE
         {  
             get  

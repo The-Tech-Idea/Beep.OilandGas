@@ -9,6 +9,7 @@ public partial class R_INCIDENT_BA_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String BA_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_ROLE
         {  
             get  

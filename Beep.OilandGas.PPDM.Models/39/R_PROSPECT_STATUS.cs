@@ -9,6 +9,7 @@ public partial class R_PROSPECT_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String PROSPECT_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROSPECT_STATUS
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_WORK_BID_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String WORK_BID_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WORK_BID_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WORK_BID_TYPEValue;
           set { SetProperty(ref  WORK_BID_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -10,6 +10,7 @@ public partial class STRAT_HIERARCHY: Entity,IPPDMEntity
 {
 
 private  System.String PARENT_STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARENT_STRAT_NAME_SET_ID
         {  
             get  
@@ -20,6 +21,7 @@ private  System.String PARENT_STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  PARENT_STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String PARENT_STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARENT_STRAT_UNIT_ID
         {  
             get  
@@ -30,6 +32,7 @@ private  System.String PARENT_STRAT_UNIT_IDValue;
           set { SetProperty(ref  PARENT_STRAT_UNIT_IDValue, value); }
         } 
 private  System.String CHILD_STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHILD_STRAT_NAME_SET_ID
         {  
             get  
@@ -40,6 +43,7 @@ private  System.String CHILD_STRAT_NAME_SET_IDValue;
           set { SetProperty(ref  CHILD_STRAT_NAME_SET_IDValue, value); }
         } 
 private  System.String CHILD_STRAT_UNIT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CHILD_STRAT_UNIT_ID
         {  
             get  
@@ -50,6 +54,7 @@ private  System.String CHILD_STRAT_UNIT_IDValue;
           set { SetProperty(ref  CHILD_STRAT_UNIT_IDValue, value); }
         } 
 private  System.String HIERARCHY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIERARCHY_ID
         {  
             get  
@@ -60,6 +65,7 @@ private  System.String HIERARCHY_IDValue;
           set { SetProperty(ref  HIERARCHY_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  

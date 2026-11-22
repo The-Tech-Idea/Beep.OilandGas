@@ -9,6 +9,7 @@ public partial class RA_SEIS_PROC_STATUS: Entity,IPPDMEntity
 {
 
 private  System.String PROCESS_STATUSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROCESS_STATUS
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROCESS_STATUSValue;
           set { SetProperty(ref  PROCESS_STATUSValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

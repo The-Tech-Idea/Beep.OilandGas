@@ -9,6 +9,7 @@ public partial class STRAT_NAME_SET: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_NAME_SET_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_NAME_SET_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_LITH_DEP_ENV: Entity,IPPDMEntity
 {
 
 private  System.String DEPOSITIONAL_ENVIRONMENTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DEPOSITIONAL_ENVIRONMENT
         {  
             get  

@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.Lease
     public partial class NET_PROFIT_LEASE : ModelEntityBase
     {
         private System.String LEASE_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String LEASE_ID
         {
             get { return this.LEASE_IDValue; }

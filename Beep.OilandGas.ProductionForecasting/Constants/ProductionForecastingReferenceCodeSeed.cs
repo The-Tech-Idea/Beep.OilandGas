@@ -26,6 +26,11 @@ public static class ProductionForecastingReferenceCodeSeed
         yield return new(ProductionForecastingReferenceSets.ForecastRunStatus, ProductionForecastingReferenceCodes.RunStatusActive, "Active");
         yield return new(ProductionForecastingReferenceSets.ForecastRunStatus, ProductionForecastingReferenceCodes.RunStatusInactive, "Inactive");
 
+        // RES-07: the lifecycle a saved forecast goes through.
+        yield return new(ProductionForecastingReferenceSets.ForecastRunStatus, "Draft", "Draft - generated but not reviewed");
+        yield return new(ProductionForecastingReferenceSets.ForecastRunStatus, "Approved", "Approved - reviewed and immutable");
+        yield return new(ProductionForecastingReferenceSets.ForecastRunStatus, "Archived", "Archived - superseded by a later version");
+
         yield return new(ProductionForecastingReferenceSets.ForecastRiskRating, ProductionForecastingReferenceCodes.RiskUnknown, "Unknown risk rating");
     }
 

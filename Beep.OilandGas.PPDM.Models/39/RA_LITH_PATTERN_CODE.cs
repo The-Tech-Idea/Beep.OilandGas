@@ -9,6 +9,7 @@ public partial class RA_LITH_PATTERN_CODE: Entity,IPPDMEntity
 {
 
 private  System.String LITH_PATTERN_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LITH_PATTERN_CODE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LITH_PATTERN_CODEValue;
           set { SetProperty(ref  LITH_PATTERN_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SHUTIN_PRESS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String SHUTIN_PRESSURE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SHUTIN_PRESSURE_TYPE
         {  
             get  

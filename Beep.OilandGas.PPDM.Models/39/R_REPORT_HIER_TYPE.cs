@@ -9,6 +9,7 @@ public partial class R_REPORT_HIER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String HIERARCHY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String HIERARCHY_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class WELL_DIR_SRVY_ST_VERSION: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SURVEY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SURVEY_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SURVEY_IDValue;
           set { SetProperty(ref  SURVEY_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal VERSION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal VERSION_OBS_NO
         {  
             get  
@@ -49,6 +53,7 @@ private  System.Decimal VERSION_OBS_NOValue;
           set { SetProperty(ref  VERSION_OBS_NOValue, value); }
         } 
 private  System.Decimal DEPTH_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal DEPTH_OBS_NO
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_SUBSTANCE_USE_RULE: Entity,IPPDMEntity
 {
 
 private  System.String SUBSTANCE_USE_RULEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SUBSTANCE_USE_RULE
         {  
             get  

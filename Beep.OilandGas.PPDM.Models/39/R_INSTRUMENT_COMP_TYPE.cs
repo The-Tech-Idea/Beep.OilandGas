@@ -9,6 +9,7 @@ public partial class R_INSTRUMENT_COMP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String INSTRUMENT_COMPONENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INSTRUMENT_COMPONENT_TYPE
         {  
             get  

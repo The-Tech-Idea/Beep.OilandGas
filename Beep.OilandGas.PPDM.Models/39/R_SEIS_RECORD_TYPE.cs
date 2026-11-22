@@ -9,6 +9,7 @@ public partial class R_SEIS_RECORD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RECORD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RECORD_TYPE
         {  
             get  

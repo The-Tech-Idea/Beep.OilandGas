@@ -9,6 +9,7 @@ public partial class RA_HSE_COMP_ROLE: Entity,IPPDMEntity
 {
 
 private  System.String COMPONENT_ROLEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_ROLE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COMPONENT_ROLEValue;
           set { SetProperty(ref  COMPONENT_ROLEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

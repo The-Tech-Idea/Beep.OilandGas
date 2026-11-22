@@ -9,6 +9,7 @@ public partial class SEIS_POINT_VERSION: Entity,IPPDMEntity
 {
 
 private  System.String SEIS_SET_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_SET_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SEIS_SET_SUBTYPEValue;
           set { SetProperty(ref  SEIS_SET_SUBTYPEValue, value); }
         } 
 private  System.String SEIS_LINE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_LINE_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SEIS_LINE_IDValue;
           set { SetProperty(ref  SEIS_LINE_IDValue, value); }
         } 
 private  System.String SEIS_POINT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SEIS_POINT_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String SEIS_POINT_IDValue;
           set { SetProperty(ref  SEIS_POINT_IDValue, value); }
         } 
 private  System.Decimal SEIS_POINT_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SEIS_POINT_OBS_NO
         {  
             get  

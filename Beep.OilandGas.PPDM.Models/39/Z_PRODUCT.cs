@@ -9,6 +9,7 @@ public partial class Z_PRODUCT: Entity,IPPDMEntity
 {
 
 private  System.String PRODUCT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PRODUCT_TYPE
         {  
             get  

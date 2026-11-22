@@ -9,6 +9,7 @@ public partial class R_FIELD_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String FIELD_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String FIELD_TYPE
         {  
             get  

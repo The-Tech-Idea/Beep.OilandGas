@@ -9,6 +9,7 @@ public partial class RA_PPDM_MAP_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MAP_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MAP_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MAP_TYPEValue;
           set { SetProperty(ref  MAP_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

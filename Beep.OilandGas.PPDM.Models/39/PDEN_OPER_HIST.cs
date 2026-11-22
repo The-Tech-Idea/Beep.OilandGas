@@ -9,6 +9,7 @@ public partial class PDEN_OPER_HIST: Entity,IPPDMEntity
 {
 
 private  System.String PDEN_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PDEN_SUBTYPEValue;
           set { SetProperty(ref  PDEN_SUBTYPEValue, value); }
         } 
 private  System.String PDEN_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String PDEN_IDValue;
           set { SetProperty(ref  PDEN_IDValue, value); }
         } 
 private  System.String PDEN_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PDEN_SOURCE
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String PDEN_SOURCEValue;
           set { SetProperty(ref  PDEN_SOURCEValue, value); }
         } 
 private  System.String BUSINESS_ASSOCIATE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BUSINESS_ASSOCIATE_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String BUSINESS_ASSOCIATE_IDValue;
           set { SetProperty(ref  BUSINESS_ASSOCIATE_IDValue, value); }
         } 
 private  System.Decimal OPERATOR_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal OPERATOR_OBS_NO
         {  
             get  

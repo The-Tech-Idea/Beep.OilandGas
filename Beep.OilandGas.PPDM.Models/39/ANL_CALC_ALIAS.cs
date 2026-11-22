@@ -9,6 +9,7 @@ public partial class ANL_CALC_ALIAS: Entity,IPPDMEntity
 {
 
 private  System.String CALCULATE_METHOD_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CALCULATE_METHOD_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CALCULATE_METHOD_IDValue;
           set { SetProperty(ref  CALCULATE_METHOD_IDValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

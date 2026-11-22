@@ -1,0 +1,48 @@
+{
+  "id": "STG-03a/LSE-01",
+  "title": "Lease portfolio and register",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: one register over the four lease tables, the expiry state derived from dates, acreage never shown without its unit, a field link that records the actor and date, and a CSV built from the rows the grid shows. The desktop data layer now reads and writes every domain table through UnitofWork<T> and LINQ; a source guard fails the build if statement text returns.",
+  "dataAccess": {
+    "change": "Every feature reader/writer in Beep.OilandGas.Desktop.Data was rewritten from hand-built SQL to UnitofWork<T> over the owning entity models, with filtering, ordering, paging and derived values done in LINQ. OgExplorationSql (field clauses, literals, COUNT statements) was deleted.",
+    "foundation": "src/Beep.OilandGas.Desktop.Data/OgUow.cs - For<T>/ReadAsync/ReadAllAsync open a unit of work over the connection's own datasource, refuse a missing table before Get() can return an empty collection, and align the datasource structure's date fields with the entity's DateTime properties so a TEXT date is bound as round-trip ISO instead of the provider's ambiguous MM/dd/yyyy.",
+    "workbench": "Ppdm/OgPpdmTableGateway.cs - filters are AppFilter values (contains/equality), rows are the datasource's entity objects converted to a column/value map, sorting/paging/search are LINQ, writes go through InsertEntity/UpdateEntity/DeleteEntity against a row type generated from the table structure; the row policy is a typed AppFilter list, not a SQL fragment.",
+    "guard": "SourceGuardTests.The_desktop_data_layer_contains_no_sql_statement_text - fails the build if RunQuery/ExecuteSql/GetScalar or a statement-shaped literal appears under src/Beep.OilandGas.Desktop.Data.",
+    "boundary": "The local diagnostics SQLite stores (SqliteFailureStore, SqliteAuditStore, SqliteGovernanceStore) keep their own DDL and commands because the failure store must work before BeepDM exists and when the database is down. They are local infrastructure, not domain data access."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lease/OgLeaseRegister.cs (OgLeaseSummary, LeaseStatus.Of, OgLeaseFilter, OgLeaseRegister.ToCsv, IOgLeaseRegister, OgLeaseRegisterService.LoadAsync/LinkFieldAsync/Filter)",
+    "page": "src/Beep.OilandGas.Desktop/Views/LeaseRegisterPageView.cs (route 'leases': filter bar, register grid, detail, link-to-field, export)",
+    "wiring": "OgBootstrapper (IOgLeaseRegister), OgApplication.LeaseRegister, catalog 'leases' (OgModuleKeys.Lease), OgPageFactory, en + ar labels",
+    "tables": "LEASE_ACQUISITION, FEE_MINERAL_LEASE, GOVERNMENT_LEASE and NET_PROFIT_LEASE, read through Beep.OilandGas.Models.Data.Lease entities (the owning LeaseAcquisition project's model)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "warnings": 7, "errors": 0 },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 652, "passed": 652, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 15, "passed": 15, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 40, "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 },
+    { "cmd": "source guard: The_desktop_data_layer_contains_no_sql_statement_text", "exit": 0, "offenders": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the four lease tables, seeded in LeaseRegisterGatewayTests",
+    "ac1_merge": "four rows load: LA-1 from LEASE_ACQUISITION (Kind LEASE), FM-1 (FEE_MINERAL), GV-1 (GOVERNMENT) and NP-1 (NET_PROFIT), the last three existing only in their typed tables; Kinds are FEE_MINERAL, GOVERNMENT, LEASE, NET_PROFIT",
+    "ac2_unit": "LA-1 reports acreage 100 with unit 'acres' and AcreageText '100 acres'; the unit-missing path is covered by LeaseRegisterTests",
+    "ac3_state": "as of 2026-06-01: LA-1 expiring (expires 2026-07-01), FM-1 expired (2026-01-01), GV-1 active (2027-01-01); the stored ACQUISITION_STATUS is not used as the state",
+    "ac4_link": "LinkFieldAsync('LA-1','F-2','tester') writes FIELD_ID='F-2' and ROW_CHANGED_BY='tester' on the acquisition row (read back with Microsoft.Data.Sqlite); LinkFieldAsync('FM-1', ...) is refused with lease-register-no-base-row",
+    "ac5_export": "LeaseRegisterTests asserts the CSV header, the lease number and type, the derived state and the royalty/NRI text from the register's own rows",
+    "field_scope": "a load scoped to F-1 returns only LA-1; typed-only leases carry no field and are excluded"
+  },
+  "gates": {
+    "AC-1 All four lease tables are visible from one register": "pass - the service reads the four entity tables and merges by lease id; the SQLite test sees all four, including the three typed-only rows.",
+    "AC-2 Acreage always carries a unit": "pass - AcreageText prints the unit, or '(unit not recorded)' / '(no acreage)'; the unit is never dropped, and MissingAcreageUnitCount calls out rows without one.",
+    "AC-3 Expiry state is derived from dates and shown": "pass - LeaseStatus.Of returns expired/pending/expiring/active/unknown from EFFECTIVE_DATE/EXPIRY only; the SQLite test reads the derived state, not the stored status.",
+    "AC-4 Linking a lease to a field records the actor and date": "pass - LinkFieldAsync writes FIELD_ID and ROW_CHANGED_BY/ROW_CHANGED_DATE through the entity and a unit of work; the test reads both columns back. A typed-only lease is refused because it has no acquisition row to carry the field.",
+    "AC-5 Export matches the active filter": "pass - the page exports register.ToCsv() from the filtered Leases collection; the unit test asserts the header and the row values from that collection."
+  },
+  "limits": [
+    "LSE-02 (acquisition pipeline) and LSE-03 (financials and lifecycle) are not started; STG-03a is therefore In progress.",
+    "The register reads the four tables in full and filters in LINQ. The current tables are small enough for this; a very large lease book would need a bounded page read from the datasource rather than a whole-table read.",
+    "The entity models declare several PPDM measures as non-nullable decimals; zero is treated as 'not recorded' for acreage, royalty, NRI, coordinates and total depth, because the entity cannot carry the distinction from NULL.",
+    "The local diagnostics SQLite stores still contain their own DDL/commands (see dataAccess.boundary); they are outside the domain data layer and the guard's scope."
+  ]
+}

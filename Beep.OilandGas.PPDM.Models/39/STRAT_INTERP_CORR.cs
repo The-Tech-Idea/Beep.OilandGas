@@ -9,6 +9,7 @@ public partial class STRAT_INTERP_CORR: Entity,IPPDMEntity
 {
 
 private  System.String CORRELATION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CORRELATION_ID
         {  
             get  

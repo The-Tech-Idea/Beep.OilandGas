@@ -1,0 +1,77 @@
+{
+  "id": "STG-10/ACC-03",
+  "title": "Revenue recognition and sales invoices",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: a credit note reduces the stored balance by exactly its amount and a larger credit is refused; issuing writes exactly one balanced journal and a second issue writes none; every invoice line keeps the volume record it came from; the author cannot approve their own invoice; every net, tax and total comes from the accounting project's own calculator; and a lost acknowledgement is recovered by the journal's stable reference instead of duplicating it.",
+  "dataModel": {
+    "decision": "The AR tables already existed - AR_INVOICE with the total, paid and balance due, and AR_CREDIT_MEMO - but there were no invoice lines at all, so there was nothing to trace back to a volume (AC-3) and nowhere for a line's own tax. A new AR_INVOICE_LINE was added to the owning ProductionAccounting module, and AR_INVOICE was extended additively with the author, the money split, the tax rate, the contract, the journal link and the review. No existing column changed meaning.",
+    "addedTable": "AR_INVOICE_LINE (AR_INVOICE_LINE_ID key, AR_INVOICE_ID, LINE_NUMBER, COMMODITY, DESCRIPTION, QUANTITY, QUANTITY_OUOM, UNIT_PRICE, NET_AMOUNT, TAX_AMOUNT, LINE_TOTAL, VOLUME_REFERENCE)",
+    "addedColumns": "AR_INVOICE: AUTHOR, SUBTOTAL_AMOUNT, TAX_AMOUNT, TAX_RATE, CONTRACT_ID, JOURNAL_ENTRY_ID, ISSUED_BY, ISSUED_AT, CREDITED_AMOUNT, APPROVED_BY, APPROVED_AT, RETURN_REASON",
+    "registration": "typeof(AR_INVOICE_LINE) added beside AR_INVOICE and AR_CREDIT_MEMO in ProductionAccountingModuleSetup. --smoke now reports 33 modules and 413 entity types (up from 412)."
+  },
+  "ownerAdditions": {
+    "codes": "Beep.OilandGas.Accounting/Constants/RevenueCodes.cs - the four invoice states (DRAFT, ISSUED, APPROVED, RETURNED), the credit-note state, the quantity units, and the three accounts an issued invoice touches. The AR tables had no status vocabulary of their own in the accounting project, so it is stated once here and the screen holds no status string.",
+    "tax": "Beep.OilandGas.Accounting/Calculations/SalesInvoiceTax.cs - the invoice tax the accounting project did not have (its tax services are income-tax provision and deferral records, not sales tax on a line): net = quantity x price, tax = net x rate rounded to the currency's minor unit away from zero, line total = net + tax, with the three invoice totals built from the lines. The screen never computes a tax amount; it stores what this returns (AC-5)."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Accounting/OgRevenue.cs (OgRevenueContext, OgSalesLineInput, OgInvoiceInputs, OgSalesLine, OgCreditNote, OgSalesInvoice, OgRevenueWorkspace, RevenueRules, IOgRevenue, OgRevenueService with BuildAsync/IssueAsync/CreditAsync/ReviewAsync/DeleteAsync/LoadAsync)",
+    "build": "Lines are priced and taxed through SalesInvoiceTax; a volume with no price is blocked naming the volume, a currency that disagrees with the stated contract currency is refused, a due date before the invoice date is refused, and the invoice is written as a draft with its subtotal, tax, total and balance due.",
+    "issue": "The number is server-owned (INV-yyyy-nnnn) and assigned at issue. The journal's REFERENCE_NUMBER is 'SALES-' + the invoice id, which exists before any numbering - so a retry after a lost acknowledgement finds the entry it already wrote and adopts it instead of writing a second one (AC-6). The entry is built from the invoice's own totals (debit receivables, credit revenue and, when there is tax, credit sales-tax payable) so it balances by construction; the period lock is checked first, as the ledger checks it.",
+    "credit": "A credit note is a new AR_CREDIT_MEMO row; the invoice's CREDITED_AMOUNT and BALANCE_DUE are recomputed as total less paid less credited, so the reduction is exactly the credit amount (AC-1). A credit larger than the outstanding balance is refused, and so is one against a draft.",
+    "review": "Approve records APPROVED_BY/APPROVED_AT; return requires a reason and records it; the author is refused approval before anything is written (AC-4).",
+    "delete": "A draft with no payments and no credits can be deleted with its lines; an issued invoice or one with money against it is refused (the state table's 'invoice with payments - deletion refused').",
+    "page": "src/Beep.OilandGas.Desktop/Views/RevenuePageView.cs (route 'revenue': the buyer/contract/currency bar, the dates and tax rate, the sold-volume line editor, issue and delete, the credit-note bar, the review bar, the invoice grid, and the selected invoice's totals, balance, journal, lines and credits)",
+    "wiring": "OgBootstrapper (IOgRevenue), OgApplication.Revenue, catalog 'revenue' (OgModuleKeys.Accounting), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/RevenueTests.cs (7, no database) + RevenueGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 1084, "passed": 1084, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 55, "passed": 55, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 79, "views-constructed": true, "modulesetup-summary": "33 module(s) - 413 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with GL_ACCOUNT, AR_INVOICE, AR_INVOICE_LINE, AR_CREDIT_MEMO, JOURNAL_ENTRY, JOURNAL_ENTRY_LINE and COMPANY_LEDGER_PERIOD, seeded in RevenueGatewayTests",
+    "ac1_credit": "a 1,500 credit against an 11,000 invoice stores CREDITED_AMOUNT 1500 and BALANCE_DUE 9500 - asserted in SQL - and a 10,000 credit is then refused as larger than the 9,500 outstanding, leaving one credit memo. This is SG-10-5.",
+    "ac2_one_journal": "issuing writes one POSTED journal with TOTAL_DEBIT = TOTAL_CREDIT = 11,000 and three lines (receivables 11,000 debit, revenue 10,000 credit, sales tax 1,000 credit); the stored debit sum and credit sum both equal 11,000; a second issue leaves the journal count at one.",
+    "ac3_volume_trace": "each line stores its VOLUME_REFERENCE, and the gateway asserts VOL-1 on one line (quantity 100, price 70, net 7,000, tax 700) and VOL-2 on the other (net 3,000, tax 300)",
+    "ac4_author": "the invoice is built by sara and an approval by sara is refused with revenue-author-cannot-approve naming her; nadia approves and APPROVED_BY/APPROVED_AT are on the row",
+    "ac5_tax": "the subtotal 10,000, tax 1,000 and total 11,000 come from SalesInvoiceTax (700 + 300 net, ten per cent), and the unit test checks the rounding rule and the out-of-range refusal",
+    "ac6_lost_ack": "JOURNAL_ENTRY_ID is cleared and STATUS reset to DRAFT by hand; the next issue finds the journal by its SALES-<invoice id> reference, adopts it, and the journal count stays at one",
+    "volume_without_price": "a line with no price is refused with revenue-volume-without-price naming VOL-2, and no invoice is written",
+    "return": "a return without a reason is refused; with one the invoice reads RETURNED and the reason is stored",
+    "deletion": "a fresh draft and its lines are deleted; deleting the issued invoice is refused with revenue-not-deletable",
+    "unavailable": "dropping the invoice tables makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 A credit note reduces the balance by exactly its amount": "pass - the balance is recomputed as total less paid less credited in decimal, asserted on the row, and a larger credit is refused. SG-10-5.",
+    "AC-2 Issuing an invoice creates exactly one journal entry": "pass - one POSTED journal, balanced to the invoice's totals, and a second issue writes none.",
+    "AC-3 The invoice line traces to a volume record": "pass - VOLUME_REFERENCE is a column, set from the workbench line and asserted on both stored lines.",
+    "AC-4 Author cannot approve their own invoice": "pass - the author is refused approval before anything is written, and a different reviewer approves.",
+    "AC-5 Tax is computed by the owning service": "pass - SalesInvoiceTax in the accounting project produces every net, tax and total; the service only stores them and the screen computes nothing.",
+    "AC-6 A lost acknowledgement does not duplicate the journal": "pass - the journal carries a reference derived from the invoice id, so a retry finds and adopts it; the count stays at one."
+  },
+  "engineFindings": {
+    "noInvoiceLines": {
+      "finding": "The AR model had an invoice header and a credit memo but no invoice lines, so a line could not be traced to a volume and there was no per-line tax.",
+      "handling": "AR_INVOICE_LINE added to the owning module; the invoice's totals are the sum of its lines through the tax helper."
+    },
+    "noSalesTax": {
+      "finding": "The accounting project has income-tax provision and deferral records but no sales-tax computation on an invoice line.",
+      "handling": "SalesInvoiceTax added as the owning calculator (AC-5), with the rounding rule and the rate bounds stated; the screen holds no arithmetic."
+    },
+    "journalReference": {
+      "finding": "Neither AR_INVOICE nor JOURNAL_ENTRY had a stable link that exists before the invoice is numbered, which is what a lost-acknowledgement retry needs.",
+      "handling": "The journal's REFERENCE_NUMBER is 'SALES-' + the invoice id and the invoice stores JOURNAL_ENTRY_ID; the lookup is by the reference, so it works even when the invoice row was never updated."
+    }
+  },
+  "limits": [
+    "The revenue workbench reads priced lines from the screen rather than from a sold-volume table: there is no sold-volume entity in this app yet, so the volume reference is a stated id the clerk supplies and the invoice keeps it. The link is real but the source volume is not validated against a volume register.",
+    "The invoice journal is written already POSTED (issuing is the posting) rather than going through the ledger's draft/post cycle, because the investment-style second-person post does not apply to a system-generated sales entry. The period lock is still checked.",
+    "Payment, receivables ageing and the sales-contract currency lookup are not built: the currency check compares the invoice against a contract currency stated on the screen, not against a SALES_CONTRACT row, and PAID_AMOUNT is read, never written by this feature (ACC-04 owns receipts).",
+    "No tax codes, no withholding and no multi-rate invoice: one rate applies to the whole invoice, stored on the row.",
+    "Credit notes do not create their own journal entry: the balance and the receivable are reduced, but the ledger reversal of revenue and tax is left to the accounting close. That is a real gap against ACC-03's 'record the ledger effect' for credits.",
+    "Deleting a draft removes its lines and the header, but an invoice that was issued can only be credited, never reversed here.",
+    "The feature's permissions (accounting.revenue.*) are not enforced per command: the app gates pages."
+  ]
+}

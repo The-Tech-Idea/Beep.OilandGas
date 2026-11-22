@@ -9,6 +9,7 @@ public partial class RA_WELL_ACT_TYPE_EQUIV: Entity,IPPDMEntity
 {
 
 private  System.String EQUIV_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String EQUIV_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String EQUIV_TYPEValue;
           set { SetProperty(ref  EQUIV_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

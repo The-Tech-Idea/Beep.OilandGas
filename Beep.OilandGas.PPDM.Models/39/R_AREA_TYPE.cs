@@ -9,6 +9,7 @@ public partial class R_AREA_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

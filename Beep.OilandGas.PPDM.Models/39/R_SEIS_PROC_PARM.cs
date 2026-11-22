@@ -9,6 +9,7 @@ public partial class R_SEIS_PROC_PARM: Entity,IPPDMEntity
 {
 
 private  System.String PARAMETER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARAMETER_TYPE
         {  
             get  

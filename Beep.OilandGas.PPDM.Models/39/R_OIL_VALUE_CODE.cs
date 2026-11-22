@@ -9,6 +9,7 @@ public partial class R_OIL_VALUE_CODE: Entity,IPPDMEntity
 {
 
 private  System.String OIL_VALUE_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String OIL_VALUE_CODE
         {  
             get  

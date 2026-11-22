@@ -1,0 +1,61 @@
+{
+  "id": "STG-05/PRD-03",
+  "title": "Well status board and deferment log",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-5 met: a deferment cannot be saved without a reason code from the reference set; overlapping deferments are flagged rather than merged; a deferred volume carries its unit; the totals by reason equal the sum of the rows; and an ongoing deferment is distinct from a closed one with its elapsed hours.",
+  "dataModel": {
+    "decision": "The feature's open question - 'deferment may be derived from status history rather than stored separately; confirm with the service before creating a second record type' - was answered from the records: PPDM's WELL_STATUS carries the status, a status type and a start/end time, but no deferred volume and no coded reason. A deferment that explains lost volume therefore needs its own row, so PRD-03 adds PRODUCTION_DEFERMENT and the reference set R_DEFERMENT_REASON to the ProductionOperations module, and the board still reads WELL_STATUS for the status itself.",
+    "tables": [
+      "PRODUCTION_DEFERMENT (DEFERMENT_ID key, WELL_ID, FIELD_ID, START_AT, END_AT, REASON_CODE, DEFERRED_VOLUME, VOLUME_OUOM, COMMENT, REPORTER, ACTOR, RECORDED_AT) - END_AT null means ongoing",
+      "R_DEFERMENT_REASON (REASON_CODE key, REASON_NAME, CATEGORY, ACTIVE_IND) - the code book; not seeded, because the taxonomy is the operating company's data"
+    ],
+    "registration": "FacilityManagementModuleSetup registers both types; --smoke now reports 378 entity types (up from 376).",
+    "reads": "PPDM WELL, WELL_STATUS, PDEN_WELL and PDEN_VOL_SUMMARY for the board, the status history and each well's last-day rate."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Production/OgWellStatusBoard.cs (OgDeferment, OgWellCard, OgStatusGroup, OgReasonTotal, OgWellStatusBoard, OgDefermentValues, DefermentRules, IOgWellStatusDeferment, OgWellStatusDefermentService with LoadAsync/LogDefermentAsync/CloseDefermentAsync)",
+    "rules": "DefermentRules states the elapsed-hours rule, the overlap rule (an ongoing deferment is open-ended), validation (well, start, end order, reason in the set, volume with its unit, reporter) and the totals-by-reason rule once, so the page and the tests agree.",
+    "page": "src/Beep.OilandGas.Desktop/Views/DefermentLogPageView.cs (route 'deferments': status board grouped by status, well cards with rate/reason/since, the deferment log with duration and overlap column, totals by reason, the logger, the close action, the reason reference, failure panel)",
+    "wiring": "OgBootstrapper (IOgWellStatusDeferment), OgApplication.WellStatusDeferment, catalog 'deferments' (OgModuleKeys.Production), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/DefermentTests.cs (11, no database) + DefermentGatewayTests.cs (1 opt-in, real SQLite over the PPDM status tables and the two new tables)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 815, "passed": 815, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 29, "passed": 29, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 53, "views-constructed": true, "modulesetup-summary": "28 module(s) - 378 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0, "well-status-route": "wellstatus", "well-status-fails-cleanly-without-table": true, "well-status-notice": "The well status could not be read." }
+  ],
+  "integration": {
+    "database": "SQLite with the PPDM WELL, WELL_STATUS, R_WELL_STATUS, PDEN_WELL and PDEN_VOL_SUMMARY tables and the new R_DEFERMENT_REASON and PRODUCTION_DEFERMENT, seeded in DefermentGatewayTests: three wells in F-1 plus one in F-2, status history, two reason codes and one inactive code, one closed and one ongoing deferment",
+    "board": "the field's three wells group as producing (2) and suspended (1); WELL-1 shows its 120 bbl last-day rate and the open deferment's coded reason; the other field's well is absent",
+    "ac1_reason": "a deferment with no reason is refused with deferment-reason-required and the set is listed in the message; an unknown code and an inactive code are refused with deferment-reason-unknown; an empty reference set refuses with deferment-reason-reference-missing",
+    "ac2_overlap": "a deferment starting inside the open one is saved, both are flagged, OverlapCount reads 2, and the page lists them rather than merging them",
+    "ac3_unit": "a deferred volume with no unit is refused with deferment-volume-unit-required; a negative volume with deferment-volume-invalid",
+    "ac4_totals": "EQ-FAIL totals 175 bbl over 2 rows and WEATHER 40 bbl over 1 row after the overlap is added; the register's totals sum equals the sum of the rows, and the field total reads 215 bbl",
+    "ac5_ongoing": "the open deferment reads 'ongoing' and '6 h so far' style durations; closing it sets END_AT, drops it from the ongoing count and fixes its elapsed hours; closing it twice is refused with deferment-already-closed and closing before the start with deferment-end-before-start",
+    "failed_read": "dropping PRODUCTION_DEFERMENT makes LoadAsync fail with a reference and no workspace"
+  },
+  "gates": {
+    "AC-1 A deferment cannot be saved without a reference reason code": "pass - Validate refuses a missing code, a code not in the active set (naming the set) and an empty reference set, and LogDefermentAsync revalidates against the table it just read; proven against SQLite for all three.",
+    "AC-2 Overlapping deferments are flagged": "pass - every row carries the ids of the same well's deferments whose intervals intersect it (an ongoing row is open-ended), the board counts them, and the page shows the count; the overlap is saved, never merged or refused.",
+    "AC-3 Deferred volume carries a unit": "pass - a volume above zero without VOLUME_OUOM is refused with deferment-volume-unit-required, and every volume renders through the shared formatter which names a missing unit.",
+    "AC-4 Totals by reason equal the sum of rows": "pass - DefermentRules.Totals groups the same list the grid shows, sums within one unit per reason and names a mixed pair instead of adding it; the gateway test compares the totals to the rows' own sum.",
+    "AC-5 An ongoing deferment is distinct from a closed one": "pass - END_AT null is IsOngoing, the page reads 'ongoing' with its elapsed hours, a closed row shows its end and fixed duration, and closing is refused on an already-closed row."
+  },
+  "incident": {
+    "what": "While adding this feature's page, `src/Beep.OilandGas.Desktop/Views/WellStatusPageView.cs` - the WEL-04 well status page - was overwritten by a new file of the same name, because the new page's class name collided with it.",
+    "effect": "The WEL-04 page's source was lost for a few minutes. The build and the full suite still passed because the restored-from-memory replacement compiled, but the route/class collision would have broken the WEL-04 page's wiring (`wellstatus` -> WellStatusPageView) at runtime.",
+    "repair": "The WEL-04 page was rewritten faithfully against the intact WEL-04 service (WELL-04's OgWellStatus and OgWellStatusView are untouched): Route 'wellstatus', OpenPending()/Open(), Pending, LastFailed, ReferenceDataMissing, NoticeText, the history grid and the change form. This feature's page was moved to its own class DefermentLogPageView with route 'deferments'. Verified afterwards: --smoke still reports well-status-route: wellstatus, well-status-fails-cleanly-without-table: True, well-status-reference-missing: False and the same notice, and the 815 desktop tests (including WellStatusTests and WellStatusGatewayTests) pass.",
+    "note": "The repository is not under version control, so nothing could be recovered from history; the restoration was written from the page's own obligations and the smoke contract that names its members."
+  },
+  "limits": [
+    "Deferment is not derived from the status history: WELL_STATUS cannot hold a deferred volume or a coded reason, so PRODUCTION_DEFERMENT is its own record. The status itself still comes from WELL_STATUS, and the two are linked by the well, not by a foreign key.",
+    "R_DEFERMENT_REASON is deliberately not seeded: the deferment taxonomy is the operating company's (or the regulator's) data. Until rows exist the page says so and refuses every deferment, rather than accepting free text.",
+    "The board shows every well of the field, active or not, because a suspended well is exactly what a deferment explains; the 'active wells' count belongs to PRD-01.",
+    "A well's rate on the card is its most recent reported day's oil volume, not a deferred-adjusted or theoretical rate.",
+    "Overlapping deferments are permitted and flagged. The feature says 'flagged, not silently merged', so no rule refuses them and no volume is de-duplicated; the totals therefore include overlaps, and the page says how many rows overlap.",
+    "The deferred volume is summed within one unit per reason and across the field; two units are named rather than converted.",
+    "The feature's permissions (production.deferment.write, production.read) are not enforced per command: the app gates pages.",
+    "The status board in this page is a read of the same PPDM status the WEL-04 page changes; there is no status-change control here, so the two pages do not compete for the write."
+  ]
+}

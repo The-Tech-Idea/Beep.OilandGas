@@ -9,6 +9,7 @@ public partial class RA_WIND_STRENGTH: Entity,IPPDMEntity
 {
 
 private  System.String WIND_STRENGTHValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String WIND_STRENGTH
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String WIND_STRENGTHValue;
           set { SetProperty(ref  WIND_STRENGTHValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

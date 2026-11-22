@@ -9,6 +9,7 @@ public partial class R_SP_ZONE_DEFIN_XREF: Entity,IPPDMEntity
 {
 
 private  System.String XREF_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String XREF_REASON
         {  
             get  

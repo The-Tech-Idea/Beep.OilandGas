@@ -9,6 +9,7 @@ public partial class R_OBLIG_COMP_REASON: Entity,IPPDMEntity
 {
 
 private  System.String COMPONENT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPONENT_REASON
         {  
             get  

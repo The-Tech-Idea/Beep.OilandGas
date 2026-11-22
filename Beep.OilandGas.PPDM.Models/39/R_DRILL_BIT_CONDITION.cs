@@ -9,6 +9,7 @@ public partial class R_DRILL_BIT_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String DRILL_BIT_CONDITIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DRILL_BIT_CONDITION
         {  
             get  

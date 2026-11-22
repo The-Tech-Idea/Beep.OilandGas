@@ -1,0 +1,65 @@
+{
+  "id": "STG-05/PRD-04",
+  "title": "Allocation workbench",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-6 met: every row prints its method, factor, residual and status (an unallocated row says so instead of showing zero); the run is flagged when the allocated total is not the measured total within tolerance and cannot be committed until that is acknowledged; a manual override needs a reason and is stored with it; the same run committed twice is posted once, recognised by its input hash; a preview writes no row at all; and every run stores the hash of its inputs.",
+  "dataModel": {
+    "decision": "The plan names the accounting 'allocation result tables' as the persistence. That was tried first: columns were added to ALLOCATION_RESULT and ALLOCATION_DETAIL for the unit, run state, input hash, tolerance, residual, per-row method, override and basis. It failed at the first entity read with 'An item with the same key has already been added. Key: METHOD': the accounting entity declares BOTH ALLOCATION_METHOD (string) and the METHOD enum (AllocationMethod), and the framework's field builder collapses them onto one column name, so ALLOCATION_RESULT cannot be read through an entity model at all. Rather than alter another author's accounting entity, those column additions were reverted and the workbench owns ALLOCATION_RUN and ALLOCATION_RUN_ROW in the same ProductionAccounting module - the same pattern DEV-05/06/07/08 used where the owner's record carries proof columns a plan-stage row cannot honestly have. The accounting tables stay the accounting record; a committed run converts into them when the accounting flow posts it.",
+    "tables": [
+      "ALLOCATION_RUN (ALLOCATION_RUN_ID key, FIELD_ID, FACILITY_ID, PERIOD_DATE, METHOD, STATE, TOTAL_MEASURED, TOTAL_ALLOCATED, RESIDUAL, VOLUME_OUOM, TOLERANCE_PERCENT, ACKNOWLEDGED_IND, INPUT_HASH, MEASURED_SOURCE, COMMITTED_BY, COMMITTED_AT)",
+      "ALLOCATION_RUN_ROW (ALLOCATION_RUN_ROW_ID key, ALLOCATION_RUN_ID, WELL_ID, WELL_NAME, MEASURED_VOLUME, ALLOCATED_VOLUME, VOLUME_OUOM, FACTOR, RESIDUAL, METHOD, STATUS, BASIS_TEXT, OVERRIDE_REASON, OVERRIDE_BY)"
+    ],
+    "registration": "ProductionAccountingModuleSetup registers both types; --smoke now reports 380 entity types (up from 378).",
+    "reads": "PPDM WELL, PDEN_WELL and PDEN_VOL_SUMMARY for what each well measured (latest amendment per entity/day/activity, production rows only), and ProductionOperations FACILITY_MEASUREMENT for a facility's own measured total."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Production/OgAllocationWorkbench.cs (OgAllocationRow, OgAllocationRun, OgAllocationFacility, OgAllocationOverride, OgAllocationInputs, OgAllocationWorkspace, AllocationRules, IOgAllocationWorkbench, OgAllocationWorkbenchService with LoadAsync/PreviewAsync/CommitAsync/RetryCommitAsync)",
+    "rules": "AllocationRules states the three methods (MEASURED_SHARE, PRIOR_PERIOD, EQUAL) and the unallocated status, the factor rule, the residual rule, the tolerance rule (a percentage of the measured total), the validation (period, method, tolerance range, override reason) and the SHA-256 input hash once, so the page and the tests agree.",
+    "ownerEntryPoint": "The feature's open question asked for the owner's single public entry point: it is IAllocationService.AllocateAsync(RUN_TICKET, method, userId, connectionName) in Beep.OilandGas.Models.Core.Interfaces, which allocates a run ticket into ALLOCATION_RESULT/ALLOCATION_DETAIL. This screen's run is the plan-stage equivalent of that result, in its own rows because the accounting entity cannot be read (see the data-model decision).",
+    "page": "src/Beep.OilandGas.Desktop/Views/AllocationWorkbenchPageView.cs (route 'allocation': run panel with period/method/facility/tolerance, preview/commit/retry, the rows grid with measured, allocated, factor, residual, method and status, the residual summary with the tolerance and the acknowledgement, the per-well basis explanation, the override bar and the committed-run history)",
+    "wiring": "OgBootstrapper (IOgAllocationWorkbench), OgApplication.AllocationWorkbench, catalog 'allocation' (OgModuleKeys.Production), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/AllocationTests.cs (12, no database) + AllocationGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 828, "passed": 828, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests (first run)", "exit": 1, "run": 30, "passed": 29, "failed": 1, "failure": "WellSearchGatewayTests 'first page took 2001 ms' - a 2000 ms timing budget missed by 1 ms under build load; it passed alone and the whole gateway suite then passed 30/30" },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests (re-run)", "exit": 0, "run": 30, "passed": 30, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 54, "views-constructed": true, "modulesetup-summary": "28 module(s) - 380 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with the PPDM WELL, PDEN_WELL and PDEN_VOL_SUMMARY tables, ProductionOperations FACILITY_MEASUREMENT and the new ALLOCATION_RUN/ALLOCATION_RUN_ROW, seeded in AllocationGatewayTests: two wells measuring 600 and 300 bbl, a third with no measurement, a fourth in another field, and a facility measuring 950 bbl",
+    "ac5_dry_run": "loading and previewing twice leaves ALLOCATION_RUN and ALLOCATION_RUN_ROW at zero rows",
+    "ac1_rows": "every row carries its method and residual; WELL-3 has no measurement, so it is UNALLOCATED with no factor, 'unallocated' rather than '0 bbl', and the run lists it in its flags",
+    "measuredTotal": "without a facility the field's own wells are the total (900 bbl, residual 0); with FAC-1 named the facility's 950 bbl is the total and the factors share exactly that",
+    "ac3_override": "an override with no reason is refused with allocation-override-reason-required; with a reason the row is OVERRIDDEN, carries 'the separator was re-calibrated', the allocated total moves to 800 and the residual to -100, and the explanation panel names the override",
+    "ac2_tolerance": "with that override the run is beyond tolerance and CommitAsync without acknowledgement is refused with allocation-residual-beyond-tolerance and writes nothing; acknowledging it commits",
+    "ac6_hash": "the preview and a second preview of the same inputs produce the same 64-character hash, the committed row stores it, and the history shows its first twelve characters",
+    "ac4_idempotence": "committing the same override inputs again returns the same run id and leaves exactly 1 ALLOCATION_RUN and 3 ALLOCATION_RUN_ROW rows",
+    "storedRows": "the run row stores METHOD, INPUT_HASH, STATE=COMMITTED and ACKNOWLEDGED_IND=Y; the row set stores the OVERRIDDEN and UNALLOCATED statuses and the override reason",
+    "failed_read": "dropping ALLOCATION_RUN_ROW makes LoadAsync fail with a reference and no workspace"
+  },
+  "gates": {
+    "AC-1 Every row shows its method and residual": "pass - every row prints method, factor, residual and status; an unallocated row prints 'unallocated' and 'no residual' rather than a zero, and the committed rows store METHOD, STATUS and RESIDUAL.",
+    "AC-2 Total allocated equals total measured within tolerance, or the run is flagged": "pass - the tolerance is a percentage of the measured total, the run reports IsBeyondTolerance and a flag sentence, and CommitAsync refuses with allocation-residual-beyond-tolerance until acknowledgeResidual is set; the gateway test proves the refusal writes nothing.",
+    "AC-3 A manual override requires a reason and is recorded": "pass - validation refuses an override without a reason, the row carries OverrideReason and OverrideBy, the basis panel names the override, and the reason is stored in OVERRIDE_REASON.",
+    "AC-4 Commit is idempotent": "pass - the run's inputs hash is looked up before writing; a matching COMMITTED run is returned and no second row set is written (1 run, 3 rows after the second commit).",
+    "AC-5 Dry run persists nothing": "pass - LoadAsync and PreviewAsync compute the run in memory only; the tests count zero rows after both, and the page labels a preview 'Preview only: nothing has been written'.",
+    "AC-6 The run stores a hash of its inputs": "pass - AllocationRules.Hash is SHA-256 over field, facility, period, method, tolerance and every row's well, measured, allocated, unit, method, residual and override reason; it is order-independent and changes when any input changes; the committed row stores it."
+  },
+  "incident": {
+    "what": "The first design extended the accounting ALLOCATION_RESULT and ALLOCATION_DETAIL entities with the workbench's columns.",
+    "effect": "The framework's field builder folds ALLOCATION_METHOD and the METHOD enum onto one column name, so the very first entity read threw 'An item with the same key has already been added. Key: METHOD' and the page could not load.",
+    "repair": "Those column additions were reverted, the workbench was given its own ALLOCATION_RUN and ALLOCATION_RUN_ROW tables in the same module, and the owner's accounting entity was left untouched. The finding is recorded here because it is a real property of the owner's model that a future accounting screen will hit too."
+  },
+  "limits": [
+    "The workbench owns its own run tables; the accounting ALLOCATION_RESULT/ALLOCATION_DETAIL are not written by this screen and the conversion into them is the accounting flow's job. PRD-05 (reconciliation) reads these run rows, not the accounting ones.",
+    "The allocation is a share of a measured total by a stated basis. Factors are normalised over the wells that have a basis, so a run without an override allocates the measured total exactly; the residual therefore comes from overrides (and from any row left unallocated), which is the only way the allocated total can differ from the measured total by construction.",
+    "A row with no measurement and no prior period is unallocated and its share is not redistributed to the others; the run says how many rows are unallocated.",
+    "FACILITY_MEASUREMENT carries no field, so naming a facility is the operator's assertion that it belongs to the field; the page says the measured total came from that facility.",
+    "The method list is the workbench's three (measured share, prior period, equal). The accounting AllocationMethod enum (working-interest and net-revenue variants) belongs to the revenue allocation, not to this production split.",
+    "The input hash covers the values the run was computed from; it does not hash the raw database rows, so a change to a measurement that leaves the computed rows identical will not change the hash.",
+    "The feature's permissions (production.allocation.run, .override, .commit) are not enforced per command: the app gates pages.",
+    "One gateway test (WellSearchGatewayTests, 2000 ms first-page budget) failed by 1 ms on the first run under build load and passed alone and on re-run; it is a timing assertion unrelated to this feature."
+  ]
+}

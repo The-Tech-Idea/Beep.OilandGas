@@ -9,6 +9,7 @@ public partial class RA_CONFIDENTIAL_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CONFIDENTIAL_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONFIDENTIAL_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONFIDENTIAL_TYPEValue;
           set { SetProperty(ref  CONFIDENTIAL_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

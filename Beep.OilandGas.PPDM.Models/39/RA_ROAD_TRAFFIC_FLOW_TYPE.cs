@@ -9,6 +9,7 @@ public partial class RA_ROAD_TRAFFIC_FLOW_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String TRAFFIC_FLOW_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String TRAFFIC_FLOW_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String TRAFFIC_FLOW_TYPEValue;
           set { SetProperty(ref  TRAFFIC_FLOW_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

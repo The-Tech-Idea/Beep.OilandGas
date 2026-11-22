@@ -9,6 +9,7 @@ public partial class RA_ANL_PROBLEM_SEVERITY: Entity,IPPDMEntity
 {
 
 private  System.String PROBLEM_SEVERITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROBLEM_SEVERITY
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PROBLEM_SEVERITYValue;
           set { SetProperty(ref  PROBLEM_SEVERITYValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_CEMENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String CEMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CEMENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CEMENT_TYPEValue;
           set { SetProperty(ref  CEMENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

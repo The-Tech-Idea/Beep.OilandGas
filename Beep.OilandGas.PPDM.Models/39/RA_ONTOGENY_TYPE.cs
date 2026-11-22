@@ -9,6 +9,7 @@ public partial class RA_ONTOGENY_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ONTOGENY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ONTOGENY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ONTOGENY_TYPEValue;
           set { SetProperty(ref  ONTOGENY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

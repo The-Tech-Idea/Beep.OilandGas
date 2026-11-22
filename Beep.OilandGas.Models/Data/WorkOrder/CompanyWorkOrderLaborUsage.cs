@@ -1,4 +1,4 @@
-using Beep.OilandGas.Models.Data.Process;
+﻿using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.AccessControl;
@@ -50,7 +50,7 @@ public sealed record CompanyWorkOrderLaborUsageReview(CompanyWorkOrderSubmission
 }
 
 /// <summary>Immutable original labor report; no wage, valuation, currency or journal posting is inferred.</summary>
-public sealed class WORK_ORDER_LABOR_USAGE:ModelEntityBase
+public sealed partial class WORK_ORDER_LABOR_USAGE:ModelEntityBase
 {
     [Key,Required,MaxLength(128)] public string LABOR_ID{get;set;}="";
     [Required,MaxLength(64)] public string OWNER_TENANT_ID{get;set;}="";

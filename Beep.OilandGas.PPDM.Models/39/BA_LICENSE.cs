@@ -9,6 +9,7 @@ public partial class BA_LICENSE: Entity,IPPDMEntity
 {
 
 private  System.String LICENSEE_BA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSEE_BA_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String LICENSEE_BA_IDValue;
           set { SetProperty(ref  LICENSEE_BA_IDValue, value); }
         } 
 private  System.String LICENSE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LICENSE_ID
         {  
             get  

@@ -1,0 +1,68 @@
+{
+  "id": "STG-07/LFT-05",
+  "title": "Plunger lift",
+  "date": "2026-11-08",
+  "status": "gate met - AC-1..AC-6 met: all six criteria are evaluated and printed with the deciding value and the module's own range; an infeasible well reports no rate at all while an uneconomic one reports the rate it can lift and the basis that made it uneconomic; the plunger types come from the owning constants; the fall, rise and shut-in times add up to the cycle and the cycle count and daily rate follow from it; the types are bound from the workspace and no type literal is in the view; and a saved assessment records the type, the cycle, the verdict and every criterion evaluated.",
+  "dataModel": {
+    "decision": "The PlungerLift project's types are calculation objects (well properties, cycle result, cycle point, gas requirements, performance, optimization) and none is a table, so an assessment had nowhere to persist. PLUNGER_DESIGN was added, storing the inputs, the cycle, the verdict and the criteria as values so the outcome can be read without re-running the screen. The project also had no module setup, so a PlungerLiftModule was added to register the table.",
+    "tables": [
+      "PLUNGER_DESIGN (DESIGN_ID key, WELL_UWI, DESIGN_DATE, PLUNGER_TYPE, DEPTH_FT, TUBING_DIAMETER_IN, CASING_PRESSURE_PSIA, LINE_PRESSURE_PSIA, GAS_RATE_MSCFD, LIQUID_RATE_BBLD, GLR_SCF_BBL, FALL_VELOCITY_FPM, RISE_VELOCITY_FPM, FALL_TIME_MIN, RISE_TIME_MIN, SHUT_IN_TIME_MIN, CYCLE_TIME_MIN, CYCLES_PER_DAY, RATE_PER_CYCLE_BBL, DAILY_RATE_BBLD, FEASIBILITY, ECONOMIC_IND, ECONOMIC_BASIS, CRITERIA_TEXT, FAILED_CRITERIA, ACTOR, RECORDED_AT)"
+    ],
+    "registration": "PlungerLiftModule (order 78, no seed: the plunger types and their velocities are the module's constants, not database rows). --smoke now reports 31 modules and 400 entity types (up from 30 and 399).",
+    "engine": "PlungerLiftCalculator.EstimateFallVelocity and EstimateRiseVelocity for the two velocities; PlungerLiftConstants for every limit the criteria are judged against."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Lift/OgPlunger.cs (PlungerTypes, PlungerVerdicts, OgPlungerCriterion, OgPlungerInputs, OgPlungerResult, OgPlungerPending, OgPlungerWorkspace, PlungerRules, IOgPlunger, OgPlungerService with AssessAsync/SaveAsync/LoadAsync/RetrySaveAsync and the public Build)",
+    "criteria": "six, in a stated order: GLR_RANGE, PRESSURE_DIFFERENTIAL, FALL_VELOCITY_RANGE, RISE_VELOCITY_RANGE, CYCLE_TIME_RANGE, SLUG_SIZE_RANGE. Each carries the deciding value, the module's range and a sentence; a failed one says FAIL and names what it missed.",
+    "verdicts": "INFEASIBLE when any criterion fails (and DailyRate stays null), UNECONOMIC when the cycle cannot keep up with the inflow (with the lifted rate and the basis), FEASIBLE otherwise.",
+    "units": "the owner's velocities are feet per second and the module's limits are feet per minute, so the service multiplies by 60 at one place and says why.",
+    "page": "src/Beep.OilandGas.Desktop/Views/PlungerPageView.cs (route 'plunger': the well, pressure and rate bars, the type and tubing pickers, the verdict, the rate line that says 'no rate' when infeasible, the cycle line, the economic line, the criterion list and the saved assessments)",
+    "wiring": "OgBootstrapper (IOgPlunger), OgApplication.Plunger, catalog 'plunger' (OgModuleKeys.Lift), OgPageFactory, en + ar labels",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PlungerTests.cs (11, no database) + PlungerGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 989, "passed": 989, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 44, "passed": 44, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 68, "views-constructed": true, "modulesetup-summary": "31 module(s) - 400 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "engineDefects": {
+    "fixed": {
+      "where": "Beep.OilandGas.PlungerLift/Constants/PlungerLiftConstants.cs - MinimumRiseVelocity and MaximumRiseVelocity",
+      "finding": "The two limits made every real well infeasible. PlungerLiftCalculator.EstimateRiseVelocity depends on the casing-to-line differential alone, so 50 psi (the module's own MinimumPressureDifferential) gives exactly 500 ft/min, 51 psi gives 505 and 200 psi gives 1,000 - while MaximumRiseVelocity was 500 and MinimumRiseVelocity 200. A well therefore had to have at least 50 psi of differential (the differential criterion) and at most 50 psi (the rise criterion): a probe over dp of 20, 49, 50, 51, 60, 100 and 200 psi found FEASIBLE at exactly 50 and INFEASIBLE at every other value. The constants also contradicted the calculator they judge, whose own comment states a typical 500-1000 ft/min and whose clamp accepts 5-20 ft/s (300-1200 ft/min).",
+      "fix": "The two constants now state the calculator's own clamp - 300 and 1200 ft/min - which is the only self-consistent reading and the only pair of numbers the module itself documents. The schedule and the clamp are unchanged, and no other caller in the repository referenced either constant (checked by search before the change).",
+      "verification": "After the change the differential is what decides: dp 20 and 49 fail pressure_differential, dp 50, 60, 100 and 200 are all feasible with rise velocities of 500, 548, 707 and 1,000 ft/min inside the 300-1200 range. The consequence is recorded honestly below: with a differential-only rise model the rise criterion is entailed by the differential and never decides on its own."
+    },
+    "noted": {
+      "where": "Beep.OilandGas.PlungerLift/Services/PlungerLiftService.Advanced.cs - AnalyzePlungerCycleAsync",
+      "finding": "It hard-codes gas and liquid densities (2.5 and 62.4 lb/ft3), assumes the liquid density from the oil gravity and has no feasibility criteria at all, so its result is not an assessment.",
+      "handling": "Not used. The screen calls the calculator's velocity estimates and the module's constants directly, and evaluates its own criteria from them; the service's own reporting is left as the owner's to fix and is recorded here rather than relied on."
+    }
+  },
+  "integration": {
+    "database": "SQLite with PLUNGER_DESIGN, seeded in PlungerGatewayTests",
+    "ac1_criteria": "the feasible case evaluates all six criteria in a fixed order; every criterion states its value and the module's range, the differential states the module's minimum rather than a band, and a 49 psi differential reports FAIL with '49 psi' and the 50 psi minimum",
+    "ac2_infeasible": "a 100 scf/bbl well is INFEASIBLE, its DailyRate is null (not zero), its rate line reads 'no rate: the well is infeasible (glr_range)', and SaveAsync refuses it with plunger-nothing-to-save, writing no row",
+    "ac3_uneconomic": "a 400 bbl/d well at the same pressures is UNECONOMIC rather than infeasible: no criterion failed, the lifted rate is reported (about 238.8 bbl/d, capped at the module's 5 bbl slug), and the basis reads 'the cycle lifts at most ... against an inflow of 400 bbl/d ... this module has no price basis to judge the cost of a cycle'. The stored row has FEASIBILITY='UNECONOMIC', ECONOMIC_IND='N' and that basis",
+    "ac5_cycle": "fall 6.67 + rise 8.49 + shut-in 15 = 30.15 min, 47.76 cycles per day, and the daily rate is the per-cycle slug times that count; the stored row asserts CYCLE_TIME_MIN = FALL_TIME_MIN + RISE_TIME_MIN + SHUT_IN_TIME_MIN in SQL",
+    "ac6_saved": "the stored row carries PLUNGER_TYPE='BAR', FEASIBILITY='FEASIBLE', ECONOMIC_IND='Y', the tubing diameter (2.375 in), the cycle, all six criterion codes in CRITERIA_TEXT, a null FAILED_CRITERIA and the actor; the reload keeps the verdict, the type, the cycle, the rise velocity and the criteria count",
+    "lost_acknowledgement": "dropping the table makes the save fail with the assessment retained in Pending; recreating it and retrying inserts it once",
+    "history_unavailable": "dropping PLUNGER_DESIGN makes LoadAsync return a workspace with HistoryFailed true"
+  },
+  "gates": {
+    "AC-1 Feasibility passes or fails per criterion with the deciding value": "pass - six criteria, each printed with its value, the module's range and a sentence; the order is fixed so the panel reads the same way every time, and a failed criterion says FAIL and what it missed.",
+    "AC-2 An infeasible well reports no rate, never zero": "pass - the verdict is INFEASIBLE, DailyRate is null, the rate line says 'no rate: the well is infeasible (<failed criteria>)', and the assessment cannot be saved as a design. This is SG-07-6's first half.",
+    "AC-3 Feasible-but-uneconomic is distinguished from infeasible": "pass - a third verdict with no failed criterion, the rate the cycle can lift, and the basis that decided it, stored on the row. This is SG-07-6's second half.",
+    "AC-4 The plunger type selector uses the owning constant set": "pass - PlungerTypes.All is built from PlungerLiftConstants, the view binds the workspace's list, and a source guard asserts no type literal appears in the page. An unknown type is refused.",
+    "AC-5 The cycle states fall, rise, shut-in and their total": "pass - the three phases are computed from depth over each velocity plus the module's shut-in, the total is asserted equal to their sum and to 1440/cycle, and the text prints all three plus the total and the cycles per day.",
+    "AC-6 A saved design records the type and the criteria outcome": "pass - the type, the cycle, the verdict, the economic flag and basis, every criterion code and the failed set are columns; the gateway test asserts them on the stored row and after a reload."
+  },
+  "limits": [
+    "The rise-velocity criterion cannot decide on its own: PlungerLiftCalculator.EstimateRiseVelocity is a function of the differential alone and its clamp is the criterion's range, so the criterion is entailed by the differential. A rise model that also depends on gas rate and tubing area is the owner's to provide; the screen still evaluates and prints the criterion rather than hiding it.",
+    "A criterion is compared with a relative tolerance of 1e-9. The calculator computes in double and returns decimal, so a well sitting exactly on a limit comes back a fraction past it (50 psi of differential gives 500.0000000000004 ft/min); the tolerance accepts the boundary the engineer actually hit without hiding a violation of any size.",
+    "The gas the well must have per cycle (PlungerLiftCalculator's gas-requirement path and the module's gas requirements entity) is not surfaced: the screen screens feasibility and designs the cycle, and a gas-volume criterion would need a stated gas-availability input this feature does not define.",
+    "Optimization (the plan's 'recommend the cycle that maximises rate') is not surfaced: the cycle is computed from the module's velocities and shut-in, and the screen does not search for a better one. PlungerLiftOptimization exists in the owner and would be its own addition.",
+    "The performance curve and the cycle-point graph are not drawn: there is still no chart host for these calculation screens, so the cycle is a line of numbers rather than a plot.",
+    "The feature's permissions (lift.plunger.read/.write) are not enforced per command: the app gates pages."
+  ]
+}

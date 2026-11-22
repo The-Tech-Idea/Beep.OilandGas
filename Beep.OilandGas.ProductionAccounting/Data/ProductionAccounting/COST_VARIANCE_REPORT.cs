@@ -8,6 +8,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class COST_VARIANCE_REPORT : ModelEntityBase {
         private System.String COST_VARIANCE_REPORT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public System.String COST_VARIANCE_REPORT_ID
         {
             get { return this.COST_VARIANCE_REPORT_IDValue; }

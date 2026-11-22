@@ -9,6 +9,7 @@ public partial class RA_SF_DESC_VALUE: Entity,IPPDMEntity
 {
 
 private  System.String DESC_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESC_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DESC_TYPEValue;
           set { SetProperty(ref  DESC_TYPEValue, value); }
         } 
 private  System.String VALUE_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALUE_CODE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String VALUE_CODEValue;
           set { SetProperty(ref  VALUE_CODEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

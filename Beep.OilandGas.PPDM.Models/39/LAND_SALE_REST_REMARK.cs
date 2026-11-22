@@ -9,6 +9,7 @@ public partial class LAND_SALE_REST_REMARK: Entity,IPPDMEntity
 {
 
 private  System.String RESTRICTION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String RESTRICTION_IDValue;
           set { SetProperty(ref  RESTRICTION_IDValue, value); }
         } 
 private  System.Decimal RESTRICTION_VERSIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal RESTRICTION_VERSION
         {  
             get  
@@ -29,6 +31,7 @@ private  System.Decimal RESTRICTION_VERSIONValue;
           set { SetProperty(ref  RESTRICTION_VERSIONValue, value); }
         } 
 private  System.String JURISDICTIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String JURISDICTION
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String JURISDICTIONValue;
           set { SetProperty(ref  JURISDICTIONValue, value); }
         } 
 private  System.String LAND_SALE_NUMBERValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_SALE_NUMBER
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String LAND_SALE_NUMBERValue;
           set { SetProperty(ref  LAND_SALE_NUMBERValue, value); }
         } 
 private  System.String LAND_SALE_OFFERING_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LAND_SALE_OFFERING_ID
         {  
             get  
@@ -59,6 +64,7 @@ private  System.String LAND_SALE_OFFERING_IDValue;
           set { SetProperty(ref  LAND_SALE_OFFERING_IDValue, value); }
         } 
 private  System.String RESTRICTION_REMARK_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RESTRICTION_REMARK_ID
         {  
             get  

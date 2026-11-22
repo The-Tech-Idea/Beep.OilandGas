@@ -9,6 +9,7 @@ public partial class RA_ENT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String ENTITLEMENT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ENTITLEMENT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String ENTITLEMENT_TYPEValue;
           set { SetProperty(ref  ENTITLEMENT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

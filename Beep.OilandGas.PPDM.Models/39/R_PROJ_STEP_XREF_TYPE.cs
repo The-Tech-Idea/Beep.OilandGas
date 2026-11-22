@@ -9,6 +9,7 @@ public partial class R_PROJ_STEP_XREF_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PROJECT_STEP_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PROJECT_STEP_XREF_TYPE
         {  
             get  

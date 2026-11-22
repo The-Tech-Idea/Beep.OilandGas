@@ -9,6 +9,7 @@ public partial class RA_MACERAL_AMOUNT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String MACERAL_AMOUNT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String MACERAL_AMOUNT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String MACERAL_AMOUNT_TYPEValue;
           set { SetProperty(ref  MACERAL_AMOUNT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

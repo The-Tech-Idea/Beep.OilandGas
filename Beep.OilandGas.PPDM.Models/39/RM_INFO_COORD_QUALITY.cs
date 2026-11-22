@@ -9,6 +9,7 @@ public partial class RM_INFO_COORD_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String INFO_ITEM_SUBTYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFO_ITEM_SUBTYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INFO_ITEM_SUBTYPEValue;
           set { SetProperty(ref  INFO_ITEM_SUBTYPEValue, value); }
         } 
 private  System.String INFORMATION_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INFORMATION_ITEM_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String INFORMATION_ITEM_IDValue;
           set { SetProperty(ref  INFORMATION_ITEM_IDValue, value); }
         } 
 private  System.String QUALITY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUALITY_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_RIG_DESILTER_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String DESILTER_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String DESILTER_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String DESILTER_TYPEValue;
           set { SetProperty(ref  DESILTER_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_PICK_LOCATION: Entity,IPPDMEntity
 {
 
 private  System.String PICK_LOCATIONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PICK_LOCATION
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_ANL_BA_ROLE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String BA_ROLE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String BA_ROLE_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String BA_ROLE_TYPEValue;
           set { SetProperty(ref  BA_ROLE_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class SP_PARCEL_AREA: Entity,IPPDMEntity
 {
 
 private  System.String PARCEL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PARCEL_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PARCEL_IDValue;
           set { SetProperty(ref  PARCEL_IDValue, value); }
         } 
 private  System.String AREA_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_ID
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String AREA_IDValue;
           set { SetProperty(ref  AREA_IDValue, value); }
         } 
 private  System.String AREA_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AREA_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_OBLIG_PAY_RESP: Entity,IPPDMEntity
 {
 
 private  System.String PAYMENT_RESPONSIBILITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PAYMENT_RESPONSIBILITY
         {  
             get  

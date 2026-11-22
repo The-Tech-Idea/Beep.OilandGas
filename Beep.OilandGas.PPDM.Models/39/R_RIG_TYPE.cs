@@ -9,6 +9,7 @@ public partial class R_RIG_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String RIG_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RIG_TYPE
         {  
             get  

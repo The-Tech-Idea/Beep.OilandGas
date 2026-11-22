@@ -9,6 +9,7 @@ public partial class RA_API_LOG_SYSTEM: Entity,IPPDMEntity
 {
 
 private  System.String API_CODE_SYSTEMValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String API_CODE_SYSTEM
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String API_CODE_SYSTEMValue;
           set { SetProperty(ref  API_CODE_SYSTEMValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

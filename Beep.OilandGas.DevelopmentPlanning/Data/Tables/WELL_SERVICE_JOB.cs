@@ -5,6 +5,7 @@ namespace Beep.OilandGas.Models.Data.DevelopmentPlanning;
 public partial class WELL_SERVICE_JOB : ModelEntityBase
 {
     private string JOB_IDValue = string.Empty;
+    [System.ComponentModel.DataAnnotations.Key]
     public string JOB_ID
     {
         get => JOB_IDValue;

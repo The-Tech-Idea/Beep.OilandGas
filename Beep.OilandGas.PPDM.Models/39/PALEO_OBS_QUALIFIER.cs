@@ -9,6 +9,7 @@ public partial class PALEO_OBS_QUALIFIER: Entity,IPPDMEntity
 {
 
 private  System.String QUALIFIER_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String QUALIFIER_ID
         {  
             get  

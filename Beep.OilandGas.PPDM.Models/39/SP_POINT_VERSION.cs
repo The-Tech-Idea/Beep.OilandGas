@@ -9,6 +9,7 @@ public partial class SP_POINT_VERSION: Entity,IPPDMEntity
 {
 
 private  System.String POINT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POINT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String POINT_IDValue;
           set { SetProperty(ref  POINT_IDValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal VERSION_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal VERSION_OBS_NO
         {  
             get  

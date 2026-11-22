@@ -9,6 +9,7 @@ public partial class R_REMARK_USE_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String REMARK_USE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String REMARK_USE_TYPE
         {  
             get  

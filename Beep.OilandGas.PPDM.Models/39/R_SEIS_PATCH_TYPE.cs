@@ -9,6 +9,7 @@ public partial class R_SEIS_PATCH_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String PATCH_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PATCH_TYPE
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_STRAT_HIERARCHY: Entity,IPPDMEntity
 {
 
 private  System.String STRAT_HIERARCHY_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String STRAT_HIERARCHY_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String STRAT_HIERARCHY_TYPEValue;
           set { SetProperty(ref  STRAT_HIERARCHY_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

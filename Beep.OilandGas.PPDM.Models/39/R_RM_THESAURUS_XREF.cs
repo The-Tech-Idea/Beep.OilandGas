@@ -9,6 +9,7 @@ public partial class R_RM_THESAURUS_XREF: Entity,IPPDMEntity
 {
 
 private  System.String THESAURUS_XREF_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String THESAURUS_XREF_TYPE
         {  
             get  

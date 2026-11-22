@@ -9,6 +9,7 @@ public partial class R_AIR_GAS_CODE: Entity,IPPDMEntity
 {
 
 private  System.String AIR_GAS_CODEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AIR_GAS_CODE
         {  
             get  

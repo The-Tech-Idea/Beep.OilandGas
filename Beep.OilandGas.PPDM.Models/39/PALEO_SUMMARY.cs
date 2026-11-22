@@ -9,6 +9,7 @@ public partial class PALEO_SUMMARY: Entity,IPPDMEntity
 {
 
 private  System.String PALEO_SUMMARY_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PALEO_SUMMARY_ID
         {  
             get  

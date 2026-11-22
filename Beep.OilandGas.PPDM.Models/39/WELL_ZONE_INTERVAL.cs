@@ -9,6 +9,7 @@ public partial class WELL_ZONE_INTERVAL: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.String INTERVAL_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INTERVAL_ID
         {  
             get  
@@ -39,6 +42,7 @@ private  System.String INTERVAL_IDValue;
           set { SetProperty(ref  INTERVAL_IDValue, value); }
         } 
 private  System.String ZONE_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_ID
         {  
             get  
@@ -49,6 +53,7 @@ private  System.String ZONE_IDValue;
           set { SetProperty(ref  ZONE_IDValue, value); }
         } 
 private  System.String ZONE_SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ZONE_SOURCE
         {  
             get  

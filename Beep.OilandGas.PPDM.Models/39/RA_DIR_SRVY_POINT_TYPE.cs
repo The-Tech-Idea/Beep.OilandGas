@@ -9,6 +9,7 @@ public partial class RA_DIR_SRVY_POINT_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String POINT_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String POINT_TYPE
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String POINT_TYPEValue;
           set { SetProperty(ref  POINT_TYPEValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

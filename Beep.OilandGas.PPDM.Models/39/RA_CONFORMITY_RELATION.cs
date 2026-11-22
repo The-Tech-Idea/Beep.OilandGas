@@ -9,6 +9,7 @@ public partial class RA_CONFORMITY_RELATION: Entity,IPPDMEntity
 {
 
 private  System.String CONFORMITY_RELATIONSHIPValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONFORMITY_RELATIONSHIP
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONFORMITY_RELATIONSHIPValue;
           set { SetProperty(ref  CONFORMITY_RELATIONSHIPValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_FOS_LIFE_HABIT: Entity,IPPDMEntity
 {
 
 private  System.String LIFE_HABITValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String LIFE_HABIT
         {  
             get  

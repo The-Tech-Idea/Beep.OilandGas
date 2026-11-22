@@ -9,6 +9,7 @@ public partial class WELL_ACTIVITY_CAUSE: Entity,IPPDMEntity
 {
 
 private  System.String UWIValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String UWI
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String UWIValue;
           set { SetProperty(ref  UWIValue, value); }
         } 
 private  System.String SOURCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SOURCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String SOURCEValue;
           set { SetProperty(ref  SOURCEValue, value); }
         } 
 private  System.Decimal ACTIVITY_OBS_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal ACTIVITY_OBS_NO
         {  
             get  
@@ -39,6 +42,7 @@ private  System.Decimal ACTIVITY_OBS_NOValue;
           set { SetProperty(ref  ACTIVITY_OBS_NOValue, value); }
         } 
 private  System.String CAUSE_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CAUSE_TYPE
         {  
             get  

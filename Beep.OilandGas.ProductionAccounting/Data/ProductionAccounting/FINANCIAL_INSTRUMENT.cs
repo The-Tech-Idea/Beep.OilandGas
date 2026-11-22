@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     public partial class FINANCIAL_INSTRUMENT : ModelEntityBase
     {
         private string INSTRUMENT_IDValue;
+        [System.ComponentModel.DataAnnotations.Key]
         public string INSTRUMENT_ID
         {
             get { return this.INSTRUMENT_IDValue; }

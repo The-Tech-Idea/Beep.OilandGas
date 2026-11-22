@@ -9,6 +9,7 @@ public partial class HSE_INCIDENT_SUBSTANCE: Entity,IPPDMEntity
 {
 
 private  System.String INCIDENT_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String INCIDENT_IDValue;
           set { SetProperty(ref  INCIDENT_IDValue, value); }
         } 
 private  System.String INCIDENT_SUBSTANCEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String INCIDENT_SUBSTANCE
         {  
             get  
@@ -29,6 +31,7 @@ private  System.String INCIDENT_SUBSTANCEValue;
           set { SetProperty(ref  INCIDENT_SUBSTANCEValue, value); }
         } 
 private  System.Decimal SUBSTANCE_SEQ_NOValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.Decimal SUBSTANCE_SEQ_NO
         {  
             get  

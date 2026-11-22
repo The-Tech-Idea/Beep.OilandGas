@@ -9,6 +9,7 @@ public partial class RM_PHYS_ITEM_CONDITION: Entity,IPPDMEntity
 {
 
 private  System.String PHYSICAL_ITEM_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String PHYSICAL_ITEM_ID
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String PHYSICAL_ITEM_IDValue;
           set { SetProperty(ref  PHYSICAL_ITEM_IDValue, value); }
         } 
 private  System.String CONDITION_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONDITION_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class RA_SAMPLE_CONTAMINANT: Entity,IPPDMEntity
 {
 
 private  System.String SAMPLE_CONTAMINANTValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String SAMPLE_CONTAMINANT
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String SAMPLE_CONTAMINANTValue;
           set { SetProperty(ref  SAMPLE_CONTAMINANTValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

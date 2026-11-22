@@ -9,6 +9,7 @@ public partial class RA_CONSULT_REASON: Entity,IPPDMEntity
 {
 
 private  System.String CONSULT_REASONValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String CONSULT_REASON
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String CONSULT_REASONValue;
           set { SetProperty(ref  CONSULT_REASONValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

@@ -9,6 +9,7 @@ public partial class R_RIG_CLASS: Entity,IPPDMEntity
 {
 
 private  System.String RIG_CLASSValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String RIG_CLASS
         {  
             get  

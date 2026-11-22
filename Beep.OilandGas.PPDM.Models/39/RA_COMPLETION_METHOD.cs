@@ -9,6 +9,7 @@ public partial class RA_COMPLETION_METHOD: Entity,IPPDMEntity
 {
 
 private  System.String COMPLETION_METHODValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String COMPLETION_METHOD
         {  
             get  
@@ -19,6 +20,7 @@ private  System.String COMPLETION_METHODValue;
           set { SetProperty(ref  COMPLETION_METHODValue, value); }
         } 
 private  System.String ALIAS_IDValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String ALIAS_ID
         {  
             get  

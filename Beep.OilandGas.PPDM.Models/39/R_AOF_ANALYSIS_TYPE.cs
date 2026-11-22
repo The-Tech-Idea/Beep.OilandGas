@@ -9,6 +9,7 @@ public partial class R_AOF_ANALYSIS_TYPE: Entity,IPPDMEntity
 {
 
 private  System.String AOF_ANALYSIS_TYPEValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String AOF_ANALYSIS_TYPE
         {  
             get  

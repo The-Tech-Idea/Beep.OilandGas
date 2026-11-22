@@ -9,6 +9,7 @@ public partial class R_VALUE_QUALITY: Entity,IPPDMEntity
 {
 
 private  System.String VALUE_QUALITYValue; 
+ [System.ComponentModel.DataAnnotations.Key]
  public System.String VALUE_QUALITY
         {  
             get  

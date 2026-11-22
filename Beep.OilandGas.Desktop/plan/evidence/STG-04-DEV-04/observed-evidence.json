@@ -1,0 +1,53 @@
+{
+  "id": "STG-04/DEV-04",
+  "title": "Pools and facilities planning",
+  "date": "2026-11-07",
+  "status": "gate met - AC-1..AC-4 met: a rate is compared with a capacity only when the units agree and a non-matching unit is named rather than converted; a shortfall is reported as its own number; a planned facility is distinguishable from an operating one through the PPDM row and is excluded from the operational pages until it operates; and every pool and facility row carries the plan and plan version it belongs to.",
+  "dataModel": {
+    "decision": "PPDM owns the POOL and FACILITY identities and DevelopmentPlanning already owned FACILITY_INVESTMENT (FDP_ID, FIELD_ID, facility name/type, capacity + OUOM, CAPEX + currency, planned dates). DEV-04 therefore adds one planning table for the pool numbers and reuses the investment table for facilities, rather than duplicating either.",
+    "tables": [
+      "DEVELOPMENT_POOL_PLAN (POOL_PLAN_ID key, FDP_ID, PLAN_VERSION, FIELD_ID, POOL_ID, POOL_NAME, RESERVOIR, DRIVE_MECHANISM, OOIP, OOIP_OUOM, RECOVERY_FACTOR, PLANNED_WELLS, FACILITY_ID, ACTOR, RECORDED_AT) - new, DevelopmentPlanning-owned; it carries only the plan's numbers and the facility routing, not the pool's PPDM identity",
+      "FACILITY_INVESTMENT - reused; gained PLAN_VERSION so a facility investment states the plan version it belongs to (AC-4), alongside the existing capacity, OUOM, CAPEX, currency and planned dates"
+    ],
+    "registration": "DevelopmentPlanningModule registers DEVELOPMENT_POOL_PLAN; --smoke now reports 362 entity types (up from 361).",
+    "rates": "The plan's planned rate is the sum of DEVELOPMENT_WELL_SCHEDULE.INITIAL_RATE_OIL_BOPD (BOPD) and INITIAL_RATE_GAS_MMSCFD (MMSCFD); the unit is the column's own stated unit."
+  },
+  "implementation": {
+    "service": "src/Beep.OilandGas.Desktop.Data/Development/OgPoolsFacilities.cs (OgPoolPlan, OgFacilityPlan, OgCapacityLine, OgCapacityCheck, OgAllocationLine, OgAllocation, OgPoolsFacilitiesSnapshot, OgPoolValues, OgFacilityValues, IOgPoolsFacilities, OgPoolsFacilitiesService with ValidatePool/ValidateFacility/CheckCapacity/BuildAllocation/FacilityState/SavePoolAsync/SaveFacilityAsync)",
+    "page": "src/Beep.OilandGas.Desktop/Views/PoolsFacilitiesPageView.cs (route 'poolsfacilities': pool grid and editor, facility grid and editor, capacity check panel, allocation preview)",
+    "wiring": "OgBootstrapper (IOgPoolsFacilities), OgApplication.PoolsFacilities, catalog 'poolsfacilities' (OgModuleKeys.Development), OgPageFactory, en + ar labels; DEV-01's facility link now points at the real route",
+    "tests": "test/Beep.OilandGas.Desktop.Tests/PoolsFacilitiesTests.cs (12, no database) + PoolsFacilitiesGatewayTests.cs (1 opt-in, real SQLite)"
+  },
+  "commands": [
+    { "cmd": "dotnet build src/Beep.OilandGas.Desktop.slnx -c Debug -p:SkipMinVer=true -m:1", "exit": 0, "errors": 0, "warnings": "owner-project analyzer warnings only" },
+    { "cmd": "dotnet test (desktop, all)", "exit": 0, "run": 724, "passed": 724, "failed": 0, "skipped": 0 },
+    { "cmd": "OG_RUN_SETUP_INTEGRATION=1 dotnet test --filter FullyQualifiedName~GatewayTests", "exit": 0, "run": 22, "passed": 22, "failed": 0 },
+    { "cmd": "TheTechIdea.Beep.OilandGas.Desktop.exe --smoke", "exit": 0, "result": "ok", "pages-declared": 46, "views-constructed": true, "modulesetup-summary": "28 module(s) - 362 entity type(s)", "accessibility-unnamed-count": 0, "accessibility-untabbable-count": 0 }
+  ],
+  "integration": {
+    "database": "SQLite with FIELD_DEVELOPMENT_PLAN, DEVELOPMENT_POOL_PLAN, FACILITY_INVESTMENT, DEVELOPMENT_WELL_SCHEDULE and the PPDM FACILITY table, seeded in PoolsFacilitiesGatewayTests",
+    "ac4_plan_version": "every pool row and every facility row reports PlanId FDP-1 and PlanVersion 3; the other field's plan, pool and facility are absent",
+    "ac1_mixed_units": "oil 1300 BOPD is compared only with the 1000 BOPD facility; the 'bbl/d' water plant and the MMSCFD gas plant are named as not comparable and are neither converted nor silently dropped",
+    "ac2_shortfall": "oil is short by 300 BOPD (1300 planned vs 1000 capacity) and the value is its own field; after a 500 BOPD planned facility is added the capacity becomes 1500 and the headroom 200",
+    "ac3_states": "F-1 is OPERATING (PPDM ACTIVE_IND='Y'), F-2 is IN_CONSTRUCTION (planned start passed, no PPDM row), F-4 is ABANDONED (PPDM ABANDONED_DATE) and a newly saved F-9 is PLANNED (start in the future); only F-1 is not excluded from the operational pages",
+    "allocation": "F-1 totals 45 MMbbl from two pools that share the unit; F-2 holds a Bcf pool and an MMstb pool, so it reports both units and no total; the unrouted pool is listed by name; a new 40 MMbbl x 0.25 pool routed to F-1 takes it to 55 MMbbl",
+    "refusals": "a pool with an OOIP and no unit is refused with pools-facilities-volume-unit-required; a pool routed to a facility outside the plan is refused with pools-facilities-facility-unknown; a facility with a capacity and no unit is refused with pools-facilities-capacity-unit-required",
+    "failed_read": "dropping FIELD_DEVELOPMENT_PLAN makes the load a failure with a reference and no snapshot, not an empty plan"
+  },
+  "gates": {
+    "AC-1 Capacity and rate comparisons refuse mixed units": "pass - a rate in BOPD is summed only against facilities whose CAPACITY_OUOM is BOPD (and MMSCFD against MMSCFD); any other unit is listed as not comparable with its unit named. The allocation preview applies the same rule to volumes: two OOIP units produce no total.",
+    "AC-2 A shortfall is shown as a number, never silently capped": "pass - headroom is capacity - rate and the shortfall is its negation when negative; the gateway test reads 300 BOPD short and then 200 BOPD headroom after a facility is added.",
+    "AC-3 A planned facility is distinguishable from an operating one": "pass - the state comes from the PPDM FACILITY row (operating/abandoned) and otherwise from the planned start date (planned/in construction); only an operating facility is not excluded from the operational pages, and planned dates alone never report 'operating'.",
+    "AC-4 Pool and facility records link to the plan version they belong to": "pass - DEVELOPMENT_POOL_PLAN carries FDP_ID + PLAN_VERSION and FACILITY_INVESTMENT gained PLAN_VERSION; both are written from the plan row's FDP_VERSION and the workspace shows the plan version on both grids."
+  },
+  "limits": [
+    "The capacity check compares the plan's own planned rates with the plan's own planned capacity: it includes facilities that are in construction or planned and excludes only abandoned ones, so it is a planning check, not a today's-throughput check. The page shows each facility's state next to the number.",
+    "FACILITY_INVESTMENT's numeric column is named CAPACITY_PLANNED_BOPD but is read as 'capacity in CAPACITY_OUOM'; a row whose unit is MMSCFD therefore reports gas capacity. The mismatch between the column name and the unit column is a pre-existing table design that this feature does not rename.",
+    "No unit conversion is performed anywhere: 'bbl/d' is not treated as BOPD, and no gas-to-oil equivalence is invented.",
+    "The allocation preview sums recoverable volume (OOIP x recovery factor) per facility; it does not allocate by well, by time or by pipeline capacity, and it does not compare recoverable volume with facility throughput capacity (those are different quantities with different units).",
+    "Facility identity in the PPDM FACILITY table is matched by FACILITY_ID only; a plan facility with no PPDM facility id can never be operating.",
+    "The feature doc's per-command permissions (development.pools.write, development.facilities.write) are not enforced: the app gates pages, not commands.",
+    "The production pools page (PRD-02) is not built; whether it is the same records viewed differently is still the open question recorded in the feature doc.",
+    "The new table and the new FACILITY_INVESTMENT column need the DEVELOPMENT_PLANNING module applied again on an existing database."
+  ]
+}
