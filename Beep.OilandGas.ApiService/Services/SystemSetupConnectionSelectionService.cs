@@ -11,6 +11,7 @@ using Beep.OilandGas.Models.Core.Refusals;
 #if BEEP_SECURE_CONNECTIONS
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Utilities;
+using DataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 #endif
 
 namespace Beep.OilandGas.ApiService.Services;

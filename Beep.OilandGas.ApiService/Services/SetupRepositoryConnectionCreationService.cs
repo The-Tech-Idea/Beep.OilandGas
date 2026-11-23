@@ -6,6 +6,7 @@ using System.Data.Common;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Utilities;
+using DataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 
 namespace Beep.OilandGas.ApiService.Services;
 

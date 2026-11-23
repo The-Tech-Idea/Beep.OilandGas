@@ -2366,7 +2366,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitApplicat
     var logger     = sp.GetRequiredService<ILoggerFactory>()
                        .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationWorkflowService>();
     return new Beep.OilandGas.PermitsAndApplications.Services.PermitApplicationWorkflowService(
-        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
+        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger);
 });
 
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitComplianceCheckService>(sp =>
@@ -2378,7 +2378,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitComplian
     var logger     = sp.GetRequiredService<ILoggerFactory>()
                        .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitComplianceCheckService>();
     return new Beep.OilandGas.PermitsAndApplications.Services.PermitComplianceCheckService(
-        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
+        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger);
 });
 
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitStatusHistoryService>(sp =>
@@ -2390,7 +2390,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPermitStatusHi
     var logger     = sp.GetRequiredService<ILoggerFactory>()
                        .CreateLogger<Beep.OilandGas.PermitsAndApplications.Services.PermitStatusHistoryService>();
     return new Beep.OilandGas.PermitsAndApplications.Services.PermitStatusHistoryService(
-        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger, sp.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>());
+        editor, cch, defaults, metadata, sp.GetRequiredService<ICompanyPermitApplicationDataAccess>(), logger);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
