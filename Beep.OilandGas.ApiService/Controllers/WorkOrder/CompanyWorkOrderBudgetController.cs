@@ -8,7 +8,7 @@ namespace Beep.OilandGas.ApiService.Controllers.WorkOrder;
 
 [ApiController][Authorize]
 [Route("api/field/current/workorder/{workOrderId}/budget")]
-public sealed class CompanyWorkOrderBudgetController(CompanyWorkOrderBudgetService service):ControllerBase
+public sealed class CompanyWorkOrderBudgetController(CompanyWorkOrderBudgetService service,TheTechIdeaWeb.Diagnostics.IFailureReporter failures):ControllerBase
 {
     [HttpPost("financial-sources")][RequireCurrentFieldAccess("READ")]
     public Task<ActionResult> FinancialSources(string workOrderId,CompanyWorkOrderFinancialQuery query)=>Run(async()=>{query.Require();if(query.WorkOrderId!=workOrderId)throw new ArgumentException("Original route work order is required.");return Ok(await service.ReadFinancialSourcesAsync(User,query));});
@@ -42,7 +42,7 @@ public sealed class CompanyWorkOrderBudgetController(CompanyWorkOrderBudgetServi
     public Task<ActionResult> Recover(string workOrderId,CompanyWorkOrderBudgetReference reference)=>Run(async()=>{reference.Require();if(reference.Query.WorkOrderId!=workOrderId)throw new ArgumentException("The original route work order is required.");return Ok(await service.RecoverAsync(User,reference));});
     private async Task<ActionResult> Run(Func<Task<ActionResult>> action)
     {
-        Response.Headers.CacheControl="no-store";try{return await action();}catch(UnauthorizedAccessException){return Forbid();}
-        catch(ArgumentException error){return BadRequest(new{error=error.Message});}catch(InvalidOperationException error){return Conflict(new{error=error.Message});}
+        Response.Headers.CacheControl="no-store";try{return await action();}catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company workflow request","request forbidden");return Forbid();}
+        catch(ArgumentException error){var failureReference=failures.ReportHandled(error,"validating company workflow request","request rejected");return BadRequest(new{error="The workflow request is invalid.",reference=failureReference});}catch(InvalidOperationException error){var failureReference=failures.ReportHandled(error,"reviewing company workflow evidence","original evidence or outcome unconfirmed; reconcile before retrying");return Conflict(new{error="The workflow evidence or outcome could not be confirmed. Reconcile the original record before retrying.",reference=failureReference});}
     }
 }

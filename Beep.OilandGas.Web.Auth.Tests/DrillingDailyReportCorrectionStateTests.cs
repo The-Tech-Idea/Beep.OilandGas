@@ -101,7 +101,7 @@ public sealed class DrillingDailyReportCorrectionStateTests
         f.History = await f.Native.Store.Service.ReadDailyReportPageAsync(f.Native.Execution, 0, 25, null, f.Native.Guard, () => Task.CompletedTask);
         using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();
         ui.Services.AddSingleton(f.Company); ui.Services.AddSingleton(f.Personas.Object); ui.Services.AddSingleton(f.Client.Object);
-        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal); ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal); ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reports?reviewId=" + Uri.EscapeDataString(f.Native.Execution.Basis.ReviewInstanceId));
         var page = ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingDailyReports>();
         page.WaitForAssertion(() => Assert.Contains("3 observed periods; 1 corrections; 4 immutable history entries", page.Markup));

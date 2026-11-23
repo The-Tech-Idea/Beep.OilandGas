@@ -30,10 +30,10 @@ public sealed class DevelopmentInvestmentStateTests
             var source=new DevelopmentAfeIndexItem(facts,progress.InstanceId,progress.Scope.FieldId,current.Source.Baseline!.FDP_NAME,current.Source.Baseline.FDP_VERSION);Queue=new(progress.Scope.Company,"investor",progress.Scope.CoreDatabase,current.BudgetDatabase,[new(source,null)],"",DateTimeOffset.UtcNow);Queue=Queue with{Revision=Queue.ContentRevision()};Queue.Require(Queue.Company,"investor");
             Base.Client.Setup(client=>client.ReviewInvestmentAsync(It.IsAny<string>(),It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>Review);
             Base.Client.Setup(client=>client.QueueAsync(It.IsAny<CancellationToken>())).ReturnsAsync(()=>Queue);
-            State=NewState();QueueState=new(Base.Company,Base.Baseline.Reader.Personas.Object,Base.Client.Object,(_,_,text)=>text);
+            State=NewState();QueueState=new(Base.Company,Base.Baseline.Reader.Personas.Object,Base.Client.Object,TestFailures.Calls(new RecordingFailureReporter()));
         }
         internal void Select(bool review)=>Base.Company.TrySelect(Base.Company.Clear(),"investor",new(Review.Current.Source.Review.Scope.Company,["InvestmentReviewer"],review?["Accounting.View","DevelopmentPlanning.View","Workflow.View","Accounting.ReviewDevelopmentBudget"]:["Accounting.View","DevelopmentPlanning.View","Workflow.View"]));
-        internal DevelopmentInvestmentState NewState()=>new(Base.Company,Base.Baseline.Reader.Personas.Object,Base.Client.Object,(_,_,text)=>text);
+        internal DevelopmentInvestmentState NewState()=>new(Base.Company,Base.Baseline.Reader.Personas.Object,Base.Client.Object,TestFailures.Calls(new RecordingFailureReporter()));
         internal async Task Inspect(){await State.LoadAsync(Review.Current.Source.Review.InstanceId,Review.AfeId);await State.InspectAsync();Assert.NotNull(State.Review);}
         public void Dispose(){State.Dispose();QueueState.Dispose();Base.Dispose();}
     }
@@ -120,6 +120,6 @@ public sealed class DevelopmentInvestmentStateTests
     }
     private static Bunit.TestContext Ui(Fixture f,bool source=true,Action<Bunit.TestContext>? configure=null)
     {
-        var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Base.Company);ui.Services.AddSingleton(f.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Base.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));configure?.Invoke(ui);ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/economics/afe"+(source?"?processId="+f.Review.Current.Source.Review.InstanceId:""));return ui;
+        var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Base.Company);ui.Services.AddSingleton(f.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Base.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));configure?.Invoke(ui);ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/economics/afe"+(source?"?processId="+f.Review.Current.Source.Review.InstanceId:""));return ui;
     }
 }

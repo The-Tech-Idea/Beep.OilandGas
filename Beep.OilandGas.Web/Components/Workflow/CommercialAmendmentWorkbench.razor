@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.ProductionAccounting.Models
@@ -112,7 +113,7 @@
         _authorized=true;
     }
     private Task Reload()=>ReloadEvidence(true);
-    private async Task ReloadEvidence(bool notify){var epoch=_epoch;_error=null;try{await Access();await State.LoadAsync(Processes);if(!_disposed && epoch==_epoch){await Access();if(notify && State.Recorded is not null)await RecordedOutcomeChanged.InvokeAsync();}}catch{if(!_disposed && epoch==_epoch)_error="The original closed process, fresh source or amendment authority could not be confirmed. Retain any original intent and reload.";}}
+    private async Task ReloadEvidence(bool notify){var epoch=_epoch;_error=null;try{await Access();await State.LoadAsync(Processes);if(!_disposed && epoch==_epoch){await Access();if(notify && State.Recorded is not null)await RecordedOutcomeChanged.InvokeAsync();}}catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "CommercialAmendmentWorkbench.ReloadEvidence", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original closed process, fresh source or amendment authority could not be confirmed. Retain any original intent and reload.";}}
     private async Task Prepare()
     {
         var epoch=_epoch;_error=null;
@@ -120,9 +121,9 @@
             var terms=new SalesContractEffectiveTerms(_version,DateTime.SpecifyKind(_from.Value.Date,DateTimeKind.Unspecified),_through is null?null:DateTime.SpecifyKind(_through.Value.Date,DateTimeKind.Unspecified),_currency,_price.Value,_basis,_method,_notes);
             terms.Require();await State.PrepareAsync(Processes,terms,_reason);
             if(!_disposed && epoch==_epoch && State.Recorded is not null){ResetDraft();await RecordedOutcomeChanged.InvokeAsync();}}
-        catch{if(!_disposed && epoch==_epoch)_error="The amendment is unconfirmed. Check explicit terms and reason, retain the original intent and reconcile before another proposal.";}
+        catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "CommercialAmendmentWorkbench.Prepare", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The amendment is unconfirmed. Check explicit terms and reason, retain the original intent and reconcile before another proposal.";}
     }
-    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();await State.SubmitPendingAsync(Processes);if(!_disposed && epoch==_epoch && State.Recorded is not null)await RecordedOutcomeChanged.InvokeAsync();}catch{if(!_disposed && epoch==_epoch)_error="The original amendment remains unconfirmed. Return to its original context, reload and reconcile the same intent.";}}
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();await State.SubmitPendingAsync(Processes);if(!_disposed && epoch==_epoch && State.Recorded is not null)await RecordedOutcomeChanged.InvokeAsync();}catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "CommercialAmendmentWorkbench.Retry", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original amendment remains unconfirmed. Return to its original context, reload and reconcile the same intent.";}}
     private void ResetDraft(){_version="";_currency="";_basis="";_method="";_notes="";_reason="";_from=null;_through=null;_price=null;}
     private void ContextChanged(){++_epoch;_authorized=false;_error=null;ResetDraft();if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}

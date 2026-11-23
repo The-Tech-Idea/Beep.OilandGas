@@ -1,5 +1,4 @@
 using Beep.OilandGas.Models.Data.Company;
-using Beep.OilandGas.Models.Core.Refusals;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -8,12 +7,7 @@ public sealed class CompanyEnvironmentBindingReader(ModuleConnectionResolver mod
 {
     public async Task<string?> ResolveAsync(string module, CancellationToken cancellationToken)
     {
-        try
-        {
-            var connection = await modules.ResolveAsync(module, cancellationToken);
-            return await modules.GetMigrationBindingFingerprintAsync([module], connection);
-        }
-        catch (RefusalException refusal) when (refusal.Kind is RefusalKind.Conflict or RefusalKind.NotFound)
-        { return null; }
+        var connection = await modules.FindAsync(module, cancellationToken);
+        return connection is null ? null : await modules.GetMigrationBindingFingerprintAsync([module], connection);
     }
 }

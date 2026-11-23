@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @namespace Beep.OilandGas.Web.Components.Workflow
@@ -110,7 +111,7 @@
             if(State.Workspace is not {} workspace)return null;
             try{var facts=Facts();var amounts=workspace.Source.ReviewAmounts(facts);var policy=workspace.Source.Policies.RequireApplicable(amounts.Rules.CurrencyCode,facts.InvoiceDate);
                 return(policy.ACCOUNTING_METHOD_ID,amounts.Rules.CurrencyCode,amounts.RoundedPrice,amounts.Subtotal,amounts.Total);}
-            catch(InvalidOperationException){return null;}
+            catch(InvalidOperationException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "SalesInvoiceWorkbench.operation", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); return null;}
         }
     }
     private CompanySalesInvoiceFacts Facts()
@@ -132,7 +133,7 @@
     private async Task Reload()
     {
         var epoch=_epoch;_error=null;Reset();try{await Access();if(TicketId is null)throw new InvalidOperationException();await State.LoadAsync(TicketId,Accounting);if(!_disposed && epoch==_epoch)await Access();}
-        catch{if(!_disposed && epoch==_epoch)_error="Invoice source and original outcome could not be confirmed. Check selected company/account access, the delivery and billing policy, then reload.";}
+        catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "SalesInvoiceWorkbench.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Invoice source and original outcome could not be confirmed. Check selected company/account access, the delivery and billing policy, then reload.";}
     }
     private async Task Record()
     {
@@ -143,9 +144,9 @@
             if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
             await State.PrepareAsync(Facts(),Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}
         }
-        catch{if(!_disposed && epoch==_epoch)_error="Invoice draft outcome was not confirmed. Check explicit dates, policy precision, tax, charges, entitlement and reason. Retain and reconcile any original request.";}
+        catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "SalesInvoiceWorkbench.Record", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Invoice draft outcome was not confirmed. Check explicit dates, policy precision, tax, charges, entitlement and reason. Retain and reconcile any original request.";}
     }
-    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(!_canPrepare || !State.CanRetryPending)throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch{if(!_disposed && epoch==_epoch)_error="The original invoice request remains unconfirmed. Return to its original company, account and delivery to reconcile.";}}
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(!_canPrepare || !State.CanRetryPending)throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch (System.Exception handledFailureAuto4){ HandledFailures.ReportHandled(handledFailureAuto4, "SalesInvoiceWorkbench.Retry", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original invoice request remains unconfirmed. Return to its original company, account and delivery to reconcile.";}}
     private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_error=null;Reset();if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}

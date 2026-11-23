@@ -2,11 +2,12 @@
   <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><IsPackable>false</IsPackable><IsTestProject>true</IsTestProject></PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="../../Beep.OilandGas.Repository.Tests/RecordingFailureReporter.cs" Link="RecordingFailureReporter.cs" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
-    <ProjectReference Include="../../../OilandGasTools/src/TheTechIdea.OilGas.Core/TheTechIdea.OilGas.Core.csproj" />
-    <ProjectReference Include="../../../OilandGasTools/src/TheTechIdea.OilGas.Loaders/TheTechIdea.OilGas.Loaders.csproj" />
+    <ProjectReference Include="../../../OilandGasTools/src/TheTechIdea.OilGas.Wellbore.Data/TheTechIdea.OilGas.Wellbore.Data.csproj" />
+    <ProjectReference Include="../../../OilandGasTools/src/TheTechIdea.OilGas.Wellbore.Loaders/TheTechIdea.OilGas.Wellbore.Loaders.csproj" />
     <Compile Include="../../Beep.OilandGas.ApiService/Services/CompanyEnvironmentPreviewer.cs" Link="CompanyEnvironmentPreviewer.cs" />
     <Compile Include="../../Beep.OilandGas.ApiService/Services/ICompanyEnvironmentStore.cs" Link="ICompanyEnvironmentStore.cs" />
     <Compile Include="../../Beep.OilandGas.ApiService/Services/ISystemSetupRecordReader.cs" Link="ISystemSetupRecordReader.cs" />

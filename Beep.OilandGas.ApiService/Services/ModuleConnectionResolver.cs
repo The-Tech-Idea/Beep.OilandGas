@@ -49,13 +49,13 @@ public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDM
     private async Task<(string ConnectionName, string Fingerprint)> ResolveBindingSnapshotAsync(IReadOnlyList<string> moduleIds, string? expectedConnection)
     {
         if (moduleIds.Count == 0) throw RefusalException.Invalid("Select at least one module.");
-        var ids = moduleIds.Select(x => x.ToUpperInvariant()).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var ids = moduleIds.Select(ModuleBindingService.NormalizeModule).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var tenantId = await RequireTenantAsync();
         var bindings = await ReadAsync(CurrentQueries.Bindings(repository, tenantId, ids));
         var owners = await ReadAsync(CurrentQueries.Owners(repository, tenantId));
         var owned = owners.Where(x => x.PhysicalTargetKey is not null).Select(x => x.ConnectionKey).ToArray();
         var connectionName = expectedConnection ?? bindings.FirstOrDefault()?.ConnectionName;
-        if (string.IsNullOrWhiteSpace(connectionName) || ids.Contains("SECURITY") || bindings.Count != ids.Length || bindings.Any(x =>
+        if (string.IsNullOrWhiteSpace(connectionName) || bindings.Count != ids.Length || bindings.Any(x =>
             x.ConnectionKey is null || !owned.Contains(x.ConnectionKey) ||
             !string.Equals(x.ConnectionKey, x.ConnectionName.ToUpperInvariant(), StringComparison.Ordinal) ||
             string.IsNullOrWhiteSpace(x.ConcurrencyStamp) || !string.Equals(x.ConnectionName, connectionName, StringComparison.OrdinalIgnoreCase)))
@@ -97,9 +97,7 @@ public sealed class ModuleConnectionResolver(RepositoryDbContext repository, IDM
 
     private async Task<(string? Connection, string? Refusal)> LookupAsync(string moduleId, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(moduleId);
-        var id = moduleId.ToUpperInvariant();
-        if (id == "SECURITY") throw new InvalidOperationException("Security belongs to the default repository.");
+        var id = ModuleBindingService.NormalizeModule(moduleId);
         var tenantId = await RequireTenantAsync(cancellationToken);
         var binding = (await ReadAsync(CurrentQueries.Binding(repository, tenantId, id), cancellationToken)).SingleOrDefault();
         if (binding is null || string.IsNullOrWhiteSpace(binding.ConnectionName))

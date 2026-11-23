@@ -5,7 +5,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Models;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Checks whether the selected catalog and company environment still match a recorded selection.</summary>
-public sealed class CompanyGhgSelectionStatusReader(ICompanyGhgSelectionStore selections, CompanyGhgCatalogReader catalogs)
+public sealed class CompanyGhgSelectionStatusReader(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, ICompanyGhgSelectionStore selections, CompanyGhgCatalogReader catalogs)
 {
     public async Task<CompanyGhgSelectionReadResult> ReadAsync(CompanyScope company, Func<Task> authority)
     {
@@ -24,9 +24,16 @@ public sealed class CompanyGhgSelectionStatusReader(ICompanyGhgSelectionStore se
             status = current.Catalog.Revision == selected.CatalogRevision && current.EffectiveRevision == selected.EnvironmentRevision
                 ? "Current" : "ReviewRequired";
         }
-        catch (CompanyEnvironmentReviewRequiredException) { status = "ReviewRequired"; }
+        catch (CompanyEnvironmentReviewRequiredException error)
+        {
+            failures.ReportHandled(error, "checking the saved company GHG selection", "the company environment requires review");
+            status = "ReviewRequired";
+        }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or FormatException or NotSupportedException or InvalidOperationException)
-        { status = "Unconfirmed"; }
+        {
+            failures.ReportHandled(error, "checking the saved company GHG selection", "the selection cannot be confirmed");
+            status = "Unconfirmed";
+        }
         await authority();
         if (await selections.ReadAsync(company, authority) != selected) throw new InvalidOperationException("The company selection changed during status review.");
         await authority();

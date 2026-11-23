@@ -35,11 +35,11 @@ public sealed partial class AssetGrantAdministrationState
             FieldInterestReviewValidation.RequireValid(result, scope.Selection.Scope, field);
             InterestReview = result;
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "AssetGrantAdministrationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
             if (!Current()) return;
-            var sentence = explain(failure, "reviewing recorded FIELD interests", "FIELD interests could not be reviewed");
+            var sentence = explain.Explain(failure, "reviewing recorded FIELD interests", "FIELD interests could not be reviewed");
             if (Current()) Error = sentence;
         }
         finally

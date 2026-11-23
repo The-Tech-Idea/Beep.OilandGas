@@ -94,6 +94,7 @@ public class OilGasDiagnosticsTests
             OilGasDiagnosticsDbContext.MigrationsHistoryTable,
             RelationalOptionsExtension.Extract(context.GetService<IDbContextOptions>()).MigrationsHistoryTableName);
         Assert.Contains(context.Database.GetMigrations(), migration => migration.EndsWith("_AddFailureRecords", StringComparison.Ordinal));
+        Assert.Contains(context.Database.GetMigrations(), migration => migration.EndsWith("_AddBackchannelLogoutRevocations", StringComparison.Ordinal));
         Assert.False(context.Database.HasPendingModelChanges(), $"{engineContext.Name} has model changes no migration carries.");
     }
 
@@ -130,15 +131,13 @@ public class OilGasDiagnosticsTests
                     .Set<FailureRecord>().SingleOrDefaultAsync(record => record.Reference == reference);
             }
 
-            await host.StopAsync();
-
             Assert.NotNull(stored);
             Assert.Equal("proving the store", stored!.Operation);
         }
         finally
         {
-            using var scope = host.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<OilGasDiagnosticsDbContext>().Database.EnsureDeletedAsync();
+            await host.StopAsync();
+            // Retain the isolated LocalDB catalog as acceptance evidence.
         }
     }
 

@@ -31,6 +31,7 @@ public sealed class CompanyProgressState(TimeProvider? clock = null)
 
     public bool CanRead(RepositoryCompanyContext company, CompanyHubChannel channel)
     {
+        if (!Enum.IsDefined(channel.Kind)) return false;
         if (channel.Scope != company.Scope) return false;
         lock (Gate)
         {
@@ -42,7 +43,7 @@ public sealed class CompanyProgressState(TimeProvider? clock = null)
                 CompanyChannelKind.Operation => Operations.ContainsKey(key) || Groups.TryGetValue(key, out var group) &&
                     group.Operations.Keys.All(resource => CanRead(company, channel with { Resource = resource })),
                 CompanyChannelKind.Workflow => Workflows.ContainsKey(key),
-                _ => false
+                CompanyChannelKind.User or CompanyChannelKind.Persona or CompanyChannelKind.Process => false
             };
         }
     }

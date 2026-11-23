@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Models.Data.Company
@@ -107,7 +108,7 @@
             if(_disposed || version!=_contextVersion || scope!=Company.Snapshot || !ReferenceEquals(source,_source))return;
             result.Source.Require(source.Company,source.ActorUserId,source.FieldId,source.From,source.Through,transaction,source.Revision);result.Require(result.Source);_delivery=CompanyInventorySourceReview.Copy(result);
         }
-        catch{if(!_disposed && version==_contextVersion && scope==Company.Snapshot)_deliveryError="Recorded allocation and measured ticket could not be confirmed. Check original company, FIELD, source and provisioning, then reload.";}
+        catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "RevenueRecognition.ReviewDelivery", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && version==_contextVersion && scope==Company.Snapshot)_deliveryError="Recorded allocation and measured ticket could not be confirmed. Check original company, FIELD, source and provisioning, then reload.";}
         finally{_deliveryBusy=false;}
     }
     private FieldRevenueSourceReview? _source;
@@ -135,7 +136,7 @@
             if(_disposed || version!=_contextVersion || scope!=Company.Snapshot || !ReferenceEquals(source,_source))return;
             result.Require(source.Company,source.ActorUserId,source.FieldId,source.From,source.Through,transaction,source.Revision);_contract=CompanyInventorySourceReview.Copy(result);
         }
-        catch{if(!_disposed && version==_contextVersion && scope==Company.Snapshot && ReferenceEquals(source,_source))_contractError="The original revenue transaction and company-owned sales contract could not be confirmed. Reload source evidence and check current access.";}
+        catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "RevenueRecognition.ReviewContract", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && version==_contextVersion && scope==Company.Snapshot && ReferenceEquals(source,_source))_contractError="The original revenue transaction and company-owned sales contract could not be confirmed. Reload source evidence and check current access.";}
         finally{_contractBusy=false;}
     }
     protected override async Task OnInitializedAsync(){Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;await Reload();}
@@ -161,7 +162,7 @@
                     if(_disposed || scope!=Company.Snapshot || version!=_contextVersion || from!=_from || through!=_through)continue;
                     source.Require(scope.Selection.Scope,scope.Selection.UserId,field,from.Value,through.Value);_source=CompanyInventorySourceReview.Copy(source);_retrieved=DateTime.UtcNow;
                 }
-                catch{if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Recorded revenue could not be confirmed for this company, account, FIELD and date window. Check current access and reload.";}
+                catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "RevenueRecognition.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Recorded revenue could not be confirmed for this company, account, FIELD and date window. Check current access and reload.";}
             }while(_reloadRequested && !_disposed);
         }
         finally{_busy=false;}

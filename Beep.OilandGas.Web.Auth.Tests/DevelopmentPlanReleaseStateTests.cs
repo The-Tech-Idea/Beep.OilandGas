@@ -24,7 +24,7 @@ public sealed class DevelopmentPlanReleaseStateTests
             Review=DevelopmentReviewProgressStateTests.Progress(source,"reviewer");
             Reader.Client.Setup(client=>client.GetDraftReviewProgressAsync(Review.InstanceId,It.IsAny<CancellationToken>())).ReturnsAsync(()=>Review);
             Reader.Client.Setup(client=>client.GetDraftBaselineAsync(It.IsAny<string>(),It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>new DevelopmentPlanBaselineReview(Review,null,DateTimeOffset.UtcNow));
-            State=new(Reader.Company,Reader.Personas.Object,Reader.Client.Object,Reader.Journal,(_,_,text)=>text);
+            State=new(Reader.Company,Reader.Personas.Object,Reader.Client.Object,Reader.Journal,TestFailures.Calls(new RecordingFailureReporter()));
         }
         internal async Task Prepare(){await State.LoadAsync(Review);await State.InspectAsync();State.Prepare("Independent baseline approval rationale");Assert.NotNull(State.Prepared);}
         internal static DevelopmentPlanReleaseReceipt Receipt(DevelopmentPlanRelease original,bool recorded=true)=>new(original.Revision(),new(original.Review,recorded?original.ToRecord(DateTime.UtcNow):null,DateTimeOffset.UtcNow));
@@ -60,7 +60,7 @@ public sealed class DevelopmentPlanReleaseStateTests
     {
         using var f=new Fixture();await f.Prepare();var original=f.State.Prepared!;f.Reader.Journal.ReleaseOriginal=original;
         f.Reader.Company.TrySelect(f.Reader.Company.Clear(),"reviewer",new(f.Review.Scope.Company,["ConfiguredReviewRole"],["DevelopmentPlanning.View","Workflow.View"]));
-        f.State.Dispose();f.State=new(f.Reader.Company,f.Reader.Personas.Object,f.Reader.Client.Object,f.Reader.Journal,(_,_,text)=>text);await f.State.LoadAsync(f.Review);Assert.True(f.State.CanRecover);Assert.False(f.State.CanPrepare);
+        f.State.Dispose();f.State=new(f.Reader.Company,f.Reader.Personas.Object,f.Reader.Client.Object,f.Reader.Journal,TestFailures.Calls(new RecordingFailureReporter()));await f.State.LoadAsync(f.Review);Assert.True(f.State.CanRecover);Assert.False(f.State.CanPrepare);
         f.Reader.Client.Setup(client=>client.RecoverDraftBaselineAsync(It.IsAny<DevelopmentPlanRelease>(),It.IsAny<CancellationToken>())).ReturnsAsync(Fixture.Receipt(original));
         await f.State.RecoverAsync();Assert.NotNull(f.State.Result!.Baseline);Assert.Null(f.Reader.Journal.ReleaseOriginal);
         f.Reader.Client.Verify(client=>client.GetAssignedDraftReviewAsync(It.IsAny<string>(),It.IsAny<CancellationToken>()),Times.Never);
@@ -117,7 +117,7 @@ public sealed class DevelopmentPlanReleaseStateTests
     private static Bunit.TestContext Ui(Fixture f)
     {
         var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Reader.Company);ui.Services.AddSingleton(f.Reader.Personas.Object);ui.Services.AddSingleton(f.Reader.Client.Object);
-        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Reader.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Reader.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/development/fdp/history?processId="+f.Review.InstanceId);return ui;
     }
 }

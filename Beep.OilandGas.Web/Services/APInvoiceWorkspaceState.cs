@@ -7,6 +7,7 @@ namespace Beep.OilandGas.Web.Services;
 public sealed partial class APInvoiceWorkspaceState : IDisposable
 {
     private readonly CompanyClientContext company;
+    private readonly OilGasCallFailures failures;
     private bool disposed;
     private int purchaseVersion,allocationVersion,proposalVersion;
     private int financialVersion;
@@ -71,7 +72,7 @@ public sealed partial class APInvoiceWorkspaceState : IDisposable
     public IReadOnlyList<LineItem>? Lines {get;private set;}
     public string? SourceRevision {get;private set;}
     public DateTimeOffset? RetrievedAtUtc {get;private set;}
-    public APInvoiceWorkspaceState(CompanyClientContext company){this.company=company;LinkedOrder=new(company);company.Changed+=Clear;}
+    public APInvoiceWorkspaceState(OilGasCallFailures failures, CompanyClientContext company){this.company=company;this.failures=failures;LinkedOrder=new(failures,company);company.Changed+=Clear;}
     public void ClearPurchaseSource(){ClearMatchingPolicies();ClearFinancialReview();++purchaseVersion;LinkedOrder.Clear();SelectedPurchaseLineId=null;ClearReceiptAllocations();}
     public void Clear(){InvalidateAllocationDisplay();++Version;ClearPurchaseSource();recordedCorrectionHistory=null;recordedVariance=null;HasRecordedVarianceSource=false;recordedVarianceDecision=null;HasRecordedVarianceDecisionSource=false;Rows=null;SupplierFilter=null;StatusFilter=null;UnavailableStatusOnly=false;Detail=null;Lines=null;SourceRevision=null;RetrievedAtUtc=null;}
     public async Task LoadPurchaseSourceAsync(string lineId,Func<string,string,string,Task<APLinePurchaseSourceReview>> read)

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -119,7 +120,7 @@ else if (ready)
     {
         try { await clear(); return true; }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HseClosureWorkflow.ClearConfirmedOriginalAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Recorded HSE outcome confirmed but saved request cleanup failed");
             return false;
         }
@@ -130,7 +131,7 @@ else if (ready)
         activity = "Refreshing recorded incident details.";
         try { await InvokeAsync(StateHasChanged); await OnConfirmed.InvokeAsync(); }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HseClosureWorkflow.RefreshConfirmedAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Recorded HSE outcome confirmed but incident detail refresh failed");
             if (!disposed && generation == version) message = confirmed + " Details could not be refreshed. Reload the incident to view its current state.";
         }
@@ -174,7 +175,7 @@ else if (ready)
             if (savedResolution is not null && (saved is null || saved.IntentId != savedResolution.Review.ApprovedIntentId)) throw new InvalidOperationException("The native resolution has no matching retained terminal original.");
             pending = saved; resolution = savedResolution; correctionPending = savedCorrection; ready = true;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Incident closure original recovery failed"); if (disposed || generation != version) return; unavailable = true; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.OnAfterRenderAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident closure original recovery failed"); if (disposed || generation != version) return; unavailable = true; }
         await InvokeAsync(StateHasChanged);
     }
     private async Task Current(long version, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -191,14 +192,14 @@ else if (ready)
     {
         if (!CanStartNewStage || busy || !ready || pending is not null) return; var version = generation; var snapshot = Company.Snapshot; BeginActivity("Reviewing the assigned closure stage."); review = null; correctionReview = null;
         try { await Current(version, snapshot); var result = await Client.ReviewClosureStageAsync(Context, IncidentId); result.Require(); await Current(version, snapshot); if (result.Context != Context || result.Evidence.Actions.IncidentId != IncidentId) throw new InvalidOperationException(); review = result; }
-        catch (Exception error) { Logger.LogWarning(error, "Assigned incident closure review failed"); if (!disposed && version == generation) message = "The assigned stage could not be reviewed. Complete earlier work and confirm independent verified evidence before final approval."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.ReviewAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Assigned incident closure review failed"); if (!disposed && version == generation) message = "The assigned stage could not be reviewed. Complete earlier work and confirm independent verified evidence before final approval."; }
         finally { EndActivity(); }
     }
     private async Task ReviewCorrectionAsync()
     {
         if (!CanStartNewStage || busy || !ready || pending is not null || correctionPending is not null) return; var version = generation; var snapshot = Company.Snapshot; BeginActivity("Reviewing rejected verification evidence."); review = null; correctionReview = null;
         try { await Current(version, snapshot); var result = await Client.ReviewCorrectionReturnAsync(Context, IncidentId); result.RequireCorrectionReview(); await Current(version, snapshot); if (result.Context != Context || result.Evidence.Actions.IncidentId != IncidentId) throw new InvalidOperationException(); correctionReview = result; }
-        catch (Exception error) { Logger.LogWarning(error, "Rejected verification correction review failed"); if (!disposed && version == generation) message = "Return review is unavailable. Confirm the recorded rejection and current assigned verification role."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.ReviewCorrectionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Rejected verification correction review failed"); if (!disposed && version == generation) message = "Return review is unavailable. Confirm the recorded rejection and current assigned verification role."; }
         finally { EndActivity(); }
     }
     private async Task SubmitCorrectionAsync()
@@ -207,14 +208,14 @@ else if (ready)
         if (!ValidateReason(correctionReason, out correctionReasonError)) { message = null; return; }
         var version = generation; var snapshot = Company.Snapshot; BeginActivity("Recording the return to corrective work.");
         try { await Current(version, snapshot); var original = new CompanyHseCorrectionCommand(Guid.NewGuid(), correctionReview, correctionReason.Trim()); original.Require(); await Intents.RetainCorrectionAsync(original); await Current(version, snapshot); correctionPending = original; await SendCorrection(original, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Incident correction return was not confirmed"); if (!disposed && version == generation) { read = true; ready = false; message = "The correction return is unconfirmed. Reconcile the retained original before starting another operation."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.SubmitCorrectionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident correction return was not confirmed"); if (!disposed && version == generation) { read = true; ready = false; message = "The correction return is unconfirmed. Reconcile the retained original before starting another operation."; } }
         finally { EndActivity(); }
     }
     private async Task RetryCorrectionAsync()
     {
         if (busy || correctionPending is not { } original) return; var version = generation; var snapshot = Company.Snapshot; BeginActivity("Confirming the original correction return.");
         try { await SendCorrection(original, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Incident correction return reconciliation failed"); if (!disposed && version == generation) message = "The correction return remains unconfirmed. Its original evidence is retained."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.RetryCorrectionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident correction return reconciliation failed"); if (!disposed && version == generation) message = "The correction return remains unconfirmed. Its original evidence is retained."; }
         finally { EndActivity(); }
     }
     private async Task SendCorrection(CompanyHseCorrectionCommand original, long version, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -235,7 +236,7 @@ else if (ready)
             await Current(version, snapshot); var result = await Client.ReviewClosureResolutionAsync(Context, IncidentId); result.Require(); await Current(version, snapshot);
             if (result.Context != Context || result.IncidentId != IncidentId || result.ApprovedIntentId != pending.IntentId || result.ApprovedNativeRevision != pending.Review.NativeRevision || result.LifecycleDatabase != pending.Review.LifecycleDatabase) throw new InvalidOperationException("The native review belongs to another terminal approval."); resolutionReview = result;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Native incident history resolution review failed"); if (!disposed && generation == version) message = "The history change cannot be resolved from the current approval. Confirm the original company, role, action and cause evidence."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.ReviewResolutionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Native incident history resolution review failed"); if (!disposed && generation == version) message = "The history change cannot be resolved from the current approval. Confirm the original company, role, action and cause evidence."; }
         finally { EndActivity(); }
     }
     private async Task SubmitResolutionAsync()
@@ -244,14 +245,14 @@ else if (ready)
         if (!ValidateReason(resolutionReason, out resolutionReasonError)) { message = null; return; }
         var version = generation; var snapshot = Company.Snapshot; BeginActivity("Recording the reviewed native history resolution.");
         try { await Current(version, snapshot); var original = new IncidentClosureResolution(Guid.NewGuid(), resolutionReview, resolutionReason.Trim()); original.Require(); await Intents.RetainResolutionAsync(original); await Current(version, snapshot); resolution = original; await SendResolution(original, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Native incident history resolution was not confirmed"); if (!disposed && generation == version) { read = true; ready = false; message = "The native resolution is unconfirmed. Reload and reconcile the retained original; closure is not confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.SubmitResolutionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Native incident history resolution was not confirmed"); if (!disposed && generation == version) { read = true; ready = false; message = "The native resolution is unconfirmed. Reload and reconcile the retained original; closure is not confirmed."; } }
         finally { EndActivity(); }
     }
     private async Task RetryResolutionAsync()
     {
         if (busy || resolution is not { } original) return; var version = generation; var snapshot = Company.Snapshot; BeginActivity("Confirming the original native history resolution.");
         try { await SendResolution(original, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Native incident history resolution reconciliation failed"); if (!disposed && generation == version) message = "The original native resolution remains unconfirmed. Its evidence is retained."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.RetryResolutionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Native incident history resolution reconciliation failed"); if (!disposed && generation == version) message = "The original native resolution remains unconfirmed. Its evidence is retained."; }
         finally { EndActivity(); }
     }
     private async Task SendResolution(IncidentClosureResolution original, long version, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -274,7 +275,7 @@ else if (ready)
             await Intents.RetainClosureAsync(recorded.Original); await Current(version, snapshot); pending = recorded.Original; review = null;
             message = "Recorded lifecycle evidence recovered. Reconcile the original to confirm its complete outcome.";
         }
-        catch (Exception error) { Logger.LogWarning(error, "Recorded incident closure recovery failed"); if (!disposed && version == generation) message = "Recorded closure could not be confirmed. The incident has not been confirmed closed."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.RecoverAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Recorded incident closure recovery failed"); if (!disposed && version == generation) message = "Recorded closure could not be confirmed. The incident has not been confirmed closed."; }
         finally { EndActivity(); }
     }
     private async Task SubmitAsync()
@@ -283,14 +284,14 @@ else if (ready)
         if (!ValidateReason(reason, out reasonError)) { message = null; return; }
         var version = generation; var snapshot = Company.Snapshot; BeginActivity(review.Stage == "INC_CLOSURE" ? "Confirming lifecycle approval and native incident closure." : "Confirming the assigned lifecycle stage.");
         try { await Current(version, snapshot); var original = new CompanyHseClosureCommand(Guid.NewGuid(), review, reason.Trim()); original.Require(); await Intents.RetainClosureAsync(original); await Current(version, snapshot); pending = original; await Send(original, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Incident closure stage was not confirmed"); if (!disposed && version == generation) { read = true; ready = false; message = "The stage outcome is unconfirmed. Reload and reconcile the retained original; the incident has not been confirmed closed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.SubmitAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident closure stage was not confirmed"); if (!disposed && version == generation) { read = true; ready = false; message = "The stage outcome is unconfirmed. Reload and reconcile the retained original; the incident has not been confirmed closed."; } }
         finally { EndActivity(); }
     }
     private async Task ReconcileAsync()
     {
         if (busy || pending is not { } original) return; var version = generation; var snapshot = Company.Snapshot; BeginActivity(original.Review.Stage == "INC_CLOSURE" ? "Confirming the original lifecycle approval and native closure." : "Confirming the original lifecycle stage.");
         try { await Send(original, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Incident closure reconciliation failed"); if (!disposed && version == generation) message = "The original outcome is still unconfirmed. Its evidence is retained; the incident has not been confirmed closed."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseClosureWorkflow.ReconcileAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident closure reconciliation failed"); if (!disposed && version == generation) message = "The original outcome is still unconfirmed. Its evidence is retained; the incident has not been confirmed closed."; }
         finally { EndActivity(); }
     }
     private async Task Send(CompanyHseClosureCommand original, long version, (long Version, CompanyClientSelection? Selection) snapshot)

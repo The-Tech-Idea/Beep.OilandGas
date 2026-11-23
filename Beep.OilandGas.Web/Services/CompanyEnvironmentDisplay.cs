@@ -11,7 +11,7 @@ public sealed record CompanyEnvironmentDisplay(long CompanyVersion, CompanyEnvir
     public bool Matches(CompanyClientContext company) => company.Selection is not null && company.Version == CompanyVersion &&
         company.Selection.Scope == Review.Company && Review.ReviewStatus == "Current";
 
-    public string? LocalTime(DateTime utc)
+    public string? LocalTime(DateTime utc, OilGasCallFailures failures)
     {
         var settings = Review.Settings;
         if (utc.Kind != DateTimeKind.Utc || Review.ReviewStatus != "Current" || settings is null || settings.Company != Review.Company ||
@@ -36,7 +36,7 @@ public sealed record CompanyEnvironmentDisplay(long CompanyVersion, CompanyEnvir
             return local.ToString(pattern, culture) + " " + local.ToString("zzz", CultureInfo.InvariantCulture) + " (" + id + ")";
         }
         catch (Exception error) when (error is TimeZoneNotFoundException or InvalidTimeZoneException or ArgumentException or FormatException)
-        { return null; }
+        { failures.Told(error, "formatting company local time", "Company local time could not be displayed; the UTC value remains available."); return null; }
     }
 
 }

@@ -1,7 +1,7 @@
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.ApiService.Services;
-using TheTechIdea.OilGas.Core;
+using TheTechIdea.OilGas.Wellbore.Data;
 using Xunit;
 
 namespace CompanyEnvironment.Tests;
@@ -38,7 +38,7 @@ public class CompanyEnvironmentPreviewTests
     [Fact]
     public async Task OverridesAndAmbientCatalogDoNotLeakAcrossCompanies()
     {
-        using var ambient = OilGasServices.Scope(new OilGasServices { Countries = new JsonCountryCatalog(new Dictionary<string, string>()) });
+        using var ambient = WellboreServices.Scope(new WellboreServices { Countries = new JsonCountryCatalog(new Dictionary<string, string>()) });
         var first = Task.Run(() => CompanyEnvironmentPreviewer.Preview(new("t", "one"), new("KW", "{\"culture\":\"ar-KW\",\"units\":{\"depthUnit\":\"m\"}}")));
         var second = Task.Run(() => CompanyEnvironmentPreviewer.Preview(new("t", "two"), new("NO", "{\"culture\":\"nb-NO\"}")));
         var results = await Task.WhenAll(first, second);
@@ -46,7 +46,7 @@ public class CompanyEnvironmentPreviewTests
         Assert.Equal("nb-NO", results[1].Culture);
         Assert.Equal("m", results[0].DepthUnit);
         Assert.Equal("one", results[0].Company.BusinessAssociateId);
-        Assert.Empty(OilGasServices.Current.Countries.Codes);
+        Assert.Empty(WellboreServices.Current.Countries.Codes);
     }
 
     [Theory]

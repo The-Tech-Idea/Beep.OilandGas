@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -177,7 +178,7 @@
             if (retainedRetirement is not null) { _retirementPending = retainedRetirement; _user = retainedRetirement.UserId; _retirementReason = retainedRetirement.Request.Reason; }
             _ready = true;
         }
-        catch (Exception error) { if (!_disposed && generation == Interlocked.Read(ref _generation)) { Logger.LogWarning(error, "Company membership setup could not be loaded"); _message = "Membership setup is unavailable. Reload before continuing."; _ready = false; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.Restore", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (!_disposed && generation == Interlocked.Read(ref _generation)) { Logger.LogWarning(error, "Company membership setup could not be loaded"); _message = "Membership setup is unavailable. Reload before continuing."; _ready = false; } }
         finally { if (!_disposed && generation == Interlocked.Read(ref _generation)) await InvokeAsync(StateHasChanged); }
     }
     private async Task Save()
@@ -186,7 +187,7 @@
         if (_busy || !_ready || _rolePending is not null || _revocationPending is not null || _retirementPending is not null || !Current(generation, actor, scope)) return;
         if (_pending is null && !SelectedAccountIsActive) { _message = "Select an active account to add a company member."; return; }
         var request = _pending ?? new CompanyMembershipRequest(_user, _role, _reason, Guid.NewGuid().ToString("N"));
-        try { request.Require(); } catch (ArgumentException) { _message = "Select an account, role and reason."; return; }
+        try { request.Require(); } catch (ArgumentException handledFailure2) { HandledFailures.ReportHandled(handledFailure2, "CompanyMembershipSetup.Save", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _message = "Select an account, role and reason."; return; }
         var intent = new CompanyMembershipIntent(scope!, actor!, request); _busy = true; _message = null;
         try
         {
@@ -194,7 +195,7 @@
             if (!Current(generation, actor, scope)) return;
             _pending = request;
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership request could not be retained"); _message = "The request could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.Save", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership request could not be retained"); _message = "The request could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
         try
         {
             var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/memberships";
@@ -207,7 +208,7 @@
             if (!Current(generation, actor, scope)) return;
             _pending = null; _assignments = null; _access = null; _user = request.UserId; _role = _reason = ""; _message = "The original membership request was recorded. Review current company access before assigning work.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company membership outcome is unconfirmed"); _message = "The outcome is unconfirmed. Retry the same request or review company access."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.Save", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company membership outcome is unconfirmed"); _message = "The outcome is unconfirmed. Retry the same request or review company access."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
     private async Task AssignRole()
@@ -216,7 +217,7 @@
         if (_busy || !_ready || _pending is not null || _rolePending is not null || _revocationPending is not null || _retirementPending is not null || !Current(generation, actor, scope) ||
             _access?.Access is null || _access.UserId != user || _access.Company != scope) return;
         var intent = new CompanyRoleIntent(scope!, actor!, user, new AssignCompanyRoleRequest(_role, _reason));
-        try { intent.Require(); } catch (ArgumentException) { _message = "Select an account, role and reason."; return; }
+        try { intent.Require(); } catch (ArgumentException handledFailure5) { HandledFailures.ReportHandled(handledFailure5, "CompanyMembershipSetup.AssignRole", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _message = "Select an account, role and reason."; return; }
         _busy = true; _message = null;
         try
         {
@@ -224,7 +225,7 @@
             if (!Current(generation, actor, scope)) return;
             _rolePending = intent;
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role request could not be retained"); _message = "The role request could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.AssignRole", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role request could not be retained"); _message = "The role request could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
         try
         {
             var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/users/{Uri.EscapeDataString(user)}/assignments";
@@ -239,7 +240,7 @@
             _rolePending = null; _role = _reason = ""; _access = null; _assignments = null;
             _message = "Role assignment recorded. Review current company access before assigning work.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role outcome is unconfirmed"); _message = "The role outcome is unconfirmed. Review current access and recorded assignments before clearing the request."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.AssignRole", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role outcome is unconfirmed"); _message = "The role outcome is unconfirmed. Review current access and recorded assignments before clearing the request."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
 
@@ -254,7 +255,7 @@
             intent = new CompanyMembershipRetirementIntent(scope!, actor!, _user,
                 new(Guid.NewGuid().ToString("N"), _access.Membership.Revision, _retirementReason));
         }
-        try { intent.Require(); } catch (ArgumentException) { _message = "Enter a valid reason and review the membership again."; return; }
+        try { intent.Require(); } catch (ArgumentException handledFailure8) { HandledFailures.ReportHandled(handledFailure8, "CompanyMembershipSetup.RetireMembership", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _message = "Enter a valid reason and review the membership again."; return; }
         _busy = true; _message = null;
         try
         {
@@ -262,7 +263,7 @@
             if (!Current(generation, actor, scope)) return;
             _retirementPending = intent;
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal could not be retained"); _message = "The removal could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.RetireMembership", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal could not be retained"); _message = "The removal could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
         try
         {
             var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope!.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/users/{Uri.EscapeDataString(intent.UserId)}/membership-retirements";
@@ -277,7 +278,7 @@
             _retirementPending = null; _retirementConfirmed = false; _retirementReason = ""; _access = null; _assignments = null; _retirements = null; _revocationSelection = null;
             _message = "Company membership removal recorded. Review current access and stored grants.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal outcome is unconfirmed"); _message = "The removal is unconfirmed. Retry the original request or review current access."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.RetireMembership", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal outcome is unconfirmed"); _message = "The removal is unconfirmed. Retry the original request or review current access."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
     private async Task ClearRetirementRetained()
@@ -292,7 +293,7 @@
             _retirementPending = null; _retirementConfirmed = false; _retirementClearAcknowledged = false; _retirementReason = ""; _access = null; _assignments = null; _retirements = null;
             _message = "The retained removal was cleared. Server changes remain and an earlier request may still complete.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal recovery could not be cleared"); _message = "The retained removal could not be cleared. Reload before continuing."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.ClearRetirementRetained", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership removal recovery could not be cleared"); _message = "The retained removal could not be cleared. Reload before continuing."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
 
@@ -303,7 +304,7 @@
             !Current(generation, actor, scope) || _assignments is null || !_assignments.Contains(assignment) ||
             assignment.UserId != user || assignment.TenantId != scope!.TenantId || assignment.BusinessAssociateId != scope.BusinessAssociateId || assignment.ApprovalStatus == "Revoked") return;
         var intent = new CompanyRoleRevocationIntent(scope, actor!, user, assignment.UserRoleId);
-        try { intent.Require(); } catch (ArgumentException) { _message = "The assignment could not be confirmed. Review assignments again."; return; }
+        try { intent.Require(); } catch (ArgumentException handledFailure12) { HandledFailures.ReportHandled(handledFailure12, "CompanyMembershipSetup.RevokeRole", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _message = "The assignment could not be confirmed. Review assignments again."; return; }
         _busy = true; _message = null;
         try
         {
@@ -311,7 +312,7 @@
             if (!Current(generation, actor, scope)) return;
             _revocationPending = intent;
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Role removal could not be retained"); _message = "The removal could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.RevokeRole", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Role removal could not be retained"); _message = "The removal could not be retained; no request was sent."; _ready = false; _busy = false; } return; }
         try
         {
             var path = $"/api/identity/roles/tenants/{Uri.EscapeDataString(scope.TenantId)}/companies/{Uri.EscapeDataString(scope.BusinessAssociateId)}/assignments/{Uri.EscapeDataString(intent.AssignmentId)}";
@@ -322,7 +323,7 @@
             _revocationPending = null; _revocationSelection = null; _access = null; _assignments = null;
             _message = "Company role removal recorded. Review current access before assigning work.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role removal is unconfirmed"); _message = "The removal is unconfirmed. Review current access and recorded assignments before clearing it."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.RevokeRole", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role removal is unconfirmed"); _message = "The removal is unconfirmed. Review current access and recorded assignments before clearing it."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
     private async Task ClearRevocationRetained()
@@ -337,7 +338,7 @@
             _revocationPending = null; _revocationSelection = null; _revocationClearAcknowledged = false; _access = null; _assignments = null;
             _message = "The retained removal was cleared. Server-side changes remain and an earlier request may still complete.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Role removal recovery could not be cleared"); _message = "The retained removal could not be cleared. Reload before continuing."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.ClearRevocationRetained", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Role removal recovery could not be cleared"); _message = "The retained removal could not be cleared. Reload before continuing."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
 
@@ -353,7 +354,7 @@
             _rolePending = null; _roleClearAcknowledged = false; _access = null; _assignments = null; _role = _reason = "";
             _message = "The retained role request was cleared. Server-side assignments remain and an earlier request may still complete.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role recovery could not be cleared"); _message = "The retained role request could not be cleared. Reload before continuing."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.ClearRoleRetained", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Company role recovery could not be cleared"); _message = "The retained role request could not be cleared. Reload before continuing."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
     private async Task ReviewRetirements(int offset)
@@ -375,7 +376,7 @@
                 throw new InvalidOperationException("Membership history could not be matched to this company and account.");
             _retirements = page;
         }
-        catch (Exception error) { if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Membership removal history could not be reviewed"); _message = "Membership removal history could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.ReviewRetirements", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Membership removal history could not be reviewed"); _message = "Membership removal history could not be confirmed."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
 
@@ -395,7 +396,7 @@
                 throw new InvalidOperationException("The access response belongs to another scope.");
             _access = result;
         }
-        catch (Exception error) { if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Current company access could not be reviewed"); _message = "Current company access could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.ReviewCurrentAccess", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Current company access could not be reviewed"); _message = "Current company access could not be confirmed."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
     private async Task ReviewAssignments()
@@ -412,7 +413,7 @@
                 throw new InvalidOperationException("The assignment response belongs to another scope.");
             _assignments = result;
         }
-        catch (Exception error) { if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Company assignments could not be reviewed"); _message = "Recorded assignments could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.ReviewAssignments", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope) && _user == user) { Logger.LogWarning(error, "Company assignments could not be reviewed"); _message = "Recorded assignments could not be confirmed."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
     private async Task ClearRetained()
@@ -427,7 +428,7 @@
             _pending = null; _clearAcknowledged = false; _assignments = null; _access = null; _user = _role = _reason = "";
             _message = "The retained request was cleared. Server-side changes remain and an earlier request may still complete.";
         }
-        catch (Exception error) { if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership recovery request could not be cleared"); _message = "The retained request could not be cleared. Reload before continuing."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyMembershipSetup.ClearRetained", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor, scope)) { Logger.LogWarning(error, "Membership recovery request could not be cleared"); _message = "The retained request could not be cleared. Reload before continuing."; } }
         finally { if (Current(generation, actor, scope)) _busy = false; }
     }
     public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); Company.Changed -= CompanyChanged; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }

@@ -98,6 +98,7 @@ public sealed class SetupFirstRunHttpIntegrationTests
             builder.Services.AddScoped<SetupDriverService>(); builder.Services.AddScoped<SetupBootstrapAccess>();
             builder.Services.AddScoped<SetupRepositoryConnectionCreationService>();
             builder.Services.AddScoped<SetupRepositoryConnectionSelectionService>();
+            builder.Services.AddSingleton<IFailureReporter, Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter>();
             builder.Services.AddControllers().AddApplicationPart(typeof(SetupBootstrapDriverController).Assembly);
             var app = builder.Build();
             var editor = app.Services.GetRequiredService<IDMEEditor>();

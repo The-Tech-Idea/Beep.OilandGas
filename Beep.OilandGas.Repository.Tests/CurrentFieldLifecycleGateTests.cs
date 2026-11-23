@@ -25,6 +25,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -45,6 +46,20 @@ namespace Beep.OilandGas.Repository.Tests;
 [Collection(CurrentCompanyHttpAcceptanceCollection.Name)]
 public sealed partial class CurrentFieldLifecycleGateTests
 {
+    // Explicit authentication seam; standard roles come from the selected app company, not a token.
+    private sealed class HandoffRoleBridge(CompanyModuleConnection company) : IClaimsTransformation
+    {
+        public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal user)
+        {
+            if (user.Identity?.IsAuthenticated != true) return user;
+            var selected = await company.RefreshCompanyAsync();
+            var identity = new ClaimsIdentity("handoff-role-fixture");
+            foreach (var role in selected.Roles) identity.AddClaim(new(ClaimTypes.Role, role));
+            user.AddIdentity(identity);
+            return user;
+        }
+    }
+
     private static RepositoryUserProfileService Profile(Fixture f)
     { f.Http.HttpContext = f.Request; return new(f.Db, new RepositoryApplicationAuthorizationReader(f.Gate), new UpperInvariantLookupNormalizer(), f.Account, f.Gate, f.Service); }
     private static async Task<Fixture> Ready()
@@ -497,6 +512,7 @@ public sealed partial class CurrentFieldLifecycleGateTests
             builder.WebHost.UseUrls("http://127.0.0.1:0"); builder.Logging.ClearProviders();
             builder.Services.AddAuthentication("fixture").AddScheme<AuthenticationSchemeOptions, FixtureAuthentication>("fixture", _ => { }); builder.Services.AddAuthorization();
             builder.Services.AddSingleton(new FixturePrincipal(authenticated)); builder.Services.AddSingleton(f.Account); builder.Services.AddSingleton(f.Gate);
+            builder.Services.AddSingleton<TheTechIdeaWeb.Diagnostics.IFailureReporter, RecordingFailureReporter>();
             builder.Services.AddSingleton(owner); builder.Services.AddSingleton(accessOverride ?? boundary.Access.Object); builder.Services.AddSingleton(boundary.Orchestrator.Object); builder.Services.AddSingleton(boundary.Observations.Object);
             configure?.Invoke(builder.Services);
             builder.Services.AddExceptionHandler<RefusalExceptionHandler>(); builder.Services.AddProblemDetails();

@@ -22,7 +22,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
     private readonly IFieldSelectionContext fields;
     private readonly IDevelopmentServiceClient development;
     private readonly IDevelopmentDraftIntentStore? journal;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private FACILITY[] rows=[];
     private long generation;
     private long installationRequest;
@@ -93,7 +93,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
     public string? CreationError { get; private set; }
     public event Action? Changed;
 
-    public DevelopmentFacilityEvidenceState(CompanyClientContext company,IFieldSelectionContext fields,IDevelopmentServiceClient development,Func<Exception,string,string,string> explain,IDevelopmentDraftIntentStore? journal=null)
+    public DevelopmentFacilityEvidenceState(CompanyClientContext company,IFieldSelectionContext fields,IDevelopmentServiceClient development,OilGasCallFailures explain,IDevelopmentDraftIntentStore? journal=null)
     {
         this.company=company;this.fields=fields;this.development=development;this.explain=explain;this.journal=journal;
         company.Changed+=Invalidate;fields.CurrentFieldChanged+=FieldChanged;
@@ -118,7 +118,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             if(result.Any(item=>item is null || !LeaseSummaryValidator.Identifier(item.EquipmentId) || item.InstallationObservation<0 || decimal.Truncate(item.InstallationObservation)!=item.InstallationObservation) || result.Select(item=>(item.EquipmentId,item.InstallationObservation)).Distinct().Count()!=result.Count)throw new InvalidOperationException("Facility equipment evidence is incomplete or ambiguous.");
             if(Current()){equipment=result.ToArray();EquipmentLoaded=true;}
         }
-        catch(Exception error){var message=explain(error,"reading facility equipment","Facility equipment evidence could not be confirmed");if(Current())EquipmentError=message;}
+        catch(Exception error){var message=explain.Explain(error,"reading facility equipment","Facility equipment evidence could not be confirmed");if(Current())EquipmentError=message;}
         finally{if(Current()){EquipmentLoading=false;Changed?.Invoke();}}
     }
     public void ClearInstallation(){++installationRequest;installationReview=null;preparedInstallation=null;InstallationReviewing=false;InstallationError=null;if(!disposed)Changed?.Invoke();}
@@ -131,7 +131,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             if(string.IsNullOrWhiteSpace(utcText) || !utcText.EndsWith("Z",StringComparison.Ordinal) || !DateTimeOffset.TryParse(utcText,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out var instant) || instant.Offset!=TimeSpan.Zero)throw new InvalidOperationException("Enter the installation time in UTC ending with Z.");
             var original=new DevelopmentEquipmentInstallation(Copy(installationReview),Guid.NewGuid(),Guid.NewGuid(),instant.UtcDateTime,confirmed);original.Require();preparedInstallation=original;
         }
-        catch(Exception error){InstallationError=explain(error,"preparing installation","Enter a valid UTC installation time and confirm the original");}
+        catch(Exception error){InstallationError=explain.Explain(error,"preparing installation","Enter a valid UTC installation time and confirm the original");}
         Changed?.Invoke();
     }
     public async Task ReviewInstallationAsync(string facilityId,string facilityType,string equipmentId,string role,string reason)
@@ -145,7 +145,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             var proposal=new DevelopmentEquipmentInstallationProposal(Copy(Review),facilityId,facilityType,equipmentId?.Trim()??"",role,reason?.Trim()??"");proposal.Require();
             var result=await development.ReviewEquipmentInstallationAsync(proposal);result.Require();if(result.Proposal!=proposal)throw new InvalidOperationException("The source review differs from the proposal.");if(Current())installationReview=Copy(result);
         }
-        catch(Exception error){var message=explain(error,"reviewing equipment installation","Equipment installation evidence could not be confirmed");if(Current())InstallationError=message;}
+        catch(Exception error){var message=explain.Explain(error,"reviewing equipment installation","Equipment installation evidence could not be confirmed");if(Current())InstallationError=message;}
         finally{if(Current()){InstallationReviewing=false;Changed?.Invoke();}}
     }
     public Task SubmitInstallationAsync()=>RecordInstallationAsync(false,false,false);
@@ -165,7 +165,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             if(!Current())return;installationReceipt=Copy(result);installationReview=null;equipment=[];EquipmentLoaded=false;Changed?.Invoke();
             if(!Current())return;await journal.ClearEquipmentInstallationAsync(original);if(!Current())return;pendingInstallation=null;installationRetained=false;installationAttempted=false;InstallationConfirmation="The original equipment installation was confirmed. Reload the equipment evidence to inspect the recorded row.";
         }
-        catch(Exception error){var message=explain(error,recover?"recovering the original installation":"saving the original installation","The outcome is unconfirmed. Preserve and recover the retained original before another installation");if(Current())InstallationError=message;}
+        catch(Exception error){var message=explain.Explain(error,recover?"recovering the original installation":"saving the original installation","The outcome is unconfirmed. Preserve and recover the retained original before another installation");if(Current())InstallationError=message;}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
     public void ClearEdit(){if(writing || pendingEdit is not null)return;++editRequest;editReview=null;preparedEdit=null;EditError=null;ReviewingEdit=false;if(!disposed)Changed?.Invoke();}
@@ -187,7 +187,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
                 throw new InvalidOperationException("The selected facility or company/FIELD review changed. Reload the source before editing.");
             editReview=Copy(result);
         }
-        catch(Exception error){var message=explain(error,"reviewing facility edit","The current facility edit review could not be confirmed");if(Current())EditError=message;}
+        catch(Exception error){var message=explain.Explain(error,"reviewing facility edit","The current facility edit review could not be confirmed");if(Current())EditError=message;}
         finally{if(Current()){ReviewingEdit=false;Changed?.Invoke();}}
     }
     public bool CanPrepareEdit=>!disposed && !writing && !Loading && !ReviewingEdit && pendingEdit is null && pendingCreation is null && pendingInstallation is null && editReview is not null && company.Selection is {} selected &&
@@ -205,7 +205,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             if(rows.Any(row=>row.FACILITY_ID==draft.FacilityId && row.FACILITY_TYPE==draft.FacilityType))throw new InvalidOperationException("This facility identity is already present in the displayed FIELD evidence.");
             creationDraft=draft;
         }
-        catch(Exception error){CreationError=explain(error,"preparing a facility proposal","Enter a facility identity, name, current role and reason");}
+        catch(Exception error){CreationError=explain.Explain(error,"preparing a facility proposal","Enter a facility identity, name, current role and reason");}
         Changed?.Invoke();
     }
     public void ClearCreation(){if(writing || pendingCreation is not null)return;++creationRequest;creationDraft=null;creationReview=null;preparedCreation=null;ReviewingCreation=false;CreationError=null;if(!disposed)Changed?.Invoke();}
@@ -221,7 +221,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             if(JsonSerializer.Serialize(result.Draft)!=JsonSerializer.Serialize(draft))throw new InvalidOperationException("The source review differs from the original proposal.");
             if(Current())creationReview=Copy(result);
         }
-        catch(Exception error){var message=explain(error,"reviewing the facility proposal","The facility source review could not be confirmed");if(Current())CreationError=message;}
+        catch(Exception error){var message=explain.Explain(error,"reviewing the facility proposal","The facility source review could not be confirmed");if(Current())CreationError=message;}
         finally{if(Current()){ReviewingCreation=false;Changed?.Invoke();}}
     }
     public bool CanRecoverCreation=>!disposed && !writing && (creationRetained || creationAttempted) && pendingCreation is not null && company.Selection is {} selected && selected.Scope==pendingCreation.Review.Draft.Context.Company && selected.UserId==pendingCreation.Review.Draft.Context.ActorUserId && selected.Permissions.Contains("DevelopmentPlanning.View",StringComparer.Ordinal);
@@ -231,7 +231,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
     {
         if(creationReview is null || !CanPrepareCreation(creationReview.Draft.CreatorRole))return;preparedCreation=null;CreationError=null;
         try{var original=new DevelopmentFacilityCreation(Copy(creationReview),Guid.NewGuid(),Guid.NewGuid(),Guid.NewGuid(),confirmed);original.Require();preparedCreation=original;}
-        catch(Exception error){CreationError=explain(error,"confirming the facility proposal","Confirm the original facility creation");}Changed?.Invoke();
+        catch(Exception error){CreationError=explain.Explain(error,"confirming the facility proposal","Confirm the original facility creation");}Changed?.Invoke();
     }
     public Task SubmitCreationAsync()=>RecordCreationAsync(false,false,false);
     public Task RetryCreationRetentionAsync()=>RecordCreationAsync(false,true,false);
@@ -250,7 +250,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             if(!Current())return;creationReceipt=Copy(result);creationDraft=null;creationReview=null;rows=[];Review=null;Loaded=false;FieldName=null;LoadedAtUtc=null;Changed?.Invoke();
             if(!Current())return;await journal.ClearFacilityCreationAsync(original);if(!Current())return;pendingCreation=null;creationRetained=false;creationAttempted=false;CreationConfirmation="The original facility creation was confirmed. Reload to inspect current facility evidence.";
         }
-        catch(Exception error){var message=explain(error,recover?"recovering the original facility creation":"saving the original facility creation","The original outcome is unconfirmed. Preserve and recover the retained input before preparing another facility");if(Current())CreationError=message;}
+        catch(Exception error){var message=explain.Explain(error,recover?"recovering the original facility creation":"saving the original facility creation","The original outcome is unconfirmed. Preserve and recover the retained input before preparing another facility");if(Current())CreationError=message;}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
     public bool CanRecoverEdit=>!disposed && !writing && (retentionConfirmed || submissionAttempted) && pendingEdit is not null && company.Selection is {} selected &&
@@ -261,7 +261,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
     {
         if(!CanPrepareEdit)return;preparedEdit=null;EditError=null;
         try{var original=new DevelopmentFacilityEdit(Copy(editReview)!,Guid.NewGuid(),name?.Trim()??"",string.IsNullOrWhiteSpace(description)?null:description.Trim(),reason?.Trim()??"",confirmed);original.Require();preparedEdit=original;}
-        catch(Exception error){EditError=explain(error,"preparing a facility edit","Enter a changed name or description, a reason and explicit confirmation");}
+        catch(Exception error){EditError=explain.Explain(error,"preparing a facility edit","Enter a changed name or description, a reason and explicit confirmation");}
         Changed?.Invoke();
     }
     public void CancelPreparedEdit(){if(writing || pendingEdit is not null)return;preparedEdit=null;Changed?.Invoke();}
@@ -282,7 +282,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
             if(!Current())return;editReceipt=Copy(result);editReview=null;rows=[];Review=null;Loaded=false;FieldName=null;LoadedAtUtc=null;Changed?.Invoke();
             if(!Current())return;await journal.ClearFacilityEditAsync(original);if(!Current())return;pendingEdit=null;retentionConfirmed=false;submissionAttempted=false;EditConfirmation="The original facility edit was confirmed. Reload to inspect current facility evidence.";
         }
-        catch(Exception error){var message=explain(error,recover?"recovering the original facility edit":"saving the original facility edit","The original outcome is unconfirmed. Preserve and recover the retained input before trying another edit");if(Current())EditError=message;}
+        catch(Exception error){var message=explain.Explain(error,recover?"recovering the original facility edit":"saving the original facility edit","The original outcome is unconfirmed. Preserve and recover the retained input before trying another edit");if(Current())EditError=message;}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
     public async Task LoadAsync()
@@ -321,7 +321,7 @@ public sealed class DevelopmentFacilityEvidenceState : IDisposable
         }
         catch(Exception error)
         {
-            var message=explain(error,"loading development facility evidence","Development facility evidence could not be confirmed");
+            var message=explain.Explain(error,"loading development facility evidence","Development facility evidence could not be confirmed");
             if(Current())Error=message;
         }
         finally{if(Current()){Loading=false;Changed?.Invoke();}}

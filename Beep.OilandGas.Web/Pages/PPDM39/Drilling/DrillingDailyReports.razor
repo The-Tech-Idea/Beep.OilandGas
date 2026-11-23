@@ -213,7 +213,7 @@
     private bool withdrawCompletion;
     private string? completionError;
     private static string Hours(decimal? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "Unknown";
-    protected override void OnInitialized() { _state=new(Company,Personas,Drilling,Journal,Calls.Explain); _state.Changed+=Changed; }
+    protected override void OnInitialized() { _state=new(Company,Personas,Drilling,Journal,Calls); _state.Changed+=Changed; }
     protected override Task OnParametersSetAsync() => interactive ? Reload() : Task.CompletedTask;
     protected override Task OnAfterRenderAsync(bool firstRender) { if(!firstRender)return Task.CompletedTask; interactive=true; return Reload(); }
     private void ResetInputs()

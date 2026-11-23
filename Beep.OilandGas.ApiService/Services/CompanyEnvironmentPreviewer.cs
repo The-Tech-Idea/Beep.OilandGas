@@ -3,7 +3,7 @@ using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using TheTechIdea.OilGas.Core;
+using TheTechIdea.OilGas.Wellbore.Data;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -17,7 +17,7 @@ public static class CompanyEnvironmentPreviewer
         .ToArray();
 
     /// <summary>Identify the actual compiled tool assembly and its country catalog, not an assumed package version.</summary>
-    public static string ToolsVersion => typeof(OilGasEnvironment).Assembly.ManifestModule.ModuleVersionId.ToString("N");
+    public static string ToolsVersion => typeof(WellboreEnvironment).Assembly.ManifestModule.ModuleVersionId.ToString("N");
 
     /// <summary>Validate a change for storage; external files and credentials need a separate approved owner.</summary>
     public static CompanyEnvironmentPreview ValidateForSave(CompanyScope company, CompanyEnvironmentSaveRequest request)
@@ -62,7 +62,7 @@ public static class CompanyEnvironmentPreviewer
               DisplayCulture = environment.Locale.Culture, DateFormat = environment.Locale.DateFormat, DateTimeFormat = environment.Locale.DateTimeFormat, Calendar = environment.Locale.Calendar };
     }
 
-    internal static string? ConfirmTimeZone(OilGasEnvironment environment)
+    internal static string? ConfirmTimeZone(WellboreEnvironment environment)
     {
         if (environment.Locale is null) throw new ArgumentException("The environment locale is unavailable.");
         var id = environment.Locale.TimeZone;
@@ -74,7 +74,7 @@ public static class CompanyEnvironmentPreviewer
         return id.Trim();
     }
 
-    internal static (string Code, OilGasEnvironment Environment, List<string> Warnings) Load(CompanyEnvironmentPreviewRequest request)
+    internal static (string Code, WellboreEnvironment Environment, List<string> Warnings) Load(CompanyEnvironmentPreviewRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         var code = request.CountryCode?.Trim().ToUpperInvariant();
@@ -96,8 +96,8 @@ public static class CompanyEnvironmentPreviewer
         }
         root["extends"] = "country:" + code;
         // CountryPresets normally resolves an ambient catalog. Fix it to the embedded catalog in this async scope.
-        using var scope = OilGasServices.Scope(new OilGasServices { Countries = JsonCountryCatalog.BuiltIn });
-        var environment = OilGasEnvironment.FromJson(root.ToJsonString(), out var warnings);
+        using var scope = WellboreServices.Scope(new WellboreServices { Countries = JsonCountryCatalog.BuiltIn });
+        var environment = WellboreEnvironment.FromJson(root.ToJsonString(), out var warnings);
         if (environment.Region is null || environment.Units is null || environment.Region.CoordinateSystems is null ||
             environment.Region.Regulators is null || string.IsNullOrWhiteSpace(environment.Culture))
             throw new ArgumentException("The environment must contain its region, units and culture.");
@@ -151,7 +151,7 @@ public static class CompanyEnvironmentPreviewer
 
     internal static bool IsWellPathColor(string path, string property, JsonNode? value) =>
         path.Equals("styles.sectionColors", StringComparison.OrdinalIgnoreCase) && property.Equals("WellPath", StringComparison.OrdinalIgnoreCase) &&
-        value is JsonValue scalar && scalar.TryGetValue<string>(out var color) && StyleColors.IsColor(color);
+        value is JsonValue scalar && scalar.TryGetValue<string>(out var color) && SkiaSharp.SKColor.TryParse(color, out _);
 
     internal static bool IsRestrictedSetupProperty(string property)
     {

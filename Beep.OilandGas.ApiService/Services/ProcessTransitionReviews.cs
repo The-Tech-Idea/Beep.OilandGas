@@ -10,13 +10,13 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 namespace Beep.OilandGas.ApiService.Services;
 public static class ProcessTransitionReviews
 {
-    public static ProcessTransitionReview Create(CompanyScope company,string actor,ClaimsPrincipal user,ProcessInstance instance,ProcessDefinition definition,IReadOnlyList<ProcessHistoryEntry> history, JOURNAL_ENTRY? journal = null, IReadOnlyList<JOURNAL_ENTRY_LINE>? journalLines = null, WorkOrderDetailModel? workOrder = null, IReadOnlyList<InspectionCondition>? inspections = null)
+    public static ProcessTransitionReview Create(TheTechIdeaWeb.Diagnostics.IFailureReporter failures,CompanyScope company,string actor,ClaimsPrincipal user,ProcessInstance instance,ProcessDefinition definition,IReadOnlyList<ProcessHistoryEntry> history, JOURNAL_ENTRY? journal = null, IReadOnlyList<JOURNAL_ENTRY_LINE>? journalLines = null, WorkOrderDetailModel? workOrder = null, IReadOnlyList<InspectionCondition>? inspections = null)
     {
         if(string.IsNullOrWhiteSpace(actor) || string.IsNullOrWhiteSpace(instance.InstanceId) || string.IsNullOrWhiteSpace(instance.FieldId) || definition.ProcessId!=instance.ProcessId || history.Any(row=>row.InstanceId!=instance.InstanceId))
             throw new InvalidOperationException("The source action review cannot be confirmed.");
         var step=instance.StepInstances?.SingleOrDefault(row=>row.StepId==instance.CurrentStepId);
         var template=definition.Steps?.SingleOrDefault(row=>row.StepId==instance.CurrentStepId);
-        var allowed=step is not null && template is not null && ProcessStepRoleChecks.CanAct(user,actor,instance,step,definition,template);
+        var allowed=step is not null && template is not null && ProcessStepRoleChecks.CanAct(failures, user,actor,instance,step,definition,template);
         var isJournal=instance.EntityType=="JOURNAL_ENTRY";
         if (journal is not null && (!isJournal || journal.JOURNAL_ENTRY_ID!=instance.EntityId))
             throw new InvalidOperationException("The recorded journal does not match the workflow source.");
@@ -45,7 +45,7 @@ public static class ProcessTransitionReviews
         var choices=(definition.Transitions is null ? Enumerable.Empty<ProcessTransition>() : definition.Transitions.Values).Where(row=>allowed && !string.IsNullOrWhiteSpace(row.TransitionId) &&
             (!isWorkOrder || maintenance is not null) &&
             (!isJournal || journal is not null && (!(independentStep || row.RequiresApproval) || independentJournal)) &&
-            ProcessStepRoleChecks.CanTransition(user,actor,instance,definition,row.FromStateId,row.ToStateId,row.Trigger))
+            ProcessStepRoleChecks.CanTransition(failures, user,actor,instance,definition,row.FromStateId,row.ToStateId,row.Trigger))
             .OrderBy(row=>row.TransitionId,StringComparer.Ordinal).Select(row=>new ProcessTransitionChoice(row.TransitionId,row.FromStateId,row.ToStateId,row.Trigger,row.RequiresApproval)).ToArray();
         var roles=user.Identities.SelectMany(identity=>identity.Claims.Where(row=>row.Type==identity.RoleClaimType)).Select(row=>row.Value).Distinct().Order(StringComparer.Ordinal).ToArray();
         var evidence=JsonSerializer.Serialize(new { Company=company,Actor=actor,Roles=roles,Instance=instance,Definition=definition,WorkOrder=workOrder,Inspections=inspections?.OrderBy(row=>row.CondSeq),Journal=journal,JournalLines=journalLines?.OrderBy(row=>row.JOURNAL_ENTRY_LINE_ID,StringComparer.Ordinal),History=history.OrderBy(row=>row.HistoryId,StringComparer.Ordinal) });

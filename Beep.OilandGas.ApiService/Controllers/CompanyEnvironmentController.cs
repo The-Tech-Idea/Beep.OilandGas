@@ -5,7 +5,7 @@ using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.ApiService.Controllers;
 
@@ -14,7 +14,7 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [Authorize(Roles = "Administrator")]
 [Route("api/company-environment")]
 public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant, RepositoryCompanyContextResolver companies,
-    ICompanyEnvironmentStore store, ILogger<CompanyEnvironmentController> logger) : ControllerBase
+    ICompanyEnvironmentStore store, IFailureReporter failures) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Read(CancellationToken token)
@@ -27,9 +27,9 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
             await RequireAdministrator(token);
             return Ok(new CompanyEnvironmentReadResult(selected.Scope, value));
         }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (InvalidOperationException failure)
-        { logger.LogWarning(failure, "The company environment could not be reviewed"); return Conflict(new { error = "The company environment or its Beep schema could not be confirmed. Review the system setup repository." }); }
+        { failures.ReportHandled(failure, "The company environment could not be reviewed", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The company environment or its Beep schema could not be confirmed. Review the system setup repository." }); }
     }
 
     [HttpPut]
@@ -43,11 +43,11 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
             await RequireAdministrator(token);
             return Ok(value);
         }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or JsonException or FormatException or NotSupportedException)
-        { return BadRequest(new { error = "The environment settings or save request are invalid." }); }
+        { failures.ReportHandled(invalid, "validating company environment settings", "request rejected"); return BadRequest(new { error = "The environment settings or save request are invalid." }); }
         catch (InvalidOperationException failure)
-        { logger.LogWarning(failure, "The company environment save was not confirmed"); return Conflict(new { error = "The save was not confirmed. Reload the original company settings before retrying." }); }
+        { failures.ReportHandled(failure, "The company environment save was not confirmed", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The save was not confirmed. Reload the original company settings before retrying." }); }
     }
 
     [HttpGet("countries")]
@@ -63,9 +63,9 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
     {
         if (!await IsCurrentAdministrator(token)) return Forbid();
         try { return Ok(await runtime.VerifyAsync(tenant.Company!.Scope, () => RequireAdministrator(token))); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or JsonException or FormatException or NotSupportedException or InvalidOperationException)
-        { logger.LogWarning(invalid, "The company environment verification could not be confirmed"); return Conflict(new { error = "The saved environment or OilandGasTools build could not be verified. Reload and review the company settings." }); }
+        { failures.ReportHandled(invalid, "The company environment verification could not be confirmed", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The saved environment or OilandGasTools build could not be verified. Reload and review the company settings." }); }
     }
 
     [HttpGet("organization")]
@@ -73,9 +73,9 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
     {
         if (!await IsCurrentAdministrator(token)) return Forbid();
         try { return Ok(await verifier.ReviewAsync(tenant.Company!.Scope, () => RequireAdministrator(token), token)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (InvalidOperationException failure)
-        { logger.LogWarning(failure, "The selected company organization could not be verified"); return Conflict(new { error = "The PPDM organization or company binding could not be confirmed." }); }
+        { failures.ReportHandled(failure, "The selected company organization could not be verified", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The PPDM organization or company binding could not be confirmed." }); }
     }
 
     [HttpGet("sources")]
@@ -83,9 +83,9 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
     {
         if (!await IsCurrentAdministrator(token)) return Forbid();
         try { return Ok(await sources.ReviewAsync(tenant.Company!.Scope, () => RequireAdministrator(token), token)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or JsonException or FormatException or NotSupportedException or InvalidOperationException)
-        { logger.LogWarning(invalid, "The company environment sources could not be reviewed"); return Conflict(new { error = "The saved sources or their company bindings could not be confirmed." }); }
+        { failures.ReportHandled(invalid, "The company environment sources could not be reviewed", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The saved sources or their company bindings could not be confirmed." }); }
     }
 
     [HttpGet("ghg-catalog/{jurisdiction}")]
@@ -93,9 +93,9 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
     {
         if (!await IsCurrentAdministrator(token)) return Forbid();
         try { return Ok(await reader.ReviewAsync(tenant.Company!.Scope, jurisdiction, () => RequireAdministrator(token))); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or JsonException or FormatException or NotSupportedException or InvalidOperationException)
-        { logger.LogWarning(invalid, "The company GHG catalog could not be reviewed"); return Conflict(new { error = "The selected factor catalog or company settings could not be confirmed." }); }
+        { failures.ReportHandled(invalid, "The company GHG catalog could not be reviewed", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The selected factor catalog or company settings could not be confirmed." }); }
     }
 
     [HttpGet("ghg-selection")]
@@ -103,9 +103,9 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
     {
         if (!await IsCurrentAdministrator(token)) return Forbid();
         try { return Ok(await status.ReadAsync(tenant.Company!.Scope, () => RequireAdministrator(token))); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or InvalidOperationException)
-        { logger.LogWarning(invalid, "Company GHG selection could not be read"); return Conflict(new { error = "The company selection or system setup schema could not be confirmed." }); }
+        { failures.ReportHandled(invalid, "Company GHG selection could not be read", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The company selection or system setup schema could not be confirmed." }); }
     }
 
     [HttpPut("ghg-selection")]
@@ -113,10 +113,10 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
     {
         if (!await IsCurrentAdministrator(token)) return Forbid();
         try { return Ok(await selections.SaveAsync(tenant.Company!.Scope, tenant.Company.UserId, request, () => RequireAdministrator(token))); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (ArgumentException) { return BadRequest(new { error = "The company selection is incomplete or invalid." }); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
+        catch (ArgumentException invalid) { failures.ReportHandled(invalid, "validating company selection", "request rejected"); return BadRequest(new { error = "The company selection is incomplete or invalid." }); }
         catch (InvalidOperationException invalid)
-        { logger.LogWarning(invalid, "Company GHG selection was not confirmed"); return Conflict(new { error = "The catalog, company environment or selection changed. Review the original record." }); }
+        { failures.ReportHandled(invalid, "Company GHG selection was not confirmed", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The catalog, company environment or selection changed. Review the original record." }); }
     }
 
     [HttpPost("sources/test-well")]
@@ -125,9 +125,9 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
     {
         if (!await IsCurrentAdministrator(token)) return Forbid();
         try { return Ok(await tests.TestAsync(tenant.Company!.Scope, request, () => RequireAdministrator(token), token)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or JsonException or FormatException or NotSupportedException or InvalidOperationException)
-        { logger.LogWarning(invalid, "The company source well check could not be confirmed"); return Conflict(new { error = "The selected source or well check could not be confirmed. Review the company, binding and saved settings." }); }
+        { failures.ReportHandled(invalid, "The company source well check could not be confirmed", "request refused; company settings or evidence could not be confirmed"); return Conflict(new { error = "The selected source or well check could not be confirmed. Review the company, binding and saved settings." }); }
     }
 
     [HttpPost("preview")]
@@ -136,12 +136,12 @@ public sealed class CompanyEnvironmentController(RepositoryTenantContext tenant,
         if (!await IsCurrentAdministrator(token)) return Forbid();
         CompanyEnvironmentDraftReview preview;
         try { preview = await effective.PreviewDraftAsync(tenant.Company!.Scope, request, () => RequireAdministrator(token)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "checking company environment administrator access", "request forbidden"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or JsonException or FormatException or NotSupportedException)
-        { return BadRequest(new { error = "The country or environment overrides are invalid. Review the preset and JSON." }); }
+        { failures.ReportHandled(invalid, "validating company environment preview", "request rejected"); return BadRequest(new { error = "The country or environment overrides are invalid. Review the preset and JSON." }); }
         catch (InvalidOperationException failure)
         {
-            logger.LogWarning(failure, "Company environment preview could not confirm shared setup");
+            failures.ReportHandled(failure, "Company environment preview could not confirm shared setup", "request refused; company settings or evidence could not be confirmed");
             return Conflict(new { error = "The combined settings could not be confirmed. Check shared system and country settings and review the company draft again." });
         }
         return await IsCurrentAdministrator(token) ? Ok(preview) : Forbid();

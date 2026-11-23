@@ -47,7 +47,7 @@ public sealed class SetupDriverServiceTests
             Loader.Setup(x => x.LoadNuggetFromNuGetAsync("Provider", "1.2.3", null, true, null, false)).ReturnsAsync(() => { Downloads++; Provider = true; return new List<System.Reflection.Assembly> { typeof(SetupDriverService).Assembly }; });
             var values = configured ? new Dictionary<string, string?> { ["SetupDrivers:Connectors:DriverImpl:Package"] = "Connector", ["SetupDrivers:Connectors:DriverImpl:Version"] = "4.0" } : new();
             var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
-            Service = new(Editor.Object, configuration, NullLogger<SetupDriverService>.Instance);
+            Service = new(Editor.Object, configuration, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         }
     }
 #if BEEP_SECURE_CONNECTIONS
@@ -117,7 +117,7 @@ public sealed class SetupDriverServiceTests
         var f = new Fixture();
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Connectors:DriverImpl:Package"] = "Connector", ["SetupDrivers:Connectors:DriverImpl:Version"] = "4.0" }).Build();
-        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         f.Loader.Setup(x => x.LoadNuggetFromNuGetAsync("Connector", "4.0", null, true, null, false)).ReturnsAsync(() =>
         {
             f.Connector = true;
@@ -152,7 +152,7 @@ public sealed class SetupDriverServiceTests
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Connectors:DriverImpl:Package"] = "Connector", ["SetupDrivers:Connectors:DriverImpl:Version"] = "4.0",
           ["SetupDrivers:PackageSources:0"] = "https://packages.example.test/v3/index.json" }).Build();
-        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         f.Loader.Setup(x => x.LoadNuggetFromNuGetAsync("Connector", "4.0", It.Is<IEnumerable<string>>(s => s.SequenceEqual(new[] { "https://packages.example.test/v3/index.json" })), true, null, false))
             .ReturnsAsync(() => { f.Connector = true; return new List<System.Reflection.Assembly> { typeof(SetupDriverService).Assembly }; });
         f.Loader.Setup(x => x.LoadNuggetFromNuGetAsync("Provider", "1.2.3", It.Is<IEnumerable<string>>(s => s.SequenceEqual(new[] { "https://packages.example.test/v3/index.json" })), true, null, false))
@@ -172,7 +172,7 @@ public sealed class SetupDriverServiceTests
         var f = new Fixture() { Connector = true };
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Providers:DriverImpl:Package"] = "ActualProvider", ["SetupDrivers:Providers:DriverImpl:Version"] = "9.1" }).Build();
-        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         f.Loader.Setup(x => x.LoadNuggetFromNuGetAsync("ActualProvider", "9.1", null, true, null, false))
             .ReturnsAsync(() => { f.Provider = true; return new List<System.Reflection.Assembly> { typeof(SetupDriverService).Assembly }; });
         var catalog = Assert.Single(f.Service.Catalog());
@@ -189,7 +189,7 @@ public sealed class SetupDriverServiceTests
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Connectors:DriverImpl:Package"] = "../outside", ["SetupDrivers:Connectors:DriverImpl:Version"] = "1.0",
           ["SetupDrivers:Providers:DriverImpl:Package"] = "provider", ["SetupDrivers:Providers:DriverImpl:Version"] = "../outside" }).Build();
-        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         await f.Service.RestoreCachedAsync(default);
         f.Loader.Verify(x => x.LoadNugget(It.IsAny<string>()), Times.Never);
         f.Loader.Verify(x => x.LoadNuggetFromNuGetAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
@@ -217,7 +217,7 @@ public sealed class SetupDriverServiceTests
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Connectors:DriverImpl:Package"] = "Connector", ["SetupDrivers:Connectors:DriverImpl:Version"] = "4.0",
           ["SetupDrivers:Connectors:OtherImpl:Package"] = "OtherConnector", ["SetupDrivers:Connectors:OtherImpl:Version"] = "3.0" }).Build();
-        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var connector = SetupDriverService.CachePath(root, "Connector", "4.0")!;
         var firstProvider = SetupDriverService.CachePath(root, "Provider", "1.2.3")!;
         var otherConnector = SetupDriverService.CachePath(root, "OtherConnector", "3.0")!;
@@ -268,7 +268,7 @@ public sealed class SetupDriverServiceTests
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Connectors:DriverImpl:Package"] = "Connector", ["SetupDrivers:Connectors:DriverImpl:Version"] = connectorVersion,
           ["SetupDrivers:Providers:DriverImpl:Package"] = "Provider", ["SetupDrivers:Providers:DriverImpl:Version"] = providerVersion }).Build();
-        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        f.Service = new(f.Editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         Assert.False(Assert.Single(f.Service.Catalog()).CanInstall);
         await Assert.ThrowsAnyAsync<Exception>(() => f.Service.InstallAsync("driver-id", Assert.Single(f.Service.Catalog()), () => Task.CompletedTask, default));
         Assert.Equal(0, f.Downloads);

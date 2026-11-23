@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -116,7 +117,7 @@
             if(IntentId is not null){IntentId=RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"warehouse/stock-intents/");if(!Guid.TryParseExact(IntentId,"N",out var key) || key==Guid.Empty || key.ToString("N")!=IntentId)throw new FormatException();OrderId="";ReceiptId="";}
             else{var ids=RecordedSourceId.FromDetailSegments(Navigation.Uri,Navigation.BaseUri,"warehouse/receipt-stock/",2);OrderId=ids[0];ReceiptId=ids[1];}
         }
-        catch(FormatException){Workspace.Clear();_error="The receipt stock address is invalid. Open the original verified receiving link.";return;}
+        catch(FormatException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "ReceiptStockWorkbench.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); Workspace.Clear();_error="The receipt stock address is invalid. Open the original verified receiving link.";return;}
         await Reload();
     }
     private void ClearForm(){_kind=0;_quantity=null;_originalReceipt=null;_reason="";}

@@ -12,7 +12,7 @@ public sealed class DevelopmentPlanReleaseState : IDisposable
     private readonly IPersonaContextService personas;
     private readonly IDevelopmentServiceClient client;
     private readonly IDevelopmentDraftIntentStore journal;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private DevelopmentReviewProgress? displayed;
     private DevelopmentPlanRelease? prepared,pending;
     private DevelopmentPlanBaselineReview? result;
@@ -35,7 +35,7 @@ public sealed class DevelopmentPlanReleaseState : IDisposable
         company.Selection.UserId==pending.Review.Scope.ActorUserId && company.Selection.Roles.Contains(pending.Review.Stages[^1].AssignedRole,StringComparer.Ordinal);
     public event Action? Changed;
     private static T Copy<T>(T value)=>JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value))!;
-    public DevelopmentPlanReleaseState(CompanyClientContext company,IPersonaContextService personas,IDevelopmentServiceClient client,IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+    public DevelopmentPlanReleaseState(CompanyClientContext company,IPersonaContextService personas,IDevelopmentServiceClient client,IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;company.Changed+=Invalidate;personas.Changed+=Invalidate;}
     private void Invalidate(){++generation;displayed=null;prepared=null;pending=null;result=null;journalReady=false;Error=null;Confirmation=null;Changed?.Invoke();}
     public async Task LoadAsync(DevelopmentReviewProgress review)
@@ -50,7 +50,7 @@ public sealed class DevelopmentPlanReleaseState : IDisposable
             if(original is not null){original.Require();if(original.Review.Scope.Company!=selected.Selection.Scope || original.Review.Scope.ActorUserId!=selected.Selection.UserId)throw new InvalidOperationException("The retained baseline belongs to another account or company.");pending=Copy(original);}
             journalReady=true;
         }
-        catch(Exception error){var text=explain(error,"loading original FDP baseline input","The original baseline recovery input could not be confirmed");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"loading original FDP baseline input","The original baseline recovery input could not be confirmed");if(Active())Error=text;}
         finally{if(Active())Changed?.Invoke();}
     }
     public async Task InspectAsync()
@@ -58,14 +58,14 @@ public sealed class DevelopmentPlanReleaseState : IDisposable
         if(!CanInspect)return;var review=Copy(displayed!);var epoch=generation;var selected=company.Snapshot;Busy=true;result=null;prepared=null;Error=null;Confirmation=null;Changed?.Invoke();
         bool Active()=>!disposed && epoch==generation && selected==company.Snapshot;
         try{var found=await client.GetDraftBaselineAsync(review.InstanceId,review.Revision);found.Require(review);if(Active())result=Copy(found);}
-        catch(Exception error){var text=explain(error,"inspecting approved FDP baseline","The approved baseline or its absence could not be confirmed");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"inspecting approved FDP baseline","The approved baseline or its absence could not be confirmed");if(Active())Error=text;}
         finally{Busy=false;if(!disposed)Changed?.Invoke();}
     }
     public void Prepare(string rationale)
     {
         if(!CanPrepare)return;prepared=null;Error=null;Confirmation=null;
         try{var original=new DevelopmentPlanRelease(Copy(displayed!),Guid.NewGuid(),rationale.Trim());original.Require();prepared=original;}
-        catch(Exception error){Error=explain(error,"reviewing FDP baseline approval","Record an explicit baseline approval rationale before confirming");}Changed?.Invoke();
+        catch(Exception error){Error=explain.Explain(error,"reviewing FDP baseline approval","Record an explicit baseline approval rationale before confirming");}Changed?.Invoke();
     }
     public void Cancel(){if(Busy || pending is not null)return;prepared=null;Changed?.Invoke();}
     public Task SubmitAsync()=>RecordAsync(false);
@@ -89,7 +89,7 @@ public sealed class DevelopmentPlanReleaseState : IDisposable
                     "The original baseline approval was confirmed absent. Inspect its current review and baseline before preparing another approval.";
             }
         }
-        catch(Exception error){var text=explain(error,recover?"recovering original FDP baseline":"approving original FDP baseline","The original baseline outcome is unconfirmed. Its exact recovery input was preserved");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering original FDP baseline":"approving original FDP baseline","The original baseline outcome is unconfirmed. Its exact recovery input was preserved");if(Active())Error=text;}
         finally{Busy=false;if(!disposed)Changed?.Invoke();}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;Invalidate();}

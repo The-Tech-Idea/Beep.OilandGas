@@ -58,7 +58,7 @@ public sealed partial class CompanyAccountingProcessReads
             var independent=ProcessStepRoleChecks.RequiresIndependentActor(step,definition,template);
             var permitted=current.Access.Permissions.Contains(permission,StringComparer.Ordinal);
             var authoritative=new ClaimsPrincipal(new ClaimsIdentity(current.Access.Roles.Where(user.IsInRole).Select(role=>new Claim(ClaimTypes.Role,role)),"company-review"));
-            var canAct=ProcessStepRoleChecks.CanAct(authoritative,current.Actor,instance,step,definition,template);
+            var canAct=ProcessStepRoleChecks.CanAct(failures, authoritative,current.Actor,instance,step,definition,template);
             var evidence=payment is not null?await SalesPaymentStepEvidence(user,original.Access.Scope,original.Actor,instance.EntityId,source.Revision,template,payment):journal is not null?await SalesJournalStepEvidence(user,original.Access.Scope,original.Actor,instance.EntityId,source.Revision,template,journal):receivable is not null?await SalesReceivableStepEvidence(user,original.Access.Scope,original.Actor,instance.EntityId,source.Revision,template,receivable):
                 await ReadStepEvidenceAsync(user,original.Access.Scope,original.Actor,instance.EntityType,instance.EntityId,source.Revision,template,original.Process is ICompanyAccountingProcessCommands commandOwner?await commandOwner.GetRecordedCompanyAccountingStepCommandAsync(id):null);
             var eligibility=!permitted?"WORKFLOW_PERMISSION_REQUIRED":!canAct?"ROLE_OR_INDEPENDENCE_REQUIRED":evidence.Eligibility;

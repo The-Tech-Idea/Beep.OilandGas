@@ -17,7 +17,7 @@ using DataSourceType = TheTechIdea.Beep.Utilities.DataSourceType;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Chooses the bootstrap pointer to a registered Beep system repository.</summary>
-public sealed class SystemSetupConnectionSelectionService(IConfiguration configuration, IDMEEditor editor)
+public sealed class SystemSetupConnectionSelectionService(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, IConfiguration configuration, IDMEEditor editor)
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
     public static string SettingsPath(IConfiguration configuration) => Path.Combine(
@@ -48,7 +48,10 @@ public sealed class SystemSetupConnectionSelectionService(IConfiguration configu
             if (group.Count() != 1) continue;
             var connection = group.Single();
             try { _ = ModuleDatabaseTarget.Key(editor, connection); eligible.Add(connection.ConnectionName); }
-            catch (Exception error) when (error is InvalidOperationException or ArgumentException or RefusalException) { }
+            catch (Exception error) when (error is InvalidOperationException or ArgumentException or RefusalException)
+            {
+                failures.ReportHandled(error, "reviewing a registered system repository connection", "the connection is excluded from the available system targets");
+            }
         }
         return eligible.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
     }

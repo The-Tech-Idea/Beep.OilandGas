@@ -1,12 +1,12 @@
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
-using TheTechIdea.OilGas.Core;
+using TheTechIdea.OilGas.Wellbore.Data;
 
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Runs OilandGasTools against one confirmed company revision without changing process-wide defaults.</summary>
-public sealed class CompanyEnvironmentRuntime(CompanyEnvironmentEffectiveResolver effective)
+public sealed class CompanyEnvironmentRuntime(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, CompanyEnvironmentEffectiveResolver effective)
 {
     public async Task<CompanyEnvironmentVerification> VerifyAsync(CompanyScope company, Func<Task> authority)
     {
@@ -19,11 +19,11 @@ public sealed class CompanyEnvironmentRuntime(CompanyEnvironmentEffectiveResolve
             throw new InvalidOperationException("The saved verification configuration is invalid or too large.");
 
         // Use the constructor rather than FromEnvironment: the latter reads resource files from the server filesystem.
-        OilGasServices services;
-        try { services = new OilGasServices(environment); }
+        WellboreServices services;
+        try { services = new WellboreServices(environment); }
         catch (Exception invalid) when (invalid is ArgumentException or InvalidOperationException or NullReferenceException)
         { throw new InvalidOperationException("The saved environment has invalid required settings.", invalid); }
-        using var scope = OilGasServices.Scope(services);
+        using var scope = WellboreServices.Scope(services);
         List<string> issues;
         try { issues = environment.Validate(); }
         catch (Exception invalid) when (invalid is ArgumentException or InvalidOperationException or NullReferenceException)
@@ -43,7 +43,10 @@ public sealed class CompanyEnvironmentRuntime(CompanyEnvironmentEffectiveResolve
                 results.Add(new(test.Name, test.Kind, result.Passed && result.Values.Count > 0 ? "Passed" : "Failed", result.Error));
             }
             catch (Exception invalid) when (invalid is ArgumentException or InvalidOperationException or IndexOutOfRangeException or NullReferenceException)
-            { results.Add(new(test.Name, test.Kind, "Failed", "The reference case could not be evaluated.")); }
+            {
+                failures.ReportHandled(invalid, "evaluating a saved company environment reference case", "the reference case is marked failed");
+                results.Add(new(test.Name, test.Kind, "Failed", "The reference case could not be evaluated."));
+            }
         }
         await authority();
         var closing = await effective.ResolveAsync(company, authority);

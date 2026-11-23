@@ -7,7 +7,9 @@ public static class CompanyRequestPolicy
         path.StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase);
 
     public static bool IsControlPlane(string path) => Under(path, "/api/auth/repository") ||
-        (Under(path, "/api/identity") && !Under(path, "/api/identity/security")) || Under(path, "/api/setup") || Under(path, "/api/ppdm39/setup");
+        (Under(path, "/api/identity") && !Under(path, "/api/identity/security")) ||
+        (Under(path, "/api/personas") && !Under(path, "/api/personas/users") && !Under(path, "/api/personas/workspaces")) ||
+        Under(path, "/api/setup") || Under(path, "/api/ppdm39/setup");
 
     public static bool RequiresCompany(string path) => !IsControlPlane(path) &&
         (Under(path, "/api") || Under(path, "/hubs") || path.Equals("/progressHub", StringComparison.OrdinalIgnoreCase));

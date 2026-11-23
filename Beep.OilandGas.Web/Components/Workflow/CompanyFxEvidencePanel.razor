@@ -1,3 +1,4 @@
+@inject Beep.OilandGas.Web.Services.OilGasCallFailures Calls
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @namespace Beep.OilandGas.Web.Components.Workflow
@@ -11,7 +12,7 @@
         <MudText>Original @conversion.SourceTotal @rate.SourceCurrency · Functional @conversion.TargetTotal @rate.TargetCurrency · Book @book.BookId</MudText>
         <MudText>Rate @rate.Rate @rate.TargetCurrency per @rate.SourceCurrency · Version @rate.Version · @rate.RateDecimals exact rate decimals</MudText>
         <MudText>Quote @rate.QuoteDate.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · Effective @rate.EffectiveFrom.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) through @rate.EffectiveThrough.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) · Observed UTC @rate.ObservedAtUtc.ToString("O",System.Globalization.CultureInfo.InvariantCulture)</MudText>
-        @if (CompanyEnvironment?.Matches(Company) == true && conversion.Rates.Books.Company == Company.Selection?.Scope && CompanyEnvironment.LocalTime(rate.ObservedAtUtc) is { } localTime)
+        @if (CompanyEnvironment?.Matches(Company) == true && conversion.Rates.Books.Company == Company.Selection?.Scope && CompanyEnvironment.LocalTime(rate.ObservedAtUtc, Calls) is { } localTime)
         { <MudText>Observed in company time zone: @localTime</MudText> }
         <MudText>Provider @rate.Provider · Quote provenance @rate.Provenance · Reviewed authority @rate.AuthorityReference</MudText>
         <MudText>Functional precision @book.CurrencyDecimals · Total rounding @book.RoundingPolicy · Allocation @rate.AllocationPolicy</MudText>

@@ -453,7 +453,7 @@ public sealed class LedgerRoutingTests
         Task<string> Resolve() { calls++; return Task.FromResult(""); }
         var orders = new PurchaseOrderService(editor.Object, Mock.Of<ICommonColumnHandler>(),
             Mock.Of<IPPDM39DefaultsRepository>(), metadata.Object, NullLogger<PurchaseOrderService>.Instance, Resolve);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => orders.GetPOByIdAsync("order"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => orders.GetPOByIdAsync(new("tenant", "company"), "order"));
         Assert.Equal(1, calls);
         editor.VerifyNoOtherCalls();
         metadata.VerifyNoOtherCalls();

@@ -7,7 +7,7 @@ using System.Text.Json;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 namespace Beep.OilandGas.ApiService.Services;
-public sealed partial class CompanyFieldRevenueReads(ProductionAccountingService production,ICompanyAccountingReadContext context,IAccessControlService assets,Func<Task<string>> resolve)
+public sealed partial class CompanyFieldRevenueReads(TheTechIdeaWeb.Diagnostics.IFailureReporter failures,ProductionAccountingService production,ICompanyAccountingReadContext context,IAccessControlService assets,Func<Task<string>> resolve)
 {
     /// <summary>Reopens the original prepared source without consulting a client's current FIELD selection.</summary>
     public Task<RevenueDeliveryAcceptanceReadReview> ReadProcessDeliveryAsync(ClaimsPrincipal user,string ticketId,string preparationRevision)

@@ -102,7 +102,7 @@
     private string workflowId="",managerRole="",actualUtc="",reason="";
     private static string StatusUrl(string? id)=>"/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(id??"");
     private static string TransferUrl(string id)=>"/drilling/program-execution/reporting/transfer?assignmentId="+Uri.EscapeDataString(id);
-    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
     protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
     private void ClearForm(){actualUtc="";reason="";confirmed=false;}

@@ -82,7 +82,7 @@ public sealed partial class PurchaseOrderWorkspaceState
             var result=CompanyInventorySourceReview.Copy(await record(CompanyInventorySourceReview.Copy(submission)) ?? throw new InvalidOperationException("Cycle result is unavailable."));submission.RequireResult(result);if(!Current())return;
             var fresh=CompanyInventorySourceReview.Copy(await read(submission.Command.OrderId,submission.Command.LineId) ?? throw new InvalidOperationException("Cycle read-back is unavailable."));submission.RequireResult(fresh);if(!Current())return;
             if(result.Purchase.Revision!=fresh.Purchase.Revision || result.History.Revision!=fresh.History.Revision)throw new InvalidOperationException("The committed cycle read-back changed.");
-            using var staged=new PurchaseOrderWorkspaceState(company);await staged.LoadDetailAsync(submission.Command.OrderId,_=>Task.FromResult<PurchaseOrderSourceReview?>(fresh.Purchase));if(!Current())return;
+            using var staged=new PurchaseOrderWorkspaceState(failures,company);await staged.LoadDetailAsync(submission.Command.OrderId,_=>Task.FromResult<PurchaseOrderSourceReview?>(fresh.Purchase));if(!Current())return;
             Detail=staged.Detail;Lines=staged.Lines;Receipts=staged.Receipts;SourceRevision=staged.SourceRevision;RetrievedAtUtc=staged.RetrievedAtUtc;Rows=null;
             linkCycleHistory=fresh;linkCycleResult=result;linkCycleConfirmed=true;
         }

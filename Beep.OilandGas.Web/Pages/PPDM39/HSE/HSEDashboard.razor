@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -93,14 +94,14 @@
     private int _incidentPage;
     private DateTime? _checkedAt;
     private string Pressed(IncidentGroup group) => _incidentGroup == group ? "true" : "false";
-    private string IncidentGroupLabel => _incidentGroup switch { IncidentGroup.Open => "Open incidents", IncidentGroup.Closed => "Closed incidents", IncidentGroup.Cancelled => "Cancelled incidents", IncidentGroup.Other => "Other or unrecorded states", _ => "All returned incidents" };
+    private string IncidentGroupLabel => _incidentGroup switch { IncidentGroup.Open => "Open incidents", IncidentGroup.Closed => "Closed incidents", IncidentGroup.Cancelled => "Cancelled incidents", IncidentGroup.Other => "Other or unrecorded states", IncidentGroup.All => "All returned incidents" };
     private IEnumerable<IncidentLink> FilteredIncidents => _incidentLinks.Where(row => _incidentGroup switch
     {
         IncidentGroup.Open => IsOpen(row.State),
         IncidentGroup.Closed => row.State == IncidentState.Closed,
         IncidentGroup.Cancelled => row.State == IncidentState.Cancelled,
         IncidentGroup.Other => !IsOpen(row.State) && row.State is not (IncidentState.Closed or IncidentState.Cancelled),
-        _ => true
+        IncidentGroup.All => true
     });
     private int FilteredIncidentCount => FilteredIncidents.Count();
     private int IncidentPageCount => Math.Max(1, (FilteredIncidentCount + IncidentPageSize - 1) / IncidentPageSize);
@@ -160,7 +161,7 @@
             _fieldName = string.IsNullOrWhiteSpace(before.FieldName) ? before.FieldId : before.FieldName;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HSEDashboard.LoadIncidentsAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (Current()) { Logger.LogWarning(error, "Could not confirm current FIELD incident summary"); _incidentMessage = error is UnauthorizedAccessException ? "Current company HSE view authority is required. Sign in with the selected account and refresh." : "Incident totals could not be confirmed. Refresh or open incident records."; }
         }
         finally { if (Current()) _loading = false; }

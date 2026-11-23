@@ -54,6 +54,9 @@ public sealed class CompanyClientScopeTests
     [Theory]
     [InlineData("/api/auth/repository/me/companies")]
     [InlineData("/api/identity/roles")]
+    [InlineData("/api/personas")]
+    [InlineData("/api/personas/ENGINEER")]
+    [InlineData("/api/personas/roles/admin/workspaces")]
     [InlineData("/api/setup/modules?tenantId=tenant-a")]
     [InlineData("/api/ppdm39/setup/schema/execute?tenantId=tenant-a")]
     public async Task Account_and_control_plane_calls_require_no_business_selection(string path)
@@ -74,6 +77,9 @@ public sealed class CompanyClientScopeTests
     [Theory]
     [InlineData("/api/setup-other")]
     [InlineData("/api/identity-other")]
+    [InlineData("/api/personas-other")]
+    [InlineData("/api/personas/users/first")]
+    [InlineData("/api/personas/workspaces/current")]
     [InlineData("/hubs/workflow-notifications/negotiate")]
     [InlineData("/progressHub")]
     public void Similar_prefixes_and_hubs_require_selection(string path)
@@ -258,6 +264,19 @@ public sealed class CompanyClientScopeTests
         Assert.False(result.User.IsInRole("Administrator"));
     }
 
+    // Blind spot: this proves deferred navigation wiring; the real endpoint is checked separately.
+    [Fact]
+    public async Task Authentication_provider_can_be_resolved_before_navigation_initialization()
+    {
+        using var company = new CompanyClientContext();
+        var navigation = new TestNavigation();
+        using var provider = new CompanyAuthenticationStateProvider(new AccountProvider("alice", "Administrator"), company, navigation, Account);
+        navigation.Start("/admin/module-databases");
+        Assert.True((await provider.GetAuthenticationStateAsync()).User.IsInRole("Administrator"));
+        navigation.Go("/production");
+        Assert.False((await provider.GetAuthenticationStateAsync()).User.IsInRole("Administrator"));
+    }
+
     private sealed class DeferredAccount(Task<AuthenticationState> state) : AuthenticationStateProvider
     { public override Task<AuthenticationState> GetAuthenticationStateAsync() => state; }
     private sealed class AccessClient : ICompanyAccessClient
@@ -278,6 +297,8 @@ public sealed class CompanyClientScopeTests
     }
     private sealed class TestNavigation : NavigationManager
     {
+        public TestNavigation() { }
+        public void Start(string path) => Initialize("https://web.test/", "https://web.test" + path);
         public TestNavigation(string path) => Initialize("https://web.test/", "https://web.test" + path);
         public void Go(string path) { Uri = ToAbsoluteUri(path).ToString(); NotifyLocationChanged(false); }
         protected override void NavigateToCore(string uri, bool forceLoad) => Go(uri);

@@ -18,7 +18,7 @@ public sealed partial class DrillingCompletionAssignedState
             var selection=new DrillingCompletionTestSelection(CompanyInventorySourceReview.Copy(current!),index,source.Trim(),type.Trim(),run.Trim(),number.Trim());selection.Require();
             var result=await client.InspectCompletionTestAsync(selection);result.Require(selection);if(!Active())return;testInspection=CompanyInventorySourceReview.Copy(result);
         }
-        catch(Exception error){var message=explain(error,"inspecting the selected native completion test","The selected native test, original review and current FIELD authority could not be confirmed");if(Active())Error=message;}
+        catch(Exception error){var message=explain.Explain(error,"inspecting the selected native completion test","The selected native test, original review and current FIELD authority could not be confirmed");if(Active())Error=message;}
         finally{if(Active()){inspectingTest=false;Changed?.Invoke();}}
     }
 }

@@ -27,7 +27,7 @@ public sealed class DevelopmentInvestmentHandoffStateTests
         }
         internal void Select(bool write=true)=>Native.Source.Base.Company.TrySelect(Native.Source.Base.Company.Clear(),"investor",new(Native.Current.Current.Source.Review.Scope.Company,["InvestmentReviewer"],write?
             ["Accounting.View","DevelopmentPlanning.View","Workflow.View","Workflow.Start","Accounting.PrepareDevelopmentBudget"]:["Accounting.View","DevelopmentPlanning.View","Workflow.View"]));
-        internal DevelopmentInvestmentHandoffState NewState()=>new(Native.Source.Base.Company,Native.Source.Base.Baseline.Reader.Personas.Object,Client.Object,Journal,(_,_,text)=>text);
+        internal DevelopmentInvestmentHandoffState NewState()=>new(Native.Source.Base.Company,Native.Source.Base.Baseline.Reader.Personas.Object,Client.Object,Journal,TestFailures.Calls(new RecordingFailureReporter()));
         internal static DevelopmentInvestmentHandoffReceipt Receipt(DevelopmentInvestmentHandoff original,bool exists=true)=>new(original.Revision(),original.InstanceId(),exists,exists?"original-step":null,exists?["original-task"]:[],new string('D',64),DateTimeOffset.UtcNow);
         internal DevelopmentInvestmentHandoffStatus Status(bool exists)
         {
@@ -82,7 +82,7 @@ public sealed class DevelopmentInvestmentHandoffStateTests
     [Fact]public async Task ActualSourcePanelPreparesConfirmsAndReloadsTheRecordedHandoffWithoutFinancialApproval()
     {
         using var f=new Fixture();await f.Initialize();f.Client.Setup(client=>client.StartInvestmentHandoffAsync(It.IsAny<DevelopmentInvestmentHandoff>(),It.IsAny<CancellationToken>())).Returns((DevelopmentInvestmentHandoff original,CancellationToken _)=>Task.FromResult(Fixture.Receipt(original)));
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Native.Source.Base.Company);ui.Services.AddSingleton(f.Native.Source.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Native.Source.Base.Company);ui.Services.AddSingleton(f.Native.Source.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var panel=ui.RenderComponent<DevelopmentInvestmentHandoffPanel>(parameters=>parameters.Add(value=>value.ProcessId,f.Process).Add(value=>value.AfeId,f.Afe).Add(value=>value.Review,f.Native.Original.Review));
         await panel.FindComponent<MudBlazor.MudSelect<string>>().InvokeAsync(()=>panel.FindComponent<MudBlazor.MudSelect<string>>().Instance.ValueChanged.InvokeAsync(f.Native.Original.Workflow.ProcessId));
         panel.FindAll("button").Single(button=>button.TextContent=="Review investment handoff").Click();panel.WaitForAssertion(()=>Assert.Contains("Confirm independent investment review handoff",panel.Markup));Assert.Contains("Configured investment review 1",panel.Markup);Assert.Contains("independent-reviewer",panel.Markup);

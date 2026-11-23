@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -75,7 +76,7 @@
             if (detail is null) { _message = "The obligation is unavailable in the current FIELD."; return; }
             _detail = detail; _fieldName = string.IsNullOrWhiteSpace(before.FieldName) ? before.FieldId : before.FieldName;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Could not confirm obligation detail"); _message = "The obligation detail could not be confirmed for the current company and FIELD."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "ObligationDetail.LoadAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Could not confirm obligation detail"); _message = "The obligation detail could not be confirmed for the current company and FIELD."; } }
         finally { if (Current()) _loading = false; }
     }
     private void FieldChanged(string _) => ContextChanged();

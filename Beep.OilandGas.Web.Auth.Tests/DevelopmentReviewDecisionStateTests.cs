@@ -92,7 +92,7 @@ public sealed class DevelopmentReviewDecisionStateTests
         using var f=new DevelopmentAssignedReviewStateTests.Fixture();f.Client.Setup(client=>client.DecideDraftReviewAsync(It.IsAny<DevelopmentReviewDecision>(),It.IsAny<CancellationToken>())).Returns((DevelopmentReviewDecision command,CancellationToken _) =>{
             Assert.Equal(decision,command.Decision);Assert.Equal("Independent screen rationale",command.Notes);Assert.NotNull(f.Journal.DecisionOriginal);return Task.FromResult(Receipt(command));});
         using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);
-        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/development/fdp/assigned?processId="+f.Review.InstanceId);
         var page=ui.RenderComponent<AssignedPage>();page.WaitForAssertion(()=>Assert.Contains("Record this review stage",page.Markup));
         page.InvokeAsync(()=>page.FindComponent<MudSelect<string>>().Instance.ValueChanged.InvokeAsync(decision));page.Find("textarea").Change("Independent screen rationale");

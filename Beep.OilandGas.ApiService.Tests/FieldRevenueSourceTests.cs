@@ -92,7 +92,7 @@ public sealed class FieldRevenueSourceTests
         });
         if(mode=="source")f.Data.Native.Rows.OfType<REVENUE_TRANSACTION>().Single().GROSS_REVENUE=99;if(mode=="native")f.Data.Native.Rows.OfType<RUN_TICKET>().Single().NET_VOLUME=99;f.Data.MissingDeliverySchema=mode=="schema";
         if(mode=="history"){var row=f.Data.Native.Rows.OfType<RUN_TICKET>().Single();var proof=RevenueDeliveryAcceptanceProof.RequireEnvelope(f.Original.Company,row);row.DELIVERY_WORKFLOW_JSON=JsonSerializer.Serialize(proof with{PriorVersions=[]});}
-        var reads=new CompanyFieldRevenueReads(f.Data.Service,context.Object,assets.Object,()=>Task.FromResult(f.Data.Native.Connection));var user=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,actor),new(ClaimTypes.Role,"ConfiguredCompanyRole")],"app"));
+        var reads=new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Data.Service,context.Object,assets.Object,()=>Task.FromResult(f.Data.Native.Connection));var user=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,actor),new(ClaimTypes.Role,"ConfiguredCompanyRole")],"app"));
         var revision=mode=="current"?CompanyAccountingSourceTypes.DeliveryPreparationRevision(prepared):mode=="unknown"?new string('a',64):CompanyAccountingSourceTypes.DeliveryPreparationRevision(f.Previous);
         if(mode is "historical" or "current")
         {
@@ -266,7 +266,7 @@ public sealed class FieldRevenueSourceTests
         }
         else if(mode.StartsWith("api",StringComparison.Ordinal))
         {
-            await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View","ProductionAccounting.Adjust","ProductionAccounting.Approve"],configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,Mock.Of<IAccessControlService>(),()=>Task.FromResult(f.Native.Connection)));});host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);
+            await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View","ProductionAccounting.Adjust","ProductionAccounting.Approve"],configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,Mock.Of<IAccessControlService>(),()=>Task.FromResult(f.Native.Connection)));});host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);
             var path="api/fields/field/accounting/revenue-source/delivery/acceptance/"+(mode=="api-prepare"?"prepare":mode=="api-save"?"intent":"decide");var response=await host.Client.PostAsJsonAsync(path,mode=="api-prepare"?(object)preparation:mode=="api-save"?envelope:submission);Assert.Equal(HttpStatusCode.Conflict,response.StatusCode);Assert.Empty(f.Native.Source.Invocations);
         }
         else if(mode.StartsWith("sdk",StringComparison.Ordinal))
@@ -288,7 +288,7 @@ public sealed class FieldRevenueSourceTests
         f.Native.Rows.RemoveAll(row=>row is REVENUE_TRANSACTION or SALES_CONTRACT);f.Native.Rows.AddRange(original.Source.Source.Rows.Select(CompanyInventorySourceReview.Copy));f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Source.Contract));f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Allocation));f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Ticket));
         var actor=preparation.ActorUserId;var businessUncertain=false;var businessWrites=0;f.Native.Source.Setup(value=>value.UpdateEntity("RUN_TICKET",It.IsAny<object>())).Returns((string table,object value)=>{++f.Native.Writes;++businessWrites;f.Native.Rows.RemoveAll(row=>row is RUN_TICKET);f.Native.Rows.Add(CompanyInventorySourceReview.Copy((RUN_TICKET)value));f.Native.FailCommit=businessUncertain;return new ErrorsInfo{Flag=Errors.Ok};});
         var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(It.IsAny<string>(),"field","FIELD",It.IsAny<string>(),null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});var permissions=new[]{"Accounting.View","ProductionAccounting.Adjust","ProductionAccounting.Approve"};
-        await using var host=await AccountingSourceHttpTests.Start(permissions:permissions,configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});using var company=new CompanyClientContext();
+        await using var host=await AccountingSourceHttpTests.Start(permissions:permissions,configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});using var company=new CompanyClientContext();
         void Actor(string account){actor=account;host.Context.Actor=account;host.Client.DefaultRequestHeaders.Remove("X-Test-Actor");host.Client.DefaultRequestHeaders.Add("X-Test-Actor",account);company.TrySelect(company.Clear(),account,new(preparation.Company,["ConfiguredCompanyRole"],permissions));}Actor(actor);
         var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);RevenueDeliveryAcceptanceRecord prepared;
         if(mode.StartsWith("legacy",StringComparison.Ordinal))
@@ -348,7 +348,7 @@ public sealed class FieldRevenueSourceTests
             if(deciding && mode.EndsWith("recorded",StringComparison.Ordinal))record=record.Decide(decision,original,new DateTime(2026,2,3,0,0,0,DateTimeKind.Utc));ticket.ROW_CHANGED_BY=record.Decision?.ActorUserId ??preparation.ActorUserId;ticket.ROW_CHANGED_DATE=record.DecidedAtUtc ??record.PreparedAtUtc;ticket.DELIVERY_WORKFLOW_JSON=RevenueDeliveryAcceptanceProof.Create(record,ticket);
         }
         f.Native.Rows.Add(ticket);var entry=DELIVERY_ACCEPTANCE_INTENT.Create(command,new DateTime(2026,2,4,0,0,0,DateTimeKind.Utc));f.Native.Rows.Add(entry);var nativeBefore=JsonSerializer.Serialize(ticket);var journalBefore=JsonSerializer.Serialize(entry);
-        var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(actor,"field","FIELD","READ",null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);
+        var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(actor,"field","FIELD","READ",null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),actor,new(preparation.Company,["ConfiguredCompanyRole"],["Accounting.View"]));var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);var review=await client.GetDeliverySavedIntentAsync(command.IntentId);var recorded=mode.EndsWith("recorded",StringComparison.Ordinal);
         Assert.Equal(recorded?"RECORDED":mode.StartsWith("reject",StringComparison.Ordinal)?"SAVED_PENDING":"RECONCILIATION_REQUIRED",review.Status);Assert.Equal(body,JsonSerializer.Serialize(review.Entry.Restore(preparation.Company,actor,entry.SCOPE_KEY)));Assert.NotNull(review.Current);Assert.Null(review.Current.ApprovedAcceptedQuantity);Assert.Null(review.Current.MeasuredQuantityOutsideApprovedAcceptance);
         using var state=new DeliveryAcceptanceWorkspaceState(company);state.Attach("field",From,Through,original.Source.TransactionId);state.RecoverSaved(review.Entry);await state.LoadAsync(client);Assert.Equal(!recorded,state.HasPendingIntent);Assert.Equal(!recorded && mode.StartsWith("reject",StringComparison.Ordinal),state.CanRetryPending);
@@ -428,7 +428,7 @@ public sealed class FieldRevenueSourceTests
             if(mode=="changed")ticket.NET_VOLUME=8;if(mode=="unavailable")f.Fail=true;
             var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(actor,"field","FIELD",It.IsAny<string>(),null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});
             var permissions=new[]{"Accounting.View",deciding?"ProductionAccounting.Approve":"ProductionAccounting.Adjust"};
-            await using var host=await AccountingSourceHttpTests.Start(permissions:permissions,configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
+            await using var host=await AccountingSourceHttpTests.Start(permissions:permissions,configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
             host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);using var company=new CompanyClientContext();company.TrySelect(company.Clear(),actor,new(preparation.Company,["ConfiguredCompanyRole"],permissions));
             var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
             var item=await client.GetDeliverySavedIntentAsync(command.IntentId);var expected=mode=="recorded"?"RECORDED":mode=="pending"?"SAVED_PENDING":"RECONCILIATION_REQUIRED";
@@ -471,7 +471,7 @@ public sealed class FieldRevenueSourceTests
                 return mode=="duplicate"?new object[]{returned,CompanyInventorySourceReview.Copy(returned)}:new object[]{returned};
             });
             var checks=0;var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(preparation.ActorUserId,"field","FIELD","READ",null)).ReturnsAsync(()=>new AccessCheckResponse{HasAccess=mode!="field" && (mode!="closing" || ++checks<2)});
-            await using var host=await AccountingSourceHttpTests.Start(authenticate:mode!="anonymous",role:mode!="role",permissions:mode=="permission"?[]:["Accounting.View"],configure:(services,context)=>{context.Actor=preparation.ActorUserId;context.ChangeBinding=mode=="binding";services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
+            await using var host=await AccountingSourceHttpTests.Start(authenticate:mode!="anonymous",role:mode!="role",permissions:mode=="permission"?[]:["Accounting.View"],configure:(services,context)=>{context.Actor=preparation.ActorUserId;context.ChangeBinding=mode=="binding";services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
             host.Client.DefaultRequestHeaders.Add("X-Test-Actor",preparation.ActorUserId);var response=await host.Client.GetAsync(paged?"api/accounting/delivery-intents?page=1&size=8":"api/accounting/delivery-intents/"+entry.DELIVERY_ACCEPTANCE_INTENT_ID);
             if(paged && mode=="missing"){Assert.Equal(HttpStatusCode.OK,response.StatusCode);Assert.Empty((await response.Content.ReadFromJsonAsync<CompanyDeliverySavedWorkPage>())!.Rows);}
             else Assert.Equal(mode=="anonymous"?HttpStatusCode.Unauthorized:mode is "missing" or "duplicate" or "wrong-id" or "foreign" or "drift"?HttpStatusCode.Conflict:HttpStatusCode.Forbidden,response.StatusCode);
@@ -483,7 +483,7 @@ public sealed class FieldRevenueSourceTests
     {
         var f=new Fixture();f.Native.Connection="production";var entries=Enumerable.Range(0,33).Select(index=>DeliveryJournalEntry("saved-"+index)).OrderBy(row=>row.SCOPE_KEY,StringComparer.Ordinal).ToArray();f.Native.Rows.AddRange(entries);var actor=entries[0].ROW_CREATED_BY;
         var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(actor,"field","FIELD","READ",null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});
-        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);
+        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),actor,new(new("tenant","company"),["ConfiguredCompanyRole"],["Accounting.View"]));var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
         var first=await client.GetDeliverySavedPageAsync(1,32);var last=await client.GetDeliverySavedPageAsync(2,32);Assert.Equal(33,first.TotalRecords);Assert.Equal(32,first.Rows.Count);Assert.Equal(33,last.TotalRecords);Assert.Equal(entries[^1].DELIVERY_ACCEPTANCE_INTENT_ID,Assert.Single(last.Rows).Entry.DELIVERY_ACCEPTANCE_INTENT_ID);Assert.All(first.Rows.Concat(last.Rows),row=>{Assert.Null(row.Current);Assert.Equal("RECONCILIATION_REQUIRED",row.Status);});
         Assert.Equal(0,f.Native.Writes);Assert.Empty(f.Native.Transactions);Assert.DoesNotContain(f.Native.Source.Invocations,call=>call.Method.Name=="GetEntityAsync" && (string)call.Arguments[0]=="DELIVERY_ACCEPTANCE_INTENT" && !((List<AppFilter>)call.Arguments[1]).Any(filter=>filter.FieldName=="DELIVERY_ACCEPTANCE_INTENT_ID"));
@@ -590,7 +590,7 @@ public sealed class FieldRevenueSourceTests
             f.Native.Source.Setup(value=>value.UpdateEntity("RUN_TICKET",It.IsAny<object>())).Returns((string table,object value)=>{++f.Native.Writes;++businessWrites;f.Native.Rows.RemoveAll(row=>row is RUN_TICKET);f.Native.Rows.Add(CompanyInventorySourceReview.Copy((RUN_TICKET)value));f.Native.FailCommit=businessUncertain;return new ErrorsInfo{Flag=Errors.Ok};});
             var allowed=true;var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(It.IsAny<string>(),"field","FIELD",It.IsAny<string>(),null)).ReturnsAsync(()=>new AccessCheckResponse{HasAccess=allowed});
             var permissions=new[]{"Accounting.View",deciding?"ProductionAccounting.Approve":"ProductionAccounting.Adjust"};
-            await using var host=await AccountingSourceHttpTests.Start(permissions:permissions,configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
+            await using var host=await AccountingSourceHttpTests.Start(permissions:permissions,configure:(services,context)=>{context.Actor=actor;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
             host.Client.DefaultRequestHeaders.Add("X-Test-Actor",actor);using var company=new CompanyClientContext();company.TrySelect(company.Clear(),actor,new(preparation.Company,["ConfiguredCompanyRole"],permissions));
             var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
             var decision=new RevenueDeliveryAcceptanceDecisionCommand(Guid.NewGuid().ToString("N"),preparation.Company,actor,record.Revision,RevenueDeliveryAcceptanceDecision.Reject,"Original independently reviewed receiving rejection");
@@ -661,7 +661,7 @@ public sealed class FieldRevenueSourceTests
             });
         }
         await using var host=await AccountingSourceHttpTests.Start(authenticate:mode!="anonymous",role:mode!="role",permissions:mode=="permission"?[]:["Accounting.View"],configure:(services,context)=>{
-            context.Actor=preparation.ActorUserId;context.ChangeBinding=mode=="binding";services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
+            context.Actor=preparation.ActorUserId;context.ChangeBinding=mode=="binding";services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
         });
         host.Client.DefaultRequestHeaders.Add("X-Test-Actor",preparation.ActorUserId);
         var response=await host.Client.GetAsync("api/fields/field/accounting/revenue-source/delivery/acceptance/saved?from=2026-01-01&through=2026-01-31&transactionId="+Uri.EscapeDataString(original.Source.TransactionId));
@@ -799,7 +799,7 @@ public sealed class FieldRevenueSourceTests
         await using var host=await AccountingSourceHttpTests.Start(permissions:permissions,configure:(services,context)=>{
             if(rbac is not null){rbac.Configure(services,context);services.AddSingleton<IProcessService>(native.Service);services.AddSingleton<Beep.OilandGas.LifeCycle.Services.Processes.ICrossPersonaTaskRouter>(native.Native.Router);}
             context.FixedProcess=native.Service;context.StartBinding=new string('B',64);
-            services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
+            services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
         });
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),"actor",new(template.Company,["ConfiguredCompanyRole"],permissions));
         var api=new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company);var accounting=new AccountingServiceClient(api,NullLogger<AccountingServiceClient>.Instance);
@@ -956,7 +956,7 @@ public sealed class FieldRevenueSourceTests
             Actor("actor");var current=await accounting.GetDeliveryAcceptanceAsync("field",From,Through,original.Source.TransactionId);var proof=RevenueDeliveryAcceptanceProof.RequireEnvelope(preparation.Company,current.Source.Ticket);
             var correctedPreparation=new RevenueDeliveryAcceptancePreparation(Guid.NewGuid().ToString("N"),preparation.Company,"actor",RevenueDeliveryAcceptanceCorrection.NormalizeSource(current.Source,decided),preparation.Facts with{AcceptedQuantity=4m,AcceptedQuantityUnit="BBL",EvidenceReference="corrected-receiving-reference",Notes="Original preparer corrected rejected receiving facts"});
             var nativeContext=new Mock<ICompanyAccountingReadContext>();nativeContext.Setup(value=>value.CaptureAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync((new RepositoryCompanyAccess(preparation.Company,["ConfiguredCompanyRole"],permissions),correctedPreparation.Source.Source.Source.BindingRevision,"actor"));
-            var nativeReader=new CompanyFieldRevenueReads(f.Service,nativeContext.Object,assets.Object,()=>Task.FromResult(f.Native.Connection));var maker=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,"actor"),new(ClaimTypes.Role,"ConfiguredCompanyRole")],"app"));
+            var nativeReader=new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,nativeContext.Object,assets.Object,()=>Task.FromResult(f.Native.Connection));var maker=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,"actor"),new(ClaimTypes.Role,"ConfiguredCompanyRole")],"app"));
             var corrected=await f.Service.CorrectDeliveryAcceptanceAsync(new(decided,proof.Revision,correctedPreparation,"Correct rejected original receiving evidence"),"production",async()=> (await nativeReader.ReadDeliveryAcceptanceAsync(maker,"field",From,Through,original.Source.TransactionId)).Source,()=>Task.CompletedTask);
             Assert.Null(corrected.Decision);Actor("reviewer");var graph=JsonSerializer.Serialize(native.Native.Rows);var workflowWrites=native.Native.Writes;var productionWrites=f.Native.Writes;
             var historical=await processes.GetCompanyDeliverySourceAsync(receipt.InstanceId);historical.Require(preparation.Company,"reviewer",receipt.InstanceId);Assert.True(historical.IsHistorical);Assert.Equal(JsonSerializer.Serialize(decided),JsonSerializer.Serialize(historical.Delivery.Recorded));Assert.Equal("acceptance-reference",historical.Delivery.Recorded!.Preparation.Facts.EvidenceReference);Assert.Null(historical.Delivery.ApprovedAcceptedQuantity);
@@ -1134,7 +1134,7 @@ public sealed class FieldRevenueSourceTests
             if(rbac is not null){rbac.Configure(services,context);services.AddSingleton<IProcessService>(native.Service);services.AddSingleton<Beep.OilandGas.LifeCycle.Services.Processes.ICrossPersonaTaskRouter>(native.Native.Router);}
             context.FixedProcess=native.Service;context.StartBinding=new string('B',64);
             services.AddSingleton(amendmentLog.Object);
-            services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
+            services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
         });
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),"actor",new(new("tenant","company"),["ConfiguredCompanyRole"],permissions));
         var api=new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company);
@@ -2116,7 +2116,7 @@ public sealed class FieldRevenueSourceTests
             return mode=="duplicate-ticket"?new object[]{ticket,ticket}:new object[]{ticket};
         });
         var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync("actor","field","FIELD","READ",null)).ReturnsAsync(new AccessCheckResponse{HasAccess=mode!="asset"});
-        await using var host=await AccountingSourceHttpTests.Start(permissions:mode=="grant"?[]:["Accounting.View"],configure:(services,context)=>services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection))));
+        await using var host=await AccountingSourceHttpTests.Start(permissions:mode=="grant"?[]:["Accounting.View"],configure:(services,context)=>services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection))));
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),"actor",new(new("tenant","company"),["ConfiguredCompanyRole"],["Accounting.View"]));
         var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
         var source=FieldRevenueSourceReview.Create(new("tenant","company"),"actor","field",From,Through,"binding",[f.Row]);
@@ -2194,7 +2194,7 @@ public sealed class FieldRevenueSourceTests
     {
         var original=BillingDeliveryReview(mode=="account"?"partial":mode);var f=new Fixture();f.Native.Connection="production";f.Native.Rows.Clear();f.Native.Rows.AddRange(original.Source.Source.Source.Rows.Select(CompanyInventorySourceReview.Copy));f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Source.Source.Contract));f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Source.Allocation));f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Source.Ticket));
         var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(It.IsAny<string>(),"field","FIELD","READ",null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});
-        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>{context.Actor=original.Source.Source.Source.ActorUserId;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult("production")));});host.Client.DefaultRequestHeaders.Remove("X-Test-Actor");host.Client.DefaultRequestHeaders.Add("X-Test-Actor",original.Source.Source.Source.ActorUserId);
+        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>{context.Actor=original.Source.Source.Source.ActorUserId;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult("production")));});host.Client.DefaultRequestHeaders.Remove("X-Test-Actor");host.Client.DefaultRequestHeaders.Add("X-Test-Actor",original.Source.Source.Source.ActorUserId);
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),original.Source.Source.Source.ActorUserId,new(original.Source.Source.Source.Company,["ConfiguredCompanyRole"],["Accounting.View"]));var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
         var current=await client.GetDeliveryAcceptanceAsync("field",From,Through,"rev");current.Require();Assert.Equal(original.ReviewBillingBasis().Status,current.ReviewBillingBasis().Status);
         await using var provider=DeliveryServices(company,client);await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
@@ -2289,7 +2289,7 @@ public sealed class FieldRevenueSourceTests
         f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Allocation));f.Native.Rows.Add(CompanyInventorySourceReview.Copy(original.Ticket));
         f.Native.Source.Setup(value=>value.UpdateEntity("RUN_TICKET",It.IsAny<object>())).Returns((string table,object value)=>{++f.Native.Writes;f.Native.FailCommit=mode is "uncertain" or "form-uncertain" && f.Native.Writes==2;f.Native.Rows.RemoveAll(row=>row is RUN_TICKET);f.Native.Rows.Add(CompanyInventorySourceReview.Copy((RUN_TICKET)value));return new ErrorsInfo{Flag=Errors.Ok};});
         var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(It.IsAny<string>(),"field","FIELD",It.IsAny<string>(),null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});
-        await using var host=await AccountingSourceHttpTests.Start(permissions:mode=="grant"?["Accounting.View"]:["Accounting.View","ProductionAccounting.Adjust"],configure:(services,context)=>{context.Actor=preparation.ActorUserId;services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
+        await using var host=await AccountingSourceHttpTests.Start(permissions:mode=="grant"?["Accounting.View"]:["Accounting.View","ProductionAccounting.Adjust"],configure:(services,context)=>{context.Actor=preparation.ActorUserId;services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));});
         host.Client.DefaultRequestHeaders.Add("X-Test-Actor",preparation.ActorUserId);using var company=new CompanyClientContext();company.TrySelect(company.Clear(),preparation.ActorUserId,new(preparation.Company,["ConfiguredCompanyRole"],["Accounting.View","ProductionAccounting.Adjust"]));
         var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
         var first=await client.GetDeliveryAcceptanceAsync("field",From,Through,original.Source.TransactionId);Assert.Null(first.Recorded);
@@ -2391,7 +2391,7 @@ public sealed class FieldRevenueSourceTests
         });
         var assets=new Mock<IAccessControlService>();var assetReads=0;
         assets.Setup(value=>value.CheckAssetAccessAsync(actor,"field","FIELD","READ",null)).ReturnsAsync(()=>new AccessCheckResponse{HasAccess=mode!="asset" && (mode!="closing-asset" || ++assetReads<3)});
-        var reads=new CompanyFieldRevenueReads(f.Service,context.Object,assets.Object,()=>Task.FromResult(f.Native.Connection));
+        var reads=new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context.Object,assets.Object,()=>Task.FromResult(f.Native.Connection));
         var user=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,actor),new(ClaimTypes.Role,"ConfiguredCompanyRole")],"app"));
         if(mode is "prepared" or "approved" or "rejected")
         {
@@ -2562,7 +2562,7 @@ public sealed class FieldRevenueSourceTests
             return(new RepositoryCompanyAccess(new("tenant","company"),[mode=="role"?"Other":"ConfiguredCompanyRole"],mode=="grant"?[]:["Accounting.View"]),"binding","actor");
         });
         var assets=new Mock<IAccessControlService>();var assetReads=0;assets.Setup(value=>value.CheckAssetAccessAsync("actor","field","FIELD","READ",null)).ReturnsAsync(()=>new AccessCheckResponse{HasAccess=mode!="asset" && (mode!="closing" || ++assetReads<3)});
-        var reads=new CompanyFieldRevenueReads(f.Service,context.Object,assets.Object,()=>Task.FromResult(f.Native.Connection));
+        var reads=new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context.Object,assets.Object,()=>Task.FromResult(f.Native.Connection));
         var user=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.NameIdentifier,"actor"),new(ClaimTypes.Role,"ConfiguredCompanyRole")],"app"));
         if(mode=="valid"){var result=await reads.GetAsync(user,"field",From,Through);result.Require(new("tenant","company"),"actor","field",From,Through);Assert.Single(result.Rows);}
         else await Assert.ThrowsAnyAsync<Exception>(()=>reads.GetAsync(user,"field",From,Through));
@@ -2626,7 +2626,7 @@ public sealed class FieldRevenueSourceTests
         await using var host=await AccountingSourceHttpTests.Start(authenticate:mode!="anonymous",role:mode!="role",permissions:mode=="grant"?[]:["Accounting.View"],configure:(services,context)=>{
             context.ChangeBinding=mode=="binding";
             context.OnCapture=count=>{if(count==2 && mode=="drift")f.Row.GROSS_REVENUE=25;};
-            services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
+            services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection)));
         });
         if(mode is "allowed" or "escaped")
         {
@@ -2656,7 +2656,7 @@ public sealed class FieldRevenueSourceTests
     {
         var f=new Fixture();var field=mode=="escaped"?"field/α%2F":"field";f.Row.FIELD_ID=field;f.Row.PROPERTY_ID=field;f.Row.ROW_CREATED_BY="production-maker";f.Contract.ROW_CREATED_BY="contract-maker";
         var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync(It.IsAny<string>(),field,"FIELD",It.IsAny<string>(),null)).ReturnsAsync((string actor,string id,string type,string level,string? connection)=>new AccessCheckResponse{HasAccess=level!="WRITE" || mode!="asset"});
-        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View","ProductionAccounting.Adjust","ProductionAccounting.Approve"],configure:(services,context)=>services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection))));
+        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View","ProductionAccounting.Adjust","ProductionAccounting.Approve"],configure:(services,context)=>services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection))));
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),"actor",new(new("tenant","company"),["ConfiguredCompanyRole"],["Accounting.View","ProductionAccounting.Adjust","ProductionAccounting.Approve"]));
         var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
         if(mode=="read-schema"){f.MissingTermsSchema=true;await Assert.ThrowsAnyAsync<Exception>(()=>client.GetSalesContractTermsAsync(field,From,Through,"revenue-a"));Assert.Equal(0,f.Native.Writes);return;}
@@ -2702,7 +2702,7 @@ public sealed class FieldRevenueSourceTests
     public async Task RevenueContractHttpReviewPreservesExactReferenceAndNativeSellerOwnership(string mode)
     {
         var f=new Fixture();var assets=new Mock<IAccessControlService>();assets.Setup(value=>value.CheckAssetAccessAsync("actor","field","FIELD","READ",null)).ReturnsAsync(new AccessCheckResponse{HasAccess=true});
-        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>services.AddSingleton(new CompanyFieldRevenueReads(f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection))));
+        await using var host=await AccountingSourceHttpTests.Start(permissions:["Accounting.View"],configure:(services,context)=>services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), f.Service,context,assets.Object,()=>Task.FromResult(f.Native.Connection))));
         using var company=new CompanyClientContext();company.TrySelect(company.Clear(),"actor",new(new("tenant","company"),["ConfiguredCompanyRole"],["Accounting.View"]));
         var client=new AccountingServiceClient(new ApiClient(host.Client,Mock.Of<IFailureReporter>(),company),NullLogger<AccountingServiceClient>.Instance);
         var source=await client.GetFieldRevenueSourceAsync("field",From,Through);

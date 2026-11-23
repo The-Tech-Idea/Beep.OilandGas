@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @namespace Beep.OilandGas.Web.Components.BusinessProcess
@@ -106,7 +107,7 @@
     {
         var source=Source;_loading=true;_error=null;_selected=null;
         try{await Review.LoadAsync(source.FieldId,source.InstanceId,()=>ReadOnly && AssignedReview is not null?Task.FromResult(AssignedReview.Inspections.ToList()):Client.GetChecklistAsync(source.InstanceId));if(!ReadOnly && !_disposed && Source==source)await Review.ReviewWriteAccessAsync(CheckWriteAsync);}
-        catch(Exception ex){Logger.LogError(ex,"Inspection evidence/access review failed for {Order}",source.InstanceId);if(!_disposed && Source==source && Review.WriteAccessError is null)_error="Inspection evidence is unavailable. Reload to review current evidence.";}
+        catch(Exception ex){ HandledFailures.ReportHandled(ex, "WorkOrderInspectionPanel.LoadAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); Logger.LogError(ex,"Inspection evidence/access review failed for {Order}",source.InstanceId);if(!_disposed && Source==source && Review.WriteAccessError is null)_error="Inspection evidence is unavailable. Reload to review current evidence.";}
         finally{if(!_disposed && Source==source)_loading=false;}
     }
     private void SelectResult(InspectionCondition row){_selected=row;_result="";_notes="";}
@@ -131,7 +132,7 @@
             Review.Confirm(attempt,response,saved);if(_disposed || !Review.IsCurrent(attempt))return;
             _requirement=new(){FieldId=attempt.Field};_selected=null;_result="";_notes="";await LoadAsync();
         }
-        catch(Exception ex){Logger.LogError(ex,"Inspection submission or access review failed for {Order}",Source.InstanceId);if(!_disposed && (attempt is null || Review.IsCurrent(attempt)))_error="Inspection submission is unconfirmed. Review recorded evidence before another action.";}
+        catch(Exception ex){ HandledFailures.ReportHandled(ex, "WorkOrderInspectionPanel.SubmitAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); Logger.LogError(ex,"Inspection submission or access review failed for {Order}",Source.InstanceId);if(!_disposed && (attempt is null || Review.IsCurrent(attempt)))_error="Inspection submission is unconfirmed. Review recorded evidence before another action.";}
         finally{_busy=false;}
     }
     public void Dispose(){_disposed=true;}

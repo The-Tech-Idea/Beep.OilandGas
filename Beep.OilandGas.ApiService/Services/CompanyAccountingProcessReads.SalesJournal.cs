@@ -16,7 +16,7 @@ public sealed partial class CompanyAccountingProcessReads
         if(task.ScopeKind!="COMPANY_ACCOUNTING" || task.EntityType!=type)throw new InvalidOperationException("An owned journal assignment is required.");
         ProcessInstance? process=null;var review=await ReviewStepCoreAsync(user,task.WorkflowName,value=>process=value) ?? throw new InvalidOperationException("The assigned journal step is unavailable.");
         review.Require(company,actor,task.WorkflowName);
-        if(process is null || process.EntityType!=type || process.EntityId!=task.EntityId || review.EntityId!=task.EntityId || review.StepInstanceId!=task.StepName || review.AssignedRole!=task.AssignedRole || review.ProcessRevision!=ProcessDefinitionRevision.FromJson(JsonSerializer.Serialize(process)) || !WorkflowTaskProcessAdmission.Matches(task,process,actor))throw new InvalidOperationException("The assigned journal process and complete step evidence disagree.");
+        if(process is null || process.EntityType!=type || process.EntityId!=task.EntityId || review.EntityId!=task.EntityId || review.StepInstanceId!=task.StepName || review.AssignedRole!=task.AssignedRole || review.ProcessRevision!=ProcessDefinitionRevision.FromJson(JsonSerializer.Serialize(process)) || !WorkflowTaskProcessAdmission.Matches(failures, task,process,actor))throw new InvalidOperationException("The assigned journal process and complete step evidence disagree.");
         return(process,review);
     }
     public async Task<CompanySalesJournalProcessSourceReview?> ReadSalesJournalProcessSourceAsync(ClaimsPrincipal user,string id)

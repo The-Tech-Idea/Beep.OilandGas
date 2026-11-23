@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -64,7 +65,7 @@
         if(query.TryGetValue("materialCostUsage",out var source) && source.Count==1)_material=source[0]??"";
         if(query.TryGetValue("materialCostIntent",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
         if(!string.IsNullOrEmpty(_book) && !string.IsNullOrEmpty(_afe) && !string.IsNullOrEmpty(_material))Attach();
-        try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+        try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){ HandledFailures.ReportHandled(error, "WorkOrderMaterialCostPanel.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _authorized=false;}
     }
     private void Attach()=>State.Attach(new(new(new(WorkOrderId,FieldId,_book),_afe),_material));
     private async Task Authority()

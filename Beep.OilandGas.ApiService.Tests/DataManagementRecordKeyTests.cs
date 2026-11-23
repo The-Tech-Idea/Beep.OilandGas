@@ -138,8 +138,7 @@ public class DataManagementRecordKeyTests
             tables.Setup(m => m.GetTableMetadataAsync(It.IsAny<string>())).ReturnsAsync(metadata);
 
             Controller = new DataManagementController(editor.Object, Columns.Object, Mock.Of<IPPDM39DefaultsRepository>(),
-                tables.Object, Mock.Of<IPPDMDataValidationService>(), Mock.Of<IPPDMDataQualityService>(),
-                Mock.Of<IPPDMDataQualityDashboardService>(), NullLogger<DataManagementController>.Instance)
+                tables.Object, Mock.Of<IPPDMDataValidationService>(), NullLogger<DataManagementController>.Instance)
             {
                 ControllerContext = new ControllerContext
                 {

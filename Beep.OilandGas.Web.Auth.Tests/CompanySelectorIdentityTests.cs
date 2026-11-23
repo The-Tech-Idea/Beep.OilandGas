@@ -38,7 +38,7 @@ public sealed class CompanySelectorIdentityTests
         ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddLogging(); ui.Services.AddMudServices();
         ui.Services.AddSingleton<AuthenticationStateProvider>(auth); ui.Services.AddSingleton(company);
         ui.Services.AddSingleton(new CompanySelectionService(api, auth, company, p => p.FindFirst("party_id")?.Value));
-        ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         return ui.RenderComponent<CompanySelector>();
     }
     [Fact]

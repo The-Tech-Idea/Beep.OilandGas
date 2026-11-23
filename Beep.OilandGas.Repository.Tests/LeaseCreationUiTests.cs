@@ -27,7 +27,7 @@ public sealed class LeaseCreationUiTests
             writes.Add(request.Snapshot()); return writes.Count == 1 ? Task.FromException<string>(new IOException("lost")) : Task.FromResult(request.CommandId.ToString("N"));
         });
         api.Setup(value => value.ReconcileLeaseCreationAsync(It.IsAny<CreateLeaseAcquisition>())).Returns((CreateLeaseAcquisition request) => Task.FromResult(new LeaseCreationReceipt(request.CommandId, "NotRecorded", null, request.Context!)));
-        using var state = new LeaseCreationState(company, api.Object); await state.ReviewAsync("A");
+        using var state = new LeaseCreationState(company, api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())); await state.ReviewAsync("A");
         var id = state.Draft.CommandId; state.Draft.LeaseName = "Original"; state.Draft.CalculatedInterest = .25m;
         await state.SubmitAsync("A"); Assert.True(state.HasPending); Assert.False(state.CanEdit); Assert.False(state.CanSubmit); Assert.True(state.CanReconcile); Assert.NotNull(state.Error);
         state.Draft.CommandId = Guid.NewGuid(); state.Draft.LeaseName = "Changed"; state.Draft.CalculatedInterest = .9m;
@@ -46,7 +46,7 @@ public sealed class LeaseCreationUiTests
         using var company = new CompanyClientContext(); Select(company); var api = Api();
         api.Setup(value => value.CreateLeaseAcquisitionAsync(It.IsAny<CreateLeaseAcquisition>())).ThrowsAsync(new IOException("lost"));
         api.Setup(value => value.ReconcileLeaseCreationAsync(It.IsAny<CreateLeaseAcquisition>())).Returns((CreateLeaseAcquisition request) => Task.FromResult(new LeaseCreationReceipt(request.CommandId, "Recorded", request.CommandId.ToString("N"), request.Context!)));
-        using var state = new LeaseCreationState(company, api.Object); await state.ReviewAsync("A"); var id = state.Draft.CommandId;
+        using var state = new LeaseCreationState(company, api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())); await state.ReviewAsync("A"); var id = state.Draft.CommandId;
         await state.SubmitAsync("A"); await state.ReconcileAsync("A");
         Assert.Equal(id.ToString("N"), state.ConfirmedLeaseId); Assert.False(state.HasPending); Assert.False(state.CanSubmit);
         api.Verify(value => value.CreateLeaseAcquisitionAsync(It.IsAny<CreateLeaseAcquisition>()), Times.Once);
@@ -64,7 +64,7 @@ public sealed class LeaseCreationUiTests
                 "state" => receipt with { State = "" }, "recorded-id" => receipt with { State = "Recorded" }, _ => receipt with { LeaseId = "other" } };
             return Task.FromResult(receipt);
         });
-        using var state = new LeaseCreationState(company, api.Object); await state.ReviewAsync("A"); await state.SubmitAsync("A"); await state.ReconcileAsync("A");
+        using var state = new LeaseCreationState(company, api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())); await state.ReviewAsync("A"); await state.SubmitAsync("A"); await state.ReconcileAsync("A");
         Assert.True(state.HasPending); Assert.False(state.CanSubmit); Assert.False(state.RetryAvailable); Assert.Null(state.ConfirmedLeaseId); Assert.NotNull(state.Error);
     }
 
@@ -73,7 +73,7 @@ public sealed class LeaseCreationUiTests
     {
         using var company = new CompanyClientContext(); Select(company); var api = Api(); var completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         api.Setup(value => value.CreateLeaseAcquisitionAsync(It.IsAny<CreateLeaseAcquisition>())).Returns(completion.Task);
-        using var state = new LeaseCreationState(company, api.Object); await state.ReviewAsync("A"); var id = state.Draft.CommandId;
+        using var state = new LeaseCreationState(company, api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())); await state.ReviewAsync("A"); var id = state.Draft.CommandId;
         var submit = state.SubmitAsync("A"); Assert.True(state.Busy); Select(company, "other"); completion.SetResult(id.ToString("N")); await submit;
         Assert.True(state.HasPending); Assert.False(state.CanView); Assert.False(state.CanReconcile); Assert.Null(state.ConfirmedLeaseId);
         Select(company); Assert.True(state.CanView); Assert.True(state.CanReconcile); Assert.Equal(id, state.Draft.CommandId);
@@ -84,7 +84,7 @@ public sealed class LeaseCreationUiTests
     {
         using var company = new CompanyClientContext(); Select(company); var api = Api();
         api.Setup(value => value.CreateLeaseAcquisitionAsync(It.IsAny<CreateLeaseAcquisition>())).ThrowsAsync(new IOException("lost"));
-        using var state = new LeaseCreationState(company, api.Object); await state.ReviewAsync("A"); await state.SubmitAsync("B");
+        using var state = new LeaseCreationState(company, api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())); await state.ReviewAsync("A"); await state.SubmitAsync("B");
         api.Verify(value => value.CreateLeaseAcquisitionAsync(It.IsAny<CreateLeaseAcquisition>()), Times.Never);
         await state.SubmitAsync("A"); await state.ReconcileAsync("B");
         api.Verify(value => value.ReconcileLeaseCreationAsync(It.IsAny<CreateLeaseAcquisition>()), Times.Never); Assert.True(state.HasPending);
@@ -94,7 +94,7 @@ public sealed class LeaseCreationUiTests
     public async Task Context_review_failure_does_not_leave_an_old_editable_draft()
     {
         using var company = new CompanyClientContext(); Select(company); var api = Api();
-        using var state = new LeaseCreationState(company, api.Object); await state.ReviewAsync("A"); state.Draft.LeaseName = "Previous";
+        using var state = new LeaseCreationState(company, api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())); await state.ReviewAsync("A"); state.Draft.LeaseName = "Previous";
         api.Setup(value => value.GetCreationContextAsync("A")).ThrowsAsync(new UnauthorizedAccessException());
         await state.ReviewAsync("A"); Assert.False(state.CanEdit); Assert.False(state.CanView); Assert.False(state.CanSubmit); Assert.Equal("", state.Draft.LeaseName); Assert.NotNull(state.Error);
     }

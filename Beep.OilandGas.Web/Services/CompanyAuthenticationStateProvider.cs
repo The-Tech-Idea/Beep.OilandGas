@@ -17,6 +17,7 @@ public sealed class CompanyAuthenticationStateProvider : AuthenticationStateProv
     private readonly Func<ClaimsPrincipal, string?> resolveAccount;
     private Task<AuthenticationState>? accountState;
     private bool disposed;
+    private bool observingNavigation;
 
     public CompanyAuthenticationStateProvider(AuthenticationStateProvider inner, CompanyClientContext company,
         NavigationManager navigation, Func<ClaimsPrincipal, string?> resolveAccount)
@@ -24,11 +25,17 @@ public sealed class CompanyAuthenticationStateProvider : AuthenticationStateProv
         this.inner = inner; this.company = company; this.navigation = navigation; this.resolveAccount = resolveAccount;
         inner.AuthenticationStateChanged += AccountChanged;
         company.Changed += ScopeChanged;
-        navigation.LocationChanged += LocationChanged;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
+        // Endpoint rendering resolves this service before RemoteNavigationManager is initialized.
+        // Blazor initializes navigation before requesting authentication state.
+        if (!disposed && !observingNavigation)
+        {
+            navigation.LocationChanged += LocationChanged;
+            observingNavigation = true;
+        }
         var pending = accountState ??= inner.GetAuthenticationStateAsync();
         var state = await pending;
         if (!ReferenceEquals(pending, accountState)) return await GetAuthenticationStateAsync();
@@ -68,7 +75,7 @@ public sealed class CompanyAuthenticationStateProvider : AuthenticationStateProv
         disposed = true;
         inner.AuthenticationStateChanged -= AccountChanged;
         company.Changed -= ScopeChanged;
-        navigation.LocationChanged -= LocationChanged;
+        if (observingNavigation) navigation.LocationChanged -= LocationChanged;
         if (inner is IDisposable disposable) disposable.Dispose();
     }
 }

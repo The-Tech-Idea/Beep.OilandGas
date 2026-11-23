@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Repository.Models
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -42,7 +43,7 @@
                 var summary = await SystemSetupReadinessReader.ReadAsync(Api);
                 if (!_disposed && generation == _generation) _systemSetupStatus = summary;
             }
-            catch (Exception error) { if (!_disposed && generation == _generation) { Logger.LogWarning(error, "System setup readiness could not be confirmed"); _systemSetupStatus = "System setup could not be confirmed; check the repository."; } }
+            catch (Exception error) { HandledFailures.ReportHandled(error, "RepositorySetup.Refresh", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (!_disposed && generation == _generation) { Logger.LogWarning(error, "System setup readiness could not be confirmed"); _systemSetupStatus = "System setup could not be confirmed; check the repository."; } }
             if (_disposed || generation != _generation || companySnapshot != Company.Snapshot || companySnapshot.Selection is null) return;
             try
             {
@@ -52,7 +53,7 @@
                 {
                     CompanyEnvironmentReadiness.Missing => "No environment is saved for the selected company. Configure and review its country settings.",
                     CompanyEnvironmentReadiness.Current => $"Country {readiness.CountryCode} is saved and its shared settings match the company review. Verify source coverage; activation is not confirmed.",
-                    _ => $"Country {readiness.CountryCode} is saved, but shared or country settings changed or validation issues need attention. Review the company environment again; activation is not confirmed."
+                    CompanyEnvironmentReadiness.ReviewRequired => $"Country {readiness.CountryCode} is saved, but shared or country settings changed or validation issues need attention. Review the company environment again; activation is not confirmed."
                 };
                 if (readiness.Status == CompanyEnvironmentReadiness.Current && companySnapshot.Selection.Roles.Contains("Administrator", StringComparer.Ordinal))
                 {
@@ -68,13 +69,13 @@
                         _companySetupStatus += " Binding review does not test source data or connectivity.";
                     }
                     catch (Exception error)
-                    {
+                    { HandledFailures.ReportHandled(error, "RepositorySetup.Refresh", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
                         if (!_disposed && generation == _generation && companySnapshot == Company.Snapshot)
                         { Logger.LogWarning(error, "Company source bindings could not be confirmed"); _companySetupStatus += " Company source bindings could not be confirmed."; }
                     }
                 }
             }
-            catch (Exception error) { if (!_disposed && generation == _generation && companySnapshot == Company.Snapshot) { Logger.LogWarning(error, "Company environment readiness could not be confirmed"); _companySetupStatus = "The selected company's environment could not be confirmed. Check company access and system setup."; } }
+            catch (Exception error) { HandledFailures.ReportHandled(error, "RepositorySetup.Refresh", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (!_disposed && generation == _generation && companySnapshot == Company.Snapshot) { Logger.LogWarning(error, "Company environment readiness could not be confirmed"); _companySetupStatus = "The selected company's environment could not be confirmed. Check company access and system setup."; } }
 
         }
         finally { if (!_disposed && generation == _generation) _busy = false; }

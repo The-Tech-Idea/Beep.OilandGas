@@ -66,17 +66,17 @@ public sealed class SetupDriverBeepLoaderTests
                 ConnectionString = "Server=db.example;Database=other;Integrated Security=true" };
             var config = new Mock<IConfigEditor>(); config.SetupGet(x => x.DataConnections).Returns([connection, other]);
             var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
-            await new SetupRepositoryConnectionSelectionService(first, editor.Object).SelectAsync("identity", () => Task.CompletedTask, default);
+            await new SetupRepositoryConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), first, editor.Object).SelectAsync("identity", () => Task.CompletedTask, default);
             Assert.Null(stale["Repository:BeepConnectionName"]);
             using var services = new ServiceCollection().AddSingleton(editor.Object).BuildServiceProvider();
-            Assert.Equal(connection.ConnectionString, new BeepRepositoryConnectionSource(stale, services).Resolve()!.ConnectionString);
+            Assert.Equal(connection.ConnectionString, new BeepRepositoryConnectionSource(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), stale, services).Resolve()!.ConnectionString);
             Assert.Equal("identity", stale["Repository:BeepConnectionName"]);
-            Assert.Equal("identity", (await new SetupRepositoryConnectionSelectionService(stale, editor.Object)
+            Assert.Equal("identity", (await new SetupRepositoryConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), stale, editor.Object)
                 .SelectAsync("identity", () => Task.CompletedTask, default)).ConnectionName);
-            await Assert.ThrowsAsync<InvalidOperationException>(() => new SetupRepositoryConnectionSelectionService(stale, editor.Object)
+            await Assert.ThrowsAsync<InvalidOperationException>(() => new SetupRepositoryConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), stale, editor.Object)
                 .SelectAsync("other", () => Task.CompletedTask, default));
             connection.ConnectionString = "Server=db.example;Database=changed;Integrated Security=true";
-            Assert.Null(new BeepRepositoryConnectionSource(stale, services).Resolve());
+            Assert.Null(new BeepRepositoryConnectionSource(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), stale, services).Resolve());
         }
         finally { Directory.Delete(directory, true); }
     }
@@ -96,7 +96,7 @@ public sealed class SetupDriverBeepLoaderTests
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["Beep:ConfigPath"] = directory }).Build();
             File.WriteAllText(path, contents);
             using var services = new ServiceCollection().AddSingleton(Mock.Of<IDMEEditor>()).BuildServiceProvider();
-            Assert.Null(new BeepRepositoryConnectionSource(settings, services).Resolve());
+            Assert.Null(new BeepRepositoryConnectionSource(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), settings, services).Resolve());
             Assert.Equal(contents, File.ReadAllText(path));
         }
         finally { Directory.Delete(directory, true); }
@@ -117,7 +117,7 @@ public sealed class SetupDriverBeepLoaderTests
             new() { ConnectionName = "DUPLICATE", DatabaseType = DataSourceType.SqlServer, ConnectionString = "Server=db.example;Database=two" }
         });
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
-        var service = new SystemSetupConnectionSelectionService(new ConfigurationBuilder().Build(), editor.Object);
+        var service = new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new ConfigurationBuilder().Build(), editor.Object);
         Assert.Equal(new[] { "sqlite", "sqlserver" }, service.Connections());
         editor.Verify(x => x.GetDataSource(It.IsAny<string>()), Times.Never);
     }
@@ -153,7 +153,7 @@ public sealed class SetupDriverBeepLoaderTests
             using var root = services.BuildServiceProvider();
             var editor = root.GetRequiredService<IDMEEditor>();
             var settings = new ConfigurationBuilder().AddJsonFile(Environment.GetEnvironmentVariable("OILGAS_TEST_APPSETTINGS")!).Build();
-            var catalog = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance).Catalog();
+            var catalog = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()).Catalog();
             foreach (var handler in new[] { "SQLServerDataSource", "PostgreDataSource", "OracleDataSource", "MySQLDataSource", "SQLiteDataSource" })
             {
                 var registration = Assert.Single(editor.ConfigEditor.DataDriversClasses, item => string.Equals(item.classHandler, handler, StringComparison.OrdinalIgnoreCase));
@@ -189,7 +189,7 @@ public sealed class SetupDriverBeepLoaderTests
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(config.Object); editor.SetupGet(x => x.assemblyHandler).Returns(handler);
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Connectors:SQLServerDataSource:Package"] = "not-a-real-package", ["SetupDrivers:Connectors:SQLServerDataSource:Version"] = "0.0.0" }).Build();
-        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         await service.RestoreCachedAsync(default);
         var item = Assert.Single(service.Catalog());
         Assert.True(item.Loaded); Assert.True(item.BundledConnector);
@@ -212,7 +212,7 @@ public sealed class SetupDriverBeepLoaderTests
         var driver = editor.ConfigEditor.DataDriversClasses.FirstOrDefault(x => x.DatasourceType == DataSourceType.SqlServer && x.classHandler == "SQLServerDataSource")
             ?? ConnectionHelper.CreateSqlServerConfig();
         if (!editor.ConfigEditor.DataDriversClasses.Contains(driver)) editor.ConfigEditor.DataDriversClasses.Add(driver);
-        var service = new SetupDriverService(editor, new ConfigurationBuilder().Build(), NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor, new ConfigurationBuilder().Build(), NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         await service.RestoreCachedAsync(default);
         var item = Assert.Single(service.Catalog(), x => x.Id == driver.GuidID);
         Assert.True(item.Loaded); Assert.True(item.BundledConnector);
@@ -230,7 +230,7 @@ public sealed class SetupDriverBeepLoaderTests
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(config.Object); editor.SetupGet(x => x.assemblyHandler).Returns(handler);
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["SetupDrivers:Connectors:SQLiteDataSource:Package"] = "not-a-real-package", ["SetupDrivers:Connectors:SQLiteDataSource:Version"] = "0.0.0" }).Build();
-        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         await service.RestoreCachedAsync(default);
         var item = Assert.Single(service.Catalog());
         Assert.True(item.ConnectorLoaded); Assert.True(item.BundledConnector);
@@ -270,7 +270,7 @@ public sealed class SetupDriverBeepLoaderTests
                     ["SetupDrivers:Connectors:SQLiteDataSource:Version"] = "1.0.58" };
             var settings = new ConfigurationBuilder().AddJsonFile(Environment.GetEnvironmentVariable("OILGAS_TEST_APPSETTINGS")!)
                 .AddInMemoryCollection(overrides).Build();
-            var installer = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance);
+            var installer = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
             Assert.False(Assert.Single(installer.Catalog()).ConnectorLoaded);
             SetupDriverItem installed;
             try { installed = await installer.InstallAsync(driver.GuidID, Assert.Single(installer.Catalog(), x => x.Id == driver.GuidID), () => Task.CompletedTask, default); }
@@ -397,7 +397,7 @@ public sealed class SetupDriverBeepLoaderTests
               ["SetupDrivers:Connectors:SQLServerDataSource:Version"] = version,
               ["SetupDrivers:Providers:SQLServerDataSource:Package"] = "System.Data.SqlClient", ["SetupDrivers:Providers:SQLServerDataSource:Version"] = "4.9.1",
               ["SetupDrivers:PackageSources:0"] = feed, ["SetupDrivers:PackageSources:1"] = Environment.GetEnvironmentVariable("OILGAS_TEST_NUGET_FEED") }).Build();
-            var service = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance);
+            var service = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
             var result = await service.InstallAsync(driver.GuidID, Assert.Single(service.Catalog(), x => x.Id == driver.GuidID), () => Task.CompletedTask, default);
             Assert.True(result.Loaded, string.Join(" | ", messages.TakeLast(30)));
             var downloaded = Path.Combine(packageCache, "thetechidea.beep.sqlserverdatasourcecore", version.ToLowerInvariant());
@@ -425,7 +425,7 @@ public sealed class SetupDriverBeepLoaderTests
             Assert.Equal(Errors.Failed, missing.Outcome.Flag);
             Assert.Equal(Errors.Ok, owned.RollbackOwnedTransaction(owner).Flag);
 
-            var selection = await new SystemSetupConnectionSelectionService(settings, editor)
+            var selection = await new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), settings, editor)
                 .SelectAsync(connection.ConnectionName, () => Task.CompletedTask, default);
             Assert.Equal(connection.ConnectionName, selection.ConnectionName);
             var target = new SystemSetupTarget(settings, editor);
@@ -463,7 +463,7 @@ public sealed class SetupDriverBeepLoaderTests
         { ["SetupDrivers:Connectors:SQLServerDataSource:Package"] = "TheTechIdea.Beep.SqlServerDataSourceCore",
           ["SetupDrivers:Connectors:SQLServerDataSource:Version"] = version,
           ["SetupDrivers:Providers:SQLServerDataSource:Package"] = "System.Data.SqlClient", ["SetupDrivers:Providers:SQLServerDataSource:Version"] = "4.9.1" }).Build();
-        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         Assert.False(Assert.Single(service.Catalog()).ConnectorLoaded);
         await service.RestoreCachedAsync(default);
         var restored = Assert.Single(service.Catalog());
@@ -497,12 +497,12 @@ public sealed class SetupDriverBeepLoaderTests
             using var editor = new DMEEditor(log.Object, util, errors, config.Object, handler); util.DME = editor;
             var settings = new ConfigurationBuilder().AddJsonFile(Environment.GetEnvironmentVariable("OILGAS_TEST_APPSETTINGS")!)
                 .AddInMemoryCollection(new Dictionary<string, string?> { ["Beep:ConfigPath"] = directory }).Build();
-            var drivers = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance);
+            var drivers = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
             await drivers.RestoreCachedAsync(default);
             Assert.True(Assert.Single(drivers.Catalog()).Loaded);
             var source = editor.GetDataSource(connection.ConnectionName);
             Assert.NotNull(source); Assert.IsNotAssignableFrom<IIsolationOwnedTransactionDataSource>(source);
-            var error = await Assert.ThrowsAsync<InvalidOperationException>(() => new SystemSetupConnectionSelectionService(settings, editor)
+            var error = await Assert.ThrowsAsync<InvalidOperationException>(() => new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), settings, editor)
                 .SelectAsync(connection.ConnectionName, () => Task.CompletedTask, default));
             Assert.Contains("owned serializable transactions", error.Message);
             Assert.Null(source.GetType().GetProperty("ActiveTransaction")!.GetValue(source));
@@ -545,10 +545,10 @@ public sealed class SetupDriverBeepLoaderTests
             var sourceAssembly = Environment.GetEnvironmentVariable("OILGAS_TEST_SQL_SOURCE")
                 ?? throw new InvalidOperationException("The source-built SQL Server connector path is required.");
             handler.ScanAssembly(System.Reflection.Assembly.LoadFrom(sourceAssembly));
-            await new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance).RestoreCachedAsync(default);
+            await new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()).RestoreCachedAsync(default);
             var source = editor.GetDataSource(connection.ConnectionName);
             Assert.NotNull(source); Assert.Equal(ConnectionState.Open, source.Openconnection());
-            var selection = await new SystemSetupConnectionSelectionService(settings, editor).SelectAsync(connection.ConnectionName, () => Task.CompletedTask, default);
+            var selection = await new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), settings, editor).SelectAsync(connection.ConnectionName, () => Task.CompletedTask, default);
             Assert.Equal(connection.ConnectionName, selection.ConnectionName);
             var migration = new MigrationManager(editor, source) { ExecutionTargetIdentity = ModuleDatabaseTarget.Key(editor, connection) };
             var plan = migration.BuildMigrationPlanForTypes([typeof(SYSTEM_SETUP_RECORD)], detectRelationships: false);
@@ -834,7 +834,7 @@ public sealed class SetupDriverBeepLoaderTests
         editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
         editor.SetupGet(x => x.assemblyHandler).Returns(handler);
         var settings = new ConfigurationBuilder().AddJsonFile(Environment.GetEnvironmentVariable("OILGAS_TEST_APPSETTINGS")!).Build();
-        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         await service.RestoreCachedAsync(default);
         var result = Assert.Single(service.Catalog());
         Assert.True(result.ConnectorLoaded && result.ProviderLoaded && result.Loaded,
@@ -879,7 +879,7 @@ public sealed class SetupDriverBeepLoaderTests
                 ? new Dictionary<string, string?> { ["SetupDrivers:PackageSources:0"] = "https://api.nuget.org/v3/index.json" }
                 : new Dictionary<string, string?> { ["SetupDrivers:PackageSources:0"] = Environment.GetEnvironmentVariable("OILGAS_TEST_NUGET_FEED") })
             .Build();
-        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         try
         {
             var result = await service.InstallAsync(driver.GuidID, Assert.Single(service.Catalog(), x => x.Id == driver.GuidID), () => Task.CompletedTask, default);
@@ -926,7 +926,7 @@ public sealed class SetupDriverBeepLoaderTests
 #if BEEP_SOURCE_TEST
             handler.ScanAssembly(typeof(SQLiteDataSource).Assembly);
 #endif
-            var drivers = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance);
+            var drivers = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
             await drivers.RestoreCachedAsync(default);
             Assert.True(Assert.Single(drivers.Catalog()).Loaded, string.Join(" | ", messages.TakeLast(30)));
             using (var db = (IDbConnection)Activator.CreateInstance(handler.GetType(driver.DbConnectionType))!)
@@ -1177,7 +1177,7 @@ public sealed class SetupDriverBeepLoaderTests
         var otherProcessSettings = new ConfigurationBuilder().AddJsonFile(settingsPath, optional: true)
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Beep:ConfigPath"] = settingsDirectory }).Build();
         using var editor = new DMEEditor(log.Object, Mock.Of<IUtil>(), new ErrorsInfo(), config.Object, handler);
-        var service = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         await service.RestoreCachedAsync(default);
         Assert.True(Assert.Single(service.Catalog()).Loaded, string.Join(" | ", messages.TakeLast(25)));
 #if BEEP_SOURCE_TEST
@@ -1191,14 +1191,14 @@ public sealed class SetupDriverBeepLoaderTests
             Assert.Empty(config.Object.DataConnections);
             var registered = new ConnectionProperties { ConnectionName = "system_test", DatabaseType = DataSourceType.SqlLite, ConnectionString = "Data Source=" + path, Database = path, GuidID = Guid.NewGuid().ToString() };
             config.Object.DataConnections.Add(registered);
-            var selection = new SystemSetupConnectionSelectionService(settings, editor);
+            var selection = new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), settings, editor);
             Assert.Equal("system_test", (await selection.SelectAsync("system_test", () => Task.CompletedTask, default)).ConnectionName);
             Assert.Equal("system_test", settings["SystemSetup:ConnectionName"]);
             Assert.Equal(ModuleDatabaseTarget.Key(editor, registered), settings["SystemSetup:ConnectionTarget"]);
             Assert.Null(otherProcessSettings["SystemSetup:ConnectionName"]);
             SystemSetupConnectionSelectionService.ReloadPersistedSelectionIfNeeded(otherProcessSettings);
             Assert.Equal("system_test", otherProcessSettings["SystemSetup:ConnectionName"]);
-            Assert.Equal("system_test", (await new SystemSetupConnectionSelectionService(otherProcessSettings, editor)
+            Assert.Equal("system_test", (await new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), otherProcessSettings, editor)
                 .SelectAsync("system_test", () => Task.CompletedTask, default)).ConnectionName);
 #if BEEP_SOURCE_TEST
             var target = new SystemSetupTarget(settings, editor);
@@ -1254,7 +1254,7 @@ public sealed class SetupDriverBeepLoaderTests
             { ["SetupDrivers:Connectors:SQLiteDataSource:Package"] = "TheTechIdea.Beep.SqliteDatasourceCore", ["SetupDrivers:Connectors:SQLiteDataSource:Version"] = "1.0.58",
               ["SetupDrivers:PackageSources:0"] = feed,
               ["SetupDrivers:Providers:SQLiteDataSource:Package"] = "Stub.System.Data.SQLite.Core.NetStandard", ["SetupDrivers:Providers:SQLiteDataSource:Version"] = "1.0.119" }).Build();
-        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+        var service = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         try
         {
             var result = await service.InstallAsync(driver.GuidID, Assert.Single(service.Catalog(), x => x.Id == driver.GuidID), () => Task.CompletedTask, default);

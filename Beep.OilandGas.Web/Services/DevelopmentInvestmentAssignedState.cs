@@ -12,7 +12,7 @@ public sealed partial class DevelopmentInvestmentAssignedState : IDisposable
     private readonly IPersonaContextService personas;
     private readonly IAfeServiceClient client;
     private readonly IDevelopmentDraftIntentStore journal;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private DevelopmentInvestmentAssignedReview? current;
     private long generation,requestVersion;
     private bool disposed;
@@ -23,7 +23,7 @@ public sealed partial class DevelopmentInvestmentAssignedState : IDisposable
         .All(permission=>selected.Permissions.Contains(permission,StringComparer.Ordinal));
     public bool CanView=>company.Selection is {} selected && new[]{"Accounting.View","DevelopmentPlanning.View","Workflow.View"}.All(permission=>selected.Permissions.Contains(permission,StringComparer.Ordinal));
     public event Action? Changed;
-    public DevelopmentInvestmentAssignedState(CompanyClientContext company,IPersonaContextService personas,IAfeServiceClient client,IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+    public DevelopmentInvestmentAssignedState(CompanyClientContext company,IPersonaContextService personas,IAfeServiceClient client,IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {
         this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;
         company.Changed+=Invalidate;personas.Changed+=Invalidate;
@@ -52,7 +52,7 @@ public sealed partial class DevelopmentInvestmentAssignedState : IDisposable
                 throw new InvalidOperationException("The investment review belongs to another role or workspace.");
             current=result;
         }
-        catch(Exception error){var text=explain(error,"opening assigned investment review","The assigned investment task and exact AFE source could not be confirmed");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"opening assigned investment review","The assigned investment task and exact AFE source could not be confirmed");if(Active())Error=text;}
         finally{if(Active()){Loading=false;Changed?.Invoke();}}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;++requestVersion;Invalidate();}

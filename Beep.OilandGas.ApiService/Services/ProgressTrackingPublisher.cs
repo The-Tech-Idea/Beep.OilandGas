@@ -6,7 +6,7 @@ namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Publishes snapshots from the canonical store through the company delivery gate.</summary>
 public sealed class ProgressTrackingPublisher(CompanyProgressState state, IHubContext<ProgressHub> hub,
-    Action<Exception, string, string> reportFailure) : BackgroundService
+    TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
         Task.WhenAll(BroadcastAsync(stoppingToken), CleanupAsync(stoppingToken));
@@ -24,8 +24,8 @@ public sealed class ProgressTrackingPublisher(CompanyProgressState state, IHubCo
                 try { await hub.Clients.Group(group).SendAsync(method, item, token); }
                 catch (Exception exception) when (!token.IsCancellationRequested)
                 {
-                    reportFailure(exception, $"broadcasting {method} to progress group {group}",
-                        "the live update is not delivered; progress remains readable by its owner");
+                    failures.ReportHandled(exception, $"broadcasting {method} to progress group {group}",
+                        "the live update is not delivered; progress remains readable by its owner", TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded);
                 }
             }
         }

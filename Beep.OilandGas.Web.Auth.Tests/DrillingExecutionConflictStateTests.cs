@@ -65,7 +65,7 @@ public sealed class DrillingExecutionConflictStateTests
         using var f=new DrillingExecutionStateTests.Fixture();await Pending(f);f.Journal.FailClear=true;
         if(earlierAbsentReceipt){var original=f.Native.Command;f.Client.Setup(c=>c.RecoverExecutionStartAsync(It.IsAny<DrillingExecutionStart>(),It.IsAny<CancellationToken>())).ReturnsAsync(new DrillingExecutionStartReceipt(original.Revision(),original.OperationId(),null,DateTimeOffset.UtcNow));}
         using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);
-        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution?reviewId="+Uri.EscapeDataString(f.Native.Current.ReviewInstanceId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingExecution>();
         page.WaitForAssertion(()=>Assert.Contains("Inspect a different recorded execution",page.Markup));

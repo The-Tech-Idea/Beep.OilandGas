@@ -24,8 +24,10 @@ using Moq;
 using TheTechIdea.Beep.ConfigUtil;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.Helpers;
 using TheTechIdea.Beep.Logger;
+using JsonLoader = TheTechIdea.Beep.JsonLoaderService.JsonLoader;
 using TheTechIdea.Beep.Tools;
 using TheTechIdea.Beep.Utilities;
 using Xunit;
@@ -57,15 +59,19 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         var otherDatabase = $"BeepOilGas_Module_{Guid.NewGuid():N}";
         output.WriteLine($"Retained module test database: {database}");
         output.WriteLine($"Retained second module test database: {otherDatabase}");
-        using (var master = new SqlConnection("Server=(localdb)\\MSSQLLocalDB;Database=master;Integrated Security=true;TrustServerCertificate=true"))
+        var receipts = Path.Combine(Path.GetTempPath(), "OilGasModuleMigration", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(receipts);
+        foreach (var target in new[] { database, otherDatabase })
         {
-            master.Open();
-            using var create = master.CreateCommand();
-            create.CommandText = $"CREATE DATABASE [{database}]";
-            create.ExecuteNonQuery();
-            create.CommandText = $"CREATE DATABASE [{otherDatabase}]";
-            create.ExecuteNonQuery();
+            var provider = new SQLServerDatabaseTargetMigrationProvider(SqlClientFactory.Instance,
+                $"Server=(localdb)\\MSSQLLocalDB;Database={target};Integrated Security=true;TrustServerCertificate=true",
+                "OilGasModuleIntegration");
+            var migration = TheTechIdea.Beep.Editor.Migration.MigrationManager.BindDatabaseTarget(provider,
+                Path.Combine(receipts, target + ".json"));
+            await migration.EnsureCreatedAsync();
+            Assert.True(migration.Exists);
         }
+        output.WriteLine($"Retained database ownership receipts: {receipts}");
         var connectionString = $"Server=(localdb)\\MSSQLLocalDB;Database={database};Integrated Security=true;TrustServerCertificate=true";
         var properties = new ConnectionProperties
         {
@@ -84,28 +90,20 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         };
         var otherDriver = ConnectionHelper.CreateSqlServerConfig();
         otherDriver.ConnectionString = otherConnectionString;
-        var config = new Mock<IConfigEditor>();
+        using var config = new ConfigEditor(Mock.Of<IDMLogger>(), new ErrorsInfo(), new JsonLoader(),
+            receipts, "beep-migration", BeepConfigType.DataConnector);
         // Put the unselected target first to catch accidental first-connection fallback.
-        config.SetupGet(x => x.DataConnections).Returns([otherProperties, properties]);
-        config.SetupGet(x => x.DataDriversClasses).Returns([driver]);
-        var queries = new TheTechIdea.Beep.ConfigUtil.Managers.QueryManager(Mock.Of<IDMLogger>(),
-            Mock.Of<IJsonLoader>(), string.Empty);
-        config.Setup(x => x.GetSql(It.IsAny<Sqlcommandtype>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<List<QuerySqlRepo>>(), It.IsAny<DataSourceType>()))
-            .Returns((Sqlcommandtype kind, string table, string schema, string filter,
-                List<QuerySqlRepo> catalog, DataSourceType provider) => queries.GetSql(kind, table, schema ?? "dbo", filter, provider));
+        config.DataConnections = [otherProperties, properties];
+        config.DataDriversClasses = [driver];
         var loader = new Mock<IAssemblyHandler>();
         loader.Setup(x => x.GetInstance(It.IsAny<string>())).Returns(() => new SqlConnection());
-        var editor = new Mock<IDMEEditor>();
-        editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
-        editor.SetupGet(x => x.assemblyHandler).Returns(loader.Object);
-        editor.SetupGet(x => x.ErrorObject).Returns(new ErrorsInfo());
+        var editor = new Mock<TheTechIdea.Beep.DMEEditor>(Mock.Of<IDMLogger>(),
+            new TheTechIdea.Beep.Utils.Util(Mock.Of<IDMLogger>(), new ErrorsInfo(), config),
+            new ErrorsInfo(), config, loader.Object) { CallBase = true };
+        using var editorOwner = editor.Object;
         var source = new SQLServerDataSource(database, Mock.Of<IDMLogger>(), editor.Object, DataSourceType.SqlServer, new ErrorsInfo());
-        editor.SetupGet(x => x.classCreator).Returns(new ClassCreator(editor.Object));
-        editor.SetupGet(x => x.typesHelper).Returns(new DataTypesHelper(editor.Object));
-        config.SetupGet(x => x.DataTypesMap).Returns(TheTechIdea.Beep.Helpers.DataTypesHelpers.DatabaseTypeMappingRepository.GenerateSqlServerDataTypesMapping());
+        config.DataTypesMap = TheTechIdea.Beep.Helpers.DataTypesHelpers.DatabaseTypeMappingRepository.GenerateSqlServerDataTypesMapping();
         editor.Setup(x => x.GetDataSourceClass(database)).Returns(new AssemblyClassDefinition { className = nameof(SQLServerDataSource) });
-        editor.SetupGet(x => x.Utilfunction).Returns(new TheTechIdea.Beep.Utils.Util(Mock.Of<IDMLogger>(), new ErrorsInfo(), config.Object) { DME = editor.Object });
         var providerAssembly = typeof(System.Data.SqlClient.SqlConnection).Assembly;
         loader.Setup(x => x.GetType(It.IsAny<string>())).Returns((string name) => providerAssembly.GetType(name, throwOnError: true)!);
         loader.Setup(x => x.GetInstance(It.IsAny<string>())).Returns((string name) =>
@@ -138,18 +136,26 @@ public class LocalDbDriverTests(ITestOutputHelper output)
             await repository.SaveChangesAsync();
             var tenant = TenantScope();
             var resolver = new ModuleConnectionResolver(repository, editor.Object, tenant);
+            var failures = new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter();
             var setup = new PPDM39SetupService(editor.Object, NullLogger<PPDM39SetupService>.Instance,
                 Mock.Of<Beep.OilandGas.Models.Core.Interfaces.ICommonColumnHandler>(),
                 Mock.Of<Beep.OilandGas.PPDM39.Core.IPPDM39DefaultsRepository>(),
                 Mock.Of<Beep.OilandGas.PPDM39.Core.Metadata.IPPDMMetadataRepository>(),
-                new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), moduleSetupOrchestrator: new ModuleSetupOrchestrator([module], NullLogger<ModuleSetupOrchestrator>.Instance),
-                migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync);
+                failures, moduleSetupOrchestrator: new ModuleSetupOrchestrator([module], NullLogger<ModuleSetupOrchestrator>.Instance),
+                migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync,
+                migrationTargetIdentity: connection => ModuleDatabaseTarget.Key(editor.Object, connection));
             var controller = new ModuleRepositoryController(repository, editor.Object, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new ModuleBindingService(repository, editor.Object), tenant);
             SetCaller(controller);
             var bound = Assert.IsType<OkObjectResult>(await controller.Bind(module.ModuleId, new(database, null), default));
             var binding = Assert.IsType<ModuleDatabaseBinding>(bound.Value);
             Assert.Equal(database, await resolver.ResolveAsync(module.ModuleId));
-            var plan = await PlanOverHttpAsync(controller, module.ModuleId, binding.ConcurrencyStamp);
+            SchemaMigrationPlanResult plan;
+            try { plan = await PlanOverHttpAsync(controller, module.ModuleId, binding.ConcurrencyStamp); }
+            finally
+            {
+                foreach (var failure in failures.Reports)
+                    output.WriteLine($"Reported during {failure.Operation}: {failure.Exception}");
+            }
             output.WriteLine($"Plan result: {plan.Success}: {plan.Message}; {string.Join("; ", plan.DryRunDiagnostics ?? [])}");
             Assert.True(plan.Success, plan.Message);
             var execution = new SchemaMigrationExecuteRequest
@@ -157,14 +163,8 @@ public class LocalDbDriverTests(ITestOutputHelper output)
                 PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash, ExpectedManifestHash = plan.ManifestHash
             };
             Assert.False((await setup.ExecuteSchemaMigrationPlanAsync(execution)).Success);
-            using (var beforeApproval = new SqlConnection(connectionString))
-            {
-                beforeApproval.Open();
-                using var count = beforeApproval.CreateCommand();
-                count.CommandText = "SELECT COUNT(*) FROM sys.tables";
-                Assert.Equal(0, Convert.ToInt32(count.ExecuteScalar()));
-            }
-            Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = plan.PlanId, ApprovedBy = "test-admin" })).Success);
+            Assert.Empty(source.GetEntitesList());
+            Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash, ExpectedManifestHash = plan.ManifestHash, ApprovedBy = "test-admin" })).Success);
             Assert.False((await setup.ExecuteSchemaMigrationPlanAsync(new()
             {
                 PlanId = plan.PlanId, ExpectedPlanHash = "not-the-reviewed-hash", ExpectedManifestHash = plan.ManifestHash
@@ -176,84 +176,59 @@ public class LocalDbDriverTests(ITestOutputHelper output)
                 output.WriteLine(string.Join(" | ", call.Arguments));
             Assert.True(result.Success, result.Message);
             ModuleSchemaVerification.Verify(editor.Object, source, module.EntityTypes);
-            using var otherInspect = new SqlConnection(otherConnectionString);
-            otherInspect.Open();
-            using var untouched = otherInspect.CreateCommand();
-            untouched.CommandText = "SELECT COUNT(*) FROM sys.tables";
-            Assert.Equal(0, Convert.ToInt32(untouched.ExecuteScalar()));
-            using var inspect = new SqlConnection(connectionString);
-            inspect.Open();
-            using var query = inspect.CreateCommand();
-            query.CommandText = "SELECT name FROM sys.tables ORDER BY name";
-            using var reader = query.ExecuteReader();
-            var tables = new List<string>();
-            while (reader.Read()) tables.Add(reader.GetString(0));
-            Assert.Equal(module.EntityTypes.Select(t => t.Name).OrderBy(x => x), tables);
-            reader.Close();
+            Assert.Empty(otherSource.GetEntitesList());
+            var tables = source.GetEntitesList();
+            Assert.Equal(module.EntityTypes.Select(t => t.Name).OrderBy(x => x), tables.OrderBy(x => x));
 
             var composition = new Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION
             {
                 OIL_COMPOSITION_ID = Guid.NewGuid().ToString(),
                 COMPOSITION_NAME = "LocalDB persistence verification"
             };
-            var inserted = source.InsertEntity(nameof(Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION), composition);
+            using var originalWork = new UnitofWork<Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION>(
+                editor.Object, database, nameof(Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION));
+            var inserted = await originalWork.InsertAsync(composition);
             Assert.True(inserted.Flag == Errors.Ok, $"Insert failed: {inserted.Message} {inserted.Ex}");
-            using var readRecord = inspect.CreateCommand();
-            readRecord.CommandText = "SELECT OIL_COMPOSITION_ID, COMPOSITION_NAME FROM OIL_COMPOSITION";
-            using var persisted = readRecord.ExecuteReader();
-            Assert.True(persisted.Read(), "BeepDM reported insert success but no row was persisted.");
-            Assert.Equal(composition.OIL_COMPOSITION_ID, persisted.GetString(0));
-            Assert.Equal(composition.COMPOSITION_NAME, persisted.GetString(1));
-            Assert.False(persisted.Read(), "The isolated test should contain exactly one composition.");
-            persisted.Close();
+            var persisted = Assert.Single(await originalWork.Get());
+            Assert.Equal(composition.OIL_COMPOSITION_ID, persisted.OIL_COMPOSITION_ID);
+            Assert.Equal(composition.COMPOSITION_NAME, persisted.COMPOSITION_NAME);
 
             var rebound = Assert.IsType<OkObjectResult>(await controller.Bind(module.ModuleId,
                 new(otherDatabase, binding.ConcurrencyStamp), default));
             var otherBinding = Assert.IsType<ModuleDatabaseBinding>(rebound.Value);
             Assert.Equal(otherDatabase, await resolver.ResolveAsync(module.ModuleId));
-            var stale = await setup.ExecuteSchemaMigrationPlanAsync(execution);
-            Assert.False(stale.Success);
-            Assert.Contains("binding", stale.Message, StringComparison.OrdinalIgnoreCase);
+            var stale = await Assert.ThrowsAsync<Beep.OilandGas.Models.Core.Refusals.RefusalException>(
+                () => setup.ExecuteSchemaMigrationPlanAsync(execution));
+            Assert.Equal(Beep.OilandGas.Models.Core.Refusals.RefusalKind.Conflict, stale.Kind);
+            Assert.Empty(otherSource.GetEntitesList());
             var otherPlanned = Assert.IsType<OkObjectResult>(await controller.Plan(module.ModuleId,
                 new(EnvironmentTier: "Development", ConcurrencyStamp: otherBinding.ConcurrencyStamp), default));
             var otherPlan = Assert.IsType<SchemaMigrationPlanResult>(otherPlanned.Value);
             Assert.True(otherPlan.Success, otherPlan.Message);
-            Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = otherPlan.PlanId, ApprovedBy = "test-admin" })).Success);
+            Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = otherPlan.PlanId, ExpectedPlanHash = otherPlan.PlanHash, ExpectedManifestHash = otherPlan.ManifestHash, ApprovedBy = "test-admin" })).Success);
             var otherResult = await setup.ExecuteSchemaMigrationPlanAsync(new()
             {
                 PlanId = otherPlan.PlanId, ExpectedPlanHash = otherPlan.PlanHash, ExpectedManifestHash = otherPlan.ManifestHash
             });
             Assert.True(otherResult.Success, otherResult.Message);
             ModuleSchemaVerification.Verify(editor.Object, otherSource, module.EntityTypes);
-            using (var otherTables = otherInspect.CreateCommand())
-            {
-                otherTables.CommandText = "SELECT name FROM sys.tables ORDER BY name";
-                using var tableRows = otherTables.ExecuteReader();
-                var names = new List<string>();
-                while (tableRows.Read()) names.Add(tableRows.GetString(0));
-                Assert.Equal(module.EntityTypes.Select(t => t.Name).OrderBy(x => x), names);
-            }
+            Assert.Equal(module.EntityTypes.Select(t => t.Name).OrderBy(x => x), otherSource.GetEntitesList().OrderBy(x => x));
             var otherComposition = new Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION
             {
                 OIL_COMPOSITION_ID = Guid.NewGuid().ToString(),
                 COMPOSITION_NAME = "Second named database"
             };
-            var otherInsert = editor.Object.GetDataSource(otherDatabase).InsertEntity(
-                nameof(Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION), otherComposition);
+            using var otherWork = new UnitofWork<Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION>(
+                editor.Object, otherDatabase, nameof(Beep.OilandGas.Models.Data.Common.OIL_COMPOSITION));
+            var otherInsert = await otherWork.InsertAsync(otherComposition);
             Assert.True(otherInsert.Flag == Errors.Ok, otherInsert.Message);
 
-            using var otherQuery = otherInspect.CreateCommand();
-            otherQuery.CommandText = "SELECT OIL_COMPOSITION_ID, COMPOSITION_NAME FROM OIL_COMPOSITION";
-            using var otherRows = otherQuery.ExecuteReader();
-            Assert.True(otherRows.Read());
-            Assert.Equal(otherComposition.OIL_COMPOSITION_ID, otherRows.GetString(0));
-            Assert.Equal(otherComposition.COMPOSITION_NAME, otherRows.GetString(1));
-            Assert.False(otherRows.Read());
-            using var originalRows = readRecord.ExecuteReader();
-            Assert.True(originalRows.Read());
-            Assert.Equal(composition.OIL_COMPOSITION_ID, originalRows.GetString(0));
-            Assert.Equal(composition.COMPOSITION_NAME, originalRows.GetString(1));
-            Assert.False(originalRows.Read(), "Writing to the second target must not affect the first database.");
+            var otherRow = Assert.Single(await otherWork.Get());
+            Assert.Equal(otherComposition.OIL_COMPOSITION_ID, otherRow.OIL_COMPOSITION_ID);
+            Assert.Equal(otherComposition.COMPOSITION_NAME, otherRow.COMPOSITION_NAME);
+            var originalRow = Assert.Single(await originalWork.Get());
+            Assert.Equal(composition.OIL_COMPOSITION_ID, originalRow.OIL_COMPOSITION_ID);
+            Assert.Equal(composition.COMPOSITION_NAME, originalRow.COMPOSITION_NAME);
 
             using var reopenedRepository = new SqlServerRepositoryDbContext(
                 new DbContextOptionsBuilder<SqlServerRepositoryDbContext>().UseSqlServer(repositoryConnection).Options);
@@ -262,11 +237,8 @@ public class LocalDbDriverTests(ITestOutputHelper output)
             Assert.Equal(otherDatabase, persistedBinding.ConnectionName);
             Assert.Empty(await reopenedRepository.Users.ToListAsync());
             await reopenedRepository.Database.OpenConnectionAsync();
-            using var repositoryTables = reopenedRepository.Database.GetDbConnection().CreateCommand();
-            repositoryTables.CommandText = "SELECT name FROM sys.tables ORDER BY name";
-            using var repositoryRows = await repositoryTables.ExecuteReaderAsync();
-            var repositoryNames = new List<string>();
-            while (await repositoryRows.ReadAsync()) repositoryNames.Add(repositoryRows.GetString(0));
+            var repositoryTables = await reopenedRepository.Database.GetDbConnection().GetSchemaAsync("Tables");
+            var repositoryNames = repositoryTables.Rows.Cast<DataRow>().Select(row => (string)row["TABLE_NAME"]).ToList();
             Assert.Contains("AspNetUsers", repositoryNames);
             Assert.Contains("AspNetRoles", repositoryNames);
             Assert.Contains("ModuleDatabaseBindings", repositoryNames);
@@ -292,14 +264,15 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         var module = new Beep.OilandGas.HeatMap.Modules.HeatMapModule();
         var setup = new PPDM39SetupService(editor, NullLogger<PPDM39SetupService>.Instance, common, defaults, metadata,
             new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), moduleSetupOrchestrator: new ModuleSetupOrchestrator([module], NullLogger<ModuleSetupOrchestrator>.Instance),
-            migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync);
+            migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync,
+            migrationTargetIdentity: connection => ModuleDatabaseTarget.Key(editor, connection));
         var controller = new ModuleRepositoryController(repository, editor, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new ModuleBindingService(repository, editor), TenantScope());
         SetCaller(controller);
         var binding = Assert.IsType<ModuleDatabaseBinding>(Assert.IsType<OkObjectResult>(
             await controller.Bind(module.ModuleId, new(database, null), default)).Value);
         var plan = await PlanOverHttpAsync(controller, module.ModuleId, binding.ConcurrencyStamp);
         Assert.True(plan.Success, plan.Message);
-        Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = plan.PlanId, ApprovedBy = "test-admin" })).Success);
+        Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash, ExpectedManifestHash = plan.ManifestHash, ApprovedBy = "test-admin" })).Success);
         var migrated = await setup.ExecuteSchemaMigrationPlanAsync(new()
         {
             PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash, ExpectedManifestHash = plan.ManifestHash
@@ -325,22 +298,12 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         var reloaded = await service.GetHeatMapConfigurationAsync(id);
         Assert.Equal(loaded.CreatedDate, reloaded!.CreatedDate);
 
-        using var independent = new SqlConnection($"Server=(localdb)\\MSSQLLocalDB;Database={database};Integrated Security=true;TrustServerCertificate=true");
-        await independent.OpenAsync();
-        using var row = independent.CreateCommand();
-        row.CommandText = "SELECT CONFIGURATION_NAME, ROW_CREATED_DATE FROM HEAT_MAP_CONFIGURATION WHERE HEAT_MAP_ID = @id";
-        row.Parameters.AddWithValue("@id", id);
-        using var reader = await row.ExecuteReaderAsync();
-        Assert.True(await reader.ReadAsync());
-        Assert.Equal(loaded.ConfigurationName, reader.GetString(0));
-        Assert.Equal(loaded.CreatedDate, reader.GetDateTime(1));
-        Assert.False(await reader.ReadAsync());
-
-        using var other = new SqlConnection($"Server=(localdb)\\MSSQLLocalDB;Database={otherDatabase};Integrated Security=true;TrustServerCertificate=true");
-        await other.OpenAsync();
-        using var table = other.CreateCommand();
-        table.CommandText = "SELECT COUNT(*) FROM sys.tables WHERE name = 'HEAT_MAP_CONFIGURATION'";
-        Assert.Equal(0, Convert.ToInt32(await table.ExecuteScalarAsync()));
+        using var independent = new UnitofWork<Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_CONFIGURATION>(
+            editor, database, "HEAT_MAP_CONFIGURATION");
+        var persisted = Assert.Single(await independent.Get([new() { FieldName = "HEAT_MAP_ID", Operator = "=", FilterValue = id }]));
+        Assert.Equal(loaded.ConfigurationName, persisted.CONFIGURATION_NAME);
+        Assert.Equal(loaded.CreatedDate, persisted.ROW_CREATED_DATE);
+        Assert.DoesNotContain("HEAT_MAP_CONFIGURATION", editor.GetDataSource(otherDatabase).GetEntitesList());
     }
 
     private async Task VerifyLifecyclePersistenceAsync(IDMEEditor editor, SQLServerDataSource source, string database,
@@ -356,14 +319,15 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         });
         var setup = new PPDM39SetupService(editor, NullLogger<PPDM39SetupService>.Instance, common, defaults, metadata,
             new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), moduleSetupOrchestrator: new ModuleSetupOrchestrator([module], NullLogger<ModuleSetupOrchestrator>.Instance),
-            migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync);
+            migrationBindingFingerprint: resolver.GetMigrationBindingFingerprintAsync,
+            migrationTargetIdentity: connection => ModuleDatabaseTarget.Key(editor, connection));
         var controller = new ModuleRepositoryController(repository, editor, [module], setup, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new ModuleBindingService(repository, editor), TenantScope());
         SetCaller(controller);
         var binding = Assert.IsType<ModuleDatabaseBinding>(Assert.IsType<OkObjectResult>(
             await controller.Bind(module.ModuleId, new(database, null), default)).Value);
         var plan = await PlanOverHttpAsync(controller, module.ModuleId, binding.ConcurrencyStamp);
         Assert.True(plan.Success, plan.Message);
-        Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = plan.PlanId, ApprovedBy = "test-admin" })).Success);
+        Assert.True((await setup.ApproveSchemaMigrationPlanAsync(new() { PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash, ExpectedManifestHash = plan.ManifestHash, ApprovedBy = "test-admin" })).Success);
         var migrated = await setup.ExecuteSchemaMigrationPlanAsync(new()
         {
             PlanId = plan.PlanId, ExpectedPlanHash = plan.PlanHash, ExpectedManifestHash = plan.ManifestHash
@@ -371,6 +335,16 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         output.WriteLine($"Lifecycle migration: {migrated.Success}: {migrated.Message}");
         Assert.True(migrated.Success, migrated.Message);
         ModuleSchemaVerification.Verify(editor, source, module.EntityTypes);
+        var seeded = Assert.IsType<ModuleSeedSummary>(Assert.IsType<OkObjectResult>(
+            await controller.Seed(module.ModuleId, new(binding.ConcurrencyStamp), default)).Value);
+        Assert.True(seeded.Success, string.Join("; ", seeded.Errors));
+        Assert.True(seeded.RecordsInserted > 0);
+        var repeatedSeed = Assert.IsType<ModuleSeedSummary>(Assert.IsType<OkObjectResult>(
+            await controller.Seed(module.ModuleId, new(binding.ConcurrencyStamp), default)).Value);
+        Assert.True(repeatedSeed.Success, string.Join("; ", repeatedSeed.Errors));
+        Assert.Equal(0, repeatedSeed.RecordsInserted);
+        Assert.DoesNotContain("R_LIFECYCLE_STATE_REFERENCE", editor.GetDataSource(otherDatabase).GetEntitesList());
+        using var instanceWork = new UnitofWork<Beep.OilandGas.LifeCycle.Data.Tables.PROCESS_INSTANCE>(editor, database, "PROCESS_INSTANCE");
         foreach (var row in new[]
         {
             new Beep.OilandGas.LifeCycle.Data.Tables.PROCESS_INSTANCE { PROCESS_INSTANCE_ID = "well-process", FIELD_ID = "field", ENTITY_ID = "well", ENTITY_TYPE = "WELL" },
@@ -378,7 +352,7 @@ public class LocalDbDriverTests(ITestOutputHelper output)
             new Beep.OilandGas.LifeCycle.Data.Tables.PROCESS_INSTANCE { PROCESS_INSTANCE_ID = "foreign-process", FIELD_ID = "foreign", ENTITY_ID = "well", ENTITY_TYPE = "WELL" }
         })
         {
-            var inserted = source.InsertEntity("PROCESS_INSTANCE", row);
+            var inserted = await instanceWork.InsertAsync(row);
             Assert.True(inserted.Flag == Errors.Ok, $"Workflow insert failed: {inserted.Message} {inserted.Ex}");
         }
         var process = new Beep.OilandGas.LifeCycle.Services.Processes.BoundProcessService(
@@ -386,14 +360,10 @@ public class LocalDbDriverTests(ITestOutputHelper output)
                 editor, common, defaults, metadata, target));
         var rows = await process.GetProcessInstancesForFieldAsync("field");
         Assert.Equal(new[] { "facility", "well" }, rows.Select(x => x.EntityId).OrderBy(x => x));
-        using var independent = new SqlConnection($"Server=(localdb)\\MSSQLLocalDB;Database={database};Integrated Security=true;TrustServerCertificate=true");
-        independent.Open();
-        using var count = independent.CreateCommand();
-        count.CommandText = "SELECT COUNT(*) FROM PROCESS_INSTANCE";
-        Assert.Equal(3, Convert.ToInt32(count.ExecuteScalar()));
+        Assert.Equal(3, (await instanceWork.Get()).Count);
         var definition = new Beep.OilandGas.Models.Processes.ProcessDefinition
         {
-            ProcessId = "localdb-workflow", ProcessName = "LocalDB workflow", ProcessType = "WELL_LIFECYCLE", IsActive = true,
+            ProcessId = "localdb-workflow", ProcessName = "LocalDB workflow", ProcessType = "WELL_LIFECYCLE", EntityType = "WELL", IsActive = true,
             Steps = new()
             {
                 new() { StepId = "review", StepName = "Review", SequenceNumber = 1, RequiredRoles = new() { "Reviewer" } },
@@ -411,24 +381,20 @@ public class LocalDbDriverTests(ITestOutputHelper output)
         Assert.Equal(new[] { Beep.OilandGas.Models.Processes.StepStatus.PENDING, Beep.OilandGas.Models.Processes.StepStatus.BLOCKED },
             reloaded.StepInstances.Select(x => x.Status));
         Assert.Contains(reloaded.History, x => x.Action == "PROCESS_STARTED" && x.PerformedBy == "test-admin");
-        using var workflowRows = independent.CreateCommand();
-        workflowRows.Parameters.AddWithValue("@instance", started.InstanceId);
-        workflowRows.CommandText = "SELECT COUNT(*) FROM PROCESS_INSTANCE WHERE PROCESS_INSTANCE_ID = @instance";
-        Assert.Equal(1, Convert.ToInt32(workflowRows.ExecuteScalar()));
-        workflowRows.CommandText = "SELECT COUNT(*) FROM PROCESS_STEP_INSTANCE WHERE PROCESS_INSTANCE_ID = @instance";
-        Assert.Equal(2, Convert.ToInt32(workflowRows.ExecuteScalar()));
-        workflowRows.CommandText = "SELECT COUNT(*) FROM PROCESS_HISTORY WHERE PROCESS_INSTANCE_ID = @instance";
-        Assert.Equal(1, Convert.ToInt32(workflowRows.ExecuteScalar()));
-        using var other = new SqlConnection($"Server=(localdb)\\MSSQLLocalDB;Database={otherDatabase};Integrated Security=true;TrustServerCertificate=true");
-        other.Open();
-        using var isolated = other.CreateCommand();
-        isolated.CommandText = "SELECT COUNT(*) FROM sys.tables WHERE name = 'PROCESS_INSTANCE'";
-        Assert.Equal(0, Convert.ToInt32(isolated.ExecuteScalar()));
+        var filter = new List<TheTechIdea.Beep.Report.AppFilter>
+            { new() { FieldName = "PROCESS_INSTANCE_ID", Operator = "=", FilterValue = started.InstanceId } };
+        Assert.Single(await instanceWork.Get(filter));
+        using var stepWork = new UnitofWork<Beep.OilandGas.LifeCycle.Data.Tables.PROCESS_STEP_INSTANCE>(editor, database, "PROCESS_STEP_INSTANCE");
+        using var historyWork = new UnitofWork<Beep.OilandGas.LifeCycle.Data.Tables.PROCESS_HISTORY>(editor, database, "PROCESS_HISTORY");
+        Assert.Equal(2, (await stepWork.Get(filter)).Count);
+        Assert.Single(await historyWork.Get(filter));
+        Assert.DoesNotContain("PROCESS_INSTANCE", editor.GetDataSource(otherDatabase).GetEntitesList());
     }
 
     private static async Task<SchemaMigrationPlanResult> PlanOverHttpAsync(ModuleRepositoryController controller,
         string moduleId, string stamp)
     {
+        var originalContext = controller.ControllerContext;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing" });
         builder.Logging.ClearProviders();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -467,7 +433,11 @@ public class LocalDbDriverTests(ITestOutputHelper output)
             Assert.NotEmpty(plan.DryRunOperations);
             return plan;
         }
-        finally { await app.StopAsync(); }
+        finally
+        {
+            await app.StopAsync();
+            controller.ControllerContext = originalContext;
+        }
     }
 
     private sealed class OnlyModuleController : IApplicationFeatureProvider<ControllerFeature>
@@ -510,9 +480,7 @@ public class LocalDbDriverTests(ITestOutputHelper output)
             MigrationConnectionTarget.Validate(editor.Object, source, properties.ConnectionName);
             Assert.Equal(ConnectionState.Open, source.Openconnection());
             var connection = Assert.IsType<RDBDataConnection>(source.Dataconnection);
-            using var command = connection.DbConn.CreateCommand();
-            command.CommandText = "SELECT DB_NAME()";
-            Assert.Equal("master", command.ExecuteScalar());
+            Assert.Equal("master", connection.DbConn.Database);
             Assert.Equal(Errors.Ok, source.ErrorObject.Flag);
         }
         finally

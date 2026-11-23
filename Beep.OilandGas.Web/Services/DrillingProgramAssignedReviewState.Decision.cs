@@ -26,7 +26,7 @@ public sealed partial class DrillingProgramAssignedReviewState
     {
         if(!CanPrepareDecision)return;preparedDecision=null;DecisionError=null;DecisionConfirmation=null;
         try{var command=new DrillingProgramReviewDecision(CompanyInventorySourceReview.Copy(current!),Guid.NewGuid(),decision,notes.Trim());command.Require();preparedDecision=command;}
-        catch(Exception error){DecisionError=explain(error,"reviewing the independent stage decision","Choose approve or reject and provide the recorded review rationale");}
+        catch(Exception error){DecisionError=explain.Explain(error,"reviewing the independent stage decision","Choose approve or reject and provide the recorded review rationale");}
         Changed?.Invoke();
     }
     public void CancelDecision(){if(deciding || pendingDecision is not null)return;preparedDecision=null;Changed?.Invoke();}
@@ -45,7 +45,7 @@ public sealed partial class DrillingProgramAssignedReviewState
             if(!Current())return;await journal.ClearProgramDecisionAsync(original);
             if(Current()){pendingDecision=null;current=null;progress=null;decisionReceipt=CompanyInventorySourceReview.Copy(receipt);DecisionConfirmation=original.Decision=="APPROVE"?"This review stage was approved and its configured routing was confirmed. Drilling execution remains separate.":"This review stage was rejected. Later review work was not approved or released.";}
         }
-        catch(Exception error){var text=explain(error,"recording the independent program review","The original decision outcome is unconfirmed. Recover it before another decision");if(Current())DecisionError=text;}
+        catch(Exception error){var text=explain.Explain(error,"recording the independent program review","The original decision outcome is unconfirmed. Recover it before another decision");if(Current())DecisionError=text;}
         finally{deciding=false;if(!disposed)Changed?.Invoke();}
     }
     public async Task RecoverDecisionAsync()
@@ -59,7 +59,7 @@ public sealed partial class DrillingProgramAssignedReviewState
             await journal.ClearProgramDecisionAsync(original);
             if(Current()){pendingDecision=null;current=null;progress=null;decisionReceipt=CompanyInventorySourceReview.Copy(receipt);DecisionConfirmation=receipt.Recorded?"The original independent stage decision was found and confirmed. No new decision or task was written.":"The original decision was confirmed absent. Reload the current assigned source before preparing another decision.";}
         }
-        catch(Exception error){var text=explain(error,"recovering the original program review decision","The original decision is still unconfirmed. Its exact recovery input was preserved");if(Current())DecisionError=text;}
+        catch(Exception error){var text=explain.Explain(error,"recovering the original program review decision","The original decision is still unconfirmed. Its exact recovery input was preserved");if(Current())DecisionError=text;}
         finally{deciding=false;if(!disposed)Changed?.Invoke();}
     }
 }

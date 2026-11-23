@@ -163,7 +163,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     if(row.EntityType is "JOURNAL_ENTRY" or "AR_PAYMENT"){var captured=row.EntityType=="AR_PAYMENT"?await accountingProcesses.ReadAssignedPaymentTaskAsync(User,row,company.Scope,userId):await accountingProcesses.ReadAssignedJournalTaskAsync(User,row,company.Scope,userId);process=captured.Process;row.AccountingStepReview=captured.Review;}
                     else process = await accountingProcesses.ReadAsync(User, row.WorkflowName, company.Scope, userId);
                 }
-                catch (UnauthorizedAccessException) { continue; }
+                catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"reading assigned workflow evidence","task omitted because current access was refused", FailureSeverity.Degraded); continue; }
             }
             else if(row.EntityType=="AFE")
             {
@@ -176,7 +176,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                         throw new InvalidOperationException("The qualified investment source or assignment differs from its inbox candidate.");
                     row.InvestmentReviewRevision=assigned.Revision;row.EntityDescription=assigned.Source.Afe().Name;
                 }
-                catch(UnauthorizedAccessException){continue;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","task omitted because current access was refused", FailureSeverity.Degraded);continue;}
             }
             else if(row.EntityType=="DRILLING_DAILY_REPORT")
             {
@@ -205,7 +205,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     if(assigned.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(process)) || assigned.TaskRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(task)) || assigned.TaskId!=row.TaskId || assigned.StepInstanceId!=row.StepName || assigned.AssignedRole!=row.AssignedRole || assigned.Source.Program.PROGRAM_ID!=row.EntityId || assigned.PersonaCode!=persona)throw new InvalidOperationException("The qualified program source or assignment differs from its inbox candidate.");
                     row.ProgramReviewRevision=assigned.Revision;row.EntityDescription=assigned.Source.Program.PROGRAM_NAME;
                 }
-                catch(UnauthorizedAccessException){continue;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","task omitted because current access was refused", FailureSeverity.Degraded);continue;}
             }
             else if(row.EntityType=="FIELD_DEVELOPMENT_PLAN")
             {
@@ -219,11 +219,11 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     row.DevelopmentReviewRevision=assigned.Revision;
                     row.EntityDescription=assigned.Plan.FDP_NAME;
                 }
-                catch(UnauthorizedAccessException){continue;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","task omitted because current access was refused", FailureSeverity.Degraded);continue;}
             }
             else if (!(await resources.CheckAssetAccessAsync(userId, process.FieldId, "FIELD", "READ")).HasAccess ||
                 !(await resources.CheckAssetAccessAsync(userId, process.EntityId, process.EntityType, "READ")).HasAccess) continue;
-            if (!WorkflowTaskProcessAdmission.Matches(row, process, userId)) continue;
+            if (!WorkflowTaskProcessAdmission.Matches(failures, row, process, userId)) continue;
             var stepName=process!.StepInstances.Single(step=>step.StepInstanceId==row.StepName).StepName;
             row.StepDisplayName=string.IsNullOrWhiteSpace(stepName)?null:stepName;
             if(scopeKind=="COMPANY_ACCOUNTING" && row.EntityType is not ("JOURNAL_ENTRY" or "AR_PAYMENT"))row.AccountingStepReview=await accountingProcesses.ReviewAssignedStepEvidenceAsync(User,row,process,company.Scope,userId);
@@ -262,7 +262,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     if(row.EntityType is "JOURNAL_ENTRY" or "AR_PAYMENT"){var captured=row.EntityType=="AR_PAYMENT"?await accountingProcesses.ReadAssignedPaymentTaskAsync(User,row,company.Scope,userId):await accountingProcesses.ReadAssignedJournalTaskAsync(User,row,company.Scope,userId);process=captured.Process;journalReview=captured.Review;}
                     else process = await accountingProcesses.ReadAsync(User, row.WorkflowName, company.Scope, userId);
                 }
-                catch (UnauthorizedAccessException) { return null; }
+                catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"reading assigned workflow evidence","assigned work unavailable because current access was refused", FailureSeverity.Degraded); return null; }
             }
             else if(row.EntityType=="AFE")
             {
@@ -273,7 +273,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     if(assigned.Revision!=row.InvestmentReviewRevision || assigned.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(process)))
                         throw new InvalidOperationException("The qualified investment source changed during inbox readback.");
                 }
-                catch(UnauthorizedAccessException){return null;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","assigned work unavailable because current access was refused", FailureSeverity.Degraded);return null;}
             }
             else if(row.EntityType=="DRILLING_DAILY_REPORT")
             {
@@ -287,7 +287,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                         throw new InvalidOperationException("The qualified completion source or original process/task candidate changed during inbox readback.");
                     row.CompletionReviewRevision=assigned.Revision;row.EntityDescription=assigned.Original.Description;WorkflowInboxReview.RequireTask(row,closing.Roles);
                 }
-                catch(UnauthorizedAccessException){return null;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","assigned work unavailable because current access was refused", FailureSeverity.Degraded);return null;}
             }
             else if(row.EntityType=="DRILLING_OPERATION")
             {
@@ -304,7 +304,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     row.ExecutionAssignmentRevision=assigned.Revision;row.EntityDescription=assigned.Source.Basis.Source.Program.PROGRAM_NAME;
                     WorkflowInboxReview.RequireTask(row,closing.Roles);
                 }
-                catch(UnauthorizedAccessException){return null;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","assigned work unavailable because current access was refused", FailureSeverity.Degraded);return null;}
             }
             else if(row.EntityType=="DRILLING_PROGRAM")
             {
@@ -313,7 +313,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     var assigned=await programReviews.ReadAssignedProgramAsync(User,row.WorkflowName);assigned.Require(company.Scope,userId,row.WorkflowName);process=await processes.GetProcessInstanceAsync(row.WorkflowName);
                     if(assigned.Revision!=row.ProgramReviewRevision || assigned.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(process)))throw new InvalidOperationException("The qualified program source changed during inbox readback.");
                 }
-                catch(UnauthorizedAccessException){return null;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","assigned work unavailable because current access was refused", FailureSeverity.Degraded);return null;}
             }
             else if(row.EntityType=="FIELD_DEVELOPMENT_PLAN")
             {
@@ -324,7 +324,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     if(assigned.Revision!=row.DevelopmentReviewRevision || assigned.ProcessRevision!=ProcessDefinitionRevision.FromJson(System.Text.Json.JsonSerializer.Serialize(process)))
                         throw new InvalidOperationException("The qualified development review changed during inbox readback.");
                 }
-                catch(UnauthorizedAccessException){return null;}
+                catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"reading assigned workflow evidence","assigned work unavailable because current access was refused", FailureSeverity.Degraded);return null;}
             }
             else
             {
@@ -333,7 +333,7 @@ public sealed class WorkflowTasksController(RepositoryDbContext repository, ICro
                     !(await resources.CheckAssetAccessAsync(userId, process.FieldId, "FIELD", "READ")).HasAccess ||
                     !(await resources.CheckAssetAccessAsync(userId, process.EntityId, process.EntityType, "READ")).HasAccess) return null;
             }
-            if (!WorkflowTaskProcessAdmission.Matches(row, process, userId)) return null;
+            if (!WorkflowTaskProcessAdmission.Matches(failures, row, process, userId)) return null;
             if(!WorkflowTaskProcessAdmission.CompanyMatches(process!,company.Scope))throw new InvalidOperationException("The original maintenance company ownership changed during inbox review.");
             var stepName=process!.StepInstances.Single(step=>step.StepInstanceId==row.StepName).StepName;
             if(row.StepDisplayName!=(string.IsNullOrWhiteSpace(stepName)?null:stepName))

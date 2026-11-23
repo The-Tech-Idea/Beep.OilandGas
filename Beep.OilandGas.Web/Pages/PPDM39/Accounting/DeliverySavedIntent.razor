@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.ProductionAccounting.Models
@@ -53,7 +54,7 @@
             {
                 _reload=false;_review=null;_error=null;var snapshot=Company.Snapshot;var epoch=_epoch;var id=IntentId;if(snapshot.Selection is null)continue;
                 try{CompanyDeliverySavedWorkReview.RequireIntentId(id);await Authority();if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot)continue;var result=await Accounting.GetDeliverySavedIntentAsync(id);await Authority();if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || id!=IntentId)continue;result.Require(snapshot.Selection.Scope,snapshot.Selection.UserId,id);_review=CompanyInventorySourceReview.Copy(result);}
-                catch{if(!_disposed && epoch==_epoch && snapshot==Company.Snapshot && id==IntentId)_error="The original saved delivery command or current company/account/FIELD access could not be confirmed. Reload in its original context.";}
+                catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "DeliverySavedIntent.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch && snapshot==Company.Snapshot && id==IntentId)_error="The original saved delivery command or current company/account/FIELD access could not be confirmed. Reload in its original context.";}
             }while(_reload && !_disposed);
         }
         finally{_busy=false;}

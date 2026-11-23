@@ -43,7 +43,7 @@ public sealed class MaterialReservationLocalTimeTests
         ui.Services.AddSingleton(Mock.Of<IFieldSelectionContext>()); ui.Services.AddSingleton(Mock.Of<IAccountingServiceClient>());
         using var state = new InventoryWorkspaceState(company);
         await state.LoadMaterialReservationsAsync("field", _ => Task.FromResult(queue));
-        ui.Services.AddSingleton(state); ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(state); ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var panel = ui.RenderComponent<CompanyMaterialReservationQueuePanel>(parameters => parameters.AddCascadingValue(new CompanyEnvironmentDisplay(company.Version, review)));
         Assert.Contains("Valid UTC: 2026-01-01T12:00:00", panel.Markup);
         Assert.Contains("Valid in company time zone", panel.Markup);

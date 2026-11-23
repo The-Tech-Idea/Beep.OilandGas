@@ -37,7 +37,7 @@ public sealed class DrillingCompletionSubmissionStateTests
             Client.Setup(c=>c.GetCompletionRoutingAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>Routing);
             Client.Setup(c=>c.SubmitCompletionReviewAsync(It.IsAny<DrillingCompletionReviewStart>(),It.IsAny<CancellationToken>())).Returns(async(DrillingCompletionReviewStart input,CancellationToken _) =>{Native.Original=input;return await Native.Start();});
             Client.Setup(c=>c.RecoverCompletionReviewAsync(It.IsAny<DrillingCompletionReviewStart>(),It.IsAny<CancellationToken>())).Returns(async(DrillingCompletionReviewStart input,CancellationToken _) =>{Native.Original=input;return await Native.Start(true);});
-            State=new(Company,Personas.Object,Client.Object,Journal,(_,_,message)=>message);await State.LoadAsync(ReviewId);await State.InspectCompletionRoutingAsync();
+            State=new(Company,Personas.Object,Client.Object,Journal,TestFailures.Calls(new RecordingFailureReporter()));await State.LoadAsync(ReviewId);await State.InspectCompletionRoutingAsync();
         }
         internal void Freeze(string? reason="Independent inspection and test evidence review")=>State.PrepareCompletionReview(Routing.Options[0].ProcessId,Native.Original.SenderRole,reason);
         internal void ReadOnly(){var selected=Company.Selection!;Company.TrySelect(Company.Clear(),selected.UserId,new(selected.Scope,selected.Roles.ToArray(),["Drilling.View","Drilling.ViewDailyReports","Accounting.View","DevelopmentPlanning.View","Workflow.View"]));Personas.SetupGet(p=>p.CurrentProfile).Returns(new AppUserPersona{UserId=selected.UserId,PersonaCode="UNMAPPED"});}
@@ -107,7 +107,7 @@ public sealed class DrillingCompletionSubmissionStateTests
         using var f=new Fixture();await f.Prepare();
         using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();
         ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);
-        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(f.ReviewId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingDailyReports>();
         page.WaitForAssertion(()=>Assert.Contains("Inspect independent completion routing",page.Markup));

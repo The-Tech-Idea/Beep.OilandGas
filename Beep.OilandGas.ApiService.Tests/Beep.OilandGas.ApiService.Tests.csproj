@@ -29,6 +29,16 @@
   <ItemGroup>
     <!-- Same active guard evidence in normal API and bounded focused targets. -->
     <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyPPDMTestFixture.cs" Link="Infrastructure/CompanyPPDMTestFixture.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CurrentCompanyHttpAcceptanceCollection.cs" Link="Infrastructure/CurrentCompanyHttpAcceptanceCollection.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/RecordingFailureReporter.cs" Link="Infrastructure/RepositoryRecordingFailureReporter.cs" />
+    <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyIncidentCommandTests.cs" Link="CompanyIncidentCommandTests.cs" />
+    <Compile Include="../Beep.OilandGas.Web/Services/APInvoiceWorkspaceState*.cs" Link="Production/%(Filename)%(Extension)" />
+    <Compile Include="../Beep.OilandGas.Web/Services/PurchaseOrderWorkspaceState*.cs" Link="Production/%(Filename)%(Extension)" />
+    <Compile Include="../Beep.OilandGas.Web/Services/InventoryWorkspaceState*.cs" Link="Production/%(Filename)%(Extension)" />
+    <Compile Include="../Beep.OilandGas.Web/Services/OilGasCallFailures.cs" Link="Production/OilGasCallFailures.cs" />
+    <Compile Include="../Beep.OilandGas.Web/Services/OilGasApiFailures.cs" Link="Production/OilGasApiFailures.cs" />
+    <Compile Include="../Beep.OilandGas.Web/Services/OilGasApiException.cs" Link="Production/OilGasApiException.cs" />
+    <Compile Include="../Beep.OilandGas.Web.Auth.Tests/TestFailures.cs" Link="Infrastructure/TestFailures.cs" />
     <Compile Include="../Beep.OilandGas.Repository.Tests/CurrentFieldLifecycleGateTests.cs" Link="CurrentFieldLifecycleGateTests.cs" />
     <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyRetirementBoundaryTests.cs" Link="CompanyRetirementBoundaryTests.cs" />
     <Compile Include="../Beep.OilandGas.Repository.Tests/CompanyProductionBoundaryTests.cs" Link="CompanyProductionBoundaryTests.cs" />

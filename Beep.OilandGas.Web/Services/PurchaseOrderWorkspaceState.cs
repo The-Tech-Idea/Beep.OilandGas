@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Web.Services;
 public sealed partial class PurchaseOrderWorkspaceState:IDisposable
 {
     private readonly CompanyClientContext company;
+    private readonly OilGasCallFailures failures;
     private bool disposed;
     public int Version {get;private set;}
     public IReadOnlyList<Item>? Rows {get;private set;}
@@ -29,15 +30,18 @@ public sealed partial class PurchaseOrderWorkspaceState:IDisposable
         if(!Enum.IsDefined(queue))throw new ArgumentOutOfRangeException(nameof(queue));
         ReceiptFilter=queue;
     }
-    private static bool InQueue(ReceiptItem row,ReceivingQueue queue)=>queue switch
+    private static bool InQueue(ReceiptItem row,ReceivingQueue queue)
+    {
+        if(!Enum.IsDefined(queue))throw new ArgumentOutOfRangeException(nameof(queue));
+        return queue switch
     {
         ReceivingQueue.All=>true,
         ReceivingQueue.NeedsDecision=>row.ActiveIndicator=="Y" && row.Decision is null,
         ReceivingQueue.Accepted=>row.ActiveIndicator=="Y" && row.Decision?.Accepted>0,
         ReceivingQueue.Rejected=>row.ActiveIndicator=="Y" && row.Decision?.Rejected>0,
         ReceivingQueue.InactiveOrUnconfirmed=>row.ActiveIndicator!="Y",
-        _=>throw new ArgumentOutOfRangeException(nameof(queue))
     };
+    }
     public string? SourceRevision {get;private set;}
     public DateTimeOffset? RetrievedAtUtc {get;private set;}
     private readonly InventoryWorkspaceState? warehouse;
@@ -45,9 +49,9 @@ public sealed partial class PurchaseOrderWorkspaceState:IDisposable
     public string? WarehouseRecoveryRoute=>warehouse?.StockRecoveryRoute;
     public bool HasCompetingProcurementWork=>ReceiverBusy || HasUnconfirmedReceiverIntent || InventoryLinkBusy || LinkPreparationBlocked || LinkDecisionBlocked || LinkCycleBlocked;
     public event Action? WarehouseChanged;
-    public PurchaseOrderWorkspaceState(CompanyClientContext company,InventoryWorkspaceState? warehouse=null)
+    public PurchaseOrderWorkspaceState(OilGasCallFailures failures, CompanyClientContext company,InventoryWorkspaceState? warehouse=null)
     {
-        this.company=company;this.warehouse=warehouse;
+        this.company=company;this.failures=failures;this.warehouse=warehouse;
         if(warehouse is not null){warehouse.AttachProcurement(this,company);warehouse.StockChanged+=WarehouseWorkChanged;}
         company.Changed+=Clear;
     }
@@ -88,23 +92,23 @@ public sealed partial class PurchaseOrderWorkspaceState:IDisposable
     public void Dispose(){disposed=true;company.Changed-=Clear;if(warehouse is not null){warehouse.StockChanged-=WarehouseWorkChanged;warehouse.DetachProcurement(this);}Clear();}
     public sealed record LineItem(string Id,int? Number,string? Description,decimal? Quantity,decimal? UnitPrice,decimal? LineTotal,string? ActiveIndicator,string? QuantityUnit,string? InventoryItemId=null,LinkPreparationSummary? Preparation=null,bool HasPreparationEvidence=false,LinkDecisionSummary? InventoryDecision=null,bool HasDecisionEvidence=false);
     public sealed record LinkDecisionSummary(PurchaseOrderInventoryLinkDecision Decision,string Target,string Actor,DateTime RecordedAt,string Reason,string Intent);
-    private static LinkDecisionSummary? LinkDecision(CompanyScope scope,PO_LINE_ITEM line)
+    private LinkDecisionSummary? LinkDecision(CompanyScope scope,PO_LINE_ITEM line)
     {
         if(line.INVENTORY_LINK_DECISION_JSON is null)return null;
         try{var proof=PurchaseOrderInventoryLinkDecisionProof.Require(scope,line);return new(proof.Command.Decision,proof.Command.TargetItemId,proof.Command.ActorUserId,line.ROW_CHANGED_DATE!.Value,proof.Command.Reason,proof.Command.IntentId);}
-        catch(InvalidOperationException){return null;}
+        catch(InvalidOperationException error){failures.Told(error, "PurchaseOrderWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return null;}
     }
     public sealed record LinkPreparationSummary(string Target,string Actor,DateTime RecordedAt,string Reason,string Intent);
-    private static LinkPreparationSummary? Preparation(CompanyScope scope,PO_LINE_ITEM line)
+    private LinkPreparationSummary? Preparation(CompanyScope scope,PO_LINE_ITEM line)
     {
         if(line.INVENTORY_LINK_REVIEW_JSON is null)return null;
         try{var proof=PurchaseOrderInventoryLinkProposalProof.Require(scope,line);var original=line.INVENTORY_LINK_DECISION_JSON is null?line:PurchaseOrderInventoryLinkDecisionProof.Require(scope,line).Review.Purchase.Lines.Single(row=>row.PO_LINE_ITEM_ID==line.PO_LINE_ITEM_ID);return new(proof.Command.TargetItemId,proof.Command.ActorUserId,original.ROW_CHANGED_DATE!.Value,proof.Command.Reason,proof.Command.IntentId);}
-        catch(InvalidOperationException){return null;}
+        catch(InvalidOperationException error){failures.Told(error, "PurchaseOrderWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return null;}
     }
-    private static ReceiverDecision? Decision(CompanyScope scope,PO_RECEIPT row)
+    private ReceiverDecision? Decision(CompanyScope scope,PO_RECEIPT row)
     {
         try{var proof=PurchaseReceiptDecisionProof.Require(scope,row);return new(proof.Command.AcceptedQuantity,proof.Command.RejectedQuantity,proof.Command.ActorUserId,row.ROW_CHANGED_DATE!.Value,proof.Command.Reason);}
-        catch(InvalidOperationException){return null;}
+        catch(InvalidOperationException error){failures.Told(error, "PurchaseOrderWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return null;}
     }
     public sealed record ReceiverDecision(decimal Accepted,decimal Rejected,string Actor,DateTime RecordedAt,string Reason);
     public sealed record ReceiptItem(string Id,string LineId,int? LineNumber,DateTime? ReceiptDate,decimal? Quantity,string? ReceivedBy,string? Status,string? Description,string? ActiveIndicator,string? RecordedBy,DateTime? RecordedAt,string? ChangedBy,DateTime? ChangedAt,string? QuantityUnit,ReceiverDecision? Decision=null);

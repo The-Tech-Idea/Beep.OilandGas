@@ -12,7 +12,7 @@ using System.Data;
 
 namespace Beep.OilandGas.ApiService.Services;
 
-public sealed class SetupRepositoryConnectionSelectionService(IConfiguration configuration, IDMEEditor editor, ILogger<SetupRepositoryConnectionSelectionService>? logger = null)
+public sealed class SetupRepositoryConnectionSelectionService(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, IConfiguration configuration, IDMEEditor editor)
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
     public static string SettingsPath(IConfiguration configuration) => Path.Combine(
@@ -41,7 +41,10 @@ public sealed class SetupRepositoryConnectionSelectionService(IConfiguration con
         foreach (var name in names)
         {
             try { var candidate = BeepRepositoryConnectionSource.Candidate(editor, name); result.Add(new(name, candidate.Settings.Provider)); }
-            catch (Exception error) when (error is InvalidOperationException or ArgumentException or RefusalException) { }
+            catch (Exception error) when (error is InvalidOperationException or ArgumentException or RefusalException)
+            {
+                failures.ReportHandled(error, "reviewing a registered identity repository connection", "the connection is excluded from the available repository targets");
+            }
         }
         return result.OrderBy(x => x.ConnectionName, StringComparer.OrdinalIgnoreCase).ToArray();
     }
@@ -60,7 +63,7 @@ public sealed class SetupRepositoryConnectionSelectionService(IConfiguration con
         try { open = ConnectionProbe.Test(editor, copy) == ConnectionState.Open; }
         catch (Exception error) when (error is not OperationCanceledException)
         {
-            logger?.LogWarning("The setup connection probe failed ({ErrorType})", error.GetType().Name);
+            failures.ReportHandled(error, "testing the selected identity repository connection", "the connection test failed; selection is not confirmed");
             open = false;
         }
         await authority(); token.ThrowIfCancellationRequested();

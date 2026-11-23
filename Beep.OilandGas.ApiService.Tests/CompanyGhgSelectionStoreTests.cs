@@ -241,7 +241,7 @@ public sealed class CompanyGhgSelectionStoreTests
         var changed = SystemSetupIdentity.Prepare(new("TOOLS", "DEFAULT", "2", "{}", reviewed.Revision, Guid.NewGuid().ToString("N")), reviewed);
         var saved = CompanyEnvironmentIdentity.Prepare(Company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, reviewed.Revision, null);
         var resolver = new CompanyEnvironmentEffectiveResolver(new Companies(saved), new EnvironmentLayers(changed, null));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => new CompanyEnvironmentRuntime(resolver).VerifyAsync(Company, () => Task.CompletedTask));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => new CompanyEnvironmentRuntime(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), resolver).VerifyAsync(Company, () => Task.CompletedTask));
     }
 
     [Fact]
@@ -260,7 +260,7 @@ public sealed class CompanyGhgSelectionStoreTests
         var selection = await fixture.Store.SaveAsync(Company, "reviewer", request, fixture.Native.Authority);
         var selectionStore = new Mock<ICompanyGhgSelectionStore>();
         selectionStore.Setup(x => x.ReadAsync(Company, It.IsAny<Func<Task>>())).ReturnsAsync(selection);
-        var status = new CompanyGhgSelectionStatusReader(selectionStore.Object, fixture.Reader);
+        var status = new CompanyGhgSelectionStatusReader(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), selectionStore.Object, fixture.Reader);
         Assert.Equal("Current", (await status.ReadAsync(Company, fixture.Native.Authority)).Status);
         fixture.Shared.ReplacementBaseline = SystemSetupIdentity.Prepare(new("TOOLS", "DEFAULT", "2", "{}", "", Guid.NewGuid().ToString("N")), null);
         await Assert.ThrowsAsync<CompanyEnvironmentReviewRequiredException>(() => fixture.Reader.ReviewAsync(Company, "KW", fixture.Native.Authority));

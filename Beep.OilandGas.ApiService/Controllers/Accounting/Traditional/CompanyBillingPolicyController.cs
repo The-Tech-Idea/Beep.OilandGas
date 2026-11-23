@@ -14,7 +14,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 [ApiController]
 [Authorize]
 [Route("api/accounting/traditional/billing-policies")]
-public sealed class CompanyBillingPolicyController(AccountingPolicyService policies,ICompanyAccountingReadContext context,ILogger<CompanyBillingPolicyController> logger):ControllerBase
+public sealed class CompanyBillingPolicyController(AccountingPolicyService policies,ICompanyAccountingReadContext context,TheTechIdeaWeb.Diagnostics.IFailureReporter failures):ControllerBase
 {
     private static string Permission(string action)=>action switch
     {"DRAFT"=>PermissionConstants.Accounting.PrepareBillingPolicy,"APPROVE"=>PermissionConstants.Accounting.ApproveBillingPolicy,_=>throw new InvalidOperationException("An explicit billing policy action is required.")};
@@ -69,9 +69,9 @@ public sealed class CompanyBillingPolicyController(AccountingPolicyService polic
     private async Task<ActionResult> Execute(Func<Task<ActionResult>> action)
     {
         try{return await action();}
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company or setup request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company request","request forbidden");return Forbid();}
         catch(Exception changed) when(changed is InvalidOperationException or AggregateException)
-        {logger.LogWarning(changed,"The original company billing policy evidence or outcome is unconfirmed.");return Conflict(new{error="Billing policy evidence or outcome is unconfirmed. Retain and reconcile the original intent; review company authority, explicit rules and Beep schema before another command."});}
+        {failures.ReportHandled(changed,"The original company billing policy evidence or outcome is unconfirmed.","original company evidence or outcome unconfirmed; request refused");return Conflict(new{error="Billing policy evidence or outcome is unconfirmed. Retain and reconcile the original intent; review company authority, explicit rules and Beep schema before another command."});}
     }
 }

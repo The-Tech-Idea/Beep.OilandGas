@@ -31,7 +31,7 @@ using TheTechIdeaWeb.Diagnostics;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
-    public class PPDM39SetupService : IPPDM39SetupService, IPPDM39SchemaMigrationService
+    public partial class PPDM39SetupService : IPPDM39SetupService, IPPDM39SchemaMigrationService
     {
         private sealed class SchemaMigrationPlanSession
         {
@@ -70,6 +70,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly IBackgroundOperationQueue? _backgroundOperations;
         private readonly Func<IReadOnlyList<string>, string, Task<string>>? _migrationBindingFingerprint;
         private readonly Func<string, string>? _migrationTargetIdentity;
+        private readonly Func<LocalDbDatabaseTargetRequest, DatabaseTargetMigration>? _databaseTargetMigration;
 
         private IProgressTrackingService? _progressTracking;
         private string? _currentConnectionName;
@@ -85,7 +86,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             ModuleSetupOrchestrator? moduleSetupOrchestrator = null,
             IBackgroundOperationQueue? backgroundOperations = null,
             Func<IReadOnlyList<string>, string, Task<string>>? migrationBindingFingerprint = null,
-            Func<string, string>? migrationTargetIdentity = null)
+            Func<string, string>? migrationTargetIdentity = null,
+            Func<LocalDbDatabaseTargetRequest, DatabaseTargetMigration>? databaseTargetMigration = null)
         {
             _editor              = editor              ?? throw new ArgumentNullException(nameof(editor));
             _logger              = logger              ?? throw new ArgumentNullException(nameof(logger));
@@ -98,6 +100,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _backgroundOperations = backgroundOperations;
             _migrationBindingFingerprint = migrationBindingFingerprint;
             _migrationTargetIdentity = migrationTargetIdentity;
+            _databaseTargetMigration = databaseTargetMigration;
         }
 
         // ── PROGRESS TRACKING ─────────────────────────────────────────────────

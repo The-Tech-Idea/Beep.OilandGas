@@ -27,7 +27,7 @@ public sealed class DevelopmentReviewProgressStateTests
     {
         using var f=new DevelopmentAssignedReviewStateTests.Fixture();f.Company.TrySelect(f.Company.Clear(),"reviewer",new(f.Review.Scope.Company,["ConfiguredReviewRole"],["DevelopmentPlanning.View","Workflow.View"]));var progress=Progress(Source(f.Review),"reviewer");
         f.Client.Setup(client=>client.GetDraftReviewProgressAsync(progress.InstanceId,It.IsAny<CancellationToken>())).ReturnsAsync(progress);
-        using var state=new DevelopmentReviewProgressState(f.Company,f.Personas.Object,f.Client.Object,(_,_,text)=>text);await state.LoadAsync(progress.InstanceId);
+        using var state=new DevelopmentReviewProgressState(f.Company,f.Personas.Object,f.Client.Object,TestFailures.Calls(new RecordingFailureReporter()));await state.LoadAsync(progress.InstanceId);
         Assert.Null(state.Error);Assert.Equal("REVIEW_APPROVED",state.Current!.WorkflowState);state.Current.Plan.FDP_NAME="Consumer mutation";Assert.NotEqual("Consumer mutation",state.Current.Plan.FDP_NAME);
         f.Client.Verify(client=>client.GetAssignedDraftReviewAsync(It.IsAny<string>(),It.IsAny<CancellationToken>()),Times.Never);Assert.Null(f.Journal.DecisionOriginal);
     }
@@ -39,14 +39,14 @@ public sealed class DevelopmentReviewProgressStateTests
         if(fault=="changed-source")progress.Plan.FDP_NAME="Changed source";
         if(fault=="incomplete-audit"){progress=progress with{Stages=[progress.Stages[0] with{ApprovalId=null}]};progress=progress with{Revision=progress.ContentRevision()};}
         f.Client.Setup(client=>client.GetDraftReviewProgressAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).Returns(fault=="failed"?Task.FromException<DevelopmentReviewProgress>(new HttpRequestException()):Task.FromResult(fault=="empty"?null!:progress));
-        using var state=new DevelopmentReviewProgressState(f.Company,f.Personas.Object,f.Client.Object,(_,_,text)=>text);await state.LoadAsync(progress.InstanceId);Assert.Null(state.Current);Assert.NotNull(state.Error);Assert.False(state.Loading);
+        using var state=new DevelopmentReviewProgressState(f.Company,f.Personas.Object,f.Client.Object,TestFailures.Calls(new RecordingFailureReporter()));await state.LoadAsync(progress.InstanceId);Assert.Null(state.Current);Assert.NotNull(state.Error);Assert.False(state.Loading);
     }
     [Theory][InlineData("company")][InlineData("persona")][InlineData("route")]
     public async Task LateHistoricalOutcomeCannotPublishAfterContextOrRouteChanges(string change)
     {
         using var f=new DevelopmentAssignedReviewStateTests.Fixture();var progress=Progress(Source(f.Review),"reviewer");var paused=new TaskCompletionSource<DevelopmentReviewProgress>(TaskCreationOptions.RunContinuationsAsynchronously);
         f.Client.Setup(client=>client.GetDraftReviewProgressAsync(progress.InstanceId,It.IsAny<CancellationToken>())).Returns(paused.Task);
-        using var state=new DevelopmentReviewProgressState(f.Company,f.Personas.Object,f.Client.Object,(_,_,text)=>text);var load=state.LoadAsync(progress.InstanceId);
+        using var state=new DevelopmentReviewProgressState(f.Company,f.Personas.Object,f.Client.Object,TestFailures.Calls(new RecordingFailureReporter()));var load=state.LoadAsync(progress.InstanceId);
         if(change=="company")f.Company.Clear();else if(change=="persona")f.Personas.Raise(personas=>personas.Changed+=null);else await state.LoadAsync("another-process");
         paused.SetResult(progress);await load;Assert.Null(state.Current);Assert.False(state.Loading);
     }
@@ -55,7 +55,7 @@ public sealed class DevelopmentReviewProgressStateTests
     {
         using var f=new DevelopmentAssignedReviewStateTests.Fixture();var progress=Progress(Source(f.Review),"reviewer",outcome);
         f.Client.Setup(client=>client.GetDraftReviewProgressAsync(progress.InstanceId,It.IsAny<CancellationToken>())).ReturnsAsync(progress);
-        using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/development/fdp/history?processId="+progress.InstanceId);
         var page=ui.RenderComponent<HistoryPage>();page.WaitForAssertion(()=>Assert.Contains("approval-audit",page.Markup));
         Assert.Contains(outcome=="REVIEW_APPROVED"?"All configured review stages approved":"Review rejected",page.Markup);Assert.Contains("Original &lt;review&gt; concept",page.Markup);
@@ -72,7 +72,7 @@ public sealed class DevelopmentReviewProgressStateTests
     {
         using var f=new DevelopmentDraftWorkspaceTests.Fixture();var source=await Planner(f);var progress=Progress(source,"planner");
         f.Client.Setup(client=>client.GetDraftReviewStatusAsync(source.PlanId,source.Revision,It.IsAny<CancellationToken>())).Returns(result=="failed"?Task.FromException<DevelopmentPlanReviewStatus>(new HttpRequestException()):Task.FromResult(new DevelopmentPlanReviewStatus(source,result=="recorded"?progress:null,DateTimeOffset.UtcNow)));
-        using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Fields.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Fields.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/development/fdp/review?planId="+source.PlanId);var page=ui.RenderComponent<SourcePage>();
         page.WaitForAssertion(()=>Assert.Contains("Inspect recorded review outcome",page.Markup));page.FindAll("button").Single(button=>button.TextContent.Contains("Inspect recorded review outcome")).Click();
         page.WaitForAssertion(()=>Assert.Contains(result switch{"recorded"=>"approval-audit","absent"=>"Its absence was checked",_=>"could not be confirmed"},page.Markup));

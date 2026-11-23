@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Web.Services;
 public sealed partial class WorkOrderExecutionPermitDecisionState : IDisposable
 {
     private readonly CompanyClientContext company;
+    private readonly OilGasCallFailures failures;
     private CompanyWorkOrderExecutionPermitReference? proposal,origin;
     private CompanyClientSelection? originalCompany;
     private CompanyWorkOrderExecutionPermitDecision? decision;
@@ -30,10 +31,10 @@ public sealed partial class WorkOrderExecutionPermitDecisionState : IDisposable
         get
         {
             if(!CanReview || Review is null || company.Selection?.Permissions.Contains("Inventory.View",StringComparer.Ordinal)!=true)return false;
-            try{Review.RequireCurrentPrerequisiteAcceptance(DateTime.UtcNow);return true;}catch(InvalidOperationException){return false;}
+            try{Review.RequireCurrentPrerequisiteAcceptance(DateTime.UtcNow);return true;}catch(InvalidOperationException error){failures.Told(error, "WorkOrderExecutionPermitDecisionState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return false;}
         }
     }
-    public WorkOrderExecutionPermitDecisionState(CompanyClientContext company){this.company=company;company.Changed+=Invalidate;}
+    public WorkOrderExecutionPermitDecisionState(OilGasCallFailures failures, CompanyClientContext company){this.company=company;this.failures=failures;company.Changed+=Invalidate;}
     public void Attach(CompanyWorkOrderExecutionPermitReference? next,string? revision)
     {next?.Require();if(proposal==next && sourceRevision==revision)return;Invalidate();proposal=next;sourceRevision=revision;}
     private void Invalidate(){version++;ClearMaterialDisplay();ClearPersonnelDisplay();ClearPersonnelReleaseDisplay();ClearPersonnelAcceptanceDisplay();ClearDocumentAcceptanceDisplay();proposal=null;sourceRevision=null;Review=null;Receipt=null;if(confirmed){decision=null;reference=null;origin=null;originalCompany=null;confirmed=false;}Changed?.Invoke();}

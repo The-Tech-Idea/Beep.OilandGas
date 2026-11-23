@@ -38,7 +38,7 @@ public sealed class DevelopmentAfeStateTests
             State=NewState();
         }
         internal void Select(bool prepare)=>Company.TrySelect(Company.Clear(),"reviewer",new(Review.Source.Review.Scope.Company,["ConfiguredReviewRole"],prepare?["Accounting.View","DevelopmentPlanning.View","Workflow.View","Accounting.PrepareDevelopmentBudget"]:["Accounting.View","DevelopmentPlanning.View","Workflow.View"]));
-        internal DevelopmentAfeState NewState()=>new(Company,Baseline.Reader.Personas.Object,Client.Object,Journal,(_,_,text)=>text);
+        internal DevelopmentAfeState NewState()=>new(Company,Baseline.Reader.Personas.Object,Client.Object,Journal,TestFailures.Calls(new RecordingFailureReporter()));
         internal async Task Prepare(){await State.LoadAsync(Review.Source.Review.InstanceId);State.Prepare("statutory","AFE-2027-1","Explicit financial request",12.125m,new(2027,2,3),"Private budget basis / أساس الميزانية");Assert.NotNull(State.Prepared);}
         internal static DevelopmentAfeReceipt Receipt(DevelopmentAfeCommand original,bool recorded=true)=>new(original.Revision(),recorded?original.ToRecord(DateTime.UtcNow):null,DateTimeOffset.UtcNow);
         public void Dispose(){State.Dispose();Baseline.Dispose();}
@@ -122,7 +122,7 @@ public sealed class DevelopmentAfeStateTests
     }
     private static Bunit.TestContext Ui(Fixture f,bool source=true)
     {
-        var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/economics/afe"+(source?"?processId="+f.Review.Source.Review.InstanceId:""));return ui;
     }
 }

@@ -34,11 +34,11 @@ public sealed partial class AssetGrantAdministrationState
             ValidateReview(page, scope.Selection.Scope, user, offset);
             PublishReview(page, scope);
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "AssetGrantAdministrationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
             if (!Current()) return;
-            var sentence = explain(failure, "reviewing stored asset grants", "Stored grants could not be reviewed");
+            var sentence = explain.Explain(failure, "reviewing stored asset grants", "Stored grants could not be reviewed");
             if (Current()) Error = sentence;
         }
         finally { if (ReferenceEquals(pending, cancellation)) pending = null; if (Current()) { Busy = false; Changed?.Invoke(); } }
@@ -56,11 +56,11 @@ public sealed partial class AssetGrantAdministrationState
             if (!Current()) return;
             ValidateHistory(history, scope.Selection!.Scope, database, id, offset, 50); RetirementHistory = history;
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "AssetGrantAdministrationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
             if (!Current()) return;
-            var sentence = explain(failure, "reading grant retirement history", "Retirement history could not be loaded");
+            var sentence = explain.Explain(failure, "reading grant retirement history", "Retirement history could not be loaded");
             if (Current()) { ClearReview(); loadedScope = null; Error = sentence; }
         }
         finally { if (ReferenceEquals(pending, cancellation)) pending = null; if (Current()) { Busy = false; Changed?.Invoke(); } }
@@ -96,11 +96,11 @@ public sealed partial class AssetGrantAdministrationState
             PublishReview(page, scope); RetirementHistory = history; RetirementReason = "";
             Confirmation = "Grant retired; inactive status and retirement evidence confirmed.";
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "AssetGrantAdministrationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
             if (!Current()) return;
-            var sentence = explain(failure, "retiring stored asset access", "Grant retirement could not be confirmed. Reload and review before making further changes");
+            var sentence = explain.Explain(failure, "retiring stored asset access", "Grant retirement could not be confirmed. Reload and review before making further changes");
             if (Current()) { ClearReview(); loadedScope = null; Error = sentence; }
         }
         finally { if (ReferenceEquals(pending, cancellation)) pending = null; if (Current()) { Busy = false; Changed?.Invoke(); } }

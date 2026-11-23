@@ -125,7 +125,7 @@
     private async Task InspectEquipment(string id,string type){_facilities!.ClearEquipment();selectedFacilityId=id;selectedFacilityType=type;await _facilities.LoadEquipmentAsync(id,type);}
     private bool CanViewInvestment()=>Company.Selection is {} selected && new[]{"Accounting.View","DevelopmentPlanning.View","Workflow.View"}.All(permission=>selected.Permissions.Contains(permission,StringComparer.Ordinal));
     private bool CanViewFacilities()=>Company.Selection is {} selected && selected.Permissions.Contains("DevelopmentPlanning.View",StringComparer.Ordinal);
-    protected override void OnInitialized(){_facilities=new(Company,Fields,Development,Calls.Explain);_facilities.Changed+=Changed;}
+    protected override void OnInitialized(){_facilities=new(Company,Fields,Development,Calls);_facilities.Changed+=Changed;}
     protected override Task OnAfterRenderAsync(bool firstRender)=>firstRender?ReloadFacilities():Task.CompletedTask;
     private Task ReloadFacilities()=>CanViewFacilities()?_facilities!.LoadAsync():Task.CompletedTask;
     private void Changed(){if(_facilities?.Loaded!=true){selectedFacilityId=null;selectedFacilityType=null;}if(!disposed)_=InvokeAsync(StateHasChanged);}

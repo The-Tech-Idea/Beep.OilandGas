@@ -11,7 +11,7 @@ public sealed class LeasePortfolioState : IDisposable
 {
     private readonly CompanyClientContext company;
     private readonly ILeaseServiceClient api;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private CancellationTokenSource? pending;
     private long generation;
     private bool disposed;
@@ -33,7 +33,7 @@ public sealed class LeasePortfolioState : IDisposable
     public bool Current => !disposed && Loaded && !Loading && loadedScope == company.Snapshot;
     public bool HasUnconfirmedStatus => company.Selection is { } actor && uncertainStatus.Any(target => target.User == actor.UserId && target.Company == actor.Scope && target.Field == FieldId);
     public event Action? Changed;
-    public LeasePortfolioState(CompanyClientContext company, ILeaseServiceClient api, Func<Exception, string, string, string> explain)
+    public LeasePortfolioState(CompanyClientContext company, ILeaseServiceClient api, OilGasCallFailures explain)
     { this.company = company; this.api = api; this.explain = explain; company.Changed += CompanyChanged; }
 
     public async Task LoadAsync(Func<Task<string?>> selectedField)
@@ -57,8 +57,8 @@ public sealed class LeasePortfolioState : IDisposable
             foreach (var row in snapshots) identities.Add(row, (row.LeaseId, row.LandRightSubtype, row.FieldId, row.DateZoneId));
             Leases = snapshots; Loaded = true; loadedScope = captured; RetrievedAtUtc=DateTime.UtcNow;
         }
-        catch (OperationCanceledException) when (!IsCurrent(version, captured)) { }
-        catch (Exception error) { if (IsCurrent(version, captured)) Error = explain(error, "loading the lease portfolio", "Lease records could not be confirmed for this FIELD"); }
+        catch (OperationCanceledException canceled) when (!IsCurrent(version, captured)) { explain.Told(canceled, "LeasePortfolioState.CanceledRead", "The previous read ended because its context changed."); }
+        catch (Exception error) { if (IsCurrent(version, captured)) Error = explain.Explain(error, "loading the lease portfolio", "Lease records could not be confirmed for this FIELD"); }
         finally { if (IsCurrent(version, captured)) { pending = null; Loading = false; Changed?.Invoke(); } }
     }
     public bool Owns(LeaseSummary row) => Current && identities.TryGetValue(row, out var key) && key == (row.LeaseId, row.LandRightSubtype, row.FieldId, row.DateZoneId) && row.FieldId == FieldId;
@@ -77,7 +77,7 @@ public sealed class LeasePortfolioState : IDisposable
             if (result.LandRightSubtype != key.Subtype || result.DateZoneId != key.Zone) throw new InvalidOperationException("The lease interpretation changed.");
             Evaluation = LeaseSummaryValidator.Snapshot(result);
         }
-        catch (Exception error) { if (IsCurrent(version, captured)) CommandError = explain(error, "reading the lease record", "The lease record could not be confirmed"); }
+        catch (Exception error) { if (IsCurrent(version, captured)) CommandError = explain.Explain(error, "reading the lease record", "The lease record could not be confirmed"); }
         finally { if (IsCurrent(version, captured)) { Busy = false; Changed?.Invoke(); } }
     }
     public async Task UpdateStatusAsync(LeaseSummary row, string status)
@@ -98,7 +98,7 @@ public sealed class LeasePortfolioState : IDisposable
         catch (Exception error)
         {
             uncertainStatus.Add(target);
-            if (IsCurrent(version, captured)) CommandError = explain(error, "changing the lease status", "The status change is unconfirmed; review the original FIELD record before another status write");
+            if (IsCurrent(version, captured)) CommandError = explain.Explain(error, "changing the lease status", "The status change is unconfirmed; review the original FIELD record before another status write");
         }
         finally { if (IsCurrent(version, captured)) { Busy = false; Changed?.Invoke(); } }
     }

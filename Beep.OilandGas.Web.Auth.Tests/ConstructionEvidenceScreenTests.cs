@@ -30,7 +30,7 @@ public sealed class ConstructionEvidenceScreenTests
     private static FACILITY Row(string field=Field)=>new(){FACILITY_ID="facility-1",FACILITY_TYPE="PROCESSING",PRIMARY_FIELD_ID=field,CURRENT_OPERATOR="partner-operator",FACILITY_LONG_NAME="Recorded <plant>",ACTIVE_IND="Y"};
     private static void Configure(TestContext ui,CompanyClientContext company,IFieldSelectionContext fields,IDevelopmentServiceClient api,IPersonaContextService? personas=null,IAfeServiceClient? afe=null,IUnifiedTaskInboxService? inbox=null)
     {
-        ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(company);ui.Services.AddSingleton(fields);ui.Services.AddSingleton(api);ui.Services.AddSingleton<IPersonaContextService>(personas??Mock.Of<IPersonaContextService>());ui.Services.AddSingleton<IAfeServiceClient>(afe??Mock.Of<IAfeServiceClient>());ui.Services.AddSingleton<IUnifiedTaskInboxService>(inbox??Mock.Of<IUnifiedTaskInboxService>());ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(company);ui.Services.AddSingleton(fields);ui.Services.AddSingleton(api);ui.Services.AddSingleton<IPersonaContextService>(personas??Mock.Of<IPersonaContextService>());ui.Services.AddSingleton<IAfeServiceClient>(afe??Mock.Of<IAfeServiceClient>());ui.Services.AddSingleton<IUnifiedTaskInboxService>(inbox??Mock.Of<IUnifiedTaskInboxService>());ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
     }
     [Theory][InlineData(true)][InlineData(false)]
     public void ConstructionWorkspaceLoadsOnlyItsOwnPersonaAssignments(bool matchesWorkspace)

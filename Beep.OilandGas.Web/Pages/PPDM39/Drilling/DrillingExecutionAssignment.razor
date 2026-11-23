@@ -133,7 +133,7 @@
     [Parameter,SupplyParameterFromQuery(Name="reviewId")]public string? ReviewId{get;set;}
     private DrillingExecutionAssignmentState? _state;private bool disposed,interactive;private string workflow="",role="",reason="";
     private static string AssignmentUrl(string id)=>"/drilling/program-execution/assignment?reviewId="+Uri.EscapeDataString(id);
-    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
     protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
     private Task Reload(){workflow="";role="";reason="";return _state!.LoadAsync(ReviewId);}

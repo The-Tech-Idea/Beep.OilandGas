@@ -13,7 +13,7 @@ public sealed partial class DrillingExecutionAssignmentState : IDisposable
     private readonly IPersonaContextService personas;
     private readonly IDrillingServiceClient client;
     private readonly IDevelopmentDraftIntentStore journal;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private readonly RetainedOriginalFeedback feedback = new();
     private bool disposed, reading, writing, ready;
     private long generation, request;
@@ -44,7 +44,7 @@ public sealed partial class DrillingExecutionAssignmentState : IDisposable
     public bool CanRecover => !Busy && ready && CanView && Pending is not null &&
         pending!.Scope().Company == company.Selection!.Scope && pending.Scope().ActorUserId == company.Selection.UserId;
     public DrillingExecutionAssignmentState(CompanyClientContext company, IPersonaContextService personas, IDrillingServiceClient client,
-        IDevelopmentDraftIntentStore journal, Func<Exception,string,string,string> explain)
+        IDevelopmentDraftIntentStore journal, OilGasCallFailures explain)
     {
         this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;
         company.Changed+=Invalidate;personas.Changed+=Invalidate;
@@ -83,7 +83,7 @@ public sealed partial class DrillingExecutionAssignmentState : IDisposable
         }
         catch(Exception error)
         {
-            var text=explain(error,"loading original execution reporting responsibility","The recorded execution and configured reporting assignment could not be confirmed");
+            var text=explain.Explain(error,"loading original execution reporting responsibility","The recorded execution and configured reporting assignment could not be confirmed");
             if(Current()){review=null;Error=text;}
         }
         finally{if(Current()){reading=false;Changed?.Invoke();}}
@@ -98,7 +98,7 @@ public sealed partial class DrillingExecutionAssignmentState : IDisposable
             var original=new DrillingExecutionAssignment(Copy(review.Source)!,Copy(option)!,role!,review.SenderPersonaCode!,review.SenderAuthorityRevision!,Guid.NewGuid(),reason?.Trim()??"");
             original.Require();prepared=original;
         }
-        catch(Exception error){Error=explain(error,"preparing original reporting assignment","Choose the configured reporting role/recipients and enter an explicit assignment reason");}
+        catch(Exception error){Error=explain.Explain(error,"preparing original reporting assignment","Choose the configured reporting role/recipients and enter an explicit assignment reason");}
         Changed?.Invoke();
     }
     public void Cancel(){if(Busy || pending is not null)return;prepared=null;Changed?.Invoke();}
@@ -125,7 +125,7 @@ public sealed partial class DrillingExecutionAssignmentState : IDisposable
             Confirmation=result.Recorded?"The original reporting responsibility and configured persona tasks were confirmed recorded. This does not record a daily report, completion or handover.":
                 "This original reporting assignment was confirmed absent. Reload current source and recipients before preparing another.";
         }
-        catch(Exception error){var text=explain(error,recover?"recovering original reporting assignment":"recording reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering original reporting assignment":"recording reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;++request;Invalidate();}

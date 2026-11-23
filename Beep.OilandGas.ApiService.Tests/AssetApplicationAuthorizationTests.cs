@@ -87,5 +87,5 @@ public class AssetApplicationAuthorizationTests(ITestOutputHelper output)
         Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(), Mock.Of<IPPDMMetadataRepository>(),
         reader, Mock.Of<IApplicationRolePermissionStore>(),
         Mock.Of<Beep.OilandGas.Models.Data.AccessControl.IUserAssetAccessStore>(), () => throw new InvalidOperationException("Application roles must not resolve a module database."),
-            _ => throw new InvalidOperationException("Application roles must not query asset rows."));
+            _ => throw new InvalidOperationException("Application roles must not query asset rows."), Mock.Of<Beep.OilandGas.Models.Data.Lease.ICompanyFieldInterestReview>());
 }

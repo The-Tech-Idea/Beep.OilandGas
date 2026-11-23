@@ -9,8 +9,9 @@ public sealed class LeaseCreationState : IDisposable
 {
     private readonly CompanyClientContext company;
     private readonly ILeaseServiceClient api;
-    public LeaseCreationState(CompanyClientContext company, ILeaseServiceClient api)
-    { this.company = company; this.api = api; company.Changed += CompanyChanged; }
+    private readonly OilGasCallFailures failures;
+    public LeaseCreationState(CompanyClientContext company, ILeaseServiceClient api, OilGasCallFailures failures)
+    { this.company = company; this.api = api; this.failures = failures; company.Changed += CompanyChanged; }
     public event Action? Changed;
     private void CompanyChanged() => Changed?.Invoke();
     public void Dispose() => company.Changed -= CompanyChanged;
@@ -44,7 +45,7 @@ public sealed class LeaseCreationState : IDisposable
             reviewed = context; commandId = Guid.NewGuid();
             Draft = new() { CommandId = commandId, Context = reviewed, PropertyId = field };
         }
-        catch (Exception) { Error = "The creation context could not be reviewed. Select the company and field and try again."; }
+        catch (Exception error) { Error = failures.Explain(error, "reviewing lease creation", "The creation context could not be reviewed. Select the company and field and try again"); }
         finally { Busy = false; }
     }
     public async Task SubmitAsync(string field)
@@ -65,7 +66,7 @@ public sealed class LeaseCreationState : IDisposable
             if (id != intent.CommandId.ToString("N")) throw new InvalidOperationException("The registration receipt has a different identity.");
             Confirm(id);
         }
-        catch (Exception) { Error = "Registration is unconfirmed. Check the same intent before another write."; }
+        catch (Exception error) { Error = failures.Explain(error, "registering a lease", "Registration is unconfirmed. Check the same intent before another write"); }
         finally { Busy = false; }
     }
     public async Task ReconcileAsync(string field)
@@ -84,7 +85,7 @@ public sealed class LeaseCreationState : IDisposable
             if (receipt.State == "Recorded") Confirm(receipt.LeaseId!);
             else { RetryAvailable = true; Message = "No registration found. Retry will send the same unchanged intent."; }
         }
-        catch (Exception) { Error = "Registration could not be reconciled. Keep this intent and review the original records."; }
+        catch (Exception error) { Error = failures.Explain(error, "reconciling lease registration", "Registration could not be reconciled. Keep this intent and review the original records"); }
         finally { Busy = false; }
     }
     private void Confirm(string id) { ConfirmedLeaseId = id; pending = null; reviewed = null; RetryAvailable = false; Message = "Lease registration confirmed."; }

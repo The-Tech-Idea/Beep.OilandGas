@@ -30,7 +30,7 @@ public sealed class DevelopmentInvestmentAssignedStateTests
             Personas.SetupGet(value=>value.CurrentPersona).Returns(new AppPersona{Code="FINANCE",Name="Investment finance"});
             Personas.SetupGet(value=>value.CurrentProfile).Returns(new AppUserPersona{UserId="investor",PersonaCode="FINANCE"});Personas.Setup(value=>value.EnsureLoadedAsync()).Returns(Task.CompletedTask);
             Source.Base.Client.Setup(value=>value.ReadAssignedInvestmentAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>Review);
-            State=new(Source.Base.Company,Personas.Object,Source.Base.Client.Object,Source.Base.Journal,(_,_,message)=>message);
+            State=new(Source.Base.Company,Personas.Object,Source.Base.Client.Object,Source.Base.Journal,TestFailures.Calls(new RecordingFailureReporter()));
         }
         public void Dispose(){State.Dispose();Source.Dispose();}
     }
@@ -67,7 +67,7 @@ public sealed class DevelopmentInvestmentAssignedStateTests
     {
         using var f=new Fixture();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();
         ui.Services.AddSingleton(f.Source.Base.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Source.Base.Client.Object);
-        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Source.Base.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Source.Base.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/economics/afe?investmentHandoff="+Uri.EscapeDataString(f.Review.InstanceId));
         var page=ui.RenderComponent<Page>();
         page.WaitForAssertion(()=>Assert.Contains("Configured investment review",page.Markup));Assert.Contains(f.Review.Source.Afe().Number,page.Markup);Assert.Contains("Independent investment review",page.Markup);

@@ -41,7 +41,7 @@ public sealed class DrillingDailyReportStateTests
             Personas.Setup(p => p.EnsureLoadedAsync()).Returns(Task.CompletedTask);
             Client.Setup(c => c.GetDailyReportPageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => History);
             Client.Setup(c => c.GetDailyReportBasisAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => Native.Basis);
-            State = new(Company, Personas.Object, Client.Object, Journal, (_, _, text) => text);
+            State = new(Company, Personas.Object, Client.Object, Journal, TestFailures.Calls(new RecordingFailureReporter()));
         }
         internal async Task Inspect() { await State.LoadAsync(Native.Execution.Basis.ReviewInstanceId); await State.InspectAsync(); Assert.NotNull(State.Basis); }
         internal void Freeze(string? start = null, decimal? depth = 125, string? provenance = "Observed site log 471") => State.Prepare(
@@ -128,7 +128,7 @@ public sealed class DrillingDailyReportStateTests
         if (mode == "unavailable") f.Client.Setup(c => c.GetDailyReportPageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ThrowsAsync(new HttpRequestException());
         using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();
         ui.Services.AddSingleton(f.Company); ui.Services.AddSingleton(f.Personas.Object); ui.Services.AddSingleton(f.Client.Object);
-        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal); ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal); ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reports?reviewId=" + Uri.EscapeDataString(f.Native.Execution.Basis.ReviewInstanceId));
         var page = ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingDailyReports>();
         if (mode == "unavailable") { page.WaitForAssertion(() => Assert.Contains("could not be confirmed", page.Markup)); Assert.DoesNotContain("No observed reports", page.Markup); }
@@ -197,7 +197,7 @@ public sealed class DrillingDailyReportStateTests
         await f.State.SubmitAsync();Assert.NotNull(f.Journal.DailyReportOriginal);Assert.False(f.State.PendingTabCopyConfirmed);Assert.False(f.State.PendingSubmissionMayHaveBeenSent);
         Assert.Contains("No submission was sent",f.State.PendingExplanation);Assert.Contains("kept on this page",f.State.PendingTitle);
         f.Client.Verify(c=>c.RecordDailyReportAsync(It.IsAny<DrillingDailyReportInput>(),It.IsAny<CancellationToken>()),Times.Never());
-        f.State.Dispose();using var next=new DrillingDailyReportState(f.Company,f.Personas.Object,f.Client.Object,f.Journal,(_,_,text)=>text);
+        f.State.Dispose();using var next=new DrillingDailyReportState(f.Company,f.Personas.Object,f.Client.Object,f.Journal,TestFailures.Calls(new RecordingFailureReporter()));
         await next.LoadAsync(f.Native.Execution.Basis.ReviewInstanceId);Assert.True(next.PendingTabCopyConfirmed);Assert.True(next.PendingSubmissionMayHaveBeenSent);
         Assert.DoesNotContain("No submission was sent",next.PendingExplanation);Assert.True(next.CanRecover);
     }
@@ -220,7 +220,7 @@ public sealed class DrillingDailyReportStateTests
     {
         using var f=new Fixture();await f.Prepare();f.Journal.DailyReportOriginal=f.Native.Command;f.Journal.FailClear=true;
         f.Client.Setup(c=>c.RecoverDailyReportAsync(It.IsAny<DrillingDailyReportInput>(),It.IsAny<CancellationToken>())).ReturnsAsync(Receipt(f.Native.Command,recorded));
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reports?reviewId="+Uri.EscapeDataString(f.Native.Execution.Basis.ReviewInstanceId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingDailyReports>();page.WaitForAssertion(()=>Assert.Contains("Retained original drilling report",page.Markup));
         page.FindAll("button").Single(button=>button.TextContent.Contains("Recover original drilling report")).Click();

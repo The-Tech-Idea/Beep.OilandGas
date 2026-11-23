@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
 @page "/ppdm39/database-management"
@@ -9,6 +10,7 @@
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ILogger<DatabaseManagement> Logger
+@inject OilGasCallFailures Calls
 @inject IProgressTrackingClient ProgressClient
 @inject IDataManagementService DataManagementService
 @using Beep.OilandGas.Web.Components
@@ -239,8 +241,8 @@
             // Get current connection using DataManagementService
             _currentConnectionName = await DataManagementService.GetCurrentConnectionNameAsync();
         }
-        catch (Exception)
-        {
+        catch (Exception handledFailureAuto1)
+        { HandledFailures.ReportHandled(handledFailureAuto1, "DatabaseManagement.LoadConnections", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Snackbar.Add("Error loading connections.", Severity.Error);
         }
         finally
@@ -251,8 +253,8 @@
 
     private async Task OpenAddWizard()
     {
-        var parameters = new DialogParameters { { nameof(ConnectionSetupDialog.ConnectionOnly), true } };
-        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var parameters = new DialogParameters();
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = false, BackdropClick = false };
         
         var dialog = await DialogService.ShowAsync<ConnectionSetupDialog>("Add New Database Connection", parameters, options);
         var result = await dialog.Result;
@@ -290,8 +292,8 @@
                 await LoadConnections();
             }
         }
-        catch (Exception)
-        {
+        catch (Exception handledFailureAuto2)
+        { HandledFailures.ReportHandled(handledFailureAuto2, "DatabaseManagement.OpenEditWizard", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Snackbar.Add("Error loading connection.", Severity.Error);
         }
     }
@@ -315,7 +317,7 @@
             }
         }
         catch (Exception exception)
-        {
+        { HandledFailures.ReportHandled(exception, "DatabaseManagement.SetCurrentConnection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             // Handled: the switch failed or its result could not be read; the person is told and the list is unchanged.
             Logger.LogError(exception, "The current connection could not be set to {ConnectionName}.", connectionName);
             Snackbar.Add("Error setting current connection.", Severity.Error);
@@ -345,8 +347,8 @@
                     Snackbar.Add($"Failed to delete connection: {deleteResult.Message}", Severity.Error);
                 }
             }
-            catch (Exception)
-            {
+            catch (Exception handledFailureAuto4)
+            { HandledFailures.ReportHandled(handledFailureAuto4, "DatabaseManagement.DeleteConnection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
                 Snackbar.Add("Error deleting connection.", Severity.Error);
             }
         }
@@ -404,8 +406,8 @@
                 Snackbar.Add(response.Message ?? "Operation started", response.Success ? Severity.Info : Severity.Error);
             }
         }
-        catch (Exception)
-        {
+        catch (Exception handledFailureAuto5)
+        { HandledFailures.ReportHandled(handledFailureAuto5, "DatabaseManagement.CopyDatabase", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Snackbar.Add("Error starting database copy.", Severity.Error);
             _isCopying = false;
             _currentOperationId = null;
@@ -452,7 +454,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Progress error: {ex.Message}", Severity.Error);
+            Snackbar.Add(Calls.Explain(ex, "updating database-copy progress", "Database-copy progress could not be confirmed"), Severity.Error);
         }
     }
 
@@ -469,7 +471,7 @@
         if (!string.IsNullOrEmpty(_currentOperationId))
         {
             ProgressClient.OnProgressUpdate -= HandleProgressUpdate;
-            try { await ProgressClient.LeaveOperationAsync(_currentOperationId); } catch { }
+            try { await ProgressClient.LeaveOperationAsync(_currentOperationId); } catch (System.Exception handledFailureAuto6) { HandledFailures.ReportHandled(handledFailureAuto6, "DatabaseManagement.DisposeAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  }
             _currentOperationId = null;
         }
     }

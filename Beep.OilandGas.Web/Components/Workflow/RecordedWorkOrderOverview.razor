@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -82,7 +83,7 @@
                 throw new InvalidOperationException("The FIELD selection changed during the work-order review.");
             _rows = rows.OrderBy(row => row.InstanceId, StringComparer.Ordinal).ToArray(); _fieldId = fieldId;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Visible work-order overview could not be confirmed"); _message = "Visible work orders could not be confirmed. Check company and FIELD access, then reload."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "RecordedWorkOrderOverview.Load", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Visible work-order overview could not be confirmed"); _message = "Visible work orders could not be confirmed. Check company and FIELD access, then reload."; } }
         finally { if (Current()) _busy = false; }
     }
     public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); Company.Changed -= ContextChanged; Fields.CurrentFieldChanged -= FieldChanged; }

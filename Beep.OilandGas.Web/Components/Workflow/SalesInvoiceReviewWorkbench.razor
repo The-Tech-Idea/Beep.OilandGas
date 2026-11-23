@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -94,7 +95,7 @@
             if(InvoiceId is null)throw new InvalidOperationException();
             if(AssignedSource is not null){AssignedSource.Require(snapshot.Selection!.Scope,snapshot.Selection.UserId,AssignedSource.InstanceId);if(AssignedSource.InvoiceId!=InvoiceId)throw new InvalidOperationException("The assigned invoice changed.");}
             await State.LoadAsync(InvoiceId,Accounting,AssignedSource?.SourceRevision,AssignedSource?.Invoice.Revision);}
-        catch{if(!_disposed && epoch==_epoch)_error="Complete invoice review evidence could not be confirmed. Check selected company/account, invoice review authority and FIELD access, then reload.";}
+        catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "SalesInvoiceReviewWorkbench.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Complete invoice review evidence could not be confirmed. Check selected company/account, invoice review authority and FIELD access, then reload.";}
     }
     private Task Record()=>Submit(false);
     private Task Retry()=>Submit(true);
@@ -112,7 +113,7 @@
             }
             if(!_disposed && epoch==_epoch && snapshot==Company.Snapshot && State.Source?.Original.Invoice.REVIEW_WORKFLOW_JSON is not null)await RecordedOutcomeChanged.InvokeAsync();
         }
-        catch{if(!_disposed && epoch==_epoch)_error="Invoice disposition could not be confirmed. Check independent tax, charges and entitlement evidence, current decision and FIELD authority; retain and reconcile any original reviewer command.";}
+        catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "SalesInvoiceReviewWorkbench.Submit", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Invoice disposition could not be confirmed. Check independent tax, charges and entitlement evidence, current decision and FIELD authority; retain and reconcile any original reviewer command.";}
         finally{if(epoch==_epoch)ClearForm();}
     }
     private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}

@@ -19,12 +19,12 @@ public sealed class ScopedBackgroundOperationQueue : BackgroundService, IBackgro
     private readonly Queue<(WorkKey Key, BackgroundOperationStatus Status)> _completed = new();
     private readonly object _gate = new();
     private readonly IServiceScopeFactory _scopes;
-    private readonly Func<Exception, string, string, string> _reportFailure;
+    private readonly TheTechIdeaWeb.Diagnostics.IFailureReporter _failures;
     private readonly IHttpContextAccessor _http;
     private bool _stopping;
 
-    public ScopedBackgroundOperationQueue(IServiceScopeFactory scopes, Func<Exception, string, string, string> reportFailure, IHttpContextAccessor http)
-    { _scopes = scopes; _reportFailure = reportFailure ?? throw new ArgumentNullException(nameof(reportFailure)); _http = http ?? throw new ArgumentNullException(nameof(http)); }
+    public ScopedBackgroundOperationQueue(IServiceScopeFactory scopes, TheTechIdeaWeb.Diagnostics.IFailureReporter failures, IHttpContextAccessor http)
+    { _scopes = scopes; _failures = failures ?? throw new ArgumentNullException(nameof(failures)); _http = http ?? throw new ArgumentNullException(nameof(http)); }
 
     public bool TryEnqueue<TService, TState>(string key, TState state,
         Func<TService, TState, CancellationToken, Task> execute) where TService : notnull
@@ -109,7 +109,7 @@ public sealed class ScopedBackgroundOperationQueue : BackgroundService, IBackgro
                 // reference its failure is filed under.
                 catch (Exception ex)
                 {
-                    var reference = _reportFailure(ex, $"running background operation {work.Key}",
+                    var reference = _failures.ReportHandled(ex, $"running background operation {work.Key}",
                         "the operation is marked failed with this reference; the queue goes on with the next");
                     SetStatus(work.Key, BackgroundOperationState.Failed, $"Background execution failed (reference {reference}).");
                 }

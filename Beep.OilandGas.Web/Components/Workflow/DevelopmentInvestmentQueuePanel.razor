@@ -40,7 +40,7 @@
 </MudPaper>
 @code{
     private DevelopmentInvestmentQueueState? _state;private bool disposed;private string selectedField=string.Empty;
-    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls.Explain);_state.Changed+=Changed;Company.Changed+=ContextChanged;Personas.Changed+=ContextChanged;}
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls);_state.Changed+=Changed;Company.Changed+=ContextChanged;Personas.Changed+=ContextChanged;}
     protected override Task OnInitializedAsync()=>Load();
     private async Task Load()
     {

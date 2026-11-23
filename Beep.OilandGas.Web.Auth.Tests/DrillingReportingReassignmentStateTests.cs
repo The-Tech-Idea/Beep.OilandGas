@@ -47,7 +47,7 @@ public sealed class DrillingReportingReassignmentStateTests
             Client.Setup(c=>c.RecoverReportingReassignmentAsync(It.IsAny<DrillingReportingReassignment>(),It.IsAny<CancellationToken>())).ReturnsAsync((DrillingReportingReassignment original,CancellationToken _)=>Receipt(original));
             State=NewState();await State.LoadAsync(Original.Review.Responsibility.Root.InstanceId());State.Select(Original.Review.Destination.ProcessId,Original.Review.ManagerRole);await State.ReviewAsync();Assert.True(State.CanPrepare);
         }
-        internal DrillingReportingReassignmentState NewState()=>new(Company,Personas.Object,Client.Object,Journal,(_,_,fallback)=>fallback);
+        internal DrillingReportingReassignmentState NewState()=>new(Company,Personas.Object,Client.Object,Journal,TestFailures.Calls(new RecordingFailureReporter()));
         internal void Freeze()=>State.Prepare(DateTimeOffset.UtcNow.ToString("O"),"Transfer ongoing reporting to the reviewed team",true);
         internal static DrillingReportingReassignmentReceipt Receipt(DrillingReportingReassignment original)=>new(original.Revision(),original.Review.Responsibility.Root.InstanceId(),true,original.HistoryId(),original.ReassignedAtUtc,original.Review.Responsibility.Number+1,original.StepInstanceId(),original.TaskIds(),new('A',64),DateTimeOffset.UtcNow);
         public void Dispose(){State.Dispose();Company.Dispose();}
@@ -127,7 +127,7 @@ public sealed class DrillingReportingReassignmentStateTests
     [Fact]
     public async Task ActualTransferPageUsesConfiguredSelectionsExplicitFieldsAndRetainedConfirmation()
     {
-        using var f=new Flow();await f.Prepare();f.State.Dispose();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var f=new Flow();await f.Prepare();f.State.Dispose();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reporting/transfer?assignmentId="+Uri.EscapeDataString(f.Original.Review.Responsibility.Root.InstanceId()));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingReportingTransfer>();page.WaitForAssertion(()=>Assert.Contains("Current reporting generation 1",page.Markup));
         foreach(var field in page.FindComponents<MudSelect<string>>())await page.InvokeAsync(()=>field.Instance.ValueChanged.InvokeAsync(field.Instance.Label=="Receiving reporting workflow"?f.Original.Review.Destination.ProcessId:f.Original.Review.ManagerRole));

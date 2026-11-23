@@ -23,9 +23,9 @@ public sealed partial class StoredAssetGrantReviewTests
     private static AssetGrantRetirementPage HistoryResult(AssetGrantRetirement receipt) => new(ReviewScope, ReviewDatabase, receipt.GrantId, 0, 50, 1, [receipt]);
     private static void SelectReview(CompanyClientContext company, string companyId = "company", bool admin = true, string actor = "actor") =>
         Assert.True(company.TrySelect(company.Clear(), actor, new(new("tenant", companyId), admin ? ["Administrator"] : [], [])));
-    private static AssetGrantAdministrationState ReviewState(CompanyClientContext company, ReviewClient client, Func<Exception, string, string, string>? explain = null) =>
+    private static AssetGrantAdministrationState ReviewState(CompanyClientContext company, ReviewClient client, OilGasCallFailures? explain = null) =>
         new(company, (_, _) => throw new InvalidOperationException("Unexpected PPDM-visible read"), (_, _, _) => throw new InvalidOperationException("Unexpected grant"),
-            (_, _, _) => throw new InvalidOperationException("Unexpected key-based revoke"), explain ?? ((_, _, sentence) => sentence), client);
+            (_, _, _) => throw new InvalidOperationException("Unexpected key-based revoke"), explain ?? (Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter())), client);
 
     [Fact]
     public async Task Stored_review_accepts_historical_unknown_fields_but_never_enables_the_effective_grant_editor()
@@ -132,7 +132,8 @@ public sealed partial class StoredAssetGrantReviewTests
         client.Setup(value => value.ReviewStoredGrantsAsync("subject", 0, 50, It.IsAny<CancellationToken>())).Returns(() => phase == "inventory" || phase == "readback" && ++reads == 2 ? waitingInventory.Task : Task.FromResult(ReviewResult(row)));
         client.Setup(value => value.RetireStoredGrantAsync("historical", It.IsAny<RetireAssetGrantRequest>(), It.IsAny<CancellationToken>())).Returns(() => phase == "retire" ? waitingRetirement.Task : Task.FromResult(receipt));
         client.Setup(value => value.GetGrantRetirementsAsync("historical", 0, 50, It.IsAny<CancellationToken>())).Returns(() => phase == "history" ? waitingHistory.Task : Task.FromResult(HistoryResult(receipt)));
-        using var state = ReviewState(company, client.Object, (_, _, _) => throw new ObjectDisposedException("Old failure services")); state.SelectUser("subject");
+        var reporter = new Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter>(MockBehavior.Strict);
+        using var state = ReviewState(company, client.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(reporter.Object)); state.SelectUser("subject");
         Task pending;
         if (phase == "inventory") pending = state.LoadReviewAsync();
         else { await state.LoadReviewAsync(); state.RetirementReason = receipt.Reason; pending = state.RetireAsync(row); }

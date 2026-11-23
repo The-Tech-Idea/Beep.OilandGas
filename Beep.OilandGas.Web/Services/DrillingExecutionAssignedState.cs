@@ -10,14 +10,14 @@ public sealed partial class DrillingExecutionAssignedState : IDisposable
     private readonly CompanyClientContext company;
     private readonly IPersonaContextService personas;
     private readonly IDrillingServiceClient client;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private bool disposed;private long generation,request;
     private DrillingExecutionAssignedWork? current;
     public DrillingExecutionAssignedWork? Current=>current is null?null:CompanyInventorySourceReview.Copy(current);
     public bool Busy{get;private set;}
     public string? Error{get;private set;}
     public event Action? Changed;
-    public DrillingExecutionAssignedState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,Func<Exception,string,string,string> explain)
+    public DrillingExecutionAssignedState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,OilGasCallFailures explain)
     {this.company=company;this.personas=personas;this.client=client;this.explain=explain;company.Changed+=Invalidate;personas.Changed+=Invalidate;}
     private void Invalidate(){++generation;current=null;Error=null;Busy=false;ClearProgress();if(!disposed)Changed?.Invoke();}
     public async Task LoadAsync(string? processId)
@@ -36,7 +36,7 @@ public sealed partial class DrillingExecutionAssignedState : IDisposable
                 throw new InvalidOperationException("The original reporting task must match your current configured role and workspace.");
             current=CompanyInventorySourceReview.Copy(found);
         }
-        catch(Exception error){var text=explain(error,"loading assigned execution reporting","The individual reporting responsibility and original execution could not be confirmed");if(Active()){current=null;Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,"loading assigned execution reporting","The individual reporting responsibility and original execution could not be confirmed");if(Active()){current=null;Error=text;}}
         finally{if(Active()){Busy=false;Changed?.Invoke();}}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;++request;Invalidate();}

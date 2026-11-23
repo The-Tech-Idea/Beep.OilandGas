@@ -49,7 +49,7 @@ public sealed class APLinePurchaseSourceTests
     }
     [Fact] public async Task StateUsesOriginalInvoiceRevisionAndExistingFrozenPurchaseProjection()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
         await state.LoadPurchaseSourceAsync("line",(invoice,line,revision)=>{Assert.Equal("invoice",invoice);Assert.Equal("line",line);Assert.Equal(review.Invoice.Revision,revision);return Task.FromResult(review);});
         review.Order.Header.TOTAL_AMOUNT=90m;Assert.Equal(12m,state.LinkedOrder.Detail!.RecordedAmount);Assert.Equal("line",state.SelectedPurchaseLineId);
         Assert.Equal("/procurement/orders/order%2Fa%3Fb",state.LinkedOrder.Detail.Route);
@@ -57,21 +57,21 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData("failed")][InlineData("wrong")]
     public async Task FailedOrForeignReloadClearsOwnedOrderButPreservesTheAPSource(string fault)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));await state.LoadPurchaseSourceAsync("line",(_,_,_)=>Task.FromResult(review));
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));await state.LoadPurchaseSourceAsync("line",(_,_,_)=>Task.FromResult(review));
         await Assert.ThrowsAnyAsync<Exception>(()=>state.LoadPurchaseSourceAsync("line",(_,_,_)=>fault=="failed"?throw new HttpRequestException():Task.FromResult(review with{Order=Order(company:"other")})));
         Assert.Null(state.LinkedOrder.Detail);Assert.Null(state.SelectedPurchaseLineId);Assert.NotNull(state.Detail);
     }
     [Theory][InlineData("company")][InlineData("invoice")]
     public async Task ContextChangeCannotAdoptLatePurchaseEvidence(string change)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
         var pending=new TaskCompletionSource<APLinePurchaseSourceReview>();var load=state.LoadPurchaseSourceAsync("line",(_,_,_)=>pending.Task);
         if(change=="company"){company.Clear();Assert.True(company.TrySelect(company.Version,"accountant",new(Scope,[],[])));}else state.Clear();
         pending.SetResult(review);await load;Assert.Null(state.LinkedOrder.Detail);Assert.Null(state.SelectedPurchaseLineId);
     }
     [Fact] public async Task LaterPurchaseReviewCannotBeOverwrittenByAnEarlierResponse()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
         var pending=new TaskCompletionSource<APLinePurchaseSourceReview>();var earlier=state.LoadPurchaseSourceAsync("line",(_,_,_)=>pending.Task);
         await state.LoadPurchaseSourceAsync("line",(_,_,_)=>Task.FromResult(review with{Order=Order(amount:20m)}));pending.SetResult(review);await earlier;
         Assert.Equal(20m,state.LinkedOrder.Detail!.RecordedAmount);
@@ -84,7 +84,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData(true)][InlineData(false)]
     public async Task ActualPanelShowsOwnedSourceOnlyWithinTheProcurementUiGate(bool allowed)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));await state.LoadPurchaseSourceAsync("line",(_,_,_)=>Task.FromResult(review));
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Review();await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));await state.LoadPurchaseSourceAsync("line",(_,_,_)=>Task.FromResult(review));
         var services=new ServiceCollection();services.AddLogging();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddMudServices();await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         var html=await renderer.Dispatcher.InvokeAsync(async()=>{var rendered=await renderer.RenderComponentAsync<Fixtures.APInvoiceRenderHost>(ParameterView.FromDictionary(new Dictionary<string,object?>{{"Review",state},{"AllowPurchaseSource",allowed},{"OnReview",EventCallback.Factory.Create<string>(new object(),_=>Task.CompletedTask)}}));return rendered.ToHtmlString();});
         if(allowed){Assert.Contains("Review owned PO source",html);Assert.Contains("Owned purchase source for invoice line: line",html);Assert.Contains("/procurement/orders/order%2Fa%3Fb",html);Assert.Contains("no allocation to this invoice line is established",html);Assert.Contains("Currency: KWD",html);}
@@ -92,7 +92,7 @@ public sealed class APLinePurchaseSourceTests
     }
     [Fact] public async Task CompanyLandingFiltersOnlyRecordedStatusesAndFreezesRows()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);
         var first=Invoice().Invoice;first.ACTIVE_IND="Y";first.STATUS="RECORDED";
         var second=Invoice().Invoice;second.AP_INVOICE_ID="other/a?b";second.VENDOR_BA_ID="other-supplier";second.ACTIVE_IND="Y";second.STATUS=null;second.TOTAL_AMOUNT=null;
         await state.LoadCompanyAsync(vendor=>{Assert.Null(vendor);return Task.FromResult(new List<AP_INVOICE>{second,first});});
@@ -106,20 +106,20 @@ public sealed class APLinePurchaseSourceTests
     }
     [Fact] public async Task CompanyQueueAwayAndBackCannotPublishTheOldRead()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var pending=new TaskCompletionSource<List<AP_INVOICE>>();
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var pending=new TaskCompletionSource<List<AP_INVOICE>>();
         var read=state.LoadCompanyAsync(_=>pending.Task);company.Clear();Assert.True(company.TrySelect(company.Version,"accountant",new(Scope,[],[])));
         var invoice=Invoice().Invoice;invoice.ACTIVE_IND="Y";pending.SetResult([invoice]);await read;Assert.Null(state.Rows);
     }
     [Fact] public async Task FailedCompanyReloadClearsQueueAndStatus()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var invoice=Invoice().Invoice;invoice.ACTIVE_IND="Y";invoice.STATUS="RECORDED";
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var invoice=Invoice().Invoice;invoice.ACTIVE_IND="Y";invoice.STATUS="RECORDED";
         await state.LoadCompanyAsync(_=>Task.FromResult(new List<AP_INVOICE>{invoice}));state.SetStatusFilter("RECORDED");
         await Assert.ThrowsAsync<HttpRequestException>(()=>state.LoadCompanyAsync(_=>throw new HttpRequestException()));
         Assert.Null(state.Rows);Assert.Null(state.StatusFilter);Assert.Null(state.RetrievedAtUtc);
     }
     [Fact] public async Task ActualCompanyQueueRendersRecordedCountsStatusesAndInvoiceDrillDown()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var invoice=Invoice().Invoice;
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var invoice=Invoice().Invoice;
         invoice.AP_INVOICE_ID="invoice/a?b";invoice.ACTIVE_IND="Y";invoice.STATUS="RECORDED";
         await state.LoadCompanyAsync(_=>Task.FromResult(new List<AP_INVOICE>{invoice}));
         var services=new ServiceCollection();services.AddLogging();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddMudServices();
@@ -144,7 +144,7 @@ public sealed class APLinePurchaseSourceTests
     }
     [Fact] public async Task AllocationStateUsesBothDisplayedRevisionsAndFreezesHistory()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Allocated();await PrepareAllocation(state,review);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Allocated();await PrepareAllocation(state,review);
         await state.LoadReceiptAllocationsAsync((invoice,line,invoiceRevision,orderRevision)=>{
             Assert.Equal("invoice",invoice);Assert.Equal("line",line);Assert.Equal(state.SourceRevision,invoiceRevision);Assert.Equal(state.LinkedOrder.SourceRevision,orderRevision);return Task.FromResult(review);});
         review.Allocations[0].ALLOCATED_QUANTITY=99;Assert.Equal(2m,Assert.Single(state.Allocations!).Quantity);Assert.Equal("N",state.Allocations![0].ActiveIndicator);
@@ -153,7 +153,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData("company")][InlineData("invoice")][InlineData("purchase")]
     public async Task ChangedDisplayedSourceCannotAdoptLateAllocationHistory(string change)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Allocated();await PrepareAllocation(state,review);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Allocated();await PrepareAllocation(state,review);
         var pending=new TaskCompletionSource<APReceiptAllocationReview>();var load=state.LoadReceiptAllocationsAsync((_,_,_,_)=>pending.Task);
         if(change=="company"){company.Clear();Assert.True(company.TrySelect(company.Version,"accountant",new(Scope,[],[])));}
         if(change=="invoice")state.Clear();if(change=="purchase")await state.LoadPurchaseSourceAsync("line",(_,_,_)=>Task.FromResult(review.Source));
@@ -162,7 +162,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData("failed")][InlineData("order")]
     public async Task FailedOrChangedAllocationReloadClearsHistoryAndPreservesSources(string fault)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Allocated();await PrepareAllocation(state,review);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Allocated();await PrepareAllocation(state,review);
         await state.LoadReceiptAllocationsAsync((_,_,_,_)=>Task.FromResult(review));
         if(fault=="failed")await Assert.ThrowsAsync<HttpRequestException>(()=>state.LoadReceiptAllocationsAsync((_,_,_,_)=>throw new HttpRequestException()));
         else await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadReceiptAllocationsAsync((_,_,_,_)=>Task.FromResult(Allocated(changedOrder:true))));
@@ -170,7 +170,7 @@ public sealed class APLinePurchaseSourceTests
     }
     [Fact] public async Task OlderAllocationResponseCannotOverwriteNewerReviewedRows()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Allocated();await PrepareAllocation(state,review);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Allocated();await PrepareAllocation(state,review);
         var pending=new TaskCompletionSource<APReceiptAllocationReview>();var older=state.LoadReceiptAllocationsAsync((_,_,_,_)=>pending.Task);
         await state.LoadReceiptAllocationsAsync((_,_,_,_)=>Task.FromResult(Allocated(3m)));pending.SetResult(review);await older;
         Assert.Equal(3m,Assert.Single(state.Allocations!).Quantity);
@@ -178,7 +178,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData(true,false)][InlineData(false,false)][InlineData(true,true)][InlineData(false,true)]
     public async Task ActualAllocationPanelRequiresTheProcurementGateAndShowsReceiptHistory(bool allowed,bool empty)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Allocated();if(empty)review=APReceiptAllocationReview.Create(Scope,"accountant","invoice","line",review.Source.Invoice.Revision,review.Source,[]);await PrepareAllocation(state,review);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Allocated();if(empty)review=APReceiptAllocationReview.Create(Scope,"accountant","invoice","line",review.Source.Invoice.Revision,review.Source,[]);await PrepareAllocation(state,review);
         await state.LoadReceiptAllocationsAsync((_,_,_,_)=>Task.FromResult(review));
         var services=new ServiceCollection();services.AddLogging();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddMudServices();
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
@@ -195,7 +195,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData("DRAFT",false,2)][InlineData("POSTED",false,1)][InlineData("Unavailable",false,1)][InlineData(null,true,2)]
     public async Task RecordedStatusCountSelectsExactlyItsContributingCurrentInvoiceRows(string? status,bool unavailable,int count)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var rows=StatusQueue();
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var rows=StatusQueue();
         await state.LoadCompanyAsync(_=>Task.FromResult(rows));Assert.Equal(6,state.StatusCounts.Sum(bucket=>bucket.Count));
         var bucket=Assert.Single(state.StatusCounts,value=>value.Status==status && value.Unavailable==unavailable);Assert.Equal(count,bucket.Count);
         state.SetStatusFilter(status,unavailable);Assert.Equal(count,state.VisibleRows!.Count);
@@ -205,7 +205,7 @@ public sealed class APLinePurchaseSourceTests
     }
     [Fact] public async Task StatusSummaryRemainsFrozenAndFailedReloadCannotShowPreviousCounts()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var rows=StatusQueue();await state.LoadCompanyAsync(_=>Task.FromResult(rows));
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var rows=StatusQueue();await state.LoadCompanyAsync(_=>Task.FromResult(rows));
         rows[0].STATUS="OTHER";Assert.Equal(2,Assert.Single(state.StatusCounts,bucket=>bucket.Status=="DRAFT").Count);
         state.SetStatusFilter(null,true);await Assert.ThrowsAsync<HttpRequestException>(()=>state.LoadCompanyAsync(_=>throw new HttpRequestException()));
         Assert.Empty(state.StatusCounts);Assert.Null(state.VisibleRows);Assert.False(state.UnavailableStatusOnly);
@@ -214,7 +214,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData("DRAFT",false,"status-invoice-0",2)][InlineData(null,true,"status-invoice-3",2)][InlineData("Unavailable",false,"status-invoice-5",1)]
     public async Task ActualStatusSummaryRendersItsCountAndExactSelectedDrillDown(string? status,bool unavailable,string expectedId,int count)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);await state.LoadCompanyAsync(_=>Task.FromResult(StatusQueue()));state.SetStatusFilter(status,unavailable);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);await state.LoadCompanyAsync(_=>Task.FromResult(StatusQueue()));state.SetStatusFilter(status,unavailable);
         var services=new ServiceCollection();services.AddLogging();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddMudServices();
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         var html=await renderer.Dispatcher.InvokeAsync(async()=>{var component=await renderer.RenderComponentAsync<Fixtures.APInvoiceRenderHost>(ParameterView.FromDictionary(new Dictionary<string,object?>{{"Review",state}}));return System.Net.WebUtility.HtmlDecode(component.ToHtmlString());});
@@ -229,7 +229,7 @@ public sealed class APLinePurchaseSourceTests
     }
     [Fact] public async Task ProposalStateRetainsExactInputAndFrozenReviewWithoutAllocatingAnything()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);await PrepareProposal(state);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);await PrepareProposal(state);
         await state.ReviewAllocationProposalAsync((invoice,line,proposal)=>{
             Assert.Equal("invoice",invoice);Assert.Equal("line",line);Assert.Equal(1m,proposal.Quantity);Assert.Equal("bbl",proposal.Unit);
             return Task.FromResult(APReceiptAllocationProposalReview.Create(Scope,"accountant",invoice,line,proposal,Allocated()));});
@@ -239,14 +239,14 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData("input")][InlineData("company")][InlineData("allocations")]
     public async Task ProposalChangesDiscardLateReviewedInput(string change)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);await PrepareProposal(state);var pending=new TaskCompletionSource<APReceiptAllocationProposalReview>();APReceiptAllocationProposal? captured=null;
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);await PrepareProposal(state);var pending=new TaskCompletionSource<APReceiptAllocationProposalReview>();APReceiptAllocationProposal? captured=null;
         var load=state.ReviewAllocationProposalAsync((_,_,proposal)=>{captured=proposal;return pending.Task;});
         if(change=="input")state.SetProposalQuantity(2m);if(change=="company")company.Clear();if(change=="allocations")state.ClearReceiptAllocations();
         pending.SetResult(APReceiptAllocationProposalReview.Create(Scope,"accountant","invoice","line",captured!,Allocated()));await load;Assert.Null(state.ReviewedProposal);
     }
     [Fact] public async Task FailedProposalReloadClearsReviewAndRetainsExplicitPreparerInput()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);await PrepareProposal(state);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);await PrepareProposal(state);
         await state.ReviewAllocationProposalAsync((invoice,line,proposal)=>Task.FromResult(APReceiptAllocationProposalReview.Create(Scope,"accountant",invoice,line,proposal,Allocated())));
         await Assert.ThrowsAsync<HttpRequestException>(()=>state.ReviewAllocationProposalAsync((_,_,_)=>throw new HttpRequestException()));
         Assert.Null(state.ReviewedProposal);Assert.Equal(1m,state.ProposalQuantity);Assert.Equal("receipt",state.ProposalReceiptId);Assert.NotNull(state.Allocations);
@@ -254,7 +254,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData("bbl")][InlineData("m³")]
     public async Task ActualProposalReviewRendersFrozenReceiptContributorsAndExactInvoiceLink(string unit)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);await PrepareProposal(state);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);await PrepareProposal(state);
         var source=Allocated();var header=System.Text.Json.JsonSerializer.Deserialize<AP_INVOICE>(System.Text.Json.JsonSerializer.Serialize(source.Source.Invoice.Invoice))!;
         header.AP_INVOICE_ID="other/invoice%2F";
         var invoice=APInvoiceSourceReview.Create(Scope,"accountant",header,[new(){AP_INVOICE_ID=header.AP_INVOICE_ID,AP_INVOICE_LINE_ID="other-line",PURCHASE_ORDER_ID=source.Source.Order.Header.PURCHASE_ORDER_ID,PO_LINE_ITEM_ID=source.Source.Invoice.Lines[0].PO_LINE_ITEM_ID}]);
@@ -280,7 +280,7 @@ public sealed class APLinePurchaseSourceTests
     [Theory][InlineData(true)][InlineData(false)]
     public async Task ActualProposalFormIsGatedAndExplainsTheReadOnlyReview(bool allowed)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);await PrepareProposal(state);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);await PrepareProposal(state);
         await state.ReviewAllocationProposalAsync((invoice,line,proposal)=>Task.FromResult(APReceiptAllocationProposalReview.Create(Scope,"accountant",invoice,line,proposal,Allocated())));
         var services=new ServiceCollection();services.AddLogging();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddMudServices();
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());

@@ -44,7 +44,7 @@ public sealed class DrillingReportingClosureStateTests
         f.Personas.SetupGet(p=>p.CurrentPersona).Returns((AppPersona?)null);
         status.Require(f.Company.Selection!.Scope,actor,original.Review.Responsibility.Root.InstanceId());
         f.Client.Setup(client=>client.GetReportingResponsibilityAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(status);
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(original.Review.Responsibility.Root.InstanceId()));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingReportingResponsibility>();page.WaitForAssertion(()=>Assert.Contains("Recorded reporting closure",page.Markup));
         Assert.Contains("Closed reporting responsibility",page.Markup);Assert.Contains("Last accountable manager",page.Markup);Assert.Contains("Actual reported spud",page.Markup);Assert.Contains(original.Review.Evidence.Acceptance.Source.History.Execution.Recorded!.DRILLING_OPERATION_ID,page.Markup);Assert.Contains("Pending reporting tasks 0",page.Markup);
@@ -60,7 +60,7 @@ public sealed class DrillingReportingClosureStateTests
         review=review with{Revision=review.ContentRevision()};f.Journal.ReportingReassignmentOriginal=new(review,Guid.NewGuid(),DateTimeOffset.UtcNow,"Current manager takeover of continuing reporting",true);
         f.Client.Invocations.Clear();await f.State.LoadAsync(close.Review.Responsibility.Root.InstanceId());Assert.Equal(close.Review.Responsibility.Root.InstanceId(),f.State.BlockedTransferId);Assert.False(f.State.CanInspect);
         f.Client.Verify(c=>c.GetReportingResponsibilityAsync(It.IsAny<string>(),It.IsAny<CancellationToken>()),Times.Never());
-        f.Journal.ReportingReassignmentOriginal=null;f.Journal.ReportingClosureOriginal=close;using var transfer=new DrillingReportingReassignmentState(f.Company,f.Personas.Object,f.Client.Object,f.Journal,(_,_,fallback)=>fallback);
+        f.Journal.ReportingReassignmentOriginal=null;f.Journal.ReportingClosureOriginal=close;using var transfer=new DrillingReportingReassignmentState(f.Company,f.Personas.Object,f.Client.Object,f.Journal,TestFailures.Calls(new RecordingFailureReporter()));
         await transfer.LoadAsync(close.Review.Responsibility.Root.InstanceId());Assert.Equal(close.Review.Responsibility.Root.InstanceId(),transfer.BlockedClosureId);Assert.False(transfer.CanReview);
         f.Client.Verify(c=>c.GetReportingReassignmentCatalogAsync(It.IsAny<string>(),It.IsAny<CancellationToken>()),Times.Never());
         var tab=new DevelopmentDraftIntentStoreTests.TabStorage();var store=new DevelopmentDraftIntentStore(new ProtectedSessionStorage(tab,new EphemeralDataProtectionProvider()));
@@ -92,7 +92,7 @@ public sealed class DrillingReportingClosureStateTests
             {if(Server is not null)Assert.Equal(value.Revision(),Server.Revision());return Receipt(value,Server is not null);});
             State=NewState();await State.LoadAsync(Original.Review.Responsibility.Root.InstanceId(),Original.Review.Evidence.Acceptance.InstanceId);await State.InspectAsync();Assert.True(State.CanPrepare);
         }
-        internal DrillingReportingClosureState NewState()=>new(Company,Personas.Object,Client.Object,Journal,(_,_,message)=>message);
+        internal DrillingReportingClosureState NewState()=>new(Company,Personas.Object,Client.Object,Journal,TestFailures.Calls(new RecordingFailureReporter()));
         internal DrillingReportingClosureStatus Status()
         {
             var value=new DrillingReportingClosureStatus(Original.Review.Responsibility,Original.Review.Evidence.Acceptance.Source.History.Execution,[],Server,new('C',64),"",DateTimeOffset.UtcNow);
@@ -193,7 +193,7 @@ public sealed class DrillingReportingClosureStateTests
     }
     [Theory,InlineData(false),InlineData(true)]public async Task ActualManagementPageConfirmsOriginalAndRecoversAfterWholeOwnerReload(bool loseAcknowledgement)
     {
-        using var f=new Fixture();await f.Prepare();f.State.Dispose();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var f=new Fixture();await f.Prepare();f.State.Dispose();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(f.Original.Review.Responsibility.Root.InstanceId())+"&completionId="+Uri.EscapeDataString(f.Original.Review.Evidence.Acceptance.InstanceId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingReportingResponsibility>();page.WaitForAssertion(()=>Assert.Contains("Current reporting responsibility",page.Markup));
         await page.FindAll("button").Single(button=>button.TextContent=="Check accepted completion for closure").ClickAsync(new MouseEventArgs());page.WaitForAssertion(()=>Assert.Contains("Current accepted completion checked",page.Markup));
@@ -231,7 +231,7 @@ public sealed class DrillingReportingClosureStateTests
         var selected=f.Company.Selection!;f.Company.TrySelect(f.Company.Clear(),selected.UserId,new(selected.Scope,[responsibility.ManagerRole],selected.Permissions.ToArray()));
         f.Client.Setup(client=>client.GetReportingResponsibilityAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(status);
         f.Client.Setup(client=>client.ReviewReportingClosureAsync(It.IsAny<string>(),It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(review);
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/reporting?assignmentId="+Uri.EscapeDataString(root.InstanceId())+"&completionId="+Uri.EscapeDataString(initial.Evidence.Acceptance.InstanceId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingReportingResponsibility>();
         page.WaitForAssertion(()=>Assert.Contains("Recorded reporting transfers",page.Markup));Assert.Contains("Generation 2",page.Markup);Assert.Contains("ReplacementManagementRole",page.Markup);Assert.Contains("REPLACEMENT-CREW",page.Markup);Assert.Contains("Pending reporting tasks 1",page.Markup);

@@ -75,7 +75,7 @@
 @code{
     [Parameter,EditorRequired]public string ProcessId{get;set;}=default!;[Parameter,EditorRequired]public string AfeId{get;set;}=default!;[Parameter]public DevelopmentInvestmentRoutingReview? Review{get;set;}
     private DevelopmentInvestmentHandoffState? _state;private string? process,afe,workflow;private bool disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls);_state.Changed+=Changed;}
     protected override async Task OnParametersSetAsync(){if(process!=ProcessId || afe!=AfeId){process=ProcessId;afe=AfeId;workflow=null;await _state!.LoadAsync(ProcessId,AfeId);}_state!.UseReview(Review);}
     private async Task ReloadOriginal(){await _state!.LoadAsync(ProcessId,AfeId);_state.UseReview(Review);await _state.ReadStatusAsync();}
     private static string ProgressText(string state)=>state switch{

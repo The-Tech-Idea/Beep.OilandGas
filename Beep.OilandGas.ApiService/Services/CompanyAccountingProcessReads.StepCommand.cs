@@ -70,7 +70,7 @@ public sealed partial class CompanyAccountingProcessReads
                 if(returning){step=System.Text.Json.JsonSerializer.Deserialize<ProcessStepInstance>(System.Text.Json.JsonSerializer.Serialize(step))!;step.Status=StepStatus.PENDING;}
             }
             var principal=new ClaimsPrincipal(new ClaimsIdentity(roles.Where(user.IsInRole).Select(role=>new Claim(ClaimTypes.Role,role)),"company-command"));
-            if(!ProcessStepRoleChecks.CanAct(principal,review.ActorUserId,instance,step,definition,template))throw new UnauthorizedAccessException("The current role or independent actor refuses the original step.");
+            if(!ProcessStepRoleChecks.CanAct(failures, principal,review.ActorUserId,instance,step,definition,template))throw new UnauthorizedAccessException("The current role or independent actor refuses the original step.");
             await Guard();return instance;
         }
         var retained=await commands.GetRecordedCompanyAccountingStepCommandAsync(review.InstanceId);

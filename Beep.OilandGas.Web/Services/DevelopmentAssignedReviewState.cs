@@ -12,7 +12,7 @@ public sealed partial class DevelopmentAssignedReviewState : IDisposable
     private readonly CompanyClientContext company;
     private readonly IPersonaContextService personas;
     private readonly IDevelopmentServiceClient client;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private readonly IDevelopmentDraftIntentStore journal;
     private long requestVersion,generation;
     private bool disposed;
@@ -25,7 +25,7 @@ public sealed partial class DevelopmentAssignedReviewState : IDisposable
         .All(permission=>selected.Permissions.Contains(permission,StringComparer.Ordinal));
     public event Action? Changed;
     private static T Copy<T>(T value)=>JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value))!;
-    public DevelopmentAssignedReviewState(CompanyClientContext company,IPersonaContextService personas,IDevelopmentServiceClient client,IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+    public DevelopmentAssignedReviewState(CompanyClientContext company,IPersonaContextService personas,IDevelopmentServiceClient client,IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {
         this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;
         company.Changed+=CompanyChanged;personas.Changed+=PersonaChanged;
@@ -63,7 +63,7 @@ public sealed partial class DevelopmentAssignedReviewState : IDisposable
                 throw new InvalidOperationException("The development review belongs to another current role or workspace.");
             current=result;
         }
-        catch(Exception error){var text=explain(error,"opening assigned development review","The assigned development task and original source could not be confirmed");if(CurrentRequest())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"opening assigned development review","The assigned development task and original source could not be confirmed");if(CurrentRequest())Error=text;}
         finally{if(CurrentRequest()){Loading=false;Changed?.Invoke();}}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=CompanyChanged;personas.Changed-=PersonaChanged;++requestVersion;Invalidate();}

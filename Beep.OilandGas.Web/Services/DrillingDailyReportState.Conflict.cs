@@ -25,7 +25,7 @@ public sealed partial class DrillingDailyReportState
         }
         catch (Exception error)
         {
-            var text = explain(error, "inspecting competing observed report", "The original absence and different recorded observations are unconfirmed. Preserve the original");
+            var text = explain.Explain(error, "inspecting competing observed report", "The original absence and different recorded observations are unconfirmed. Preserve the original");
             if (Current()) Error = text;
         }
         finally { if (Current()) { reading = false; Changed?.Invoke(); } }
@@ -51,7 +51,7 @@ public sealed partial class DrillingDailyReportState
         }
         catch (Exception error)
         {
-            var text = explain(error, "acknowledging competing observed report", fallback);
+            var text = explain.Explain(error, "acknowledging competing observed report", fallback);
             if (Current()) { originalFeedback.Failed(); Error = text; }
         }
         finally { writing = false; if (!disposed) Changed?.Invoke(); }

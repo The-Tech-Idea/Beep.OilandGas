@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -579,8 +580,8 @@
                     result.ProcessInstanceId,
                     _decisionNote));
         }
-        catch (Exception)
-        {
+        catch (Exception handledFailureAuto1)
+        { HandledFailures.ReportHandled(handledFailureAuto1, "InterventionDecisions.TransitionToDecommissioning", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Snackbar.Add("Decommissioning handoff failed.", Severity.Error);
         }
     }

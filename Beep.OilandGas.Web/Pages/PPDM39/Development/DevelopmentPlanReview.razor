@@ -148,7 +148,7 @@
     [Parameter, SupplyParameterFromQuery(Name="planId")] public string? PlanId{get;set;}
     private DevelopmentDraftWorkspaceState? _state;
     private bool _disposed;
-    protected override void OnInitialized(){_state=new(Company,Fields,Development,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Fields,Development,Journal,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>Reload();
     private Task InspectStatus()=>_state!.InspectReviewStatusAsync();
     private Task Reload(){if(string.IsNullOrWhiteSpace(PlanId)){_state!.Clear();return Task.CompletedTask;}return _state!.LoadAsync(PlanId);}

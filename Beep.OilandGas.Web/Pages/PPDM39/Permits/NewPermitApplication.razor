@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.PermitsAndApplications.Models
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -81,14 +82,14 @@
     private PermitApplicationCommandState _state=null!;private PermitApplicationCreationReview? _shown;
     private string _type="",_country="",_region="",_authority="",_applicant="",_well="",_facility="",_facilityType="",_description="",_reason="",_message="";
     private bool _confirmed,_disposed,_initializing;private long _seen=-1,_attempted=-1;
-    protected override void OnInitialized(){_state=new(Company,Fields,Authentication,PermitClient,Originals);_state.SetCreation();_state.Changed+=Changed;Sync();}
+    protected override void OnInitialized(){_state=new(Calls,Company,Fields,Authentication,PermitClient,Originals);_state.SetCreation();_state.Changed+=Changed;Sync();}
     private static string? Optional(string value)=>string.IsNullOrWhiteSpace(value)?null:value.Trim();
     private PermitApplicationCreationProposal? Proposal()
     {
         if(!Enum.TryParse<PermitApplicationType>(_type,out var type) || !Enum.TryParse<Country>(_country,out var country) ||
             !Enum.TryParse<StateProvince>(_region,out var region) || !Enum.TryParse<RegulatoryAuthority>(_authority,out var authority))return null;
         var proposal=new PermitApplicationCreationProposal(new(type,authority,country,region,_applicant.Trim(),Optional(_description)),Optional(_well),Optional(_facility),Optional(_facilityType));
-        try{proposal.Require();return proposal;}catch(InvalidOperationException){return null;}
+        try{proposal.Require();return proposal;}catch(InvalidOperationException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "NewPermitApplication.Proposal", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); return null;}
     }
     private bool CanCreate=>_state.CanPrepare("CREATE_DRAFT") && Proposal()==_state.CreationReview?.Proposal && _confirmed && _reason.Trim().Length is >=20 and <=2000;
     private void Sync()

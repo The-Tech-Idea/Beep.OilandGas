@@ -26,16 +26,6 @@ using Xunit;
 namespace Beep.OilandGas.Repository.Tests;
 public sealed partial class CurrentFieldLifecycleGateTests
 {
-    // Explicit authentication seam; standard role claims come from the actual selected app company, not a token.
-    private sealed class HandoffRoleBridge(CompanyModuleConnection company):IClaimsTransformation
-    {
-        public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal user)
-        {
-            if(user.Identity?.IsAuthenticated!=true)return user;
-            var selected=await company.RefreshCompanyAsync();var identity=new ClaimsIdentity("handoff-role-fixture");
-            foreach(var role in selected.Roles)identity.AddClaim(new(ClaimTypes.Role,role));user.AddIdentity(identity);return user;
-        }
-    }
     [Fact]
     public async Task ActualMaintenanceReviewRejectsMissingOriginalReferencesBeforeProductionReads()
     {

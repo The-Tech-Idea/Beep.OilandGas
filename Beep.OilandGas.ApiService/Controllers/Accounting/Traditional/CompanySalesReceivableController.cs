@@ -11,7 +11,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 [ApiController]
 [Authorize]
 [Route("api/accounting/traditional/company-receivables")]
-public sealed partial class CompanySalesReceivableController(CompanySalesReceivableReads reads,ILogger<CompanySalesReceivableController> logger):ControllerBase
+public sealed partial class CompanySalesReceivableController(CompanySalesReceivableReads reads,TheTechIdeaWeb.Diagnostics.IFailureReporter failures):ControllerBase
 {
     [HttpGet("status/{invoiceId}")]
     public Task<ActionResult> Status(string invoiceId)=>Execute(async()=>Ok(await reads.ReadStatusAsync(User,RecordedSourceRouteIds.Read(Request,nameof(invoiceId)))));
@@ -32,11 +32,11 @@ public sealed partial class CompanySalesReceivableController(CompanySalesReceiva
     private async Task<ActionResult> Execute(Func<Task<ActionResult>> action)
     {
         try{return await action();}
-        catch(ArgumentException){return BadRequest();}
-        catch(FormatException){return BadRequest();}
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
+        catch(ArgumentException invalid){failures.ReportHandled(invalid,"validating company accounting request","request rejected");return BadRequest();}
+        catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
         catch(Exception changed) when(changed is InvalidOperationException or JsonException or AggregateException)
-        {logger.LogWarning(changed,"The original company receivable evidence or outcome is unconfirmed.");return Conflict(new{error="Receivable evidence or outcome is unconfirmed. Recover the original preparation or reviewer command before another request."});}
+        {failures.ReportHandled(changed,"The original company receivable evidence or outcome is unconfirmed.","original accounting evidence or outcome unconfirmed; request refused");return Conflict(new{error="Receivable evidence or outcome is unconfirmed. Recover the original preparation or reviewer command before another request."});}
     }
 }

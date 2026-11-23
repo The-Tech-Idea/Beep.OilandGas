@@ -54,7 +54,7 @@ public sealed class DevelopmentInvestmentStageScreenTests
     [Fact]public async Task NewViewOnlyOwnerRecoversBeforeReadingAPendingAssignmentOrLoadingPersona()
     {
         using var f=new DevelopmentInvestmentAssignedStateTests.Fixture();var original=await Prepare(f);f.Source.Base.Journal.StageOriginal=original;f.Source.Select(false);f.State.Dispose();
-        using var state=new DevelopmentInvestmentAssignedState(f.Source.Base.Company,f.Personas.Object,f.Source.Base.Client.Object,f.Source.Base.Journal,(_,_,text)=>text);await state.LoadAsync(original.Review.InstanceId);
+        using var state=new DevelopmentInvestmentAssignedState(f.Source.Base.Company,f.Personas.Object,f.Source.Base.Client.Object,f.Source.Base.Journal,TestFailures.Calls(new RecordingFailureReporter()));await state.LoadAsync(original.Review.InstanceId);
         Assert.True(state.CanRecover);Assert.False(state.CanPrepare);Assert.False(state.CanContinue);f.Source.Base.Client.Setup(c=>c.RecoverAssignedInvestmentStageAsync(It.IsAny<DevelopmentInvestmentStageDecision>(),It.IsAny<CancellationToken>())).ReturnsAsync(Receipt(original));await state.RecoverDecisionAsync();Assert.Equal("RECORDED",state.Receipt!.Status);
         f.Source.Base.Client.Verify(c=>c.ReadAssignedInvestmentAsync(It.IsAny<string>(),It.IsAny<CancellationToken>()),Times.Once);f.Personas.Verify(c=>c.EnsureLoadedAsync(),Times.Once);
     }
@@ -83,7 +83,7 @@ public sealed class DevelopmentInvestmentStageScreenTests
     }
     [Fact]public void ActualReviewerPanelRequiresExplicitSelectionThenDisplaysFrozenConfirmationAndPartialRecovery()
     {
-        using var f=new DevelopmentInvestmentAssignedStateTests.Fixture();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Source.Base.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Source.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Source.Base.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));ui.RenderComponent<MudPopoverProvider>();
+        using var f=new DevelopmentInvestmentAssignedStateTests.Fixture();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Source.Base.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Source.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Source.Base.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));ui.RenderComponent<MudPopoverProvider>();
         DevelopmentInvestmentStageDecision? sent=null;f.Source.Base.Client.Setup(c=>c.DecideAssignedInvestmentStageAsync(It.IsAny<DevelopmentInvestmentStageDecision>(),It.IsAny<CancellationToken>())).Returns((DevelopmentInvestmentStageDecision body,CancellationToken _) =>{sent=body;return Task.FromException<DevelopmentInvestmentStageReceipt>(new HttpRequestException());});
         var panel=ui.RenderComponent<DevelopmentInvestmentAssignedPanel>(p=>p.Add(c=>c.InstanceId,f.Review.InstanceId));panel.WaitForAssertion(()=>Assert.Contains("Review this configured stage",panel.Markup));
         panel.FindComponents<MudSelect<string>>().Single().InvokeAsync(()=>panel.FindComponent<MudSelect<string>>().Instance.ValueChanged.InvokeAsync("REJECT")).GetAwaiter().GetResult();

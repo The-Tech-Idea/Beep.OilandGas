@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -133,7 +134,7 @@
     private async Task JournalPreparationAction(Func<Task> action)
     {
         var epoch=_epoch;_error=null;try{await Access();if(!_canPrepareJournal)throw new UnauthorizedAccessException();await action();if(!_disposed && epoch==_epoch)await Access();}
-        catch{if(!_disposed && epoch==_epoch)_error="Journal preparation is unconfirmed. Retain the exact original request and return to its company/account/receivable/book/currency/binding to recover and reconcile before another command.";}
+        catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "SalesReceivableReviewWorkbench.JournalPreparationAction", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Journal preparation is unconfirmed. Retain the exact original request and return to its company/account/receivable/book/currency/binding to recover and reconcile before another command.";}
     }
     private Task PrepareJournal()=>JournalPreparationAction(async()=>{if(_journalPrepareForm is not null){await _journalPrepareForm.ValidateAsync();if(!_journalPrepareForm.IsValid)return;}await State.PrepareJournalAsync(_journalNumber,_journalReason,Accounting);});
     private Task ReconcileJournal()=>JournalPreparationAction(()=>State.SubmitJournalPreparationAsync(Accounting));
@@ -146,11 +147,11 @@
     {
         var epoch=_epoch;_error=null;try{await Access();if(!_canReadJournal)throw new UnauthorizedAccessException();if(_journalForm is not null){await _journalForm.ValidateAsync();if(!_journalForm.IsValid)return;}if(_journalDate is null)throw new InvalidOperationException();
             await State.LoadJournalSourceAsync(ReceivableId,_journalBook,_journalCurrency,_journalCalendar,DateTime.SpecifyKind(_journalDate.Value,DateTimeKind.Unspecified),new(_journalReceivableKey,_journalRevenueKey,string.IsNullOrEmpty(_journalChargesKey)?null:_journalChargesKey,string.IsNullOrEmpty(_journalTaxKey)?null:_journalTaxKey),Accounting);if(!_disposed && epoch==_epoch)await Access();}
-        catch{State.InvalidateJournalSource();if(!_disposed && epoch==_epoch)_error="Journal source is unavailable or changed. Review the original approved receivable/invoice, company/account/FIELD access, book/currency/calendar date and explicit compatible account mappings.";}
+        catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "SalesReceivableReviewWorkbench.LoadJournalSource", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); State.InvalidateJournalSource();if(!_disposed && epoch==_epoch)_error="Journal source is unavailable or changed. Review the original approved receivable/invoice, company/account/FIELD access, book/currency/calendar date and explicit compatible account mappings.";}
     }
     private static string Calendar(DateTime? value)=>value?.ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture) ?? "Unavailable";
     protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
-    protected override async Task OnParametersSetAsync(){ClearForm();try{await Access();}catch{_error="Current company/account and accounting role are required to review this receivable.";}}
+    protected override async Task OnParametersSetAsync(){ClearForm();try{await Access();}catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "SalesReceivableReviewWorkbench.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _error="Current company/account and accounting role are required to review this receivable.";}}
     private async Task Access()
     {
         _canReview=_canRecord=_canReadJournal=_canPrepareJournal=false;var epoch=_epoch;var snapshot=Company.Snapshot;var user=(await Authentication.GetAuthenticationStateAsync()).User;
@@ -164,7 +165,7 @@
     {
         var epoch=_epoch;_error=null;
         try{await Access();await action();if(!_disposed && epoch==_epoch)await Access();}
-        catch{if(!_disposed && epoch==_epoch)_error="The receivable review or original disposition could not be confirmed. Check current company/account, roles and FIELD access. Recover the original reviewer decision before recording again.";}
+        catch (System.Exception handledFailureAuto4){ HandledFailures.ReportHandled(handledFailureAuto4, "SalesReceivableReviewWorkbench.Execute", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The receivable review or original disposition could not be confirmed. Check current company/account, roles and FIELD access. Recover the original reviewer decision before recording again.";}
     }
     private Task Load(){ClearForm();return Execute(async()=>{if(AssignedSource is {} assigned){assigned.Require(Company.Selection!.Scope,Company.Selection.UserId,assigned.InstanceId);if(assigned.ReceivableId!=ReceivableId)throw new InvalidOperationException("The assigned receivable changed.");}await State.LoadReviewAsync(ReceivableId,Accounting,AssignedSource?.SourceRevision,AssignedSource?.Receivable.Revision);});}
     private Task Recover()=>Execute(async()=>{await State.RecoverReviewAsync(ReceivableId,Accounting);await NotifyOutcome();});

@@ -42,7 +42,7 @@
 @code{
     [Parameter,EditorRequired]public string ProcessId{get;set;}=default!;[Parameter,EditorRequired]public string AfeId{get;set;}=default!;
     private DevelopmentInvestmentRoutingState? _state;private string? process,afe;private bool disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls);_state.Changed+=Changed;}
     protected override void OnParametersSet(){if(process!=ProcessId || afe!=AfeId){process=ProcessId;afe=AfeId;_state!.SetSource(ProcessId,AfeId);}}
     private Task Read()=>_state!.ReadAsync();private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
     public void Dispose(){disposed=true;if(_state is not null){_state.Changed-=Changed;_state.Dispose();}}

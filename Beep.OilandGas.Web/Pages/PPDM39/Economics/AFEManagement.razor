@@ -107,7 +107,7 @@
     private string? loadedHandoff;
     [SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
     private DevelopmentAfeState? _state;private string? _loadedProcess,_book;private string _number="",_name="",_rationale="";private decimal? _amount;private DateTime? _effectiveDate;private bool disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls.Explain);_state.Changed+=Changed;Company.Changed+=ContextChanged;Personas.Changed+=ContextChanged;}
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls);_state.Changed+=Changed;Company.Changed+=ContextChanged;Personas.Changed+=ContextChanged;}
     protected override async Task OnParametersSetAsync(){if(loadedHandoff!=InvestmentHandoff){loadedHandoff=InvestmentHandoff;_loadedProcess=ProcessId;if(InvestmentHandoff is null)await Reload();return;}if(InvestmentHandoff is not null)return;if(_loadedProcess!=ProcessId || _state!.Review is null){_loadedProcess=ProcessId;await Reload();}}
     private async Task Reload(){_book=null;_number="";_name="";_rationale="";_amount=null;_effectiveDate=null;await _state!.LoadAsync(ProcessId);}
     private static string Money(decimal amount,string currency,int decimals)=>amount.ToString("N"+decimals,CultureInfo.InvariantCulture)+" "+currency;

@@ -1,3 +1,5 @@
+@inject Beep.OilandGas.Web.Services.OilGasCallFailures Calls
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PermitsAndApplications.Models
@@ -75,7 +77,7 @@
     private long _generation;
     private static string Recorded(string? value) => string.IsNullOrWhiteSpace(value) ? "Not recorded" : value;
     private static string Date(DateTime? value) => value is null || value == default(DateTime) ? "Not recorded" : value.Value.ToString("yyyy-MM-dd HH:mm");
-    protected override void OnInitialized() { _workflow=new(Company,Fields,Authentication,PermitClient,Originals);Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; Authentication.AuthenticationStateChanged += AuthenticationChanged; }
+    protected override void OnInitialized() { _workflow=new(Calls,Company,Fields,Authentication,PermitClient,Originals);Company.Changed += ContextChanged; Fields.CurrentFieldChanged += FieldChanged; Authentication.AuthenticationStateChanged += AuthenticationChanged; }
     protected override async Task OnParametersSetAsync() { if (_loadedId == ApplicationId && _generation != 0) return; _loadedId = ApplicationId; _workflow?.SetApplication(ApplicationId); await LoadAsync(); }
     private async Task LoadAsync()
     {
@@ -102,7 +104,7 @@
             await RequireAuthority(); PermitApplicationReadValidator.Require(detail, id!, before.FieldId);
             _detail = detail; _fieldName = string.IsNullOrWhiteSpace(before.FieldName) ? before.FieldId : before.FieldName; _checkedAt = DateTime.UtcNow;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Recorded permit application could not be confirmed"); _message = "The permit application could not be confirmed for the current company, account and FIELD."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "PermitDetail.LoadAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Recorded permit application could not be confirmed"); _message = "The permit application could not be confirmed for the current company, account and FIELD."; } }
         finally { if (Current()) _loading = false; }
     }
     private void FieldChanged(string _) => ContextChanged();

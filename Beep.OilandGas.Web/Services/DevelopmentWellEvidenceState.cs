@@ -13,7 +13,7 @@ public sealed class DevelopmentWellEvidenceState : IDisposable
     private readonly CompanyClientContext company;
     private readonly IFieldSelectionContext fields;
     private readonly IDevelopmentServiceClient development;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private long generation;
     private bool disposed;
     private WELL[] rows = [];
@@ -32,7 +32,7 @@ public sealed class DevelopmentWellEvidenceState : IDisposable
     public event Action? Changed;
 
     public DevelopmentWellEvidenceState(CompanyClientContext company, IFieldSelectionContext fields,
-        IDevelopmentServiceClient development, Func<Exception, string, string, string> explain)
+        IDevelopmentServiceClient development, OilGasCallFailures explain)
     {
         this.company=company; this.fields=fields; this.development=development; this.explain=explain;
         company.Changed+=Invalidate; fields.CurrentFieldChanged+=FieldChanged;
@@ -86,7 +86,7 @@ public sealed class DevelopmentWellEvidenceState : IDisposable
         }
         catch(Exception error)
         {
-            var sentence=explain(error,"loading development well evidence","Development well evidence could not be confirmed");
+            var sentence=explain.Explain(error,"loading development well evidence","Development well evidence could not be confirmed");
             if(Current()) Error=sentence;
         }
         finally { if(Current()) { Loading=false; Changed?.Invoke(); } }

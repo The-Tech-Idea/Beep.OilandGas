@@ -24,7 +24,7 @@ public sealed partial class DrillingExecutionState
         }
         catch(Exception error)
         {
-            var text=explain(error,"inspecting competing execution","The absent original and exact different execution could not be confirmed. Preserve and recover the original");
+            var text=explain.Explain(error,"inspecting competing execution","The absent original and exact different execution could not be confirmed. Preserve and recover the original");
             if(Current())Error=text;
         }
         finally{if(Current()){reading=false;Changed?.Invoke();}}
@@ -48,7 +48,7 @@ public sealed partial class DrillingExecutionState
         }
         catch(Exception error)
         {
-            var text=explain(error,"acknowledging competing execution",fallback);
+            var text=explain.Explain(error,"acknowledging competing execution",fallback);
             if(Current()){originalFeedback.Failed();Error=text;}
         }
         finally{writing=false;if(!disposed)Changed?.Invoke();}

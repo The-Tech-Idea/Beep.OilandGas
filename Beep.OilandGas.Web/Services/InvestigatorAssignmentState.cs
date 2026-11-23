@@ -19,7 +19,7 @@ public sealed class InvestigatorAssignmentState : IDisposable
     private readonly IFieldSelectionContext fields;
     private readonly IHSEServiceClient api;
     private readonly IInvestigatorAssignmentIntentStore store;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private readonly Dictionary<Target, InvestigatorAssignmentIntent> pending = [];
     private readonly HashSet<RecordedIncidentParticipant> choices = new(ReferenceEqualityComparer.Instance);
     private sealed record Target(CompanyScope Company, string Actor, string Database, string Field, string Incident);
@@ -46,7 +46,7 @@ public sealed class InvestigatorAssignmentState : IDisposable
     public bool CanAssign => !disposed && !Loading && !Saving && Loaded && !OutcomeReviewRequired && loadedScope == company.Snapshot &&
         Selected is not null && choices.Contains(Selected) && company.Selection?.Permissions.Contains(PermissionConstants.HSE.ManageIncidents, StringComparer.Ordinal) == true;
     public event Action? Changed;
-    public InvestigatorAssignmentState(CompanyClientContext company, IFieldSelectionContext fields, IHSEServiceClient api, Func<Exception, string, string, string> explain,IInvestigatorAssignmentIntentStore store)
+    public InvestigatorAssignmentState(CompanyClientContext company, IFieldSelectionContext fields, IHSEServiceClient api, OilGasCallFailures explain,IInvestigatorAssignmentIntentStore store)
     {
         this.company = company; this.fields = fields; this.api = api; this.explain = explain; this.store=store;
         company.Changed += CompanyChanged; fields.CurrentFieldChanged += FieldChanged;
@@ -107,10 +107,10 @@ public sealed class InvestigatorAssignmentState : IDisposable
                 else Message = "No roster change has been observed. The submission remains unconfirmed; review the recorded outcome again before another change.";
             }
         }
-        catch (OperationCanceledException) when (!Current(version, captured)) { }
+        catch (OperationCanceledException canceled) when (!Current(version, captured)) { explain.Told(canceled, "InvestigatorAssignmentState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception error)
         {
-            if (Current(version, captured)) { ClearEvidence(); Error = explain(error, "reviewing the incident investigator", "Investigator records could not be confirmed"); }
+            if (Current(version, captured)) { ClearEvidence(); Error = explain.Explain(error, "reviewing the incident investigator", "Investigator records could not be confirmed"); }
         }
         finally { if (Current(version, captured)) { reading = null; Loading = false; Changed?.Invoke(); } }
     }
@@ -140,7 +140,7 @@ public sealed class InvestigatorAssignmentState : IDisposable
         }
         catch (Exception error)
         {
-            if (Current(version, captured)) { ClearEvidence(); Error = explain(error, "submitting the investigator selection", attempted ? "The assignment is unconfirmed; review its recorded outcome before another change" : "The investigator selection changed before submission. Review the current records"); }
+            if (Current(version, captured)) { ClearEvidence(); Error = explain.Explain(error, "submitting the investigator selection", attempted ? "The assignment is unconfirmed; review its recorded outcome before another change" : "The investigator selection changed before submission. Review the current records"); }
         }
         finally
         {

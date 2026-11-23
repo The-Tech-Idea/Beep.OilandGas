@@ -1,7 +1,7 @@
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.ApiService.Services;
-using TheTechIdea.OilGas.Core;
+using TheTechIdea.OilGas.Wellbore.Data;
 using Xunit;
 
 namespace CompanyEnvironment.Tests;
@@ -37,11 +37,11 @@ public sealed class CompanyEnvironmentEffectiveTests
         var baseline = Record("TOOLS", "DEFAULT", "{\"culture\":\"en-GB\",\"units\":{\"depthUnit\":\"m\",\"pressureUnit\":\"bar\"}}");
         var country = Record("COUNTRY", "KW", "{\"culture\":\"ar-KW\",\"units\":{\"pressureUnit\":\"kPa\"}}");
         var saved = Saved(company, "KW", "{\"culture\":\"en-US\",\"units\":{\"pressureUnit\":\"psi\"}}");
-        using var ambient = OilGasServices.Scope(new OilGasServices(new OilGasEnvironment { Culture = "ambient" }));
+        using var ambient = WellboreServices.Scope(new WellboreServices(new WellboreEnvironment { Culture = "ambient" }));
         var result = await new CompanyEnvironmentEffectiveResolver(new Companies(saved), new SystemRecords(baseline, country)).ResolveAsync(company, () => Task.CompletedTask);
         Assert.Equal("en-US", result.Settings.Culture); Assert.Equal("m", result.Settings.DepthUnit); Assert.Equal("psi", result.Settings.PressureUnit);
         Assert.Equal(saved.Revision, result.CompanyRevision); Assert.Equal(baseline.Revision, result.SystemRevision); Assert.Equal(country.Revision, result.CountryRevision);
-        Assert.True(CompanyEnvironmentIdentity.IsRevision(result.EffectiveRevision)); Assert.Equal("ambient", OilGasServices.Current.Environment.Culture);
+        Assert.True(CompanyEnvironmentIdentity.IsRevision(result.EffectiveRevision)); Assert.Equal("ambient", WellboreServices.Current.Environment.Culture);
     }
 
     [Fact]

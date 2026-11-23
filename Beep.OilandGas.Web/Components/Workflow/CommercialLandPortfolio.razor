@@ -1,3 +1,5 @@
+@inject Beep.OilandGas.Web.Services.OilGasCallFailures Calls
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Models.Data.Company
 @namespace Beep.OilandGas.Web.Components.Workflow
@@ -65,7 +67,7 @@
     private IReadOnlyList<LeaseSummary> VisibleRows=>_portfolio?.Current==true?_portfolio.Leases.Where(row=>_status is null || row.Status==_status).ToArray():[];
     protected override async Task OnInitializedAsync()
     {
-        _portfolio=new(Company,Leases,(_,_,sentence)=>sentence);_portfolio.Changed+=Changed;
+        _portfolio=new(Company,Leases,Calls);_portfolio.Changed+=Changed;
         Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;
         await Reload();
     }
@@ -90,7 +92,7 @@
                     await RequireAuthority();if(_disposed || scope!=Company.Snapshot || version!=_contextVersion)continue;
                     await _portfolio.LoadAsync(Fields.GetCurrentFieldIdAsync);
                 }
-                catch{if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Commercial records could not be confirmed for the current company account and app roles.";}
+                catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "CommercialLandPortfolio.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Commercial records could not be confirmed for the current company account and app roles.";}
             }while(_reloadRequested && !_disposed);
         }
         finally{_busy=false;}
@@ -100,7 +102,7 @@
     {
         var scope=Company.Snapshot;var version=_contextVersion;
         try{await RequireAuthority();if(_disposed || scope!=Company.Snapshot || version!=_contextVersion)return;await _portfolio!.EvaluateAsync(row);}
-        catch{if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Recorded lease review could not be confirmed for the current company account and app roles.";}
+        catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "CommercialLandPortfolio.Review", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && scope==Company.Snapshot && version==_contextVersion)_error="Recorded lease review could not be confirmed for the current company account and app roles.";}
     }
     private void Changed(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void ContextChanged(){++_contextVersion;_status=null;_error=null;_portfolio?.ClearSelection();if(!_disposed)_=InvokeAsync(async()=>{await Reload();if(!_disposed)StateHasChanged();});}

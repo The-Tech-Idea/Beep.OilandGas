@@ -11,7 +11,7 @@ namespace Beep.OilandGas.ApiService.Hubs;
 
 public sealed class WorkflowNotificationLifetimeManager(
     ILogger<DefaultHubLifetimeManager<WorkflowNotificationHub>> logger, IServiceScopeFactory scopes,
-    IFailureReporter failures) : CompanyHubLifetimeManager<WorkflowNotificationHub>(logger, scopes)
+    IFailureReporter failures) : CompanyHubLifetimeManager<WorkflowNotificationHub>(logger, scopes, failures)
 {
     protected override bool Supports(CompanyHubChannel channel) => channel.Kind is
         CompanyChannelKind.User or CompanyChannelKind.Persona or CompanyChannelKind.Process;
@@ -28,16 +28,15 @@ public sealed class WorkflowNotificationLifetimeManager(
     protected override Task<bool> ResourceAccessAsync(IServiceProvider services, CompanyHubChannel channel,
         RepositoryCompanyContext company, object?[]? args)
     {
+        if (!Enum.IsDefined(channel.Kind)) return Task.FromResult(false);
         var authorization = services.GetRequiredService<WorkflowNotificationAuthorization>();
         return channel.Kind switch
         {
             CompanyChannelKind.Persona => authorization.CanAccessPersonaAsync(company.UserId, channel.Resource, channel.Field!),
             CompanyChannelKind.Process => authorization.CanAccessProcessAsync(company.UserId, channel.Resource),
-            _ => Task.FromResult(false)
+            CompanyChannelKind.User or CompanyChannelKind.Operation or CompanyChannelKind.Workflow => Task.FromResult(false)
         };
     }
-    protected override void ReportFailure(Exception exception, string operation, string outcome) =>
-        failures.ReportHandled(exception, operation, outcome);
 }
 
 public static class WorkflowNotificationServiceCollectionExtensions

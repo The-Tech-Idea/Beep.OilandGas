@@ -22,14 +22,17 @@ public sealed partial class InventoryWorkspaceState:IDisposable
     private IEnumerable<Item>? WarehouseRows=>Rows?.Where(row=>WarehouseFilter is null || row.Warehouse==WarehouseFilter);
     public IReadOnlyList<Item>? VisibleRows=>WarehouseRows is null?null:Array.AsReadOnly(WarehouseRows.Where(row=>Matches(row,Queue)).ToArray());
     public int? Count(EvidenceQueue queue)=>WarehouseRows?.Count(row=>Matches(row,queue));
-    private static bool Matches(Item row,EvidenceQueue queue)=>queue switch
+    private static bool Matches(Item row,EvidenceQueue queue)
+    {
+        if(!Enum.IsDefined(queue))throw new ArgumentOutOfRangeException(nameof(queue));
+        return queue switch
     {
         EvidenceQueue.All=>true,
         EvidenceQueue.MissingLocation=>row.Warehouse is null || row.Location is null,
         EvidenceQueue.UnknownQuantity=>row.Quantity is null,
         EvidenceQueue.NonpositiveQuantity=>row.Quantity is <=0,
-        _=>throw new ArgumentOutOfRangeException(nameof(queue))
     };
+    }
     public void SetQueue(EvidenceQueue queue){if(!Enum.IsDefined(queue))throw new ArgumentOutOfRangeException(nameof(queue));Queue=queue;}
     public void SetWarehouse(string? warehouse)
     {

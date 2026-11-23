@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Models.Data.Company;
@@ -48,14 +49,14 @@ public sealed class APInvoiceFinancialReviewTests
     public async Task WorkspaceRejectsLateReviewAfterCompanyOrSourceInvalidation(bool companyChange)
     {
         var review=Review();using var company=new CompanyClientContext();company.TrySelect(company.Clear(),"actor",new(Scope,["Accountant"],["Accounting.View"]));
-        using var state=new APInvoiceWorkspaceState(company);await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
+        using var state=new APInvoiceWorkspaceState(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()), company);await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));
         var pending=new TaskCompletionSource<APInvoiceFinancialReview>();var loading=state.LoadFinancialReviewAsync((_,_)=>pending.Task);
         if(companyChange)company.Clear();else state.ClearPurchaseSource();pending.SetResult(review);await loading;Assert.Null(state.FinancialReview);
     }
     [Fact] public async Task WorkspaceProtectsFinancialEvidenceAndClearsFailedReload()
     {
         var review=Review();using var company=new CompanyClientContext();company.TrySelect(company.Clear(),"actor",new(Scope,["Accountant"],["Accounting.View"]));
-        using var state=new APInvoiceWorkspaceState(company);await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));await state.LoadFinancialReviewAsync((_,_)=>Task.FromResult(review));
+        using var state=new APInvoiceWorkspaceState(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()), company);await state.LoadDetailAsync("invoice",_=>Task.FromResult<APInvoiceSourceReview?>(review.Invoice));await state.LoadFinancialReviewAsync((_,_)=>Task.FromResult(review));
         state.FinancialReview!.Invoice.Invoice.TOTAL_AMOUNT=99m;Assert.Equal(10m,state.FinancialReview!.Invoice.Invoice.TOTAL_AMOUNT);
         await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadFinancialReviewAsync((_,_)=>throw new InvalidOperationException("Provider unavailable")));Assert.Null(state.FinancialReview);
     }

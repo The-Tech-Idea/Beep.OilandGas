@@ -146,7 +146,7 @@ public sealed class CompanyHseWorkflowServiceTests
             });
         var field = new Mock<IFieldOrchestrator>(); field.SetupGet(x => x.CurrentFieldId).Returns("A");
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incidents.Object, new BoundProcessService(() => modules.ResolveAsync("LIFECYCLE"), _ => process.Object), Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         if (scenario == "valid") Assert.IsType<CompanyHseRcaRecoveredHandoff>(Assert.IsType<OkObjectResult>((await controller.RecoverRcaHandoffAsync("local")).Result).Value).Require();
         else if (scenario == "missing") Assert.IsType<NotFoundResult>((await controller.RecoverRcaHandoffAsync("local")).Result);
         else if (scenario == "revoked") Assert.IsType<ForbidResult>((await controller.RecoverRcaHandoffAsync("local")).Result);
@@ -181,7 +181,7 @@ public sealed class CompanyHseWorkflowServiceTests
             });
         var field = new Mock<IFieldOrchestrator>(); field.SetupGet(x => x.CurrentFieldId).Returns("A");
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incidents.Object, new BoundProcessService(() => modules.ResolveAsync("LIFECYCLE"), _ => process.Object), Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         if (scenario == "valid") Assert.IsType<CompanyHseRcaHandoffReceipt>(Assert.IsType<OkObjectResult>((await controller.CompleteRcaHandoffAsync(original)).Result).Value).Require(original);
         else if (scenario == "wrong-role") Assert.IsType<ForbidResult>((await controller.CompleteRcaHandoffAsync(original)).Result);
         else await Assert.ThrowsAnyAsync<Exception>(() => controller.CompleteRcaHandoffAsync(original));
@@ -214,7 +214,7 @@ public sealed class CompanyHseWorkflowServiceTests
         var field = new Mock<IFieldOrchestrator>(); field.SetupGet(x => x.CurrentFieldId).Returns("A");
         var bound = new BoundProcessService(() => modules.ResolveAsync("LIFECYCLE"), _ => process.Object);
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incidents.Object, bound, Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         if (scenario == "valid") Assert.IsType<CompanyHseRcaHandoffReview>(Assert.IsType<OkObjectResult>((await controller.ReviewRcaHandoffAsync("local", original.IntentId)).Result).Value).Require();
         else if (scenario == "wrong-role") Assert.IsType<ForbidResult>((await controller.ReviewRcaHandoffAsync("local", original.IntentId)).Result);
         else await Assert.ThrowsAnyAsync<Exception>(() => controller.ReviewRcaHandoffAsync("local", original.IntentId));
@@ -243,7 +243,7 @@ public sealed class CompanyHseWorkflowServiceTests
             IReadOnlyList<IncidentRcaRecordedCause> rows = scenario == "duplicate" ? [cause, cause] : [cause]; return Task.FromResult(rows);
         });
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incidents.Object, Mock.Of<IProcessService>(), Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         if (scenario == "valid") Assert.Equal("another-author", Assert.Single(Assert.IsAssignableFrom<IReadOnlyList<IncidentRcaRecordedCause>>(Assert.IsType<OkObjectResult>((await controller.ReadSharedRcaAsync("local")).Result).Value)).RecordedBy);
         else if (scenario == "role-removed") Assert.IsType<ForbidResult>((await controller.ReadSharedRcaAsync("local")).Result);
         else await Assert.ThrowsAnyAsync<Exception>(() => controller.ReadSharedRcaAsync("local"));
@@ -273,7 +273,7 @@ public sealed class CompanyHseWorkflowServiceTests
             IReadOnlyList<IncidentRcaIntent> rows = scenario == "duplicate" ? [original, original] : [original]; return Task.FromResult(rows);
         });
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incidents.Object, Mock.Of<IProcessService>(), Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         if (scenario == "valid") Assert.Single(Assert.IsAssignableFrom<IReadOnlyList<IncidentRcaIntent>>(Assert.IsType<OkObjectResult>((await controller.ReadRecordedRcaAsync("local")).Result).Value));
         else if (scenario == "role-removed") Assert.IsType<ForbidResult>((await controller.ReadRecordedRcaAsync("local")).Result);
         else await Assert.ThrowsAnyAsync<Exception>(() => controller.ReadRecordedRcaAsync("local"));
@@ -313,7 +313,7 @@ public sealed class CompanyHseWorkflowServiceTests
                 value.Source.Context.FieldId!, value.IntentId, value.Source.IncidentId, value.Source.NextObservation, HSE_INCIDENT_RCA_INTENT.Create(value).COMMAND_HASH);
         });
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incidents.Object, Mock.Of<IProcessService>(), Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         if (scenario == "valid")
             Assert.IsType<IncidentRcaReceipt>(Assert.IsType<OkObjectResult>((await controller.RecordRcaAsync(original)).Result).Value).Require(original);
         else if (scenario is "role-removed" or "lifecycle-changed" or "foreign-company")
@@ -356,7 +356,7 @@ public sealed class CompanyHseWorkflowServiceTests
                     new string('A', 64), 1, [], [new("ROOT", "PROCESS", "Process")]);
             });
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incident.Object, Mock.Of<IProcessService>(), Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         if (scenario == "valid")
         {
             var review = Assert.IsType<IncidentRcaSourceReview>(Assert.IsType<OkObjectResult>((await controller.ReviewRcaAsync("local")).Result).Value);
@@ -434,7 +434,7 @@ public sealed class CompanyHseWorkflowServiceTests
         var incident = new Mock<ICompanyIncidentCommands>();
         incident.Setup(x => x.ReviewWorkflowSourceRevisionAsync(It.IsAny<FieldSelectionReview>(), "local")).ReturnsAsync(new string('A', 64));
         var service = new CompanyHseWorkflowService(f.Gate, modules, profile, profile, field.Object, incident.Object, bound, Mock.Of<ICompanyCorrectiveActionCommands>());
-        var controller = new IncidentWorkflowController(service) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
+        var controller = new IncidentWorkflowController(service, new RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = f.Request } };
         var review = Assert.IsType<CompanyHseWorkflowReview>(Assert.IsType<OkObjectResult>((await controller.ReviewAsync("local")).Result).Value);
         var original = review.CreateIntent(Guid.NewGuid());
         Assert.Equal("HSEOfficer", review.InitialRole);

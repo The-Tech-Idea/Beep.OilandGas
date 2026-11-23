@@ -25,7 +25,7 @@ public sealed partial class DrillingDailyReportState
         }
         catch (Exception error)
         {
-            var text = explain(error, "navigating checked report history", "The checked report history or current access is unconfirmed. Reload original report history before navigating or preparing another report");
+            var text = explain.Explain(error, "navigating checked report history", "The checked report history or current access is unconfirmed. Reload original report history before navigating or preparing another report");
             if (Current()) { page = null; basis = null; Error = text; }
         }
         finally { if (Current()) { reading = false; Changed?.Invoke(); } }

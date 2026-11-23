@@ -17,7 +17,7 @@ public sealed class WorkflowTaskProcessAdmissionTests
         var process=Process(row);
         if(marker=="retag-payload")process.ProcessData=new(){Data=new(){[DrillingCompletionReviewStart.PayloadKey]=new{unqualified=true}}};
         Assert.Throws<InvalidOperationException>(()=>WorkflowTaskProcessAdmission.CompanyMatches(process,new("tenant","company")));
-        Assert.False(WorkflowTaskProcessAdmission.Matches(row,process,"actor"));
+        Assert.False(WorkflowTaskProcessAdmission.Matches(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), row,process,"actor"));
         if(marker!="retag-payload")Assert.Throws<InvalidOperationException>(()=>WorkflowInboxReview.RequireTask(row,["Accountant"]));
     }
     [Theory][InlineData("AFE")][InlineData("WELL")]
@@ -42,7 +42,7 @@ public sealed class WorkflowTaskProcessAdmissionTests
         Status = ProcessStatus.IN_PROGRESS, CurrentStepId = "review", StepInstances = [new() { InstanceId = row.WorkflowName, StepInstanceId = "step", StepId = "review", RequiredRole = "Accountant" }] };
     [Theory][InlineData("COMPANY_ACCOUNTING", "AP_INVOICE")][InlineData("COMPANY_ACCOUNTING", "PURCHASE_ORDER")][InlineData("FIELD", "WELL")]
     public void ExactOwnedTaskStepCanBeLinked(string scope, string type)
-    { var row = Row(scope, type); Assert.True(WorkflowTaskProcessAdmission.Matches(row, Process(row), "actor")); Assert.Contains("%2F", row.Route); }
+    { var row = Row(scope, type); Assert.True(WorkflowTaskProcessAdmission.Matches(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), row, Process(row), "actor")); Assert.Contains("%2F", row.Route); }
     [Theory][InlineData("source")][InlineData("process")][InlineData("parent")][InlineData("duplicate")][InlineData("completed")]
     [InlineData("role")][InlineData("assigned")][InlineData("current")][InlineData("scope")][InlineData("route")][InlineData("cancelled")]
     public void ForeignStaleOrUnassignedCompanyWorkIsRefused(string fault)
@@ -62,11 +62,11 @@ public sealed class WorkflowTaskProcessAdmissionTests
             case "route": row.Route = "https://foreign.example"; break;
             case "cancelled": process.Status = ProcessStatus.CANCELLED; break;
         }
-        Assert.False(WorkflowTaskProcessAdmission.Matches(row, process, "actor"));
+        Assert.False(WorkflowTaskProcessAdmission.Matches(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), row, process, "actor"));
     }
     [Theory][InlineData("actor")][InlineData("Accountant")]
     public void ExplicitActorOrRoleAssignmentIsPreserved(string assignee)
-    { var row = Row(); var process = Process(row); process.StepInstances[0].AssignedTo = assignee; Assert.True(WorkflowTaskProcessAdmission.Matches(row, process, "actor")); }
+    { var row = Row(); var process = Process(row); process.StepInstances[0].AssignedTo = assignee; Assert.True(WorkflowTaskProcessAdmission.Matches(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), row, process, "actor")); }
     [Theory][InlineData("role")][InlineData("assigned")][InlineData("current")][InlineData("cancelled")]
     public void FieldTaskAlsoRequiresCurrentActiveProcessAndAssignedRole(string fault)
     {
@@ -75,6 +75,6 @@ public sealed class WorkflowTaskProcessAdmissionTests
         if(fault=="assigned")process.StepInstances[0].AssignedTo="foreign-actor";
         if(fault=="current")process.CurrentStepId="another-step";
         if(fault=="cancelled")process.Status=ProcessStatus.CANCELLED;
-        Assert.False(WorkflowTaskProcessAdmission.Matches(row,process,"actor"));
+        Assert.False(WorkflowTaskProcessAdmission.Matches(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), row,process,"actor"));
     }
 }

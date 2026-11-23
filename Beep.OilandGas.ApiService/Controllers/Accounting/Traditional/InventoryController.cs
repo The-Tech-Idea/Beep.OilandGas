@@ -25,17 +25,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         private readonly IInventoryService _inventoryService;
         private readonly GLIntegrationService _glIntegration;
         private readonly ILogger<InventoryController> _logger;
+        private readonly TheTechIdeaWeb.Diagnostics.IFailureReporter _failures;
 
         public InventoryController(
             ProductionAccountingService service,
             IInventoryService inventoryService,
             GLIntegrationService glIntegration,
-            ILogger<InventoryController> logger)
+            ILogger<InventoryController> logger,
+            TheTechIdeaWeb.Diagnostics.IFailureReporter failures)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
             _inventoryService = inventoryService ?? throw new ArgumentNullException(nameof(inventoryService));
             _glIntegration = glIntegration ?? throw new ArgumentNullException(nameof(glIntegration));
             _logger = logger;
+            _failures = failures ?? throw new ArgumentNullException(nameof(failures));
         }
 
         /// <summary>

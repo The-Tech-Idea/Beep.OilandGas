@@ -1,7 +1,7 @@
 using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Text.Json.Nodes;
-using TheTechIdea.OilGas.Core;
+using TheTechIdea.OilGas.Wellbore.Data;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -10,7 +10,7 @@ public static class SystemSetupToolsDefaults
 {
     public static SystemSetupToolsDefaultDraft Draft()
     {
-        var root = JsonNode.Parse(OilGasEnvironment.Template()) as JsonObject
+        var root = JsonNode.Parse(WellboreEnvironment.Template()) as JsonObject
             ?? throw new InvalidOperationException("The OilandGasTools template is unavailable.");
         if (root.TryGetPropertyValue("extends", out var extends) && !Empty(extends))
             throw new InvalidOperationException("The OilandGasTools template contains external inheritance.");
@@ -28,7 +28,7 @@ public static class SystemSetupToolsDefaults
         // theme preset can supply them. Explicitly saved colors still win.
         if (root["theme"] is JsonObject theme)
         {
-            var presetKeys = OilGasEnvironment.ThemePresets.Values.SelectMany(x => x.Keys).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var presetKeys = WellboreEnvironment.ThemePresets.Values.SelectMany(x => x.Keys).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var key in theme.Select(x => x.Key).Where(presetKeys.Contains).ToArray())
                 theme.Remove(key);
         }

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Models.Data.Company
@@ -77,7 +78,7 @@
             try{await RequireAuthority();if(_disposed || snapshot!=Company.Snapshot || version!=_contextVersion)continue;
                 await _state.LoadAsync(Fields.GetCurrentFieldIdAsync,Accounting.GetCompanySalesInvoiceQueueAsync);
                 if(!_disposed && snapshot==Company.Snapshot && version==_contextVersion)await RequireAuthority();}
-            catch{if(!_disposed && snapshot==Company.Snapshot && version==_contextVersion){_state.Clear();_error="The complete owned invoice queue could not be confirmed. Review current company/account, FIELD access and native invoice evidence, then reload.";}}
+            catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "SalesInvoiceQueue.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && snapshot==Company.Snapshot && version==_contextVersion){_state.Clear();_error="The complete owned invoice queue could not be confirmed. Review current company/account, FIELD access and native invoice evidence, then reload.";}}
         }while(_reloadRequested && !_disposed);}finally{_busy=false;}
     }
     private void ContextChanged(){++_contextVersion;_state?.Clear();_error=null;_currency=null;_status=null;if(!_disposed)_=InvokeAsync(async()=>{await Reload();if(!_disposed)StateHasChanged();});}

@@ -104,9 +104,15 @@
   </ItemGroup>
   <ItemGroup Condition="'$(FocusedCompanyTests)' == 'true'">
     <ProjectReference Include="../../Beep.Web/TheTechIdeaWeb.Diagnostics.Abstractions/TheTechIdeaWeb.Diagnostics.Abstractions.csproj" />
+    <ProjectReference Include="../../Beep.Web/TheTechIdeaWeb.Diagnostics/TheTechIdeaWeb.Diagnostics.csproj" />
     <Compile Remove="**/*.cs" />
     <Compile Include="RepositoryCompanyAccessTests.cs" />
     <Compile Include="RepositoryTenantBindingTests.cs" />
+    <Compile Include="RecordingFailureReporter.cs" />
+    <Compile Include="../Beep.OilandGas.Web.Auth.Tests/TestFailures.cs" Link="Infrastructure/TestFailures.cs" />
+    <Compile Include="../Beep.OilandGas.Web.Auth.Tests/RecordingFailureReporter.cs" Link="Infrastructure/WebRecordingFailureReporter.cs" />
+    <Compile Include="../Beep.OilandGas.Web/Services/OilGasCallFailures.cs" Link="Production/OilGasCallFailures.cs" />
+    <Compile Include="../Beep.OilandGas.Web/Services/OilGasApiFailures.cs" Link="Production/OilGasApiFailures.cs" />
     <Compile Include="CompanyClientScopeTests.cs" />
     <Compile Include="CompanyHubScopeTests.cs" />
     <Compile Include="CompanyProgressTests.cs" />
@@ -380,7 +386,7 @@
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyGhgCatalogReader.cs" Link="Production/CompanyGhgCatalogReader.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyGhgSelectionStatusReader.cs" Link="Production/CompanyGhgSelectionStatusReader.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyGhgArithmeticService.cs" Link="Production/CompanyGhgArithmeticService.cs" />
-    <Reference Include="TheTechIdea.OilGas.Core"><HintPath>../../OilandGasTools/src/TheTechIdea.OilGas.Core/bin/Debug/net9.0/TheTechIdea.OilGas.Core.dll</HintPath></Reference>
+    <ProjectReference Include="../../OilandGasTools/src/TheTechIdea.OilGas.Wellbore.Data/TheTechIdea.OilGas.Wellbore.Data.csproj" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyFieldGhgProductionReader.cs" Link="Production/CompanyFieldGhgProductionReader.cs" />
     <Compile Include="../Beep.OilandGas.PPDM39.DataManagement/Services/Compliance/GhgProductionSourceMapper.cs" Link="Production/GhgProductionSourceMapper.cs" />
     <Compile Include="CurrentFieldLifecycleGateTests.ComplianceEvidence.cs" />
@@ -389,8 +395,9 @@
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyFieldObligationWriter.cs" Link="Production/CompanyFieldObligationWriter.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyWorkOrderListReview.cs" Link="Production/CompanyWorkOrderListReview.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyEnvironmentSources.cs" Link="Production/CompanyEnvironmentSources.cs" />
+    <Compile Include="../Beep.OilandGas.ApiService/Services/CompanyEnvironmentBindingReader.cs" Link="Production/CompanyEnvironmentBindingReader.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Middleware/SetupBootstrapPaths.cs" Link="Production/SetupBootstrapPaths.cs" />
-    <Reference Include="TheTechIdea.OilGas.Loaders"><HintPath>../../OilandGasTools/src/TheTechIdea.OilGas.Loaders/bin/Debug/net9.0/TheTechIdea.OilGas.Loaders.dll</HintPath></Reference>
+    <ProjectReference Include="../../OilandGasTools/src/TheTechIdea.OilGas.Wellbore.Loaders/TheTechIdea.OilGas.Wellbore.Loaders.csproj" />
     <Compile Include="../Beep.OilandGas.PPDM39.DataManagement/Services/Compliance/ComplianceFieldObligationMapper.cs" Link="Production/ComplianceFieldObligationMapper.cs" />
     <Compile Include="../Beep.OilandGas.ApiService/Controllers/Compliance/RecordedObligationsController.cs" Link="Production/RecordedObligationsController.cs" />
     <Compile Include="../Beep.OilandGas.Web/Services/IComplianceServiceClient.cs" Link="Production/IComplianceServiceClient.cs" />
@@ -437,6 +444,7 @@
     <Compile Include="../Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HAZOPService.cs" Link="Production/HSE/HAZOPService.cs" />
     <Compile Include="../Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HSEIncidentService.cs" Link="Production/HSE/HSEIncidentService.cs" />
     <Compile Include="../Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HSEKPIService.cs" Link="Production/HSE/HSEKPIService.cs" />
+    <Compile Include="../Beep.OilandGas.PPDM39.DataManagement/Services/HSE/HSEIncidentRules.cs" Link="Production/HSE/HSEIncidentRules.cs" />
     <Compile Include="../Beep.OilandGas.PPDM39.DataManagement/Services/HSE/RCAService.cs" Link="Production/HSE/RCAService.cs" />
     <Compile Include="../Beep.OilandGas.LifeCycle/Services/HSE/PPDMHSEService.cs" Link="Production/HSE/PPDMHSEService.cs" />
     <Compile Include="../Beep.OilandGas.DevelopmentPlanning/Data/Projections/FacilityPlan.cs" Link="Production/FacilityPlan.cs" />
@@ -620,8 +628,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" PrivateAssets="all" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="$(BeepDMVersion)" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="$(BeepDMVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.6.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.9.0" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <Using Include="Microsoft.Extensions.Logging" />
   </ItemGroup>

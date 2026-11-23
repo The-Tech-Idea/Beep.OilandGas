@@ -279,7 +279,7 @@ public sealed partial class PermitProviderQualificationTests
         try
         {
             // Use the wizard's package installer, without manually scanning a connector assembly.
-            var installer = new SetupDriverService(editor, configuration, NullLogger<SetupDriverService>.Instance);
+            var installer = new SetupDriverService(editor, configuration, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.Repository.Tests.RecordingFailureReporter());
             var authorityChecks = 0;
             var reviewed = Assert.Single(installer.Catalog());
             var installed = await installer.InstallAsync(driver.GuidID, reviewed, () => { authorityChecks++; return Task.CompletedTask; }, default);

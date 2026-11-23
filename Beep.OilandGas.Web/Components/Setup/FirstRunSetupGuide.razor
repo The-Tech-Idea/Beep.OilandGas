@@ -87,6 +87,6 @@
         RepositoryReadiness.BootstrapRequired => "Repository installed. The first person to sign in becomes its administrator.",
         RepositoryReadiness.MigrationRequired => "Repository installation or migration is required on the API server.",
         RepositoryReadiness.RecoveryRequired => "Repository administrator state requires operator recovery; first-user registration is unavailable.",
-        _ => "Repository unavailable. Check the API service and repository connection."
+        RepositoryReadiness.Unavailable => "Repository unavailable. Check the API service and repository connection."
     };
 }

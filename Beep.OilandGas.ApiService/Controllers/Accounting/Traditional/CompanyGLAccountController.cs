@@ -14,7 +14,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 [ApiController]
 [Authorize]
 [Route("api/accounting/traditional/gl/company-accounts")]
-public sealed partial class CompanyGLAccountController(GLAccountService accounts,ICompanyAccountingReadContext context,ILogger<CompanyGLAccountController> logger):ControllerBase
+public sealed partial class CompanyGLAccountController(GLAccountService accounts,ICompanyAccountingReadContext context,TheTechIdeaWeb.Diagnostics.IFailureReporter failures):ControllerBase
 {
     private async Task<(CompanyScope Company,string Actor,string Binding,Func<Task> Guard)> Authority(bool configure=false,CompanyGLAccountConfigurationCommand? command=null,CompanyGLMappingConfigurationCommand? mapping=null,CompanyLedgerPeriodCreation? period=null,CompanyGLMappingTransitionCommand? transition=null,CompanyLedgerBookConfigurationCommand? book=null,CompanyFxRateConfigurationCommand? fx=null)
     {
@@ -80,10 +80,10 @@ public sealed partial class CompanyGLAccountController(GLAccountService accounts
     });
     private async Task<ActionResult> ConfigurationExecute(Func<Task<ActionResult>> action)
     {
-        try{return await action();}catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
+        try{return await action();}catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
         catch(Exception unavailable) when(unavailable is InvalidOperationException or AggregateException or ArgumentException or System.Text.Json.JsonException)
-        {logger.LogWarning(unavailable,"The original company ledger configuration request or outcome is unconfirmed.");return Conflict(new{error="Account configuration is unconfirmed. Retain the exact original request, return to its company/account/binding and reconcile before another configuration command."});}
+        {failures.ReportHandled(unavailable,"The original company ledger configuration request or outcome is unconfirmed.","original accounting evidence or outcome unconfirmed; request refused");return Conflict(new{error="Account configuration is unconfirmed. Retain the exact original request, return to its company/account/binding and reconcile before another configuration command."});}
     }
     [HttpGet("mappings")]
     public async Task<ActionResult<CompanyGLMappingReview>> ReadMappings([FromQuery]string book,[FromQuery]string currency,[FromQuery]string date,[FromServices]AccountMappingService mappings)
@@ -94,10 +94,10 @@ public sealed partial class CompanyGLAccountController(GLAccountService accounts
             var original=await Authority();var review=await mappings.GetCompanyMappingsAsync(original.Company,original.Actor,book,currency,asOf,original.Guard);
             await original.Guard();review.Require(original.Company,original.Actor,book,currency,asOf);return Ok(review);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
         catch(Exception unavailable) when(unavailable is InvalidOperationException or AggregateException or ArgumentException)
-        {logger.LogWarning(unavailable,"Company ledger account mapping evidence is unconfirmed.");return Conflict(new{error="Company mapping evidence is unavailable or changed. Review the original book, currency, company calendar date and exact configured accounts before journal preparation."});}
+        {failures.ReportHandled(unavailable,"Company ledger account mapping evidence is unconfirmed.","original accounting evidence or outcome unconfirmed; request refused");return Conflict(new{error="Company mapping evidence is unavailable or changed. Review the original book, currency, company calendar date and exact configured accounts before journal preparation."});}
     }
     [HttpGet]
     public async Task<ActionResult<CompanyGLAccountReview>> Read([FromQuery]string book,[FromQuery]string currency)
@@ -108,9 +108,9 @@ public sealed partial class CompanyGLAccountController(GLAccountService accounts
             var original=await Authority();var review=await accounts.GetCompanyAccountsAsync(original.Company,original.Actor,book,currency,original.Guard);
             await original.Guard();review.Require(original.Company,original.Actor,book,currency);return Ok(review);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
         catch(Exception unavailable) when(unavailable is InvalidOperationException or AggregateException or ArgumentException)
-        {logger.LogWarning(unavailable,"Company ledger account configuration is unconfirmed.");return Conflict(new{error="Company ledger account configuration is unavailable or changed. Review the original company, book, currency and configured accounts before posting."});}
+        {failures.ReportHandled(unavailable,"Company ledger account configuration is unconfirmed.","original accounting evidence or outcome unconfirmed; request refused");return Conflict(new{error="Company ledger account configuration is unavailable or changed. Review the original company, book, currency and configured accounts before posting."});}
     }
 }

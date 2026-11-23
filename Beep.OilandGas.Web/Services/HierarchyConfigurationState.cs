@@ -11,7 +11,7 @@ public sealed class HierarchyConfigurationState : IDisposable
 {
     private readonly CompanyClientContext company;
     private readonly Func<string, CancellationToken, Task<List<HierarchyConfig>?>> load;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private readonly Func<string, List<HierarchyConfig>, CancellationToken, Task<bool>> save;
     private CancellationTokenSource? pending;
     private long generation;
@@ -30,7 +30,7 @@ public sealed class HierarchyConfigurationState : IDisposable
     public event Action? Changed;
 
     public HierarchyConfigurationState(CompanyClientContext company,
-        Func<string, CancellationToken, Task<List<HierarchyConfig>?>> load, Func<Exception, string, string, string> explain,
+        Func<string, CancellationToken, Task<List<HierarchyConfig>?>> load, OilGasCallFailures explain,
         Func<string, List<HierarchyConfig>, CancellationToken, Task<bool>> save)
     {
         this.company = company; this.load = load; this.explain = explain;
@@ -58,10 +58,10 @@ public sealed class HierarchyConfigurationState : IDisposable
             Configuration = rows!.OrderBy(row => row.HierarchyLevel).ThenBy(row => row.AssetType).ToList(); Loaded = true;
             loadedScope = scope; revision = rows!.FirstOrDefault()?.Revision;
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "HierarchyConfigurationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
-            var sentence = explain(failure, "loading hierarchy configuration", "Hierarchy configuration could not be loaded");
+            var sentence = explain.Explain(failure, "loading hierarchy configuration", "Hierarchy configuration could not be loaded");
             if (Current()) Error = sentence;
         }
         finally
@@ -132,10 +132,10 @@ public sealed class HierarchyConfigurationState : IDisposable
             Configuration = rows.OrderBy(row => row.HierarchyLevel).ThenBy(row => row.AssetType).ToList(); revision = rows[0].Revision;
             Confirmation = "Hierarchy configuration saved and refreshed.";
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "HierarchyConfigurationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
-            var sentence = explain(failure, committed ? "refreshing saved hierarchy configuration" : "saving hierarchy configuration",
+            var sentence = explain.Explain(failure, committed ? "refreshing saved hierarchy configuration" : "saving hierarchy configuration",
                 committed ? "Saved configuration could not be refreshed. Refresh before editing" : "Configuration save could not be confirmed. Refresh before editing");
             if (Current()) { Configuration = []; Loaded = false; loadedScope = null; revision = null; Error = sentence; }
         }

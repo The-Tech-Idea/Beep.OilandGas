@@ -24,10 +24,10 @@ public sealed class CompanyFieldInterestAdministrationTests
     private static void Select(CompanyClientContext company, string user = "actor", bool admin = true, CompanyScope? scope = null) =>
         Assert.True(company.TrySelect(company.Clear(), user, new(scope ?? Scope, admin ? ["Administrator"] : [], [])));
     private static AssetGrantAdministrationState State(CompanyClientContext company, ReviewClient client,
-        Func<Exception, string, string, string>? explain = null) => new(company, (_, _) => Task.FromResult<List<Beep.OilandGas.Models.Data.AssetAccess>?>([]),
+        OilGasCallFailures? explain = null) => new(company, (_, _) => Task.FromResult<List<Beep.OilandGas.Models.Data.AssetAccess>?>([]),
             (_, _, _) => throw new InvalidOperationException("Interest review cannot grant access."),
             (_, _, _) => throw new InvalidOperationException("Interest review cannot revoke access."),
-            explain ?? ((_, _, sentence) => sentence + ". Refresh company selection or verify your FIELD access."), client);
+            explain ?? Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), client);
     private static FieldInterestReview Result() => new(Scope, new string('A', 64), "A", Now, "UTC", [
         new(new INTEREST_SET { INTEREST_SET_ID = "set", INTEREST_SET_SEQ_NO = 1, INTEREST_SET_TYPE = "test-interest", ACTIVE_IND = "Y", EFFECTIVE_DATE = Now.AddYears(-1) },
             [new INT_SET_COMPONENT { INTEREST_SET_ID = "set", INTEREST_SET_SEQ_NO = 1, COMPONENT_OBS_NO = 7, COMPONENT_TYPE = "test-field", FIELD_ID = "A", ACTIVE_IND = "Y", EFFECTIVE_DATE = Now.AddYears(-1) }],
@@ -149,7 +149,10 @@ public sealed class CompanyFieldInterestAdministrationTests
     {
         using var company = new CompanyClientContext(); Select(company); var client = new Mock<ReviewClient>();
         client.Setup(value => value.GetFieldInterestReviewAsync("A", It.IsAny<CancellationToken>())).ThrowsAsync(new ApiClientException("Denied."));
-        using var state = State(company, client.Object, (_, _, _) => { Select(company, user: "new-actor"); return "Old actor error."; });
+        var reporter = new Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter>();
+        reporter.Setup(value => value.ReportHandled(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TheTechIdeaWeb.Diagnostics.FailureSeverity>()))
+            .Callback(() => Select(company, user: "new-actor")).Returns(TheTechIdeaWeb.Diagnostics.FailureReferenceFormat.New());
+        using var state = State(company, client.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(reporter.Object));
         state.SelectInterestField("A"); await state.LoadInterestReviewAsync(); Assert.Null(state.Error); Assert.Null(state.InterestReview); Assert.False(state.Busy);
     }
 

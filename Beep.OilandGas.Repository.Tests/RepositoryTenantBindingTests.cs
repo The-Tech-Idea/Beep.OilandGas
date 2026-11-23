@@ -21,6 +21,37 @@ namespace Beep.OilandGas.Repository.Tests;
 public sealed class RepositoryTenantBindingTests
 {
     [Fact]
+    public async Task Environment_source_review_uses_current_binding_and_reports_missing_binding_as_unavailable()
+    {
+        using var f = new Fixture();
+        var reader = new CompanyEnvironmentBindingReader(f.Resolver("A"));
+        Assert.Null(await reader.ResolveAsync("PRODUCTION", default));
+        await f.Bindings.BindAsync("A", "PRODUCTION", new("db-a", null), "user");
+        Assert.Equal(await f.Resolver("A").GetMigrationBindingFingerprintAsync(["PRODUCTION"], "db-a"),
+            await reader.ResolveAsync("PRODUCTION", default));
+        f.Editor.Verify(x => x.GetDataSource(It.IsAny<string>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("SECURITY")]
+    [InlineData("security")]
+    [InlineData("SYSTEM_SETUP")]
+    [InlineData("system_setup")]
+    public async Task Repository_owned_modules_cannot_be_bound_resolved_or_planned(string module)
+    {
+        using var f = new Fixture();
+        Assert.Equal(RefusalKind.Invalid, (await Assert.ThrowsAsync<RefusalException>(() =>
+            f.Bindings.BindAsync("A", module, new("db-a", null), "user"))).Kind);
+        Assert.Equal(RefusalKind.Invalid, (await Assert.ThrowsAsync<RefusalException>(() =>
+            f.Resolver("A").ResolveAsync(module))).Kind);
+        Assert.Equal(RefusalKind.Invalid, (await Assert.ThrowsAsync<RefusalException>(() =>
+            f.Resolver("A").GetMigrationBindingFingerprintAsync([module], "db-a"))).Kind);
+        Assert.Empty(await f.Db.ModuleDatabases.ToArrayAsync());
+        Assert.Empty(await f.Db.Set<AppModuleConnection>().ToArrayAsync());
+        f.Editor.Verify(x => x.GetDataSource(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Identical_modules_in_different_tenants_resolve_only_their_owned_connection()
     {
         using var f = new Fixture();

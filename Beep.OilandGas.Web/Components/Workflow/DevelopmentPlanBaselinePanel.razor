@@ -75,7 +75,7 @@
     private string? _revision;
     private string _rationale="";
     private bool disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,Development,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Development,Journal,Calls);_state.Changed+=Changed;}
     protected override async Task OnParametersSetAsync(){if(_revision!=Review.Revision){_revision=Review.Revision;_rationale="";await _state!.LoadAsync(Review);}}
     private Task Inspect()=>_state!.InspectAsync();
     private void Prepare()=>_state!.Prepare(_rationale);

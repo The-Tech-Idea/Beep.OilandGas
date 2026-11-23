@@ -12,7 +12,7 @@ public sealed class DevelopmentReviewProgressState : IDisposable
     private readonly CompanyClientContext company;
     private readonly IPersonaContextService personas;
     private readonly IDevelopmentServiceClient client;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private DevelopmentReviewProgress? current;
     private long generation;
     private bool disposed;
@@ -22,7 +22,7 @@ public sealed class DevelopmentReviewProgressState : IDisposable
     public bool Loading{get;private set;}
     public string? Error{get;private set;}
     public event Action? Changed;
-    public DevelopmentReviewProgressState(CompanyClientContext company,IPersonaContextService personas,IDevelopmentServiceClient client,Func<Exception,string,string,string> explain)
+    public DevelopmentReviewProgressState(CompanyClientContext company,IPersonaContextService personas,IDevelopmentServiceClient client,OilGasCallFailures explain)
     {this.company=company;this.personas=personas;this.client=client;this.explain=explain;company.Changed+=Invalidate;personas.Changed+=Invalidate;}
     private void Invalidate(){++generation;current=null;Loading=false;Error=null;Changed?.Invoke();}
     public async Task LoadAsync(string? processId)
@@ -36,7 +36,7 @@ public sealed class DevelopmentReviewProgressState : IDisposable
             var result=await client.GetDraftReviewProgressAsync(processId!);if(!Active())return;
             result.Require(selected.Selection.Scope,selected.Selection.UserId,processId);current=JsonSerializer.Deserialize<DevelopmentReviewProgress>(JsonSerializer.Serialize(result));
         }
-        catch(Exception error){var text=explain(error,"reading recorded development review history","The recorded review outcome and audit could not be confirmed");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"reading recorded development review history","The recorded review outcome and audit could not be confirmed");if(Active())Error=text;}
         finally{if(Active()){Loading=false;Changed?.Invoke();}}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;Invalidate();}

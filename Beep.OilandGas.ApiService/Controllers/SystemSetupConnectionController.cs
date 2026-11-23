@@ -9,7 +9,8 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [ApiController]
 [Authorize(Roles = "Administrator")]
 [Route("api/setup/system-repository/connection")]
-public sealed class SystemSetupConnectionController(SystemSetupConnectionSelectionService selection, RepositoryRequestAccount account) : ControllerBase
+public sealed class SystemSetupConnectionController(SystemSetupConnectionSelectionService selection, RepositoryRequestAccount account,
+    TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken token)
@@ -26,6 +27,10 @@ public sealed class SystemSetupConnectionController(SystemSetupConnectionSelecti
         var actor = await account.RequireAdministratorAsync(token);
         async Task Guard() { if (await account.RequireAdministratorAsync(token) != actor) throw new UnauthorizedAccessException("The administrator changed."); }
         try { return Ok(await selection.SelectAsync(request.ConnectionName, Guard, token)); }
-        catch (InvalidOperationException) { return Conflict(new { error = "The connection could not be selected. Check its status and existing system target." }); }
+        catch (InvalidOperationException error)
+        {
+            failures.ReportHandled(error, "selecting the system repository connection", "selection could not be confirmed; the administrator receives a conflict");
+            return Conflict(new { error = "The connection could not be selected. Check its status and existing system target." });
+        }
     }
 }

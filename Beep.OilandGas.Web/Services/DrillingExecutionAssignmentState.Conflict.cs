@@ -16,7 +16,7 @@ public sealed partial class DrillingExecutionAssignmentState
         var original=Copy(pending)!;var selected=company.Snapshot;var epoch=generation;bool Current()=>Active(selected,epoch);
         reading=true;Error=null;conflict=null;ConflictAcknowledged=false;Changed?.Invoke();
         try{var result=await client.GetExecutionAssignmentConflictAsync(original);result.Require(original);if(Current())conflict=Copy(result);}
-        catch(Exception error){var text=explain(error,"inspecting competing reporting responsibility","The original absence and different recorded responsibility are unconfirmed. Preserve the original");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"inspecting competing reporting responsibility","The original absence and different recorded responsibility are unconfirmed. Preserve the original");if(Current())Error=text;}
         finally{if(Current()){reading=false;Changed?.Invoke();}}
     }
     public async Task AcknowledgeConflictAsync()
@@ -33,7 +33,7 @@ public sealed partial class DrillingExecutionAssignmentState
             if(!Current())return;await journal.ClearExecutionAssignmentAsync(original);if(!Current())return;
             pending=null;feedback.Reset();Confirmation="You kept the exact different recorded responsibility and cleared this confirmed-unrecorded original from this tab. No responsibility, task, execution or report was changed or completed. Reload its recorded source.";
         }
-        catch(Exception error){var text=explain(error,"acknowledging competing reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,"acknowledging competing reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
 }

@@ -127,7 +127,7 @@ public sealed class RepositoryCompanyAccessTests
     {
         using var fixture = new Fixture(); using var services = fixture.IdentityServices();
         fixture.Db.Add(new AppUserRoleExtension { UserId = "user", RoleId = "admin", EffectiveFromUtc = Now.UtcDateTime }); await fixture.Db.SaveChangesAsync();
-        var controller = new Beep.OilandGas.ApiService.Controllers.Identity.InitialCompanyProvisionController(fixture.Assignments(services));
+        var controller = new Beep.OilandGas.ApiService.Controllers.Identity.InitialCompanyProvisionController(fixture.Assignments(services), new RecordingFailureReporter());
         controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext() };
         controller.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity([new System.Security.Claims.Claim("party_id", "user")], "test"));
         var request = new InitialCompanyProvisionRequest("NEW", "New", "BA-1", "Initial setup", "11111111111111111111111111111111");

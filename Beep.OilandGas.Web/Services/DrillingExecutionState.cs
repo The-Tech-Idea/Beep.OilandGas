@@ -13,7 +13,7 @@ public sealed partial class DrillingExecutionState:IDisposable
     public bool PendingSubmissionMayHaveBeenSent=>pending is not null && originalFeedback.SubmissionMayHaveBeenSent;
     public string PendingTitle=>originalFeedback.Title("execution start");
     public string? PendingExplanation=>pending is null?null:ConflictAcknowledged && conflict is not null?ConflictCleanupExplanation:originalFeedback.Explanation;
-    private readonly CompanyClientContext company;private readonly IPersonaContextService personas;private readonly IDrillingServiceClient client;private readonly IDevelopmentDraftIntentStore journal;private readonly Func<Exception,string,string,string> explain;private bool disposed,ready;private long generation,request;private string? reviewId;private DrillingExecutionStatus? status;private DrillingExecutionBasis? basis;private DrillingExecutionStart? prepared,pending;private DrillingExecutionStartReceipt? receipt;
+    private readonly CompanyClientContext company;private readonly IPersonaContextService personas;private readonly IDrillingServiceClient client;private readonly IDevelopmentDraftIntentStore journal;private readonly OilGasCallFailures explain;private bool disposed,ready;private long generation,request;private string? reviewId;private DrillingExecutionStatus? status;private DrillingExecutionBasis? basis;private DrillingExecutionStart? prepared,pending;private DrillingExecutionStartReceipt? receipt;
     public DrillingExecutionStatus? Status=>Copy(status);public DrillingExecutionBasis? Basis=>Copy(basis);public DrillingExecutionStart? Prepared=>Copy(prepared);public DrillingExecutionStart? Pending=>pending?.Basis.ReviewInstanceId==reviewId?Copy(pending):null;public string? RetainedReviewId=>pending?.Basis.ReviewInstanceId;public DrillingExecutionStartReceipt? Receipt=>Copy(receipt);
     private bool reading,writing;public bool Busy=>reading||writing;public string? Error{get;private set;}public string? Confirmation{get;private set;}
     public bool CanView=>company.Selection is {} selected && new[]{"Drilling.View","Accounting.View","DevelopmentPlanning.View","Workflow.View"}.All(permission=>selected.Permissions.Contains(permission,StringComparer.Ordinal));
@@ -23,7 +23,7 @@ public sealed partial class DrillingExecutionState:IDisposable
     public bool CanPrepare=>CanInspect && basis is not null && ProfileMatches(basis);
     public bool CanRecover=>!Busy && ready && CanView && pending is not null && pending.Basis.ReviewInstanceId==reviewId && pending.Basis.Scope().Company==company.Selection!.Scope && pending.Basis.Scope().ActorUserId==company.Selection.UserId;
     public event Action? Changed;
-    public DrillingExecutionState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+    public DrillingExecutionState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;company.Changed+=Invalidate;personas.Changed+=Invalidate;}
     private static T? Copy<T>(T? value) where T:class=>value is null?null:CompanyInventorySourceReview.Copy(value);
     private void Invalidate(){++generation;reading=false;ready=false;status=null;basis=null;prepared=null;pending=null;receipt=null;conflict=null;ConflictAcknowledged=false;originalFeedback.Reset();Error=null;Confirmation=null;if(!disposed)Changed?.Invoke();}
@@ -41,19 +41,19 @@ public sealed partial class DrillingExecutionState:IDisposable
             if(HasRecorderRights){await personas.EnsureLoadedAsync();if(disposed || selected!=company.Snapshot || sequence!=request)return;epoch=generation;}
             if(Current()){status=Copy(found);ready=true;}
         }
-        catch(Exception error){var text=explain(error,"loading original program execution","The exact approved program and recorded execution or absence could not be confirmed");if(Current()){status=null;basis=null;Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,"loading original program execution","The exact approved program and recorded execution or absence could not be confirmed");if(Current()){status=null;basis=null;Error=text;}}
         finally{if(Current()){reading=false;Changed?.Invoke();}}
     }
     public async Task InspectAsync()
     {
         if(!CanInspect)return;var selected=company.Snapshot;var epoch=generation;reading=true;Error=null;basis=null;prepared=null;Changed?.Invoke();
         try{var found=await client.GetExecutionBasisAsync(reviewId!);if(!Active(selected,epoch))return;RequireBasis(found);status!.Basis.RequireSource(found,true);if(!ProfileMatches(found))throw new InvalidOperationException("Your current execution role and mapped workspace must match this source.");basis=Copy(found);}
-        catch(Exception error){var text=explain(error,"reviewing approved execution start source","The approved program/current active well and execution recorder could not be confirmed");if(Active(selected,epoch))Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"reviewing approved execution start source","The approved program/current active well and execution recorder could not be confirmed");if(Active(selected,epoch))Error=text;}
         finally{if(Active(selected,epoch)){reading=false;Changed?.Invoke();}}
     }
     public void Prepare(string? role,string? spudUtc,string? rationale)
     {
-        if(!CanPrepare)return;Error=null;prepared=null;try{if(!ExplicitUtcInput.TryParse(spudUtc,out var utc))throw new InvalidOperationException("Enter an explicit actual UTC spud timestamp ending in Z or +00:00.");if(utc>DateTime.UtcNow)throw new InvalidOperationException("Actual spud UTC cannot be in the future.");var original=new DrillingExecutionStart(Copy(basis)!,Guid.NewGuid(),role??"",new DateTimeOffset(utc),rationale?.Trim()??"");original.Require();prepared=original;}catch(Exception error){Error=explain(error,"preparing actual execution start","Choose your current role and report actual spud UTC with its recorded rationale");}Changed?.Invoke();
+        if(!CanPrepare)return;Error=null;prepared=null;try{if(!ExplicitUtcInput.TryParse(spudUtc,out var utc))throw new InvalidOperationException("Enter an explicit actual UTC spud timestamp ending in Z or +00:00.");if(utc>DateTime.UtcNow)throw new InvalidOperationException("Actual spud UTC cannot be in the future.");var original=new DrillingExecutionStart(Copy(basis)!,Guid.NewGuid(),role??"",new DateTimeOffset(utc),rationale?.Trim()??"");original.Require();prepared=original;}catch(Exception error){Error=explain.Explain(error,"preparing actual execution start","Choose your current role and report actual spud UTC with its recorded rationale");}Changed?.Invoke();
     }
     public void Cancel(){if(Busy || pending is not null)return;prepared=null;Changed?.Invoke();}
     public Task SubmitAsync()=>Record(false);public Task RecoverAsync()=>Record(true);
@@ -68,7 +68,7 @@ public sealed partial class DrillingExecutionState:IDisposable
             await journal.ClearExecutionAsync(original);if(!Current())return;pending=null;originalFeedback.Reset();
             Confirmation=result.Recorded is null?"The original execution start was confirmed absent. Reload the current source before another confirmation.":"The exact original execution start was confirmed recorded. WELL state, financial actuals, completion and production handover remain separate.";
         }
-        catch(Exception error){var text=explain(error,recover?"recovering original execution start":"recording actual execution start",failureExplanation);if(Current()){originalFeedback.Failed();Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering original execution start":"recording actual execution start",failureExplanation);if(Current()){originalFeedback.Failed();Error=text;}}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;++request;Invalidate();}

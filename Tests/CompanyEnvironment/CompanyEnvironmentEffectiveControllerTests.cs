@@ -35,7 +35,7 @@ public sealed class CompanyEnvironmentEffectiveControllerTests
         tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
         var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new string('A', 64), null);
         var store = new Store(saved) { OnRead = () => { if (revoke) access.Value = null; } };
-        var controller = new CompanyEnvironmentEffectiveController(tenant, resolver, new CompanyEnvironmentEffectiveResolver(store, new TestSystemDefaults()), NullLogger<CompanyEnvironmentEffectiveController>.Instance)
+        var controller = new CompanyEnvironmentEffectiveController(tenant, resolver, new CompanyEnvironmentEffectiveResolver(store, new TestSystemDefaults()), new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor")], "test")) } } };
         var result = await controller.Get(default);
         if (revoke) Assert.IsType<ForbidResult>(result);

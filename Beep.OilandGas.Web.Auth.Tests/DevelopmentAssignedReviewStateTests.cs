@@ -39,7 +39,7 @@ public sealed class DevelopmentAssignedReviewStateTests
             Personas.SetupGet(personas=>personas.CurrentProfile).Returns(()=>new AppUserPersona{UserId="reviewer",PersonaCode=Persona.Code});
             Personas.SetupGet(personas=>personas.CurrentPersona).Returns(()=>Persona);Personas.Setup(personas=>personas.EnsureLoadedAsync()).Returns(Task.CompletedTask);
             Client.Setup(client=>client.GetAssignedDraftReviewAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>Review);
-            State=new(Company,Personas.Object,Client.Object,Journal,(_,_,text)=>text);
+            State=new(Company,Personas.Object,Client.Object,Journal,TestFailures.Calls(new RecordingFailureReporter()));
         }
         public void Dispose(){State.Dispose();Company.Dispose();}
     }
@@ -86,7 +86,7 @@ public sealed class DevelopmentAssignedReviewStateTests
     {
         using var f=new Fixture(mode!="permission");if(mode=="failed")f.Client.Setup(client=>client.GetAssignedDraftReviewAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ThrowsAsync(new HttpRequestException());
         using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);
-        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/development/fdp/assigned?processId="+Uri.EscapeDataString(f.Review.InstanceId));
         var page=ui.RenderComponent<AssignedPage>();page.WaitForAssertion(()=>Assert.DoesNotContain("Loading assigned development review",page.Markup));
         if(mode=="permission"){Assert.Contains("review permissions are required",page.Markup);Assert.DoesNotContain("Recorded concept",page.Markup);return;}

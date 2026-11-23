@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -278,7 +279,7 @@
                 throw new InvalidOperationException("The study or FIELD could not be confirmed.");
             _summary = summary; _nodes = nodes; _review = before.SelectionContext;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Could not confirm recorded HAZOP study"); _error = "The recorded HAZOP study could not be confirmed for the current company and FIELD."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HAZOPStudy.LoadAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Could not confirm recorded HAZOP study"); _error = "The recorded HAZOP study could not be confirmed for the current company and FIELD."; } }
         finally { if (Current()) _loading = false; }
     }
 
@@ -310,7 +311,7 @@
             if (_summary is not null) Snackbar.Add("Request accepted. Review the recorded study.", Severity.Info);
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HAZOPStudy.ChangeAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (Current())
             {
                 Logger.LogWarning(error, "HAZOP study change could not be confirmed");

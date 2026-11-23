@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -117,7 +118,10 @@
     [Parameter] public DELIVERY_ACCEPTANCE_INTENT? RecoveryIntent{get;set;}
     [Parameter] public EventCallback RecordedOutcomeChanged{get;set;}
     private MudForm? _form;
-    private static string BillingBasisMessage(RevenueDeliveryBillingBasisStatus status)=>status switch
+    private static string BillingBasisMessage(RevenueDeliveryBillingBasisStatus status)
+    {
+        if(!Enum.IsDefined(status))throw new InvalidOperationException("The source-bound billing basis is unconfirmed.");
+        return status switch
     {
         RevenueDeliveryBillingBasisStatus.HistoricalReceivingEvidence=>"Historical receiving evidence cannot supply the current invoice price basis.",
         RevenueDeliveryBillingBasisStatus.CommercialTermsRequired=>"Record explicit commercial terms before reviewing the billing basis.",
@@ -133,8 +137,8 @@
         RevenueDeliveryBillingBasisStatus.ZeroPricePolicyRequired=>"A zero-price policy must be reviewed before invoice preparation.",
         RevenueDeliveryBillingBasisStatus.AmountOutOfRange=>"The exact price extension exceeds supported decimal range or precision. Review the calculation policy before billing.",
         RevenueDeliveryBillingBasisStatus.CompatibleFixedUnitPrice=>"Current independently approved receiving quantity and fixed-unit price have an exact unit/currency basis. Continue company invoice-policy review before preparation.",
-        _=>throw new InvalidOperationException("The source-bound billing basis is unconfirmed.")
     };
+    }
     private DateTime? _dateUtc;
     private TimeSpan? _timeUtc;
     private decimal? _quantity;
@@ -174,31 +178,31 @@
         if(State.Review is {} review)
         {
             if(AssignedSource is null && review.Recorded is null && selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal))
-            {try{RevenueDeliveryAcceptancePreparation.RequireSource(review.Source);_canPrepare=true;}catch(InvalidOperationException){}}
+            {try{RevenueDeliveryAcceptancePreparation.RequireSource(review.Source);_canPrepare=true;}catch(InvalidOperationException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "DeliveryAcceptanceWorkbench.Access", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); }}
             if(review.Recorded is {} record && record.Decision is null && selection.Permissions.Contains("ProductionAccounting.Approve",StringComparer.Ordinal))
-            {try{RevenueDeliveryAcceptanceDecisionCommand.RequireReviewer(record,actor);_canDecide=true;_canApprove=record.Preparation.Facts.HasExplicitQuantity;}catch(InvalidOperationException){}}
+            {try{RevenueDeliveryAcceptanceDecisionCommand.RequireReviewer(record,actor);_canDecide=true;_canApprove=record.Preparation.Facts.HasExplicitQuantity;}catch(InvalidOperationException handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "DeliveryAcceptanceWorkbench.Access", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); }}
         }
     }
     protected override void OnInitialized(){State.Changed+=StateChanged;Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
     protected override async Task OnParametersSetAsync(){var next=(FieldId,From,Through,TransactionId,AssignedSource?.InstanceId,AssignedSource?.ProcessRevision,RecoveryIntent?.RECORDED_REVISION,CorrectionReview?.ProcessRevision);if(_parameters==next)return;++_epoch;_parameters=next;State.AttachOwner(this,FieldId,From,Through,TransactionId);ResetDraft();await Reload();}
     private void ResetDraft(){_dateUtc=null;_timeUtc=null;_quantity=null;_buyer="";_reference="";_notes="";_reason="";_correctionReason="";}
-    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();if(RecoveryIntent is {} saved)State.RecoverSaved(saved);await State.LoadAsync(Accounting);if(epoch==_epoch && !_disposed)await Access();}catch{if(epoch==_epoch && !_disposed)_error="Delivery acceptance could not be confirmed. Return to the original context, check access and provisioning, then reload.";}}
+    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();if(RecoveryIntent is {} saved)State.RecoverSaved(saved);await State.LoadAsync(Accounting);if(epoch==_epoch && !_disposed)await Access();}catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "DeliveryAcceptanceWorkbench.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="Delivery acceptance could not be confirmed. Return to the original context, check access and provisioning, then reload.";}}
     private async Task Prepare()
     {
         var epoch=_epoch;_error=null;try{await Access();if(!_canPrepare)throw new UnauthorizedAccessException();if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
             if(_dateUtc is null || _timeUtc is null || _timeUtc<TimeSpan.Zero || _timeUtc>=TimeSpan.FromDays(1))throw new ArgumentException();
             var facts=new RevenueDeliveryAcceptanceFacts(DateTime.SpecifyKind(_dateUtc.Value.Date+_timeUtc.Value,DateTimeKind.Utc),_buyer,_reference,_notes){AcceptedQuantity=_quantity,AcceptedQuantityUnit=State.Review?.Source.VolumeUnit};await State.PrepareAsync(Accounting,facts);if(epoch==_epoch && !_disposed){ResetDraft();await Access();}}
-        catch{if(epoch==_epoch && !_disposed)_error="Delivery preparation was not confirmed. Check explicit UTC acceptance, positive accepted quantity in the certified unit, receiving buyer, evidence and notes. Retain any pending intent and reload its original context.";}
+        catch (System.Exception handledFailureAuto4){ HandledFailures.ReportHandled(handledFailureAuto4, "DeliveryAcceptanceWorkbench.Prepare", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="Delivery preparation was not confirmed. Check explicit UTC acceptance, positive accepted quantity in the certified unit, receiving buyer, evidence and notes. Retain any pending intent and reload its original context.";}
     }
-    private async Task Decide(RevenueDeliveryAcceptanceDecision decision){var epoch=_epoch;_error=null;try{await Access();if(!_canDecide || decision==RevenueDeliveryAcceptanceDecision.Approve && !_canApprove)throw new UnauthorizedAccessException();await State.DecideAsync(Accounting,decision,_reason);if(epoch==_epoch && !_disposed){_reason="";await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="Delivery decision was not confirmed. Check explicit accepted quantity, independent reviewer access and reason. Retain any pending intent and reload its original context.";}}
-    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(State.PendingPreparation is not null && !_canPrepare || State.PendingDecision is not null && !_canDecide || State.PendingOriginal?.Correction is not null && !_canRecoverCorrection)throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(epoch==_epoch && !_disposed){await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="The original delivery intent remains unconfirmed. Reload and reconcile before another command.";}}
+    private async Task Decide(RevenueDeliveryAcceptanceDecision decision){var epoch=_epoch;_error=null;try{await Access();if(!_canDecide || decision==RevenueDeliveryAcceptanceDecision.Approve && !_canApprove)throw new UnauthorizedAccessException();await State.DecideAsync(Accounting,decision,_reason);if(epoch==_epoch && !_disposed){_reason="";await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch (System.Exception handledFailureAuto5){ HandledFailures.ReportHandled(handledFailureAuto5, "DeliveryAcceptanceWorkbench.Decide", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="Delivery decision was not confirmed. Check explicit accepted quantity, independent reviewer access and reason. Retain any pending intent and reload its original context.";}}
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(State.PendingPreparation is not null && !_canPrepare || State.PendingDecision is not null && !_canDecide || State.PendingOriginal?.Correction is not null && !_canRecoverCorrection)throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(epoch==_epoch && !_disposed){await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch (System.Exception handledFailureAuto6){ HandledFailures.ReportHandled(handledFailureAuto6, "DeliveryAcceptanceWorkbench.Retry", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="The original delivery intent remains unconfirmed. Reload and reconcile before another command.";}}
     private async Task Correct()
     {
         var epoch=_epoch;_error=null;try{await Access();if(!_canCorrect || CorrectionReview is null)throw new UnauthorizedAccessException();if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
             if(_dateUtc is null || _timeUtc is null || _timeUtc<TimeSpan.Zero || _timeUtc>=TimeSpan.FromDays(1))throw new ArgumentException();
             var facts=new RevenueDeliveryAcceptanceFacts(DateTime.SpecifyKind(_dateUtc.Value.Date+_timeUtc.Value,DateTimeKind.Utc),_buyer,_reference,_notes){AcceptedQuantity=_quantity,AcceptedQuantityUnit=State.Review?.Source.VolumeUnit};
             await State.CorrectAsync(Accounting,CorrectionReview,facts,_correctionReason);if(epoch==_epoch && !_disposed){ResetDraft();await RecordedOutcomeChanged.InvokeAsync();}
-        }catch{if(epoch==_epoch && !_disposed)_error="Receiving correction was not confirmed. Check changed explicit facts, certified quantity/unit, original preparer access and correction reason. Retain and recover the original saved command before another correction.";}
+        }catch (System.Exception handledFailureAuto7){ HandledFailures.ReportHandled(handledFailureAuto7, "DeliveryAcceptanceWorkbench.Correct", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="Receiving correction was not confirmed. Check changed explicit facts, certified quantity/unit, original preparer access and correction reason. Retain and recover the original saved command before another correction.";}
     }
     private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_canDecide=false;_canApprove=false;_canRecoverCorrection=false;_canCorrect=false;_error=null;ResetDraft();if(!_disposed)_=InvokeAsync(StateHasChanged);}

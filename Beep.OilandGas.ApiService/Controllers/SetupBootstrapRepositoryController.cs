@@ -10,7 +10,8 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [ApiController]
 [Route("api/setup/bootstrap/repository")]
 [AllowAnonymous]
-public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess access, IServiceProvider services) : ControllerBase
+public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess access, IServiceProvider services,
+    TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : ControllerBase
 {
     private async Task Guard(CancellationToken token)
     {
@@ -22,7 +23,7 @@ public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess acce
     public async Task<IActionResult> Connections(CancellationToken token)
     {
         try { await Guard(token); return Ok(services.GetRequiredService<SetupRepositoryConnectionSelectionService>().Connections()); }
-        catch (UnauthorizedAccessException) { return Unauthorized(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "authorizing repository bootstrap", "request unauthorized"); return Unauthorized(); }
     }
 
     [HttpPost("connection")]
@@ -33,7 +34,7 @@ public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess acce
             await Guard(token);
             return Ok(await services.GetRequiredService<SetupRepositoryConnectionSelectionService>().SelectAsync(request.ConnectionName, () => Guard(token), token));
         }
-        catch (UnauthorizedAccessException) { return Unauthorized(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "authorizing repository bootstrap", "request unauthorized"); return Unauthorized(); }
     }
 
     [HttpPost("connections/test")]
@@ -44,7 +45,7 @@ public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess acce
             await Guard(token);
             return Ok(await services.GetRequiredService<SetupRepositoryConnectionSelectionService>().TestAsync(request.ConnectionName, () => Guard(token), token));
         }
-        catch (UnauthorizedAccessException) { return Unauthorized(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "authorizing repository bootstrap", "request unauthorized"); return Unauthorized(); }
     }
 
     [HttpPost("connections")]
@@ -55,7 +56,7 @@ public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess acce
             await Guard(token);
             return Ok(await services.GetRequiredService<SetupRepositoryConnectionCreationService>().CreateAsync(request, () => Guard(token), token));
         }
-        catch (UnauthorizedAccessException) { return Unauthorized(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "authorizing repository bootstrap", "request unauthorized"); return Unauthorized(); }
     }
 
     [HttpGet("migration")]
@@ -66,8 +67,8 @@ public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess acce
             await Guard(token);
             return Ok(await services.GetRequiredService<SetupRepositoryMigrationService>().PlanAsync(() => Guard(token), token));
         }
-        catch (UnauthorizedAccessException) { return Unauthorized(); }
-        catch (PersonaScopeTransitionRequiredException) { return Conflict(new { error = "Existing account-wide persona settings need a reviewed company assignment before migration." }); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "authorizing repository bootstrap", "request unauthorized"); return Unauthorized(); }
+        catch (PersonaScopeTransitionRequiredException transition) { failures.ReportHandled(transition, "preparing repository migration", "migration refused pending reviewed persona company assignment"); return Conflict(new { error = "Existing account-wide persona settings need a reviewed company assignment before migration." }); }
     }
 
     [HttpPost("migration")]
@@ -78,7 +79,7 @@ public sealed class SetupBootstrapRepositoryController(SetupBootstrapAccess acce
             await Guard(token);
             return Ok(await services.GetRequiredService<SetupRepositoryMigrationService>().ApplyAsync(request, () => Guard(token), token));
         }
-        catch (UnauthorizedAccessException) { return Unauthorized(); }
-        catch (PersonaScopeTransitionRequiredException) { return Conflict(new { error = "Existing account-wide persona settings need a reviewed company assignment before migration." }); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied, "authorizing repository bootstrap", "request unauthorized"); return Unauthorized(); }
+        catch (PersonaScopeTransitionRequiredException transition) { failures.ReportHandled(transition, "preparing repository migration", "migration refused pending reviewed persona company assignment"); return Conflict(new { error = "Existing account-wide persona settings need a reviewed company assignment before migration." }); }
     }
 }

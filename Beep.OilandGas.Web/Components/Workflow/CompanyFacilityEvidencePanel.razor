@@ -36,7 +36,7 @@
     private bool disposed;
     private static string Recorded(string? value)=>string.IsNullOrWhiteSpace(value)?"Not recorded":value;
     private bool CanView()=>Company.Selection is {} selected && selected.Permissions.Contains("DevelopmentPlanning.View",StringComparer.Ordinal);
-    protected override void OnInitialized(){_state=new(Company,Fields,Development,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Fields,Development,Calls);_state.Changed+=Changed;}
     protected override Task OnAfterRenderAsync(bool firstRender)=>firstRender?Reload():Task.CompletedTask;
     private Task Reload()=>CanView()?_state!.LoadAsync():Task.CompletedTask;
     private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}

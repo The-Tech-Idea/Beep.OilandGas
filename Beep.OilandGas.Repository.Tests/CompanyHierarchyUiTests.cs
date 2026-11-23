@@ -24,7 +24,7 @@ public sealed class CompanyHierarchyUiTests
         using var company=new CompanyClientContext();Select(company);var revision=Guid.NewGuid().ToString();var reads=0;
         var current=new[]{"FIELD","WELL","POOL","FACILITY"}.Select(type=>new HierarchyConfig{OrganizationId="company",AssetType=type,HierarchyLevel=type=="FIELD"?0:1,
             ParentLevel=type=="FIELD"?null:0,LevelName=type,Active=true,Revision=revision}).ToList();
-        using var state=new HierarchyConfigurationState(company,(_,_)=>{reads++;return Task.FromResult<List<HierarchyConfig>?>(current);},Explain,(_,request,_)=>
+        using var state=new HierarchyConfigurationState(company,(_,_)=>{reads++;return Task.FromResult<List<HierarchyConfig>?>(current);}, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),(_,request,_)=>
         {
             Assert.Equal(5,request.Count);Assert.All(request,row=>Assert.Equal(revision,row.Revision));
             Assert.Null(request.Single(row=>row.AssetType=="WORK_ORDER").ParentLevel);
@@ -47,7 +47,7 @@ public sealed class CompanyHierarchyUiTests
         using var company=new CompanyClientContext();Select(company);
         var order=new AssetHierarchyNode{AssetId="order",AssetType="WORK_ORDER",UserHasAccess=true,
             WorkOrderComponents=[new("order","a","east","",""),new("order","b","west","","")]};
-        using var state=new AssetHierarchyState(company,(_,_)=>Task.FromResult<AssetHierarchyNode?>(new(){AssetId="company",AssetType="ORGANIZATION",Children=[order]}),Explain);
+        using var state=new AssetHierarchyState(company,(_,_)=>Task.FromResult<AssetHierarchyNode?>(new(){AssetId="company",AssetType="ORGANIZATION",Children=[order]}), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync();Assert.Null(state.Error);Assert.True(state.CanSelect(order));
         order.WorkOrderComponents[1]=new("order","b","other","","");Assert.False(state.CanSelect(order));
         company.Clear();Assert.Null(state.Hierarchy);Assert.False(state.CanSelect(order));
@@ -61,15 +61,13 @@ public sealed class CompanyHierarchyUiTests
         if(fault=="parent"){order.ParentAssetId="east";order.ParentAssetType="FIELD";}
         if(fault=="missing")order.WorkOrderComponents.Clear();
         if(fault=="duplicate")order.WorkOrderComponents.Add(order.WorkOrderComponents[0]);
-        using var state=new AssetHierarchyState(company,(_,_)=>Task.FromResult<AssetHierarchyNode?>(new(){AssetId="company",AssetType="ORGANIZATION",Children=[order]}),Explain);
+        using var state=new AssetHierarchyState(company,(_,_)=>Task.FromResult<AssetHierarchyNode?>(new(){AssetId="company",AssetType="ORGANIZATION",Children=[order]}), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync();Assert.NotNull(state.Error);Assert.Null(state.Hierarchy);Assert.False(state.CanSelect(order));
     }
     private static readonly CompanyScope A = new("tenant", "company");
     private static readonly CompanyScope B = new("other-tenant", "other");
     private static void Select(CompanyClientContext company, CompanyScope? scope = null, string user = "actor", bool admin = true) =>
         Assert.True(company.TrySelect(company.Clear(), user, new(scope ?? A, admin ? ["Administrator"] : [], [])));
-    private static string Explain(Exception failure, string operation, string sentence) =>
-        failure is RefusalException refusal ? refusal.Sentence : sentence + " (reference test)";
     private static AssetHierarchyNode Field(string id = "A") => new() { AssetId = id, AssetType = "FIELD", ParentAssetId = "company", ParentAssetType = "ORGANIZATION", UserHasAccess = true };
     private static AssetHierarchyNode Facility(string type = "gas", string id = "facility") => new() { AssetId = id, AssetType = "FACILITY", FacilityType = type, ParentAssetId = "A", ParentAssetType = "FIELD", UserHasAccess = true };
     private static AssetHierarchyNode Root(params AssetHierarchyNode[] children) => new() { AssetId = "company", AssetType = "ORGANIZATION", Children = children.ToList() };
@@ -78,7 +76,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Missing_company_never_requests_business_data_and_does_not_invent_an_identity()
     {
         using var company = new CompanyClientContext(); var calls = 0;
-        using var state = new AssetHierarchyState(company, (_, _) => { calls++; return Task.FromResult<AssetHierarchyNode?>(Root()); }, Explain);
+        using var state = new AssetHierarchyState(company, (_, _) => { calls++; return Task.FromResult<AssetHierarchyNode?>(Root()); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(); Assert.True(state.NeedsCompany); Assert.False(state.Loading); Assert.Null(state.Hierarchy); Assert.Null(state.Error); Assert.Equal(0, calls);
     }
 
@@ -87,7 +85,7 @@ public sealed class CompanyHierarchyUiTests
     {
         using var company = new CompanyClientContext(); Select(company); var gas = Facility(); var oil = Facility("oil");
         var field = Field(); field.Children = [gas, oil]; var root = Root(field); string? path = null;
-        using var state = new AssetHierarchyState(company, (url, _) => { path = url; return Task.FromResult<AssetHierarchyNode?>(root); }, Explain);
+        using var state = new AssetHierarchyState(company, (url, _) => { path = url; return Task.FromResult<AssetHierarchyNode?>(root); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(); Assert.Same(root, state.Hierarchy); Assert.Null(state.Error);
         Assert.Equal("/api/AssetHierarchy/user/actor?organizationId=company", path);
         Assert.False(state.CanSelect(root)); Assert.True(state.CanSelect(field)); Assert.True(state.CanSelect(gas)); Assert.True(state.CanSelect(oil));
@@ -100,7 +98,7 @@ public sealed class CompanyHierarchyUiTests
     {
         using var company = new CompanyClientContext(); Select(company, new("tenant", "company / north"), "account / one"); string? path = null;
         var leaf = Facility("gas / sour", "facility / west");
-        using var state = new AssetHierarchyState(company, (url, _) => { path = url; return Task.FromResult<AssetHierarchyNode?>(leaf); }, Explain);
+        using var state = new AssetHierarchyState(company, (url, _) => { path = url; return Task.FromResult<AssetHierarchyNode?>(leaf); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(rootAssetId: leaf.AssetId, rootAssetType: "facility", rootFacilityType: leaf.FacilityType);
         Assert.Equal("/api/AssetHierarchy/user/account%20%2F%20one?organizationId=company%20%2F%20north&rootAssetId=facility%20%2F%20west&rootAssetType=FACILITY&rootFacilityType=gas%20%2F%20sour", path);
         Assert.True(state.CanSelect(leaf));
@@ -112,7 +110,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Invalid_scope_assertions_or_incomplete_root_keys_fail_without_a_request(string reason)
     {
         using var company = new CompanyClientContext(); Select(company); var calls = 0;
-        using var state = new AssetHierarchyState(company, (_, _) => { calls++; return Task.FromResult<AssetHierarchyNode?>(Root()); }, Explain);
+        using var state = new AssetHierarchyState(company, (_, _) => { calls++; return Task.FromResult<AssetHierarchyNode?>(Root()); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(reason == "organization" ? "other" : reason == "blank-organization" ? " " : null,
             reason == "partial-type" ? null : "asset", reason == "partial-id" ? null : reason == "unknown" ? "BLOCK" : reason == "well-qualified" ? "WELL" : "FACILITY",
             reason == "well-qualified" ? "gas" : reason == "facility-blank" ? " " : null);
@@ -144,7 +142,7 @@ public sealed class CompanyHierarchyUiTests
             case "invented-chain": leaf.Children = [new() { AssetId = "well", AssetType = "WELL", UserHasAccess = true }]; break;
             case "company-grant": root.UserHasAccess = true; break;
         }
-        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult(root), Explain);
+        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult(root), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(); Assert.NotNull(state.Error); Assert.Null(state.Hierarchy); Assert.False(state.CanSelect(leaf)); Assert.False(state.Loading);
     }
 
@@ -154,7 +152,7 @@ public sealed class CompanyHierarchyUiTests
     {
         using var company = new CompanyClientContext(); Select(company); var leaf = Facility();
         if (part == "id") leaf.AssetId = "other"; if (part == "type") { leaf.AssetType = "WELL"; leaf.FacilityType = null; } if (part == "facility-type") leaf.FacilityType = "oil";
-        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult<AssetHierarchyNode?>(leaf), Explain);
+        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult<AssetHierarchyNode?>(leaf), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(rootAssetId: "facility", rootAssetType: "FACILITY", rootFacilityType: "gas"); Assert.Null(state.Hierarchy); Assert.NotNull(state.Error);
     }
 
@@ -164,7 +162,7 @@ public sealed class CompanyHierarchyUiTests
     {
         using var company = new CompanyClientContext(); Select(company);
         var response = new TaskCompletionSource<AssetHierarchyNode?>(TaskCreationOptions.RunContinuationsAsynchronously); CancellationToken seen = default;
-        using var state = new AssetHierarchyState(company, (_, token) => { seen = token; return response.Task; }, Explain);
+        using var state = new AssetHierarchyState(company, (_, token) => { seen = token; return response.Task; }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         var load = state.LoadAsync(); Assert.True(state.Loading);
         if (change == "clear") company.Clear(); else if (change == "dispose") state.Dispose(); else Select(company, change == "switch" ? B : A, change == "account" ? "other-user" : "actor");
         Assert.True(seen.IsCancellationRequested); Assert.Null(state.Hierarchy);
@@ -176,7 +174,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Superseded_root_load_cannot_replace_the_new_result_or_error(bool failure)
     {
         using var company = new CompanyClientContext(); Select(company); var old = new TaskCompletionSource<AssetHierarchyNode?>(TaskCreationOptions.RunContinuationsAsynchronously); var calls = 0;
-        using var state = new AssetHierarchyState(company, (_, _) => ++calls == 1 ? old.Task : Task.FromResult<AssetHierarchyNode?>(Facility("oil")), Explain);
+        using var state = new AssetHierarchyState(company, (_, _) => ++calls == 1 ? old.Task : Task.FromResult<AssetHierarchyNode?>(Facility("oil")), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         var first = state.LoadAsync(rootAssetId: "facility", rootAssetType: "FACILITY", rootFacilityType: "gas");
         await state.LoadAsync(rootAssetId: "facility", rootAssetType: "FACILITY", rootFacilityType: "oil");
         if (failure) old.SetException(new HttpRequestException()); else old.SetResult(Facility()); await first;
@@ -186,18 +184,18 @@ public sealed class CompanyHierarchyUiTests
     [Fact]
     public async Task Failed_reload_removes_previously_confirmed_nodes_and_reports_the_failure()
     {
-        using var company = new CompanyClientContext(); Select(company); var leaf = Facility(); var calls = 0; var reports = new List<Exception>();
+        using var company = new CompanyClientContext(); Select(company); var leaf = Facility(); var calls = 0; var reports = new RecordingFailureReporter();
         using var state = new AssetHierarchyState(company, (_, _) => ++calls == 1 ? Task.FromResult<AssetHierarchyNode?>(Root(leaf)) : throw new HttpRequestException("internal provider detail"),
-            (failure, operation, sentence) => { reports.Add(failure); return Explain(failure, operation, sentence); });
+            Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(reports));
         await state.LoadAsync(); Assert.True(state.CanSelect(leaf)); await state.LoadAsync();
-        Assert.Null(state.Hierarchy); Assert.False(state.CanSelect(leaf)); Assert.Single(reports); Assert.DoesNotContain("internal provider", state.Error); Assert.Contains("reference", state.Error);
+        Assert.Null(state.Hierarchy); Assert.False(state.CanSelect(leaf)); Assert.Single(reports.Reports); Assert.DoesNotContain("internal provider", state.Error); Assert.Contains("reference", state.Error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public async Task Only_successful_empty_company_container_is_an_empty_result()
     {
         using var company = new CompanyClientContext(); Select(company);
-        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult<AssetHierarchyNode?>(Root()), Explain);
+        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult<AssetHierarchyNode?>(Root()), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(); Assert.Empty(state.Hierarchy!.Children); Assert.Null(state.Error); Assert.False(state.NeedsCompany);
     }
 
@@ -206,7 +204,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Selection_requires_the_complete_confirmed_identity_even_if_a_consumer_mutates_the_shared_node(string part)
     {
         using var company = new CompanyClientContext(); Select(company); var leaf = Facility();
-        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult<AssetHierarchyNode?>(Root(leaf)), Explain);
+        using var state = new AssetHierarchyState(company, (_, _) => Task.FromResult<AssetHierarchyNode?>(Root(leaf)), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(); Assert.True(state.CanSelect(leaf));
         switch (part)
         {
@@ -222,7 +220,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Configuration_requires_selected_company_admin_without_making_a_request(string reason)
     {
         using var company = new CompanyClientContext(); if (reason == "member") Select(company, admin: false); var calls = 0;
-        using var state = new HierarchyConfigurationState(company, (_, _) => { calls++; return Task.FromResult<List<HierarchyConfig>?>([]); }, Explain, (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
+        using var state = new HierarchyConfigurationState(company, (_, _) => { calls++; return Task.FromResult<List<HierarchyConfig>?>([]); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
         await state.LoadAsync(); Assert.NotNull(state.Error); Assert.False(state.Loaded); Assert.False(state.Loading); Assert.Equal(0, calls);
     }
 
@@ -233,7 +231,7 @@ public sealed class CompanyHierarchyUiTests
         using var company = new CompanyClientContext(); Select(company); List<HierarchyConfig>? rows = [new() { OrganizationId = "company", HierarchyLevel = 0 }];
         if (reason == "null") rows = null; if (reason == "wrong-company") rows![0].OrganizationId = "other";
         if (reason == "duplicate") rows!.Add(new() { OrganizationId = "company", HierarchyLevel = 0 }); if (reason == "null-row") rows!.Add(null!); if (reason == "negative-level") rows![0].HierarchyLevel = -1;
-        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult(rows), Explain, (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
+        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult(rows), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
         await state.LoadAsync(); Assert.NotNull(state.Error); Assert.Empty(state.Configuration); Assert.False(state.Loaded);
     }
 
@@ -241,7 +239,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Configuration_route_uses_selected_company_and_successful_empty_results_remain_explicit()
     {
         using var company = new CompanyClientContext(); Select(company, new("tenant", "company / north")); string? path = null;
-        using var state = new HierarchyConfigurationState(company, (url, _) => { path = url; return Task.FromResult<List<HierarchyConfig>?>([]); }, Explain, (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
+        using var state = new HierarchyConfigurationState(company, (url, _) => { path = url; return Task.FromResult<List<HierarchyConfig>?>([]); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
         await state.LoadAsync(); Assert.Equal("/api/AssetHierarchy/organization/company%20%2F%20north/config", path); Assert.True(state.Loaded); Assert.Empty(state.Configuration); Assert.Null(state.Error);
     }
 
@@ -251,7 +249,7 @@ public sealed class CompanyHierarchyUiTests
     {
         using var company = new CompanyClientContext(); Select(company); var calls = 0; CancellationToken token = default;
         var old = new TaskCompletionSource<List<HierarchyConfig>?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var state = new HierarchyConfigurationState(company, (_, cancellation) => { token = cancellation; return ++calls == 1 ? old.Task : Task.FromResult<List<HierarchyConfig>?>([]); }, Explain, (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
+        using var state = new HierarchyConfigurationState(company, (_, cancellation) => { token = cancellation; return ++calls == 1 ? old.Task : Task.FromResult<List<HierarchyConfig>?>([]); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
         var first = state.LoadAsync(); var firstToken = token;
         if (change == "clear") company.Clear(); if (change == "switch") Select(company, B); if (change == "dispose") state.Dispose(); if (change == "reload") await state.LoadAsync();
         Assert.True(firstToken.IsCancellationRequested); old.SetResult([new() { OrganizationId = "company", HierarchyLevel = 0 }]); await first;
@@ -269,10 +267,10 @@ public sealed class CompanyHierarchyUiTests
         var server = new AssetHierarchyService(f.Editor.Object, f.Columns.Object, f.Defaults.Object, f.Metadata.Object, () => f.Gate.ResolveAsync(),
             subject => new CompanyPPDMRowAccessPolicy(f.Gate, store, f.Metadata.Object, f.Eligibility, f.Editor.Object, f.Columns.Object, f.Defaults.Object, Microsoft.Extensions.Options.Options.Create(f.EligibilityConfiguration), subject), subject => f.Gate.ResolveHierarchyCompanyAsync(subject), new RepositoryHierarchyConfigurationStore(f.Db, f.Gate), order => CompanyWorkOrderFieldReview.ComponentsAsync(f.Gate, f.Editor.Object, f.Columns.Object, f.Defaults.Object, f.Metadata.Object, f.Eligibility, order));
         using var company = new CompanyClientContext(); Select(company, f.Gate.Company.Scope);
-        using var tree = new AssetHierarchyState(company, (path, _) => server.GetAssetHierarchyForUserAsync("actor", "company"), Explain);
+        using var tree = new AssetHierarchyState(company, (path, _) => server.GetAssetHierarchyForUserAsync("actor", "company"), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await tree.LoadAsync(); var field = Assert.Single(tree.Hierarchy!.Children); var facility = Assert.Single(field.Children);
         Assert.Equal("facility", facility.AssetId); Assert.Equal("gas", facility.FacilityType); Assert.True(tree.CanSelect(facility)); Assert.Null(tree.Error);
-        using var configuration = new HierarchyConfigurationState(company, async (_, _) => await server.GetHierarchyConfigAsync("company"), Explain, (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
+        using var configuration = new HierarchyConfigurationState(company, async (_, _) => await server.GetHierarchyConfigAsync("company"), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), (_, _, _) => throw new InvalidOperationException("Unexpected configuration save"));
         await configuration.LoadAsync(); Assert.True(configuration.Loaded); Assert.Empty(configuration.Configuration); Assert.Null(configuration.Error); Assert.Empty(f.Writes);
     }
 
@@ -291,7 +289,7 @@ public sealed class CompanyHierarchyUiTests
             using var request = new HttpRequestMessage(HttpMethod.Get, path); company.Prepare(request);
             using var response = await company.SendAsync(http, request, token);
             var result = JsonSerializer.Deserialize<AssetHierarchyNode>(await response.Content.ReadAsStringAsync(token)); company.EnsureCurrent(response); return result;
-        }, Explain);
+        }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(); Assert.Single(state.Hierarchy!.Children); Assert.Equal("/api/AssetHierarchy/user/actor?organizationId=company", Assert.Single(seen)); Assert.Empty(http.DefaultRequestHeaders);
     }
 
@@ -308,7 +306,7 @@ public sealed class CompanyHierarchyUiTests
         using var company = new CompanyClientContext(); Select(company); var reads = 0; var writes = 0;
         var newRevision = Guid.NewGuid().ToString("D");
         List<HierarchyConfig>? saved=null;
-        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(++reads == 1 ? [] : saved), Explain,
+        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(++reads == 1 ? [] : saved), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             (path, rows, _) =>
             {
                 writes++; Assert.Equal("/api/AssetHierarchy/organization/company/config", path);
@@ -330,7 +328,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Save_uses_confirmed_revision_and_company_even_if_mutable_dto_identity_is_changed()
     {
         using var company = new CompanyClientContext(); Select(company); var oldRevision = Guid.NewGuid().ToString("D"); var nextRevision = Guid.NewGuid().ToString("D"); var reads = 0;
-        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(ConfigRows(++reads == 1 ? oldRevision : nextRevision)), Explain,
+        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(ConfigRows(++reads == 1 ? oldRevision : nextRevision)), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             (_, rows, _) => { Assert.All(rows, row => { Assert.Equal(oldRevision, row.Revision); Assert.Equal("company", row.OrganizationId); }); return Task.FromResult(true); });
         await state.LoadAsync(); foreach (var row in state.Configuration) { row.Revision = Guid.NewGuid().ToString("D"); row.OrganizationId = "foreign"; }
         await state.SaveAsync(); Assert.NotNull(state.Confirmation); Assert.All(state.Configuration, row => Assert.Equal(nextRevision, row.Revision));
@@ -341,7 +339,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Invalid_display_names_remain_editable_without_sending_a_write(string reason)
     {
         using var company = new CompanyClientContext(); Select(company); var writes = 0;
-        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(ConfigRows(Guid.NewGuid().ToString("D"))), Explain,
+        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(ConfigRows(Guid.NewGuid().ToString("D"))), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             (_, _, _) => { writes++; return Task.FromResult(true); });
         await state.LoadAsync(); state.Configuration[0].LevelName = reason == "blank" ? " " : reason == "long" ? new string('a', 129) : "bad\nname";
         await state.SaveAsync(); Assert.Equal(0, writes); Assert.NotNull(state.Error); Assert.True(state.CanSave); Assert.False(state.Saving); Assert.Null(state.Confirmation);
@@ -351,7 +349,7 @@ public sealed class CompanyHierarchyUiTests
     public async Task Hiding_fields_hides_children_and_children_cannot_be_enabled_without_fields()
     {
         using var company = new CompanyClientContext(); Select(company);
-        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(ConfigRows(Guid.NewGuid().ToString("D"))), Explain,
+        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(ConfigRows(Guid.NewGuid().ToString("D"))), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             (_, _, _) => throw new InvalidOperationException());
         await state.LoadAsync(); var field = state.Configuration.Single(row => row.AssetType == "FIELD"); var well = state.Configuration.Single(row => row.AssetType == "WELL");
         state.SetVisible(field, false); Assert.All(state.Configuration, row => Assert.False(row.Active));
@@ -369,7 +367,7 @@ public sealed class CompanyHierarchyUiTests
             if (++reads == 1) return Task.FromResult<List<HierarchyConfig>?>(ConfigRows(revision));
             if (reason == "refresh-error") throw new HttpRequestException("internal detail");
             return Task.FromResult<List<HierarchyConfig>?>(reason == "empty-refresh" ? [] : ConfigRows(revision, reason == "foreign-refresh" ? "other" : "company"));
-        }, Explain, (_, _, _) => { writes++; if (reason == "write-error") throw new HttpRequestException("internal detail"); return Task.FromResult(reason != "false"); });
+        }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), (_, _, _) => { writes++; if (reason == "write-error") throw new HttpRequestException("internal detail"); return Task.FromResult(reason != "false"); });
         await state.LoadAsync(); await state.SaveAsync(); await state.SaveAsync();
         Assert.Equal(1, writes); Assert.False(state.Loaded); Assert.False(state.CanSave); Assert.Empty(state.Configuration); Assert.False(state.Saving);
         Assert.Null(state.Confirmation); Assert.Contains("Refresh before editing", state.Error); Assert.DoesNotContain("internal detail", state.Error);
@@ -381,7 +379,7 @@ public sealed class CompanyHierarchyUiTests
     {
         using var company = new CompanyClientContext(); Select(company); var revision = Guid.NewGuid().ToString("D"); var writes = 0; var reads = 0; CancellationToken seen = default;
         var result = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var state = new HierarchyConfigurationState(company, (_, _) => { reads++; return Task.FromResult<List<HierarchyConfig>?>(ConfigRows(revision)); }, Explain,
+        using var state = new HierarchyConfigurationState(company, (_, _) => { reads++; return Task.FromResult<List<HierarchyConfig>?>(ConfigRows(revision)); }, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             (_, _, token) => { writes++; seen = token; return result.Task; });
         await state.LoadAsync(); var save = state.SaveAsync(); Assert.True(state.Saving); Assert.False(state.CanSave); await state.SaveAsync(); Assert.Equal(1, writes);
         state.SetDisplayName(state.Configuration[0], "blocked edit"); Assert.NotEqual("blocked edit", state.Configuration[0].LevelName);
@@ -400,7 +398,7 @@ public sealed class CompanyHierarchyUiTests
         if (reason == "types") rows[1].AssetType = "BLOCK";
         if (reason == "control") rows[1].LevelName = "bad\nname";
         if (reason == "hidden-parent") rows[0].Active = false;
-        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(rows), Explain, (_, _, _) => throw new InvalidOperationException());
+        using var state = new HierarchyConfigurationState(company, (_, _) => Task.FromResult<List<HierarchyConfig>?>(rows), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()), (_, _, _) => throw new InvalidOperationException());
         await state.LoadAsync(); Assert.False(state.Loaded); Assert.False(state.CanSave); Assert.NotNull(state.Error); Assert.Empty(state.Configuration);
     }
 
@@ -413,7 +411,7 @@ public sealed class CompanyHierarchyUiTests
         var server = new AssetHierarchyService(f.Editor.Object, f.Columns.Object, f.Defaults.Object, f.Metadata.Object, () => f.Gate.ResolveAsync(),
             subject => new CompanyPPDMRowAccessPolicy(f.Gate, store, f.Metadata.Object, f.Eligibility, f.Editor.Object, f.Columns.Object, f.Defaults.Object, Microsoft.Extensions.Options.Options.Create(f.EligibilityConfiguration), subject), subject => f.Gate.ResolveHierarchyCompanyAsync(subject), new RepositoryHierarchyConfigurationStore(f.Db, f.Gate), order => CompanyWorkOrderFieldReview.ComponentsAsync(f.Gate, f.Editor.Object, f.Columns.Object, f.Defaults.Object, f.Metadata.Object, f.Eligibility, order));
         using var company = new CompanyClientContext(); Select(company, f.Gate.Company.Scope);
-        using var state = new HierarchyConfigurationState(company, async (_, _) => await server.GetHierarchyConfigAsync("company"), Explain,
+        using var state = new HierarchyConfigurationState(company, async (_, _) => await server.GetHierarchyConfigAsync("company"), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             (_, rows, _) => server.UpdateHierarchyConfigAsync("company", rows));
         await state.LoadAsync(); state.BeginDraft(); state.Configuration.Single(row => row.AssetType == "FIELD").LevelName = "حقول";
         state.SetVisible(state.Configuration.Single(row => row.AssetType == "POOL"), false); await state.SaveAsync();

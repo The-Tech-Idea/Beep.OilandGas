@@ -63,7 +63,7 @@ public sealed partial class PurchaseOrderWorkspaceState
         {
             var result=PurchaseReceiptDecisionProof.Copy(await record(PurchaseReceiptDecisionProof.Copy(intent)));result.Require(intent);if(!Current())return;
             PurchaseOrderSourceReview? fresh=null;
-            using var staged=new PurchaseOrderWorkspaceState(company);
+            using var staged=new PurchaseOrderWorkspaceState(failures,company);
             await staged.LoadDetailAsync(intent.Command.OrderId,async id=>{fresh=PurchaseReceiptDecisionProof.Copy(await read(id) ?? throw new InvalidOperationException("The receiving read-back is unavailable."));return fresh;});
             if(!Current())return;
             var stored=fresh!.Receipts.Single(row=>row.PO_RECEIPT_ID==intent.Command.ReceiptId);

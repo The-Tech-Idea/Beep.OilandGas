@@ -21,7 +21,7 @@ public sealed partial class PermitApplicationCommandState
         get
         {
             if(!CanPrepare("ATTACH_DOCUMENT") || StagedDocument is not {} staged || Review is null)return false;
-            try{new PermitAttachmentProposal(staged).Require(Review);return true;}catch(InvalidOperationException){return false;}
+            try{new PermitAttachmentProposal(staged).Require(Review);return true;}catch(InvalidOperationException error){failures.Told(error, "PermitApplicationCommandState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return false;}
         }
     }
     public async Task StageDocumentAsync(PermitDocumentUploadProposal proposal,byte[] content,string reason,bool confirmed)

@@ -22,7 +22,7 @@ public sealed class DevelopmentInvestmentProgressScreenTests
     }
     internal static TestContext Ui(DevelopmentInvestmentStageNativeTests.Fixture f)
     {
-        var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Handoff.Source.Base.Company);ui.Services.AddSingleton(f.Handoff.Source.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Handoff.Source.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Handoff.Source.Base.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));return ui;
+        var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Handoff.Source.Base.Company);ui.Services.AddSingleton(f.Handoff.Source.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Handoff.Source.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Handoff.Source.Base.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));return ui;
     }
     [Theory][InlineData("IN_REVIEW")][InlineData("RESERVED")][InlineData("FINANCIAL_RECORDED")][InlineData("APPROVED")][InlineData("REJECTED")][InlineData("RECONCILIATION_REQUIRED")]
     public async Task ActualReadOnlySourcePanelDistinguishesEachNativeFinancialStateWithoutWrites(string state)
@@ -70,13 +70,13 @@ public sealed class DevelopmentInvestmentProgressScreenTests
     {
         using var f=new DevelopmentInvestmentStageNativeTests.Fixture();await f.Prepare();var status=await Status(f);var scope=status.Source.Current.Source.Review.Scope;
         var waiting=new TaskCompletionSource<DevelopmentInvestmentHandoffStatus>(TaskCreationOptions.RunContinuationsAsynchronously);f.Handoff.Source.Base.Client.Setup(c=>c.ReadInvestmentHandoffAsync(It.IsAny<string>(),It.IsAny<string>(),It.IsAny<CancellationToken>())).Returns(waiting.Task);
-        using var state=new DevelopmentInvestmentHandoffState(f.Handoff.Source.Base.Company,f.Handoff.Source.Base.Baseline.Reader.Personas.Object,f.Handoff.Source.Base.Client.Object,f.Handoff.Source.Base.Journal,(_,_,text)=>text);await state.LoadAsync(status.Source.Current.Source.Review.InstanceId,status.Source.AfeId);var read=state.ReadStatusAsync();
+        using var state=new DevelopmentInvestmentHandoffState(f.Handoff.Source.Base.Company,f.Handoff.Source.Base.Baseline.Reader.Personas.Object,f.Handoff.Source.Base.Client.Object,f.Handoff.Source.Base.Journal,TestFailures.Calls(new RecordingFailureReporter()));await state.LoadAsync(status.Source.Current.Source.Review.InstanceId,status.Source.AfeId);var read=state.ReadStatusAsync();
         if(change=="company")f.Handoff.Source.Base.Company.Clear();else if(change=="persona")f.Handoff.Source.Base.Baseline.Reader.Personas.Raise(p=>p.Changed+=null);else if(change=="route")await state.LoadAsync("other-process","other-afe");else state.Dispose();waiting.SetResult(status);await read;Assert.Null(state.Status);
     }
     [Fact]public async Task InvalidProjectionCannotReplacePreviouslyConfirmedStatusOrAppearAsZeroPending()
     {
         using var f=new DevelopmentInvestmentStageNativeTests.Fixture();await f.Prepare();var status=await Status(f);f.Handoff.Source.Base.Client.Setup(c=>c.ReadInvestmentHandoffAsync(It.IsAny<string>(),It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>status);
-        using var state=new DevelopmentInvestmentHandoffState(f.Handoff.Source.Base.Company,f.Handoff.Source.Base.Baseline.Reader.Personas.Object,f.Handoff.Source.Base.Client.Object,f.Handoff.Source.Base.Journal,(_,_,text)=>text);await state.LoadAsync(status.Source.Current.Source.Review.InstanceId,status.Source.AfeId);await state.ReadStatusAsync();Assert.NotNull(state.Status);
+        using var state=new DevelopmentInvestmentHandoffState(f.Handoff.Source.Base.Company,f.Handoff.Source.Base.Baseline.Reader.Personas.Object,f.Handoff.Source.Base.Client.Object,f.Handoff.Source.Base.Journal,TestFailures.Calls(new RecordingFailureReporter()));await state.LoadAsync(status.Source.Current.Source.Review.InstanceId,status.Source.AfeId);await state.ReadStatusAsync();Assert.NotNull(state.Status);
         var broken=status.Progress! with{PendingTasks=0};broken=broken with{Revision=broken.ContentRevision()};status=status with{Progress=broken};status=status with{Revision=status.ContentRevision()};await state.ReadStatusAsync();Assert.Null(state.Status);Assert.NotNull(state.Error);
     }
 }

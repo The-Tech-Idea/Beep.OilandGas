@@ -61,7 +61,7 @@
 @code{
     [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
     private DrillingProgramAssignedReviewState? _state;private bool disposed,interactiveLoaded;private string rationale="";
-    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>interactiveLoaded?Reload():Task.CompletedTask;
     protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactiveLoaded=true;return Reload();}private Task Reload()=>_state!.LoadAsync(ProcessId);
     private static string Outcome(string state)=>state switch{"IN_REVIEW"=>"In review","APPROVED"=>"Approved","REJECTED"=>"Rejected","PENDING"=>"Pending","WAITING"=>"Waiting for earlier stages","NOT_REACHED"=>"Not reached after rejection",_=>throw new InvalidOperationException("The recorded program stage outcome is unavailable.")};

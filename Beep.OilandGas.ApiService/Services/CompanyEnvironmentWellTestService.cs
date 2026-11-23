@@ -2,8 +2,8 @@ using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Globalization;
-using TheTechIdea.OilGas.Core;
-using TheTechIdea.OilGas.Loaders;
+using TheTechIdea.OilGas.Wellbore.Data;
+using TheTechIdea.OilGas.Wellbore.Loaders;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -56,7 +56,7 @@ public sealed class CompanyEnvironmentWellTestService(CompanyEnvironmentEffectiv
         }
 
         var source = new SingleWellSource(reader, company, request.WellId, authority);
-        using var scope = OilGasServices.Scope(new OilGasServices(environment));
+        using var scope = WellboreServices.Scope(new WellboreServices(environment));
         var provider = new MappedWellDataProvider(source, profile);
         var wells = await provider.FindWellsAsync(cancellationToken: token);
         if (wells.Count > 1 || wells.Any(x => x.Id != request.WellId || x.Uwi != request.WellId))

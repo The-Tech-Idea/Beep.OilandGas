@@ -42,7 +42,7 @@ public sealed class InvestigatorAssignmentStateTests
             Fields.Setup(value => value.GetCurrentFieldSelectionAsync(It.IsAny<CancellationToken>())).Returns(() => Task.FromResult(Selected));
             Api.Setup(value => value.ReviewInvestigatorAssignmentAsync(It.IsAny<string>(), "A", It.IsAny<CancellationToken>())).Returns((string id, string field, CancellationToken token) => { Reads++; return Read(id); });
             Api.Setup(value => value.AssignInvestigatorAsync(It.IsAny<InvestigatorAssignmentReview>(), It.IsAny<RecordedIncidentParticipant>(), It.IsAny<CancellationToken>())).Returns((InvestigatorAssignmentReview review, RecordedIncidentParticipant participant, CancellationToken token) => { Writes++; return Write(review,participant); });
-            State = new(Company, Fields.Object, Api.Object, (_,_,message) => message,new MemoryStore());
+            State = new(Company, Fields.Object, Api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),new MemoryStore());
         }
         public void SelectCompany(string id, bool manage = true)
         { var version = Company.Clear(); Assert.True(Company.TrySelect(version, "actor", new(new("tenant",id), ["SafetyOfficer"], manage ? [PermissionConstants.HSE.View, PermissionConstants.HSE.ManageIncidents] : [PermissionConstants.HSE.View]))); }

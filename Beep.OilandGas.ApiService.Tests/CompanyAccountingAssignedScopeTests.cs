@@ -17,7 +17,7 @@ public sealed class CompanyAccountingAssignedScopeTests
     {
         var process = new Mock<IProcessService>(MockBehavior.Strict);var resources = new Mock<IAccessControlService>(MockBehavior.Strict);
         // Null native services prove the rejected scope cannot reach source lookup.
-        var reads = new CompanyAccountingProcessReads(new Context(process.Object), resources.Object, null!, null!, null!, null!);
+        var reads = new CompanyAccountingProcessReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), new Context(process.Object), resources.Object, null!, null!, null!, null!);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => reads.ReadAsync(new ClaimsPrincipal(), "process",
             new("tenant", foreignCompany ? "other" : "company"), foreignCompany ? "actor" : "other"));
         process.VerifyNoOtherCalls(); resources.VerifyNoOtherCalls();

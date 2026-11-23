@@ -20,7 +20,7 @@ public sealed partial class DevelopmentDraftWorkspaceState
             var result=await client.GetDraftReviewStatusAsync(source.PlanId,source.Revision);result.Require(source);
             await RequireCurrent(source.Context,selected,false);if(Active()){reviewStatus=Copy(result);if(result.Review is not null)preparedHandoff=null;}
         }
-        catch(Exception error){var text=explain(error,"inspecting recorded development review","The recorded review outcome could not be confirmed");if(Active())ReviewStatusError=text;}
+        catch(Exception error){var text=explain.Explain(error,"inspecting recorded development review","The recorded review outcome could not be confirmed");if(Active())ReviewStatusError=text;}
         finally{operation=false;if(!disposed)Changed?.Invoke();}
     }
 }

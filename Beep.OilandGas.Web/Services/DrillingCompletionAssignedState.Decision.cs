@@ -28,7 +28,7 @@ public sealed partial class DrillingCompletionAssignedState
     {
         if(!CanPrepareDecision)return;Error=null;
         try{var original=new DrillingCompletionReviewDecision(CompanyInventorySourceReview.Copy(current!),Guid.NewGuid(),decision,rationale?.Trim()??"");original.Require();preparedDecision=original;ResetTestInspection();ResetAcceptanceDraft();}
-        catch(Exception error){Error=explain(error,"preparing independent completion review","Choose an explicit stage decision and provide a reason against this exact claim");}
+        catch(Exception error){Error=explain.Explain(error,"preparing independent completion review","Choose an explicit stage decision and provide a reason against this exact claim");}
         Changed?.Invoke();
     }
     public void CancelDecision(){if(Busy || pendingDecision is not null)return;preparedDecision=null;Changed?.Invoke();}
@@ -57,7 +57,7 @@ public sealed partial class DrillingCompletionAssignedState
             DecisionConfirmation=receipt.CompletionAccepted?"The original independent physical completion acceptance, checked test signoffs and final review decision were confirmed recorded. Ongoing reporting closure, WELL/financial updates and production release remain separate.":receipt.Recorded?"The exact independent stage decision and its original task routing were confirmed recorded. Physical test acceptance, reporting closure and production release remain separate.":
                 "This exact decision was confirmed absent. Reload the current assigned claim before preparing another decision.";
         }
-        catch(Exception error){var message=explain(error,recover?"recovering independent completion decision":"recording independent completion decision",fallback);if(Active()){feedback.Failed();Error=message;}}
+        catch(Exception error){var message=explain.Explain(error,recover?"recovering independent completion decision":"recording independent completion decision",fallback);if(Active()){feedback.Failed();Error=message;}}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
 }

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -453,7 +454,7 @@
     protected override Task OnParametersSetAsync()
     {
         try{if(!string.IsNullOrWhiteSpace(Id))Id=Beep.OilandGas.Models.Data.Common.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"accounting/payables/invoices/");}
-        catch(FormatException){_state?.Clear();_error="The recorded source address is invalid. Open it again from the company queue.";return Task.CompletedTask;}
+        catch(FormatException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "PayablesWorkbench.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _state?.Clear();_error="The recorded source address is invalid. Open it again from the company queue.";return Task.CompletedTask;}
         return Reload();
     }
     private void VendorChanged(string value){_vendor=value;_state?.Clear();_error=null;}

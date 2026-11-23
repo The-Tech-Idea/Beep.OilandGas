@@ -33,7 +33,7 @@ public sealed class WorkOrderBudgetDecisionStatusPanelTests
         var costs=new CompanyWorkOrderActualCostReview(status,mode=="costs"?[new("cost-source",status.Query.AfeId,"WORK_ORDER_LABOR_USAGE","labor-source",new string('A',64),12.345m,status.Original().CurrencyCode,DateTime.UtcNow,new string('B',64))]:[],DateTime.UtcNow);
         client.Setup(value=>value.ReadActualCostsAsync(status.Query,It.IsAny<CancellationToken>())).Returns(()=>{reads++;return Task.FromResult(costs);});
         var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton(company);services.AddScoped<WorkOrderBudgetDecisionStatusState>();services.AddSingleton(client.Object);services.AddSingleton(fields.Object);
-        services.AddSingleton<AuthenticationStateProvider>(new Auth(status.Current.Context.ActorUserId));services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<IComponentActivator,Components>();services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        services.AddSingleton<AuthenticationStateProvider>(new Auth(status.Current.Context.ActorUserId));services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<IComponentActivator,Components>();services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {

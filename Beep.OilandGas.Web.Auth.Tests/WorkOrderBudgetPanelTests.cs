@@ -39,7 +39,7 @@ public sealed class WorkOrderBudgetPanelTests
         client.Setup(value=>value.RecoverBudgetAsync(It.IsAny<CompanyWorkOrderBudgetReference>(),It.IsAny<CancellationToken>())).Returns((CompanyWorkOrderBudgetReference reference,CancellationToken _)=>{recorded!.Require(review.Context.Company,review.Context.ActorUserId,reference);return Task.FromResult(recorded);});
         var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton(company);services.AddScoped<WorkOrderBudgetState>();services.AddSingleton<IWorkOrderServiceClient>(client.Object);
         services.AddSingleton<ICompanyLedgerBookClient>(Mock.Of<ICompanyLedgerBookClient>());services.AddSingleton(fields.Object);services.AddSingleton<NavigationManager>(nav);services.AddSingleton<AuthenticationStateProvider>(new Auth(review.Context.ActorUserId));
-        services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<IComponentActivator,Components>();services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<IComponentActivator,Components>();services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {

@@ -40,7 +40,7 @@ public sealed class SystemSetupConnectionSelectionTests
             Mock.Get(source.Object.Dataconnection).SetupGet(x => x.ConnectionProp).Returns(properties);
             var config = new Mock<IConfigEditor>(); config.SetupGet(x => x.DataConnections).Returns([properties]);
             var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(config.Object); editor.Setup(x => x.GetDataSource("system")).Returns(source.Object);
-            var service = new SystemSetupConnectionSelectionService(configuration, editor.Object);
+            var service = new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), configuration, editor.Object);
             var guards = 0; var result = await service.SelectAsync("system", () => { guards++; return Task.CompletedTask; }, default);
             Assert.Equal("system", result.ConnectionName); Assert.Equal(5, guards);
             Assert.Equal(new[] { "begin", "commit" }, native.Transactions);
@@ -66,7 +66,7 @@ public sealed class SystemSetupConnectionSelectionTests
         Mock.Get(native.Source.Object.Dataconnection).SetupGet(x => x.ConnectionProp).Returns(properties);
         var config = new Mock<IConfigEditor>(); config.SetupGet(x => x.DataConnections).Returns([properties]);
         native.Editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
-        var service = new SystemSetupConnectionSelectionService(configuration, native.Editor.Object);
+        var service = new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), configuration, native.Editor.Object);
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.SelectAsync("system", () => Task.CompletedTask, default));
         Assert.False(Directory.Exists(directory));
         Assert.Equal(borrowed ? Array.Empty<string>() : new[] { "begin", "rollback" }, native.Transactions);
@@ -83,7 +83,7 @@ public sealed class SystemSetupConnectionSelectionTests
         Mock.Get(native.Source.Object.Dataconnection).SetupGet(x => x.ConnectionProp).Returns(properties);
         var config = new Mock<IConfigEditor>(); config.SetupGet(x => x.DataConnections).Returns([properties]); native.Editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
         var checks = 0;
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => new SystemSetupConnectionSelectionService(configuration, native.Editor.Object)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), configuration, native.Editor.Object)
             .SelectAsync("system", () => ++checks == 2 ? Task.FromException(new UnauthorizedAccessException()) : Task.CompletedTask, default));
         Assert.Equal(new[] { "begin", "rollback" }, native.Transactions); Assert.False(Directory.Exists(directory));
     }
@@ -105,7 +105,7 @@ public sealed class SystemSetupConnectionSelectionTests
         var checks = 0;
         try
         {
-            await Assert.ThrowsAnyAsync<Exception>(() => new SystemSetupConnectionSelectionService(configuration, native.Editor.Object).SelectAsync("system", () =>
+            await Assert.ThrowsAnyAsync<Exception>(() => new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), configuration, native.Editor.Object).SelectAsync("system", () =>
             {
                 if (++checks == 4)
                 {
@@ -126,7 +126,7 @@ public sealed class SystemSetupConnectionSelectionTests
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Beep:ConfigPath"] = directory }).Build();
         var config = new Mock<IConfigEditor>(); config.SetupGet(x => x.DataConnections).Returns([new ConnectionProperties { ConnectionName = "duplicate" }, new ConnectionProperties { ConnectionName = "DUPLICATE" }]);
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(config.Object);
-        var service = new SystemSetupConnectionSelectionService(configuration, editor.Object);
+        var service = new SystemSetupConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), configuration, editor.Object);
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.SelectAsync("duplicate", () => Task.CompletedTask, default));
         Assert.False(Directory.Exists(directory)); editor.Verify(x => x.GetDataSource(It.IsAny<string>()), Times.Never);
     }

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -85,7 +86,10 @@
     }
 </MudPaper>
 @code {
-    private static string ApplicabilityMessage(SalesContractTermApplicability status)=>status switch
+    private static string ApplicabilityMessage(SalesContractTermApplicability status)
+    {
+        if(!Enum.IsDefined(status))throw new InvalidOperationException("Commercial terms applicability is unconfirmed.");
+        return status switch
     {
         SalesContractTermApplicability.PreparationRequired=>"Record explicit commercial terms before reviewing their applicability.",
         SalesContractTermApplicability.IndependentApprovalRequired=>"An independent recorded approval is required before these terms can apply.",
@@ -95,8 +99,8 @@
         SalesContractTermApplicability.CurrencyRequired=>"The recorded transaction currency is unavailable. No currency is substituted.",
         SalesContractTermApplicability.CurrencyMismatch=>"The recorded transaction currency differs from the approved terms. Currency conversion requires separate reviewed evidence.",
         SalesContractTermApplicability.ApprovedStoredDateAndCurrency=>"Independently approved terms cover this recorded calendar date and currency.",
-        _=>throw new InvalidOperationException("Commercial terms applicability is unconfirmed.")
     };
+    }
     [Parameter,EditorRequired] public string FieldId{get;set;}=string.Empty;
     [Parameter] public DateTime From{get;set;}
     [Parameter] public DateTime Through{get;set;}
@@ -126,22 +130,22 @@
             !selection.Roles.Any(user.IsInRole) || !selection.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || field!=FieldId)throw new UnauthorizedAccessException();
         _authorized=true;_canPrepare=selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal);
         if(State.Review?.Recorded is {} record && record.Decision is null && selection.Permissions.Contains("ProductionAccounting.Approve",StringComparer.Ordinal))
-        {try{new SalesContractTermsDecisionCommand(Guid.NewGuid().ToString("N"),record.Preparation.Company,actor,record.Revision,SalesContractTermsDecision.Approve,"Access review").Require(record);_canDecide=true;}catch(InvalidOperationException){}}
+        {try{new SalesContractTermsDecisionCommand(Guid.NewGuid().ToString("N"),record.Preparation.Company,actor,record.Revision,SalesContractTermsDecision.Approve,"Access review").Require(record);_canDecide=true;}catch(InvalidOperationException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "CommercialTermsWorkbench.Access", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); }}
     }
     protected override void OnInitialized(){State.Changed+=StateChanged;Company.Changed+=ContextChanged;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
     protected override async Task OnParametersSetAsync(){var next=(FieldId,From,Through,TransactionId,AssignedProcessId);if(_parameters==next)return;++_epoch;_parameters=next;State.AttachOwner(this,FieldId,From,Through,TransactionId);ResetDraft();await Reload();}
     private void ResetDraft(){_version="";_currency="";_basis="";_method="";_notes="";_reason="";_effectiveFrom=null;_effectiveThrough=null;_price=null;}
-    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();await State.LoadAsync(Accounting);if(epoch==_epoch && !_disposed)await Access();}catch{if(epoch==_epoch && !_disposed)_error="Commercial evidence could not be confirmed. Check the original context, access and provisioning, then reload.";}}
+    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();await State.LoadAsync(Accounting);if(epoch==_epoch && !_disposed)await Access();}catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "CommercialTermsWorkbench.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="Commercial evidence could not be confirmed. Check the original context, access and provisioning, then reload.";}}
     private async Task Prepare()
     {
         var epoch=_epoch;_error=null;try{await Access();if(!_canPrepare)throw new UnauthorizedAccessException();if(_form is not null){await _form.Validate();if(!_form.IsValid)return;}
             if(_effectiveFrom is null || _price is null)throw new ArgumentException();
             var terms=new SalesContractEffectiveTerms(_version,DateTime.SpecifyKind(_effectiveFrom.Value.Date,DateTimeKind.Unspecified),_effectiveThrough is null?null:DateTime.SpecifyKind(_effectiveThrough.Value.Date,DateTimeKind.Unspecified),_currency,_price.Value,_basis,_method,_notes);
             terms.Require();await State.PrepareAsync(Accounting,terms);if(epoch==_epoch && !_disposed){ResetDraft();await Access();}}
-        catch{if(epoch==_epoch && !_disposed)_error="Preparation was not confirmed. Check explicit version, dates, currency, price, basis and notes. Retain any pending intent and reload its original context.";}
+        catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "CommercialTermsWorkbench.Prepare", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="Preparation was not confirmed. Check explicit version, dates, currency, price, basis and notes. Retain any pending intent and reload its original context.";}
     }
-    private async Task Decide(SalesContractTermsDecision decision){var epoch=_epoch;_error=null;try{await Access();if(!_canDecide)throw new UnauthorizedAccessException();await State.DecideAsync(Accounting,decision,_reason);if(epoch==_epoch && !_disposed){_reason="";await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="Decision was not confirmed. Check independent reviewer access and reason; retain any pending intent and reload its original context.";}}
-    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();await State.SubmitPendingAsync(Accounting);if(epoch==_epoch && !_disposed){await Access();if(!State.HasPendingIntent)await RecordedOutcomeChanged.InvokeAsync();}}catch{if(epoch==_epoch && !_disposed)_error="The original commercial intent remains unconfirmed. Reload its original context and reconcile before another command.";}}
+    private async Task Decide(SalesContractTermsDecision decision){var epoch=_epoch;_error=null;try{await Access();if(!_canDecide)throw new UnauthorizedAccessException();await State.DecideAsync(Accounting,decision,_reason);if(epoch==_epoch && !_disposed){_reason="";await Access();await RecordedOutcomeChanged.InvokeAsync();}}catch (System.Exception handledFailureAuto4){ HandledFailures.ReportHandled(handledFailureAuto4, "CommercialTermsWorkbench.Decide", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="Decision was not confirmed. Check independent reviewer access and reason; retain any pending intent and reload its original context.";}}
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();await State.SubmitPendingAsync(Accounting);if(epoch==_epoch && !_disposed){await Access();if(!State.HasPendingIntent)await RecordedOutcomeChanged.InvokeAsync();}}catch (System.Exception handledFailureAuto5){ HandledFailures.ReportHandled(handledFailureAuto5, "CommercialTermsWorkbench.Retry", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(epoch==_epoch && !_disposed)_error="The original commercial intent remains unconfirmed. Reload its original context and reconcile before another command.";}}
     private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_canDecide=false;_error=null;ResetDraft();if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void FieldChanged(string value){State.Invalidate();ContextChanged();}

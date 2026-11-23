@@ -142,7 +142,7 @@ public sealed class DevelopmentDraftWorkspaceTests
                 Assert.Equal(request,Store.Original);Writes++;OnSave?.Invoke();if(FailSave)throw new HttpRequestException("Response lost");var row=Recorded(request);Rows.Add(row);return row;});
             Client.Setup(c=>c.RecoverDraftPlanAsync(It.IsAny<CreateDevelopmentPlan>(),It.IsAny<CancellationToken>())).ReturnsAsync((CreateDevelopmentPlan original,CancellationToken token)=>{
                 Recoveries++;return new(Context,Planning,original.IntentId,DevelopmentPlanDraftReview.RequestRevision(original),Rows.SingleOrDefault(row=>row.FDP_ID==DevelopmentPlanDraftReview.PlanIdFor(original)),DateTimeOffset.UtcNow);});
-            State=new(Company,Fields.Object,Client.Object,Store,(_,_,text)=>text);
+            State=new(Company,Fields.Object,Client.Object,Store,TestFailures.Calls(new RecordingFailureReporter()));
         }
         internal async Task Review(){await State.LoadAsync();State.ReviewInput("New <development> concept","Review description",new(2030,4,1),new(2031,4,1),12.125m,"KWD");Assert.NotNull(State.Review);}
         public void Dispose(){State.Dispose();Company.Dispose();}
@@ -169,7 +169,7 @@ public sealed class DevelopmentDraftWorkspaceTests
     [Fact] public async Task LostResponseWithCommittedDraftRecoversAcrossNewPageWithoutSecondWrite()
     {
         using var f=new Fixture();await f.Review();var original=f.State.Review!;f.FailSave=true;await f.State.SaveAsync();f.Rows.Add(Recorded(original));
-        f.State.Dispose();f.State=new(f.Company,f.Fields.Object,f.Client.Object,f.Store,(_,_,text)=>text);
+        f.State.Dispose();f.State=new(f.Company,f.Fields.Object,f.Client.Object,f.Store,TestFailures.Calls(new RecordingFailureReporter()));
         await f.State.LoadAsync();Assert.Equal(original,f.State.Pending);await f.State.RecoverAsync();Assert.NotNull(f.State.Confirmed);Assert.Equal(1,f.Writes);Assert.Equal(1,f.Recoveries);
     }
     [Theory][InlineData("field")][InlineData("core")][InlineData("planning")][InlineData("company")][InlineData("account")]
@@ -224,7 +224,7 @@ public sealed class DevelopmentDraftWorkspaceTests
     {
         using var f=new Fixture();f.Review().GetAwaiter().GetResult();var original=f.State.Review!;f.Rows.Add(Recorded(original));var id=DevelopmentPlanDraftReview.PlanIdFor(original);
         f.NullDetail=mode=="failed";using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Fields.Object);
-        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var location="/development/fdp/review"+(mode=="missing-id"?"":"?planId="+Uri.EscapeDataString(mode=="absent"?"missing":id));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo(location);
         var page=ui.RenderComponent<DevelopmentPlanReview>();
@@ -271,7 +271,7 @@ public sealed class DevelopmentDraftWorkspaceTests
         using var f=new Fixture();f.Review().GetAwaiter().GetResult();var original=f.State.Review!;f.Rows.Add(Recorded(original));var id=DevelopmentPlanDraftReview.PlanIdFor(original);EnableWorkflowView(f);
         f.Client.Setup(client=>client.GetDraftReviewWorkflowsAsync(id,It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>Catalog(f,id));
         using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Fields.Object);
-        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/development/fdp/review?planId="+Uri.EscapeDataString(id));var page=ui.RenderComponent<DevelopmentPlanReview>();
         page.WaitForAssertion(()=>Assert.Contains("Inspect review workflows",page.Markup));Assert.DoesNotContain("Configured technical review",page.Markup);
         page.FindAll("button").Single(button=>button.TextContent.Contains("Inspect review workflows")).Click();
@@ -282,7 +282,7 @@ public sealed class DevelopmentDraftWorkspaceTests
     {
         using var f=new Fixture(mode!="readonly");if(mode=="failure")f.NullList=true;
         using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Fields.Object);
-        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Store);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var page=ui.RenderComponent<FDPWizard>();page.WaitForAssertion(()=>Assert.DoesNotContain("Loading development drafts",page.Markup));
         Assert.Contains("Field development drafts",page.Markup);Assert.DoesNotContain("Track Regulator Response",page.Markup);Assert.DoesNotContain("Revise FDP",page.Markup);
         if(mode=="failure"){page.WaitForAssertion(()=>Assert.Contains("Development drafts could not be confirmed",page.Markup));Assert.DoesNotContain("No recorded development drafts",page.Markup);return;}

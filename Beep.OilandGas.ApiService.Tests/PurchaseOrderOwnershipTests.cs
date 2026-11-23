@@ -1,3 +1,5 @@
+using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.Models.Data.AccessControl;
@@ -145,4 +147,3 @@ public sealed class PurchaseOrderOwnershipTests
         await Assert.ThrowsAsync<InvalidOperationException>(()=>service.GetCompanyPOsAsync(Company," "));editor.VerifyNoOtherCalls();
     }
 }
-

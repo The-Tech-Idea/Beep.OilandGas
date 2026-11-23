@@ -38,14 +38,14 @@ public sealed partial class DevelopmentInvestmentAssignedState
             }
             else DecisionConfirmation="No original stage decision for your account was found in the verified assignment. Reload its current source before preparing a decision.";
         }
-        catch(Exception error){var text=explain(error,"restoring original investment stage input","The original stage recovery input is unconfirmed");if(Active())DecisionError=text;}
+        catch(Exception error){var text=explain.Explain(error,"restoring original investment stage input","The original stage recovery input is unconfirmed");if(Active())DecisionError=text;}
         finally{deciding=false;if(!disposed)Changed?.Invoke();}
     }
     public void PrepareDecision(string? decision,string? rationale)
     {
         if(!CanPrepare)return;prepared=null;DecisionError=null;DecisionConfirmation=null;
         try{var value=new DevelopmentInvestmentStageDecision(CompanyInventorySourceReview.Copy(current!),Guid.NewGuid(),decision??"",rationale?.Trim()??"");value.Require();prepared=value;}
-        catch(Exception error){DecisionError=explain(error,"preparing independent investment stage","Choose approve or reject and provide the original review rationale");}
+        catch(Exception error){DecisionError=explain.Explain(error,"preparing independent investment stage","Choose approve or reject and provide the original review rationale");}
         Changed?.Invoke();
     }
     public void CancelDecision(){if(deciding || pending is not null)return;prepared=null;Changed?.Invoke();}
@@ -75,7 +75,7 @@ public sealed partial class DevelopmentInvestmentAssignedState
                 "FINANCIAL_RECORDED"=>"The original financial outcome is recorded; assignment completion is still pending. Continue the same retained decision after confirming current review authority.",
                 _=>"The original stage is reserved; its decision is not complete. Continue the same retained decision after confirming current review authority."};
         }
-        catch(Exception error){var message=explain(error,recover?"recovering original investment stage":"recording original investment stage","The original stage outcome is unconfirmed. Its exact recovery input was preserved");if(Active())DecisionError=message;}
+        catch(Exception error){var message=explain.Explain(error,recover?"recovering original investment stage":"recording original investment stage","The original stage outcome is unconfirmed. Its exact recovery input was preserved");if(Active())DecisionError=message;}
         finally{deciding=false;if(!disposed)Changed?.Invoke();}
     }
 }

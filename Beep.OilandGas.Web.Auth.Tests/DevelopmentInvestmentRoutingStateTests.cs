@@ -26,7 +26,7 @@ public sealed class DevelopmentInvestmentRoutingStateTests
             var option=new DevelopmentInvestmentRoutingOption("configured-investment","Configured investment review","2",new string('B',64),[stage],[]);
             Review=new(Investment.Review,[option],"",DateTimeOffset.UtcNow);Review=Review with{Revision=Review.ContentRevision()};Select();
             Investment.Base.Client.Setup(client=>client.ReviewInvestmentRoutingAsync(It.IsAny<string>(),It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>Review);
-            State=new(Investment.Base.Company,Investment.Base.Baseline.Reader.Personas.Object,Investment.Base.Client.Object,(_,_,text)=>text);State.SetSource(Process,Afe);
+            State=new(Investment.Base.Company,Investment.Base.Baseline.Reader.Personas.Object,Investment.Base.Client.Object,TestFailures.Calls(new RecordingFailureReporter()));State.SetSource(Process,Afe);
         }
         internal void Select(bool allowed=true)=>Investment.Base.Company.TrySelect(Investment.Base.Company.Clear(),"investor",new(Investment.Review.Current.Source.Review.Scope.Company,["InvestmentReviewer"],allowed?
             ["Accounting.View","DevelopmentPlanning.View","Workflow.View","Workflow.Start","Accounting.PrepareDevelopmentBudget"]:["Accounting.View","DevelopmentPlanning.View","Workflow.View"]));
@@ -84,7 +84,7 @@ public sealed class DevelopmentInvestmentRoutingStateTests
         if(mode=="empty")f.Review=f.Review with{Options=[]};
         if(mode=="blocked"){var option=f.Review.Options[0];f.Review=f.Review with{Options=[option with{Stages=[option.Stages[0] with{Recipients=[]}],Blockers=["Configured role has no independent eligible reviewer."]}]};}
         f.Review=f.Review with{Revision=f.Review.ContentRevision()};using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();
-        ui.Services.AddSingleton(f.Investment.Base.Company);ui.Services.AddSingleton(f.Investment.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Investment.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Investment.Base.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Investment.Base.Company);ui.Services.AddSingleton(f.Investment.Base.Baseline.Reader.Personas.Object);ui.Services.AddSingleton(f.Investment.Base.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Investment.Base.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var panel=ui.RenderComponent<DevelopmentInvestmentPanel>(parameters=>parameters.Add(value=>value.ProcessId,f.Process).Add(value=>value.AfeId,f.Afe));
         if(mode=="permission"){Assert.DoesNotContain("Investment assignment readiness",panel.Markup);return;}
         Assert.DoesNotContain("Configured investment review",panel.Markup);panel.FindAll("button").Single(button=>button.TextContent.Contains("Review investment routing")).Click();

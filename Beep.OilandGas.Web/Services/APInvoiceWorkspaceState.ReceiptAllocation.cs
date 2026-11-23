@@ -35,7 +35,7 @@ public sealed partial class APInvoiceWorkspaceState
                     review.Revision,review.BindingRevision ?? "",new Guid("11111111-1111-1111-1111-111111111111").ToString("N"),"Readiness check").Require(review);
                 return true;
             }
-            catch(InvalidOperationException){return false;}
+            catch(InvalidOperationException error){failures.Told(error, "APInvoiceWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return false;}
         }
     }
     private void InvalidateAllocationDisplay()
@@ -69,7 +69,7 @@ public sealed partial class APInvoiceWorkspaceState
             var receipt=CopyAllocation(await record(CopyAllocation(intent)));receipt.Require(commandIntent,intent.Review);
             if(!Current())return;
             // Stage all source owners before publishing any refreshed data or successful outcome.
-            using var staged=new APInvoiceWorkspaceState(company);
+            using var staged=new APInvoiceWorkspaceState(failures,company);
             await staged.LoadDetailAsync(commandIntent.InvoiceId,readInvoice);if(!Current())return;
             if(staged.SourceRevision!=commandIntent.Proposal.ExpectedInvoiceRevision)throw new InvalidOperationException("The invoice changed after allocation recording.");
             await staged.LoadPurchaseSourceAsync(commandIntent.LineId,readPurchase);if(!Current())return;

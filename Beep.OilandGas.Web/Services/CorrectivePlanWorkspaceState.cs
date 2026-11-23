@@ -9,7 +9,7 @@ using Beep.OilandGas.Client.App.Services.Field;
 using Beep.OilandGas.Models.Data.Security;
 namespace Beep.OilandGas.Web.Services;
 
-public sealed class CorrectivePlanWorkspaceState(CompanyClientContext company,IFieldSelectionContext fields,IFieldService api,ICorrectivePlanIntentStore store,Func<Exception,string,string,string> explain):IDisposable
+public sealed class CorrectivePlanWorkspaceState(CompanyClientContext company,IFieldSelectionContext fields,IFieldService api,ICorrectivePlanIntentStore store,OilGasCallFailures explain):IDisposable
 {
     private long version;private bool disposed,started;private CAPlanCreationReview? review;private FieldSelectionReview? context;private CorrectivePlanOriginal? pending;private RecordedIncidentParticipant? participant;
     public string IncidentId { get; private set; }="";
@@ -49,14 +49,14 @@ public sealed class CorrectivePlanWorkspaceState(CompanyClientContext company,IF
             var after=await fields.GetCurrentFieldSelectionAsync();if(!Current())return;FieldSelectionReviewValidator.RequireCurrent(after,captured.Selection.Scope,captured.Selection.UserId);if(!after.SelectionAvailable || after.SelectionContext!=context)throw new InvalidOperationException("The FIELD changed during review.");
             review=source with{Participants=Array.AsReadOnly(source.Participants.Select(x=>x with{}).ToArray()),ResponseTypes=Array.AsReadOnly(source.ResponseTypes.ToArray())};
         }
-        catch(Exception error){if(Current()){review=null;pending=null;context=null;Error=explain(error,"reviewing a corrective action plan","Corrective action evidence could not be confirmed");}}
+        catch(Exception error){if(Current()){review=null;pending=null;context=null;Error=explain.Explain(error,"reviewing a corrective action plan","Corrective action evidence could not be confirmed");}}
         finally{if(Current()){Busy=false;Changed?.Invoke();}}
     }
     public async Task SubmitAsync(string name,string number,string responseType,bool confirmed)
     {
         if(!CanPrepare || !confirmed)return;
         try{var intent=new CreateCAPlanRequest(Guid.NewGuid(),name?.Trim()??"",number?.Trim()??"",responseType,participant!.PartyObservation,participant.RoleObservation,participant.BusinessAssociateId,review!.Revision);var original=new CorrectivePlanOriginal(review,new(review.Context,intent));original.Require();pending=original;review=null;participant=null;await SendAsync();}
-        catch(Exception error){Error=explain(error,"preparing a corrective action plan","The original plan could not be prepared");Changed?.Invoke();}
+        catch(Exception error){Error=explain.Explain(error,"preparing a corrective action plan","The original plan could not be prepared");Changed?.Invoke();}
     }
     public Task RetryAsync()=>SendAsync();
     private async Task SendAsync()
@@ -70,14 +70,14 @@ public sealed class CorrectivePlanWorkspaceState(CompanyClientContext company,IF
             if(result.Context!=original.Submission.Context || result.IncidentId!=IncidentId || result.PlanId!=original.Submission.Intent.PlanId.ToString("N"))throw new InvalidOperationException("The saved plan identity was not confirmed.");
             await store.ClearAsync(original);if(!Current())return;pending=null;Message="The original corrective action plan was confirmed. Open the incident to review its recorded plan.";
         }
-        catch(Exception error){if(Current())Error=explain(error,"submitting the corrective action plan","The original plan outcome is unconfirmed. Review or retry the same original");}
+        catch(Exception error){if(Current())Error=explain.Explain(error,"submitting the corrective action plan","The original plan outcome is unconfirmed. Review or retry the same original");}
         finally{if(Current()){Busy=false;Changed?.Invoke();}}
     }
     public async Task ReviewLinkAsync()
     {
         if(disposed || Busy || pending is null || context is null)return;var captured=company.Snapshot;var current=version;var original=pending;Busy=true;Error=null;Changed?.Invoke();bool Current()=>!disposed && current==version && captured==company.Snapshot;
         try{var selected=await fields.GetCurrentFieldSelectionAsync();if(!Current())return;FieldSelectionReviewValidator.RequireCurrent(selected,captured.Selection!.Scope,captured.Selection.UserId);if(!selected.SelectionAvailable || selected.SelectionContext!=context)throw new InvalidOperationException("The current FIELD changed.");var result=await api.GetCorrectiveActionPlanAsync(IncidentId,context);if(!Current())return;if(result.Context!=context || result.IncidentId!=IncidentId || result.PlanId!=original.Submission.Intent.PlanId.ToString("N"))throw new InvalidOperationException("The current plan link differs from the original.");var after=await fields.GetCurrentFieldSelectionAsync();if(!Current())return;FieldSelectionReviewValidator.RequireCurrent(after,captured.Selection.Scope,captured.Selection.UserId);if(!after.SelectionAvailable || after.SelectionContext!=context)throw new InvalidOperationException("The FIELD changed during plan link review.");Message="The current incident links to this plan ID. This alone does not confirm the original submission; retry the same original for confirmation.";}
-        catch(Exception error){if(Current())Error=explain(error,"reviewing the corrective action plan link","The original plan link could not be confirmed");}
+        catch(Exception error){if(Current())Error=explain.Explain(error,"reviewing the corrective action plan link","The original plan link could not be confirmed");}
         finally{if(Current()){Busy=false;Changed?.Invoke();}}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;fields.CurrentFieldChanged-=FieldChanged;Invalidate();}

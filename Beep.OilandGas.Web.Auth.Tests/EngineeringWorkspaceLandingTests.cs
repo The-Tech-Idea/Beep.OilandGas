@@ -81,7 +81,7 @@ public sealed class EngineeringWorkspaceLandingTests
         services.AddLogging(); services.AddMudServices();
         services.AddSingleton(company); services.AddSingleton(personas.Object); services.AddSingleton(inbox.Object);
         services.AddSingleton<IJSRuntime, NoBrowser>(); services.AddSingleton<NavigationManager, Navigation>();
-        services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         await using var provider = services.BuildServiceProvider();
         await using var renderer = new HtmlRenderer(provider, provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async () =>

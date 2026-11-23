@@ -419,3 +419,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Local BeepDM connection catalogs, ownership receipts and runtime locks
+Beep.OilandGas.ApiService/Config/ConnectionCatalogs/
+Beep.OilandGas.ApiService/Config/Beep/**/DatabaseTargets/
+*.beep.lock

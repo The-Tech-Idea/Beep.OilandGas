@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.PermitsAndApplications.Models
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -415,7 +416,7 @@
         if(State.Review is null || !Enum.TryParse<PermitApplicationType>(_draftType,out var type) || !Enum.TryParse<Country>(_draftCountry,out var country) ||
             !Enum.TryParse<StateProvince>(_draftRegion,out var region) || !Enum.TryParse<RegulatoryAuthority>(_draftAuthority,out var authority))return null;
         var changes=new PermitApplicationDraftChanges(type,authority,country,region,_draftApplicant.Trim(),string.IsNullOrWhiteSpace(_draftDescription)?null:_draftDescription.Trim());
-        try{changes.Require(State.Review.ReadApplication());return changes;}catch(InvalidOperationException){return null;}
+        try{changes.Require(State.Review.ReadApplication());return changes;}catch(InvalidOperationException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "PermitApplicationWorkflow.Draft", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); return null;}
     }
     private Task SaveDraft()=>Run(async()=>
     {

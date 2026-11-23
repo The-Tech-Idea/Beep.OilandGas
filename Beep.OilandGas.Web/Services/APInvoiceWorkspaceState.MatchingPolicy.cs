@@ -21,13 +21,13 @@ public sealed partial class APInvoiceWorkspaceState
     public CompanyMatchingPolicyProof? VerifiedPolicyProof(string id)
     {
         var row=policies?.Records.SingleOrDefault(item=>item.ACCOUNTING_METHOD_ID==id);if(row is null)return null;
-        try{return CompanyMatchingPolicyProof.Require(policies!.Company,PurchaseReceiptDecisionProof.Copy(row));}catch(InvalidOperationException){return null;}
+        try{return CompanyMatchingPolicyProof.Require(policies!.Company,PurchaseReceiptDecisionProof.Copy(row));}catch(InvalidOperationException error){failures.Told(error, "APInvoiceWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return null;}
     }
     public IReadOnlyList<string> ReviewablePolicyDraftIds=>policyCommandReview is not {Action:"APPROVE"} review?[]:review.History.Records
         .Where(row=>row.ACTIVE_IND=="Y" && row.MATCHING_POLICY_STATUS=="DRAFT").Where(row=>
         {
             try{var proof=CompanyMatchingPolicyProof.Require(review.History.Company,row);return proof.Command.Action=="DRAFT" && proof.Command.ActorUserId!=review.History.ActorUserId;}
-            catch(InvalidOperationException){return false;}
+            catch(InvalidOperationException error){failures.Told(error, "APInvoiceWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return false;}
         }).Select(row=>row.ACCOUNTING_METHOD_ID).ToArray();
     private void InvalidatePolicyCommandDisplay()
     {

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -140,7 +141,7 @@
         if (_busy || string.IsNullOrWhiteSpace(_key)) return;
         _busy = true; _message = null; _selectedDriver = null; _catalogLoaded = false;
         try { _items = await Drivers.ListAsync(_key); _catalogLoaded = true; }
-        catch (Exception error) { Logger.LogWarning(error, "First-time driver catalog could not be loaded"); _items = []; _message = "The catalog is unavailable. Check the temporary setup configuration and repository status."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.Load", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "First-time driver catalog could not be loaded"); _items = []; _message = "The catalog is unavailable. Check the temporary setup configuration and repository status."; }
         finally { _busy = false; }
     }
     private async Task Install(SetupDriverItem item)
@@ -163,7 +164,7 @@
                 _message = "Connector and provider loaded. Continue with repository setup.";
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.Install", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "First-time driver installation was not confirmed");
             // A failed response can follow a partial download or a completed installation.
             // Require a fresh catalog before selecting a driver or repeating the request.
@@ -178,8 +179,8 @@
         _busy = true; _message = null; _plan = null; _reviewed = false;
         try { _plan = await Drivers.PlanRepositoryAsync(_key); }
         catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Conflict)
-        { Logger.LogWarning(error, "Identity repository migration requires review"); _message = "Migration requires operator review. Existing account-wide persona settings may need a reviewed company assignment."; }
-        catch (Exception error) { Logger.LogWarning(error, "Identity repository migration plan could not be reviewed"); _message = "The migration plan is unavailable. Check the server configuration, database connection and setup key."; }
+        { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.ReviewRepository", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Identity repository migration requires review"); _message = "Migration requires operator review. Existing account-wide persona settings may need a reviewed company assignment."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.ReviewRepository", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Identity repository migration plan could not be reviewed"); _message = "The migration plan is unavailable. Check the server configuration, database connection and setup key."; }
         finally { _busy = false; }
     }
     private async Task LoadConnections()
@@ -187,7 +188,7 @@
         if (_busy || string.IsNullOrWhiteSpace(_key)) return;
         _busy = true; _connectionsLoaded = false; _connections = []; _connection = ""; _plan = null; _reviewed = false; _message = null;
         try { _connections = await Drivers.RepositoryConnectionsAsync(_key); _connectionsLoaded = true; }
-        catch (Exception error) { Logger.LogWarning(error, "Identity repository connections could not be listed"); _message = "The connection catalog is unavailable. Check the server and setup key."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.LoadConnections", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Identity repository connections could not be listed"); _message = "The connection catalog is unavailable. Check the server and setup key."; }
         finally { _busy = false; }
     }
 
@@ -202,7 +203,7 @@
                 : "The connection could not be opened. Check the server, credentials and database. A new database may need to be created during migration.";
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.TestConnection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning("Identity connection test could not be confirmed ({ErrorType})", error.GetType().Name);
             _message = "The connection test could not be confirmed. Refresh the connection list and try again.";
         }
@@ -257,13 +258,13 @@
                 _message = "Beep connection created and found in the catalog. Select it for the identity repository.";
             }
             catch (Exception error)
-            {
+            { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.CreateConnection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
                 Logger.LogWarning(error, "The newly created identity connection could not be confirmed in the catalog");
                 _message = "Beep connection created, but the connection catalog could not confirm it. Find registered connections and check before selecting.";
             }
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.CreateConnection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Identity Beep connection creation was not confirmed");
             _message = "The connection creation was not confirmed. Find registered connections before retrying; if it is absent, check the loaded driver, connection settings and server credential protection.";
         }
@@ -279,7 +280,7 @@
             if (!string.Equals(result.ConnectionName, name, StringComparison.Ordinal)) throw new InvalidOperationException("The selected connection changed.");
             _message = "Identity repository connection selected. Review its migrations next.";
         }
-        catch (Exception error) { Logger.LogWarning(error, "Identity repository connection selection was not confirmed"); _message = "The connection selection was not confirmed. Check the server configuration and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.SelectConnection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Identity repository connection selection was not confirmed"); _message = "The connection selection was not confirmed. Check the server configuration and retry."; }
         finally { _busy = false; }
     }
     private async Task ApplyRepository()
@@ -291,7 +292,7 @@
             var result = await Drivers.ApplyRepositoryAsync(_key, plan);
             _message = $"Migration request completed. Identity repository status: {result.Readiness}. Return to setup and check the repository again.";
         }
-        catch (Exception error) { Logger.LogWarning(error, "Identity repository migration was not confirmed"); _message = "The migration outcome could not be confirmed. Check the repository status before reviewing again."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SetupBootstrapDrivers.ApplyRepository", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Identity repository migration was not confirmed"); _message = "The migration outcome could not be confirmed. Check the repository status before reviewing again."; }
         finally { _busy = false; }
     }
 }

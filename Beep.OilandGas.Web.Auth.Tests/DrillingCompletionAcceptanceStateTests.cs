@@ -76,7 +76,7 @@ public sealed class DrillingCompletionAcceptanceStateTests
     {
         using var f=new Fixture();await f.Prepare();await f.Freeze();await f.Core.State.SubmitDecisionAsync();var progress=await f.Acceptance.Progress();f.Acceptance.Physical.NullRows=true;
         f.Core.Client.Setup(c=>c.GetCompletionReviewProgressAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(progress);
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Core.Company);ui.Services.AddSingleton(f.Core.Personas.Object);ui.Services.AddSingleton(f.Core.Client.Object);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Core.Company);ui.Services.AddSingleton(f.Core.Personas.Object);ui.Services.AddSingleton(f.Core.Client.Object);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/completion-review/history?processId="+Uri.EscapeDataString(progress.InstanceId));var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingCompletionHistory>();
         page.WaitForAssertion(()=>Assert.Contains("Original physical completion acceptance is recorded",page.Markup));Assert.Contains("Approved physical acceptance criteria 42",page.Markup);Assert.Contains("Certificate UTC evidence 42",page.Markup);Assert.Contains("Current external test readiness must be rechecked",page.Markup);Assert.Contains("production release require their own",page.Markup);
         f.Core.Company.Clear();page.WaitForAssertion(()=>Assert.DoesNotContain("Certificate UTC evidence 42",page.Markup));f.Core.Client.Verify(c=>c.InspectCompletionTestAsync(It.IsAny<DrillingCompletionTestSelection>(),It.IsAny<CancellationToken>()),Times.Exactly(2));
@@ -85,7 +85,7 @@ public sealed class DrillingCompletionAcceptanceStateTests
     {
         using var f=new Fixture();await f.Prepare();await f.Freeze();f.Core.Native.Start.Lifecycle.Native.FailCommit=true;await f.Core.State.SubmitDecisionAsync();f.Core.Native.Start.Lifecycle.Native.FailCommit=false;Assert.NotNull(f.Core.Journal.CompletionDecisionOriginal?.Acceptance);
         var writes=f.Core.Native.Mutations;f.Core.ReadOnly();f.Acceptance.Physical.NullRows=true;f.Core.Personas.Invocations.Clear();f.Core.Client.Invocations.Clear();
-        using var restarted=new DrillingCompletionAssignedState(f.Core.Company,f.Core.Personas.Object,f.Core.Client.Object,f.Core.Journal,(_,_,message)=>message);await restarted.LoadAsync(f.Core.Native.Command.Review.InstanceId);await restarted.RecoverDecisionAsync();
+        using var restarted=new DrillingCompletionAssignedState(f.Core.Company,f.Core.Personas.Object,f.Core.Client.Object,f.Core.Journal,TestFailures.Calls(new RecordingFailureReporter()));await restarted.LoadAsync(f.Core.Native.Command.Review.InstanceId);await restarted.RecoverDecisionAsync();
         Assert.True(restarted.DecisionReceipt!.CompletionAccepted);Assert.Equal(writes,f.Core.Native.Mutations);f.Core.Personas.Verify(p=>p.EnsureLoadedAsync(),Times.Never());f.Core.Client.Verify(c=>c.InspectCompletionTestAsync(It.IsAny<DrillingCompletionTestSelection>(),It.IsAny<CancellationToken>()),Times.Never());
     }
     [Theory,InlineData("company"),InlineData("persona"),InlineData("route"),InlineData("dispose")]
@@ -99,7 +99,7 @@ public sealed class DrillingCompletionAcceptanceStateTests
     }
     [Fact]public async Task ActualReviewerParentFreezesEveryTestAndConfirmsRetainedPhysicalAcceptance()
     {
-        using var f=new Fixture();await f.Prepare();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Core.Company);ui.Services.AddSingleton(f.Core.Personas.Object);ui.Services.AddSingleton(f.Core.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Core.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var f=new Fixture();await f.Prepare();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Core.Company);ui.Services.AddSingleton(f.Core.Personas.Object);ui.Services.AddSingleton(f.Core.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Core.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo(WorkflowTaskRoute.For("FIELD",f.Core.Native.Command.Review.InstanceId,"DRILLING_DAILY_REPORT"));var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingCompletionAssigned>();page.WaitForAssertion(()=>Assert.Contains("Independent physical completion acceptance",page.Markup));
         async Task Text(string label,string value){var input=page.FindComponents<MudTextField<string>>().Single(component=>component.Instance.Label==label);await page.InvokeAsync(()=>input.Instance.ValueChanged.InvokeAsync(value));}
         for(int index=0;index<2;index++)

@@ -13,7 +13,7 @@ public sealed partial class AssetGrantAdministrationState : IDisposable
     private readonly Func<string, CancellationToken, Task<List<AssetAccess>?>> load;
     private readonly Func<string, GrantAccessRequest, CancellationToken, Task<bool>> grant;
     private readonly Func<string, RevokeAccessRequest, CancellationToken, Task<bool>> revoke;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private CancellationTokenSource? pending;
     private long generation;
     private bool disposed;
@@ -40,7 +40,7 @@ public sealed partial class AssetGrantAdministrationState : IDisposable
         Func<string, CancellationToken, Task<List<AssetAccess>?>> load,
         Func<string, GrantAccessRequest, CancellationToken, Task<bool>> grant,
         Func<string, RevokeAccessRequest, CancellationToken, Task<bool>> revoke,
-        Func<Exception, string, string, string> explain,
+        OilGasCallFailures explain,
         Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService review)
     {
         this.company = company; this.load = load; this.grant = grant; this.revoke = revoke; this.explain = explain;
@@ -76,11 +76,11 @@ public sealed partial class AssetGrantAdministrationState : IDisposable
             ValidateRows(rows, user, scope.Selection.Scope.BusinessAssociateId);
             Publish(rows!, scope); Loaded = true;
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "AssetGrantAdministrationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
             if (!Current()) return;
-            var sentence = explain(failure, "loading direct asset grants", "Asset grants could not be loaded");
+            var sentence = explain.Explain(failure, "loading direct asset grants", "Asset grants could not be loaded");
             if (Current()) Error = sentence;
         }
         finally
@@ -139,11 +139,11 @@ public sealed partial class AssetGrantAdministrationState : IDisposable
             if (!confirmedChange(rows!)) throw new InvalidOperationException("The requested asset grant change could not be confirmed by readback.");
             Publish(rows!, scope); Confirmation = success;
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "AssetGrantAdministrationState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
             if (!Current()) return;
-            var sentence = explain(failure, applied ? "refreshing changed asset grants" : operation,
+            var sentence = explain.Explain(failure, applied ? "refreshing changed asset grants" : operation,
                 applied ? "Changed asset grants could not be refreshed. Reload before making further changes" : "Asset grant change could not be confirmed. Reload before making further changes");
             if (Current()) { Grants = []; confirmed.Clear(); Loaded = false; loadedScope = null; Error = sentence; }
         }

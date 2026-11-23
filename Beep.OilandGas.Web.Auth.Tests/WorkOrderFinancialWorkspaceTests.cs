@@ -84,7 +84,7 @@ public sealed class WorkOrderFinancialWorkspaceTests
         var client=new Mock<IWorkOrderServiceClient>();var reads=0;var order=Header(source);order.BudgetAmt=99999;order.ActualAmt=88888;
         client.Setup(value=>value.GetWorkOrdersAsync(null,null)).ReturnsAsync([order]);client.Setup(value=>value.ReadFinancialSourcesAsync(source.Query,It.IsAny<CancellationToken>())).Returns(()=>{reads++;return Task.FromResult(source);});
         var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton(company);services.AddScoped<WorkOrderFinancialWorkspaceState>();services.AddSingleton(client.Object);services.AddSingleton(fields.Object);
-        services.AddSingleton<AuthenticationStateProvider>(new Auth(source.Context.ActorUserId));services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<IComponentActivator,Components>();services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        services.AddSingleton<AuthenticationStateProvider>(new Auth(source.Context.ActorUserId));services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<IComponentActivator,Components>();services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {

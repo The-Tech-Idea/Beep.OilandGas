@@ -1,4 +1,5 @@
 using Beep.OilandGas.Models.Data.Company;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
@@ -164,7 +165,7 @@ builder.Services.AddScoped<CompanySalesInvoiceReviewWorkspaceState>();
 builder.Services.AddScoped<CommercialAmendmentWorkspaceState>();
 builder.Services.AddScoped<CompanyAccountingStepState>();
 builder.Services.AddScoped<APInvoiceWorkspaceState>();
-builder.Services.AddScoped<PurchaseOrderWorkspaceState>(services=>new(services.GetRequiredService<CompanyClientContext>(),services.GetRequiredService<InventoryWorkspaceState>()));
+builder.Services.AddScoped<PurchaseOrderWorkspaceState>(services=>new(services.GetRequiredService<OilGasCallFailures>(),services.GetRequiredService<CompanyClientContext>(),services.GetRequiredService<InventoryWorkspaceState>()));
 builder.Services.AddScoped<InventoryWorkspaceState>();
 var originalAuthentication = builder.Services.Last(x => x.ServiceType == typeof(AuthenticationStateProvider));
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
@@ -179,16 +180,16 @@ builder.Services.AddScoped<ICompanyAccessClient, CompanyAccessClient>();
 // Per-component state; transport and failure wording retain their existing canonical owners.
 builder.Services.AddTransient(sp => new AssetHierarchyState(sp.GetRequiredService<CompanyClientContext>(),
     (path, token) => sp.GetRequiredService<ApiClient>().GetAsync<AssetHierarchyNode>(path, token),
-    (failure, operation, sentence) => sp.GetRequiredService<OilGasCallFailures>().Explain(failure, operation, sentence)));
+    sp.GetRequiredService<OilGasCallFailures>()));
 builder.Services.AddTransient(sp => new HierarchyConfigurationState(sp.GetRequiredService<CompanyClientContext>(),
     (path, token) => sp.GetRequiredService<ApiClient>().GetAsync<List<HierarchyConfig>>(path, token),
-    (failure, operation, sentence) => sp.GetRequiredService<OilGasCallFailures>().Explain(failure, operation, sentence),
+    sp.GetRequiredService<OilGasCallFailures>(),
     (path, rows, token) => sp.GetRequiredService<ApiClient>().PutAsync<List<HierarchyConfig>, bool>(path, rows, token)));
 builder.Services.AddTransient(sp => new AssetGrantAdministrationState(sp.GetRequiredService<CompanyClientContext>(),
     (path, token) => sp.GetRequiredService<ApiClient>().GetAsync<List<AssetAccess>>(path, token),
     (path, request, token) => sp.GetRequiredService<ApiClient>().PostAsync<Beep.OilandGas.Models.Data.AccessControl.GrantAccessRequest, bool>(path, request, token),
     (path, request, token) => sp.GetRequiredService<ApiClient>().PostAsync<Beep.OilandGas.Models.Data.AccessControl.RevokeAccessRequest, bool>(path, request, token),
-    (failure, operation, sentence) => sp.GetRequiredService<OilGasCallFailures>().Explain(failure, operation, sentence),
+    sp.GetRequiredService<OilGasCallFailures>(),
     sp.GetRequiredService<IBeepOilandGasApp>().AccessControl));
 
 builder.Services.AddScoped(sp => new CompanySelectionService(sp.GetRequiredService<ICompanyAccessClient>(),
@@ -287,16 +288,16 @@ builder.Services.AddBeepOilandGasAppRemote(builder.Configuration);
         builder.Services.AddScoped<IInitialCompanyIntentStore>(sp => sp.GetRequiredService<CompanySetupIntentStore>());
         builder.Services.AddScoped<ICompanyMembershipIntentStore>(sp => sp.GetRequiredService<CompanySetupIntentStore>());
         builder.Services.AddScoped<ICompanyRoleIntentStore>(sp => sp.GetRequiredService<CompanySetupIntentStore>());
-        builder.Services.AddTransient(sp => new CorrectivePlanWorkspaceState(sp.GetRequiredService<CompanyClientContext>(),sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(),sp.GetRequiredService<Beep.OilandGas.Client.App.Services.Field.IFieldService>(),sp.GetRequiredService<ICorrectivePlanIntentStore>(),sp.GetRequiredService<OilGasCallFailures>().Explain));
+        builder.Services.AddTransient(sp => new CorrectivePlanWorkspaceState(sp.GetRequiredService<CompanyClientContext>(),sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(),sp.GetRequiredService<Beep.OilandGas.Client.App.Services.Field.IFieldService>(),sp.GetRequiredService<ICorrectivePlanIntentStore>(),sp.GetRequiredService<OilGasCallFailures>()));
         builder.Services.AddTransient(sp => new InvestigatorAssignmentState(sp.GetRequiredService<CompanyClientContext>(),
             sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(), sp.GetRequiredService<IHSEServiceClient>(),
-            sp.GetRequiredService<OilGasCallFailures>().Explain,sp.GetRequiredService<IInvestigatorAssignmentIntentStore>()));
+            sp.GetRequiredService<OilGasCallFailures>(),sp.GetRequiredService<IInvestigatorAssignmentIntentStore>()));
         builder.Services.AddScoped<ILeaseServiceClient, LeaseServiceClient>();
         builder.Services.AddTransient<LeaseCreationState>();
         builder.Services.AddTransient(sp => new FieldSelectionState(sp.GetRequiredService<CompanyClientContext>(),
-            sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(), sp.GetRequiredService<OilGasCallFailures>().Explain));
+            sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFieldSelectionContext>(), sp.GetRequiredService<OilGasCallFailures>()));
         builder.Services.AddTransient(sp => new LeasePortfolioState(sp.GetRequiredService<CompanyClientContext>(),
-            sp.GetRequiredService<ILeaseServiceClient>(), sp.GetRequiredService<OilGasCallFailures>().Explain));
+            sp.GetRequiredService<ILeaseServiceClient>(), sp.GetRequiredService<OilGasCallFailures>()));
         builder.Services.AddScoped<IOperationsServiceClient, OperationsServiceClient>();
         builder.Services.AddScoped<IExecutiveServiceClient, ExecutiveServiceClient>();
 builder.Services.AddScoped<IProductionServiceClient, ProductionServiceClient>();

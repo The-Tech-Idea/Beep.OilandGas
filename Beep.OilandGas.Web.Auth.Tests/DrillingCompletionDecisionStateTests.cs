@@ -31,7 +31,7 @@ public sealed class DrillingCompletionDecisionStateTests
             Client.Setup(c=>c.GetAssignedCompletionReviewAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(()=>Native.Command.Review);
             Client.Setup(c=>c.DecideCompletionReviewAsync(It.IsAny<DrillingCompletionReviewDecision>(),It.IsAny<CancellationToken>())).Returns(async(DrillingCompletionReviewDecision original,CancellationToken _)=>{Native.Command=original;return await Native.Decide();});
             Client.Setup(c=>c.RecoverCompletionReviewDecisionAsync(It.IsAny<DrillingCompletionReviewDecision>(),It.IsAny<CancellationToken>())).Returns(async(DrillingCompletionReviewDecision original,CancellationToken _)=>{Native.Command=original;return await Native.Decide(true);});
-            State=new(Company,Personas.Object,Client.Object,Journal,(_,_,message)=>message);await State.LoadAsync(packet.InstanceId);
+            State=new(Company,Personas.Object,Client.Object,Journal,TestFailures.Calls(new RecordingFailureReporter()));await State.LoadAsync(packet.InstanceId);
         }
         internal void Freeze()=>State.PrepareDecision("APPROVE","Signed independent review against the exact reported completion claim");
         internal void ReadOnly(){var selected=Company.Selection!;Company.TrySelect(Company.Clear(),selected.UserId,new(selected.Scope,selected.Roles.ToArray(),["Drilling.View","Drilling.ViewDailyReports","Accounting.View","DevelopmentPlanning.View","Workflow.View"]));Personas.SetupGet(p=>p.CurrentProfile).Returns(new AppUserPersona{UserId=selected.UserId,PersonaCode="UNMAPPED"});}
@@ -83,7 +83,7 @@ public sealed class DrillingCompletionDecisionStateTests
     [Theory,InlineData(false),InlineData(true)]
     public async Task ActualReviewerParentConfirmsOriginalAndRecoversAfterWholeOwnerReload(bool loseAcknowledgement)
     {
-        using var f=new Fixture();await f.Prepare();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var f=new Fixture();await f.Prepare();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Journal);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo(WorkflowTaskRoute.For("FIELD",f.Native.Command.Review.InstanceId,"DRILLING_DAILY_REPORT"));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingCompletionAssigned>();page.WaitForAssertion(()=>Assert.Contains("Review this reported completion claim",page.Markup));
         var panel=page.FindComponent<Beep.OilandGas.Web.Components.Workflow.DrillingCompletionDecisionPanel>();await page.InvokeAsync(()=>panel.Instance.State.PrepareDecision("APPROVE","Independent recorded review with physical test acceptance remaining separate"));
@@ -99,7 +99,7 @@ public sealed class DrillingCompletionDecisionStateTests
         using var f=new Fixture();await f.Prepare();await f.Native.Decide();var graph=await f.Native.Start.Recorded();var progress=PPDMProcessService.CompletionReviewProgress(graph.Original,graph.Process,graph.Tasks,f.Native.Current,graph.NativeRevision);
         f.Client.Setup(c=>c.GetCompletionReviewProgressAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).Returns((string _,CancellationToken token)=>{if(mode=="unavailable")throw new HttpRequestException("Unavailable history");if(mode=="late")f.Company.Clear();return Task.FromResult(progress);});
         if(mode=="company"){var selected=f.Company.Selection!;f.Company.TrySelect(f.Company.Clear(),selected.UserId,new(new("tenant","foreign"),selected.Roles.ToArray(),selected.Permissions.ToArray()));}
-        using var state=new DrillingCompletionProgressState(f.Company,f.Personas.Object,f.Client.Object,(_,_,message)=>message);await state.LoadAsync(progress.InstanceId);
+        using var state=new DrillingCompletionProgressState(f.Company,f.Personas.Object,f.Client.Object,TestFailures.Calls(new RecordingFailureReporter()));await state.LoadAsync(progress.InstanceId);
         if(mode=="current"){Assert.Equal("APPROVED",state.Current!.State);Assert.Equal(0,state.Current.PendingTasks);}else Assert.Null(state.Current);
         Assert.Equal("STARTED",f.Native.Current.History.Execution.Recorded!.STATUS);
     }
@@ -108,7 +108,7 @@ public sealed class DrillingCompletionDecisionStateTests
     {
         using var f=new Fixture();await f.Prepare();await f.Native.Decide();var graph=await f.Native.Start.Recorded();var progress=PPDMProcessService.CompletionReviewProgress(graph.Original,graph.Process,graph.Tasks,f.Native.Current,graph.NativeRevision);
         f.Client.Setup(c=>c.GetCompletionReviewProgressAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(progress);
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/completion-review/history?processId="+Uri.EscapeDataString(progress.InstanceId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingCompletionHistory>();page.WaitForAssertion(()=>Assert.Contains("Complete ordered independent completion review stages",page.Markup));
         Assert.Contains("Independent review state APPROVED",page.Markup);Assert.Contains("No independent physical completion acceptance is recorded",page.Markup);Assert.False(progress.OriginalCompletionAccepted);Assert.DoesNotContain("Original physical completion acceptance evidence",page.Markup);Assert.Contains(f.Native.Command.Rationale,page.Markup);Assert.Contains("actual pending approval tasks 0",page.Markup);

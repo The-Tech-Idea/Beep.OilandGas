@@ -97,7 +97,7 @@ public sealed class CompanyFieldObligationSqliteTests
         using var editor = new DMEEditor(log.Object, util, errors, config.Object, handler); util.DME = editor;
         try
         {
-            await new SetupDriverService(editor, new ConfigurationBuilder().Build(), NullLogger<SetupDriverService>.Instance).RestoreCachedAsync(default);
+            await new SetupDriverService(editor, new ConfigurationBuilder().Build(), NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()).RestoreCachedAsync(default);
             var source = editor.GetDataSource(connection.ConnectionName); Assert.NotNull(source); Assert.Equal(ConnectionState.Open, source.Openconnection());
             var definitions = new (Type Type, string[] Keys, string[] Fields)[] {
                 (typeof(FIELD), ["FIELD_ID"], ["FIELD_ID", "ACTIVE_IND"]),

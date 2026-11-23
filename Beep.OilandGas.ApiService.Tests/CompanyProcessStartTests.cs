@@ -150,10 +150,10 @@ public sealed class CompanyProcessStartTests
         var instance = (await fixture.Service.GetProcessInstanceAsync(receipt.InstanceId))!;
         var definition = (await fixture.Service.GetProcessDefinitionAsync(intent.ProcessId))!;
         var user = new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.Role,"Administrator")],"test"));
-        Assert.Equal(allowed,ProcessStepRoleChecks.CanAct(user,actor,instance,instance.StepInstances[0],definition,definition.Steps[0]));
+        Assert.Equal(allowed,ProcessStepRoleChecks.CanAct(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,actor,instance,instance.StepInstances[0],definition,definition.Steps[0]));
         instance.CurrentState = "review";
         definition.Transitions.Add("approve",new(){FromStateId="review",ToStateId="approved",Trigger="approve",RequiresApproval=true});
-        Assert.Equal(allowed,ProcessStepRoleChecks.CanTransition(user,actor,instance,definition,"review","approved","approve"));
+        Assert.Equal(allowed,ProcessStepRoleChecks.CanTransition(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,actor,instance,definition,"review","approved","approve"));
     }
     [Fact] public async Task MissingCompanyPreparerProofCannotUnlockIndependentAction()
     {
@@ -162,7 +162,7 @@ public sealed class CompanyProcessStartTests
         var definition = (await fixture.Service.GetProcessDefinitionAsync(intent.ProcessId))!;
         instance.ProcessData.Data.Remove(CompanyAccountingProcessStart.PayloadKey);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.Role,"Administrator")],"test"));
-        Assert.False(ProcessStepRoleChecks.CanAct(user,"reviewer",instance,instance.StepInstances[0],definition,definition.Steps[0]));
+        Assert.False(ProcessStepRoleChecks.CanAct(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,"reviewer",instance,instance.StepInstances[0],definition,definition.Steps[0]));
     }
     [Theory][InlineData("intent")][InlineData("preparer")][InlineData("revision")]
     public async Task IncompleteReviewedIntentNeverBeginsATransaction(string missing)

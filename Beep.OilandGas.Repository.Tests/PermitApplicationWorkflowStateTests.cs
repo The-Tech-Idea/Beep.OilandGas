@@ -73,7 +73,7 @@ public sealed class PermitApplicationWorkflowStateTests
         }
         public void Select(bool write,string company="company")=>Assert.True(Company.TrySelect(Company.Clear(),"actor",new(new("tenant",company),["Safety"],write?[PermissionConstants.HSE.ViewPermits,PermissionConstants.HSE.IssuePermit,PermissionConstants.HSE.ApprovePermit]:[PermissionConstants.HSE.ViewPermits])));
         public PermitApplicationSourceReview Source()=>PermitApplicationSourceReview.Capture(new(Field,new("permits","permit-binding")),new PERMIT_APPLICATION{PERMIT_APPLICATION_ID=Id,OWNER_TENANT_ID=Field.Company.TenantId,OWNER_COMPANY_ID=Field.Company.BusinessAssociateId,FIELD_ID=Field.FieldId!,APPLICANT_ID="Recorded applicant",APPLICATION_TYPE=ApplicationType,WELL_ID=WellId,COUNTRY=Country.Kuwait,STATUS=Status,SUBMITTED_BY_USER_ID=Submitter},[],PermitApplicationSupportingSnapshot.Capture(new PERMIT_APPLICATION{PERMIT_APPLICATION_ID=Id},Drilling,Environmental,Injection,Attachments));
-        public PermitApplicationCommandState State()=>new(Company,Fields.Object,Authentication,Client.Object,Store);
+        public PermitApplicationCommandState State()=>new(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),Company,Fields.Object,Authentication,Client.Object,Store);
         public void Dispose()=>Company.Dispose();
     }
     [Theory][InlineData("submit")][InlineData("approve")][InlineData("reject")][InlineData("self")][InlineData("terminal")][InlineData("readonly")]
@@ -259,7 +259,7 @@ public sealed class PermitApplicationWorkflowStateTests
     {
         using var f=new Fixture();var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());
         services.AddSingleton(f.Company);services.AddSingleton(f.Fields.Object);services.AddSingleton(f.Client.Object);services.AddSingleton<IPermitApplicationIntentStore>(f.Store);services.AddSingleton<AuthenticationStateProvider>(f.Authentication);
-        var activator=new CreationPageActivator();services.AddSingleton<IComponentActivator>(activator);services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        var activator=new CreationPageActivator();services.AddSingleton<IComponentActivator>(activator);services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -297,7 +297,7 @@ public sealed class PermitApplicationWorkflowStateTests
     {
         using var f=new Fixture();f.Status=PermitApplicationStatus.Submitted;f.Submitter=mode=="self"?"actor":"issuer";if(mode=="readonly")f.Select(false);
         using var state=f.State();await state.AttachAsync(Id);await state.ReviewAsync();
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -328,7 +328,7 @@ public sealed class PermitApplicationWorkflowStateTests
         if(mode=="readonly")f.Select(false);
         if(mode=="independent"){f.Status=PermitApplicationStatus.Submitted;f.Submitter="issuer";}
         using var state=f.State();await state.AttachAsync(Id);await state.ReviewAsync();
-        var activator=new DrillingWorkflowActivator();var services=new ServiceCollection();services.AddSingleton<IComponentActivator>(activator);services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        var activator=new DrillingWorkflowActivator();var services=new ServiceCollection();services.AddSingleton<IComponentActivator>(activator);services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -380,7 +380,7 @@ public sealed class PermitApplicationWorkflowStateTests
         using var state=f.State();await state.AttachAsync(Id);await state.ReviewAsync();
         var proposed=PermitProviderQualificationTests.SupportingOriginal(f.Source(),kind,true);
         var activator=new DrillingWorkflowActivator();var services=new ServiceCollection();services.AddSingleton<IComponentActivator>(activator);
-        services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -425,7 +425,7 @@ public sealed class PermitApplicationWorkflowStateTests
         if(mode=="independent"){f.Status=PermitApplicationStatus.Submitted;f.Submitter="issuer";}if(mode=="readonly")f.Select(false);
         using var state=f.State();await state.AttachAsync(Id);await state.ReviewAsync();
         Assert.False(state.CanPrepare("SUBMIT"));Assert.False(state.CanPrepare("APPROVE"));
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -471,7 +471,7 @@ public sealed class PermitApplicationWorkflowStateTests
     {
         using var f=new Fixture();if(!write)f.Select(false);var id="review/شركة?1";var review=Inbox(f,[InboxRow("draft","Draft"),InboxRow("correction","AdditionalInformationRequired"),InboxRow(id,"Submitted","issuer")],write);
         f.Client.Setup(x=>x.ReadInboxAsync(It.IsAny<FieldSelectionReview>(),It.IsAny<CancellationToken>())).ReturnsAsync(review);
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(f.Company);services.AddSingleton(f.Fields.Object);services.AddSingleton(f.Client.Object);services.AddSingleton<AuthenticationStateProvider>(f.Authentication);services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(f.Company);services.AddSingleton(f.Fields.Object);services.AddSingleton(f.Client.Object);services.AddSingleton<AuthenticationStateProvider>(f.Authentication);services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -524,7 +524,7 @@ public sealed class PermitApplicationWorkflowStateTests
         if(!allowed)Assert.True(f.Company.TrySelect(f.Company.Clear(),"actor",new(new("tenant","company"),["Safety"],[])));
         f.Client.Setup(x=>x.GetByIdAsync(Id,It.IsAny<CancellationToken>())).ReturnsAsync(new PermitApplicationDetail{Application=new(){PermitApplicationId=Id,FieldId="A",ApplicantName="Recorded applicant",ApplicationType="Drilling",RegulatoryAuthority="Recorded authority",Status="Draft"},StatusHistory=[]});
         var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(f.Company);services.AddSingleton(f.Fields.Object);services.AddSingleton(f.Client.Object);services.AddSingleton<IPermitApplicationIntentStore>(f.Store);services.AddSingleton<AuthenticationStateProvider>(f.Authentication);
-        services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));services.AddSingleton<NavigationManager,Navigation>();services.AddSingleton<IComponentActivator,PageActivator>();
+        services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));services.AddSingleton<NavigationManager,Navigation>();services.AddSingleton<IComponentActivator,PageActivator>();
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -549,7 +549,7 @@ public sealed class PermitApplicationWorkflowStateTests
     {
         using var f=new Fixture();using var state=f.State();await state.AttachAsync(Id);await state.ReviewAsync();
         var activator=new WorkbenchActivator();var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());
-        services.AddSingleton<IComponentActivator>(activator);services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        services.AddSingleton<IComponentActivator>(activator);services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -568,7 +568,7 @@ public sealed class PermitApplicationWorkflowStateTests
     {
         using var f=new Fixture();if(mode is "independent" or "self"){f.Status=PermitApplicationStatus.Submitted;f.Submitter=mode=="self"?"actor":"issuer";}if(mode=="readonly")f.Select(false);
         using var state=f.State();await state.AttachAsync(Id);await state.ReviewAsync();
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(new Tab());services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {
@@ -678,7 +678,7 @@ public sealed class PermitApplicationWorkflowStateTests
         {request.Require();Assert.Equal(request.Original,f.Store.Document);Assert.Equal(UploadBytes,request.Content);return new PermitDocumentStageResponse(request.Original,UploadReceipt(request.Original));});
         using var state=f.State();await state.AttachAsync(Id);if(mode!="retained")await state.ReviewAsync();
         var browser=new DocumentBrowser();
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(browser);services.AddSingleton(new OilGasCallFailures(Mock.Of<TheTechIdeaWeb.Diagnostics.IFailureReporter>()));
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton<IJSRuntime>(browser);services.AddSingleton(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()));
         var activator=new DrillingWorkflowActivator();services.AddSingleton<IComponentActivator>(activator);
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>

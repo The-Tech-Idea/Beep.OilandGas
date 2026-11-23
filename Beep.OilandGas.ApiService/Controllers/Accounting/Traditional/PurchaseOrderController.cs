@@ -15,7 +15,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional;
 [ApiController]
 [Authorize]
 [Route("api/accounting/traditional/purchase-order")]
-public sealed class PurchaseOrderController(PurchaseOrderService service,ICompanyAccountingReadContext context,ILogger<PurchaseOrderController> logger) : ControllerBase
+public sealed class PurchaseOrderController(PurchaseOrderService service,ICompanyAccountingReadContext context,TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : ControllerBase
 {
     private async Task<(CompanyScope Scope,string Binding,string Actor)> RequireReadAsync(PurchaseOrderSourceReview? source=null)
     {
@@ -28,7 +28,7 @@ public sealed class PurchaseOrderController(PurchaseOrderService service,ICompan
     [HttpGet("{id}/receipts/{receiptId}/decision-review")]
     public async Task<ActionResult<PurchaseReceiptDecisionReview>> GetReceiptDecisionReview(string id,string receiptId)
     {
-        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));receiptId=RecordedSourceRouteIds.Read(Request,nameof(receiptId));}catch(FormatException){return BadRequest();}
+        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));receiptId=RecordedSourceRouteIds.Read(Request,nameof(receiptId));}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
         try
         {
             var original=await RequireReadAsync();
@@ -37,14 +37,14 @@ public sealed class PurchaseOrderController(PurchaseOrderService service,ICompan
             if(initial.Revision!=closing.Revision || await RequireReadAsync(closing)!=original)throw new InvalidOperationException("The original receiving source or binding changed.");
             var review=new PurchaseReceiptDecisionReview(closing,receiptId,original.Binding);review.Require(original.Scope,original.Actor,id,receiptId);return Ok(review);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
-        catch(InvalidOperationException changed){logger.LogWarning(changed,"Receiver review could not be confirmed.");return Conflict(new{error="Receiver source or company access changed. Reload the original order and receipt."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"Receiver review could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new{error="Receiver source or company access changed. Reload the original order and receipt."});}
     }
     [HttpPost("{id}/receipts/{receiptId}/decision")]
     public async Task<ActionResult<PurchaseReceiptDecisionResult>> RecordReceiptDecision(string id,string receiptId,[FromBody]PurchaseReceiptDecisionSubmission submission)
     {
-        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));receiptId=RecordedSourceRouteIds.Read(Request,nameof(receiptId));}catch(FormatException){return BadRequest();}
+        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));receiptId=RecordedSourceRouteIds.Read(Request,nameof(receiptId));}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
         if(submission?.Command is null || submission.Review is null || submission.Command.OrderId!=id || submission.Command.ReceiptId!=receiptId)return BadRequest();
         try
         {
@@ -65,16 +65,16 @@ public sealed class PurchaseOrderController(PurchaseOrderService service,ICompan
             var row=await service.RecordReceiptDecisionAsync(command,submission.Review.Source,Guard);await Guard();
             return Ok(PurchaseReceiptDecisionResult.Create(submission,row));
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
-        catch(InvalidOperationException changed){logger.LogWarning(changed,"Receiver outcome could not be confirmed.");return Conflict(new{error="Receiver outcome is unconfirmed or original evidence changed. Reconcile the original intent before another decision."});}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException refused){logger.LogWarning(refused,"Receiver provider refused the command.");return Conflict(new{error="Receiver outcome is unconfirmed. Reconcile the original intent before another decision."});}
-        catch(AggregateException uncertain){logger.LogWarning(uncertain,"Receiver transaction or rollback is unconfirmed.");return Conflict(new{error="Receiver outcome is unconfirmed. Reconcile the original intent before another decision."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"Receiver outcome could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new{error="Receiver outcome is unconfirmed or original evidence changed. Reconcile the original intent before another decision."});}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException refused){failures.ReportHandled(refused,"Receiver provider refused the command.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new{error="Receiver outcome is unconfirmed. Reconcile the original intent before another decision."});}
+        catch(AggregateException uncertain){failures.ReportHandled(uncertain,"Receiver transaction or rollback is unconfirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new{error="Receiver outcome is unconfirmed. Reconcile the original intent before another decision."});}
     }
     [HttpGet("{id}")]
     public async Task<ActionResult<PurchaseOrderSourceReview>> GetPurchaseOrder(string id)
     {
-        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException){return BadRequest();}
+        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
         if(string.IsNullOrWhiteSpace(id))return BadRequest(new {error="Purchase order ID is required."});
         try
         {
@@ -86,8 +86,8 @@ public sealed class PurchaseOrderController(PurchaseOrderService service,ICompan
                 await RequireReadAsync(closing)!=original)return Conflict(new {error="Company, binding or purchase order changed. Reload before continuing."});
             return Ok(closing);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(InvalidOperationException changed){logger.LogWarning(changed,"Company-owned purchase-order evidence could not be confirmed.");return Conflict(new {error="Purchase-order source is unconfirmed. Review header ownership, recorded line/receipt relationships and the PRODUCTION schema."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"Company-owned purchase-order evidence could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new {error="Purchase-order source is unconfirmed. Review header ownership, recorded line/receipt relationships and the PRODUCTION schema."});}
     }
     [HttpGet]
     public async Task<ActionResult<List<PURCHASE_ORDER>>> GetCompanyOrders([FromQuery]string? vendorId=null)
@@ -100,13 +100,13 @@ public sealed class PurchaseOrderController(PurchaseOrderService service,ICompan
             if(await RequireReadAsync()!=original)return Conflict(new {error="Company or production binding changed during the order read."});
             return Ok(rows);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(InvalidOperationException changed){logger.LogWarning(changed,"Company order queue could not be confirmed.");return Conflict(new {error="Purchase-order ownership or schema is unconfirmed. Review the PRODUCTION migration and company assignment."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"Company order queue could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new {error="Purchase-order ownership or schema is unconfirmed. Review the PRODUCTION migration and company assignment."});}
     }
     [HttpGet("vendor/{vendorId}/orders")]
     public async Task<ActionResult<List<PURCHASE_ORDER>>> GetVendorOrders(string vendorId)
     {
-        try{vendorId=RecordedSourceRouteIds.Read(Request,nameof(vendorId));}catch(FormatException){return BadRequest();}
+        try{vendorId=RecordedSourceRouteIds.Read(Request,nameof(vendorId));}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
         if(string.IsNullOrWhiteSpace(vendorId))return BadRequest();
         try
         {
@@ -114,8 +114,8 @@ public sealed class PurchaseOrderController(PurchaseOrderService service,ICompan
             if(await RequireReadAsync()!=original)return Conflict(new {error="Company or production binding changed during the purchase-order read."});
             return Ok(rows);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(InvalidOperationException changed){logger.LogWarning(changed,"Company-owned purchase-order evidence could not be confirmed.");return Conflict(new {error="Purchase-order ownership or schema is unconfirmed. Review the PRODUCTION migration and company assignment."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"Company-owned purchase-order evidence could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new {error="Purchase-order ownership or schema is unconfirmed. Review the PRODUCTION migration and company assignment."});}
     }
     // An unreviewed legacy request cannot create company-less PO data through the overlapping traditional owner.
     [HttpPost]

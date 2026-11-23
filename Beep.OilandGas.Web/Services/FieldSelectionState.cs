@@ -12,7 +12,7 @@ public sealed class FieldSelectionState : IDisposable
 {
     private readonly CompanyClientContext company;
     private readonly IFieldSelectionContext data;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private CancellationTokenSource? pending;
     private long generation;
     private bool disposed;
@@ -29,7 +29,7 @@ public sealed class FieldSelectionState : IDisposable
     public string? Error { get; private set; }
     public string? Confirmation { get; private set; }
     public event Action? Changed;
-    public FieldSelectionState(CompanyClientContext company, IFieldSelectionContext data, Func<Exception, string, string, string> explain)
+    public FieldSelectionState(CompanyClientContext company, IFieldSelectionContext data, OilGasCallFailures explain)
     { this.company = company; this.data = data; this.explain = explain; company.Changed += CompanyChanged; data.CurrentFieldChanged += FieldChanged; }
 
     public async Task LoadAsync()
@@ -56,8 +56,8 @@ public sealed class FieldSelectionState : IDisposable
             if (!selected.SelectionAvailable && review!.FieldId is not null)
                 Error = "The saved FIELD is no longer available. Choose an available FIELD.";
         }
-        catch (OperationCanceledException) when (!Current(version, captured)) { }
-        catch (Exception error) { if (Current(version, captured)) Error = explain(error, "loading the FIELD selector", "FIELD settings could not be confirmed"); }
+        catch (OperationCanceledException canceled) when (!Current(version, captured)) { explain.Told(canceled, "FieldSelectionState.CanceledRead", "The previous read ended because its context changed."); }
+        catch (Exception error) { if (Current(version, captured)) Error = explain.Explain(error, "loading the FIELD selector", "FIELD settings could not be confirmed"); }
         finally { if (Current(version, captured)) { pending = null; Loading = false; Changed?.Invoke(); } }
     }
 
@@ -78,7 +78,7 @@ public sealed class FieldSelectionState : IDisposable
         }
         catch (Exception error)
         {
-            if (Current(version, captured)) { ClearEvidence(); Error = explain(error, "saving the FIELD preference", "The FIELD change could not be confirmed. Refresh before continuing"); }
+            if (Current(version, captured)) { ClearEvidence(); Error = explain.Explain(error, "saving the FIELD preference", "The FIELD change could not be confirmed. Refresh before continuing"); }
         }
         finally { Saving = false; pendingField = null; if (!disposed) Changed?.Invoke(); }
     }

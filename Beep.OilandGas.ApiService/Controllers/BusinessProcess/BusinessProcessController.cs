@@ -80,7 +80,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             }
             catch(InvalidOperationException changed)
             {
-                _logger.LogWarning(changed,"The configured process definition catalog could not be confirmed.");
+                _failures.ReportHandled(changed, "reading the configured process definition catalog", "the catalog could not be confirmed; selection is refused");
                 return Conflict(new {error="The configured process catalog is unavailable or ambiguous. Reload before selecting a definition."});
             }
         }
@@ -322,7 +322,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
                     order=await _workOrders.GetByIdAsync(source.FieldId,source.EntityId) ?? throw new InvalidOperationException("The recorded maintenance header is unavailable.");
                     inspections=await _inspections.GetChecklistAsync(source.EntityId,source.FieldId);
                 }
-                return ProcessTransitionReviews.Create(company.Scope,actor,User,source,definition,history,journal,journalLines,order,inspections);
+                return ProcessTransitionReviews.Create(_failures, company.Scope,actor,User,source,definition,history,journal,journalLines,order,inspections);
             }
             var initial=await CaptureAsync();if(initial is null)return null;
             var closing=await CaptureAsync();
@@ -356,7 +356,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(request.ExpectedRevision)) return BadRequest(new { error = "The original source action review revision is required." });
             if (instance.CurrentState != request.FromStateId) return Conflict(new { error = "The process state changed. Reload before submitting a transition." });
             var definition = await processService.GetProcessDefinitionAsync(instance.ProcessId);
-            if (definition is null || !ProcessStepRoleChecks.CanTransition(User, userId, instance, definition, request.FromStateId, request.ToStateId, request.Trigger)) return Forbid();
+            if (definition is null || !ProcessStepRoleChecks.CanTransition(_failures, User, userId, instance, definition, request.FromStateId, request.ToStateId, request.Trigger)) return Forbid();
             var actualFromState = instance.CurrentState;
 
             ProcessTransitionReview? review;
@@ -477,7 +477,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (step is null || instance.CurrentStepId != stepId) return false;
             var definition = await service.GetProcessDefinitionAsync(instance.ProcessId);
             var definitionStep = definition?.Steps?.SingleOrDefault(x => x.StepId == stepId);
-            if(definition is null || definitionStep is null || !ProcessStepRoleChecks.CanAct(User,userId,instance,step,definition,definitionStep))return false;
+            if(definition is null || definitionStep is null || !ProcessStepRoleChecks.CanAct(_failures, User,userId,instance,step,definition,definitionStep))return false;
             if(instance.EntityType=="JOURNAL_ENTRY" && ProcessStepRoleChecks.RequiresIndependentActor(step,definition,definitionStep))
             {
                 // Recheck source resource authority before looking up the preparer in the bound accounting owner.

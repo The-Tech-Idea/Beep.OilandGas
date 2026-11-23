@@ -61,7 +61,7 @@ public sealed class CompanySalesInvoiceHttpTests
         {
             var host=await AccountingSourceHttpTests.Start(authenticate:authenticated,role:role,permissions:permissions ??["Accounting.View","Accounting.PrepareSalesInvoice"],configureAccounting:(services,context)=>{
                 context.Actor=Actor;context.PolicyBinding=new string('B',64);services.AddSingleton<IInvoiceService>(Data.Owner);services.AddSingleton(Data.Policy.Owner);services.AddSingleton(Assets.Object);
-                services.AddSingleton(new CompanyFieldRevenueReads(Production,context,Assets.Object,()=>Task.FromResult(Data.Native.Connection)));services.AddScoped<CompanySalesInvoiceReads>();configure?.Invoke(services,context);});
+                services.AddSingleton(new CompanyFieldRevenueReads(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), Production,context,Assets.Object,()=>Task.FromResult(Data.Native.Connection)));services.AddScoped<CompanySalesInvoiceReads>();configure?.Invoke(services,context);});
             host.Client.DefaultRequestHeaders.Remove("X-Test-Actor");host.Client.DefaultRequestHeaders.Add("X-Test-Actor",Actor);return host;
         }
         public CompanyClientContext Selected(params string[] grants)

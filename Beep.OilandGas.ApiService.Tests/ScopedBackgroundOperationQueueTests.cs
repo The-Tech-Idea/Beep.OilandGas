@@ -19,8 +19,7 @@ public class ScopedBackgroundOperationQueueTests
     private static ScopedBackgroundOperationQueue Create(ServiceProvider services, RecordingFailureReporter? failures = null)
     {
         var reporter = failures ?? new RecordingFailureReporter();
-        return new(services.GetRequiredService<IServiceScopeFactory>(),
-            (exception, operation, outcome) => reporter.ReportHandled(exception, operation, outcome), Http());
+        return new(services.GetRequiredService<IServiceScopeFactory>(), reporter, Http());
     }
 
     private static IHttpContextAccessor Http()

@@ -18,7 +18,7 @@ using TheTechIdea.Beep.Helpers.ConnectionHelpers;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>A credential-free configured database identity, independent of connection names, driver versions and schemas.</summary>
-public static class ModuleDatabaseTarget
+public static partial class ModuleDatabaseTarget
 {
     public static string Key(IDMEEditor editor, string connectionName)
     {
@@ -128,12 +128,10 @@ public static class ModuleDatabaseTarget
         foreach (var part in file[root.Length..].Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
         {
             root = Path.Combine(root, part);
-            FileAttributes attributes;
-            try { attributes = File.GetAttributes(root); }
-            // Missing components are valid for a database that setup has not created yet.
-            // Permission and other I/O failures still propagate to the existing refusal boundary.
-            catch (FileNotFoundException) { continue; }
-            catch (DirectoryNotFoundException) { continue; }
+            // FileSystemInfo exposes missing paths as -1 without an exception. A fresh
+            // instance avoids cached attributes; permission and other I/O errors propagate.
+            var attributes = new FileInfo(root).Attributes;
+            if (attributes == (FileAttributes)(-1)) continue;
             if ((attributes & FileAttributes.ReparsePoint) == 0) continue;
             FileSystemInfo info = (attributes & FileAttributes.Directory) != 0 ? new DirectoryInfo(root) : new FileInfo(root);
             if (info.LinkTarget is not null) root = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ??

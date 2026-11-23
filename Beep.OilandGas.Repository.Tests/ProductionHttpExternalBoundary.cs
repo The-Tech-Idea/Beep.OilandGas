@@ -12,11 +12,3 @@ namespace TheTechIdeaWeb.Http
         }
     }
 }
-namespace Beep.OilandGas.Web.Services
-{
-    // Explicit test wording seam; production diagnostics/store/wording are not certified.
-    public sealed class OilGasCallFailures(TheTechIdeaWeb.Diagnostics.IFailureReporter failures)
-    {
-        public string Explain(Exception error,string operation,string message){failures.ReportHandled(error,operation,message);return error is OilGasApiException api && api.Sentence is not null?api.Sentence:message;}
-    }
-}

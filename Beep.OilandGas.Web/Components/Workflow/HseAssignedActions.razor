@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -86,7 +87,7 @@
             review = result;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HseAssignedActions.LoadAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Assigned HSE action review was not confirmed.");
             if (Current()) message = "Assigned actions could not be confirmed. Check your company, FIELD and recorded account-to-person identity link, then review again.";
         }

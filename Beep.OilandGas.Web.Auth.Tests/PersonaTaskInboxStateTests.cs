@@ -101,7 +101,7 @@ public sealed class PersonaTaskInboxStateTests
         response.CriticalTasks.Add(known); response.Counts = new() { TotalPending = 2, Critical = 2, Reviews = 2, Overdue = 0 };
         using var state = new PersonaTaskInboxState(new Inbox { Load = () => Task.FromResult(response) }, company, new Personas()); state.Start(); await state.LoadAsync();
         Assert.Equal("utc-task", state.VisibleRows[0].TaskId); Assert.Equal(0, state.SelectedCounts.Overdue);
-        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();
+        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var panel = ui.RenderComponent<Beep.OilandGas.Web.Components.Workflow.PersonaAssignedWorkPanel>(p => p.Add(x => x.Review, state));
         Assert.Contains("Recorded due date (time zone unconfirmed)", panel.Markup); Assert.Contains("Due (UTC)", panel.Markup);
         ambiguous.SlaStatus = "BREACHED"; Assert.Throws<InvalidOperationException>(() => WorkflowInboxReview.RequireTask(ambiguous, ["Reader"]));
@@ -116,7 +116,7 @@ public sealed class PersonaTaskInboxStateTests
         response.CriticalTasks.Add(unscheduled); response.Counts = new() { TotalPending = 2, Critical = 2, Reviews = 2 };
         using var state = new PersonaTaskInboxState(new Inbox { Load = () => Task.FromResult(response) }, company, new Personas()); state.Start(); await state.LoadAsync();
         Assert.Equal(1, state.ScheduleCount("UNCONFIRMED")); Assert.Equal(1, state.ScheduleCount("UNSCHEDULED")); Assert.Equal(0, state.SelectedCounts.Overdue);
-        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();
+        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var panel = ui.RenderComponent<Beep.OilandGas.Web.Components.Workflow.PersonaAssignedWorkPanel>(p => p.Add(x => x.Review, state));
         panel.FindAll("button").Single(button => button.TextContent.Contains("Time zone unconfirmed: 1")).Click();
         Assert.Equal("task", Assert.Single(state.VisibleRows).TaskId);
@@ -135,26 +135,26 @@ public sealed class PersonaTaskInboxStateTests
         var settings = new CompanyEnvironmentPreview(company.Selection!.Scope, "KW", "Kuwait", "ar-KW", "metric", "m", "bar", "mm", [], [], []) { TimeZoneId = "Asia/Kuwait", DisplayCulture = "en-GB", DateTimeFormat = "yyyy-MM-dd HH:mm", Calendar = "Gregorian" };
         var effective = new CompanyEnvironmentEffectiveReview(company.Selection.Scope, new string('A',64), new string('B',64), null, new string('C',64), settings) { ReviewStatus = "Current" };
         var display = new CompanyEnvironmentDisplay(company.Version, effective); Assert.True(display.Matches(company));
-        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();
+        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var panel = ui.RenderComponent<Beep.OilandGas.Web.Components.Workflow.PersonaAssignedWorkPanel>(p => p.Add(x => x.Review, state).AddCascadingValue(display));
         Assert.Contains("Due (UTC)", panel.Markup); Assert.Contains("2026-01-01 15:00 +03:00 (Asia/Kuwait)", panel.Markup);
-        Assert.Null((display with { Review = effective with { ReviewStatus = "ReviewRequired" } }).LocalTime(task.DueDate.Value));
-        Assert.Null((display with { Review = effective with { Settings = settings with { TimeZoneId = "not/a-zone" } } }).LocalTime(task.DueDate.Value));
-        Assert.Null(display.LocalTime(DateTime.SpecifyKind(task.DueDate.Value, DateTimeKind.Unspecified)));
+        Assert.Null((display with { Review = effective with { ReviewStatus = "ReviewRequired" } }).LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
+        Assert.Null((display with { Review = effective with { Settings = settings with { TimeZoneId = "not/a-zone" } } }).LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
+        Assert.Null(display.LocalTime(DateTime.SpecifyKind(task.DueDate.Value, DateTimeKind.Unspecified), TestFailures.Calls(new RecordingFailureReporter())));
         var oslo = display with { Review = effective with { Settings = settings with { TimeZoneId = "Europe/Oslo" } } };
-        Assert.Contains("13:00 +01:00", oslo.LocalTime(new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc)));
-        Assert.Contains("14:00 +02:00", oslo.LocalTime(new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc)));
+        Assert.Contains("13:00 +01:00", oslo.LocalTime(new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc), TestFailures.Calls(new RecordingFailureReporter())));
+        Assert.Contains("14:00 +02:00", oslo.LocalTime(new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc), TestFailures.Calls(new RecordingFailureReporter())));
         var localized = display with { Review = effective with { Settings = settings with { DateTimeFormat = "dd/MM/yyyy HH:mm" } } };
-        Assert.Contains("01/01/2026 15:00 +03:00", localized.LocalTime(task.DueDate.Value));
+        Assert.Contains("01/01/2026 15:00 +03:00", localized.LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
         var localizedPanel = ui.RenderComponent<Beep.OilandGas.Web.Components.Workflow.PersonaAssignedWorkPanel>(p => p.Add(x => x.Review, state).AddCascadingValue(localized));
         Assert.Contains("01/01/2026 15:00 +03:00", localizedPanel.Markup); Assert.Contains("Due (UTC)", localizedPanel.Markup);
-        Assert.Null((display with { Review = effective with { Settings = settings with { DisplayCulture = "invalid-culture-name" } } }).LocalTime(task.DueDate.Value));
-        Assert.Null((display with { Review = effective with { Settings = settings with { Calendar = "invalid" } } }).LocalTime(task.DueDate.Value));
-        Assert.Null((display with { Review = effective with { Settings = settings with { DateTimeFormat = "yyyy-MM-dd '" } } }).LocalTime(task.DueDate.Value));
+        Assert.Null((display with { Review = effective with { Settings = settings with { DisplayCulture = "invalid-culture-name" } } }).LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
+        Assert.Null((display with { Review = effective with { Settings = settings with { Calendar = "invalid" } } }).LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
+        Assert.Null((display with { Review = effective with { Settings = settings with { DateTimeFormat = "yyyy-MM-dd '" } } }).LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
         var saudi = display with { Review = effective with { Settings = settings with { DisplayCulture = "ar-SA", Calendar = "Gregorian" } } };
-        Assert.Contains("2026-01-01", saudi.LocalTime(task.DueDate.Value));
+        Assert.Contains("2026-01-01", saudi.LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
         var saudiCalendar = saudi with { Review = saudi.Review with { Settings = saudi.Review.Settings with { Calendar = "Culture" } } };
-        Assert.DoesNotContain("2026-01-01", saudiCalendar.LocalTime(task.DueDate.Value));
+        Assert.DoesNotContain("2026-01-01", saudiCalendar.LocalTime(task.DueDate.Value, TestFailures.Calls(new RecordingFailureReporter())));
         company.Clear(); Assert.False(display.Matches(company)); Assert.True(company.TrySelect(company.Version, "actor", new(new("tenant", "A"), ["Reader"], []))); Assert.False(display.Matches(company));
     }
 
@@ -168,7 +168,7 @@ public sealed class PersonaTaskInboxStateTests
     {
         using var company=Selected();var response=Result();var row=response.CriticalTasks[0];row.EntityType="DRILLING_PROGRAM";row.WorkflowName=DrillingProgramReviewStart.InstancePrefix+"original";row.TaskType="APPROVAL";row.ProgramReviewRevision=new('A',64);row.Route=WorkflowTaskRoute.For("FIELD",row.WorkflowName,row.EntityType);response.Counts.Approvals=1;response.Counts.Reviews=0;
         using var state=new PersonaTaskInboxState(new Inbox{Load=()=>Task.FromResult(response)},company,new Personas());state.Start();await state.LoadAsync();Assert.Contains("DRILLING_PROGRAM",state.AvailableSources);state.SelectSource("DRILLING_PROGRAM");Assert.Equal(1,state.SelectedCounts.Approvals);Assert.Equal(row.ProgramReviewRevision,Assert.Single(state.VisibleRows).ProgramReviewRevision);
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();var panel=ui.RenderComponent<Beep.OilandGas.Web.Components.Workflow.PersonaAssignedWorkPanel>(p=>p.Add(c=>c.Review,state));Assert.Contains("Drilling program reviews",panel.Markup);Assert.Contains("Open assigned program review",panel.Markup);Assert.Equal("/drilling/program-review/assigned?processId="+Uri.EscapeDataString(row.WorkflowName),state.VisibleRows[0].Route);
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));var panel=ui.RenderComponent<Beep.OilandGas.Web.Components.Workflow.PersonaAssignedWorkPanel>(p=>p.Add(c=>c.Review,state));Assert.Contains("Drilling program reviews",panel.Markup);Assert.Contains("Open assigned program review",panel.Markup);Assert.Equal("/drilling/program-review/assigned?processId="+Uri.EscapeDataString(row.WorkflowName),state.VisibleRows[0].Route);
         var invalid=System.Text.Json.JsonSerializer.Deserialize<UnifiedTask>(System.Text.Json.JsonSerializer.Serialize(row))!;invalid.ProgramReviewRevision=null;Assert.Throws<InvalidOperationException>(()=>WorkflowInboxReview.RequireTask(invalid,["Reader"]));invalid.ProgramReviewRevision=row.ProgramReviewRevision;invalid.EntityType="WELL";Assert.Throws<InvalidOperationException>(()=>WorkflowInboxReview.RequireTask(invalid,["Reader"]));
     }
     [Fact] public async Task InvestmentAssignmentsKeepQualifiedSourceCountsAndTheExactReceivingLink()
@@ -179,7 +179,7 @@ public sealed class PersonaTaskInboxStateTests
         using var state=new PersonaTaskInboxState(new Inbox{Load=()=>Task.FromResult(response)},company,new Personas());state.Start();await state.LoadAsync();
         Assert.Contains("AFE",state.AvailableSources);state.SelectSource("AFE");Assert.Equal(1,state.SelectedCounts.Approvals);
         var visible=Assert.Single(state.VisibleRows);Assert.Equal(row.InvestmentReviewRevision,visible.InvestmentReviewRevision);
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         var panel=ui.RenderComponent<Beep.OilandGas.Web.Components.Workflow.PersonaAssignedWorkPanel>(parameters=>parameters.Add(value=>value.Review,state));
         Assert.Contains("Investment review assignments",panel.Markup);Assert.Contains("Open assigned investment source",panel.Markup);
         Assert.Equal("/economics/afe?investmentHandoff="+Uri.EscapeDataString(row.WorkflowName),visible.Route);
@@ -510,7 +510,7 @@ public sealed class PersonaTaskInboxStateTests
         Microsoft.Extensions.DependencyInjection.LoggingServiceCollectionExtensions.AddLogging(services);
         Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<Microsoft.JSInterop.IJSRuntime,NoBrowser>(services);
         Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<Microsoft.AspNetCore.Components.NavigationManager,StaticNavigation>(services);
-        MudBlazor.Services.ServiceCollectionExtensions.AddMudServices(services);
+        MudBlazor.Services.ServiceCollectionExtensions.AddMudServices(services);services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         await using var provider=Microsoft.Extensions.DependencyInjection.ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(services);
         var logger=Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>(provider);
         await using var renderer=new Microsoft.AspNetCore.Components.Web.HtmlRenderer(provider,logger);

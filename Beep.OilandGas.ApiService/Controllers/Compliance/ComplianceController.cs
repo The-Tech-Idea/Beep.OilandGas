@@ -19,17 +19,20 @@ public class ComplianceController : ControllerBase
     private readonly IRoyaltyCalculationService _royalty;
     private readonly IGHGReportingService       _ghg;
     private readonly IFieldOrchestrator         _fieldOrchestrator;
+    private readonly TheTechIdeaWeb.Diagnostics.IFailureReporter _failures;
 
     public ComplianceController(
         IComplianceService         compliance,
         IRoyaltyCalculationService royalty,
         IGHGReportingService       ghg,
-        IFieldOrchestrator         fieldOrchestrator)
+        IFieldOrchestrator         fieldOrchestrator,
+        TheTechIdeaWeb.Diagnostics.IFailureReporter failures)
     {
         _compliance        = compliance;
         _royalty           = royalty;
         _ghg               = ghg;
         _fieldOrchestrator = fieldOrchestrator;
+        _failures = failures;
     }
 
     // ── Obligations ───────────────────────────────────────────────────────────
@@ -155,7 +158,11 @@ public class ComplianceController : ControllerBase
         var userId = User.ActingUserId();
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         try { return Ok(await _ghg.GenerateAnnualReportAsync(fieldId, year, jurisdiction, userId)); }
-        catch (NotSupportedException) { return StatusCode(503, new { error = "GHG reporting requires verified company-scoped activity data and emission factors." }); }
+        catch (NotSupportedException error)
+        {
+            _failures.ReportHandled(error, "generating the company GHG report", "verified activity data and emission factors are unavailable; no report is returned");
+            return StatusCode(503, new { error = "GHG reporting requires verified company-scoped activity data and emission factors." });
+        }
     }
 
     [HttpGet("ghg/total")]
@@ -166,6 +173,10 @@ public class ComplianceController : ControllerBase
         var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         var y       = year ?? DateTime.UtcNow.Year;
         try { return Ok(await _ghg.GetTotalEmissionsAsync(fieldId, y, jurisdiction)); }
-        catch (NotSupportedException) { return StatusCode(503, new { error = "GHG reporting requires verified company-scoped activity data and emission factors." }); }
+        catch (NotSupportedException error)
+        {
+            _failures.ReportHandled(error, "reading company GHG total emissions", "verified activity data and emission factors are unavailable; no total is returned");
+            return StatusCode(503, new { error = "GHG reporting requires verified company-scoped activity data and emission factors." });
+        }
     }
 }

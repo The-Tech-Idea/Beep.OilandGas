@@ -40,7 +40,7 @@ public sealed partial class DevelopmentDraftWorkspaceState
                 throw new InvalidOperationException("The prepared handoff differs from the displayed source or selected workflow.");
             await RequireCurrent(original.Context,captured,true);if(Current())preparedHandoff=result;
         }
-        catch(Exception error){var text=explain(error,"preparing independent development review","The development review handoff could not be prepared");if(Current())HandoffError=text;}
+        catch(Exception error){var text=explain.Explain(error,"preparing independent development review","The development review handoff could not be prepared");if(Current())HandoffError=text;}
         finally{operation=false;if(!disposed)Changed?.Invoke();}
     }
     public async Task SubmitHandoffAsync()
@@ -57,7 +57,7 @@ public sealed partial class DevelopmentDraftWorkspaceState
             await RequireCurrent(original.Source.Context,captured,true);await journal.ClearReviewAsync(original);
             if(Current()){pendingHandoff=null;handoffReceipt=Copy(receipt);HandoffConfirmation="Development review requested and its initial assignments confirmed. Independent approval is still required.";}
         }
-        catch(Exception error){var text=explain(error,"submitting the original development review","The original review outcome is unconfirmed. Recover it before requesting another review");if(Current())HandoffError=text;}
+        catch(Exception error){var text=explain.Explain(error,"submitting the original development review","The original review outcome is unconfirmed. Recover it before requesting another review");if(Current())HandoffError=text;}
         finally{operation=false;if(!disposed)Changed?.Invoke();}
     }
     public async Task RecoverHandoffAsync()
@@ -73,7 +73,7 @@ public sealed partial class DevelopmentDraftWorkspaceState
             if(Current()){pendingHandoff=null;preparedHandoff=null;handoffReceipt=Copy(receipt);HandoffConfirmation=receipt.Recorded?
                 "The original development review handoff was found and confirmed. No new assignment was written.":"The original development review handoff was confirmed absent. Inspect current workflows before preparing another request.";if(!receipt.Recorded)workflows=null;}
         }
-        catch(Exception error){var text=explain(error,"recovering the original development review","The original review outcome is still unconfirmed. Its recovery input was preserved");if(Current())HandoffError=text;}
+        catch(Exception error){var text=explain.Explain(error,"recovering the original development review","The original review outcome is still unconfirmed. Its recovery input was preserved");if(Current())HandoffError=text;}
         finally{operation=false;if(!disposed)Changed?.Invoke();}
     }
 }

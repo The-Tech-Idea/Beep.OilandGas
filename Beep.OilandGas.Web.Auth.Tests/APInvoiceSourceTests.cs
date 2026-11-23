@@ -75,21 +75,21 @@ public sealed class APInvoiceSourceTests
     }
     [Fact] public async Task DetailFreezesRecordedValuesWithoutSynthesizingPayment()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var review=Review();
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var review=Review();
         await state.LoadDetailAsync("invoice/a?b",_=>Task.FromResult<APInvoiceSourceReview?>(review));review.Invoice.CURRENCY_CODE="USD";
         Assert.Equal("KWD",state.Detail!.Currency);Assert.Null(state.Detail.PaidAmount);Assert.Equal(0m,state.Detail.BalanceDue);Assert.Equal(review.RetrievedAtUtc,state.RetrievedAtUtc);Assert.Equal("/accounting/payables/invoices/invoice%2Fa%3Fb",state.Detail.Route);
     }
     [Theory][InlineData("missing")][InlineData("wrong")][InlineData("changed")]
     public async Task InvalidReloadClearsPriorHeader(string fault)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);await state.LoadDetailAsync("invoice/a?b",_=>Task.FromResult<APInvoiceSourceReview?>(Review()));
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);await state.LoadDetailAsync("invoice/a?b",_=>Task.FromResult<APInvoiceSourceReview?>(Review()));
         var review=Review();if(fault=="wrong")review=review with{ActorUserId="other"};if(fault=="changed")review.Invoice.STATUS="PAID";
         await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadDetailAsync("invoice/a?b",_=>Task.FromResult<APInvoiceSourceReview?>(fault=="missing"?null:review)));
         Assert.Null(state.Detail);Assert.Null(state.SourceRevision);Assert.Null(state.RetrievedAtUtc);
     }
     [Fact] public async Task CompanyAwayAndBackCannotAdoptLateInvoiceIdentity()
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);var pending=new TaskCompletionSource<APInvoiceSourceReview?>();var load=state.LoadDetailAsync("invoice/a?b",_=>pending.Task);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);var pending=new TaskCompletionSource<APInvoiceSourceReview?>();var load=state.LoadDetailAsync("invoice/a?b",_=>pending.Task);
         company.Clear();Assert.True(company.TrySelect(company.Version,"accountant",new(Scope,["ConfiguredAccountant"],["Accounting.View"])));pending.SetResult(Review());await load;Assert.Null(state.Detail);
     }
     private sealed class NoBrowser:IJSRuntime
@@ -100,7 +100,7 @@ public sealed class APInvoiceSourceTests
     [Theory][InlineData("detail")][InlineData("lines")][InlineData("list")][InlineData("empty")][InlineData("unconfirmed")]
     public async Task ActualPanelShowsRecordedValuesAndDistinctEvidenceStates(string mode)
     {
-        using var company=Selected();using var state=new APInvoiceWorkspaceState(company);
+        using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);
         if(mode is "detail" or "lines")await state.LoadDetailAsync("invoice/a?b",_=>Task.FromResult<APInvoiceSourceReview?>(mode=="lines"?LineReview():Review()));
         if(mode is "list" or "empty")await state.LoadVendorAsync("supplier",_=>Task.FromResult(mode=="empty"?new List<AP_INVOICE>():[Invoice()]));
         var services=new ServiceCollection();services.AddLogging();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddMudServices();await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
@@ -135,7 +135,7 @@ public sealed class APInvoiceSourceTests
     [Fact] public async Task APLineJsonAndFrozenStateRetainRecordedZeroNullUnitsAndHistory()
     {
         var options=new JsonSerializerOptions(JsonSerializerDefaults.Web);var review=JsonSerializer.Deserialize<APInvoiceSourceReview>(JsonSerializer.Serialize(LineReview(),options),options)!;
-        review.Require(Scope,"accountant","invoice/a?b");using var company=Selected();using var state=new APInvoiceWorkspaceState(company);
+        review.Require(Scope,"accountant","invoice/a?b");using var company=Selected();using var state=new APInvoiceWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);
         await state.LoadDetailAsync("invoice/a?b",_=>Task.FromResult<APInvoiceSourceReview?>(review));review.Lines[0].QUANTITY_UOM="bbl";
         var line=Assert.Single(state.Lines!);Assert.Equal("m³",line.Unit);Assert.Equal(0m,line.Quantity);Assert.Null(line.UnitPrice);Assert.Equal("N",line.ActiveIndicator);Assert.Equal("order-line",line.OrderLineId);
         await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadDetailAsync("invoice/a?b",_=>Task.FromResult<APInvoiceSourceReview?>(review)));Assert.Null(state.Lines);Assert.Null(state.Detail);

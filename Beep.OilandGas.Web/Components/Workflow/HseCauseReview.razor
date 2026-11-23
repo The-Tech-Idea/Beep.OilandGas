@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -110,7 +111,7 @@ else if (_checked)
             if (original is not null && handoff is not null) throw new InvalidOperationException("Both a cause and a handoff require reconciliation.");
             Original = original; HandoffOriginal = handoff; _checked = true;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Incident cause recovery could not be read"); if (_disposed || generation != _generation) return; _unavailable = true; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.OnAfterRenderAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident cause recovery could not be read"); if (_disposed || generation != _generation) return; _unavailable = true; }
         await InvokeAsync(StateHasChanged);
     }
     private async Task RequireContextAsync(long generation, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -137,7 +138,7 @@ else if (_checked)
             if (review.Context != Context || review.IncidentId != IncidentId) throw new InvalidOperationException("The reviewed incident changed.");
             review.Require(); Review = review; SelectedCode = null; Summary = "";
         }
-        catch (Exception error) { Logger.LogWarning(error, "Incident cause review failed"); if (!_disposed && generation == _generation) Message = "Could not confirm recorded causes and classifications. Check access and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.ReviewAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident cause review failed"); if (!_disposed && generation == _generation) Message = "Could not confirm recorded causes and classifications. Check access and retry."; }
         finally { Busy = false; }
     }
     private async Task FindSharedAsync()
@@ -157,7 +158,7 @@ else if (_checked)
             }
             Shared = causes;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Shared incident causes could not be reviewed"); if (!_disposed && generation == _generation) Message = "Shared causes could not be confirmed. Check access and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.FindSharedAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Shared incident causes could not be reviewed"); if (!_disposed && generation == _generation) Message = "Shared causes could not be confirmed. Check access and retry."; }
         finally { Busy = false; }
     }
     private async Task FindRecordedAsync()
@@ -178,7 +179,7 @@ else if (_checked)
             }
             Recorded = originals;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Recorded incident causes could not be recovered"); if (!_disposed && generation == _generation) Message = "Recorded causes could not be confirmed. Check access and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.FindRecordedAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Recorded incident causes could not be recovered"); if (!_disposed && generation == _generation) Message = "Recorded causes could not be confirmed. Check access and retry."; }
         finally { Busy = false; }
     }
     private async Task ReviewHandoffAsync(IncidentRcaRecordedCause original)
@@ -194,7 +195,7 @@ else if (_checked)
                 throw new InvalidOperationException("The reviewed workflow differs from the recorded cause or FIELD.");
             Handoff = review;
         }
-        catch (Exception error) { Logger.LogWarning(error, "RCA workflow readiness could not be confirmed"); if (!_disposed && generation == _generation) Message = "Workflow readiness could not be confirmed. Check the current RCA assignment and access."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.ReviewHandoffAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "RCA workflow readiness could not be confirmed"); if (!_disposed && generation == _generation) Message = "Workflow readiness could not be confirmed. Check the current RCA assignment and access."; }
         finally { Busy = false; }
     }
     private async Task RecoverHandoffAsync()
@@ -212,7 +213,7 @@ else if (_checked)
                 throw new InvalidOperationException("The recorded RCA handoff belongs to another FIELD or incident.");
             Recovered = result;
         }
-        catch (Exception error) { Logger.LogWarning(error, "RCA handoff recovery could not be confirmed"); if (!_disposed && generation == _generation) Message = "The recorded RCA handoff could not be confirmed. Check access and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.RecoverHandoffAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "RCA handoff recovery could not be confirmed"); if (!_disposed && generation == _generation) Message = "The recorded RCA handoff could not be confirmed. Check access and retry."; }
         finally { Busy = false; }
     }
     private async Task SubmitHandoffAsync()
@@ -228,7 +229,7 @@ else if (_checked)
             HandoffOriginal = original; Handoff = null;
             await SendHandoffAsync(original, generation, snapshot);
         }
-        catch (Exception error) { Logger.LogWarning(error, "RCA handoff was not confirmed"); if (!_disposed && generation == _generation) { Handoff = null; _needsRead = true; _checked = false; Message = "Handoff was not confirmed. Reconcile the original before submitting another."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.SubmitHandoffAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "RCA handoff was not confirmed"); if (!_disposed && generation == _generation) { Handoff = null; _needsRead = true; _checked = false; Message = "Handoff was not confirmed. Reconcile the original before submitting another."; } }
         finally { Busy = false; }
     }
     private async Task RetryHandoffAsync()
@@ -236,7 +237,7 @@ else if (_checked)
         if (Busy || HandoffOriginal is not { } original) return;
         var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
         try { await SendHandoffAsync(original, generation, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "RCA handoff reconciliation failed"); if (!_disposed && generation == _generation) Message = "The original handoff could not be reconciled. Check access and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.RetryHandoffAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "RCA handoff reconciliation failed"); if (!_disposed && generation == _generation) Message = "The original handoff could not be reconciled. Check access and retry."; }
         finally { Busy = false; }
     }
     private async Task SendHandoffAsync(CompanyHseRcaHandoffCommand original, long generation, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -263,7 +264,7 @@ else if (_checked)
             Original = original; Review = null;
             await SendAsync(original, generation, snapshot);
         }
-        catch (Exception error) { Logger.LogWarning(error, "Incident cause was not confirmed"); if (!_disposed && generation == _generation) { Review = null; _needsRead = true; _checked = false; Message = "Cause request was not confirmed. Reconcile the original before recording another."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.RecordAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident cause was not confirmed"); if (!_disposed && generation == _generation) { Review = null; _needsRead = true; _checked = false; Message = "Cause request was not confirmed. Reconcile the original before recording another."; } }
         finally { Busy = false; }
     }
     private async Task RetryAsync()
@@ -271,7 +272,7 @@ else if (_checked)
         if (Busy || Original is not { } original) return;
         var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
         try { await SendAsync(original, generation, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Incident cause reconciliation failed"); if (!_disposed && generation == _generation) Message = "The original cause could not be reconciled. Check access and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCauseReview.RetryAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident cause reconciliation failed"); if (!_disposed && generation == _generation) Message = "The original cause could not be reconciled. Check access and retry."; }
         finally { Busy = false; }
     }
     private async Task SendAsync(IncidentRcaIntent original, long generation, (long Version, CompanyClientSelection? Selection) snapshot)

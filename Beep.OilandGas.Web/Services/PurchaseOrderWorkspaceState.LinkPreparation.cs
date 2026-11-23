@@ -91,7 +91,7 @@ public sealed partial class PurchaseOrderWorkspaceState
         try
         {
             var result=CompanyInventorySourceReview.Copy(await record(CompanyInventorySourceReview.Copy(intent)) ?? throw new InvalidOperationException("Preparation outcome is unavailable."));intent.RequireResult(result);if(!Current())return;
-            PurchaseOrderSourceReview? fresh=null;using var staged=new PurchaseOrderWorkspaceState(company);
+            PurchaseOrderSourceReview? fresh=null;using var staged=new PurchaseOrderWorkspaceState(failures,company);
             await staged.LoadDetailAsync(intent.Command.OrderId,async id=>{fresh=CompanyInventorySourceReview.Copy(await read(id) ?? throw new InvalidOperationException("The preparation read-back is unavailable."));return fresh;});
             if(!Current())return;
             var stored=fresh!.Lines.Single(row=>row.PO_LINE_ITEM_ID==intent.Command.LineId);intent.RequireResult(stored);
@@ -114,7 +114,7 @@ public sealed partial class PurchaseOrderWorkspaceState
         {
             var resolution=CompanyInventorySourceReview.Copy(await read(CompanyInventorySourceReview.Copy(intent)) ?? throw new InvalidOperationException("Independent resolution is unavailable."));resolution.Require(intent);
             if(disposed || WarehouseWorkBlocked || LinkCycleBlocked || version!=Version || generation!=linkPreparationGeneration || original!=company.Snapshot)return;
-            using var staged=new PurchaseOrderWorkspaceState(company);await staged.LoadDetailAsync(intent.Command.OrderId,_=>Task.FromResult<PurchaseOrderSourceReview?>(resolution.Purchase));
+            using var staged=new PurchaseOrderWorkspaceState(failures,company);await staged.LoadDetailAsync(intent.Command.OrderId,_=>Task.FromResult<PurchaseOrderSourceReview?>(resolution.Purchase));
             if(disposed || WarehouseWorkBlocked || LinkCycleBlocked || version!=Version || generation!=linkPreparationGeneration || original!=company.Snapshot)return;
             Detail=staged.Detail;Lines=staged.Lines;Receipts=staged.Receipts;SourceRevision=staged.SourceRevision;RetrievedAtUtc=staged.RetrievedAtUtc;Rows=null;
             linkPreparationResolution=resolution;linkPreparationConfirmed=true;LinkTargets=null;

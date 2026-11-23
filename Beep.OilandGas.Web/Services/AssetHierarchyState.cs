@@ -10,7 +10,7 @@ public sealed class AssetHierarchyState : IDisposable
 {
     private readonly CompanyClientContext company;
     private readonly Func<string, CancellationToken, Task<AssetHierarchyNode?>> load;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private CancellationTokenSource? pending;
     private long generation;
     private bool disposed;
@@ -25,7 +25,7 @@ public sealed class AssetHierarchyState : IDisposable
 
     public AssetHierarchyState(CompanyClientContext company,
         Func<string, CancellationToken, Task<AssetHierarchyNode?>> load,
-        Func<Exception, string, string, string> explain)
+        OilGasCallFailures explain)
     {
         this.company = company; this.load = load; this.explain = explain;
         company.Changed += Invalidate;
@@ -74,10 +74,10 @@ public sealed class AssetHierarchyState : IDisposable
             }
             Hierarchy = result; loadedScope = scope;
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested || !Current()) { }
+        catch (OperationCanceledException canceled) when (cancellation.IsCancellationRequested || !Current()) { explain.Told(canceled, "AssetHierarchyState.CanceledRead", "The previous read ended because its context changed."); }
         catch (Exception failure)
         {
-            var sentence = explain(failure, "loading the asset hierarchy", "The asset hierarchy could not be confirmed");
+            var sentence = explain.Explain(failure, "loading the asset hierarchy", "The asset hierarchy could not be confirmed");
             if (Current()) Error = sentence;
         }
         finally

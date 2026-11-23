@@ -70,7 +70,7 @@
 @code{
     [Parameter,SupplyParameterFromQuery(Name="reviewId")]public string? ReviewId{get;set;}
     private DrillingExecutionState? _state;private bool disposed,interactive;private string role="",spud="",rationale="";
-    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Journal,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
     protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
     private Task Reload(){role="";spud="";rationale="";return _state!.LoadAsync(ReviewId);}

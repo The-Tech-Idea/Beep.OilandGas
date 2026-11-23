@@ -115,15 +115,11 @@ builder.Services.AddSwaggerGen(c =>
 // REGISTER BEEP FRAMEWORK SERVICES
 // ============================================
 // Use the modern BeepService registration pattern for Web API
-#if BEEP_SECURE_CONNECTIONS
 builder.Services.AddBeepRuntime(options =>
-#else
-builder.Services.AddBeepServices(options =>
-#endif
 {
     options.DirectoryPath = builder.Configuration["Beep:ConfigPath"] ?? Path.Combine(AppContext.BaseDirectory, "Config");
     options.ConfigType = BeepConfigType.DataConnector;
-    // The current BeepDM registration shares editor state; scoped application services do not isolate it.
+    // The registered runtime owns the editor and configuration graph.
     options.EnableAutoMapping = true;
     options.EnableAssemblyLoading = false; // We'll load assemblies after app startup
     options.EnableConfigurationValidation = true;
@@ -1113,7 +1109,9 @@ builder.Services.AddOptions<Beep.OilandGas.PPDM39.DataManagement.Models.PPDMFiel
 builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Models.ICompanyFieldEligibility, PPDMCompanyFieldEligibility>();
 builder.Services.AddScoped<Beep.OilandGas.Models.Data.Lease.ICompanyFieldInterestReview, PPDMCompanyFieldInterestReview>();
 builder.Services.AddScoped<Beep.OilandGas.LeaseAcquisition.Models.ICompanyLeaseDataAccess, PPDMCompanyLeaseDataAccess>();
-builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy, CompanyPPDMRowAccessPolicy>();
+builder.Services.AddScoped<CompanyPPDMRowAccessPolicy>();
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy>(sp =>
+    sp.GetRequiredService<CompanyPPDMRowAccessPolicy>());
 builder.Services.AddScoped<IAccessControlService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -1241,13 +1239,15 @@ builder.Services.AddScoped<PPDM39SetupService>(sp =>
         migrationBindingFingerprint: (ids, connection) => ids.Any(id => string.Equals(id, "SYSTEM_SETUP", StringComparison.OrdinalIgnoreCase))
             ? Task.FromResult(sp.GetRequiredService<SystemSetupTarget>().FingerprintForMigration(ids, connection))
             : sp.GetRequiredService<ModuleConnectionResolver>().GetMigrationBindingFingerprintAsync(ids, connection),
-        migrationTargetIdentity: connection => ModuleDatabaseTarget.Key(editor, connection));
+        migrationTargetIdentity: connection => ModuleDatabaseTarget.Key(editor, connection),
+        databaseTargetMigration: request => ModuleDatabaseTarget.BindLocalDbCreation(request, editor,
+            sp.GetRequiredService<RepositoryDbContext>(), sp.GetRequiredService<IConfiguration>()));
 });
 
 // Interface aliases — both setup and schema-migration consumers resolve the same scoped instance
 builder.Services.AddSingleton(sp => new Beep.OilandGas.ApiService.Services.ScopedBackgroundOperationQueue(
     sp.GetRequiredService<IServiceScopeFactory>(),
-    (exception, operation, outcome) => sp.GetRequiredService<IFailureReporter>().ReportHandled(exception, operation, outcome),
+    sp.GetRequiredService<IFailureReporter>(),
     sp.GetRequiredService<IHttpContextAccessor>()));
 builder.Services.AddSingleton<IBackgroundOperationQueue>(sp => sp.GetRequiredService<Beep.OilandGas.ApiService.Services.ScopedBackgroundOperationQueue>());
 builder.Services.AddHostedService(sp => sp.GetRequiredService<Beep.OilandGas.ApiService.Services.ScopedBackgroundOperationQueue>());
@@ -1523,6 +1523,7 @@ builder.Services.AddScoped<ModuleBindingService>();
 builder.Services.AddScoped<CompanyModuleConnection>();
 builder.Services.AddScoped<ICompanyAccountingReadContext>(sp=>sp.GetRequiredService<CompanyModuleConnection>());
 builder.Services.AddScoped(sp=>new CompanyFieldRevenueReads(
+    sp.GetRequiredService<IFailureReporter>(),
     sp.GetRequiredService<Beep.OilandGas.ProductionAccounting.Services.ProductionAccountingService>(),
     sp.GetRequiredService<ICompanyAccountingReadContext>(),sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IAccessControlService>(),
     ()=>sp.GetRequiredService<ModuleConnectionResolver>().ResolveAsync("PRODUCTION")));
@@ -2136,11 +2137,10 @@ Beep.OilandGas.ApiService.Hubs.WorkflowNotificationServiceCollectionExtensions.A
 builder.Services.AddSingleton<CompanyProgressState>();
 builder.Services.AddScoped<IProgressTrackingService, ProgressTrackingService>();
 builder.Services.AddHostedService(sp => new ProgressTrackingPublisher(sp.GetRequiredService<CompanyProgressState>(),
-    sp.GetRequiredService<IHubContext<ProgressHub>>(), (exception, operation, outcome) =>
-        sp.GetRequiredService<IFailureReporter>().ReportHandled(exception, operation, outcome, FailureSeverity.Degraded)));
+    sp.GetRequiredService<IHubContext<ProgressHub>>(), sp.GetRequiredService<IFailureReporter>()));
 builder.Services.AddSingleton<HubLifetimeManager<ProgressHub>>(sp => new ProgressHubLifetimeManager(
     sp.GetRequiredService<ILogger<DefaultHubLifetimeManager<ProgressHub>>>(), sp.GetRequiredService<IServiceScopeFactory>(),
-    (exception, operation, outcome) => sp.GetRequiredService<IFailureReporter>().ReportHandled(exception, operation, outcome)));
+    sp.GetRequiredService<IFailureReporter>()));
 
 // Resolves through the existing company gateway rather than the startup/default connection.
 static async Task<(Beep.OilandGas.Models.Data.AccessControl.CompanyScope Company,string Actor,Beep.OilandGas.Models.Data.AccessControl.AssetDatabaseScope Database)> ResolveWorkOrderDatabaseAsync(IServiceProvider services)
@@ -2710,7 +2710,6 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Beep.OilandGas.ApiService.Startup");
-startupLog.LogInformation("Beep Service Configuration: {Summary}", BeepServiceRegistration.GetConfigurationSummary());
 
 // ============================================
 // INITIALIZE BEEP FRAMEWORK
@@ -2718,70 +2717,30 @@ startupLog.LogInformation("Beep Service Configuration: {Summary}", BeepServiceRe
 // Load assemblies asynchronously during startup
 using (var scope = app.Services.CreateScope())
 {
-    var logger = scope.ServiceProvider.GetRequiredService<IDMLogger>();
-    var beepServiceType = AppDomain.CurrentDomain.GetAssemblies()
-        .SelectMany(assembly =>
-        {
-            try
-            {
-                return assembly.GetTypes();
-            }
-            // .NET has no question for "can every type of this assembly be loaded": an assembly whose dependencies are not
-            // all present answers with the types that did load, and those are searched.
-            catch (ReflectionTypeLoadException ex)
-            {
-                app.Services.GetRequiredService<TheTechIdeaWeb.Diagnostics.IFailureReporter>().ReportHandled(ex,
-                    $"listing the types of assembly {assembly.GetName().Name} while looking for the Beep service",
-                    "the types that loaded are searched; the ones that did not are skipped",
-                    TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded);
-                return ex.Types.Where(type => type != null)!;
-            }
-        })
-        .FirstOrDefault(type => type?.Name == "IBeepService");
-
-    var beepSvc = beepServiceType != null
-        ? scope.ServiceProvider.GetService(beepServiceType)
-        : null;
+    var beepSvc = scope.ServiceProvider.GetRequiredService<TheTechIdea.Beep.Services.IBeepService>();
+    startupLog.LogInformation("Beep Service Configuration: {Summary}", beepSvc.GetConfigurationSummary());
     
     startupLog.LogInformation("Loading Beep assemblies and configurations...");
     
     try
     {
         // Load assemblies if needed
-        if (builder.Configuration.GetValue<bool>("Beep:LoadAssemblies", true) && beepSvc != null)
+        if (builder.Configuration.GetValue<bool>("Beep:LoadAssemblies", true))
         {
             var progress = new Progress<PassedArgs>(args =>
             {
                 startupLog.LogDebug("Assembly loading: {Message}", args.Messege);
             });
 
-            var loadAssembliesAsync = beepSvc.GetType().GetMethod("LoadAssembliesAsync");
-            if (loadAssembliesAsync?.Invoke(beepSvc, new object?[] { progress }) is Task loadTask)
-            {
-                await loadTask;
-
-                var configEditor = beepSvc.GetType().GetProperty("Config_editor")?.GetValue(beepSvc);
-                var loader = beepSvc.GetType().GetProperty("LLoader")?.GetValue(beepSvc);
-                var assembliesProperty = loader?.GetType().GetProperty("Assemblies")?.GetValue(loader) as System.Collections.IEnumerable;
-
-                var loadedAssemblies = assembliesProperty?
-                    .Cast<object>()
-                    .Select(item => item.GetType().GetProperty("DllLib")?.GetValue(item) as Assembly)
-                    .Where(assembly => assembly != null)
-                    .Cast<Assembly>()
-                    .ToList() ?? new List<Assembly>();
-
-                var configLoadedAssembliesProperty = configEditor?.GetType().GetProperty("LoadedAssemblies");
-                configLoadedAssembliesProperty?.SetValue(configEditor, loadedAssemblies);
-
-                startupLog.LogInformation("Loaded {Count} assemblies", loadedAssemblies.Count);
-                startupLog.LogDebug("Registered assemblies: {AssemblyNames}",
-                    string.Join(", ", loadedAssemblies.Select(assembly => assembly.FullName)));
-            }
+            await beepSvc.LoadAssembliesAsync(progress);
+            var loadedAssemblies = beepSvc.Config_editor.LoadedAssemblies;
+            startupLog.LogInformation("Loaded {Count} assemblies", loadedAssemblies.Count);
+            startupLog.LogDebug("Registered assemblies: {AssemblyNames}",
+                string.Join(", ", loadedAssemblies.Select(assembly => assembly.FullName)));
         }
         
         // Validate Beep configuration
-        if (BeepServiceRegistration.ValidateConfiguration())
+        if (beepSvc.ValidateConfiguration())
         {
             startupLog.LogInformation("Beep configuration validated successfully");
         }

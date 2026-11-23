@@ -150,7 +150,7 @@ public sealed class CompanyAccountingHandoffTests
         services.AddSingleton(company);services.AddSingleton(state);services.AddSingleton<IBusinessProcessServiceClient>(client);services.AddSingleton(accounting.Object);services.AddScoped<APInvoiceWorkspaceState>();
         services.AddScoped<PurchaseOrderWorkspaceState>();
         services.AddSingleton<AuthenticationStateProvider,Auth>();var navigation=new Navigation(path);navigation.InitializeForTest();services.AddSingleton<NavigationManager>(navigation);
-        services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         var html=await renderer.Dispatcher.InvokeAsync(async()=>{
             var parameters=ParameterView.FromDictionary(new Dictionary<string,object?>{{"Id",id}});

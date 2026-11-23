@@ -20,7 +20,7 @@ public sealed partial class DrillingCompletionAssignedState
             var evidence=testInspection!;var test=new DrillingCompletionAcceptedTest(evidence.Selection.ReportedTestIndex,CompanyInventorySourceReview.Copy(evidence.Native),evidence.Revision,evidence.CheckedAtUtc,
                 criteria.Trim(),utcCertificate.Trim(),dateResolution.Trim(),reason.Trim(),passing,reportedUtc);test.Require(current!);acceptedTests[test.ReportedTestIndex]=test;
         }
-        catch(Exception error){Error=explain(error,"checking independent physical test acceptance","Verify the exact certificate, criteria, reported UTC and any date discrepancy before including this test");}
+        catch(Exception error){Error=explain.Explain(error,"checking independent physical test acceptance","Verify the exact certificate, criteria, reported UTC and any date discrepancy before including this test");}
         Changed?.Invoke();
     }
     public void PrepareAcceptance(string actualUtc,string? reason,bool confirmed)
@@ -32,7 +32,7 @@ public sealed partial class DrillingCompletionAssignedState
             var review=CompanyInventorySourceReview.Copy(current!);var acceptance=new DrillingCompletionAcceptance(review.Revision,new DateTimeOffset(utc),AcceptedTests,confirmed);
             var original=new DrillingCompletionReviewDecision(review,Guid.NewGuid(),"APPROVE",reason?.Trim()??""){Acceptance=acceptance};original.Require();preparedDecision=original;ResetTestInspection();ResetAcceptanceDraft();
         }
-        catch(Exception error){Error=explain(error,"preparing independent physical completion acceptance","Confirm every checked test, clear outstanding work and enter actual UTC with a completion rationale");}
+        catch(Exception error){Error=explain.Explain(error,"preparing independent physical completion acceptance","Confirm every checked test, clear outstanding work and enter actual UTC with a completion rationale");}
         Changed?.Invoke();
     }
 }

@@ -62,6 +62,28 @@ public sealed class CompanyEnvironmentControllerTests
         }
     }
 
+    [Fact]
+    public async Task InvalidPreviewIsReportedAndReturnsSafeValidationResponse()
+    {
+        var company = new CompanyScope("tenant", "company");
+        var access = new Access { Value = new(company, ["Administrator"], []) };
+        var resolver = new RepositoryCompanyContextResolver(access);
+        var tenant = new RepositoryTenantContext();
+        tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
+        var reporter = new Beep.OilandGas.Repository.Tests.RecordingFailureReporter();
+        var controller = new CompanyEnvironmentController(tenant, resolver, new Store(), reporter)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext
+            { User = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor"), new(ClaimTypes.Role, "Administrator")], "test")) } }
+        };
+        var response = Assert.IsType<BadRequestObjectResult>(await controller.Preview(new("KW", "{invalid"),
+            new CompanyEnvironmentEffectiveResolver(new Store(), new Defaults()), default));
+        Assert.Single(reporter.Reports);
+        Assert.Equal("validating company environment preview", reporter.Reports[0].Operation);
+        Assert.Equal("The country or environment overrides are invalid. Review the preset and JSON.",
+            response.Value!.GetType().GetProperty("error")!.GetValue(response.Value));
+    }
+
     [Theory]
     [InlineData("allowed")]
     [InlineData("revoked")]
@@ -79,7 +101,7 @@ public sealed class CompanyEnvironmentControllerTests
         if (mode == "different-company") access.Value = new(new("tenant", "other"), ["Administrator"], []);
         if (mode == "role-revoked") access.Value = new(company, ["Operator"], []);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", mode == "different-actor" ? "other" : "actor"), new(ClaimTypes.Role, "Administrator")], "test"));
-        var controller = new CompanyEnvironmentController(tenant, resolver, new Store(), NullLogger<CompanyEnvironmentController>.Instance) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
+        var controller = new CompanyEnvironmentController(tenant, resolver, new Store(), new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var result = await controller.Preview(new("KW", "{}"), new CompanyEnvironmentEffectiveResolver(new Store(), new Defaults()), default);
         if (mode == "allowed") Assert.Equal(company, Assert.IsType<CompanyEnvironmentDraftReview>(Assert.IsType<OkObjectResult>(result).Value).Settings.Company);
         else Assert.IsType<ForbidResult>(result);
@@ -94,7 +116,7 @@ public sealed class CompanyEnvironmentControllerTests
         var resolver = new RepositoryCompanyContextResolver(access);
         var tenant = new RepositoryTenantContext(); tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor"), new(ClaimTypes.Role, "Administrator")], "test"));
-        var controller = new CompanyEnvironmentController(tenant, resolver, new Store(), NullLogger<CompanyEnvironmentController>.Instance) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
+        var controller = new CompanyEnvironmentController(tenant, resolver, new Store(), new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()) { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         Assert.IsType<ForbidResult>(await controller.Preview(new("KW", "{}"), new CompanyEnvironmentEffectiveResolver(new Store(), new Defaults()), default));
     }
 
@@ -107,7 +129,7 @@ public sealed class CompanyEnvironmentControllerTests
         var tenant = new RepositoryTenantContext(); tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor"), new(ClaimTypes.Role, "Administrator")], "test"));
         var store = new Store();
-        var controller = new CompanyEnvironmentController(tenant, resolver, store, NullLogger<CompanyEnvironmentController>.Instance)
+        var controller = new CompanyEnvironmentController(tenant, resolver, store, new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var request = new CompanyEnvironmentSaveRequest("KW", "{}", "", Guid.NewGuid().ToString("N"));
         var draft = new CompanyEnvironmentPreviewRequest(request.CountryCode, request.OverridesJson);
@@ -131,8 +153,8 @@ public sealed class CompanyEnvironmentControllerTests
         var tenant = new RepositoryTenantContext(); tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor"), new(ClaimTypes.Role, "Administrator")], "test"));
         var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new Defaults().Revision, null);
-        var store = new Store { Value = saved }; var runtime = new CompanyEnvironmentRuntime(new CompanyEnvironmentEffectiveResolver(store, new Defaults()));
-        var controller = new CompanyEnvironmentController(tenant, resolver, store, NullLogger<CompanyEnvironmentController>.Instance)
+        var store = new Store { Value = saved }; var runtime = new CompanyEnvironmentRuntime(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), new CompanyEnvironmentEffectiveResolver(store, new Defaults()));
+        var controller = new CompanyEnvironmentController(tenant, resolver, store, new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var result = Assert.IsType<CompanyEnvironmentVerification>(Assert.IsType<OkObjectResult>(await controller.Verify(runtime, default)).Value);
         Assert.Equal(company, result.Company); Assert.Equal(saved.Revision, result.Revision); Assert.False(result.SourcesVerified);
@@ -152,7 +174,7 @@ public sealed class CompanyEnvironmentControllerTests
         var defaults = new Defaults();
         var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", json, "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, defaults.Revision, null);
         var store = new Store { Value = saved }; var sources = new CompanyEnvironmentSources(new CompanyEnvironmentEffectiveResolver(store, defaults), new Bindings());
-        var controller = new CompanyEnvironmentController(tenant, resolver, store, NullLogger<CompanyEnvironmentController>.Instance)
+        var controller = new CompanyEnvironmentController(tenant, resolver, store, new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var result = Assert.IsType<CompanyEnvironmentSourceReview>(Assert.IsType<OkObjectResult>(await controller.Sources(sources, default)).Value);
         Assert.Equal("Bound", Assert.Single(result.Sources).BindingStatus); Assert.False(result.DataTested);
@@ -170,7 +192,7 @@ public sealed class CompanyEnvironmentControllerTests
         var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", "{}", "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new Defaults().Revision, null);
         var store = new Store { Value = saved }; var records = new FactorRecords();
         var reader = new CompanyGhgCatalogReader(new(store, records), records);
-        var controller = new CompanyEnvironmentController(tenant, resolver, store, NullLogger<CompanyEnvironmentController>.Instance)
+        var controller = new CompanyEnvironmentController(tenant, resolver, store, new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var result = Assert.IsType<CompanyGhgCatalogReview>(Assert.IsType<OkObjectResult>(await controller.GhgCatalog("KW", reader, default)).Value);
         Assert.Equal(company, result.Company); Assert.Equal(saved.Revision, result.CompanyRevision);
@@ -184,14 +206,14 @@ public sealed class CompanyEnvironmentControllerTests
         var company = new CompanyScope("tenant", "company"); var access = new Access { Value = new(company, ["Administrator"], []) };
         var resolver = new RepositoryCompanyContextResolver(access); var tenant = new RepositoryTenantContext(); tenant.SelectCompany((await resolver.ResolveAsync("actor", company))!);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "actor"), new(ClaimTypes.Role, "Administrator")], "test"));
-        var controller = new CompanyEnvironmentController(tenant, resolver, new Store(), NullLogger<CompanyEnvironmentController>.Instance)
+        var controller = new CompanyEnvironmentController(tenant, resolver, new Store(), new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var request = new CompanyGhgSelectionRequest("KW", new string('A', 64), new string('B', 64), "reviewed", "", Guid.NewGuid().ToString("N"));
         var saved = Assert.IsType<CompanyGhgSelection>(Assert.IsType<OkObjectResult>(await controller.SaveGhgSelection(request, new Selections(), default)).Value);
         Assert.Equal(company, saved.Company); Assert.Equal("actor", saved.SelectedBy);
         access.Value = null;
         var records = new FactorRecords();
-        Assert.IsType<ForbidResult>(await controller.GhgSelection(new CompanyGhgSelectionStatusReader(new Selections(), new(new(new Store(), records), records)), default));
+        Assert.IsType<ForbidResult>(await controller.GhgSelection(new CompanyGhgSelectionStatusReader(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), new Selections(), new(new(new Store(), records), records)), default));
         Assert.IsType<ForbidResult>(await controller.SaveGhgSelection(request, new Selections(), default));
     }
 
@@ -207,7 +229,7 @@ public sealed class CompanyEnvironmentControllerTests
         var defaults = new Defaults();
         var saved = CompanyEnvironmentIdentity.Prepare(company, new("KW", json, "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, defaults.Revision, null);
         var store = new Store { Value = saved }; var effective = new CompanyEnvironmentEffectiveResolver(store, defaults); var tests = new CompanyEnvironmentWellTestService(effective, new Bindings(), new WellReader());
-        var controller = new CompanyEnvironmentController(tenant, resolver, store, NullLogger<CompanyEnvironmentController>.Instance)
+        var controller = new CompanyEnvironmentController(tenant, resolver, store, new Beep.OilandGas.Repository.Tests.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var review = await effective.ResolveAsync(company, () => Task.CompletedTask);
         var request = new CompanyEnvironmentWellTestRequest("wells", "well-1", saved.Revision, review.EffectiveRevision);

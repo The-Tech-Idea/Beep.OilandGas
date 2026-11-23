@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Process
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
@@ -228,7 +229,7 @@
     protected override async Task OnParametersSetAsync()
     {
         try{Id=RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"accounting/processes/");}
-        catch(FormatException){_state?.Clear();_error="The recorded accounting process location is invalid.";AttachCompletion();return;}
+        catch(FormatException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "CompanyAccountingProcessDetail.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _state?.Clear();_error="The recorded accounting process location is invalid.";AttachCompletion();return;}
         await Reload();
     }
     private async Task Reload()
@@ -295,7 +296,7 @@
         try{var user=(await Authentication.GetAuthenticationStateAsync()).User;if(snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || !selected.Roles.Any(user.IsInRole))throw new UnauthorizedAccessException();
             var review=await Accounting.GetDeliveryCorrectionReviewAsync(id);review.Require(selected.Scope,selected.UserId,id);
             if(_disposed || epoch!=_authorityEpoch || snapshot!=Company.Snapshot || id!=Id)return;if(review.ProcessRevision!=source.ProcessRevision || review.Previous.Preparation.Source.TicketId!=source.TicketId)throw new InvalidOperationException("The original process/source changed.");_deliveryCorrection=review;
-        }catch{if(!_disposed && epoch==_authorityEpoch && snapshot==Company.Snapshot && id==Id)_correctionError="The original correction review could not be confirmed. Check the completed preparer review and current company/source access.";}finally{_correctionBusy=false;}
+        }catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "CompanyAccountingProcessDetail.ReviewDeliveryCorrection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_authorityEpoch && snapshot==Company.Snapshot && id==Id)_correctionError="The original correction review could not be confirmed. Check the completed preparer review and current company/source access.";}finally{_correctionBusy=false;}
     }
     private async Task ReviewStep()
     {

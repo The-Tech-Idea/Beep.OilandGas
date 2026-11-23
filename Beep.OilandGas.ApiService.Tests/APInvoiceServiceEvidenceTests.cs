@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Models.Data.Company;
@@ -117,7 +118,7 @@ public sealed class APInvoiceServiceEvidenceTests
     {
         IEnumerable<object>? raw=new[]{Invoice()};var fixture=Reads(_=>raw!);
         using var company=new Beep.OilandGas.Client.App.CompanyClientContext();Assert.True(company.TrySelect(company.Clear(),"accountant",new(Scope,["ConfiguredAccountant"],["Accounting.View"])));
-        using var state=new Beep.OilandGas.Web.Services.APInvoiceWorkspaceState(company);
+        using var state=new Beep.OilandGas.Web.Services.APInvoiceWorkspaceState(Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter()), company);
         await state.LoadVendorAsync("supplier",vendor=>fixture.Service.GetVendorBillsAsync(Scope,vendor));Assert.Single(state.Rows!);
         raw=fault=="null-payload"?null:new object[]{Invoice(),null!};
         await Assert.ThrowsAsync<InvalidOperationException>(()=>state.LoadVendorAsync("supplier",vendor=>fixture.Service.GetVendorBillsAsync(Scope,vendor)));

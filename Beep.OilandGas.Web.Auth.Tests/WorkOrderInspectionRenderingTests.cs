@@ -30,6 +30,7 @@ public sealed class WorkOrderInspectionRenderingTests
     }
     private sealed class ReadFixture(List<InspectionCondition> rows,bool failure):IWorkOrderServiceClient
     {
+        public Task<List<WorkOrderSummary>> GetWorkOrderSampleAsync(CancellationToken cancellationToken=default)=>throw new NotSupportedException("This fixture reads inspections only.");
         public Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderFinancialSources> ReadFinancialSourcesAsync(Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderFinancialQuery query,CancellationToken token=default)=>throw new NotSupportedException();
         public Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostReview> ReviewMaterialCostAsync(Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostQuery query,CancellationToken token=default)=>throw new NotSupportedException();
         public Task<Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostRecovery> RecordMaterialCostAsync(Beep.OilandGas.ProductionOperations.Models.CompanyWorkOrderMaterialCostCommand command,CancellationToken token=default)=>throw new NotSupportedException();

@@ -121,7 +121,7 @@
     private string? _routeError;
     protected override void OnInitialized()
     {
-        _state=new(Company,Fields,Development,Calls.Explain); _state.Changed+=Changed;
+        _state=new(Company,Fields,Development,Calls); _state.Changed+=Changed;
     }
     protected override Task OnParametersSetAsync()
     {

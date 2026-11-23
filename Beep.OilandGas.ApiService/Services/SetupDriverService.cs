@@ -16,7 +16,8 @@ using TheTechIdea.Beep.Tools;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Provisions only drivers registered in the server's Beep catalog.</summary>
-public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configuration, ILogger<SetupDriverService> logger)
+public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configuration, ILogger<SetupDriverService> logger,
+    TheTechIdeaWeb.Diagnostics.IFailureReporter failures)
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
     private static readonly object NativeGate = new();
@@ -29,16 +30,19 @@ public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configu
         return matches.Length == 1 && matches[0].type is { } type && typeof(IDataSource).IsAssignableFrom(type);
     }
 #if BEEP_SECURE_CONNECTIONS
+    private static readonly IReadOnlyDictionary<DataSourceType, (string AssemblyName, string TypeName)> BundledConnectors =
+        new Dictionary<DataSourceType, (string, string)>
+        {
+            [DataSourceType.SqlServer] = ("SqlServerDataSourceCore", "TheTechIdea.Beep.DataBase.SQLServerDataSource"),
+            [DataSourceType.SqlLite] = ("SqliteDatasourceCore", "TheTechIdea.Beep.DataBase.SQLiteDataSource")
+        };
+
     private bool RegisterBundledConnector(IAssemblyHandler loader, ConnectionDriversConfig driver)
     {
         if (loader is not AssemblyHandler handler) return false;
-        var (assemblyName, typeName) = driver.DatasourceType switch
-        {
-            DataSourceType.SqlServer => ("SqlServerDataSourceCore", "TheTechIdea.Beep.DataBase.SQLServerDataSource"),
-            DataSourceType.SqlLite => ("SqliteDatasourceCore", "TheTechIdea.Beep.DataBase.SQLiteDataSource"),
-            _ => ((string?)null, (string?)null)
-        };
-        if (assemblyName is null || !string.Equals(driver.classHandler, typeName![(typeName.LastIndexOf('.') + 1)..], StringComparison.OrdinalIgnoreCase)) return false;
+        if (!BundledConnectors.TryGetValue(driver.DatasourceType, out var connector)) return false;
+        var (assemblyName, typeName) = connector;
+        if (!string.Equals(driver.classHandler, typeName[(typeName.LastIndexOf('.') + 1)..], StringComparison.OrdinalIgnoreCase)) return false;
         try
         {
             // Only the known host dependencies are candidates for bundled registration.
@@ -50,7 +54,7 @@ public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configu
             return ConnectorLoaded(driver);
         }
         catch (Exception error) when (error is FileNotFoundException or FileLoadException or BadImageFormatException or ReflectionTypeLoadException)
-        { logger.LogWarning(error, "The bundled {DatabaseType} connector could not be registered", driver.DatasourceType); return false; }
+        { failures.ReportHandled(error, "registering a bundled database connector", "the connector is unavailable; setup remains available"); return false; }
     }
 #endif
     private bool ProviderLoaded(ConnectionDriversConfig driver)
@@ -73,12 +77,12 @@ public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configu
         }
         catch (Exception error)
         {
-            logger.LogWarning(error, "Database provider initialization failed for {ConnectionType}", driver.DbConnectionType);
+            failures.ReportHandled(error, "initializing the database provider", "the provider is unavailable; setup reports it as not loaded");
             return false;
         }
     }
 
-    private static void ConfigureSqliteNativeResolver(System.Reflection.Assembly assembly)
+    private void ConfigureSqliteNativeResolver(System.Reflection.Assembly assembly)
     {
         lock (NativeGate)
         {
@@ -94,7 +98,10 @@ public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configu
                     NativeLibrary.SetDllImportResolver(assembly, (name, _, _) =>
                         string.Equals(name, "SQLite.Interop.dll", StringComparison.OrdinalIgnoreCase) ? NativeLibrary.Load(native) : IntPtr.Zero);
                 }
-                catch (InvalidOperationException) { /* An existing resolver is verified by constructing the provider below. */ }
+                catch (InvalidOperationException error)
+                {
+                    failures.ReportHandled(error, "registering the database provider native library resolver", "an existing resolver remains installed; provider construction must verify it");
+                }
                 NativeResolvers.Add(assembly);
             }
         }
@@ -195,7 +202,7 @@ public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configu
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
-                    logger.LogWarning(error, "Cached Beep connector restoration failed for driver {Driver}; the setup catalog remains available", driver.GuidID);
+                    failures.ReportHandled(error, "restoring a cached Beep connector", "the connector could not be restored; the setup catalog remains available");
                 }
                 token.ThrowIfCancellationRequested();
                 try
@@ -208,7 +215,7 @@ public sealed class SetupDriverService(IDMEEditor editor, IConfiguration configu
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
-                    logger.LogWarning(error, "Cached database provider restoration failed for driver {Driver}; the setup catalog remains available", driver.GuidID);
+                    failures.ReportHandled(error, "restoring a cached database provider", "the provider could not be restored; the setup catalog remains available");
                 }
                 token.ThrowIfCancellationRequested();
             }

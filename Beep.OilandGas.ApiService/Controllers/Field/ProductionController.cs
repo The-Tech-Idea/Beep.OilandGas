@@ -210,7 +210,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch(InvalidOperationException changed)
             {
-                _logger.LogWarning(changed,"Recorded intervention activity or workflow references could not be confirmed.");
+                _failures.ReportHandled(changed,"Recorded intervention activity or workflow references could not be confirmed.","recorded production evidence unconfirmed; request refused");
                 return Conflict(new {error="Recorded intervention source or workflow references are ambiguous. Review the original activity records."});
             }
             ProductionInterventionCandidateChecks.Require(candidates,company.Scope,actor,fieldId);
@@ -322,9 +322,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if ((await resources.CheckAssetAccessAsync(actor, wellId, "WELL", "WRITE"))?.HasAccess != true) return Forbid();
             if(!string.IsNullOrWhiteSpace(request.WorkOrderId) && (await resources.CheckAssetAccessAsync(actor,request.WorkOrderId,"WORK_ORDER","READ"))?.HasAccess!=true)return Forbid();
             try { return Ok(await _productionService.RecordNativeInterventionDecisionAsync(wellId, request, actor)); }
-            catch (UnauthorizedAccessException) { return Forbid(); }
-            catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
-            catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message, intentId = request.IntentId, recoveryRequired = true }); }
+            catch (UnauthorizedAccessException denied) { _failures.ReportHandled(denied,"authorizing production intervention","request forbidden"); return Forbid(); }
+            catch (ArgumentException ex) {_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying"); return BadRequest(new { error = "The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying." }); }
+            catch (InvalidOperationException ex) {_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying"); return Conflict(new { error = "The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying.", intentId = request.IntentId, recoveryRequired = true }); }
         }
 
         [HttpGet("intervention-decisions/{intentId:guid}")]
@@ -336,8 +336,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             if (tenant.Company is not { } company || company.UserId != actor) return Forbid();
             if ((await resources.CheckAssetAccessAsync(actor, wellId, "WELL", "READ"))?.HasAccess != true) return Forbid();
             try { return Ok(await _productionService.RecoverNativeInterventionDecisionAsync(wellId, intentId, actor, company.Scope)); }
-            catch (UnauthorizedAccessException) { return Forbid(); }
-            catch (InvalidOperationException ex) { return Conflict(new { error = ex.Message, intentId, recoveryRequired = true }); }
+            catch (UnauthorizedAccessException denied) { _failures.ReportHandled(denied,"authorizing production intervention","request forbidden"); return Forbid(); }
+            catch (InvalidOperationException ex) {_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying"); return Conflict(new { error = "The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying.", intentId, recoveryRequired = true }); }
         }
 
         [HttpGet("intervention-decisions/{intentId:guid}/maintenance-link")]
@@ -348,8 +348,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             var actor=User.ActingUserId();if(tenant.Company is not {} company || company.UserId!=actor)return Forbid();
             if((await resources.CheckAssetAccessAsync(actor,wellId,"WELL","READ"))?.HasAccess!=true || (await resources.CheckAssetAccessAsync(actor,workOrderId,"WORK_ORDER","READ"))?.HasAccess!=true)return Forbid();
             try{return Ok(await _productionService.ReadInterventionMaintenanceLinkAsync(wellId,intentId,workOrderId,actor,company.Scope));}
-            catch(UnauthorizedAccessException){return Forbid();}
-            catch(InvalidOperationException ex){return Conflict(new{error=ex.Message});}
+            catch(UnauthorizedAccessException denied){_failures.ReportHandled(denied,"authorizing production intervention","request forbidden");return Forbid();}
+            catch(InvalidOperationException ex){_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying");return Conflict(new{error="The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying."});}
         }
 
         /// <summary>Legacy decisions remain subject to the original command-owner boundary.</summary>
@@ -377,13 +377,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     ProductionInterventionSourceReviews.RequireDecision(rows.Where(x=>x.UWI==uwi),request,company.Scope,userId,fieldId,uwi);
                     return true;
                 }
-                catch(UnauthorizedAccessException){approvalDenied=true;return false;}
-                catch(InvalidOperationException){return false;}
+                catch(UnauthorizedAccessException denied){_failures.ReportHandled(denied,"authorizing production intervention","request forbidden");approvalDenied=true;return false;}
+                catch(InvalidOperationException changed){_failures.ReportHandled(changed,"reviewing production intervention source","source or authority unconfirmed; decision refused");return false;}
             }
             string normalizedDecision;
             try { normalizedDecision=ProductionInterventionDecisionChecks.Require(request,fieldId); }
-            catch(ArgumentException ex){return BadRequest(new { error=ex.Message });}
-            catch(InvalidOperationException ex){return Conflict(new { error=ex.Message });}
+            catch(ArgumentException ex){_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying");return BadRequest(new { error="The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying." });}
+            catch(InvalidOperationException ex){_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying");return Conflict(new { error="The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying." });}
             if(!(await resources.CheckAssetAccessAsync(userId,uwi,"WELL","WRITE")).HasAccess) return Forbid();
             if(_fieldOrchestrator.CurrentFieldId!=fieldId) return Conflict(new { error="FIELD changed before the decision." });
             if(!await SourceStillMatchesAsync())
@@ -418,8 +418,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 if (!string.IsNullOrWhiteSpace(request.WorkOrderId))
                 {
                     try { linkedWorkOrder=await ReadLinkedOrderAsync(); }
-                    catch(UnauthorizedAccessException){return Forbid();}
-                    catch(InvalidOperationException ex){return Conflict(new { error=ex.Message });}
+                    catch(UnauthorizedAccessException denied){_failures.ReportHandled(denied,"authorizing production intervention","request forbidden");return Forbid();}
+                    catch(InvalidOperationException ex){_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying");return Conflict(new { error="The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying." });}
                 }
 
                 if(_fieldOrchestrator.CurrentFieldId!=fieldId)
@@ -438,8 +438,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     if(currentOrder is null || !currentOrder.Components.OrderBy(c=>c.ComponentId,StringComparer.Ordinal).SequenceEqual(linkedWorkOrder.Components.OrderBy(c=>c.ComponentId,StringComparer.Ordinal)))
                         return Conflict(new { error="The recorded work-order component relationships changed before linking. Review the original source again." });
                 }
-                catch(UnauthorizedAccessException){return Forbid();}
-                catch(InvalidOperationException ex){return Conflict(new { error=ex.Message });}
+                catch(UnauthorizedAccessException denied){_failures.ReportHandled(denied,"authorizing production intervention","request forbidden");return Forbid();}
+                catch(InvalidOperationException ex){_failures.ReportHandled(ex,"processing production intervention","request refused or outcome unconfirmed; reconcile original intent before retrying");return Conflict(new { error="The intervention request or original evidence could not be confirmed. Reconcile the original intent before retrying." });}
             }
             var remark = BuildDecisionRemark(request.Note, linkedWorkOrder?.InstanceId, null, null);
             await _productionService.RecordInterventionDecisionAsync(uwi, activityTypeId, remark, userId);

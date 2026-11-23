@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.HSE.Models
@@ -5,6 +6,7 @@
 @using System.Text.Json
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
 @inject ApiClient Api
+@inject OilGasCallFailures Calls
 @inject ILogger<GhgFactorSetup> Logger
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
 @inject ISystemSetupIntentStore SystemIntents
@@ -103,7 +105,7 @@
             _recoveryReady = true;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "GhgFactorSetup.RestoreIntent", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (generation != Interlocked.Read(ref _generation) || _disposed) return;
             Logger.LogWarning(error, "GHG catalog recovery is unavailable");
             _message = "Catalog recovery is unavailable. Return to system setup to recover the retained request, or reload this page.";
@@ -130,7 +132,10 @@
             _ = GhgFactorCatalogValidation.Parse(_key, Json(_key, [.. _factors, factor]));
             _factors.Add(factor); _id = _category = _input = _output = _source = ""; _factor = null; _from = _through = null; _message = null;
         }
-        catch (Exception invalid) when (invalid is ArgumentException or JsonException) { _message = invalid.Message; }
+        catch (Exception invalid) when (invalid is ArgumentException or JsonException)
+        {
+            _message = Calls.Explain(invalid, "reviewing the proposed GHG factor", "The proposed factor could not be validated");
+        }
     }
     private async Task Load()
     {
@@ -161,7 +166,7 @@
             _revision = response.Configuration?.Revision ?? ""; _version = response.Configuration?.Version ?? "1"; _loaded = true;
             _message = catalog is null ? "No catalog is saved for this jurisdiction." : "Catalog loaded for review.";
         }
-        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "GHG factor catalog could not be loaded"); if (_pending is null) _loaded = false; _message = "The catalog could not be confirmed. Check the jurisdiction and system repository."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "GhgFactorSetup.Load", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "GHG factor catalog could not be loaded"); if (_pending is null) _loaded = false; _message = "The catalog could not be confirmed. Check the jurisdiction and system repository."; } }
         finally { if (Current(generation, actor)) _busy = false; }
     }
     private async Task Save()
@@ -176,7 +181,7 @@
             request = _pending ?? new("GHG_FACTORS", _key, _version, json, _revision, Guid.NewGuid().ToString("N"));
             _ = SystemSetupIdentity.ForChange(request);
         }
-        catch (Exception invalid) when (invalid is ArgumentException or JsonException) { _message = "Review the catalog version and factor details before saving."; return; }
+        catch (Exception invalid) when (invalid is ArgumentException or JsonException) { HandledFailures.ReportHandled(invalid, "GhgFactorSetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _message = "Review the catalog version and factor details before saving."; return; }
         var intent = new SystemSetupIntent(actor!, request); _busy = true; _message = null;
         try
         {
@@ -185,7 +190,7 @@
             _pending = request;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "GhgFactorSetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (Current(generation, actor)) { Logger.LogWarning(error, "GHG catalog request could not be retained"); _message = "The original save could not be retained; no save was sent. Reload this page to recover it."; _recoveryReady = false; _busy = false; }
             return;
         }
@@ -199,11 +204,11 @@
             _revision = result.Revision; _pending = null; _message = "Catalog saved. Review and approval are still required before use.";
         }
         catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
+        { HandledFailures.ReportHandled(error, "GhgFactorSetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             try { await SystemIntents.ClearSystemAsync(intent); if (Current(generation, actor)) { _pending = null; _message = "The catalog was refused. Review its factors and version."; } }
-            catch (Exception clearError) { if (Current(generation, actor)) { Logger.LogWarning(clearError, "Refused catalog request could not be cleared"); _message = "The catalog was refused, but recovery storage could not be cleared. Reload this page."; } }
+            catch (Exception clearError) { HandledFailures.ReportHandled(clearError, "GhgFactorSetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(clearError, "Refused catalog request could not be cleared"); _message = "The catalog was refused, but recovery storage could not be cleared. Reload this page."; } }
         }
-        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "GHG factor catalog save is unconfirmed"); _message = "The save outcome is unconfirmed. Retry the same save or load the catalog."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "GhgFactorSetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "GHG factor catalog save is unconfirmed"); _message = "The save outcome is unconfirmed. Retry the same save or load the catalog."; } }
         finally { if (Current(generation, actor)) _busy = false; }
     }
     private static bool Matches(SystemSetupConfiguration value, SystemSetupRequest request)

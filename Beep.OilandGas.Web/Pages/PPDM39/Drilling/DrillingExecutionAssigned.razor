@@ -62,7 +62,7 @@
 @code {
     [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
     private DrillingExecutionAssignedState? _state;private bool interactive,disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>interactive?Reload():Task.CompletedTask;
     protected override Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return Task.CompletedTask;interactive=true;return Reload();}
     private Task Reload()=>_state!.LoadAsync(ProcessId);

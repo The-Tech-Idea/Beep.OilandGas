@@ -20,7 +20,7 @@ public sealed partial class DrillingDailyReportState : IDisposable
     private readonly IPersonaContextService personas;
     private readonly IDrillingServiceClient client;
     private readonly IDevelopmentDraftIntentStore journal;
-    private readonly Func<Exception, string, string, string> explain;
+    private readonly OilGasCallFailures explain;
     private bool disposed, ready, reading, writing;
     private long generation, request;
     private string? reviewId;
@@ -54,7 +54,7 @@ public sealed partial class DrillingDailyReportState : IDisposable
     public event Action? Changed;
 
     public DrillingDailyReportState(CompanyClientContext company, IPersonaContextService personas, IDrillingServiceClient client,
-        IDevelopmentDraftIntentStore journal, Func<Exception, string, string, string> explain)
+        IDevelopmentDraftIntentStore journal, OilGasCallFailures explain)
     {
         this.company = company; this.personas = personas; this.client = client; this.journal = journal; this.explain = explain;
         company.Changed += Invalidate; personas.Changed += Invalidate;
@@ -113,7 +113,7 @@ public sealed partial class DrillingDailyReportState : IDisposable
         }
         catch (Exception error)
         {
-            var text = explain(error, "loading drilling report history", "The original execution/report history could not be confirmed");
+            var text = explain.Explain(error, "loading drilling report history", "The original execution/report history could not be confirmed");
             if (Current()) { page = null; basis = null; Error = text; }
         }
         finally { if (Current()) { reading = false; Changed?.Invoke(); } }
@@ -135,7 +135,7 @@ public sealed partial class DrillingDailyReportState : IDisposable
         }
         catch (Exception error)
         {
-            var text = explain(error, "reviewing drilling report source", "The current report head, active well and configured recorder could not be confirmed");
+            var text = explain.Explain(error, "reviewing drilling report source", "The current report head, active well and configured recorder could not be confirmed");
             if (Active(selected, epoch)) Error = text;
         }
         finally { if (Active(selected, epoch)) { reading = false; Changed?.Invoke(); } }
@@ -186,7 +186,7 @@ public sealed partial class DrillingDailyReportState : IDisposable
                 throw new InvalidOperationException("Report actual completed work and performed tests, never future event times.");
             prepared = original;
         }
-        catch (Exception error) { Error = explain(error, "preparing observed drilling report", "Confirm the actual period, measured hole depth/unit, source provenance and summary"); }
+        catch (Exception error) { Error = explain.Explain(error, "preparing observed drilling report", "Confirm the actual period, measured hole depth/unit, source provenance and summary"); }
         Changed?.Invoke();
     }
     public void Cancel() { if (Busy || pending is not null) return; prepared = null; Changed?.Invoke(); }
@@ -228,7 +228,7 @@ public sealed partial class DrillingDailyReportState : IDisposable
         }
         catch (Exception error)
         {
-            var text = explain(error, recover ? "recovering original drilling report" : "recording observed drilling report",
+            var text = explain.Explain(error, recover ? "recovering original drilling report" : "recording observed drilling report",
                 failureExplanation);
             if (Current()) { originalFeedback.Failed(); Error = text; }
         }

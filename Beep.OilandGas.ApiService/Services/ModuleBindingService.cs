@@ -118,12 +118,13 @@ public sealed class ModuleBindingService(RepositoryDbContext db, IDMEEditor edit
         return name;
     }
 
-    private static string NormalizeModule(string moduleId)
+    internal static string NormalizeModule(string moduleId)
     {
         if (string.IsNullOrWhiteSpace(moduleId) || moduleId.Length > 64)
             throw RefusalException.Invalid("Select a valid module.");
         var id = moduleId.ToUpperInvariant();
-        if (id == "SECURITY") throw RefusalException.Invalid("Security belongs to the default repository.");
+        if (id is "SECURITY" or "SYSTEM_SETUP")
+            throw RefusalException.Invalid("Security and system setup belong to the default repository.");
         return id;
     }
 

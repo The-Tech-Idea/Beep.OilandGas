@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Client.App
@@ -46,8 +47,8 @@ else
                 await InvokeAsync(Refresh);
             }
         }
-        catch (OperationCanceledException) when (_stopping.IsCancellationRequested) { }
-        catch (Exception error) { if (!_disposed) Logger.LogWarning(error, "Automatic company setup refresh stopped"); }
+        catch (OperationCanceledException handledFailureAuto1) when (_stopping.IsCancellationRequested) { HandledFailures.ReportHandled(handledFailureAuto1, "CompanyEnvironmentIndicator.PollAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded);  }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentIndicator.PollAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (!_disposed) Logger.LogWarning(error, "Automatic company setup refresh stopped"); }
     }
     private async Task Refresh()
     {
@@ -80,8 +81,8 @@ else
             _review = value;
             if (value.ReviewStatus == "Current") await OnEnvironmentChanged.InvokeAsync(new CompanyEnvironmentDisplayUpdate(snapshot.Version, value));
         }
-        catch (OperationCanceledException) { }
-        catch (Exception error) { if (Current()) Logger.LogWarning(error, "Effective company setup is unavailable"); }
+        catch (OperationCanceledException handledFailureAuto3) { HandledFailures.ReportHandled(handledFailureAuto3, "CompanyEnvironmentIndicator.Refresh", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentIndicator.Refresh", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) Logger.LogWarning(error, "Effective company setup is unavailable"); }
         finally { if (Current()) { _loading = false; StateHasChanged(); } }
     }
     public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); _stopping.Cancel(); Company.Changed -= Changed; EnvironmentChanges.Changed -= Changed; Authentication.AuthenticationStateChanged -= AuthenticationChanged; }

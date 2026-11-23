@@ -37,7 +37,7 @@
     [Parameter,SupplyParameterFromQuery(Name="processId")]public string? ProcessId{get;set;}
     private DevelopmentReviewProgressState? _state;
     private bool disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,Development,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Development,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>Reload();
     private Task Reload()=>_state!.LoadAsync(ProcessId);
     private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}

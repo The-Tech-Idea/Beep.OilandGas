@@ -16,7 +16,7 @@ namespace Beep.OilandGas.ApiService.Hubs;
 /// </summary>
 public abstract class CompanyHubLifetimeManager<THub>(
     ILogger<DefaultHubLifetimeManager<THub>> transportLogger,
-    IServiceScopeFactory scopeFactory) : DefaultHubLifetimeManager<THub>(transportLogger) where THub : Hub
+    IServiceScopeFactory scopeFactory, TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : DefaultHubLifetimeManager<THub>(transportLogger) where THub : Hub
 {
     private sealed class ConnectionState(HubConnectionContext connection, RepositoryCompanyContext company)
     {
@@ -115,7 +115,7 @@ public abstract class CompanyHubLifetimeManager<THub>(
                 // still served.
                 catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
                 {
-                    ReportFailure(exception, $"checking current company access ({group}) for connection {connectionId}",
+                    failures.ReportHandled(exception, $"checking current company access ({group}) for connection {connectionId}",
                         "the notification is not delivered to this connection, which leaves the group; it can subscribe again");
                 }
                 if (!allowed)
@@ -138,7 +138,6 @@ public abstract class CompanyHubLifetimeManager<THub>(
     protected abstract object?[] DeliveryArguments(CompanyHubChannel channel, object?[] args);
     protected abstract Task<bool> ResourceAccessAsync(IServiceProvider services, CompanyHubChannel channel,
         RepositoryCompanyContext company, object?[]? args);
-    protected abstract void ReportFailure(Exception exception, string operation, string outcome);
 
     private async Task<bool> CanDeliverAsync(ConnectionState state, string group, string? requiredRole,
         object?[]? args, CancellationToken token)

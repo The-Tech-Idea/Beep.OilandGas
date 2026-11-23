@@ -93,7 +93,7 @@ public sealed class SystemSetupTargetTests
         var module = new SystemSetupModule(new ModuleSetupContext());
         var access = new Mock<IRepositoryAccessService>();
         access.Setup(x => x.GetAccessAsync("admin", It.IsAny<CancellationToken>())).ReturnsAsync(new RepositoryUserAccess("admin", true, ["Administrator"], []));
-        var controller = new SystemSetupRepositoryController(new SystemSetupTarget(configuration, editor.Object), editor.Object, [module], migration.Object, configuration, access.Object)
+        var controller = new SystemSetupRepositoryController(new SystemSetupTarget(configuration, editor.Object), editor.Object, [module], migration.Object, configuration, access.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "admin"), new(ClaimTypes.Role, "Administrator")], "test")) } } };
         Assert.IsType<OkObjectResult>(await controller.Plan(new ModulePlanRequest("Test")));
         migration.Verify(x => x.PlanSchemaMigrationAsync(It.Is<SchemaMigrationPlanRequest>(p => p.ConnectionName == "system" && p.ModuleIds!.SequenceEqual(new[] { "SYSTEM_SETUP" }) && p.EnvironmentTier == "Test")), Times.Once);
@@ -117,7 +117,7 @@ public sealed class SystemSetupTargetTests
         migration.Setup(x => x.PlanSchemaMigrationAsync(It.IsAny<SchemaMigrationPlanRequest>())).ReturnsAsync(() =>
         { if (change == "revoked") active = false; else properties.ConnectionString = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder { DataSource = Path.Combine(Path.GetTempPath(), "changed.db") }.ConnectionString; return new SchemaMigrationPlanResult { Success = true, PlanId = "plan" }; });
         var controller = new SystemSetupRepositoryController(new SystemSetupTarget(configuration, editor.Object), editor.Object,
-            [new SystemSetupModule(new ModuleSetupContext())], migration.Object, configuration, access.Object)
+            [new SystemSetupModule(new ModuleSetupContext())], migration.Object, configuration, access.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "admin"), new(ClaimTypes.Role, "Administrator")], "test")) } } };
         var result = await controller.Plan(new ModulePlanRequest("Test"));
         if (change == "revoked") Assert.IsType<ForbidResult>(result); else Assert.IsType<ConflictObjectResult>(result);
@@ -139,7 +139,7 @@ public sealed class SystemSetupTargetTests
         var access = new Mock<IRepositoryAccessService>();
         access.Setup(x => x.GetAccessAsync("admin", It.IsAny<CancellationToken>())).ReturnsAsync(new RepositoryUserAccess("admin", true, ["Administrator"], []));
         var controller = new SystemSetupRepositoryController(new SystemSetupTarget(configuration, editor.Object), editor.Object,
-            [new SystemSetupModule(new ModuleSetupContext())], Mock.Of<IPPDM39SchemaMigrationService>(), configuration, access.Object)
+            [new SystemSetupModule(new ModuleSetupContext())], Mock.Of<IPPDM39SchemaMigrationService>(), configuration, access.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "admin"), new(ClaimTypes.Role, "Administrator")], "test")) } } };
 
         source.Setup(x => x.GetEntityStructure(It.IsAny<EntityStructure>(), true)).Throws(new InvalidOperationException("metadata unavailable"));
@@ -166,7 +166,7 @@ public sealed class SystemSetupTargetTests
             access.Setup(x => x.GetAccessAsync("admin", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new RepositoryUserAccess("admin", true, ["Administrator"], []));
             var controller = new SystemSetupRepositoryController(new SystemSetupTarget(configuration, editor.Object), editor.Object, [],
-                Mock.Of<IPPDM39SchemaMigrationService>(), configuration, access.Object)
+                Mock.Of<IPPDM39SchemaMigrationService>(), configuration, access.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
             { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "admin"), new(ClaimTypes.Role, "Administrator")], "test")) } } };
             Assert.Equal("Unconfigured", Assert.IsType<SystemSetupRepositoryStatus>(Assert.IsType<OkObjectResult>(await controller.Status(default)).Value).Status);
             await File.WriteAllTextAsync(path, "{\"SystemSetup\":{\"ConnectionName\":\"system\",\"ConnectionTarget\":\"saved-target\"}}");
@@ -184,7 +184,7 @@ public sealed class SystemSetupTargetTests
         access.Setup(x => x.GetAccessAsync("admin", It.IsAny<CancellationToken>())).ReturnsAsync(() =>
             new RepositoryUserAccess("admin", ++calls == 1, ["Administrator"], []));
         var controller = new SystemSetupRepositoryController(new SystemSetupTarget(configuration, editor.Object), editor.Object, [],
-            Mock.Of<IPPDM39SchemaMigrationService>(), configuration, access.Object)
+            Mock.Of<IPPDM39SchemaMigrationService>(), configuration, access.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "admin"), new(ClaimTypes.Role, "Administrator")], "test")) } } };
         Assert.IsType<ForbidResult>(await controller.Status(default));
         editor.Verify(x => x.GetDataSource(It.IsAny<string>()), Times.Never);

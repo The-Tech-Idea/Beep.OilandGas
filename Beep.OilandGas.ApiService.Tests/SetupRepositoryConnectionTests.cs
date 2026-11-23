@@ -42,7 +42,7 @@ public sealed class SetupRepositoryConnectionTests
         var config = new ConfigurationBuilder().Build();
         var editor = new Mock<IDMEEditor>();
         var service = new SetupRepositoryConnectionCreationService(config, editor.Object,
-            new SetupDriverService(editor.Object, config, NullLogger<SetupDriverService>.Instance));
+            new SetupDriverService(editor.Object, config, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(new("identity_db", "SQLSERVER", $"Server=localhost;Database=IdentityDb;{key}=secret", "driver"), () => Task.CompletedTask, default));
         editor.VerifyGet(x => x.ConfigEditor, Times.Never);
     }
@@ -64,12 +64,12 @@ public sealed class SetupRepositoryConnectionTests
             config.DataDriversClasses.Add(new ConnectionDriversConfig { GuidID = "driver", PackageName = "provider", classHandler = "SqlImpl", DatasourceType = DataSourceType.SqlServer, ADOType = false });
             config.DataSourcesClasses.Add(new AssemblyClassDefinition { className = "SqlImpl", type = Mock.Of<IDataSource>().GetType() });
             var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(config);
-            var drivers = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance);
+            var drivers = new SetupDriverService(editor.Object, settings, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
             var service = new SetupRepositoryConnectionCreationService(settings, editor.Object, drivers);
             await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(new("identity_db", "SQLSERVER", "Server=localhost;Database=IdentityDb;Password=" + secret, "driver"), () => Task.CompletedTask, default));
             Assert.Empty(config.DataConnections.Where(x => x.ConnectionName == "identity_db"));
             Assert.Equal("identity_db", (await service.CreateAsync(new("identity_db", "SQLSERVER", connectionString, "driver"), () => Task.CompletedTask, default)).ConnectionName);
-            Assert.Equal("identity_db", (await new SetupRepositoryConnectionSelectionService(settings, editor.Object).SelectAsync("identity_db", () => Task.CompletedTask, default)).ConnectionName);
+            Assert.Equal("identity_db", (await new SetupRepositoryConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), settings, editor.Object).SelectAsync("identity_db", () => Task.CompletedTask, default)).ConnectionName);
         }
         var disk = await File.ReadAllTextAsync(Path.Combine(configPath, "DataConnections.json"));
         Assert.DoesNotContain(secret, disk);
@@ -79,7 +79,7 @@ public sealed class SetupRepositoryConnectionTests
         var reopenedEditor = new Mock<IDMEEditor>(); reopenedEditor.SetupGet(x => x.ConfigEditor).Returns(reopened);
         using var services = new ServiceCollection().AddSingleton(reopenedEditor.Object).BuildServiceProvider();
         var reopenedSettings = new ConfigurationBuilder().AddJsonFile(targetPath).Build();
-        Assert.Equal(connectionString, new BeepRepositoryConnectionSource(reopenedSettings, services).Resolve()!.ConnectionString);
+        Assert.Equal(connectionString, new BeepRepositoryConnectionSource(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), reopenedSettings, services).Resolve()!.ConnectionString);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class SetupRepositoryConnectionTests
         beep.Setup(x => x.SaveDataconnectionsValues()).Callback(() => { if (++saves == 1) throw new IOException("save failed"); });
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(beep.Object);
         var config = new ConfigurationBuilder().Build();
-        var drivers = new SetupDriverService(editor.Object, config, NullLogger<SetupDriverService>.Instance);
+        var drivers = new SetupDriverService(editor.Object, config, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter());
         var creation = new SetupRepositoryConnectionCreationService(config, editor.Object, drivers);
         var request = new SetupRepositoryConnectionCreate("identity_db", "SQLSERVER", "Server=localhost;Database=IdentityDb;Integrated Security=true", "driver");
         Assert.DoesNotContain("not-a-real-secret", (request with { ConnectionString = "Password=not-a-real-secret" }).ToString());
@@ -134,7 +134,7 @@ public sealed class SetupRepositoryConnectionTests
         beep.Setup(x => x.AddDataConnection(It.IsAny<ConnectionProperties>())).Returns((ConnectionProperties value) => { connections.Add(value); return true; });
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(beep.Object);
         var config = new ConfigurationBuilder().Build();
-        var service = new SetupRepositoryConnectionCreationService(config, editor.Object, new SetupDriverService(editor.Object, config, NullLogger<SetupDriverService>.Instance));
+        var service = new SetupRepositoryConnectionCreationService(config, editor.Object, new SetupDriverService(editor.Object, config, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()));
         var request = new SetupRepositoryConnectionCreate("identity_db", "SQLSERVER", "Server=localhost;Database=IdentityDb;Integrated Security=true", "selected");
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(request with { DriverId = "wrong-type" }, () => Task.CompletedTask, default));
@@ -166,8 +166,9 @@ public sealed class SetupRepositoryConnectionTests
         beep.Setup(x => x.AddDataConnection(It.IsAny<ConnectionProperties>())).Returns((ConnectionProperties value) => { beep.Object.DataConnections.Add(value); return true; });
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(beep.Object);
         builder.Services.AddSingleton(editor.Object); builder.Services.AddSingleton(readiness.Object);
+        builder.Services.AddSingleton<TheTechIdeaWeb.Diagnostics.IFailureReporter, Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter>();
         builder.Services.AddScoped<SetupBootstrapAccess>(); builder.Services.AddScoped<SetupRepositoryConnectionSelectionService>();
-        builder.Services.AddSingleton(new SetupDriverService(editor.Object, builder.Configuration, NullLogger<SetupDriverService>.Instance));
+        builder.Services.AddSingleton(new SetupDriverService(editor.Object, builder.Configuration, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()));
         builder.Services.AddScoped<SetupRepositoryConnectionCreationService>();
         builder.Services.AddSingleton<Func<ClaimsPrincipal, string?>>(_ => _ => null);
         builder.Services.AddControllers().AddApplicationPart(typeof(SetupBootstrapRepositoryController).Assembly);
@@ -205,14 +206,14 @@ public sealed class SetupRepositoryConnectionTests
         var beep = new Mock<IConfigEditor>(); beep.SetupGet(x => x.DataConnections).Returns(new List<ConnectionProperties> { connection });
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(beep.Object);
         using var services = new ServiceCollection().AddSingleton(editor.Object).BuildServiceProvider();
-        var selection = new SetupRepositoryConnectionSelectionService(config, editor.Object);
+        var selection = new SetupRepositoryConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), config, editor.Object);
         Assert.Equal("identity_db", Assert.Single(selection.Connections()).ConnectionName);
         await selection.SelectAsync("identity_db", () => Task.CompletedTask, default);
         var saved = await File.ReadAllTextAsync(file);
         Assert.DoesNotContain("not-a-real-secret", saved);
         Assert.DoesNotContain("User ID", saved);
         var reopenedConfig = new ConfigurationBuilder().AddJsonFile(file).Build();
-        var reopened = new BeepRepositoryConnectionSource(reopenedConfig, services);
+        var reopened = new BeepRepositoryConnectionSource(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), reopenedConfig, services);
         Assert.Equal(connection.ConnectionString, reopened.Resolve()!.ConnectionString);
         connection.ConnectionString = "Server=localhost;Database=OtherDb;User ID=user;Password=not-a-real-secret";
         Assert.Null(reopened.Resolve());
@@ -230,7 +231,7 @@ public sealed class SetupRepositoryConnectionTests
         var beep = new Mock<IConfigEditor>(); beep.SetupGet(x => x.DataConnections).Returns(new List<ConnectionProperties> { connection });
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(x => x.ConfigEditor).Returns(beep.Object);
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Beep:ConfigPath"] = folder }).Build();
-        var selection = new SetupRepositoryConnectionSelectionService(config, editor.Object);
+        var selection = new SetupRepositoryConnectionSelectionService(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), config, editor.Object);
         var calls = 0;
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => selection.SelectAsync("identity_db", () => ++calls == revokeAt ? throw new UnauthorizedAccessException() : Task.CompletedTask, default));
         Assert.False(File.Exists(Path.Combine(folder, "identity-repository-target.json")));

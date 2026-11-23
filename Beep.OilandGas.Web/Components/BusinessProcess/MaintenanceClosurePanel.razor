@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Models.Data.Company
@@ -85,7 +86,7 @@
     private CompanyWorkOrderCompletionQuery? RecordedQuery=>State.Receipt?.Command.Reference().Query ?? State.Status?.Recorded?.Query;
     private CompanyWorkOrderCompletionQuery? ReadableQuery
     {
-        get{if(Query is not null)return Query;if(string.IsNullOrWhiteSpace(_process) || string.IsNullOrWhiteSpace(_submission))return null;try{var query=CurrentQuery();query.Require();return query;}catch(ArgumentException){return null;}}
+        get{if(Query is not null)return Query;if(string.IsNullOrWhiteSpace(_process) || string.IsNullOrWhiteSpace(_submission))return null;try{var query=CurrentQuery();query.Require();return query;}catch(ArgumentException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "MaintenanceClosurePanel.operation", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); return null;}}
     }
     private void InputsChanged(){_generation++;State.Attach(null);_confirm=false;_error=null;}
     private async Task Authority(bool approve=true,bool discover=false)

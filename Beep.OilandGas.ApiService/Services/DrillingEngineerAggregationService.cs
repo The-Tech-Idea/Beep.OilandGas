@@ -18,14 +18,14 @@ using PpdmEntities= Beep.OilandGas.PPDM39.Models;
 namespace Beep.OilandGas.ApiService.Services
 {
     /// <summary>
-    /// Aggregates drilling engineering KPIs: well counts, the drilling programmes' AFE budget against their reported cost,
+    /// Aggregates drilling engineering KPIs: well counts, the drilling programmes' AFE budget,
     /// and the non-productive time reported this month.
     /// </summary>
     /// <remarks>
     /// Each figure is read from the record that holds it and is null when nothing records it (2026-10-10). It had answered
     /// AFE budget, spend and NPT as 0, which nothing computed, and every well as producing. The AFE figures and NPT come from
-    /// the drilling programme (DRILLING_PROGRAM: its AFE cost) and its daily drilling reports (DRILLING_DAILY_REPORT: daily
-    /// and cumulative cost, NPT hours).
+    /// the drilling programme (DRILLING_PROGRAM: its AFE cost) and its daily drilling report periods (NPT hours).
+    /// Spend remains unavailable because those reports contain no cost ledger.
     /// </remarks>
     public class DrillingEngineerAggregationService
     {
@@ -80,20 +80,20 @@ namespace Beep.OilandGas.ApiService.Services
                 return kpi;
             }
 
-            // A daily report carries no field: it belongs to the field of the programme it reports on.
+            // Only reports of the selected programmes contribute to their NPT.
             var programIds = programs.Select(p => p.PROGRAM_ID).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var reports = (await GetRepo<DRILLING_DAILY_REPORT>("DRILLING_DAILY_REPORT").GetAsync(ActiveIn(null, null)))
                 .OfType<DRILLING_DAILY_REPORT>()
                 .Where(r => !string.IsNullOrWhiteSpace(r.PROGRAM_ID) && programIds.Contains(r.PROGRAM_ID))
                 .ToLookup(r => r.PROGRAM_ID, StringComparer.OrdinalIgnoreCase);
 
-            ApplyAfeFigures(kpi, programs, reports);
+            ApplyAfeFigures(kpi, programs);
 
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var nptThisMonth = reports
                 .SelectMany(programReports => programReports)
-                .Where(r => r.REPORT_DATE >= monthStart && r.NPT_HOURS.HasValue)
+                .Where(r => r.PERIOD_END_UTC >= monthStart && r.NPT_HOURS.HasValue)
                 .Select(r => r.NPT_HOURS!.Value)
                 .ToList();
             kpi.NptHours = nptThisMonth.Count == 0 ? null : nptThisMonth.Sum();
@@ -101,14 +101,12 @@ namespace Beep.OilandGas.ApiService.Services
         }
 
         /// <summary>
-        /// The AFE budget is the AFE cost of the programmes that carry one; the spend is those programmes' reported cost to
-        /// date. Both stay null when no programme records them, and when the programmes' AFE currencies differ, since
-        /// amounts in different currencies do not add up.
+        /// The budget sums programmes with recorded AFE costs in a single currency.
+        /// Different currencies cannot be summed; spend requires a separate cost owner.
         /// </summary>
         private static void ApplyAfeFigures(
             DrillingEngineerKpi kpi,
-            List<DRILLING_PROGRAM> programs,
-            ILookup<string, DRILLING_DAILY_REPORT> reports)
+            List<DRILLING_PROGRAM> programs)
         {
             var budgeted = programs.Where(p => p.AFE_COST.HasValue).ToList();
             if (budgeted.Count == 0)
@@ -129,35 +127,13 @@ namespace Beep.OilandGas.ApiService.Services
             kpi.AfeCurrency = currencies.SingleOrDefault();
             kpi.AfeBudget = budgeted.Sum(p => p.AFE_COST!.Value);
 
-            var spent = budgeted
-                .Select(p => CostToDate(reports[p.PROGRAM_ID]))
-                .Where(cost => cost.HasValue)
-                .Select(cost => cost!.Value)
-                .ToList();
-            kpi.AfeSpent = spent.Count == 0 ? null : spent.Sum();
+            // Observed daily reports carry no cost ledger. Spend stays unavailable until a cost owner supplies it.
+            kpi.AfeSpent = null;
         }
 
         /// <summary>
-        /// A programme's reported cost to date: its latest report's cumulative cost, else the sum of its daily costs; null
-        /// when its reports record neither.
+        /// Builds an active-row filter, optionally scoped to a field.
         /// </summary>
-        private static decimal? CostToDate(IEnumerable<DRILLING_DAILY_REPORT> programReports)
-        {
-            var reports = programReports.ToList();
-            var latestCumulative = reports
-                .Where(r => r.CUMULATIVE_COST.HasValue)
-                .OrderByDescending(r => r.REPORT_DATE ?? DateTime.MinValue)
-                .ThenByDescending(r => r.REPORT_NUMBER)
-                .FirstOrDefault();
-            if (latestCumulative is not null)
-            {
-                return latestCumulative.CUMULATIVE_COST;
-            }
-
-            var daily = reports.Where(r => r.DAILY_COST.HasValue).Select(r => r.DAILY_COST!.Value).ToList();
-            return daily.Count == 0 ? null : daily.Sum();
-        }
-
         private static List<AppFilter> ActiveIn(string? fieldColumn, string? fieldId)
         {
             var filters = new List<AppFilter> { new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" } };

@@ -122,7 +122,7 @@ public sealed class LandingWorkspaceRefreshTests
     {
         ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddLogging(); ui.Services.AddMudServices();
         ui.Services.AddSingleton<AuthenticationStateProvider>(auth); ui.Services.AddSingleton<IPersonaContextService>(personas);
-        ui.Services.AddSingleton(company); ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(company); ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.AddSingleton(new ApiClient(new HttpClient(setup ?? new SetupStatusHandler()) { BaseAddress = new("https://api.test") }, Mock.Of<IFailureReporter>(), company));
         ui.Services.AddSingleton(new CompanySelectionService(access ?? Mock.Of<ICompanyAccessClient>(), auth, company, user => user.FindFirst("party_id")?.Value));
         ui.ComponentFactories.AddStub<CompanySelector>(); ui.ComponentFactories.AddStub<PersonaSelector>();

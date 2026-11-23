@@ -22,7 +22,7 @@ public sealed class LeasePortfolioUiTests
             .Returns((Dictionary<string, string> filter, CancellationToken _) => Task.FromResult(new List<LeaseSummary> { Row(filter["FieldId"]) }));
         return api;
     }
-    private static LeasePortfolioState State(CompanyClientContext company, Mock<ILeaseServiceClient> api) => new(company, api.Object, (_, _, message) => message);
+    private static LeasePortfolioState State(CompanyClientContext company, Mock<ILeaseServiceClient> api) => new(company, api.Object, Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
     [Fact]
     public async Task Clear_selection_removes_retrieval_time_records_and_late_results()
     {

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Data.Production
 @using Beep.OilandGas.Models.Data.Company
@@ -79,7 +80,7 @@
             _wellIds = string.Join("\n", sample.WellIds);
             _sampleNotice = sample.WellIds.Length == 0 ? "No wells were returned in this visible sample." : $"{sample.WellIds.Length} wells selected from the visible sample. Review or edit the list before continuing.";
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Visible well sample was not confirmed"); _error = "The visible well sample could not be confirmed. Check company access and try again."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "DataQuality.FindWells", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Visible well sample was not confirmed"); _error = "The visible well sample could not be confirmed. Check company access and try again."; } }
         finally { if (!_disposed && generation == Interlocked.Read(ref _generation) && snapshot == Company.Snapshot) _busy = false; }
     }
     private async Task Review()
@@ -103,7 +104,7 @@
                 throw new InvalidOperationException("The well reviews were not confirmed for the selected company.");
             _review = review;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Well data review was not confirmed"); _error = "Well data could not be confirmed. Check your company, access and well identifier, then try again."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "DataQuality.Review", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Well data review was not confirmed"); _error = "Well data could not be confirmed. Check your company, access and well identifier, then try again."; } }
         finally { if (Current()) _busy = false; }
     }
     public void Dispose() { _disposed = true; Interlocked.Increment(ref _generation); Company.Changed -= CompanyChanged; }

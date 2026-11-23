@@ -21,7 +21,7 @@ public sealed class PurchaseOrderSourceRenderingTests
     }
     private static async Task<string> Render(string mode)
     {
-        using var company=new CompanyClientContext();Assert.True(company.TrySelect(company.Clear(),"buyer",new(new("tenant","company"),[],[])));using var state=new PurchaseOrderWorkspaceState(company);
+        using var company=new CompanyClientContext();Assert.True(company.TrySelect(company.Clear(),"buyer",new(new("tenant","company"),[],[])));using var state=new PurchaseOrderWorkspaceState(TestFailures.Calls(new RecordingFailureReporter()), company);
         var order=new PURCHASE_ORDER{PURCHASE_ORDER_ID="order/a?b",OWNER_TENANT_ID="tenant",OWNER_COMPANY_BA_ID="company",VENDOR_BA_ID="supplier",ACTIVE_IND="Y",PO_NUMBER="PO-1",STATUS="DRAFT",DESCRIPTION="<script>recorded</script>",TOTAL_AMOUNT=12m};
         if(mode=="measurements")order.CURRENCY_CODE="KWD";
         if(mode is "history" or "measurements")await state.LoadDetailAsync(order.PURCHASE_ORDER_ID,_=>Task.FromResult<PurchaseOrderSourceReview?>(PurchaseOrderSourceReview.Create(new("tenant","company"),"buyer",order,

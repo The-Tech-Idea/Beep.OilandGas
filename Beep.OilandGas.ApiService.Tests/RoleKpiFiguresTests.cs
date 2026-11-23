@@ -1,3 +1,4 @@
+using Beep.OilandGas.DrillingAndConstruction.Models;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.DrillingAndConstruction;
@@ -37,12 +38,14 @@ public class RoleKpiFiguresTests
 
         public Rows In(string table, params object[] rows)
         {
+            foreach (var row in rows) row.GetType().GetProperty("ACTIVE_IND")?.SetValue(row, "Y");
             Source.Setup(s => s.GetEntityAsync(table, It.IsAny<List<AppFilter>>())).ReturnsAsync(rows);
             return this;
         }
 
         public Rows InWhen(string table, Func<List<AppFilter>, bool> when, params object[] rows)
         {
+            foreach (var row in rows) row.GetType().GetProperty("ACTIVE_IND")?.SetValue(row, "Y");
             Source.Setup(s => s.GetEntityAsync(table, It.Is<List<AppFilter>>(filters => when(filters)))).ReturnsAsync(rows);
             return this;
         }
@@ -51,9 +54,30 @@ public class RoleKpiFiguresTests
     private static bool Names(List<AppFilter> filters, string column, string value) =>
         filters.Any(f => f.FieldName == column && f.FilterValue == value);
 
-    private static HSEKPIService KpiService(Rows rows) => new(
-        rows.Editor.Object, new Mock<ICommonColumnHandler>().Object, new Mock<IPPDM39DefaultsRepository>().Object,
-        new Mock<IPPDMMetadataRepository>().Object, Connection, NullLogger<HSEKPIService>.Instance);
+    private static HSEKPIService KpiService(Rows rows)
+    {
+        var selection = new Mock<Beep.OilandGas.Models.Data.Field.ICompanyFieldSelectionService>();
+        selection.Setup(service => service.GetCurrentFieldSelectionAsync()).ReturnsAsync(new FieldResponse
+        {
+            SelectionAvailable = true, FieldId = "FIELD-7",
+            SelectionContext = new(new("tenant", "company"), new(Connection, "binding"), "actor", "review", "FIELD-7")
+        });
+        var policy = new Mock<Beep.OilandGas.PPDM39.Core.Security.IPPDMRowAccessPolicy>();
+        policy.Setup(service => service.GetReadConjunctionsAsync(It.IsAny<Type>(), It.IsAny<string>()))
+            .ReturnsAsync(new IReadOnlyList<AppFilter>[] { new[] { new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" } } });
+        policy.Setup(service => service.GetReadConstraintsAsync(It.IsAny<Type>(), It.IsAny<string>())).ReturnsAsync(Array.Empty<AppFilter>());
+        var metadata = new Mock<IPPDMMetadataRepository>();
+        metadata.Setup(service => service.GetPrimaryKeyColumnsAsync(It.IsAny<string>())).ReturnsAsync((string table) => table switch
+        {
+            "HSE_INCIDENT" => new[] { "INCIDENT_ID" },
+            "HSE_INCIDENT_DETAIL" => new[] { "INCIDENT_ID", "DETAIL_OBS_NO" },
+            "HSE_INCIDENT_RESPONSE" => new[] { "INCIDENT_ID", "RESPONSE_OBS_NO" },
+            "HSE_INCIDENT_COMPONENT" => new[] { "INCIDENT_ID", "COMPONENT_OBS_NO" },
+            _ => throw new InvalidOperationException("Unexpected HSE KPI table.")
+        });
+        return new(rows.Editor.Object, Mock.Of<ICommonColumnHandler>(), Mock.Of<IPPDM39DefaultsRepository>(),
+            metadata.Object, selection.Object, policy.Object, NullLogger<HSEKPIService>.Instance);
+    }
 
     private static Rows ThreeIncidents() => new Rows()
         .In("HSE_INCIDENT",
@@ -104,7 +128,7 @@ public class RoleKpiFiguresTests
         new Mock<IPPDMMetadataRepository>().Object, Connection);
 
     [Fact]
-    public async Task DrillingKpi_CountsProducingWellsByStatus_AndReadsAfeAndNptFromTheProgrammesAndTheirReports()
+    public async Task DrillingKpi_ReadsProgrammeBudgetsAndPeriodNpt_WithoutInventingReportCosts()
     {
         var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var rows = new Rows()
@@ -114,20 +138,20 @@ public class RoleKpiFiguresTests
                 new Ppdm.WELL { UWI = "W3", CURRENT_STATUS = "DRILLING" })
             .In("DRILLING_PROGRAM",
                 new DRILLING_PROGRAM { PROGRAM_ID = "P1", AFE_COST = 1_000_000m, AFE_CURRENCY = "USD" },
-                // No AFE: neither its budget nor its spend is added to the AFE figures.
+                // A programme without an AFE contributes no budget.
                 new DRILLING_PROGRAM { PROGRAM_ID = "P2" })
             .In("DRILLING_DAILY_REPORT",
-                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P1", REPORT_NUMBER = 1, REPORT_DATE = monthStart, DAILY_COST = 100_000m, CUMULATIVE_COST = 100_000m, NPT_HOURS = 3m },
-                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P1", REPORT_NUMBER = 2, REPORT_DATE = monthStart.AddHours(24), DAILY_COST = 160_000m, CUMULATIVE_COST = 260_000m, NPT_HOURS = 2m },
-                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P1", REPORT_NUMBER = 0, REPORT_DATE = monthStart.AddDays(-1), NPT_HOURS = 10m },
-                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P2", REPORT_NUMBER = 1, REPORT_DATE = monthStart, DAILY_COST = 50_000m, NPT_HOURS = 1m });
+                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P1", REPORT_NUMBER = 1, PERIOD_END_UTC = monthStart, NPT_HOURS = 3m },
+                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P1", REPORT_NUMBER = 2, PERIOD_END_UTC = monthStart.AddHours(24), NPT_HOURS = 2m },
+                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P1", REPORT_NUMBER = 0, PERIOD_END_UTC = monthStart.AddDays(-1), NPT_HOURS = 10m },
+                new DRILLING_DAILY_REPORT { PROGRAM_ID = "P2", REPORT_NUMBER = 1, PERIOD_END_UTC = monthStart, NPT_HOURS = 1m });
 
         var kpi = await DrillingService(rows).GetKpiAsync();
 
         Assert.Equal(3, kpi.TotalWells);
         Assert.Equal(1, kpi.ProducingWells);
         Assert.Equal(1_000_000m, kpi.AfeBudget);
-        Assert.Equal(260_000m, kpi.AfeSpent);
+        Assert.Null(kpi.AfeSpent);
         Assert.Equal("USD", kpi.AfeCurrency);
         // This month's reports only: 3 + 2 for P1 and 1 for P2; last month's 10 hours are not this month's.
         Assert.Equal(6m, kpi.NptHours);

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @namespace Beep.OilandGas.Web.Components.Workflow
@@ -192,7 +193,7 @@
     private async Task PeriodAction(Func<Task> action,bool configure=true)
     {
         var epoch=_epoch;_error=null;try{await Access();if(configure && !_canConfigure)throw new UnauthorizedAccessException();await action();if(!_disposed && epoch==_epoch)await Access();}
-        catch{if(!_disposed && epoch==_epoch)_error="Period evidence or configuration is unconfirmed. Check the original company/account/book/currency/calendar, explicit dates and management authority. Retain and reconcile any original request.";}
+        catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "CompanyLedgerAccounts.PeriodAction", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Period evidence or configuration is unconfirmed. Check the original company/account/book/currency/calendar, explicit dates and management authority. Retain and reconcile any original request.";}
     }
     private Task ReloadPeriods()=>PeriodAction(async()=>{await PeriodSelection();await _state.LoadPeriodsAsync(_book,_currency,_calendarId,Accounting);},false);
     private Task ReviewPeriodConfiguration()=>PeriodAction(async()=>{await PeriodSelection();await _state.LoadPeriodConfigurationReviewAsync(_book,_currency,_calendarId,Accounting);_periodCode="";_periodReason="";_periodFrom=null;_periodThrough=null;});
@@ -201,52 +202,52 @@
     private Task RecoverPeriod()=>PeriodAction(async()=>{await PeriodSelection();if(_periodRecoveryForm is not null){await _periodRecoveryForm.ValidateAsync();if(!_periodRecoveryForm.IsValid)return;}await _state.RecoverPeriodAsync(_book,_currency,_calendarId,_periodRecoveryId,Accounting);});
     protected override void OnInitialized(){_state=State;_state.AttachOwner(this);_state.Changed+=StateChanged;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
     protected override Task OnInitializedAsync()=>RefreshAccess();
-    private async Task RefreshAccess(){try{await Access();}catch(UnauthorizedAccessException){_authorized=false;_canConfigure=false;}if(!_disposed)await InvokeAsync(StateHasChanged);}
+    private async Task RefreshAccess(){try{await Access();}catch(UnauthorizedAccessException handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "CompanyLedgerAccounts.RefreshAccess", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _authorized=false;_canConfigure=false;}if(!_disposed)await InvokeAsync(StateHasChanged);}
     private void ResetConfiguration(){_number="";_name="";_type="";_normal="";_parent="";_description="";_reason="";_recoveryId="";_mappingKey="";_mappingAccountId="";_mappingReason="";_mappingRecoveryId="";_mappingFrom=null;_mappingThrough=null;}
     private async Task ReviewMappingConfiguration()
     {
         var epoch=_epoch;_error=null;
         try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_mappingForm is not null){await _mappingForm.ValidateAsync();if(!_mappingForm.IsValid)return;}if(_mappingDate is null)return;
             await _state.LoadMappingConfigurationReviewAsync(_book,_currency,DateTime.SpecifyKind(_mappingDate.Value,DateTimeKind.Unspecified),Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
-        catch{if(!_disposed && epoch==_epoch)_error="Mapping creation authority could not be confirmed. Check the original company/account/book/currency/calendar date and ledger management access.";}
+        catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "CompanyLedgerAccounts.ReviewMappingConfiguration", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Mapping creation authority could not be confirmed. Check the original company/account/book/currency/calendar date and ledger management access.";}
     }
     private async Task ConfigureMapping()
     {
         var epoch=_epoch;_error=null;
         try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_mappingConfigureForm is not null){await _mappingConfigureForm.ValidateAsync();if(!_mappingConfigureForm.IsValid)return;}if(_mappingFrom is null)return;
             await _state.ConfigureMappingAsync(_mappingKey,_mappingAccountId,DateTime.SpecifyKind(_mappingFrom.Value,DateTimeKind.Unspecified),_mappingThrough is {} end?DateTime.SpecifyKind(end,DateTimeKind.Unspecified):null,_mappingReason,Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
-        catch{if(!_disposed && epoch==_epoch)_error="Mapping configuration is unconfirmed. Check the reviewed account, explicit effective dates, nonoverlapping history and reason; retain and reconcile any original request.";}
+        catch (System.Exception handledFailureAuto4){ HandledFailures.ReportHandled(handledFailureAuto4, "CompanyLedgerAccounts.ConfigureMapping", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Mapping configuration is unconfirmed. Check the reviewed account, explicit effective dates, nonoverlapping history and reason; retain and reconcile any original request.";}
     }
     private async Task ReconcileMappingConfiguration()
-    {var epoch=_epoch;_error=null;try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();await _state.SubmitMappingConfigurationAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="The original mapping configuration remains unconfirmed. Return to its original company/account/binding and reconcile the retained request.";}}
+    {var epoch=_epoch;_error=null;try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();await _state.SubmitMappingConfigurationAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch (System.Exception handledFailureAuto5){ HandledFailures.ReportHandled(handledFailureAuto5, "CompanyLedgerAccounts.ReconcileMappingConfiguration", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original mapping configuration remains unconfirmed. Return to its original company/account/binding and reconcile the retained request.";}}
     private async Task RecoverMappingConfiguration()
     {
         var epoch=_epoch;_error=null;
         try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_mappingRecoveryForm is not null){await _mappingRecoveryForm.ValidateAsync();if(!_mappingRecoveryForm.IsValid)return;}
             await _state.RecoverMappingConfigurationAsync(_book,_currency,_mappingRecoveryId,Accounting);if(!_disposed && epoch==_epoch)await Access();}
-        catch{if(!_disposed && epoch==_epoch)_error="The original producer's committed mapping request could not be recovered. Check original company/account/book/currency and mapping ID; no new configuration is authorized.";}
+        catch (System.Exception handledFailureAuto6){ HandledFailures.ReportHandled(handledFailureAuto6, "CompanyLedgerAccounts.RecoverMappingConfiguration", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original producer's committed mapping request could not be recovered. Check original company/account/book/currency and mapping ID; no new configuration is authorized.";}
     }
     private async Task ReviewConfiguration()
     {
         var epoch=_epoch;_error=null;
         try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}await _state.LoadConfigurationReviewAsync(_book,_currency,Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
-        catch{if(!_disposed && epoch==_epoch)_error="Account creation authority could not be confirmed. Check the original company, account, book, currency and ledger management access.";}
+        catch (System.Exception handledFailureAuto7){ HandledFailures.ReportHandled(handledFailureAuto7, "CompanyLedgerAccounts.ReviewConfiguration", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Account creation authority could not be confirmed. Check the original company, account, book, currency and ledger management access.";}
     }
     private async Task ConfigureAccount()
     {
         var epoch=_epoch;_error=null;
         try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_configureForm is not null){await _configureForm.ValidateAsync();if(!_configureForm.IsValid)return;}
             await _state.ConfigureAsync(_number,_name,_type,_normal,string.IsNullOrEmpty(_parent)?null:_parent,string.IsNullOrEmpty(_description)?null:_description,_reason,Accounting);if(!_disposed && epoch==_epoch){ResetConfiguration();await Access();}}
-        catch{if(!_disposed && epoch==_epoch)_error="Account configuration is unconfirmed. Check explicit fields and current management authority; retain and reconcile any original request before another account.";}
+        catch (System.Exception handledFailureAuto8){ HandledFailures.ReportHandled(handledFailureAuto8, "CompanyLedgerAccounts.ConfigureAccount", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Account configuration is unconfirmed. Check explicit fields and current management authority; retain and reconcile any original request before another account.";}
     }
     private async Task ReconcileConfiguration()
-    {var epoch=_epoch;_error=null;try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();await _state.SubmitConfigurationAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="The original account configuration remains unconfirmed. Return to its original company/account/binding and reconcile the retained request.";}}
+    {var epoch=_epoch;_error=null;try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();await _state.SubmitConfigurationAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch (System.Exception handledFailureAuto9){ HandledFailures.ReportHandled(handledFailureAuto9, "CompanyLedgerAccounts.ReconcileConfiguration", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original account configuration remains unconfirmed. Return to its original company/account/binding and reconcile the retained request.";}}
     private async Task RecoverConfiguration()
     {
         var epoch=_epoch;_error=null;
         try{await Access();if(!_canConfigure)throw new UnauthorizedAccessException();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}if(_recoveryForm is not null){await _recoveryForm.ValidateAsync();if(!_recoveryForm.IsValid)return;}
             await _state.RecoverConfigurationAsync(_book,_currency,_recoveryId,Accounting);if(!_disposed && epoch==_epoch)await Access();}
-        catch{if(!_disposed && epoch==_epoch)_error="The original producer's committed configuration request could not be recovered. Check original company/account/book/currency and account ID; no new configuration is authorized.";}
+        catch (System.Exception handledFailureAuto10){ HandledFailures.ReportHandled(handledFailureAuto10, "CompanyLedgerAccounts.RecoverConfiguration", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original producer's committed configuration request could not be recovered. Check original company/account/book/currency and account ID; no new configuration is authorized.";}
     }
     private void BookChanged(string value){_book=value;_state.Invalidate();_error=null;}
     private void CurrencyChanged(string value){_currency=value;_state.Invalidate();_error=null;}
@@ -263,7 +264,7 @@
             var date=DateTime.SpecifyKind(_mappingDate.Value,DateTimeKind.Unspecified);
             await _state.LoadMappingsAsync(_book,_currency,date,Accounting);if(!_disposed && epoch==_epoch)await Access();
         }
-        catch{_state.Invalidate();if(!_disposed && epoch==_epoch)_error="Company mapping evidence could not be confirmed. Check current company/account access, recorded book, currency and company calendar date, then review again.";}
+        catch (System.Exception handledFailureAuto11){ HandledFailures.ReportHandled(handledFailureAuto11, "CompanyLedgerAccounts.ReloadMappings", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _state.Invalidate();if(!_disposed && epoch==_epoch)_error="Company mapping evidence could not be confirmed. Check current company/account access, recorded book, currency and company calendar date, then review again.";}
     }
     private async Task Access()
     {
@@ -281,7 +282,7 @@
             await Access();if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}
             await _state.LoadAsync(_book,_currency,Accounting);if(!_disposed && epoch==_epoch)await Access();
         }
-        catch{_state.Invalidate();if(!_disposed && epoch==_epoch)_error="Company ledger configuration could not be confirmed. Check current company/account access, the recorded book and currency, then review again.";}
+        catch (System.Exception handledFailureAuto12){ HandledFailures.ReportHandled(handledFailureAuto12, "CompanyLedgerAccounts.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _state.Invalidate();if(!_disposed && epoch==_epoch)_error="Company ledger configuration could not be confirmed. Check current company/account access, the recorded book and currency, then review again.";}
     }
     private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void ContextChanged(){++_epoch;_authorized=false;_canConfigure=false;_error=null;_book="";_currency="";_mappingDate=null;_calendarId="";_periodCode="";_periodReason="";_periodRecoveryId="";_periodFrom=null;_periodThrough=null;ResetConfiguration();if(!_disposed)_=RefreshAccess();}

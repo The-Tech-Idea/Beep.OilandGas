@@ -133,7 +133,7 @@
     private DateTime? _firstProduction,_lifeEnd;
     private decimal? _cost;
     private bool _disposed;
-    protected override void OnInitialized(){_state=new(Company,Fields,Development,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Fields,Development,Journal,Calls);_state.Changed+=Changed;}
     // Protected browser storage is available after interactive rendering.
     protected override async Task OnAfterRenderAsync(bool firstRender){if(firstRender){await Reload();if(!_disposed)StateHasChanged();}}
     private async Task Reload(){ClearInputs();await _state!.LoadAsync();}

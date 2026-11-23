@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @page "/landing"
@@ -190,8 +191,8 @@
                         else Nav.NavigateTo(route);
                     }
                 }
-                catch (OperationCanceledException)
-                { if (!_disposed && !_reloadRequested) _error = "The account or company changed. Retry workspace settings."; }
+                catch (OperationCanceledException handledFailureAuto1)
+                { HandledFailures.ReportHandled(handledFailureAuto1, "Landing.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (!_disposed && !_reloadRequested) _error = "The account or company changed. Retry workspace settings."; }
                 catch (Exception ex)
                 { if (!_disposed && !_reloadRequested) _error = Calls.Explain(ex, "loading company workspace settings", "Workspace settings could not be loaded"); }
             } while (!_disposed && _reloadRequested);

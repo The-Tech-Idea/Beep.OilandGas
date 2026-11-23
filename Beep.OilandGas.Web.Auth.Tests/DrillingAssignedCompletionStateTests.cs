@@ -41,7 +41,7 @@ public sealed class DrillingAssignedCompletionStateTests
             Personas.Setup(p => p.EnsureLoadedAsync()).Returns(Task.CompletedTask); Personas.SetupGet(p => p.CurrentProfile).Returns(new AppUserPersona { UserId = scope.ActorUserId, PersonaCode = Packet.PersonaCode }); Personas.SetupGet(p => p.CurrentPersona).Returns(new AppPersona { Code = Packet.PersonaCode });
             Client.Setup(c => c.GetAssignedExecutionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(Packet);
             Client.Setup(c => c.GetDailyReportPageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(() => Page);
-            State = new(Company, Personas.Object, Client.Object, (_, _, message) => message); await State.LoadAsync(Packet.InstanceId);
+            State = new(Company, Personas.Object, Client.Object, TestFailures.Calls(new RecordingFailureReporter())); await State.LoadAsync(Packet.InstanceId);
         }
         public void Dispose() { State?.Dispose(); Company.Dispose(); }
     }
@@ -78,7 +78,7 @@ public sealed class DrillingAssignedCompletionStateTests
     public async Task ActualReceiverScreenLoadsReportedTestsAndKeepsOngoingResponsibilityExplicit()
     {
         using var f = new Fixture(); await f.Prepare(); using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices();
-        ui.Services.AddSingleton(f.Company); ui.Services.AddSingleton(f.Personas.Object); ui.Services.AddSingleton(f.Client.Object); ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Company); ui.Services.AddSingleton(f.Personas.Object); ui.Services.AddSingleton(f.Client.Object); ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/assigned?processId=" + Uri.EscapeDataString(f.Packet.InstanceId));
         var page = ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingExecutionAssigned>(); page.WaitForAssertion(() => Assert.Contains("Your current reporting responsibility", page.Markup));
         await page.FindAll("button").Single(button => button.TextContent == "Load observed progress and completion evidence").ClickAsync(new MouseEventArgs());

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Models.Data.Company
@@ -94,7 +95,7 @@
         if(_inspectionPermit!=Permit){_inspectionPermit=Permit;_inspectionVersion++;_submissionInspections=null;}
         State.Attach(Permit);var values=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
         if(values.TryGetValue("workStart",out var id) && id.Count==1 && Guid.TryParse(id[0],out var saved))_reference=saved.ToString("D");
-        try{await Authority(false);_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+        try{await Authority(false);_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){ HandledFailures.ReportHandled(error, "WorkOrderExecutionStartPanel.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _authorized=false;}
     }
     private async Task Authority(bool inventory)
     {

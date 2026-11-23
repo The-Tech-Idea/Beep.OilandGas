@@ -31,12 +31,16 @@ public static class WorkflowTaskProcessAdmission
         }
         catch(Exception invalid) when(invalid is System.Text.Json.JsonException or KeyNotFoundException){throw new InvalidOperationException("The recorded task ownership is malformed.",invalid);}
     }
-    public static bool Matches(UnifiedTask task, ProcessInstance? process, string actor)
+    public static bool Matches(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, UnifiedTask task, ProcessInstance? process, string actor)
     {
         if(process is not null && (process.EntityType=="DRILLING_DAILY_REPORT" || process.InstanceId.StartsWith(DrillingCompletionReviewStart.InstancePrefix,StringComparison.Ordinal) || process.ProcessData?.Data?.ContainsKey(DrillingCompletionReviewStart.PayloadKey)==true))
         {
             try{DrillingCompletionReviewStart.FromPayload(System.Text.Json.JsonSerializer.Serialize(process.ProcessData),process.InstanceId,process.FieldId,process.EntityId);}
-            catch(Exception invalid) when(invalid is InvalidOperationException or System.Text.Json.JsonException or KeyNotFoundException){return false;}
+            catch(Exception invalid) when(invalid is InvalidOperationException or System.Text.Json.JsonException or KeyNotFoundException)
+            {
+                failures.ReportHandled(invalid, "checking the recorded drilling completion task", "the process payload cannot establish ownership; the task is denied");
+                return false;
+            }
         }
         if (process is null || (process.InstanceId.StartsWith(DrillingCompletionReviewStart.InstancePrefix,StringComparison.Ordinal) || process.ProcessData?.Data?.ContainsKey(DrillingCompletionReviewStart.PayloadKey)==true) && process.EntityType!="DRILLING_DAILY_REPORT" || process.InstanceId != task.WorkflowName || process.EntityId != task.EntityId || process.EntityType != task.EntityType ||
             task.Status != "PENDING" || string.IsNullOrWhiteSpace(task.AssignedRole) || !WorkflowTaskRoute.Matches(task) ||

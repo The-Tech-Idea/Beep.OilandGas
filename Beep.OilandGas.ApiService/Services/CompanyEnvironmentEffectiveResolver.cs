@@ -4,7 +4,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Models;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using TheTechIdea.OilGas.Core;
+using TheTechIdea.OilGas.Wellbore.Data;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -66,10 +66,10 @@ public sealed class CompanyEnvironmentEffectiveResolver(ICompanyEnvironmentStore
         { ReviewStatus = reviewStatus }, environment, mappingOrigins);
     }
 
-    internal static OilGasEnvironment BuildEnvironment(string countryCode, string overrides, SystemSetupConfiguration baseline, SystemSetupConfiguration? country)
+    internal static WellboreEnvironment BuildEnvironment(string countryCode, string overrides, SystemSetupConfiguration baseline, SystemSetupConfiguration? country)
         => BuildEnvironment(countryCode, overrides, baseline, country, out _);
 
-    private static OilGasEnvironment BuildEnvironment(string countryCode, string overrides, SystemSetupConfiguration baseline, SystemSetupConfiguration? country,
+    private static WellboreEnvironment BuildEnvironment(string countryCode, string overrides, SystemSetupConfiguration baseline, SystemSetupConfiguration? country,
         out IReadOnlyDictionary<string, SetupMappingOrigin> mappingOrigins)
     {
         if (!JsonCountryCatalog.BuiltIn.TryGet(countryCode, out var preset))
@@ -88,8 +88,8 @@ public sealed class CompanyEnvironmentEffectiveResolver(ICompanyEnvironmentStore
             merged.Where(p => p.Key.Equals("resources", StringComparison.OrdinalIgnoreCase)).Any(p =>
                 p.Value is not JsonObject resources || resources.Any(r => r.Key.Equals("countryFolders", StringComparison.OrdinalIgnoreCase))))
             throw new InvalidOperationException("Effective settings cannot resolve server files or country folders.");
-        using var scope = OilGasServices.Scope(new OilGasServices { Countries = JsonCountryCatalog.BuiltIn });
-        var environment = OilGasEnvironment.FromJson(merged.ToJsonString(), out var warnings);
+        using var scope = WellboreServices.Scope(new WellboreServices { Countries = JsonCountryCatalog.BuiltIn });
+        var environment = WellboreEnvironment.FromJson(merged.ToJsonString(), out var warnings);
         if (warnings.Count != 0 || environment.Region is null || environment.Units is null ||
             environment.Region.CoordinateSystems is null || environment.Region.Regulators is null ||
             !string.Equals(environment.Region.Country, countryCode, StringComparison.Ordinal) || string.IsNullOrWhiteSpace(environment.Culture))
@@ -99,14 +99,14 @@ public sealed class CompanyEnvironmentEffectiveResolver(ICompanyEnvironmentStore
         return environment;
     }
 
-    private static CompanyEnvironmentPreview Describe(CompanyScope company, string countryCode, OilGasEnvironment environment) =>
+    private static CompanyEnvironmentPreview Describe(CompanyScope company, string countryCode, WellboreEnvironment environment) =>
         new CompanyEnvironmentPreview(company, countryCode, environment.Region.Name ?? countryCode,
             environment.Culture, environment.Units.System, environment.Units.DepthUnit, environment.Units.PressureUnit,
             environment.Units.DiameterUnit, environment.Region.CoordinateSystems.ToArray(), environment.Region.Regulators.ToArray(), ReviewSettings(environment))
             { TimeZoneId = CompanyEnvironmentPreviewer.ConfirmTimeZone(environment), WeightUnit = environment.Units.WeightUnit, ForceUnit = environment.Units.ForceUnit,
               DisplayCulture = environment.Locale.Culture, DateFormat = environment.Locale.DateFormat, DateTimeFormat = environment.Locale.DateTimeFormat, Calendar = environment.Locale.Calendar };
 
-    internal static string[] ReviewSettings(OilGasEnvironment environment)
+    internal static string[] ReviewSettings(WellboreEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(environment);
         return environment.Validate().Concat(CompanyEnvironmentSources.ReviewEnvironment(environment)).Take(64).ToArray();
@@ -162,4 +162,4 @@ public sealed class CompanyEnvironmentEffectiveResolver(ICompanyEnvironmentStore
 
 public sealed record SetupMappingOrigin(string Layer, string Value);
 /// <summary>Request-local OilandGasTools environment; never assign it to a process-wide global.</summary>
-public sealed record ResolvedCompanyEnvironment(CompanyEnvironmentEffectiveReview Review, OilGasEnvironment Environment, IReadOnlyDictionary<string, SetupMappingOrigin> MappingOrigins);
+public sealed record ResolvedCompanyEnvironment(CompanyEnvironmentEffectiveReview Review, WellboreEnvironment Environment, IReadOnlyDictionary<string, SetupMappingOrigin> MappingOrigins);

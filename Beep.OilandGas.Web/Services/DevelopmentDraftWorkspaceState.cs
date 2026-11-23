@@ -20,7 +20,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
     private readonly IFieldSelectionContext fields;
     private readonly IDevelopmentServiceClient client;
     private readonly IDevelopmentDraftIntentStore journal;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private long generation;
     private bool disposed,operation;
     private FIELD_DEVELOPMENT_PLAN[] rows=[];
@@ -59,7 +59,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
     public DateTimeOffset? CheckedAtUtc{get;private set;}
     public event Action? Changed;
     public DevelopmentDraftWorkspaceState(CompanyClientContext company,IFieldSelectionContext fields,IDevelopmentServiceClient client,
-        IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+        IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {
         this.company=company;this.fields=fields;this.client=client;this.journal=journal;this.explain=explain;
         company.Changed+=Invalidate;fields.CurrentFieldChanged+=FieldChanged;
@@ -103,7 +103,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
                         if(reviewRecoveryInput is not null){reviewRecoveryInput.Require();if(reviewRecoveryInput.Source.Context.Company!=context.Company || reviewRecoveryInput.Source.Context.ActorUserId!=context.ActorUserId)throw new InvalidOperationException("The retained original review belongs to another company or account.");}
                         await RequireCurrent(context,captured,true);if(!Current())return;pendingHandoff=reviewRecoveryInput;
                     }
-                    catch(Exception error){var text=explain(error,"loading original development review recovery","Original review recovery input could not be checked. Reload before requesting another review");if(Current()){HandoffError=text;handoffJournalUnavailable=true;}}
+                    catch(Exception error){var text=explain.Explain(error,"loading original development review recovery","Original review recovery input could not be checked. Reload before requesting another review");if(Current()){HandoffError=text;handoffJournalUnavailable=true;}}
                 }
                 return;
             }
@@ -129,7 +129,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
             Context=context;PlanningDatabase=list.PlanningDatabase;FieldName=before.FieldName;rows=list.Plans.ToArray();currencies=options?.Currencies.ToArray() ?? [];
             pending=retained;loadedScope=captured;CheckedAtUtc=list.CheckedAtUtc;Loaded=true;
         }
-        catch(Exception error){var text=explain(error,"loading development drafts","Development drafts could not be confirmed");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"loading development drafts","Development drafts could not be confirmed");if(Current())Error=text;}
         finally{if(Current()){Loading=false;Changed?.Invoke();}}
     }
     public async Task LoadReviewWorkflowsAsync()
@@ -148,7 +148,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
         }
         catch(Exception error)
         {
-            var text=explain(error,"loading configured development review assignments","Development review workflows could not be confirmed");
+            var text=explain.Explain(error,"loading configured development review assignments","Development review workflows could not be confirmed");
             if(Current())WorkflowError=text;
         }
         finally{operation=false;if(!disposed)Changed?.Invoke();}
@@ -164,7 +164,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
             review=DevelopmentPlanDraftReview.Capture(input,Context);
             if(currency is not null && !currencies.Contains(currency,StringComparer.Ordinal))throw new InvalidOperationException("Choose a configured cost currency.");
         }
-        catch(Exception error){review=null;Error=explain(error,"reviewing development draft inputs",error.Message);}
+        catch(Exception error){review=null;Error=explain.Explain(error,"reviewing development draft inputs","The development draft inputs could not be confirmed");}
         Changed?.Invoke();
     }
     public void EditReview(){if(operation || pending is not null)return;review=null;Changed?.Invoke();}
@@ -193,7 +193,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
             await journal.ClearAsync(original);
             if(Current()){pending=null;confirmed=Copy(saved);Confirmation="Development draft saved and confirmed from the recorded source.";rows=rows.Where(row=>row.FDP_ID!=saved.FDP_ID).Append(Copy(saved)).ToArray();}
         }
-        catch(Exception error){var text=explain(error,"saving the original development draft","The draft outcome is unconfirmed. Recover the retained original before saving more work");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"saving the original development draft","The draft outcome is unconfirmed. Recover the retained original before saving more work");if(Current())Error=text;}
         finally{operation=false;if(!disposed)Changed?.Invoke();}
     }
     public async Task RecoverAsync()
@@ -218,7 +218,7 @@ public sealed partial class DevelopmentDraftWorkspaceState : IDisposable
                 Confirmation=result.Plan is null?"The original draft was confirmed absent. You can review a new save.":"The original development draft was found and confirmed. No new draft was written.";
             }
         }
-        catch(Exception error){var text=explain(error,"recovering the original development draft","The original draft outcome is still unconfirmed. Its recovery input was preserved");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"recovering the original development draft","The original draft outcome is still unconfirmed. Its recovery input was preserved");if(Current())Error=text;}
         finally{operation=false;if(!disposed)Changed?.Invoke();}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;fields.CurrentFieldChanged-=FieldChanged;Invalidate();}

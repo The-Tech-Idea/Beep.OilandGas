@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.ProductionAccounting.Models
@@ -86,7 +87,7 @@
                     if(requested!=_requestedPage || size!=_pageSize)continue;
                     result.Require(original.Selection.Scope,original.Selection.UserId,requested,size);_page=CompanyInventorySourceReview.Copy(result);_queue=CompanyInventorySourceReview.Copy(result.Queue);_retrieved=DateTime.UtcNow;
                 }
-                catch{if(!_disposed && generation==_generation && original==Company.Snapshot)_error="The complete saved proposal queue, native history or current company account authority could not be confirmed. Reload access and original process evidence.";}
+                catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "CommercialSavedProposalQueue.LoadPage", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && generation==_generation && original==Company.Snapshot)_error="The complete saved proposal queue, native history or current company account authority could not be confirmed. Reload access and original process evidence.";}
             }while(_reloadRequested && !_disposed);
         }
         finally{_busy=false;}

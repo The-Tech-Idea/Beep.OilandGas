@@ -28,6 +28,67 @@ namespace Beep.OilandGas.ApiService.Tests;
 
 public class RepositoryRegistrationHttpTests(ITestOutputHelper output)
 {
+    /// <remarks>Blind spot: exercises real Identity storage/authentication/controllers and asset middleware;
+    /// company business endpoints and the full production service graph are checked separately.</remarks>
+    [LocalDbModuleFact]
+    public async Task FirstAdministratorCanReadRepositoryAdministrationWithoutCompanyOrModuleBindings()
+    {
+        var database = $"BeepOilGas_AdminBoundary_{Guid.NewGuid():N}";
+        output.WriteLine($"Retained repository administration database: {database}");
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing" });
+        builder.Logging.ClearProviders();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Repository:Provider"] = "SqlServer",
+            ["Repository:ConnectionString"] = $"Server=(localdb)\\MSSQLLocalDB;Database={database};Integrated Security=true;TrustServerCertificate=true"
+        });
+        builder.Services.AddOilGasRepository(builder.Configuration);
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<RepositoryUserService>();
+        builder.Services.AddScoped<RepositoryRoleAssignmentService>();
+        builder.Services.AddScoped<RepositoryRequestAccount>();
+        builder.Services.AddScoped<RepositoryRoleCatalogService>();
+        builder.Services.AddSingleton<Func<ClaimsPrincipal, string?>>(_ => principal => principal.FindActingUserId());
+        var assets = new Mock<Beep.OilandGas.Models.Core.Interfaces.IAccessControlService>(MockBehavior.Strict);
+        builder.Services.AddSingleton(assets.Object);
+        builder.AddApiIdentity();
+        builder.Services.AddControllers().AddApplicationPart(typeof(RepositoryAccountController).Assembly)
+            .ConfigureApplicationPartManager(parts => parts.FeatureProviders.Add(new AccountControllers()));
+        await using var app = builder.Build();
+        app.UseAuthentication();
+        app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.AssetAccessMiddleware>();
+        app.UseAuthorization();
+        app.MapControllers();
+        await using (var setup = app.Services.CreateAsyncScope())
+            await setup.ServiceProvider.GetRequiredService<RepositoryDbContext>().Database.MigrateAsync();
+        await app.StartAsync();
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+            SetSubject(client, "first");
+            var first = await client.GetFromJsonAsync<RepositoryUserAccess>("/api/auth/repository/me");
+            Assert.Equal(["Administrator"], first!.Roles);
+            Assert.Single((await client.GetFromJsonAsync<List<RepositoryUserSummary>>("/api/identity/users"))!);
+            var catalog = await client.GetFromJsonAsync<List<RepositoryRoleSummary>>("/api/identity/roles");
+            var administrator = Assert.Single(catalog!);
+            Assert.Equal("Administrator", administrator.RoleName);
+            Assert.Equal(["Administrator"], await client.GetFromJsonAsync<List<string>>($"/api/identity/users/{first.UserId}/roles"));
+            using (var personas = await client.GetAsync("/api/personas")) Assert.Equal(HttpStatusCode.OK, personas.StatusCode);
+            SetSubject(client, "second");
+            var second = await client.GetFromJsonAsync<RepositoryUserAccess>("/api/auth/repository/me");
+            Assert.Empty(second!.Roles);
+            using (var denied = await client.GetAsync("/api/identity/users")) Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+            assets.VerifyNoOtherCalls();
+            await using var verify = app.Services.CreateAsyncScope();
+            var db = verify.ServiceProvider.GetRequiredService<RepositoryDbContext>();
+            Assert.Equal(first.UserId, (await db.Bootstrap.SingleAsync()).AdministratorUserId);
+            Assert.Single(await db.UserRoles.ToListAsync());
+            Assert.Empty(await db.ModuleDatabases.ToListAsync());
+        }
+        finally { await app.StopAsync(); }
+    }
+
     [LocalDbModuleFact]
     public async Task FirstSightProvisioningAndUserAdministrationUseLocalDbIdentityOverHttp()
     {

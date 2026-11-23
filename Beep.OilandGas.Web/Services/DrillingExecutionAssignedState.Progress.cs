@@ -31,7 +31,7 @@ public sealed partial class DrillingExecutionAssignedState
         }
         catch (Exception error)
         {
-            var text = explain(error, "loading assigned execution progress and reported completion", "The original observed history and reported completion could not be confirmed");
+            var text = explain.Explain(error, "loading assigned execution progress and reported completion", "The original observed history and reported completion could not be confirmed");
             if (Active()) { progress = null; ProgressError = text; }
         }
         finally { if (Active()) { ProgressBusy = false; Changed?.Invoke(); } }

@@ -13,7 +13,7 @@ public sealed partial class APController
     [HttpGet("{id}/correction-decision-review")]
     public async Task<ActionResult<APInvoiceCorrectionDecisionReview>> ReviewRecordedCorrection(string id,[FromQuery]string expectedInvoiceRevision,[FromServices]AccountingPolicyService policies)
     {
-        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException){return BadRequest();}
+        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
         if(!ProcessDefinitionRevision.IsValid(expectedInvoiceRevision))return BadRequest();
         try
         {
@@ -37,14 +37,14 @@ public sealed partial class APController
             if(initial.Revision!=closing.Revision)throw new InvalidOperationException("Current correction source or contributor evidence changed during independent review.");
             await Guard();return Ok(initial);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
         catch(InvalidOperationException changed)
-        {logger.LogWarning(changed,"Independent corrected-invoice review could not be confirmed.");return Conflict(new{error="Independent correction review is unavailable or changed. Reload the latest recorded correction and complete current invoice, receipt and policy evidence."});}
+        {failures.ReportHandled(changed,"Independent corrected-invoice review could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new{error="Independent correction review is unavailable or changed. Reload the latest recorded correction and complete current invoice, receipt and policy evidence."});}
     }
     [HttpPost("{id}/correction-commands")]
     public async Task<ActionResult<APInvoiceCorrectionResult>> RecordCorrection(string id,[FromBody]APInvoiceCorrectionSubmission submission,[FromServices]AccountingPolicyService policies)
     {
-        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException){return BadRequest();}
+        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
         if(submission?.Command is null || submission.Review?.Current?.Invoice is null)return BadRequest();
         try
         {
@@ -70,15 +70,15 @@ public sealed partial class APController
             await Guard();var result=await service.RecordCorrectionAsync(command,submission.Review,async()=>{await Guard();},Financial);
             await Guard();result.Require(submission);return Ok(result);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
         catch(Exception changed) when(changed is InvalidOperationException or AggregateException)
-        {logger.LogWarning(changed,"Original accountant correction could not be confirmed.");return Conflict(new{error="The original correction is unconfirmed or changed. Retain and reconcile its exact intent, company and account; reload current source and contributor evidence."});}
+        {failures.ReportHandled(changed,"Original accountant correction could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new{error="The original correction is unconfirmed or changed. Retain and reconcile its exact intent, company and account; reload current source and contributor evidence."});}
     }
     [HttpPost("{id}/correction-review")]
     public async Task<ActionResult<APInvoiceCorrectionReview>> ReviewCorrection(string id,[FromBody]APInvoiceCorrectionDraft draft,[FromServices]AccountingPolicyService policies)
     {
-        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException){return BadRequest();}
+        try{id=RecordedSourceRouteIds.Read(Request,nameof(id));}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company accounting route","request rejected");return BadRequest();}
         if(draft is null)return BadRequest();
         try
         {
@@ -103,8 +103,8 @@ public sealed partial class APController
             if(initial.Revision!=closing.Revision)throw new InvalidOperationException("Current correction source, controller request or contributor evidence changed during review.");
             await Guard();return Ok(initial);
         }
-        catch(UnauthorizedAccessException){return Forbid();}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company accounting request","request forbidden");return Forbid();}
         catch(InvalidOperationException changed)
-        {logger.LogWarning(changed,"Accountant invoice correction review could not be confirmed.");return Conflict(new{error="Correction review is unavailable or changed. Reload the recorded controller request and complete current invoice, receipt and policy evidence; provide exact line edits and totals."});}
+        {failures.ReportHandled(changed,"Accountant invoice correction review could not be confirmed.","original evidence or transaction outcome unconfirmed; request refused");return Conflict(new{error="Correction review is unavailable or changed. Reload the recorded controller request and complete current invoice, receipt and policy evidence; provide exact line edits and totals."});}
     }
 }

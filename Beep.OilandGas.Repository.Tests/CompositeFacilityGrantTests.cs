@@ -203,7 +203,7 @@ public sealed class CompositeFacilityGrantTests
         Assert.True(company.TrySelect(company.Clear(), "actor", new(f.Gate.Company.Scope, ["Administrator"], [])));
         using var state = new AssetGrantAdministrationState(company, async (_, _) => await service.GetUserAccessibleAssetsAsync("actor", organizationId: "company", includeInherited: false),
             (_, request, _) => service.GrantAssetAccessAsync(request.UserId, request.AssetId, request.AssetType, request.AccessLevel, request.Inherit, request.OrganizationId, request.FacilityType),
-            (_, request, _) => service.RevokeAssetAccessAsync(request.UserId, request.AssetId, request.AssetType, request.FacilityType), (_, _, message) => message,
+            (_, request, _) => service.RevokeAssetAccessAsync(request.UserId, request.AssetId, request.AssetType, request.FacilityType), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             Mock.Of<Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService>());
         state.SelectUser("actor"); await state.LoadAsync(); state.SelectAssetType("FACILITY"); state.AssetId = "plant"; state.FacilityType = "gas"; await state.GrantAsync(); Assert.NotNull(state.Confirmation);
         state.FacilityType = "oil"; state.AccessLevel = "DELETE"; await state.GrantAsync(); Assert.NotNull(state.Confirmation); Assert.Equal(2, state.Grants.Count);
@@ -217,7 +217,7 @@ public sealed class CompositeFacilityGrantTests
         using var company = new CompanyClientContext(); Assert.True(company.TrySelect(company.Clear(), "actor", new(new("tenant", "company"), ["Administrator"], []))); var reads = 0;
         using var state = new AssetGrantAdministrationState(company, (_, _) => Task.FromResult<List<AssetAccess>?>(++reads == 1 ? [] :
             [new() { UserId = "actor", OrganizationId = "company", AssetType = "FACILITY", AssetId = "plant", FacilityType = "oil", AccessLevel = "READ", Inherit = false, Active = true }]),
-            (_, request, _) => { Assert.Equal("gas", request.FacilityType); return Task.FromResult(true); }, (_, _, _) => throw new InvalidOperationException(), (_, _, message) => message,
+            (_, request, _) => { Assert.Equal("gas", request.FacilityType); return Task.FromResult(true); }, (_, _, _) => throw new InvalidOperationException(), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             Mock.Of<Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService>());
         state.SelectUser("actor"); await state.LoadAsync(); state.SelectAssetType("FACILITY"); state.AssetId = "plant"; state.FacilityType = "gas"; await state.GrantAsync();
         Assert.Null(state.Confirmation); Assert.NotNull(state.Error); Assert.False(state.CanEdit); Assert.Empty(state.Grants);
@@ -232,7 +232,7 @@ public sealed class CompositeFacilityGrantTests
         var path = await hierarchy.GetAssetPathAsync("plant", "FACILITY", "company", "gas"); Assert.Equal("gas", Assert.Single(path).FacilityType);
         Assert.True(await hierarchy.ValidateAccessAsync("actor", path)); Assert.Empty(await hierarchy.GetAssetPathAsync("plant", "FACILITY", "company", "oil"));
         using var company = new CompanyClientContext(); Assert.True(company.TrySelect(company.Clear(), "actor", new(f.Gate.Company.Scope, ["Administrator"], [])));
-        using var state = new AssetHierarchyState(company, (_, _) => hierarchy.GetAssetHierarchyForUserAsync("actor", "company", "plant", "FACILITY", "gas"), (_, _, message) => message);
+        using var state = new AssetHierarchyState(company, (_, _) => hierarchy.GetAssetHierarchyForUserAsync("actor", "company", "plant", "FACILITY", "gas"), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(rootAssetId: "plant", rootAssetType: "FACILITY", rootFacilityType: "gas");
         Assert.Equal("gas", state.Hierarchy!.FacilityType); Assert.True(state.CanSelect(state.Hierarchy)); Assert.Null(state.Error);
     }

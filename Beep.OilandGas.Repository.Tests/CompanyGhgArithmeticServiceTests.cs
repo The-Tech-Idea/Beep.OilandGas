@@ -52,7 +52,7 @@ public sealed class CompanyGhgArithmeticServiceTests
         var effective = new CompanyEnvironmentEffectiveResolver(new Companies(environment), records); var catalogs = new CompanyGhgCatalogReader(effective, records);
         var companyReview = await catalogs.ReviewAsync(company, "KW", () => Task.CompletedTask);
         var selection = CompanyGhgSelectionIdentity.Prepare(company, "actor", new("KW", catalog.Revision, companyReview.EffectiveRevision, "reviewed", "", Guid.NewGuid().ToString("N")), null);
-        var status = new CompanyGhgSelectionStatusReader(new Selections(selection), catalogs);
+        var status = new CompanyGhgSelectionStatusReader(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), new Selections(selection), catalogs);
         f.Rows.Add(new PDEN { PDEN_SUBTYPE = "WELL", PDEN_ID = "pden", SOURCE = "source", FIELD_ID = "A", ACTIVE_IND = "Y" });
         f.Rows.Add(new PDEN_VOL_DISPOSITION { PDEN_SUBTYPE = "WELL", PDEN_ID = "pden", PDEN_SOURCE = "source", VOLUME_METHOD = "measured", ACTIVITY_TYPE = "flare", PRODUCT_TYPE = "gas", PERIOD_TYPE = "month", DISPOSITION_OBS_NO = 1, AMENDMENT_SEQ_NO = 0, VOLUME = 12m, VOLUME_UOM = mode == "wrong-unit" ? "other" : "volume", VOLUME_START_DATE = new(2026, 2, 1), VOLUME_END_DATE = new(2026, 2, 28), ACTIVE_IND = "Y" });
         var production = new CompanyFieldGhgProductionReader(f.Gate, fields.Object, access.Object, f.Editor.Object, f.Columns.Object, f.Defaults.Object, f.Metadata.Object);

@@ -21,12 +21,11 @@ public sealed class CompanyAssetGrantUiTests
 {
     private static void Select(CompanyClientContext company, bool administrator = true, string actor = "actor", CompanyScope? scope = null) =>
         Assert.True(company.TrySelect(company.Clear(), actor, new(scope ?? new("tenant", "company"), administrator ? ["Administrator"] : [], [])));
-    private static string Explain(Exception failure, string operation, string sentence) => failure is RefusalException refusal ? refusal.Sentence : sentence + " (reference test)";
     private static AssetAccess Row(string user = "subject", string type = "FIELD", string id = "asset", string organization = "company", string level = "READ", bool inherit = true) =>
         new() { UserId = user, AssetType = type, AssetId = id, OrganizationId = organization, AccessLevel = level, Inherit = inherit, Active = true };
     private static AssetGrantAdministrationState State(CompanyClientContext company, Func<string, CancellationToken, Task<List<AssetAccess>?>> load,
         Func<string, GrantAccessRequest, CancellationToken, Task<bool>>? grant = null, Func<string, RevokeAccessRequest, CancellationToken, Task<bool>>? revoke = null) =>
-        new(company, load, grant ?? ((_, _, _) => throw new InvalidOperationException("Unexpected grant")), revoke ?? ((_, _, _) => throw new InvalidOperationException("Unexpected revoke")), Explain,
+        new(company, load, grant ?? ((_, _, _) => throw new InvalidOperationException("Unexpected grant")), revoke ?? ((_, _, _) => throw new InvalidOperationException("Unexpected revoke")), Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new RecordingFailureReporter()),
             Mock.Of<Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService>());
 
     [Theory]
@@ -275,7 +274,7 @@ public sealed class CompanyAssetGrantUiTests
         {
             reads++; return phase == "load" || phase == "readback" && reads == 2 ? oldRead.Task : Task.FromResult<List<AssetAccess>?>([]);
         }, (_, _, _) => phase == "write" ? oldWrite.Task : Task.FromResult(true), (_, _, _) => throw new InvalidOperationException(),
-            (_, _, _) => throw new ObjectDisposedException("Circuit failure services"), Mock.Of<Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService>());
+            Beep.OilandGas.Web.Auth.Tests.TestFailures.Calls(new Mock<TheTechIdeaWeb.Diagnostics.IFailureReporter>(MockBehavior.Strict).Object), Mock.Of<Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService>());
         state.SelectUser("subject"); Task pending;
         if (phase == "load") pending = state.LoadAsync();
         else { await state.LoadAsync(); state.AssetId = "asset"; pending = state.GrantAsync(); }

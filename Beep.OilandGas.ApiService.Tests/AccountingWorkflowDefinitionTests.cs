@@ -43,7 +43,7 @@ public sealed class AccountingWorkflowDefinitionTests
         var user=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.Role,role)],"test"));
         var instance=new ProcessInstance{ProcessId=definition.ProcessId,CurrentStepId=template.StepId,StartedBy=initiator};
         var step=new ProcessStepInstance{StepId=template.StepId,RequiredRole=template.RequiredRoles[0],ApprovalRequired=template.RequiresApproval};
-        Assert.Equal(allowed,ProcessStepRoleChecks.CanAct(user,actor,instance,step,definition,template));
+        Assert.Equal(allowed,ProcessStepRoleChecks.CanAct(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,actor,instance,step,definition,template));
     }
     [Fact] public void FactoryKeepsTheExistingPreparationApprovalPaymentChainAndReturnsIndependentMutableDefinitions()
     {

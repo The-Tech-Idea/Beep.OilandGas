@@ -13,7 +13,7 @@ public sealed class DrillingReportingReassignmentState : IDisposable
     private readonly IPersonaContextService personas;
     private readonly IDrillingServiceClient client;
     private readonly IDevelopmentDraftIntentStore journal;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private readonly RetainedOriginalFeedback feedback=new();
     private bool disposed,reading,writing,ready;
     private long generation,request;
@@ -46,7 +46,7 @@ public sealed class DrillingReportingReassignmentState : IDisposable
         personas.CurrentProfile.PersonaCode==review.ManagerPersona && personas.CurrentPersona?.Code==review.ManagerPersona && selected.Roles.Contains(review.ManagerRole,StringComparer.Ordinal);
     public bool CanPrepare=>!Busy && ready && WriteRights && ProfileMatches && review is not null && pending is null && receipt is null && BlockedClosureId is null;
     public bool CanRecover=>!Busy && ready && CanView && Pending is not null && pending!.Scope().Company==company.Selection!.Scope && pending.Scope().ActorUserId==company.Selection.UserId;
-    public DrillingReportingReassignmentState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+    public DrillingReportingReassignmentState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;company.Changed+=Invalidate;personas.Changed+=Invalidate;}
     private static T? Copy<T>(T? value) where T:class=>value is null?null:CompanyInventorySourceReview.Copy(value);
     private bool Active((long Version,CompanyClientSelection? Selection) selected,long epoch)=>!disposed && company.Snapshot==selected && generation==epoch;
@@ -73,7 +73,7 @@ public sealed class DrillingReportingReassignmentState : IDisposable
             var found=await client.GetReportingReassignmentCatalogAsync(id);if(!Current())return;
             found.Require(selected.Selection.Scope,selected.Selection.UserId,id);catalog=Copy(found);ready=true;
         }
-        catch(Exception error){var text=explain(error,"loading reporting transfer authority","The current reporting generation and configured receiving teams could not be confirmed");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"loading reporting transfer authority","The current reporting generation and configured receiving teams could not be confirmed");if(Current())Error=text;}
         finally{if(Current()){reading=false;Changed?.Invoke();}}
     }
     public void Select(string? processId,string? role)
@@ -95,7 +95,7 @@ public sealed class DrillingReportingReassignmentState : IDisposable
                 throw new InvalidOperationException("Use the current configured management workspace before confirming a reporting transfer.");
             catalog=source;workflowId=choice.ProcessId;managerRole=choice.ManagerRole;review=Copy(found);ready=true;
         }
-        catch(Exception error){var text=explain(error,"reviewing reporting transfer","The current generation, configured receiving team and management authority could not be confirmed");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"reviewing reporting transfer","The current generation, configured receiving team and management authority could not be confirmed");if(Current())Error=text;}
         finally{if(Current()){reading=false;Changed?.Invoke();}}
     }
     public void Prepare(string? actualUtc,string? reason,bool confirmed)
@@ -106,7 +106,7 @@ public sealed class DrillingReportingReassignmentState : IDisposable
             if(!ExplicitUtcInput.TryParse(actualUtc,out var utc))throw new InvalidOperationException("Enter an explicit actual transfer UTC ending in Z or +00:00.");
             var value=new DrillingReportingReassignment(Copy(review)!,Guid.NewGuid(),new DateTimeOffset(utc),reason?.Trim()??"",confirmed);value.Require();prepared=value;
         }
-        catch(Exception error){Error=explain(error,"preparing reporting transfer","Enter actual UTC after review, a reason and explicit confirmation");}Changed?.Invoke();
+        catch(Exception error){Error=explain.Explain(error,"preparing reporting transfer","Enter actual UTC after review, a reason and explicit confirmation");}Changed?.Invoke();
     }
     public void Cancel(){if(Busy || pending is not null)return;prepared=null;Changed?.Invoke();}
     public Task SubmitAsync()=>Record(false);
@@ -129,7 +129,7 @@ public sealed class DrillingReportingReassignmentState : IDisposable
             if(!Current())return;await journal.ClearReportingReassignmentAsync(original);if(!Current())return;pending=null;feedback.Reset();
             Confirmation=result.Recorded?"The reporting transfer was confirmed. Only the former generation ended; the receiving generation remains ongoing.":"This original reporting transfer was confirmed absent. Reload current responsibility before preparing another.";
         }
-        catch(Exception error){var text=explain(error,recover?"recovering original reporting transfer":"transferring reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering original reporting transfer":"transferring reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;++request;Invalidate();}

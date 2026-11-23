@@ -16,7 +16,7 @@ public sealed partial class DrillingProgramDraftState
     {
         if(!CanPrepareReview)return;Error=null;
         try{var option=routing!.Options.SingleOrDefault(option=>option.ProcessId==processId)??throw new InvalidOperationException("Choose an actual configured program workflow.");var value=new DrillingProgramReviewStart(CompanyInventorySourceReview.Copy(routing.Source),CompanyInventorySourceReview.Copy(option),Guid.NewGuid());value.Require();reviewPrepared=value;}
-        catch(Exception error){Error=explain(error,"preparing original program review","The exact saved source and current independent recipients must be reviewed before submission");}Changed?.Invoke();
+        catch(Exception error){Error=explain.Explain(error,"preparing original program review","The exact saved source and current independent recipients must be reviewed before submission");}Changed?.Invoke();
     }
     public void CancelReview(){if(Busy || reviewPending is not null)return;reviewPrepared=null;Changed?.Invoke();}
     public Task SubmitReviewAsync()=>RecordReview(false);public Task RecoverReviewAsync()=>RecordReview(true);
@@ -31,7 +31,7 @@ public sealed partial class DrillingProgramDraftState
             await journal.ClearProgramReviewAsync(value);if(!Active())return;reviewPending=null;reviewReceipt=CompanyInventorySourceReview.Copy(result);basis=null;drafts=null;routing=null;
             Confirmation=result.Recorded?"The original program review and first independent receiving assignment were confirmed recorded. The program remains DRAFT; no program approval or execution is recorded by submission.":"This original program review was confirmed absent. Reload the current program and routing before preparing another submission.";
         }
-        catch(Exception error){var text=explain(error,recover?"recovering original program review":"submitting original program review","The program assignment outcome is unconfirmed. Its exact original recovery input was preserved");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering original program review":"submitting original program review","The program assignment outcome is unconfirmed. Its exact original recovery input was preserved");if(Active())Error=text;}
         finally{Busy=false;if(!disposed)Changed?.Invoke();}
     }
 }

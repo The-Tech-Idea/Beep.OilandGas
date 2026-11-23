@@ -1,8 +1,8 @@
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.Models.Data.Company;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
-using TheTechIdea.OilGas.Core;
-using TheTechIdea.OilGas.Loaders;
+using TheTechIdea.OilGas.Wellbore.Data;
+using TheTechIdea.OilGas.Wellbore.Loaders;
 
 namespace Beep.OilandGas.ApiService.Services;
 
@@ -42,7 +42,7 @@ public sealed class CompanyEnvironmentSources(CompanyEnvironmentEffectiveResolve
 
     private static bool InvalidCode(string? value) => string.IsNullOrWhiteSpace(value) || value.Length > 512 || value.Any(char.IsControl);
 
-    public static string[] ReviewEnvironment(OilGasEnvironment environment)
+    public static string[] ReviewEnvironment(WellboreEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(environment);
         if (environment.DataSources is null || environment.DataSources.Count > 32)

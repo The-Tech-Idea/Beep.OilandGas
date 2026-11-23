@@ -11,12 +11,13 @@ namespace Beep.OilandGas.Web.Services;
 /// <summary>One page's reviewed original. Browser input is never authorization or a recorded business outcome.</summary>
 public sealed partial class PermitApplicationCommandState:IDisposable
 {
-    private readonly CompanyClientContext company;private readonly IFieldSelectionContext fields;private readonly AuthenticationStateProvider authentication;
+    private readonly CompanyClientContext company;
+    private readonly OilGasCallFailures failures;private readonly IFieldSelectionContext fields;private readonly AuthenticationStateProvider authentication;
     private readonly IPermitServiceClient client;private readonly IPermitApplicationIntentStore originals;
     private readonly RetainedOriginalFeedback feedback=new();private CancellationTokenSource? active;
     private PermitApplicationCommand? pending;private FieldSelectionReview? currentField;private bool readable,disposed,savingOriginal,savingPrior;private long version;
-    public PermitApplicationCommandState(CompanyClientContext company,IFieldSelectionContext fields,AuthenticationStateProvider authentication,IPermitServiceClient client,IPermitApplicationIntentStore originals)
-    {this.company=company;this.fields=fields;this.authentication=authentication;this.client=client;this.originals=originals;company.Changed+=Invalidate;fields.CurrentFieldChanged+=FieldChanged;authentication.AuthenticationStateChanged+=AuthChanged;}
+    public PermitApplicationCommandState(OilGasCallFailures failures, CompanyClientContext company,IFieldSelectionContext fields,AuthenticationStateProvider authentication,IPermitServiceClient client,IPermitApplicationIntentStore originals)
+    {this.company=company;this.failures=failures;this.fields=fields;this.authentication=authentication;this.client=client;this.originals=originals;company.Changed+=Invalidate;fields.CurrentFieldChanged+=FieldChanged;authentication.AuthenticationStateChanged+=AuthChanged;}
     public event Action? Changed;
     public string? ApplicationId{get;private set;}public long Epoch=>version;public bool Ready{get;private set;}public bool Busy{get;private set;}
     public bool CreationMode{get;private set;}private Guid creationIntent;

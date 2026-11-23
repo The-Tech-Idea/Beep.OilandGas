@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -69,7 +70,7 @@
         var query=QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query);
         if(query.TryGetValue("budgetBook",out var book) && book.Count==1)_book=book[0]??"";
         if(query.TryGetValue("budgetIntent",out var ids) && ids.Count==1 && Guid.TryParse(ids[0],out var id))_reference=id.ToString("D");
-        Attach();try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){_authorized=false;}
+        Attach();try{await Authority();_authorized=true;}catch(Exception error) when(error is UnauthorizedAccessException or InvalidOperationException){ HandledFailures.ReportHandled(error, "WorkOrderBudgetPanel.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); _authorized=false;}
     }
     private void Attach()=>State.Attach(string.IsNullOrEmpty(_book)?null:new CompanyWorkOrderBudgetQuery(WorkOrderId,FieldId,_book));
     private async Task Authority()

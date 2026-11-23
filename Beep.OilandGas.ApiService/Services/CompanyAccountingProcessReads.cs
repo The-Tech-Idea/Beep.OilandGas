@@ -11,7 +11,7 @@ using Beep.OilandGas.Models.Processes;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>One company process/native source read boundary for detail and assigned work.</summary>
-public sealed partial class CompanyAccountingProcessReads(ICompanyAccountingProcessReadContext context, IAccessControlService resources,
+public sealed partial class CompanyAccountingProcessReads(TheTechIdeaWeb.Diagnostics.IFailureReporter failures,ICompanyAccountingProcessReadContext context, IAccessControlService resources,
     APInvoiceService invoices, PurchaseOrderService orders, ICompanyAccountingReadContext production, AccountingPolicyService policies,CompanyFieldRevenueReads? commercial=null,CompanySalesInvoiceReads? salesInvoices=null,CompanySalesReceivableReads? salesReceivables=null,JournalEntryService? journals=null)
 {
     public Task<ProcessInstance?> ReadAsync(ClaimsPrincipal user, string id, CompanyScope? expectedCompany = null, string? expectedActor = null)

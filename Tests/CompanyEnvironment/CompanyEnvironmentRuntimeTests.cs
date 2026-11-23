@@ -1,7 +1,7 @@
 using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.PPDM39.DataManagement.Models;
 using Beep.OilandGas.ApiService.Services;
-using TheTechIdea.OilGas.Core;
+using TheTechIdea.OilGas.Wellbore.Data;
 using Xunit;
 
 namespace CompanyEnvironment.Tests;
@@ -28,7 +28,7 @@ public sealed class CompanyEnvironmentRuntimeTests
         public async Task<SystemSetupConfiguration?> ReadAsync(string category, string key, Func<Task> authority)
         { await authority(); return category == "TOOLS" && key == "DEFAULT" ? baseline : null; }
     }
-    private static CompanyEnvironmentRuntime Runtime(Store store) => new(new CompanyEnvironmentEffectiveResolver(store, new Defaults()));
+    private static CompanyEnvironmentRuntime Runtime(Store store) => new(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), new CompanyEnvironmentEffectiveResolver(store, new Defaults()));
 
     private static CompanyEnvironmentConfiguration Saved(CompanyScope company, string country, string json = "{}") =>
         CompanyEnvironmentIdentity.Prepare(company, new(country, json, "", Guid.NewGuid().ToString("N")), CompanyEnvironmentPreviewer.ToolsVersion, null, new Defaults().Revision, null);
@@ -65,19 +65,19 @@ public sealed class CompanyEnvironmentRuntimeTests
     {
         var company=new CompanyScope("tenant","one");var saved=Saved(company,"KW");
         var resolver=new CompanyEnvironmentEffectiveResolver(new Store(saved),new Defaults("{\"locale\":{\"timeZone\":\"not/a-zone\"}}"));
-        await Assert.ThrowsAsync<ArgumentException>(()=>new CompanyEnvironmentRuntime(resolver).VerifyAsync(company,()=>Task.CompletedTask));
+        await Assert.ThrowsAsync<ArgumentException>(()=>new CompanyEnvironmentRuntime(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), resolver).VerifyAsync(company,()=>Task.CompletedTask));
     }
 
     [Fact]
     public async Task DifferentCompaniesVerifyIndependentlyWithoutChangingAmbientServices()
     {
-        using var ambient = OilGasServices.Scope(new OilGasServices(new OilGasEnvironment { Culture = "ambient" }));
+        using var ambient = WellboreServices.Scope(new WellboreServices(new WellboreEnvironment { Culture = "ambient" }));
         var one = new CompanyScope("tenant", "one"); var two = new CompanyScope("tenant", "two");
         var results = await Task.WhenAll(
             Runtime(new Store(Saved(one, "KW"))).VerifyAsync(one, () => Task.CompletedTask),
             Runtime(new Store(Saved(two, "NO"))).VerifyAsync(two, () => Task.CompletedTask));
         Assert.Equal(one, results[0].Company); Assert.Equal(two, results[1].Company);
-        Assert.Equal("ambient", OilGasServices.Current.Environment.Culture);
+        Assert.Equal("ambient", WellboreServices.Current.Environment.Culture);
     }
 
     [Fact]

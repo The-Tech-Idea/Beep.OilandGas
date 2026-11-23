@@ -30,7 +30,7 @@
 @code{
     [Parameter,EditorRequired]public string ProcessId{get;set;}=default!;[Parameter,EditorRequired]public string AfeId{get;set;}=default!;
     private DevelopmentInvestmentState? _state;private string? _process,_afe;private bool disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Calls);_state.Changed+=Changed;}
     protected override async Task OnParametersSetAsync(){if(_process!=ProcessId || _afe!=AfeId){_process=ProcessId;_afe=AfeId;await _state!.LoadAsync(ProcessId,AfeId);}}
     private Task Inspect()=>_state!.InspectAsync();
     private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}

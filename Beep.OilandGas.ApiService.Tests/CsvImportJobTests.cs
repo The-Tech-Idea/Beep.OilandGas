@@ -40,7 +40,7 @@ public class CsvImportJobTests : IDisposable
         database.Open();
         db = new(new DbContextOptionsBuilder<Context>().UseSqlite(database).Options);
         db.Database.EnsureCreated();
-        var configured = new ConnectionProperties { ConnectionName = "selected", DatabaseType = DataSourceType.SqlServer, Host = "server", Database = "assets" };
+        var configured = new ConnectionProperties { ConnectionName = "selected", DatabaseType = TheTechIdea.Beep.Utilities.DataSourceType.SqlServer, Host = "server", Database = "assets" };
         var config = new Mock<IConfigEditor>(); config.SetupGet(editor => editor.DataConnections).Returns([configured]);
         var editor = new Mock<IDMEEditor>(); editor.SetupGet(value => value.ConfigEditor).Returns(config.Object);
         var scope = new CompanyScope("tenant", "company");
@@ -116,7 +116,7 @@ public class CsvImportJobTests : IDisposable
     {
         var executor = new Mock<ICsvImportExecutor>(MockBehavior.Strict);
         var worker = new CsvImportJobRunner(executor.Object, Mock.Of<IProgressTrackingService>(), company);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => worker.RunAsync(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await worker.RunAsync(
             new("id", "WELL", company.Company.Scope, await company.ResolveAsync(), company.Company.UserId, true, new byte[] { 1 }), new CancellationToken(true)));
         executor.VerifyNoOtherCalls();
     }

@@ -95,7 +95,7 @@ public sealed class HseIncidentScreenTests
         var process = new Beep.OilandGas.Models.Processes.ProcessInstance { InstanceId = id, EntityId = "case/شركة?", EntityType = CompanyHseWorkflowStart.EntityType, ProcessId = CompanyHseWorkflowStart.ProcessId, FieldId = "field" };
         var client = new Mock<IRecordedProcessClient>(); client.Setup(x => x.GetInstanceAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(process); client.Setup(x => x.GetHistoryAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         var fields = new Mock<IFieldSelectionContext>(); fields.Setup(x => x.GetCurrentFieldIdAsync()).ReturnsAsync("field");
-        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices(); ui.Services.AddLogging(); ui.Services.AddSingleton(company); ui.Services.AddSingleton(client.Object); ui.Services.AddSingleton(fields.Object); ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui = new TestContext(); ui.JSInterop.Mode = JSRuntimeMode.Loose; ui.Services.AddMudServices(); ui.Services.AddLogging(); ui.Services.AddSingleton(company); ui.Services.AddSingleton(client.Object); ui.Services.AddSingleton(fields.Object); ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.ComponentFactories.AddStub<Beep.OilandGas.Web.Components.FieldSelector>();
         var page = ui.RenderComponent<ProcessInstanceDetail>(p => p.Add(x => x.Id, id));
         page.WaitForAssertion(() => Assert.Contains("Generic state actions are unavailable for an incident", page.Markup));

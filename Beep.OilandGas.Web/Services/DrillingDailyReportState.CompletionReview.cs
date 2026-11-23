@@ -32,7 +32,7 @@ public sealed partial class DrillingDailyReportState
         }
         catch (Exception error)
         {
-            var text = explain(error, "inspecting independent completion routing", "The current completion source, configured approval stages and independent recipients could not be confirmed. Reload before trying again");
+            var text = explain.Explain(error, "inspecting independent completion routing", "The current completion source, configured approval stages and independent recipients could not be confirmed. Reload before trying again");
             if (Current()) { completionRouting = null; CompletionRoutingError = text; }
         }
         finally { if (Current()) { reading = false; Changed?.Invoke(); } }

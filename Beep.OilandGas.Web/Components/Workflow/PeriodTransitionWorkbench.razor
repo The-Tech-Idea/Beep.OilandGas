@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @namespace Beep.OilandGas.Web.Components.Workflow
 @using Beep.OilandGas.Web.Services
@@ -46,7 +47,7 @@
     private long _epoch;
     protected override void OnInitialized(){State.Changed+=Changed;Company.Changed+=Reset;Authentication.AuthenticationStateChanged+=AuthChanged;}
     private async Task Access(bool write){var snapshot=Company.Snapshot;var epoch=_epoch;var user=(await Authentication.GetAuthenticationStateAsync()).User;if(_disposed || epoch!=_epoch || snapshot!=Company.Snapshot || snapshot.Selection is not {} selected || user.Identity?.IsAuthenticated!=true || (user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value)!=selected.UserId || !selected.Roles.Any(user.IsInRole) || !selected.Permissions.Contains("Accounting.View",StringComparer.Ordinal) || write && !selected.Permissions.Contains("Accounting.ManagePeriods",StringComparer.Ordinal))throw new UnauthorizedAccessException();}
-    private async Task Execute(Func<Task> action,bool write=true){var epoch=_epoch;_error=null;try{await Access(write);await action();}catch{if(!_disposed && epoch==_epoch)_error="The original period transition is unconfirmed. Check current company/account/calendar, independent authority, reviewed state and control evidence. Recover the original request before another change.";}}
+    private async Task Execute(Func<Task> action,bool write=true){var epoch=_epoch;_error=null;try{await Access(write);await action();}catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "PeriodTransitionWorkbench.Execute", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original period transition is unconfirmed. Check current company/account/calendar, independent authority, reviewed state and control evidence. Recover the original request before another change.";}}
     private Task Review()=>Execute(()=>State.LoadPeriodTransitionReviewAsync(Book,Currency,Calendar,Accounting));
     private Task Record()=>Execute(async()=>{if(_form is not null){await _form.ValidateAsync();if(!_form.IsValid)return;}await State.ChangePeriodStateAsync(_period,_target,_disposition,_evidence,_reason,Accounting);});
     private Task Retry()=>Execute(()=>State.SubmitPeriodTransitionAsync(Accounting));

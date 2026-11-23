@@ -115,8 +115,9 @@ public sealed class SetupBootstrapAccessTests
         builder.Services.AddAuthentication("counting").AddScheme<AuthenticationSchemeOptions, CountingAuthentication>("counting", _ => { });
         builder.Services.AddAuthorization(options => options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
         builder.Services.AddSingleton<Func<ClaimsPrincipal, string?>>(_ => _ => null);
-        builder.Services.AddSingleton(new SetupDriverService(editor.Object, builder.Configuration, NullLogger<SetupDriverService>.Instance));
+        builder.Services.AddSingleton(new SetupDriverService(editor.Object, builder.Configuration, NullLogger<SetupDriverService>.Instance, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter()));
         builder.Services.AddSingleton(editor.Object);
+        builder.Services.AddSingleton<TheTechIdeaWeb.Diagnostics.IFailureReporter, Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter>();
         builder.Services.AddScoped<SetupRepositoryConnectionSelectionService>();
         builder.Services.AddScoped<SetupBootstrapAccess>();
         builder.Services.AddControllers().AddApplicationPart(typeof(SetupBootstrapDriverController).Assembly);

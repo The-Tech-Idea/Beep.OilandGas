@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -8,12 +8,16 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="bunit" Version="1.40.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <Using Include="Microsoft.AspNetCore.Http" />
     <Using Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
     <ProjectReference Include="../Beep.OilandGas.Web/Beep.OilandGas.Web.csproj" />
+    <ProjectReference Include="../Beep.OilandGas.ApiService/Beep.OilandGas.ApiService.csproj" />
+    <ProjectReference Include="../Beep.OilandGas.Repository/Beep.OilandGas.Repository.csproj" />
+    <Using Include="Beep.OilandGas.Models.Data.Company" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Beep.OilandGas.HSE/Beep.OilandGas.HSE.csproj" />

@@ -34,7 +34,7 @@ public sealed class CompanyEnvironmentPreviewControllerTests
         var store = new Mock<ICompanyEnvironmentStore>(); var shared = new Mock<ISystemSetupRecordReader>();
         shared.Setup(x => x.ReadAsync("TOOLS", "DEFAULT", It.IsAny<Func<Task>>())).ReturnsAsync((SystemSetupConfiguration?)null);
         var effective = new CompanyEnvironmentEffectiveResolver(store.Object, shared.Object);
-        var controller = new CompanyEnvironmentController(context, resolver, store.Object, NullLogger<CompanyEnvironmentController>.Instance)
+        var controller = new CompanyEnvironmentController(context, resolver, store.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("party_id", "actor"), new Claim(ClaimTypes.Role, "Administrator")], "test")) } } };
         var result = await controller.Preview(new(country, json), effective, default);
         if (expected == 403)

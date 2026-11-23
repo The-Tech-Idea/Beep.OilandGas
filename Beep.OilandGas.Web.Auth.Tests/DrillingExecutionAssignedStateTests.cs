@@ -41,7 +41,7 @@ public sealed class DrillingExecutionAssignedStateTests
             if(mode=="unavailable")throw new HttpRequestException();if(mode=="late-company")company.Clear();
             var result=CompanyInventorySourceReview.Copy(packet);if(mode=="actor")company.TrySelect(company.Clear(),"another",new(scope.Company,[packet.AssignedRole],[]));
             if(mode=="company")company.TrySelect(company.Clear(),scope.ActorUserId,new(new("tenant","foreign"),[packet.AssignedRole],[]));return Task.FromResult(result);});
-        using var state=new DrillingExecutionAssignedState(company,personas.Object,client.Object,(_,_,message)=>message);await state.LoadAsync(packet.InstanceId);
+        using var state=new DrillingExecutionAssignedState(company,personas.Object,client.Object,TestFailures.Calls(new RecordingFailureReporter()));await state.LoadAsync(packet.InstanceId);
         if(mode=="current"){Assert.Equal(packet.Revision,state.Current!.Revision);Assert.Equal(scope.ActorUserId,state.Current.Source.Basis.Scope().ActorUserId);}
         else Assert.Null(state.Current);Assert.False(state.Busy);
     }
@@ -51,7 +51,7 @@ public sealed class DrillingExecutionAssignedStateTests
         company.TrySelect(company.Clear(),scope.ActorUserId,new(scope.Company,[packet.AssignedRole],[]));var personas=new Mock<IPersonaContextService>();
         personas.Setup(p=>p.EnsureLoadedAsync()).Returns(Task.CompletedTask);personas.SetupGet(p=>p.CurrentProfile).Returns(new AppUserPersona{UserId=scope.ActorUserId,PersonaCode=packet.PersonaCode});personas.SetupGet(p=>p.CurrentPersona).Returns(new AppPersona{Code=packet.PersonaCode,Name="Reporting site"});
         var client=new Mock<IDrillingServiceClient>();client.Setup(c=>c.GetAssignedExecutionAsync(It.IsAny<string>(),It.IsAny<CancellationToken>())).ReturnsAsync(packet);
-        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(company);ui.Services.AddSingleton(personas.Object);ui.Services.AddSingleton(client.Object);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();ui.Services.AddSingleton(company);ui.Services.AddSingleton(personas.Object);ui.Services.AddSingleton(client.Object);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/drilling/program-execution/assigned?processId="+Uri.EscapeDataString(packet.InstanceId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingExecutionAssigned>();
         page.WaitForAssertion(()=>Assert.Contains("Your current reporting responsibility",page.Markup));Assert.Contains(packet.Responsibility.Root.Reason,page.Markup);

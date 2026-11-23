@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace Beep.OilandGas.ApiService.Controllers.Field;
 [ApiController][Authorize][Route("api/fields/{fieldId}/accounting/revenue-source")]
-public sealed class FieldRevenueSourceController(CompanyFieldRevenueReads reads):ControllerBase
+public sealed class FieldRevenueSourceController(CompanyFieldRevenueReads reads,TheTechIdeaWeb.Diagnostics.IFailureReporter failures):ControllerBase
 {
     [HttpGet("/api/accounting/delivery-intents")]
     public Task<ActionResult<CompanyDeliverySavedWorkPage>> ReadDeliveryPage(int page=1,int size=8)=>Acceptance(()=>reads.ReadDeliverySavedPageAsync(User,page,size));
@@ -29,38 +29,38 @@ public sealed class FieldRevenueSourceController(CompanyFieldRevenueReads reads)
     public Task<ActionResult<RevenueDeliveryAcceptanceRecord>> DecideAcceptance(string fieldId,[FromBody]RevenueDeliveryAcceptanceSubmission submission)=>Acceptance(()=>reads.DecideDeliveryAcceptanceAsync(User,RecordedSourceRouteIds.Read(Request,nameof(fieldId)),submission));
     private async Task<ActionResult<T>> Acceptance<T>(Func<Task<T>> action)
     {
-        try{return Ok(await action());}catch(ArgumentException){return BadRequest();}catch(FormatException){return BadRequest();}catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
-        catch(Exception invalid) when(invalid is InvalidOperationException or JsonException){return Conflict(new{error="Original measured delivery or recorded acceptance could not be confirmed. Retain and reconcile the original intent."});}
+        try{return Ok(await action());}catch(ArgumentException invalid){failures.ReportHandled(invalid,"validating company revenue request","request rejected");return BadRequest();}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company revenue route","request rejected");return BadRequest();}catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(Exception invalid) when(invalid is InvalidOperationException or JsonException){failures.ReportHandled(invalid,"reviewing company revenue delivery acceptance","original evidence or outcome unconfirmed; reconcile before retrying");return Conflict(new{error="Original measured delivery or recorded acceptance could not be confirmed. Retain and reconcile the original intent."});}
     }
     [HttpGet("delivery")]
     public async Task<ActionResult<RevenueDeliverySourceReview>> GetDelivery(string fieldId,DateTime from,DateTime through,string transactionId,string sourceRevision)
     {
-        try{fieldId=RecordedSourceRouteIds.Read(Request,nameof(fieldId));FieldRevenueSourceReview.RequireWindow(fieldId,from,through);}catch(ArgumentException){return BadRequest();}catch(FormatException){return BadRequest();}
+        try{fieldId=RecordedSourceRouteIds.Read(Request,nameof(fieldId));FieldRevenueSourceReview.RequireWindow(fieldId,from,through);}catch(ArgumentException invalid){failures.ReportHandled(invalid,"validating company revenue request","request rejected");return BadRequest();}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company revenue route","request rejected");return BadRequest();}
         try{return Ok(await reads.GetDeliveryAsync(User,fieldId,from,through,transactionId,sourceRevision));}
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
-        catch(InvalidOperationException){return Conflict(new{error="The original company revenue, allocation and FIELD run-ticket evidence could not be confirmed. Reload before reviewing delivery."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"reading company revenue source","original source or outcome unconfirmed; request refused");return Conflict(new{error="The original company revenue, allocation and FIELD run-ticket evidence could not be confirmed. Reload before reviewing delivery."});}
     }
     [HttpGet("sales-contract")]
     public async Task<ActionResult<RevenueSalesContractReview>> GetSalesContract(string fieldId,DateTime from,DateTime through,string transactionId,string sourceRevision)
     {
-        try{fieldId=RecordedSourceRouteIds.Read(Request,nameof(fieldId));FieldRevenueSourceReview.RequireWindow(fieldId,from,through);}catch(ArgumentException){return BadRequest();}catch(FormatException){return BadRequest();}
+        try{fieldId=RecordedSourceRouteIds.Read(Request,nameof(fieldId));FieldRevenueSourceReview.RequireWindow(fieldId,from,through);}catch(ArgumentException invalid){failures.ReportHandled(invalid,"validating company revenue request","request rejected");return BadRequest();}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company revenue route","request rejected");return BadRequest();}
         try{return Ok(await reads.GetContractAsync(User,fieldId,from,through,transactionId,sourceRevision));}
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
-        catch(InvalidOperationException){return Conflict(new{error="The original revenue source and company-owned sales contract could not be confirmed. Reload before reviewing."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"reading company revenue source","original source or outcome unconfirmed; request refused");return Conflict(new{error="The original revenue source and company-owned sales contract could not be confirmed. Reload before reviewing."});}
     }
     [HttpGet]
     public async Task<ActionResult<FieldRevenueSourceReview>> Get(string fieldId,DateTime from,DateTime through)
     {
-        try{fieldId=RecordedSourceRouteIds.Read(Request,nameof(fieldId));FieldRevenueSourceReview.RequireWindow(fieldId,from,through);}catch(ArgumentException){return BadRequest();}catch(FormatException){return BadRequest();}
+        try{fieldId=RecordedSourceRouteIds.Read(Request,nameof(fieldId));FieldRevenueSourceReview.RequireWindow(fieldId,from,through);}catch(ArgumentException invalid){failures.ReportHandled(invalid,"validating company revenue request","request rejected");return BadRequest();}catch(FormatException invalid){failures.ReportHandled(invalid,"reading company revenue route","request rejected");return BadRequest();}
         try
         {
             return Ok(await reads.GetAsync(User,fieldId,from,through));
         }
-        catch(UnauthorizedAccessException){return Forbid();}
-        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){return Forbid();}
-        catch(InvalidOperationException){return Conflict(new{error="Recorded revenue source could not be confirmed. Reload the original company, FIELD and date window."});}
+        catch(UnauthorizedAccessException denied){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(Beep.OilandGas.Models.Core.Refusals.RefusalException denied) when(denied.Kind==Beep.OilandGas.Models.Core.Refusals.RefusalKind.Forbidden){failures.ReportHandled(denied,"authorizing company revenue request","request forbidden");return Forbid();}
+        catch(InvalidOperationException changed){failures.ReportHandled(changed,"reading company revenue source","original source or outcome unconfirmed; request refused");return Conflict(new{error="Recorded revenue source could not be confirmed. Reload the original company, FIELD and date window."});}
     }
 }

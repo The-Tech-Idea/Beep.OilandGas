@@ -27,7 +27,7 @@ public sealed class WorkOrderGrantAdministrationTests
         Func<string, RevokeAccessRequest, CancellationToken, Task<bool>>? revoke = null) =>
         new(company, read, grant ?? ((_, _, _) => throw new InvalidOperationException("Unexpected write")),
             revoke ?? ((_, _, _) => throw new InvalidOperationException("Unexpected revoke")),
-            (_, _, sentence) => sentence,
+            TestFailures.Calls(new RecordingFailureReporter()),
             DispatchProxy.Create<Beep.OilandGas.Client.App.Services.AccessControl.IAccessControlService, UserAssetAccessAdmissionTests.BoundaryProxy>());
 
     [Fact]

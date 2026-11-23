@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -370,7 +371,7 @@
             if (_storageReady) await RefreshRetainedReportAsync();
         }
         catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
-        {
+        { HandledFailures.ReportHandled(ex, "HSEIncidents.LoadIncidentsAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if(!Current())return;
             _incidents = new();
             _tier1Count = 0;
@@ -384,7 +385,7 @@
             _loadWarning = _requiresLogin ? "Sign in to load HSE incidents and workflow status for the current field." : "Your current account cannot view incidents for this field.";
         }
         catch (Exception exception)
-        {
+        { HandledFailures.ReportHandled(exception, "HSEIncidents.LoadIncidentsAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if(!Current())return;
             // Failed reads are not an empty incident population.
             Logger.LogWarning(exception, "HSE incidents could not be loaded.");
@@ -406,7 +407,7 @@
             _retainedReport = retained; _retentionChecked = true;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HSEIncidents.RefreshRetainedReportAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Retained incident report could not be loaded");
             if (!_disposed && generation == _generation && snapshot == Company.Snapshot) _retentionUnavailable = true;
         }
@@ -456,7 +457,7 @@
             if (options.Options.Count == 0) _optionsMessage = "No current incident type and tier combinations are configured for this database.";
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HSEIncidents.OpenReportDialogAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Incident report options could not be reviewed");
             if (!_disposed && generation == _generation && scope == Company.Snapshot) _optionsMessage = "Could not review recorded incident options. Close and try again.";
         }
@@ -477,7 +478,7 @@
         var original = new IncidentReportIntent(Guid.NewGuid(), review, _rOption, _reportOptions.Revision,
             incidentUtc, _rLocation.Trim(), _rDescription.Trim(), _rJurisdiction.Trim());
         try { original.Require(); }
-        catch (InvalidOperationException) { Snackbar.Add("Check the report details and try again.", Severity.Warning); return; }
+        catch (InvalidOperationException handledFailureAuto5) { HandledFailures.ReportHandled(handledFailureAuto5, "HSEIncidents.SubmitReportAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Snackbar.Add("Check the report details and try again.", Severity.Warning); return; }
         var generation = _generation; var snapshot = Company.Snapshot;
         _reporting = true;
         try
@@ -489,7 +490,7 @@
             await SendRetainedReportAsync(original, selected, generation, snapshot);
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HSEIncidents.SubmitReportAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Incident report submission was not confirmed");
             if (!_disposed && generation == _generation && snapshot == Company.Snapshot)
             {
@@ -508,7 +509,7 @@
         var generation = _generation; var snapshot = Company.Snapshot; _reporting = true;
         try { await SendRetainedReportAsync(original, selected, generation, snapshot); }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HSEIncidents.RetryReportAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "Original incident report could not be reconciled");
             if (!_disposed && generation == _generation && snapshot == Company.Snapshot)
                 Snackbar.Add("The original report could not be reconciled. Review the current company, FIELD and incident options.", Severity.Warning);

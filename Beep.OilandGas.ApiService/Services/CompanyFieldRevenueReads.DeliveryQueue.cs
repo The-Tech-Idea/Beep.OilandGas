@@ -35,7 +35,11 @@ public sealed partial class CompanyFieldRevenueReads
         {
             await Guard();RevenueDeliveryAcceptanceReadReview? current;
             try{current=await ReadDeliveryAcceptanceAsync(user,original.FieldId,original.From,original.Through,command.Original.Source.Source.TransactionId);}
-            catch(Exception unavailable) when(unavailable is InvalidOperationException or JsonException){current=null;}
+            catch(Exception unavailable) when(unavailable is InvalidOperationException or JsonException)
+            {
+                failures.ReportHandled(unavailable, "reviewing the original revenue delivery source", "the current source is unavailable; recovery review retains the recorded intent");
+                current=null;
+            }
             await Guard();return CompanyInventorySourceReview.Copy(current);
         }
         var first=await Current();var last=await Current();

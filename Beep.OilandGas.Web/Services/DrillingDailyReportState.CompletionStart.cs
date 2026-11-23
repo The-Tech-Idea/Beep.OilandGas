@@ -36,7 +36,7 @@ public sealed partial class DrillingDailyReportState
             original.Require();if(!CompletionProfileMatches(original))throw new InvalidOperationException("The current completion sender workspace changed.");
             completionPrepared=Copy(original);
         }
-        catch(Exception error){Error=explain(error,"preparing completion review","Confirm the current claim, configured independent recipients, sender role/workspace and explicit review reason");}
+        catch(Exception error){Error=explain.Explain(error,"preparing completion review","Confirm the current claim, configured independent recipients, sender role/workspace and explicit review reason");}
         Changed?.Invoke();
     }
     public void CancelCompletionReview(){if(Busy || completionPending is not null)return;completionPrepared=null;Changed?.Invoke();}
@@ -65,7 +65,7 @@ public sealed partial class DrillingDailyReportState
             Confirmation=result.Recorded?"The exact completion review and first independent approval tasks were confirmed recorded. Completion/tests remain unaccepted and reporting responsibility remains ongoing.":
                 "This exact completion-review intent was confirmed absent. Reload the current claim and routing before preparing another.";
         }
-        catch(Exception error){var text=explain(error,recover?"recovering completion review":"submitting completion review",fallback);if(Current()){completionFeedback.Failed();Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering completion review":"submitting completion review",fallback);if(Current()){completionFeedback.Failed();Error=text;}}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
 }

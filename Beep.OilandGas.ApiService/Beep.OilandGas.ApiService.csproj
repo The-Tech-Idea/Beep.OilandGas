@@ -12,6 +12,7 @@
   <!-- Never published: the development file names this machine's database, the template is documentation, and the
        server's own appsettings.Production.json is maintained on the server (placed there by the operator). -->
   <ItemGroup>
+    <InternalsVisibleTo Include="Beep.OilandGas.ApiService.Tests" />
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
     <Content Update="appsettings.Production.json" CopyToPublishDirectory="Never" />
     <Content Update="appsettings.Production.template.json" CopyToPublishDirectory="Never" />
@@ -19,8 +20,8 @@
 
   <ItemGroup>
     <!-- OilandGasTools is a sibling source dependency; deploy its core assembly with the API. -->
-    <ProjectReference Include="..\..\OilandGasTools\src\TheTechIdea.OilGas.Core\TheTechIdea.OilGas.Core.csproj" />
-    <ProjectReference Include="..\..\OilandGasTools\src\TheTechIdea.OilGas.Loaders\TheTechIdea.OilGas.Loaders.csproj" />
+    <ProjectReference Include="..\..\OilandGasTools\src\TheTechIdea.OilGas.Wellbore.Data\TheTechIdea.OilGas.Wellbore.Data.csproj" />
+    <ProjectReference Include="..\..\OilandGasTools\src\TheTechIdea.OilGas.Wellbore.Loaders\TheTechIdea.OilGas.Wellbore.Loaders.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.Repository\Beep.OilandGas.Repository.csproj" />
     <!-- The identity server's client library: local validation of signed access tokens and each person's account. -->
     <ProjectReference Include="$(IdentitySharedProject)" />

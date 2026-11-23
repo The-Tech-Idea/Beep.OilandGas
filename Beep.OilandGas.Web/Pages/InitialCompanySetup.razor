@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -78,7 +79,7 @@
             _ready = true;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "InitialCompanySetup.Restore", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (_disposed || generation != Interlocked.Read(ref _generation)) return;
             Logger.LogWarning(error, "Initial company recovery is unavailable");
             _message = "Company setup recovery is unavailable. Reload this page before creating a company.";
@@ -91,7 +92,7 @@
         if (_busy || !_ready || !Current(generation, actor)) return;
         var request = _pending ?? new InitialCompanyProvisionRequest(_tenantId, _tenantName, _companyId, _reason, Guid.NewGuid().ToString("N"));
         try { request.Require(); }
-        catch (ArgumentException) { _message = "Enter valid tenant, company and reason details before continuing."; return; }
+        catch (ArgumentException handledFailureAuto2) { HandledFailures.ReportHandled(handledFailureAuto2, "InitialCompanySetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _message = "Enter valid tenant, company and reason details before continuing."; return; }
         var original = new InitialCompanyIntent(actor!, request); _busy = true; _message = null; _created = null;
         try
         {
@@ -100,7 +101,7 @@
             _pending = request;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "InitialCompanySetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (Current(generation, actor)) { Logger.LogWarning(error, "Initial company request could not be retained"); _message = "The request could not be retained; no request was sent. Reload to recover it."; _ready = false; _busy = false; }
             return;
         }
@@ -114,7 +115,7 @@
             _pending = null; _created = result; _clearAcknowledged = false; _tenantId = _tenantName = _companyId = _reason = "";
             _message = "Company access was created. Select the company to configure its environment, then verify its PPDM organization and connection.";
         }
-        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Initial company setup is unconfirmed"); _message = "Company setup is unconfirmed. Retry the same request or review the existing tenant before proceeding."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "InitialCompanySetup.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "Initial company setup is unconfirmed"); _message = "Company setup is unconfirmed. Retry the same request or review the existing tenant before proceeding."; } }
         finally { if (Current(generation, actor)) _busy = false; }
     }
     private async Task Review()
@@ -138,7 +139,7 @@
             }
             else _message = "The request was not found at the time of this check. An earlier request may still finish; retry the original request or review the tenant before clearing it.";
         }
-        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Original company request could not be reviewed"); _message = "The original request could not be confirmed. Retry or review the tenant before clearing it."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "InitialCompanySetup.Review", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "Original company request could not be reviewed"); _message = "The original request could not be confirmed. Retry or review the tenant before clearing it."; } }
         finally { if (Current(generation, actor)) _busy = false; }
     }
     private async Task ContinueToEnvironment()
@@ -158,9 +159,9 @@
             Navigation.NavigateTo("/setup/company-environment");
         }
         catch (Exception error) when (error is not OperationCanceledException)
-        { if (Current(generation, actor)) { Logger.LogWarning(error, "Created company access could not be selected"); _message = "Company access was recorded, but current access could not be confirmed. Refresh the company selector and try again."; } }
-        catch (OperationCanceledException)
-        { if (Current(generation, actor)) _message = "The account or company selection changed. Select the company again before continuing."; }
+        { HandledFailures.ReportHandled(error, "InitialCompanySetup.ContinueToEnvironment", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "Created company access could not be selected"); _message = "Company access was recorded, but current access could not be confirmed. Refresh the company selector and try again."; } }
+        catch (OperationCanceledException handledFailureAuto7)
+        { HandledFailures.ReportHandled(handledFailureAuto7, "InitialCompanySetup.ContinueToEnvironment", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) _message = "The account or company selection changed. Select the company again before continuing."; }
         finally { if (Current(generation, actor)) _busy = false; }
     }
     private async Task ClearRetained()
@@ -176,7 +177,7 @@
             _message = "The retained request was cleared. Any server-side changes remain; review the tenant and company before submitting another request.";
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "InitialCompanySetup.ClearRetained", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (Current(generation, actor)) { Logger.LogWarning(error, "Retained company setup request could not be cleared"); _message = "The retained request could not be cleared. Reload this page to recover it."; }
         }
         finally { if (Current(generation, actor)) _busy = false; }

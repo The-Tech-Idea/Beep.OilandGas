@@ -23,7 +23,7 @@ public sealed class ProcessStepRoleChecksTests
         var step=new ProcessStepInstance { StepId="step",RequiredRole="Reviewer" };
         var definition=new ProcessDefinition { ProcessId="definition",ProcessType=category };
         var template=new ProcessStepDefinition { StepId="step",StepType=type,RequiredRoles=["Reviewer"] };
-        Assert.Equal(expected,ProcessStepRoleChecks.CanAct(user,"actor",instance,step,definition,template));
+        Assert.Equal(expected,ProcessStepRoleChecks.CanAct(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,"actor",instance,step,definition,template));
     }
     [Theory][InlineData("definition")][InlineData("step")][InlineData("current")][InlineData("anonymous")][InlineData("actor")]
     public void UnconfirmedStepOrAuthorityCannotAct(string fault)
@@ -33,13 +33,13 @@ public sealed class ProcessStepRoleChecksTests
         var step=new ProcessStepInstance { StepId="step" };
         var definition=new ProcessDefinition { ProcessId=fault=="definition"?"other":"definition" };
         var template=new ProcessStepDefinition { StepId=fault=="step"?"other":"step",RequiresApproval=true };
-        Assert.False(ProcessStepRoleChecks.CanAct(user,fault=="actor"?"":"actor",instance,step,definition,template));
+        Assert.False(ProcessStepRoleChecks.CanAct(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,fault=="actor"?"":"actor",instance,step,definition,template));
     }
     [Fact]
     public void RecordedApprovalFlagStillRequiresIndependentActorWhenTemplateTypeIsNotApproval()
     {
         var user=new ClaimsPrincipal(new ClaimsIdentity([new(ClaimTypes.Role,"Administrator")],"test"));
-        Assert.False(ProcessStepRoleChecks.CanAct(user,"actor",new() { ProcessId="p",CurrentStepId="s",StartedBy="actor" },
+        Assert.False(ProcessStepRoleChecks.CanAct(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,"actor",new() { ProcessId="p",CurrentStepId="s",StartedBy="actor" },
             new() { StepId="s",ApprovalRequired=true },new() { ProcessId="p" },new() { StepId="s",StepType="ACTION" }));
     }
     [Theory]
@@ -52,6 +52,6 @@ public sealed class ProcessStepRoleChecksTests
         var transition=new ProcessTransition { TransitionId="different-id",FromStateId="source",ToStateId="target",Trigger="approve",RequiredRoles=["Reviewer"],RequiresApproval=true };
         var definition=new ProcessDefinition { ProcessId="p",Transitions=new() { ["different-id"]=transition } };
         if(fault=="duplicate")definition.Transitions.Add("duplicate",transition);
-        Assert.Equal(allowed,ProcessStepRoleChecks.CanTransition(user,"actor",instance,definition,fault=="stale"?"old":"source",fault=="target"?"different-id":"target",fault=="trigger"?"other":"approve"));
+        Assert.Equal(allowed,ProcessStepRoleChecks.CanTransition(new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter(), user,"actor",instance,definition,fault=="stale"?"old":"source",fault=="target"?"different-id":"target",fault=="trigger"?"other":"approve"));
     }
 }

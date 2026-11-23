@@ -87,7 +87,7 @@ else{<MudAlert Severity="Severity.Info">Reload the assigned source to confirm it
 @code{
     [Parameter,EditorRequired]public string InstanceId{get;set;}=default!;
     private DevelopmentInvestmentAssignedState? _state;private string? loaded,decision;private string rationale="";private bool disposed;
-    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,AfeClient,Journal,Calls);_state.Changed+=Changed;}
     protected override async Task OnParametersSetAsync(){if(loaded!=InstanceId){loaded=InstanceId;await Reload();}}
     private void Prepare()=>_state!.PrepareDecision(decision,rationale);private void Cancel()=>_state!.CancelDecision();
     private Task Submit()=>_state!.SubmitDecisionAsync();private Task Recover()=>_state!.RecoverDecisionAsync();private Task Continue()=>_state!.ContinueDecisionAsync();

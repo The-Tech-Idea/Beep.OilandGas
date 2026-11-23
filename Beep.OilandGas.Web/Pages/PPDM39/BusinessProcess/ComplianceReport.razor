@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.Models.Data.AccessControl
@@ -63,7 +64,7 @@
             _uncertain = _review is not null && _pending.Contains(Key(_review));
             _message = _uncertain ? "A process outcome is unconfirmed for this FIELD. Review the workflow inbox before starting another process." : null;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Could not review compliance process FIELD"); _message = "The current FIELD could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "ComplianceReport.LoadFieldAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Could not review compliance process FIELD"); _message = "The current FIELD could not be confirmed."; } }
     }
     private static bool ValidText(string? value, bool required = true) => (!required && string.IsNullOrEmpty(value)) || !string.IsNullOrWhiteSpace(value) && value.Length <= 128 && value == value.Trim() && !value.Any(char.IsControl);
     private async Task SubmitAsync()
@@ -89,7 +90,7 @@
             _pending.Remove(Key(review)); _confirmed = true; _message = $"Internal process {instance.InstanceId} was accepted. Review it in the workflow inbox. No regulator submission is confirmed.";
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "ComplianceReport.SubmitAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (Current()) { Logger.LogWarning(error, "Compliance report process request could not be confirmed"); _uncertain = attempted; _message = attempted ? "The process outcome is unconfirmed. Review the workflow inbox before starting another process." : "The current FIELD could not be confirmed."; }
         }
         finally { _submitting = false; }

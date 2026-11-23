@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -71,7 +72,7 @@ else if (_checked && (Original is not null || CanStart && !HasWorkflow))
             Original = original; _checked = true;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "HseWorkflowStart.OnAfterRenderAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             Logger.LogWarning(error, "HSE workflow recovery state could not be read");
             if (_disposed || generation != _generation) return;
             _unavailable = true;
@@ -102,7 +103,7 @@ else if (_checked && (Original is not null || CanStart && !HasWorkflow))
             if (review.Context != Context || review.IncidentId != IncidentId) throw new InvalidOperationException("The incident review changed.");
             _ = review.CreateIntent(Guid.NewGuid()); Review = review;
         }
-        catch (Exception error) { Logger.LogWarning(error, "HSE workflow review failed"); if (!_disposed && generation == _generation) Message = "Workflow review could not be confirmed. Reload and check access."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseWorkflowStart.ReviewAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "HSE workflow review failed"); if (!_disposed && generation == _generation) Message = "Workflow review could not be confirmed. Reload and check access."; }
         finally { Busy = false; }
     }
     private async Task StartAsync()
@@ -118,7 +119,7 @@ else if (_checked && (Original is not null || CanStart && !HasWorkflow))
             Original = original; Review = null;
             await SendAsync(original, generation, snapshot);
         }
-        catch (Exception error) { Logger.LogWarning(error, "HSE workflow start was not confirmed"); if (!_disposed && generation == _generation) { Review = null; _needsRead = true; _checked = false; Message = "Workflow request was not confirmed. Reconcile the original before starting another."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseWorkflowStart.StartAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "HSE workflow start was not confirmed"); if (!_disposed && generation == _generation) { Review = null; _needsRead = true; _checked = false; Message = "Workflow request was not confirmed. Reconcile the original before starting another."; } }
         finally { Busy = false; }
     }
     private async Task RetryAsync()
@@ -126,7 +127,7 @@ else if (_checked && (Original is not null || CanStart && !HasWorkflow))
         if (Busy || Original is not { } original) return;
         var generation = _generation; var snapshot = Company.Snapshot; Busy = true; Message = null;
         try { await SendAsync(original, generation, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "HSE workflow reconciliation was not confirmed"); if (!_disposed && generation == _generation) Message = "The original workflow could not be reconciled. Check the company and FIELD, then retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseWorkflowStart.RetryAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "HSE workflow reconciliation was not confirmed"); if (!_disposed && generation == _generation) Message = "The original workflow could not be reconciled. Check the company and FIELD, then retry."; }
         finally { Busy = false; }
     }
     private async Task SendAsync(CompanyHseWorkflowStart original, long generation, (long Version, CompanyClientSelection? Selection) snapshot)

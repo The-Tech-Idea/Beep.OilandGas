@@ -229,7 +229,7 @@
     private bool installationConfirmed;
     private bool editConfirmed,creationConfirmed;
     private static string Recorded(string? value)=>string.IsNullOrWhiteSpace(value)?"Not recorded":value;
-    protected override void OnInitialized(){_state=new(Company,Fields,Development,Calls.Explain,Journal);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Fields,Development,Calls,Journal);_state.Changed+=Changed;}
     protected override void OnParametersSet(){if(_state?.Loaded==true)ApplySourceLink();}
     protected override Task OnAfterRenderAsync(bool firstRender)=>firstRender?Reload():Task.CompletedTask;
     private async Task Reload(){await _state!.LoadAsync();ApplySourceLink();}

@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -85,7 +86,7 @@
                 throw new InvalidOperationException("The production source review is unconfirmed.");
             _review = result;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "FIELD production sources could not be confirmed"); _message = "Production sources could not be confirmed for the current company and FIELD."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "GHGReport.LoadSources", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "FIELD production sources could not be confirmed"); _message = "Production sources could not be confirmed for the current company and FIELD."; } }
         finally { if (Current()) _busy = false; }
     }
     private async Task LoadDispositions(GhgProductionEntity item)
@@ -109,7 +110,7 @@
                 throw new InvalidOperationException("The recorded dispositions are unconfirmed.");
             _dispositions = result;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Recorded dispositions could not be confirmed"); _message = "Recorded dispositions could not be confirmed for this source and FIELD."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "GHGReport.LoadDispositions", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Recorded dispositions could not be confirmed"); _message = "Recorded dispositions could not be confirmed for this source and FIELD."; } }
         finally { if (Current()) _busy = false; }
     }
     private async Task LoadBasis()
@@ -131,7 +132,7 @@
             var validatedCatalog = GhgFactorCatalogValidation.Parse(basis.Selection.Jurisdiction, System.Text.Json.JsonSerializer.Serialize(basis.Catalog));
             _basis = basis with { Catalog = validatedCatalog };
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Company factor selection could not be confirmed"); _message = "A current company factor selection could not be confirmed. Ask an administrator to review setup."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "GHGReport.LoadBasis", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Company factor selection could not be confirmed"); _message = "A current company factor selection could not be confirmed. Ask an administrator to review setup."; } }
         finally { if (Current()) _busy = false; }
     }
     private async Task CheckArithmetic(GhgDispositionFact row, GhgFactorDefinition factor)
@@ -154,7 +155,7 @@
                 result.CatalogRevision != basis.Selection.CatalogRevision || result.Check != GhgArithmetic.Check(row, factor)) throw new InvalidOperationException("The arithmetic check is unconfirmed.");
             _check = result;
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "Arithmetic check could not be confirmed"); _message = "The recorded dates, units, factor or company evidence could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "GHGReport.CheckArithmetic", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "Arithmetic check could not be confirmed"); _message = "The recorded dates, units, factor or company evidence could not be confirmed."; } }
         finally { if (Current()) _busy = false; }
     }
     private void FieldChanged(string _) => ContextChanged();

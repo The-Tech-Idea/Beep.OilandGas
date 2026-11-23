@@ -57,7 +57,7 @@ public sealed class DevelopmentReviewWorkspaceTests
     [Fact] public async Task RetainedOriginalSurvivesPageOwnerReloadAndAnotherDraftCannotReplaceIt()
     {
         using var f=new Fixture();await f.Review();f.FailResponse=true;await f.Draft.State.SubmitHandoffAsync();
-        f.Draft.State.Dispose();f.Draft.State=new(f.Draft.Company,f.Draft.Fields.Object,f.Draft.Client.Object,f.Draft.Store,(_,_,text)=>text);
+        f.Draft.State.Dispose();f.Draft.State=new(f.Draft.Company,f.Draft.Fields.Object,f.Draft.Client.Object,f.Draft.Store,TestFailures.Calls(new RecordingFailureReporter()));
         await f.Draft.State.LoadAsync(f.Original.Source.PlanId);Assert.Equal(f.Original.Revision(),f.Draft.State.PendingHandoff!.Revision());Assert.True(f.Draft.State.CanRecoverHandoff);
         await f.Draft.State.LoadAsync("other-draft");Assert.Null(f.Draft.State.PendingHandoff);Assert.Equal(f.Original.Source.PlanId,f.Draft.State.RetainedReviewPlanId);Assert.False(f.Draft.State.CanRequestReview);Assert.False(f.Draft.State.CanRecoverHandoff);
         await f.Draft.State.LoadAsync(f.Original.Source.PlanId);await f.Draft.State.RecoverHandoffAsync();Assert.Equal(1,f.Submissions);Assert.Equal(1,f.Recoveries);
@@ -86,7 +86,7 @@ public sealed class DevelopmentReviewWorkspaceTests
     {
         using var f=new Fixture();await f.Prepare();using var ui=new Bunit.TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();
         ui.Services.AddSingleton(f.Draft.Company);ui.Services.AddSingleton(f.Draft.Fields.Object);ui.Services.AddSingleton(f.Draft.Client.Object);
-        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Draft.Store);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton<IDevelopmentDraftIntentStore>(f.Draft.Store);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/development/fdp/review?planId="+Uri.EscapeDataString(f.Original.Source.PlanId));
         var page=ui.RenderComponent<DevelopmentPlanReview>();page.WaitForAssertion(()=>Assert.Contains("Inspect review workflows",page.Markup));
         page.FindAll("button").Single(button=>button.TextContent.Contains("Inspect review workflows")).Click();page.WaitForAssertion(()=>Assert.Contains("Prepare review request",page.Markup));

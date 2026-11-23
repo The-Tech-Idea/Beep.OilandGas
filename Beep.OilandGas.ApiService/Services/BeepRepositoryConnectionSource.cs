@@ -10,7 +10,7 @@ using TheTechIdea.Beep.Editor;
 namespace Beep.OilandGas.ApiService.Services;
 
 /// <summary>Resolves an identity connection from Beep only when its physical target still matches the selected target.</summary>
-public sealed class BeepRepositoryConnectionSource(IConfiguration configuration, IServiceProvider services) : IRepositoryConnectionSource
+public sealed class BeepRepositoryConnectionSource(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, IConfiguration configuration, IServiceProvider services) : IRepositoryConnectionSource
 {
     public RepositoryConnectionSettings? Resolve()
     {
@@ -25,7 +25,11 @@ public sealed class BeepRepositoryConnectionSource(IConfiguration configuration,
             return string.Equals(candidate.Target, configuration["Repository:BeepConnectionTarget"], StringComparison.Ordinal)
                 ? candidate.Settings : null;
         }
-        catch (Exception error) when (error is InvalidOperationException or ArgumentException or RefusalException) { return null; }
+        catch (Exception error) when (error is InvalidOperationException or ArgumentException or RefusalException)
+        {
+            failures.ReportHandled(error, "resolving the configured identity repository target", "no repository connection is returned; access remains unavailable");
+            return null;
+        }
     }
 
     public static (RepositoryConnectionSettings Settings, string Target) Candidate(IDMEEditor editor, string name)

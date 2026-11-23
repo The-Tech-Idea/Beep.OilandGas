@@ -187,7 +187,7 @@ public sealed class SystemSetupRecordStoreTests
         var fixture = new Fixture(); await fixture.Save(Request()); var access = new Mock<IRepositoryAccessService>();
         access.Setup(x => x.IsAccountActiveAsync("reader", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "reader")], "test"));
-        var controller = new SystemSetupRecordController(fixture.Store, access.Object, NullLogger<SystemSetupRecordController>.Instance)
+        var controller = new SystemSetupRecordController(fixture.Store, access.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         var read = Assert.IsType<SystemSetupReadResult>(Assert.IsType<OkObjectResult>(await controller.Read("PPDM", "DEFAULT", default)).Value);
         Assert.NotNull(read.Configuration); Assert.IsType<ForbidResult>(await controller.Save("PPDM", "DEFAULT", Request(), default));
@@ -200,7 +200,7 @@ public sealed class SystemSetupRecordStoreTests
     {
         var fixture = new Fixture(); var access = new Mock<IRepositoryAccessService>();
         var user = new ClaimsPrincipal(new ClaimsIdentity([new("party_id", "admin"), new(ClaimTypes.Role, "Administrator")], "test"));
-        var controller = new SystemSetupRecordController(fixture.Store, access.Object, NullLogger<SystemSetupRecordController>.Instance)
+        var controller = new SystemSetupRecordController(fixture.Store, access.Object, new Beep.OilandGas.ApiService.Tests.Infrastructure.RecordingFailureReporter())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } } };
         access.Setup(x => x.GetAccessAsync("admin", It.IsAny<CancellationToken>())).ReturnsAsync(new RepositoryUserAccess("admin", true, [], []));
         Assert.IsType<ForbidResult>(await controller.ToolsDefaultDraft(default));

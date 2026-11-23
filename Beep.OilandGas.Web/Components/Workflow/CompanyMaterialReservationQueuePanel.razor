@@ -63,7 +63,7 @@
     private string? _error;
     private string? LocalTime(CompanyMaterialReservationQueue queue, DateTime value) =>
         CompanyEnvironment?.Matches(Company) == true && queue.Context.Company == Company.Selection?.Scope && queue.Context.ActorUserId == Company.Selection?.UserId
-            ? CompanyEnvironment.LocalTime(value) : null;
+            ? CompanyEnvironment.LocalTime(value, Calls) : null;
     private bool CanRead=>Company.Selection?.Permissions.Contains("Inventory.View",StringComparer.Ordinal)==true;
     private string ProcessRoute(CompanyWorkOrderMaterialReservationFacts row)=>"/ppdm39/process/instances/"+Uri.EscapeDataString(row.Task.InstanceId)+(Company.Selection is {} selected && selected.UserId==row.ReservedBy && selected.Permissions.Contains("Inventory.ReserveWorkOrderMaterial",StringComparer.Ordinal)?"?materialAllocationId="+row.IntentId.ToString("D"):"");
     protected override void OnInitialized(){Company.Changed+=Clear;Fields.CurrentFieldChanged+=FieldChanged;Authentication.AuthenticationStateChanged+=AuthenticationChanged;}

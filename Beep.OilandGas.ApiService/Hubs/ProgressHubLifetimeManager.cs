@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Beep.OilandGas.ApiService.Hubs;
 
 public sealed class ProgressHubLifetimeManager(ILogger<DefaultHubLifetimeManager<ProgressHub>> logger,
-    IServiceScopeFactory scopes, Action<Exception, string, string> reportFailure) : CompanyHubLifetimeManager<ProgressHub>(logger, scopes)
+    IServiceScopeFactory scopes, TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : CompanyHubLifetimeManager<ProgressHub>(logger, scopes, failures)
 {
     protected override bool Supports(CompanyHubChannel channel) => channel.Kind is
         CompanyChannelKind.Operation or CompanyChannelKind.Workflow;
@@ -26,6 +26,4 @@ public sealed class ProgressHubLifetimeManager(ILogger<DefaultHubLifetimeManager
         return Task.FromResult(args is null ? state.CanRead(company, channel) :
             args.Length == 1 && args[0] is CompanyProgressNotification notification && state.CanDeliver(company, channel, notification));
     }
-    protected override void ReportFailure(Exception exception, string operation, string outcome) =>
-        reportFailure(exception, operation, outcome);
 }

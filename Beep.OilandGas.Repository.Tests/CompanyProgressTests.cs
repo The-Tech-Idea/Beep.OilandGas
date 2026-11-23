@@ -246,7 +246,7 @@ public sealed class CompanyProgressTests
         services.AddSingleton<Func<ClaimsPrincipal, string?>>(principal => principal.FindFirst("account")?.Value);
         await using var provider = services.BuildServiceProvider();
         var manager = new ProgressHubLifetimeManager(NullLogger<DefaultHubLifetimeManager<ProgressHub>>.Instance,
-            provider.GetRequiredService<IServiceScopeFactory>(), (_, _, _) => { });
+            provider.GetRequiredService<IServiceScopeFactory>(), new RecordingFailureReporter());
         var one = Connection(alice); var two = Connection(bob); var group = CompanyHubGroups.Name(new(A, CompanyChannelKind.Operation, "reused"));
         await manager.OnConnectedAsync(one.Hub); await manager.OnConnectedAsync(two.Hub);
         try
@@ -259,7 +259,8 @@ public sealed class CompanyProgressTests
                 .Returns((string method, object?[] args, CancellationToken token) => manager.SendGroupAsync(group, method, args, token));
             var hub = new Mock<IHubContext<ProgressHub>> { DefaultValue = DefaultValue.Mock };
             hub.Setup(context => context.Clients.Group(group)).Returns(client.Object);
-            using (var publisher = new ProgressTrackingPublisher(state, hub.Object, (_, _, _) => throw new InvalidOperationException("Unexpected publisher failure")))
+            var publisherFailures = new RecordingFailureReporter();
+            using (var publisher = new ProgressTrackingPublisher(state, hub.Object, publisherFailures))
             {
                 a.UpdateOperationGroup("reused"); await publisher.StartAsync(default);
                 try
@@ -271,6 +272,7 @@ public sealed class CompanyProgressTests
                     Assert.False(two.Output.TryRead(out _));
                 }
                 finally { await publisher.StopAsync(default); }
+                Assert.Empty(publisherFailures.Reports);
             }
             var notification = new CompanyProgressNotification(alice, CompanyChannelKind.Operation, "reused", System.Text.Json.JsonSerializer.SerializeToElement(new { secret = "alice" }));
             await manager.SendGroupAsync(group, "ProgressUpdate", [notification]);
@@ -306,7 +308,7 @@ public sealed class CompanyProgressTests
             .ReturnsAsync(new RepositoryCompanyAccess(A, ["Admin", "Engineer"], []));
         var services = new ServiceCollection(); services.AddSingleton(access.Object); services.AddScoped<RepositoryTenantContext>(); services.AddScoped<RepositoryCompanyContextResolver>();
         await using var provider = services.BuildServiceProvider(validateScopes: true);
-        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), (_, _, _) => "failure-reference", http);
+        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), new RecordingFailureReporter(), http);
         var completed = new TaskCompletionSource<RepositoryCompanyContext>(TaskCreationOptions.RunContinuationsAsynchronously);
         Assert.True(queue.TryEnqueue<RepositoryTenantContext, TaskCompletionSource<RepositoryCompanyContext>>("job", completed,
             static (tenant, completion, _) => { completion.SetResult(tenant.Company!); return Task.CompletedTask; }));
@@ -333,14 +335,14 @@ public sealed class CompanyProgressTests
         access.Setup(service => service.GetCompanyAccessAsync("alice", A, It.IsAny<CancellationToken>()))
             .ReturnsAsync(denial == "membership" ? null : new RepositoryCompanyAccess(A, denial == "role" ? [] : ["Admin"], denial == "permission" ? [] : ["Import"]));
         var services = new ServiceCollection(); services.AddSingleton(access.Object); services.AddScoped<RepositoryTenantContext>(); services.AddScoped<RepositoryCompanyContextResolver>();
-        await using var provider = services.BuildServiceProvider(); var executions = 0; var reports = 0;
-        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), (_, _, _) => { Interlocked.Increment(ref reports); return "failure-reference"; }, http);
+        await using var provider = services.BuildServiceProvider(); var executions = 0; var failures = new RecordingFailureReporter();
+        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), failures, http);
         Assert.True(queue.TryEnqueue<RepositoryTenantContext, int>("job", 0, (_, _, _) => { Interlocked.Increment(ref executions); return Task.CompletedTask; }));
         await queue.StartAsync(default);
         try
         {
             await WaitFor(queue, "job", Beep.OilandGas.Models.Core.Interfaces.BackgroundOperationState.Failed);
-            Assert.Equal(0, executions); Assert.Equal(1, reports); Assert.Contains("failure-reference", queue.GetStatus("job")!.Error);
+            Assert.Equal(0, executions); Assert.Single(failures.Reports); Assert.Contains("reference ", queue.GetStatus("job")!.Error);
         }
         finally { await queue.StopAsync(default); }
     }
@@ -350,7 +352,7 @@ public sealed class CompanyProgressTests
     {
         var alice = await Company(A); var http = new HttpContextAccessor { HttpContext = Request(alice) };
         await using var provider = new ServiceCollection().BuildServiceProvider();
-        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), (_, _, _) => "failure-reference", http);
+        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), new RecordingFailureReporter(), http);
         Assert.True(queue.TryEnqueue<IServiceProvider, int>("reused", 0, static (_, _, _) => Task.CompletedTask));
         Assert.False(queue.TryEnqueue<IServiceProvider, int>("reused", 0, static (_, _, _) => Task.CompletedTask));
         foreach (var stranger in new[] { await Company(A, "bob"), await Company(B), await Company(SameTenant) })
@@ -368,7 +370,7 @@ public sealed class CompanyProgressTests
         http.HttpContext.Request.Headers[CompanyRequestHeaders.Tenant] = A.TenantId;
         http.HttpContext.Request.Headers[CompanyRequestHeaders.Company] = A.BusinessAssociateId;
         await using var provider = new ServiceCollection().BuildServiceProvider();
-        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), (_, _, _) => "failure-reference", http);
+        using var queue = new ScopedBackgroundOperationQueue(provider.GetRequiredService<IServiceScopeFactory>(), new RecordingFailureReporter(), http);
         Assert.False(queue.TryEnqueue<IServiceProvider, int>("job", 0, static (_, _, _) => Task.CompletedTask));
         Assert.Null(queue.GetStatus("job"));
         http.HttpContext = null; Assert.False(queue.TryEnqueue<IServiceProvider, int>("job", 0, static (_, _, _) => Task.CompletedTask));

@@ -22,8 +22,7 @@ public class ProgressWorkerTests
         : ProgressTrackingService(state, Beep.OilandGas.ApiService.Tests.Infrastructure.TestCompanyProgress.Tenant(),
             NullLogger<ProgressTrackingService>.Instance), IDisposable
     {
-        private readonly ProgressTrackingPublisher _publisher = new(state, hub,
-            (exception, operation, outcome) => failures.ReportHandled(exception, operation, outcome, TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded));
+        private readonly ProgressTrackingPublisher _publisher = new(state, hub, failures);
         public Task StartAsync(CancellationToken token) => _publisher.StartAsync(token);
         public Task StopAsync(CancellationToken token) => _publisher.StopAsync(token);
         public void Dispose() => _publisher.Dispose();

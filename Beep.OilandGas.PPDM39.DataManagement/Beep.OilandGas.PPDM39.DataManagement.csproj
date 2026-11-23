@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="Beep.OilandGas.Web.Auth.Tests" />
+  </ItemGroup>
 
   <PropertyGroup>
     <TargetFrameworks>net10.0</TargetFrameworks>

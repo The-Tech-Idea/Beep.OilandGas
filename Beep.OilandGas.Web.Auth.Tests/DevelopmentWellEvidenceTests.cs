@@ -70,7 +70,7 @@ public sealed class DevelopmentWellEvidenceTests
             if(mode=="late-field") fields.Raise(value=>value.CurrentFieldChanged+=null!,"other");
             return Task.FromResult(mode=="empty" ? new List<WELL>() : mode=="duplicate" ? new List<WELL>{raw,raw} : [raw]);
         });
-        using var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,(_,_,sentence)=>sentence);
+        using var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync();
         if(mode is "current" or "empty")
         {
@@ -97,7 +97,7 @@ public sealed class DevelopmentWellEvidenceTests
     {
         using var company=Company();var fields=Fields();var development=new Mock<IDevelopmentServiceClient>();
         development.Setup(value=>value.GetWellAsync(Well,It.IsAny<CancellationToken>(),Field)).ReturnsAsync(mode=="absent" ? null : mode=="substituted" ? new WELL{UWI="other",ASSIGNED_FIELD=Field,ACTIVE_IND="Y",CURRENT_CLASS="DEVELOPMENT"} : Row());
-        var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,(_,_,sentence)=>sentence);
+        var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,TestFailures.Calls(new RecordingFailureReporter()));
         await state.LoadAsync(Well);
         if(mode=="changed") fields.Raise(value=>value.CurrentFieldChanged+=null!,"other");
         if(mode=="disposed") state.Dispose();
@@ -125,7 +125,7 @@ public sealed class DevelopmentWellEvidenceTests
             if(mode=="failed-refresh") throw new HttpRequestException("Refresh unavailable");
             var fresh=Row();fresh.WELL_NAME="Newer recorded evidence";return Task.FromResult(new List<WELL>{fresh});
         });
-        using var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,(_,_,sentence)=>sentence);
+        using var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,TestFailures.Calls(new RecordingFailureReporter()));
         var first=state.LoadAsync();
         if(mode=="disposed") state.Dispose();
         else if(mode=="route-clear") state.Clear();
@@ -143,7 +143,7 @@ public sealed class DevelopmentWellEvidenceTests
         var pending=new TaskCompletionSource<FieldResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
         if(delayed) fields.Setup(value=>value.GetCurrentFieldSelectionAsync(It.IsAny<CancellationToken>())).Returns(pending.Task);
         else company.Clear();
-        using var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,(_,_,sentence)=>sentence);
+        using var state=new DevelopmentWellEvidenceState(company,fields.Object,development.Object,TestFailures.Calls(new RecordingFailureReporter()));
         var load=state.LoadAsync();
         if(delayed)
         {
@@ -169,7 +169,7 @@ public sealed class DevelopmentWellEvidenceTests
         var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton(company);services.AddSingleton(fields.Object);services.AddSingleton(development.Object);
         services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<NavigationManager>(new Navigation(mode is "new" or "conflicting"?"/development/well-design/new":"/development/well-design"));
         services.AddSingleton(Mock.Of<IPersonaContextService>());services.AddSingleton(Mock.Of<IDrillingServiceClient>());services.AddSingleton(Mock.Of<IAfeServiceClient>());services.AddSingleton(Mock.Of<IDevelopmentDraftIntentStore>());
-        services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {

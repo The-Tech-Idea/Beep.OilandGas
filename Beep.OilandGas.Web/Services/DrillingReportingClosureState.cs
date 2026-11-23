@@ -13,7 +13,7 @@ public sealed class DrillingReportingClosureState : IDisposable
     private readonly IPersonaContextService personas;
     private readonly IDrillingServiceClient client;
     private readonly IDevelopmentDraftIntentStore journal;
-    private readonly Func<Exception,string,string,string> explain;
+    private readonly OilGasCallFailures explain;
     private readonly RetainedOriginalFeedback feedback=new();
     private bool disposed,reading,writing,ready;
     private long generation,request;
@@ -46,7 +46,7 @@ public sealed class DrillingReportingClosureState : IDisposable
     public bool CanPrepare=>!Busy && ready && WriteRights && ProfileMatches && review is not null && pending is null && receipt is null;
     public bool CanRecover=>!Busy && ready && CanView && Pending is not null && pending!.Scope().Company==company.Selection!.Scope && pending.Scope().ActorUserId==company.Selection.UserId;
 
-    public DrillingReportingClosureState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+    public DrillingReportingClosureState(CompanyClientContext company,IPersonaContextService personas,IDrillingServiceClient client,IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {
         this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;
         company.Changed+=Invalidate;personas.Changed+=Invalidate;
@@ -77,7 +77,7 @@ public sealed class DrillingReportingClosureState : IDisposable
             var found=await client.GetReportingResponsibilityAsync(id);if(!Current())return;
             found.Require(selected.Selection.Scope,selected.Selection.UserId,id);status=Copy(found);ready=true;
         }
-        catch(Exception error){var text=explain(error,"loading original reporting responsibility","The original reporting responsibility could not be confirmed");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"loading original reporting responsibility","The original reporting responsibility could not be confirmed");if(Current())Error=text;}
         finally{if(Current()){reading=false;Changed?.Invoke();}}
     }
     public async Task InspectAsync()
@@ -100,7 +100,7 @@ public sealed class DrillingReportingClosureState : IDisposable
                 throw new InvalidOperationException("The closure review belongs to another original responsibility/account.");
             review=Copy(found);status=original;ready=true;completionId=accepted;
         }
-        catch(Exception error){var text=explain(error,"checking current reporting closure readiness","Current accepted completion, test evidence and management authority could not be confirmed");if(Current())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"checking current reporting closure readiness","Current accepted completion, test evidence and management authority could not be confirmed");if(Current())Error=text;}
         finally{if(Current()){reading=false;Changed?.Invoke();}}
     }
     public void Prepare(string? actualUtc,string? reason,bool confirmed)
@@ -111,7 +111,7 @@ public sealed class DrillingReportingClosureState : IDisposable
             if(!ExplicitUtcInput.TryParse(actualUtc,out var utc))throw new InvalidOperationException("Enter an explicit actual UTC ending in Z or +00:00.");
             var value=new DrillingReportingClosure(Copy(review)!,Guid.NewGuid(),new DateTimeOffset(utc),reason?.Trim()??"",confirmed);value.Require();prepared=value;
         }
-        catch(Exception error){Error=explain(error,"preparing reporting closure","Enter actual UTC after the readiness check, a rationale and explicit confirmation");}
+        catch(Exception error){Error=explain.Explain(error,"preparing reporting closure","Enter actual UTC after the readiness check, a rationale and explicit confirmation");}
         Changed?.Invoke();
     }
     public void Cancel(){if(Busy || pending is not null)return;prepared=null;Changed?.Invoke();}
@@ -137,7 +137,7 @@ public sealed class DrillingReportingClosureState : IDisposable
             Confirmation=result.Recorded?"The original ongoing reporting responsibility and its owned tasks were confirmed closed. Physical release remains a separate workflow.":
                 "This original reporting closure was confirmed absent. Reload and check current evidence before preparing another.";
         }
-        catch(Exception error){var text=explain(error,recover?"recovering original reporting closure":"closing original reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering original reporting closure":"closing original reporting responsibility",fallback);if(Current()){feedback.Failed();Error=text;}}
         finally{writing=false;if(!disposed)Changed?.Invoke();}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;++request;Invalidate();}

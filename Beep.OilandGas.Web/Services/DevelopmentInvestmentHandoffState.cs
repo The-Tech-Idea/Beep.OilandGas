@@ -8,7 +8,7 @@ using Beep.OilandGas.Client.App;
 namespace Beep.OilandGas.Web.Services;
 public sealed class DevelopmentInvestmentHandoffState:IDisposable
 {
-    private readonly CompanyClientContext company;private readonly IPersonaContextService personas;private readonly IAfeServiceClient client;private readonly IDevelopmentDraftIntentStore journal;private readonly Func<Exception,string,string,string> explain;
+    private readonly CompanyClientContext company;private readonly IPersonaContextService personas;private readonly IAfeServiceClient client;private readonly IDevelopmentDraftIntentStore journal;private readonly OilGasCallFailures explain;
     private string? processId,afeId;private long generation;private bool disposed,journalReady;
     private DevelopmentInvestmentRoutingReview? routing;private DevelopmentInvestmentHandoff? prepared,pending;private DevelopmentInvestmentHandoffReceipt? recorded;private DevelopmentInvestmentHandoffStatus? status;
     public bool Busy{get;private set;}public string? Error{get;private set;}public string? Confirmation{get;private set;}
@@ -22,7 +22,7 @@ public sealed class DevelopmentInvestmentHandoffState:IDisposable
         company.Selection!.Permissions.Contains("Workflow.Start",StringComparer.Ordinal) && company.Selection.Permissions.Contains("Accounting.PrepareDevelopmentBudget",StringComparer.Ordinal);
     public bool CanRecover=>!Busy && CanView && Pending is not null;
     public event Action? Changed;
-    public DevelopmentInvestmentHandoffState(CompanyClientContext company,IPersonaContextService personas,IAfeServiceClient client,IDevelopmentDraftIntentStore journal,Func<Exception,string,string,string> explain)
+    public DevelopmentInvestmentHandoffState(CompanyClientContext company,IPersonaContextService personas,IAfeServiceClient client,IDevelopmentDraftIntentStore journal,OilGasCallFailures explain)
     {this.company=company;this.personas=personas;this.client=client;this.journal=journal;this.explain=explain;company.Changed+=Invalidate;personas.Changed+=Invalidate;}
     private void Invalidate(){++generation;routing=null;prepared=null;pending=null;journalReady=false;Recorded=null;status=null;Error=null;Confirmation=null;if(!disposed)Changed?.Invoke();}
     public async Task ReadStatusAsync()
@@ -35,7 +35,7 @@ public sealed class DevelopmentInvestmentHandoffState:IDisposable
             if(recorded is {Recorded:true} saved && found.HandoffId!=saved.InstanceId)throw new InvalidOperationException("The recorded handoff no longer matches its acknowledged original.");
             if(Active()){status=CompanyInventorySourceReview.Copy(found);if(found.HandoffId is not null){prepared=null;routing=null;}}
         }
-        catch(Exception error){var text=explain(error,"reading recorded investment handoff status","The recorded investment handoff or its absence could not be confirmed");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"reading recorded investment handoff status","The recorded investment handoff or its absence could not be confirmed");if(Active())Error=text;}
         finally{Busy=false;if(!disposed)Changed?.Invoke();}
     }
     public async Task LoadAsync(string process,string afe)
@@ -47,7 +47,7 @@ public sealed class DevelopmentInvestmentHandoffState:IDisposable
             var original=await journal.ReadInvestmentHandoffAsync(selected.Selection!.Scope,selected.Selection.UserId);if(!Active())return;
             if(original is not null){original.Require();if(original.Scope().Company!=selected.Selection.Scope || original.Scope().ActorUserId!=selected.Selection.UserId)throw new InvalidOperationException("The retained investment handoff belongs to another original company or sender.");pending=CompanyInventorySourceReview.Copy(original);}journalReady=true;
         }
-        catch(Exception error){var text=explain(error,"loading original investment handoff input","The retained original investment handoff could not be confirmed");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"loading original investment handoff input","The retained original investment handoff could not be confirmed");if(Active())Error=text;}
         finally{if(Active())Changed?.Invoke();}
     }
     public void UseReview(DevelopmentInvestmentRoutingReview? review)
@@ -56,7 +56,7 @@ public sealed class DevelopmentInvestmentHandoffState:IDisposable
         if(review is null){routing=null;prepared=null;return;}
         var selected=company.Selection;if(selected is null)return;
         try{review.Require(selected.Scope,selected.UserId,processId!,afeId!);if(routing?.Revision!=review.Revision)prepared=null;routing=CompanyInventorySourceReview.Copy(review);}
-        catch(Exception error){routing=null;prepared=null;Error=explain(error,"checking the investment handoff source","The routing review does not match the original company or AFE source");}
+        catch(Exception error){routing=null;prepared=null;Error=explain.Explain(error,"checking the investment handoff source","The routing review does not match the original company or AFE source");}
     }
     public async Task PrepareAsync(string? workflow)
     {
@@ -70,7 +70,7 @@ public sealed class DevelopmentInvestmentHandoffState:IDisposable
             if(original.Review.Revision!=review.Revision || original.Workflow.ProcessId!=workflow || original.Scope().Company!=selected.Selection!.Scope || original.Scope().ActorUserId!=selected.Selection.UserId)throw new InvalidOperationException("The prepared handoff differs from the current original routing source.");
             if(Active())prepared=CompanyInventorySourceReview.Copy(original);
         }
-        catch(Exception error){var text=explain(error,"preparing original investment handoff","The original investment assignment could not be prepared. Inspect its routing again");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,"preparing original investment handoff","The original investment assignment could not be prepared. Inspect its routing again");if(Active())Error=text;}
         finally{Busy=false;if(!disposed)Changed?.Invoke();}
     }
     public void Cancel(){if(Busy || pending is not null)return;prepared=null;Changed?.Invoke();}
@@ -89,7 +89,7 @@ public sealed class DevelopmentInvestmentHandoffState:IDisposable
             Confirmation=receipt.Recorded?(recover?"The original investment review handoff was confirmed without another write.":"The investment review handoff was recorded and read back. Budget approval remains separate."):
                 "The original handoff was confirmed absent. Inspect current routing before preparing another assignment.";
         }
-        catch(Exception error){var text=explain(error,recover?"recovering original investment handoff":"recording original investment handoff","The original investment handoff is unconfirmed. Its exact recovery input was preserved");if(Active())Error=text;}
+        catch(Exception error){var text=explain.Explain(error,recover?"recovering original investment handoff":"recording original investment handoff","The original investment handoff is unconfirmed. Its exact recovery input was preserved");if(Active())Error=text;}
         finally{Busy=false;if(!disposed)Changed?.Invoke();}
     }
     public void Dispose(){if(disposed)return;disposed=true;company.Changed-=Invalidate;personas.Changed-=Invalidate;Invalidate();}

@@ -120,7 +120,7 @@
     private bool _disposed;
     private string _decision="",_notes="";
     private string? _displayedRevision;
-    protected override void OnInitialized(){_state=new(Company,Personas,Development,Journal,Calls.Explain);_state.Changed+=Changed;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Development,Journal,Calls);_state.Changed+=Changed;}
     protected override Task OnParametersSetAsync()=>Reload();
     private Task Reload(){_decision="";_notes="";return _state!.LoadAsync(ProcessId);}
     private void PrepareDecision()=>_state!.PrepareDecision(_decision,_notes);

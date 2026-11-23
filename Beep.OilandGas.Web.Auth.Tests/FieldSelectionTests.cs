@@ -108,7 +108,7 @@ public sealed class FieldSelectionTests
     private sealed class Fixture : IDisposable
     {
         public CompanyClientContext Company { get; } = new(); public SelectionFacet Data { get; } = new(); public FieldSelectionState State { get; }
-        public Fixture() { SelectCompany(); State = new(Company, Data, (_, _, sentence) => sentence); }
+        public Fixture() { SelectCompany(); State = new(Company, Data, TestFailures.Calls(new RecordingFailureReporter())); }
         public void SelectCompany() => Assert.True(Company.TrySelect(Company.Clear(), "actor", new(new("tenant", "company"), ["Reader"], [])));
         public void Dispose() { State.Dispose(); Company.Dispose(); }
     }

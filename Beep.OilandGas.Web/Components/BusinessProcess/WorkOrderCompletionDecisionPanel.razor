@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Core.Interfaces
@@ -63,7 +64,7 @@
         if(values.TryGetValue("completionProcess",out var process) && process.Count==1)_process=process[0]??"";if(values.TryGetValue("completionSubmission",out var submission) && submission.Count==1)_submission=submission[0]??"";
     }
     private CompanyWorkOrderCompletionQuery CurrentQuery()=>Query??new(new(_process,FieldId,WorkOrderId),_submission);
-    private bool CanDecide{get{try{State.Review?.RequireIndependentReviewer();return State.Review is not null;}catch(UnauthorizedAccessException){return false;}}}
+    private bool CanDecide{get{try{State.Review?.RequireIndependentReviewer();return State.Review is not null;}catch(UnauthorizedAccessException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "WorkOrderCompletionDecisionPanel.operation", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); return false;}}}
     private void InputsChanged(){State.Attach(null);_decision="";_confirm=false;_error=null;}
     private async Task Authority()
     {

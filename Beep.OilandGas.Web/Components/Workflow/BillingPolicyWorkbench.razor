@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -109,10 +110,10 @@
     protected override void OnInitialized(){State.AttachOwner(this);State.Changed+=StateChanged;Company.Changed+=ContextChanged;Authentication.AuthenticationStateChanged+=AuthChanged;}
     protected override Task OnInitializedAsync()=>Reload();
     private void Reset(){_policyId="";_version="";_currency="";_rounding="";_tax="";_charges="";_rights="";_reason="";_decimals=null;_from=null;_through=null;}
-    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();await State.LoadHistoryAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch{if(!_disposed && epoch==_epoch)_error="Company billing policy history could not be confirmed. Check current company/account access and policy provisioning, then reload.";}}
+    private async Task Reload(){var epoch=_epoch;_error=null;try{await Access();await State.LoadHistoryAsync(Accounting);if(!_disposed && epoch==_epoch)await Access();}catch (System.Exception handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "BillingPolicyWorkbench.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="Company billing policy history could not be confirmed. Check current company/account access and policy provisioning, then reload.";}}
     private Task ReviewDraft()=>Review("DRAFT");
     private Task ReviewApproval()=>Review("APPROVE");
-    private async Task Review(string action){var epoch=_epoch;_error=null;try{await Access();if(!Grant(action))throw new UnauthorizedAccessException();await State.LoadReviewAsync(action,Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch{if(!_disposed && epoch==_epoch)_error="The policy action could not be reviewed. Check current authority and reconcile any original retained request.";}}
+    private async Task Review(string action){var epoch=_epoch;_error=null;try{await Access();if(!Grant(action))throw new UnauthorizedAccessException();await State.LoadReviewAsync(action,Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch (System.Exception handledFailureAuto2){ HandledFailures.ReportHandled(handledFailureAuto2, "BillingPolicyWorkbench.Review", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The policy action could not be reviewed. Check current authority and reconcile any original retained request.";}}
     private async Task Record()
     {
         var epoch=_epoch;_error=null;
@@ -130,9 +131,9 @@
             else await State.ApproveAsync(_reason,Accounting);
             if(!_disposed && epoch==_epoch){Reset();await Access();}
         }
-        catch{if(!_disposed && epoch==_epoch)_error="The policy outcome was not confirmed. Check explicit fields, independent reviewer authority and reason. Retain any original request and reconcile it before another action.";}
+        catch (System.Exception handledFailureAuto3){ HandledFailures.ReportHandled(handledFailureAuto3, "BillingPolicyWorkbench.Record", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The policy outcome was not confirmed. Check explicit fields, independent reviewer authority and reason. Retain any original request and reconcile it before another action.";}
     }
-    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(!State.CanRetryPending || !Grant(State.PendingAction!))throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch{if(!_disposed && epoch==_epoch)_error="The original policy request remains unconfirmed. Return to its original company/account with current authority and reconcile before another action.";}}
+    private async Task Retry(){var epoch=_epoch;_error=null;try{await Access();if(!State.CanRetryPending || !Grant(State.PendingAction!))throw new UnauthorizedAccessException();await State.SubmitPendingAsync(Accounting);if(!_disposed && epoch==_epoch){Reset();await Access();}}catch (System.Exception handledFailureAuto4){ HandledFailures.ReportHandled(handledFailureAuto4, "BillingPolicyWorkbench.Retry", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); if(!_disposed && epoch==_epoch)_error="The original policy request remains unconfirmed. Return to its original company/account with current authority and reconcile before another action.";}}
     private void StateChanged(){if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void ContextChanged(){++_epoch;_authorized=false;_canPrepare=false;_canApprove=false;_error=null;Reset();if(!_disposed)_=InvokeAsync(StateHasChanged);}
     private void AuthChanged(Task<AuthenticationState> value){State.Invalidate();ContextChanged();}

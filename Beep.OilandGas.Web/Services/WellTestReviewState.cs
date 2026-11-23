@@ -20,7 +20,11 @@ public sealed class WellTestReviewState:IDisposable
     public int Count(WellTestCoverage coverage)=>Rows.Count(x=>Includes(x,coverage));
     public void SelectCoverage(WellTestCoverage coverage){if(!Enum.IsDefined(coverage))throw new ArgumentOutOfRangeException(nameof(coverage));Coverage=coverage;Selected=null;}
     public void SelectRecord(string id)=>Selected=Confirmed ? VisibleRows.SingleOrDefault(x=>x.TestId==id) : null;
-    private static bool Includes(WellTestResponse row,WellTestCoverage coverage)=>coverage switch{WellTestCoverage.All=>true,WellTestCoverage.Oil=>row.OilFlowAmount.HasValue,WellTestCoverage.Gas=>row.GasFlowAmount.HasValue,WellTestCoverage.Water=>row.WaterFlowAmount.HasValue,_=>false};
+    private static bool Includes(WellTestResponse row,WellTestCoverage coverage)
+    {
+        if(!Enum.IsDefined(coverage))return false;
+        return coverage switch{WellTestCoverage.All=>true,WellTestCoverage.Oil=>row.OilFlowAmount.HasValue,WellTestCoverage.Gas=>row.GasFlowAmount.HasValue,WellTestCoverage.Water=>row.WaterFlowAmount.HasValue};
+    }
     public void Clear(){++version;Coverage=WellTestCoverage.All;Selected=null;Confirmed=false;RetrievedAtUtc=null;Field=null;Well=null;Rows=[];}
     public async Task LoadAsync(string well,Func<Task<string?>> fieldLookup,Func<string,Task<WellTestReview>> read)
     {

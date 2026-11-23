@@ -299,12 +299,15 @@ public static class CompanyEnvironmentOverrideEditor
         return result;
     }
 
-    private static int SizeLimit(EnvironmentSettingsScope scope) => scope switch
+    private static int SizeLimit(EnvironmentSettingsScope scope)
+    {
+        if (!Enum.IsDefined(scope)) throw new ArgumentOutOfRangeException(nameof(scope));
+        return scope switch
     {
         EnvironmentSettingsScope.Company => CompanyEnvironmentIdentity.MaxOverridesLength,
         EnvironmentSettingsScope.Shared => SystemSetupIdentity.MaximumSettingsLength,
-        _ => throw new ArgumentOutOfRangeException(nameof(scope))
     };
+    }
 
     private static void RequireSourceIdentity(string name, string module)
     {

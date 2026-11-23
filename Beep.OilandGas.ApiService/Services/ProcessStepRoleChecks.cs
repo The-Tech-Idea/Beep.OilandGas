@@ -12,12 +12,12 @@ public static class ProcessStepRoleChecks
     public static bool RequiresIndependentActor(ProcessStepInstance step, ProcessDefinition definition, ProcessStepDefinition template) =>
         step.ApprovalRequired || template.RequiresApproval || template.StepType=="APPROVAL" ||
         definition.ProcessType=="FINANCIAL" && template.StepType=="REVIEW";
-    public static bool CanAct(ClaimsPrincipal user, string actor, ProcessInstance instance, ProcessStepInstance step, ProcessDefinition definition, ProcessStepDefinition template)
+    public static bool CanAct(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, ClaimsPrincipal user, string actor, ProcessInstance instance, ProcessStepInstance step, ProcessDefinition definition, ProcessStepDefinition template)
     {
         if(user.Identity?.IsAuthenticated!=true || string.IsNullOrWhiteSpace(actor) || definition.ProcessId!=instance.ProcessId ||
             template.StepId!=step.StepId || instance.CurrentStepId!=step.StepId || template.RequiredRoles is null) return false;
         var independent = RequiresIndependentActor(step,definition,template);
-        if(independent && !CanIndependentlyCheck(instance,actor)) return false;
+        if(independent && !CanIndependentlyCheck(failures,instance,actor)) return false;
         if(user.IsInRole("Administrator")) return true;
         var assigned=!string.IsNullOrWhiteSpace(step.AssignedTo);
         if(assigned && step.AssignedTo!=actor && !user.IsInRole(step.AssignedTo!)) return false;
@@ -25,18 +25,18 @@ public static class ProcessStepRoleChecks
         if(template.RequiredRoles.Count>0 && !template.RequiredRoles.Any(user.IsInRole)) return false;
         return assigned || !string.IsNullOrWhiteSpace(step.RequiredRole) || template.RequiredRoles.Count>0;
     }
-    public static bool CanTransition(ClaimsPrincipal user, string actor, ProcessInstance instance, ProcessDefinition definition, string from, string to, string trigger)
+    public static bool CanTransition(TheTechIdeaWeb.Diagnostics.IFailureReporter failures, ClaimsPrincipal user, string actor, ProcessInstance instance, ProcessDefinition definition, string from, string to, string trigger)
     {
         if(user.Identity?.IsAuthenticated!=true || string.IsNullOrWhiteSpace(actor) || string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to) || string.IsNullOrWhiteSpace(trigger) ||
             instance.CurrentState!=from || definition.ProcessId!=instance.ProcessId || definition.Transitions is null)return false;
         var matches=definition.Transitions.Values.Where(row=>row.FromStateId==from && row.ToStateId==to && row.Trigger==trigger).ToArray();
         if(matches.Length!=1 || matches[0].RequiredRoles is null)return false;
         var selected=matches[0];
-        if(selected.RequiresApproval && !CanIndependentlyCheck(instance,actor))return false;
+        if(selected.RequiresApproval && !CanIndependentlyCheck(failures,instance,actor))return false;
         return user.IsInRole("Administrator") || selected.RequiredRoles.Count==0 || selected.RequiredRoles.Any(user.IsInRole);
     }
 
-    private static bool CanIndependentlyCheck(ProcessInstance instance,string actor)
+    private static bool CanIndependentlyCheck(TheTechIdeaWeb.Diagnostics.IFailureReporter failures,ProcessInstance instance,string actor)
     {
         if(string.IsNullOrWhiteSpace(instance.StartedBy) || instance.StartedBy==actor)return false;
         if(!string.IsNullOrEmpty(instance.FieldId) || instance.EntityType is not ("AP_INVOICE" or "PURCHASE_ORDER" or "SALES_CONTRACT" or "RUN_TICKET" or "INVOICE" or "AR_INVOICE" or "JOURNAL_ENTRY" or "AR_PAYMENT"))return true;
@@ -51,6 +51,10 @@ public static class ProcessStepRoleChecks
             return start.InstanceId()==instance.InstanceId && start.ActorUserId==instance.StartedBy && start.ProcessId==instance.ProcessId &&
                 start.EntityType==instance.EntityType && start.EntityId==instance.EntityId && start.SourcePreparerUserId!=actor;
         }
-        catch(Exception invalid) when(invalid is JsonException or InvalidOperationException or ArgumentException){return false;}
+        catch(Exception invalid) when(invalid is JsonException or InvalidOperationException or ArgumentException)
+        {
+            failures.ReportHandled(invalid, "checking the independent process actor", "recorded accounting ownership is invalid; the action is denied");
+            return false;
+        }
     }
 }

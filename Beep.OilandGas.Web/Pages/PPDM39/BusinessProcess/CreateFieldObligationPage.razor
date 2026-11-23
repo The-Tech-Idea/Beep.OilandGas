@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -94,7 +95,7 @@
             _context = review; _fieldName = string.IsNullOrWhiteSpace(field.FieldName) ? field.FieldId : field.FieldName;
             _pending = pending; _options = options; _message = pending is null ? null : "The prior submission outcome is unconfirmed.";
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "FIELD obligation setup could not be confirmed"); _message = "Obligation setup could not be confirmed. Check your company, FIELD and filing access, then reload."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CreateFieldObligationPage.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "FIELD obligation setup could not be confirmed"); _message = "Obligation setup could not be confirmed. Check your company, FIELD and filing access, then reload."; } }
         finally { if (Current()) _busy = false; }
     }
     private async Task Submit()
@@ -117,7 +118,7 @@
             await Intents.ClearAsync(request); if (!Current()) return;
             _pending = null; _confirmed = true; _message = "The FIELD obligation and its component were recorded. Return to the worklist to review them.";
         }
-        catch (Exception error) { if (Current()) { Logger.LogWarning(error, "FIELD obligation submission was not confirmed"); _message = _pending is null ? "The request could not be retained. No submission was sent." : "The outcome is unconfirmed. Retry the original submission."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CreateFieldObligationPage.Submit", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current()) { Logger.LogWarning(error, "FIELD obligation submission was not confirmed"); _message = _pending is null ? "The request could not be retained. No submission was sent." : "The outcome is unconfirmed. Retry the original submission."; } }
         finally { if (Current()) _busy = false; }
     }
     private void FieldChanged(string _) => ContextChanged();

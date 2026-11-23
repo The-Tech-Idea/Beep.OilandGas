@@ -62,13 +62,13 @@ public sealed class CompanyGhgCatalogTests
         var review = await reader.ReviewAsync(company, "KW", () => Task.CompletedTask);
         var request = new CompanyGhgSelectionRequest("KW", review.Catalog.Revision, review.EffectiveRevision, "reviewed", "", Guid.NewGuid().ToString("N"));
         var selection = CompanyGhgSelectionIdentity.Prepare(company, "actor", request, null);
-        var status = new CompanyGhgSelectionStatusReader(new Selections(selection), reader);
+        var status = new CompanyGhgSelectionStatusReader(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), new Selections(selection), reader);
         Assert.Equal("Current", (await status.ReadAsync(company, () => Task.CompletedTask)).Status);
         var stale = CompanyGhgSelectionIdentity.Prepare(company, "actor", request with { CatalogRevision = new string('C', 64) }, null);
-        Assert.Equal("ReviewRequired", (await new CompanyGhgSelectionStatusReader(new Selections(stale), reader).ReadAsync(company, () => Task.CompletedTask)).Status);
+        Assert.Equal("ReviewRequired", (await new CompanyGhgSelectionStatusReader(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), new Selections(stale), reader).ReadAsync(company, () => Task.CompletedTask)).Status);
         records.Change = true;
         Assert.Equal("Unconfirmed", (await status.ReadAsync(company, () => Task.CompletedTask)).Status);
-        Assert.Equal("NotSelected", (await new CompanyGhgSelectionStatusReader(new Selections(null), reader).ReadAsync(company, () => Task.CompletedTask)).Status);
+        Assert.Equal("NotSelected", (await new CompanyGhgSelectionStatusReader(new Beep.OilandGas.Repository.Tests.RecordingFailureReporter(), new Selections(null), reader).ReadAsync(company, () => Task.CompletedTask)).Status);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => status.ReadAsync(company, () => throw new UnauthorizedAccessException()));
     }
 }

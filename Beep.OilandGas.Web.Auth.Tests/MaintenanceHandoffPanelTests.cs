@@ -64,7 +64,7 @@ public sealed class MaintenanceHandoffPanelTests
             Assert.NotNull(intent);Assert.Equal(intent.IntentId,query.IntentId);Assert.Equal(source.WorkOrderId,query.WorkOrderId);Assert.Equal(source.DecisionId,query.DecisionId);
             return fault=="missing"?Task.FromException<CompanyMaintenanceRecovery>(new InvalidOperationException("Original assignment unavailable")):Task.FromResult(new CompanyMaintenanceRecovery(intent,Receipt(intent)));
         });
-        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton(company);services.AddSingleton<AuthenticationStateProvider>(auth);services.AddSingleton(client.Object);services.AddScoped<CompanyMaintenanceHandoffState>();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<NavigationManager>(nav);services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));services.AddSingleton<IComponentActivator,Components>();
+        var services=new ServiceCollection();services.AddLogging();services.AddMudServices();services.AddSingleton(company);services.AddSingleton<AuthenticationStateProvider>(auth);services.AddSingleton(client.Object);services.AddScoped<CompanyMaintenanceHandoffState>();services.AddSingleton<IJSRuntime,NoBrowser>();services.AddSingleton<NavigationManager>(nav);services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));services.AddSingleton<IComponentActivator,Components>();
         await using var provider=services.BuildServiceProvider();await using var renderer=new HtmlRenderer(provider,provider.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async()=>
         {

@@ -132,6 +132,19 @@ namespace Beep.OilandGas.Models.Data.DataManagement
                 ConnectionString = this.ConnectionString ?? string.Empty
             };
 
+            if (cp.DatabaseType == BeepDataSourceType.SqlServer &&
+                Host.StartsWith(@"(localdb)\", StringComparison.OrdinalIgnoreCase) &&
+                string.IsNullOrWhiteSpace(Username) && string.IsNullOrWhiteSpace(Password) &&
+                string.IsNullOrWhiteSpace(ConnectionString))
+            {
+                cp.Port = 0;
+                cp.IntegratedSecurity = true;
+                cp.ConnectionString = new System.Data.Common.DbConnectionStringBuilder
+                {
+                    ["Data Source"] = Host, ["Initial Catalog"] = Database,
+                    ["Integrated Security"] = true, ["TrustServerCertificate"] = true
+                }.ConnectionString;
+            }
             return cp;
         }
 
@@ -145,7 +158,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
             return databaseType.ToLowerInvariant() switch
             {
-                "sqlserver" => BeepDataSourceType.SqlServer,
+                "sqlserver" or "sql server" => BeepDataSourceType.SqlServer,
                 "postgre" or "postgresql" => BeepDataSourceType.Postgre,
                 "mysql" or "mariadb" => BeepDataSourceType.Mysql,
                 "oracle" => BeepDataSourceType.Oracle,

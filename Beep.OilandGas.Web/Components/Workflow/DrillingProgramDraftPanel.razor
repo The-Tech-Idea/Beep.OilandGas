@@ -142,12 +142,12 @@ else
     [Parameter]public string? WellUwi{get;set;}
     [CascadingParameter] public Beep.OilandGas.Web.Services.CompanyEnvironmentDisplay? CompanyEnvironment { get; set; }
     private string? SuggestedDepthUnit => CompanyEnvironment?.Matches(Company) == true && CompanyEnvironment.Review.Settings.DepthUnit is "m" or "ft" ? CompanyEnvironment.Review.Settings.DepthUnit : null;
-    private string? CompanyLocalTime(DateTimeOffset instant) => CompanyEnvironment?.Matches(Company) == true ? CompanyEnvironment.LocalTime(instant.UtcDateTime) : null;
+    private string? CompanyLocalTime(DateTimeOffset instant) => CompanyEnvironment?.Matches(Company) == true ? CompanyEnvironment.LocalTime(instant.UtcDateTime, Calls) : null;
     private void UseCompanyDepthUnit(){if(string.IsNullOrEmpty(unit) && md is null && tvd is null && SuggestedDepthUnit is {} suggested) unit=suggested;}
     private bool DepthUnitLocked => !string.IsNullOrEmpty(unit) && (md is not null || tvd is not null);
     private void ClearDepthsForUnitChange(){if(DepthUnitLocked){md=null;tvd=null;}}
     private DrillingProgramDraftState? _state;private string? loaded,well,afe,name,objective,type,profile,unit;private decimal? md,tvd;private int? days;private DateTime? start,end;private bool disposed,initialized;
-    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Afes,Journal,Calls.Explain);_state.Changed+=Changed;Company.Changed+=ClearCompanyInputs;}
+    protected override void OnInitialized(){_state=new(Company,Personas,Drilling,Afes,Journal,Calls);_state.Changed+=Changed;Company.Changed+=ClearCompanyInputs;}
     protected override async Task OnParametersSetAsync(){if(!initialized || loaded!=WellUwi){initialized=true;loaded=WellUwi;await Reload();}}
     private void PrepareReview(string id)=>_state!.PrepareReview(id);private void CancelReview()=>_state!.CancelReview();private Task SubmitReview()=>_state!.SubmitReviewAsync();private Task RecoverReview()=>_state!.RecoverReviewAsync();
     private Task ReviewRouting(string id)=>_state!.ReviewRoutingAsync(id);

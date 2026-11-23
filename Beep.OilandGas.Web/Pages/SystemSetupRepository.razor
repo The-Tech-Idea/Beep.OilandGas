@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -173,7 +174,7 @@
             _recoveryReady = true;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "SystemSetupRepository.RestoreIntent", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (generation != Interlocked.Read(ref _authGeneration) || _disposed) return;
             Logger.LogWarning(error, "Shared setup recovery is unavailable");
             _message = "Shared setup recovery is unavailable. Reload this page before saving a record.";
@@ -207,7 +208,7 @@
             _message = "Source removed from the draft. Save the shared record, then review affected company environments.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Shared source could not be removed from the setup draft"); _message = "The source could not be removed. Check that it is defined in this shared draft."; }
+        { HandledFailures.ReportHandled(error, "SystemSetupRepository.RemoveSharedSource", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Shared source could not be removed from the setup draft"); _message = "The source could not be removed. Check that it is defined in this shared draft."; }
     }
     private void EditSharedSource(bool change)
     {
@@ -220,7 +221,7 @@
             _message = "Source draft updated. Save the shared record, then review company bindings.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Shared source could not be edited in the setup draft"); _message = "The source could not be updated. Check the name, uppercase module and existing settings."; }
+        { HandledFailures.ReportHandled(error, "SystemSetupRepository.EditSharedSource", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Shared source could not be edited in the setup draft"); _message = "The source could not be updated. Check the name, uppercase module and existing settings."; }
     }
 
     private async Task Refresh()
@@ -244,7 +245,7 @@
             else _connection = "";
             if (status.Status == "SchemaReady") await RefreshDefaults();
         }
-        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System repository status could not be confirmed"); _status = null; _message = "The system repository status could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.Refresh", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (SameGeneration(generation)) { Logger.LogWarning(error, "System repository status could not be confirmed"); _status = null; _message = "The system repository status could not be confirmed."; } }
         finally { if (SameGeneration(generation)) _busy = false; }
     }
 
@@ -263,7 +264,7 @@
                 _message = "System connection selected. Review the schema status before continuing.";
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "SystemSetupRepository.SelectConnection", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (SameGeneration(generation))
             {
                 Logger.LogWarning(error, "System connection selection was not confirmed");
@@ -284,7 +285,7 @@
             var hasDefaults = await SystemSetupReadinessReader.HasDefaultsAsync(Api);
             if (SameGeneration(generation)) _defaultsStatus = hasDefaults ? "present; verify each company environment" : "missing";
         }
-        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "Shared tool defaults could not be checked"); _defaultsStatus = "unavailable; check the repository"; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.RefreshDefaults", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (SameGeneration(generation)) { Logger.LogWarning(error, "Shared tool defaults could not be checked"); _defaultsStatus = "unavailable; check the repository"; } }
     }
 
     private async Task Plan()
@@ -299,7 +300,7 @@
             if (_plan is null || !_plan.Success || _plan.PreflightChecks is null || _plan.PolicyFindings is null || _plan.DryRunOperations is null)
             { _plan = null; _message = "The system repository migration plan was not confirmed."; }
         }
-        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration planning failed"); _message = "The migration plan could not be generated. Check the system connection and setup policy."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.Plan", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration planning failed"); _message = "The migration plan could not be generated. Check the system connection and setup policy."; } }
         finally { if (SameGeneration(generation)) _busy = false; }
     }
 
@@ -315,7 +316,7 @@
                 throw new InvalidOperationException("Plan approval did not match the reviewed plan.");
             _approved = true;
         }
-        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration approval failed"); _message = "Plan approval could not be confirmed. Generate a new plan."; Invalidate(); } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.Approve", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration approval failed"); _message = "Plan approval could not be confirmed. Generate a new plan."; Invalidate(); } }
         finally { if (SameGeneration(generation)) _busy = false; }
     }
 
@@ -332,7 +333,7 @@
                 throw new InvalidOperationException("Migration outcome did not match the reviewed plan.");
             _message = "Migration reported success. Check repository status before continuing.";
         }
-        catch (Exception error) { if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration outcome is unconfirmed"); _message = "Migration outcome is unconfirmed. Check repository status and migration artifacts before another attempt."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.Execute", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (SameGeneration(generation)) { Logger.LogWarning(error, "System migration outcome is unconfirmed"); _message = "Migration outcome is unconfirmed. Check repository status and migration artifacts before another attempt."; } }
         finally { if (SameGeneration(generation)) _busy = false; }
     }
 
@@ -364,7 +365,7 @@
             _recordJson = draft.SettingsJson; _recordVersion = draft.ToolsVersion;
             _message = "Tool defaults prepared as a draft. Review them before saving.";
         }
-        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Tool default draft could not be prepared"); _message = "The installed tool defaults could not be prepared. Check the API server."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.LoadToolsDraft", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "Tool default draft could not be prepared"); _message = "The installed tool defaults could not be prepared. Check the API server."; } }
         finally { if (Current(generation, actor)) _busy = false; }
     }
     private async Task LoadRecord()
@@ -396,7 +397,7 @@
             _recordJson = result.Configuration?.SettingsJson ?? "{}"; _recordLoaded = true;
             _message = result.Configuration is null ? "No shared record exists for this category and key." : "Shared record loaded.";
         }
-        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "The shared system record could not be loaded"); if (_recordPending is null) _recordLoaded = false; _message = "The shared record could not be confirmed. Check the category, key and system repository."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.LoadRecord", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "The shared system record could not be loaded"); if (_recordPending is null) _recordLoaded = false; _message = "The shared record could not be confirmed. Check the category, key and system repository."; } }
         finally { if (Current(generation, actor)) _busy = false; }
     }
 
@@ -413,7 +414,7 @@
             _recordPending = request;
         }
         catch (Exception error)
-        {
+        { HandledFailures.ReportHandled(error, "SystemSetupRepository.SaveRecord", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             if (Current(generation, actor)) { Logger.LogWarning(error, "Shared setup request could not be retained"); _message = "The original save could not be retained; no save was sent. Reload this page to recover it."; _recoveryReady = false; _busy = false; }
             return;
         }
@@ -429,11 +430,11 @@
             if (request.Category == "TOOLS" && request.Key == "DEFAULT") await RefreshDefaults();
         }
         catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        {
+        { HandledFailures.ReportHandled(error, "SystemSetupRepository.SaveRecord", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);
             try { await SystemIntents.ClearSystemAsync(intent); if (Current(generation, actor)) { _recordPending = null; _message = "The record was refused. Review the identifiers and JSON."; } }
-            catch (Exception clearError) { if (Current(generation, actor)) { Logger.LogWarning(clearError, "Refused setup request could not be cleared"); _message = "The record was refused, but recovery storage could not be cleared. Reload this page."; } }
+            catch (Exception clearError) { HandledFailures.ReportHandled(clearError, "SystemSetupRepository.SaveRecord", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(clearError, "Refused setup request could not be cleared"); _message = "The record was refused, but recovery storage could not be cleared. Reload this page."; } }
         }
-        catch (Exception error) { if (Current(generation, actor)) { Logger.LogWarning(error, "Shared record save outcome is unconfirmed"); _message = "The save outcome is unconfirmed. Retry the same save or reload the record."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "SystemSetupRepository.SaveRecord", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(generation, actor)) { Logger.LogWarning(error, "Shared record save outcome is unconfirmed"); _message = "The save outcome is unconfirmed. Retry the same save or reload the record."; } }
         finally { if (Current(generation, actor)) _busy = false; }
     }
     private static bool Matches(SystemSetupConfiguration value, SystemSetupRequest request)

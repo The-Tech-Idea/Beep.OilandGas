@@ -58,7 +58,7 @@ public sealed class DrillingExecutionAssignmentStateTests
             Client.Setup(c=>c.RecoverExecutionAssignmentAsync(It.IsAny<DrillingExecutionAssignment>(),It.IsAny<CancellationToken>())).ReturnsAsync((DrillingExecutionAssignment input,CancellationToken _)=>Receipt(input));
             State=NewState();await State.LoadAsync(original.Source.Basis.ReviewInstanceId);
         }
-        internal DrillingExecutionAssignmentState NewState()=>new(Company,Personas.Object,Client.Object,Journal.Object,(_,_,message)=>message);
+        internal DrillingExecutionAssignmentState NewState()=>new(Company,Personas.Object,Client.Object,Journal.Object,TestFailures.Calls(new RecordingFailureReporter()));
         internal void Freeze()=>State.Prepare(Native.Original.Workflow.ProcessId,Native.Original.SenderRole,"Original site reporting responsibility confirmed");
         public void Dispose(){State?.Dispose();Company.Dispose();}
     }
@@ -130,7 +130,7 @@ public sealed class DrillingExecutionAssignmentStateTests
     [Theory,InlineData(false),InlineData(true)]public async Task ActualSenderScreenUsesEmptyExplicitFieldsThenFrozenConfirmationAndOutcome(bool lostAcknowledgement)
     {
         using var f=new Fixture();await f.Prepare();using var ui=new TestContext();ui.JSInterop.Mode=JSRuntimeMode.Loose;ui.Services.AddMudServices();
-        ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton(f.Journal.Object);ui.Services.AddSingleton(new OilGasCallFailures(Mock.Of<IFailureReporter>()));
+        ui.Services.AddSingleton(f.Company);ui.Services.AddSingleton(f.Personas.Object);ui.Services.AddSingleton(f.Client.Object);ui.Services.AddSingleton(f.Journal.Object);ui.Services.AddSingleton(TestFailures.Calls(new RecordingFailureReporter()));
         ui.Services.GetRequiredService<NavigationManager>().NavigateTo("/drilling/program-execution/assignment?reviewId="+Uri.EscapeDataString(f.Native.Original.Source.Basis.ReviewInstanceId));
         var page=ui.RenderComponent<Beep.OilandGas.Web.Pages.PPDM39.Drilling.DrillingExecutionAssignment>();
         page.WaitForAssertion(()=>Assert.Contains("Configured reporting destinations",page.Markup));Assert.Contains("Assignment reason",page.Markup);

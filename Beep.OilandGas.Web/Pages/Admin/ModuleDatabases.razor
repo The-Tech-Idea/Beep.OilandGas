@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -181,7 +182,7 @@
             SelectModule(_modules.Any(x => x.ModuleId == _moduleId) ? _moduleId :
                 _modules.FirstOrDefault(x => x.ModuleId == "PPDM_CORE")?.ModuleId ?? _modules.FirstOrDefault()?.ModuleId ?? "");
         }
-        catch { _tenants = []; _modules = []; _connections = []; _error = "Could not load tenant module databases."; }
+        catch (System.Exception handledFailureAuto1) { HandledFailures.ReportHandled(handledFailureAuto1, "ModuleDatabases.Reload", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _tenants = []; _modules = []; _connections = []; _error = "Could not load tenant module databases."; }
         finally { _busy = false; }
     }
 
@@ -217,7 +218,7 @@
             _connection = saved.ConnectionName;
             Snackbar.Add("Module binding saved.", Severity.Success);
         }
-        catch { _error = "Binding could not be saved. Reload to check for changes."; }
+        catch (System.Exception handledFailureAuto2) { HandledFailures.ReportHandled(handledFailureAuto2, "ModuleDatabases.Save", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _error = "Binding could not be saved. Reload to check for changes."; }
         finally { _busy = false; }
     }
 
@@ -235,7 +236,7 @@
             _plan = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             if (!result.Success) _error = "Migration planning failed.";
         }
-        catch { _error = "Could not generate the migration plan. Check the binding and connection."; }
+        catch (System.Exception handledFailureAuto3) { HandledFailures.ReportHandled(handledFailureAuto3, "ModuleDatabases.Plan", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _error = "Could not generate the migration plan. Check the binding and connection."; }
         finally { _busy = false; }
     }
 
@@ -259,7 +260,7 @@
             _seedResult = await Client.SeedAsync(_tenantId, _moduleId, new(Selected.ConcurrencyStamp!));
             if (!_seedResult.Success) _error = "Module seeding reported errors. Check the database before retrying.";
         }
-        catch { _error = "Seeding did not complete successfully. Check the binding, schema and server logs before retrying."; }
+        catch (System.Exception handledFailureAuto4) { HandledFailures.ReportHandled(handledFailureAuto4, "ModuleDatabases.Seed", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _error = "Seeding did not complete successfully. Check the binding, schema and server logs before retrying."; }
         finally { _busy = false; }
     }
 
@@ -275,7 +276,7 @@
             _approved = result.Success && result.PlanHash == _reviewed.PlanHash && result.ManifestHash == _reviewed.ManifestHash;
             if (!_approved) _error = "Approval failed or the plan changed. Generate a new plan.";
         }
-        catch { _error = "Approval could not be verified. Reload and generate a new plan."; }
+        catch (System.Exception handledFailureAuto5) { HandledFailures.ReportHandled(handledFailureAuto5, "ModuleDatabases.Approve", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _error = "Approval could not be verified. Reload and generate a new plan."; }
         finally { _busy = false; }
     }
 
@@ -290,7 +291,7 @@
             await VerifyBinding();
             _execution = await Client.ExecuteAsync(_tenantId, _reviewed, _riskAcknowledged);
         }
-        catch { _error = "Execution outcome could not be verified. Check migration status before attempting another migration."; }
+        catch (System.Exception handledFailureAuto6) { HandledFailures.ReportHandled(handledFailureAuto6, "ModuleDatabases.Execute", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _error = "Execution outcome could not be verified. Check migration status before attempting another migration."; }
         finally { _busy = false; }
     }
 }

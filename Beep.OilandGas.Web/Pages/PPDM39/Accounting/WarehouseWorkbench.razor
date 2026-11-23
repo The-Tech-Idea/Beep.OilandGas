@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @using Beep.OilandGas.Models.Data.Common
@@ -97,7 +98,7 @@
     protected override Task OnParametersSetAsync()
     {
         try{if(!string.IsNullOrWhiteSpace(Id))Id=Beep.OilandGas.Models.Data.Common.RecordedSourceId.FromDetailLocation(Navigation.Uri,Navigation.BaseUri,"warehouse/items/");}
-        catch(FormatException){Workspace.Clear();_error="The inventory address is invalid. Open the original item from the company queue.";return Task.CompletedTask;}
+        catch(FormatException handledFailureAuto1){ HandledFailures.ReportHandled(handledFailureAuto1, "WarehouseWorkbench.OnParametersSetAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error); Workspace.Clear();_error="The inventory address is invalid. Open the original item from the company queue.";return Task.CompletedTask;}
         return Reload();
     }
     private async Task Reload()

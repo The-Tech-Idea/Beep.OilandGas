@@ -12,7 +12,9 @@ public static class CompanyHubGroups
     public static string Name(CompanyHubChannel channel)
     {
         ArgumentNullException.ThrowIfNull(channel);
-        Valid(channel.Scope.TenantId, 64); Valid(channel.Scope.BusinessAssociateId, 128); Valid(channel.Resource, 512);
+        if (!Enum.IsDefined(channel.Kind)) throw new ArgumentException("Unknown company channel.", nameof(channel));
+        if (!Valid(channel.Scope.TenantId, 64) || !Valid(channel.Scope.BusinessAssociateId, 128) || !Valid(channel.Resource, 512))
+            throw new ArgumentException("A complete, valid company channel is required.");
         if (channel.Kind != CompanyChannelKind.Persona && channel.Field is not null)
             throw new ArgumentException("Only persona channels specify a field.", nameof(channel));
         var prefix = $"tenant:{Uri.EscapeDataString(channel.Scope.TenantId)}:company:{Uri.EscapeDataString(channel.Scope.BusinessAssociateId)}";
@@ -23,17 +25,18 @@ public static class CompanyHubGroups
             CompanyChannelKind.Process => $"{prefix}:process:{resource}",
             CompanyChannelKind.Operation => $"{prefix}:operation:{resource}",
             CompanyChannelKind.Workflow => $"{prefix}:workflow:{resource}",
-            CompanyChannelKind.Persona => Persona(prefix, resource, channel.Field),
-            _ => throw new ArgumentException("Unknown company channel.", nameof(channel))
+            CompanyChannelKind.Persona => Persona(prefix, resource, channel.Field)
         };
     }
 
     private static string Persona(string prefix, string resource, string? field)
-    { Valid(field, 512); return $"{prefix}:persona:{resource}:field:{Uri.EscapeDataString(field!)}"; }
-    private static void Valid(string? value, int max)
     {
-        if (string.IsNullOrWhiteSpace(value) || value.Length > max || value.Any(char.IsControl))
-            throw new ArgumentException("A complete, valid company channel is required.");
+        if (!Valid(field, 512)) throw new ArgumentException("A complete, valid company channel is required.");
+        return $"{prefix}:persona:{resource}:field:{Uri.EscapeDataString(field!)}";
+    }
+    private static bool Valid(string? value, int max)
+    {
+        return !string.IsNullOrWhiteSpace(value) && value.Length <= max && !value.Any(char.IsControl);
     }
 
     public static CompanyHubChannel? Parse(string? group)
@@ -48,12 +51,10 @@ public static class CompanyHubGroups
             "workflow" => CompanyChannelKind.Workflow, _ => (CompanyChannelKind?)null
         };
         if (kind is null || (kind == CompanyChannelKind.Persona ? parts.Length != 8 || parts[6] != "field" : parts.Length != 6)) return null;
-        try
-        {
-            var channel = new CompanyHubChannel(new(Uri.UnescapeDataString(parts[1]), Uri.UnescapeDataString(parts[3])),
-                kind.Value, Uri.UnescapeDataString(parts[5]), parts.Length == 8 ? Uri.UnescapeDataString(parts[7]) : null);
-            return Name(channel) == group ? channel : null;
-        }
-        catch (ArgumentException) { return null; }
+        var channel = new CompanyHubChannel(new(Uri.UnescapeDataString(parts[1]), Uri.UnescapeDataString(parts[3])),
+            kind.Value, Uri.UnescapeDataString(parts[5]), parts.Length == 8 ? Uri.UnescapeDataString(parts[7]) : null);
+        if (!Valid(channel.Scope.TenantId, 64) || !Valid(channel.Scope.BusinessAssociateId, 128) ||
+            !Valid(channel.Resource, 512) || kind == CompanyChannelKind.Persona && !Valid(channel.Field, 512)) return null;
+        return Name(channel) == group ? channel : null;
     }
 }

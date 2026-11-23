@@ -9,6 +9,7 @@ namespace Beep.OilandGas.Web.Services;
 public sealed class DeliveryAcceptanceWorkspaceState:IDisposable
 {
     private readonly CompanyClientContext company;
+    private readonly OilGasCallFailures failures;
     private record Selection(string Field,DateTime From,DateTime Through,string Transaction);
     private Selection? selected;
     private RevenueDeliveryAcceptancePreparation? pendingPreparation;
@@ -35,7 +36,7 @@ public sealed class DeliveryAcceptanceWorkspaceState:IDisposable
     public bool Busy{get;private set;}
     public bool HasPendingIntent=>pendingPreparation is not null || pendingDecision is not null || pendingCorrection is not null;
     public bool CanRetryPending
-    {get{if(Busy || review is null || !HasPendingIntent || !PendingMatchesSelection())return false;try{var original=PendingEnvelope();if(original.Correction is not null && (company.Selection?.Permissions.Contains("Accounting.View",StringComparer.Ordinal)!=true || !company.Selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal)))return false;original.RequireExecution();original.RequireCurrent(review);return true;}catch(InvalidOperationException){return false;}}}
+    {get{if(Busy || review is null || !HasPendingIntent || !PendingMatchesSelection())return false;try{var original=PendingEnvelope();if(original.Correction is not null && (company.Selection?.Permissions.Contains("Accounting.View",StringComparer.Ordinal)!=true || !company.Selection.Permissions.Contains("ProductionAccounting.Adjust",StringComparer.Ordinal)))return false;original.RequireExecution();original.RequireCurrent(review);return true;}catch(InvalidOperationException error){failures.Told(error, "DeliveryAcceptanceWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");return false;}}}
     public DELIVERY_ACCEPTANCE_INTENT? SavedIntent=>saved is null?null:CompanyInventorySourceReview.Copy(saved);
     public RevenueDeliveryAcceptanceIntent? PendingOriginal
     {get{if(!HasPendingIntent)return null;var original=PendingEnvelope();return company.Selection is {} selection && selection.Scope==original.Company && selection.UserId==original.ActorUserId?original:null;}}
@@ -43,7 +44,7 @@ public sealed class DeliveryAcceptanceWorkspaceState:IDisposable
     public RevenueDeliveryAcceptanceDecisionCommand? PendingDecision=>pendingDecision is not null && PendingMatchesSelection()?CompanyInventorySourceReview.Copy(pendingDecision.Command):null;
     public RevenueDeliveryAcceptanceReadReview? Review=>review is null?null:CompanyInventorySourceReview.Copy(review);
     public event Action? Changed;
-    public DeliveryAcceptanceWorkspaceState(CompanyClientContext company){this.company=company;company.Changed+=Invalidate;}
+    public DeliveryAcceptanceWorkspaceState(OilGasCallFailures failures, CompanyClientContext company){this.company=company;this.failures=failures;company.Changed+=Invalidate;}
     public void Attach(string? field,DateTime from,DateTime through,string? transaction)
     {
         var next=field is null || transaction is null?null:new Selection(field,from,through,transaction);

@@ -94,8 +94,8 @@ public sealed partial class APInvoiceWorkspaceState
     {
         HasRecordedVarianceSource=source.Invoice.VARIANCE_PROPOSAL_JSON is not null;recordedVariance=null;
         HasRecordedVarianceDecisionSource=source.Invoice.VARIANCE_DECISION_JSON is not null;recordedVarianceDecision=null;
-        if(HasRecordedVarianceDecisionSource)try{recordedVarianceDecision=APInvoiceVarianceDecisionProof.Require(source.Company,source.Invoice);}catch(InvalidOperationException){}
+        if(HasRecordedVarianceDecisionSource)try{recordedVarianceDecision=APInvoiceVarianceDecisionProof.Require(source.Company,source.Invoice);}catch(InvalidOperationException error){failures.Told(error, "APInvoiceWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");}
         if(!HasRecordedVarianceSource)return;
-        try{recordedVariance=APInvoiceVarianceProof.Require(source.Company,source.Invoice);}catch(InvalidOperationException){}
+        try{recordedVariance=APInvoiceVarianceProof.Require(source.Company,source.Invoice);}catch(InvalidOperationException error){failures.Told(error, "APInvoiceWorkspaceState.ReviewEvidence", "The evidence did not satisfy the current review requirements.");}
     }
 }

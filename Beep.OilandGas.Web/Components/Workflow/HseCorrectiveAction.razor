@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Field
 @using Beep.OilandGas.Models.Data.HSE
 @using Beep.OilandGas.PPDM39.DataManagement.Models
@@ -141,7 +142,7 @@ else if (ready && CanRecord)
         if (!needsRead || disposed) return;
         needsRead = false; var version = generation; var context = Context; var incident = IncidentId;
         try { var saved = await Intents.ReadAsync(context, incident); var savedCompletion = await Intents.ReadCompletionAsync(context, incident); var savedVerification = await Intents.ReadVerificationAsync(context, incident); if (disposed || version != generation) return; original = saved; completion = savedCompletion; pendingVerification = savedVerification; ready = true; }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action recovery is unavailable"); if (disposed || version != generation) return; unavailable = true; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.OnAfterRenderAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action recovery is unavailable"); if (disposed || version != generation) return; unavailable = true; }
         await InvokeAsync(StateHasChanged);
     }
     private async Task RequireContextAsync(long version, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -168,7 +169,7 @@ else if (ready && CanRecord)
             if (result.Context != Context || result.IncidentId != IncidentId) throw new InvalidOperationException("The recorded choices belong to another incident or FIELD.");
             options = result;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action choices could not be confirmed"); if (!disposed && version == generation) message = "Could not confirm a corrective plan and its recorded choices. Review the plan and try again."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.ReviewOptionsAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action choices could not be confirmed"); if (!disposed && version == generation) message = "Could not confirm a corrective plan and its recorded choices. Review the plan and try again."; }
         finally { busy = false; }
     }
     private async Task SubmitAsync()
@@ -186,7 +187,7 @@ else if (ready && CanRecord)
             await Intents.RetainAsync(pending); await RequireContextAsync(version, snapshot);
             original = pending; await SendAsync(pending, version, snapshot);
         }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "The action was not confirmed. Reload to reconcile the original request."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.SubmitAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "The action was not confirmed. Reload to reconcile the original request."; } }
         finally { busy = false; }
     }
     private async Task RetryAsync()
@@ -194,7 +195,7 @@ else if (ready && CanRecord)
         if (busy || original is not { } pending) return;
         var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
         try { await SendAsync(pending, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action reconciliation failed"); if (!disposed && version == generation) message = "The original action could not be confirmed. Check the plan and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.RetryAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action reconciliation failed"); if (!disposed && version == generation) message = "The original action could not be confirmed. Check the plan and retry."; }
         finally { busy = false; }
     }
     private async Task SendAsync(CorrectiveActionOriginal pending, long version, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -221,7 +222,7 @@ else if (ready && CanRecord)
             if (result.Context != Context || result.IncidentId != IncidentId) throw new InvalidOperationException("The verification evidence belongs to another incident.");
             verification = result;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action verification review failed"); if (!disposed && version == generation) message = "Verification evidence could not be confirmed. Reload and try again."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.ReviewVerificationAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action verification review failed"); if (!disposed && version == generation) message = "Verification evidence could not be confirmed. Reload and try again."; }
         finally { busy = false; }
     }
     private async Task RecordVerificationAsync()
@@ -237,7 +238,7 @@ else if (ready && CanRecord)
             await Intents.RetainVerificationAsync(pending); await RequireContextAsync(version, snapshot); pendingVerification = pending;
             await SendVerificationAsync(pending, version, snapshot);
         }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action verification could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "Verification was not confirmed. Reload to reconcile the original decision."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.RecordVerificationAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action verification could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "Verification was not confirmed. Reload to reconcile the original decision."; } }
         finally { busy = false; }
     }
     private async Task RetryVerificationAsync()
@@ -245,7 +246,7 @@ else if (ready && CanRecord)
         if (busy || pendingVerification is not { } pending) return;
         var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
         try { await SendVerificationAsync(pending, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action verification reconciliation failed"); if (!disposed && version == generation) message = "The original verification could not be confirmed. Review the incident and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.RetryVerificationAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action verification reconciliation failed"); if (!disposed && version == generation) message = "The original verification could not be confirmed. Review the incident and retry."; }
         finally { busy = false; }
     }
     private async Task SendVerificationAsync(CAVerificationDecision pending, long version, (long Version, CompanyClientSelection? Selection) snapshot)
@@ -284,7 +285,7 @@ else if (ready && CanRecord)
             if (result.Actions.Context != Context || result.Actions.IncidentId != IncidentId) throw new InvalidOperationException("The closure review changed.");
             closure = result;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Incident closure review failed"); if (!disposed && version == generation) message = "Closure evidence could not be confirmed. Reload and review the incident again."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.ReviewClosureAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Incident closure review failed"); if (!disposed && version == generation) message = "Closure evidence could not be confirmed. Reload and review the incident again."; }
         finally { busy = false; }
     }
     private async Task ReviewCompletionAsync()
@@ -300,7 +301,7 @@ else if (ready && CanRecord)
                 throw new InvalidOperationException("The reviewed action changed.");
             completionReview = result;
         }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action completion review failed"); if (!disposed && version == generation) message = "The action could not be reviewed. Reload and try again."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.ReviewCompletionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action completion review failed"); if (!disposed && version == generation) message = "The action could not be reviewed. Reload and try again."; }
         finally { busy = false; }
     }
     private async Task CompleteAsync()
@@ -316,7 +317,7 @@ else if (ready && CanRecord)
             await Intents.RetainCompletionAsync(pending); await RequireContextAsync(version, snapshot); completion = pending;
             await SendCompletionAsync(pending, version, snapshot);
         }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action completion could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "Completion was not confirmed. Reload to reconcile the original evidence."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.CompleteAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action completion could not be confirmed"); if (!disposed && version == generation) { needsRead = true; ready = false; message = "Completion was not confirmed. Reload to reconcile the original evidence."; } }
         finally { busy = false; }
     }
     private async Task RetryCompletionAsync()
@@ -324,7 +325,7 @@ else if (ready && CanRecord)
         if (busy || completion is not { } pending) return;
         var version = generation; var snapshot = Company.Snapshot; busy = true; message = null;
         try { await SendCompletionAsync(pending, version, snapshot); }
-        catch (Exception error) { Logger.LogWarning(error, "Corrective action completion reconciliation failed"); if (!disposed && version == generation) message = "The original completion could not be confirmed. Review the action and retry."; }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "HseCorrectiveAction.RetryCompletionAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Corrective action completion reconciliation failed"); if (!disposed && version == generation) message = "The original completion could not be confirmed. Review the action and retry."; }
         finally { busy = false; }
     }
     private async Task SendCompletionAsync(CorrectiveActionCompletionOriginal pending, long version, (long Version, CompanyClientSelection? Selection) snapshot)

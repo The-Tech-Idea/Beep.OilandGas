@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.PPDM39.DataManagement.Models
 @page "/data/versioning"
@@ -92,7 +93,7 @@
                 .Select(s => new SnapshotRow(s.Label ?? s.Table, s.Table, s.CreatedBy, s.CreatedAt, s.RowCount))
                 .ToList() ?? new();
         }
-        catch (Exception) { Snackbar.Add("Could not load snapshots.", Severity.Error); }
+        catch (Exception handledFailureAuto1) { HandledFailures.ReportHandled(handledFailureAuto1, "Versioning.LoadSnapshotsAsync", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Snackbar.Add("Could not load snapshots.", Severity.Error); }
         finally { _loading = false; }
     }
 
@@ -114,7 +115,7 @@
                 Snackbar.Add($"Snapshot '{label}' created.", Severity.Success);
             }
         }
-        catch (Exception) { Snackbar.Add("Snapshot failed.", Severity.Error); }
+        catch (Exception handledFailureAuto2) { HandledFailures.ReportHandled(handledFailureAuto2, "Versioning.CreateSnapshot", "the operation is unconfirmed; the existing handler retains its refusal, cancellation or recovery state", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Snackbar.Add("Snapshot failed.", Severity.Error); }
     }
 
     private void CompareSnapshot(SnapshotRow row) =>

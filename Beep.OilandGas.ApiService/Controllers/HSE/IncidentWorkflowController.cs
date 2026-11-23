@@ -17,14 +17,14 @@ namespace Beep.OilandGas.ApiService.Controllers.HSE;
 [Authorize(Policy = PermissionConstants.HSE.ManageIncidents)]
 [RequireCurrentFieldAccess(PermissionConstants.HSE.ManageIncidents, true)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflow) : ControllerBase
+public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflow, TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : ControllerBase
 {
     [HttpGet("closure/resolution-review")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
     public async Task<ActionResult<IncidentClosureResolutionReview>> ReviewClosureResolutionAsync([FromQuery] string incidentId)
     {
         if (!LeaseSummaryValidator.Identifier(incidentId)) throw RefusalException.Invalid("An exact incident is required.");
-        try { return Ok(await workflow.ReviewClosureResolutionAsync(User, incidentId)); } catch (UnauthorizedAccessException) { return Forbid(); }
+        try { return Ok(await workflow.ReviewClosureResolutionAsync(User, incidentId)); } catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpPost("closure/resolve-native-history")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
@@ -32,14 +32,14 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
     {
         if (original is null) throw RefusalException.Invalid("The original native resolution is required.");
         try { original.Require(); } catch (InvalidOperationException) { throw RefusalException.Invalid("The original native resolution is invalid."); }
-        try { return Ok(await workflow.ResolveClosureAsync(User, original)); } catch (UnauthorizedAccessException) { return Forbid(); }
+        try { return Ok(await workflow.ResolveClosureAsync(User, original)); } catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpGet("closure/review")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
     public async Task<ActionResult<CompanyHseClosureReview>> ReviewClosureStageAsync([FromQuery] string incidentId)
     {
         try { return Ok(await workflow.ReviewClosureStageAsync(User, incidentId)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpPost("closure/complete-stage")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
@@ -48,7 +48,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
         if (original is null) throw RefusalException.Invalid("The original reviewed closure command is required.");
         try { original.Require(); } catch (InvalidOperationException) { throw RefusalException.Invalid("The original closure command is invalid."); }
         try { return Ok(await workflow.CompleteClosureStageAsync(User, original)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpPost("closure/record-native")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
@@ -57,14 +57,14 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
         if (approved is null) throw RefusalException.Invalid("The recorded lifecycle approval is required.");
         try { approved.Require(); } catch (InvalidOperationException) { throw RefusalException.Invalid("The recorded lifecycle approval is invalid."); }
         try { return Ok(await workflow.RecordApprovedIncidentClosedAsync(User, approved)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpGet("closure/correction-review")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
     public async Task<ActionResult<CompanyHseClosureReview>> ReviewCorrectionReturnAsync([FromQuery] string incidentId)
     {
         try { return Ok(await workflow.ReviewCorrectionReturnAsync(User, incidentId)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpPost("closure/return-for-correction")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
@@ -73,21 +73,21 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
         if (original is null) throw RefusalException.Invalid("The original reviewed rejection return is required.");
         try { original.Require(); } catch (InvalidOperationException) { throw RefusalException.Invalid("The correction return command is invalid."); }
         try { return Ok(await workflow.ReturnForCorrectionAsync(User, original)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpGet("closure/recovery")]
     [Authorize(Policy = PermissionConstants.Workflow.Approve)]
     public async Task<ActionResult<CompanyHseClosureRecovery>> RecoverClosureStageAsync([FromQuery] string incidentId)
     {
         try { var recovered = await workflow.RecoverClosureStageAsync(User, incidentId); return recovered is null ? NotFound() : Ok(recovered); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
     [HttpGet("review")]
     public async Task<ActionResult<CompanyHseWorkflowReview>> ReviewAsync([FromQuery] string incidentId)
     {
         if (!LeaseSummaryValidator.Identifier(incidentId)) throw RefusalException.Invalid("An exact incident is required.");
         try { return Ok(await workflow.ReviewAsync(User, incidentId)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpPost("start")]
@@ -97,7 +97,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
         try { original.Require(); }
         catch (InvalidOperationException) { throw RefusalException.Invalid("The reviewed workflow request is invalid."); }
         try { return Ok(await workflow.StartAsync(User, original)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpGet("rca/review")]
@@ -105,7 +105,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
     {
         if (!LeaseSummaryValidator.Identifier(incidentId)) throw RefusalException.Invalid("An exact incident is required.");
         try { return Ok(await workflow.ReviewRcaAsync(User, incidentId)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpPost("rca/record-cause")]
@@ -115,7 +115,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
         try { original.Require(); }
         catch (InvalidOperationException) { throw RefusalException.Invalid("The original reviewed cause is invalid."); }
         try { return Ok(await workflow.RecordRcaAsync(User, original)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpGet("rca/recorded")]
@@ -123,7 +123,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
     {
         if (!LeaseSummaryValidator.Identifier(incidentId)) throw RefusalException.Invalid("An exact incident is required.");
         try { return Ok(await workflow.ReadRecordedRcaAsync(User, incidentId)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpGet("rca/shared")]
@@ -131,7 +131,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
     {
         if (!LeaseSummaryValidator.Identifier(incidentId)) throw RefusalException.Invalid("An exact incident is required.");
         try { return Ok(await workflow.ReadSharedRcaAsync(User, incidentId)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpGet("rca/handoff-review")]
@@ -139,7 +139,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
     {
         if (!LeaseSummaryValidator.Identifier(incidentId) || intentId == Guid.Empty) throw RefusalException.Invalid("An exact incident and recorded cause are required.");
         try { return Ok(await workflow.ReviewRcaHandoffAsync(User, incidentId, intentId)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpPost("rca/handoff")]
@@ -149,7 +149,7 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
         try { original.Require(); }
         catch (InvalidOperationException) { throw RefusalException.Invalid("The original RCA handoff is invalid."); }
         try { return Ok(await workflow.CompleteRcaHandoffAsync(User, original)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 
     [HttpGet("rca/handoff-recovery")]
@@ -157,6 +157,6 @@ public sealed class IncidentWorkflowController(CompanyHseWorkflowService workflo
     {
         if (!LeaseSummaryValidator.Identifier(incidentId)) throw RefusalException.Invalid("An exact incident is required.");
         try { var result = await workflow.RecoverRcaHandoffAsync(User, incidentId); return result is null ? NotFound() : Ok(result); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company incident workflow","request forbidden"); return Forbid(); }
     }
 }

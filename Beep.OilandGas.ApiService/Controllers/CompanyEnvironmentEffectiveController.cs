@@ -12,7 +12,7 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [Authorize]
 [Route("api/company-environment/effective")]
 public sealed class CompanyEnvironmentEffectiveController(RepositoryTenantContext tenant, RepositoryCompanyContextResolver companies,
-    CompanyEnvironmentEffectiveResolver environments, ILogger<CompanyEnvironmentEffectiveController> logger) : ControllerBase
+    CompanyEnvironmentEffectiveResolver environments, TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken token)
@@ -28,8 +28,8 @@ public sealed class CompanyEnvironmentEffectiveController(RepositoryTenantContex
                 throw new UnauthorizedAccessException("Company access changed.");
         }
         try { await Guard(); return Ok(await environments.ResolveAsync(selected.Scope, Guard)); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing company or setup request","request refused"); return Forbid(); }
         catch (Exception invalid) when (invalid is ArgumentException or System.Text.Json.JsonException or FormatException or NotSupportedException or InvalidOperationException)
-        { logger.LogWarning(invalid, "The effective company environment could not be confirmed"); return Conflict(new { error = "The shared, country or company setup could not be confirmed. Ask an administrator to review system setup." }); }
+        { failures.ReportHandled(invalid,"The effective company environment could not be confirmed","original company evidence or outcome unconfirmed; request refused"); return Conflict(new { error = "The shared, country or company setup could not be confirmed. Ask an administrator to review system setup." }); }
     }
 }

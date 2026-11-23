@@ -25,6 +25,13 @@ public sealed class AssetAccessMiddlewareTests
     [InlineData("/api/auth/repository/me/deletion")]
     [InlineData("/api/setup/modules/PPDM_CORE/connection")]
     [InlineData("/api/setup/repository")]
+    [InlineData("/api/identity/users")]
+    [InlineData("/api/identity/users/first/roles")]
+    [InlineData("/api/identity/roles")]
+    [InlineData("/api/ppdm39/setup")]
+    [InlineData("/api/personas")]
+    [InlineData("/api/personas/ENGINEER")]
+    [InlineData("/api/personas/roles/admin/workspaces")]
     public async Task Account_and_setup_requests_are_not_asked_about_assets(string path)
     {
         var (context, access) = Request(path);
@@ -38,10 +45,15 @@ public sealed class AssetAccessMiddlewareTests
     }
 
     /// <summary>Everything else still is: the same unbound repository fails an asset request as it did.</summary>
-    [Fact]
-    public async Task An_asset_request_is_still_asked()
+    [Theory]
+    [InlineData("/api/production/fields")]
+    [InlineData("/api/identity/security/rows")]
+    [InlineData("/api/identity-other/users")]
+    [InlineData("/api/personas/users/first")]
+    [InlineData("/api/personas/workspaces/current")]
+    public async Task An_asset_request_is_still_asked(string path)
     {
-        var (context, _) = Request("/api/production/fields");
+        var (context, _) = Request(path);
 
         // OILGAS-CATCH-01: the unbound module is the resolver's refusal (409), passed through untouched.
         await Refusals.RefusedAsync(RefusalKind.Conflict, () =>

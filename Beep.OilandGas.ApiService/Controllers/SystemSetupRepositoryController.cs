@@ -20,7 +20,7 @@ namespace Beep.OilandGas.ApiService.Controllers;
 [Route("api/setup/system-repository")]
 public sealed class SystemSetupRepositoryController(SystemSetupTarget target, IDMEEditor editor,
     IEnumerable<IModuleSetup> modules, IPPDM39SchemaMigrationService migration, IConfiguration configuration,
-    IRepositoryAccessService access) : ControllerBase
+    IRepositoryAccessService access, TheTechIdeaWeb.Diagnostics.IFailureReporter failures) : ControllerBase
 {
     [HttpGet("status")]
     public async Task<IActionResult> Status(CancellationToken token)
@@ -41,16 +41,16 @@ public sealed class SystemSetupRepositoryController(SystemSetupTarget target, ID
             var manifest = modules.Single(x => x.ModuleId == "SYSTEM_SETUP").EntityTypes;
             var status = "SchemaReady";
             try { ModuleSchemaVerification.Verify(editor, source.Source, manifest); }
-            catch (ModuleSchemaMismatchException) { status = "MigrationRequired"; }
+            catch (ModuleSchemaMismatchException mismatch) { failures.ReportHandled(mismatch,"reviewing system setup schema","schema migration required", TheTechIdeaWeb.Diagnostics.FailureSeverity.Degraded); status = "MigrationRequired"; }
             await RequireAdministrator(actor, token);
             RequireSameTarget(source);
             return Ok(new SystemSetupRepositoryStatus(status));
         }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (InvalidOperationException)
-        {
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing system setup schema access","request forbidden"); return Forbid(); }
+        catch (InvalidOperationException changed)
+        { failures.ReportHandled(changed,"reviewing system setup repository","target unavailable or changed; status unconfirmed");
             try { await RequireAdministrator(actor, token); }
-            catch (UnauthorizedAccessException) { return Forbid(); }
+            catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing system setup schema access","request forbidden"); return Forbid(); }
             return Ok(new SystemSetupRepositoryStatus("Unavailable"));
         }
     }
@@ -75,8 +75,8 @@ public sealed class SystemSetupRepositoryController(SystemSetupTarget target, ID
             RequireSameTarget(source);
             return result.Success ? Ok(result) : BadRequest(result);
         }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-        catch (InvalidOperationException) { return Conflict(new { error = "The system setup connection is unavailable or changed." }); }
+        catch (UnauthorizedAccessException denied) { failures.ReportHandled(denied,"authorizing system setup schema access","request forbidden"); return Forbid(); }
+        catch (InvalidOperationException changed) { failures.ReportHandled(changed,"reviewing system setup repository","target unavailable or changed; status unconfirmed"); return Conflict(new { error = "The system setup connection is unavailable or changed." }); }
     }
 
     private async Task RequireAdministrator(string actor, CancellationToken token)

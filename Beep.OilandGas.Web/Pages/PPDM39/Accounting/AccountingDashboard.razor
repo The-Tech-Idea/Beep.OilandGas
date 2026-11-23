@@ -68,7 +68,7 @@
     private string? _sourceError;
     private bool _busy,_disposed,_reloadRequested;
     private string? _error;
-    protected override async Task OnInitializedAsync(){_catalog=new(Company);_apSources=new(Company);Company.Changed+=ContextChanged;DataManagement.CurrentFieldChanged+=FieldChanged;await Reload();await ReloadSources();}
+    protected override async Task OnInitializedAsync(){_catalog=new(Company);_apSources=new(Calls,Company);Company.Changed+=ContextChanged;DataManagement.CurrentFieldChanged+=FieldChanged;await Reload();await ReloadSources();}
     private async Task Reload()
     {
         if(_disposed)return;if(_busy){_catalog?.Clear();_reloadRequested=true;return;}_busy=true;

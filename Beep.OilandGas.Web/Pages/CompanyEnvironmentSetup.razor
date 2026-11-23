@@ -1,3 +1,4 @@
+@inject TheTechIdeaWeb.Diagnostics.IFailureReporter HandledFailures
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Models.Data.Company
 @using Beep.OilandGas.Models.Data.WorkOrder
@@ -271,7 +272,7 @@
             _ghgRecoveryReady = true;
             if (original is not null) _message = "A previous catalog selection is awaiting confirmation.";
         }
-        catch (Exception error) { if (CurrentRecovery(snapshot, recoveryGeneration)) { Logger.LogWarning(error, "Catalog selection recovery is unavailable"); _message = "Selection recovery is unavailable. Check browser storage before saving."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.RestoreGhgIntent", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (CurrentRecovery(snapshot, recoveryGeneration)) { Logger.LogWarning(error, "Catalog selection recovery is unavailable"); _message = "Selection recovery is unavailable. Check browser storage before saving."; } }
         finally { if (CurrentRecovery(snapshot, recoveryGeneration)) StateHasChanged(); }
     }
     private async Task RestoreEnvironmentIntent()
@@ -291,7 +292,7 @@
             }
             _environmentRecoveryReady = true;
         }
-        catch (Exception error) { if (CurrentEnvironmentRecovery(snapshot, generation)) { Logger.LogWarning(error, "Environment recovery is unavailable"); _message = "Environment recovery is unavailable. Check browser storage before saving."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.RestoreEnvironmentIntent", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (CurrentEnvironmentRecovery(snapshot, generation)) { Logger.LogWarning(error, "Environment recovery is unavailable"); _message = "Environment recovery is unavailable. Check browser storage before saving."; } }
         finally { if (CurrentEnvironmentRecovery(snapshot, generation)) StateHasChanged(); }
     }
     private void CountryChanged(string value) { _country = value; _preview = null; _draftReview = null; _verification = null; _effective = null; _sources = null; _wellTest = null; }
@@ -300,7 +301,7 @@
     {
         try { _mappingRows = CompanyEnvironmentOverrideEditor.ReadCompanyCodeMappings(_overrides); _mappingRowsValid = true; }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { _mappingRows = []; _mappingRowsValid = false; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.RefreshMappingRows", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _mappingRows = []; _mappingRowsValid = false; }
     }
     private void SelectMapping(CompanySourceCodeMapping mapping)
     {
@@ -324,7 +325,7 @@
             _message = "Effective mapping selected. Change its value, then apply it to the company draft.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Effective source mapping could not be selected for editing"); _message = "The mapping cannot be edited in this draft. Check the source and mapping values."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.SelectEffectiveMapping", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Effective source mapping could not be selected for editing"); _message = "The mapping cannot be edited in this draft. Check the source and mapping values."; }
     }
     private void ApplyCommonOverrides()
     {
@@ -336,7 +337,7 @@
             _message = "Overrides updated. Preview the settings before saving.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Company environment overrides could not be edited"); _message = "The overrides could not be updated. Check the existing JSON and entered values."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.ApplyCommonOverrides", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Company environment overrides could not be edited"); _message = "The overrides could not be updated. Check the existing JSON and entered values."; }
     }
     private void UseInheritedDisplayFormats()
     {
@@ -348,7 +349,7 @@
             _message = "Display format overrides removed. Preview the inherited settings before saving.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Company display formats could not be inherited"); _message = "Inherited display formats could not be selected. Check the existing overrides."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.UseInheritedDisplayFormats", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Company display formats could not be inherited"); _message = "Inherited display formats could not be selected. Check the existing overrides."; }
     }
     private void UseInheritedCommonSettings()
     {
@@ -360,7 +361,7 @@
             _message = "Common company overrides removed. Preview the inherited settings before saving.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Company environment defaults could not be restored"); _message = "Inherited settings could not be selected. Check the existing overrides."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.UseInheritedCommonSettings", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Company environment defaults could not be restored"); _message = "Inherited settings could not be selected. Check the existing overrides."; }
     }
     private void ApplyRegionLists()
     {
@@ -372,7 +373,7 @@
             _message = "Regional references updated. Preview the settings before saving.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Regional references could not be updated"); _message = "Enter up to 32 distinct entries of at most 128 characters per list, one per line, and check the existing overrides."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.ApplyRegionLists", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Regional references could not be updated"); _message = "Enter up to 32 distinct entries of at most 128 characters per list, one per line, and check the existing overrides."; }
     }
     private void UseInheritedCoordinateSystems() => UseInheritedRegionList(true);
     private void UseInheritedRegulators() => UseInheritedRegionList(false);
@@ -386,7 +387,7 @@
             _message = "Regional override removed. Preview the inherited settings before saving.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Regional defaults could not be inherited"); _message = "Inherited regional settings could not be selected. Check the existing overrides."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.UseInheritedRegionList", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Regional defaults could not be inherited"); _message = "Inherited regional settings could not be selected. Check the existing overrides."; }
     }
     private void AddCompanySource()
         => EditCompanySource(change: false);
@@ -405,7 +406,7 @@
             _message = "Company mapping draft updated. Preview the settings and review code meanings before saving.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Company source mapping could not be edited"); _message = "The mapping could not be updated. Check the source name, profile entity, field and code values."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.EditSourceMapping", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Company source mapping could not be edited"); _message = "The mapping could not be updated. Check the source name, profile entity, field and code values."; }
     }
     private void ChangeCompanySource()
         => EditCompanySource(change: true);
@@ -419,7 +420,7 @@
             _message = "Company source override removed. Preview the effective settings before saving.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Company source override could not be removed"); _message = "The source could not be removed. Check that it is defined in this company draft."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.RemoveCompanySource", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Company source override could not be removed"); _message = "The source could not be removed. Check that it is defined in this company draft."; }
     }
     private void EditCompanySource(bool change)
     {
@@ -432,7 +433,7 @@
             _message = "Source draft updated. Preview and save it, then review its binding and test the source.";
         }
         catch (Exception error) when (error is ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
-        { Logger.LogWarning(error, "Company source could not be edited in the environment draft"); _message = "The source could not be updated. Check the name, uppercase module and existing overrides."; }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.EditCompanySource", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(error, "Company source could not be edited in the environment draft"); _message = "The source could not be updated. Check the name, uppercase module and existing overrides."; }
     }
     private void TestSourceChanged(string value) { _testSource = value; _wellTest = null; }
     private void TestWellChanged(string value) { _testWell = value; _wellTest = null; }
@@ -462,7 +463,7 @@
             _ghgSelection = result.Selection; _ghgSelectionStatus = result.Status; _ghgSelectionLoaded = true;
             _message = result.Selection is null ? "No company catalog selection is saved." : "Company catalog selection loaded.";
         }
-        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company catalog selection could not be loaded"); _ghgSelectionLoaded = false; _message = "The company catalog selection could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.LoadGhgSelection", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company catalog selection could not be loaded"); _ghgSelectionLoaded = false; _message = "The company catalog selection could not be confirmed."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -478,7 +479,7 @@
                 _ghgPending = new(_ghgReview!.Catalog.Key, _ghgReview.Catalog.Revision, _ghgReview.EffectiveRevision, _ghgRationale, _ghgSelection?.Revision ?? "", Guid.NewGuid().ToString("N"));
                 _ = CompanyGhgSelectionIdentity.Prepare(snapshot.Selection.Scope, snapshot.Selection.UserId, _ghgPending, _ghgSelection);
             }
-            catch (ArgumentException) { _ghgPending = null; _message = "Enter a reason for selecting this catalog."; return; }
+            catch (ArgumentException handledFailure14) { HandledFailures.ReportHandled(handledFailure14, "CompanyEnvironmentSetup.SaveGhgSelection", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  _ghgPending = null; _message = "Enter a reason for selecting this catalog."; return; }
         }
         var request = _ghgPending; var original = new GhgSelectionIntent(snapshot.Selection.Scope, snapshot.Selection.UserId, request); _busy = true; _message = null; var attempted = false;
         try
@@ -492,8 +493,8 @@
             _ghgSelection = saved; _ghgSelectionStatus = "Unconfirmed"; _ghgPending = null; _message = "Company selection saved. Reload it to check whether the reviewed setup is current. Reporting approval is still required.";
         }
         catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        { if (Current(snapshot, generation)) { try { await GhgIntents.ClearAsync(original); _ghgPending = null; _message = "The selection was refused. Review the reason and catalog."; } catch (Exception clearError) { Logger.LogWarning(clearError, "Refused selection recovery could not be cleared"); _message = "The selection was refused, but its recovery input could not be cleared."; } } }
-        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company catalog selection was not confirmed"); _message = attempted ? "The selection outcome is unconfirmed. Retry the same selection or load the saved record." : "The original selection could not be retained; no save was sent."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.SaveGhgSelection", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { try { await GhgIntents.ClearAsync(original); _ghgPending = null; _message = "The selection was refused. Review the reason and catalog."; } catch (Exception clearError) { HandledFailures.ReportHandled(clearError, "CompanyEnvironmentSetup.SaveGhgSelection", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(clearError, "Refused selection recovery could not be cleared"); _message = "The selection was refused, but its recovery input could not be cleared."; } } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.SaveGhgSelection", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company catalog selection was not confirmed"); _message = attempted ? "The selection outcome is unconfirmed. Retry the same selection or load the saved record." : "The original selection could not be retained; no save was sent."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -524,7 +525,7 @@
             RetainEvidenceFor(result!.EffectiveRevision);
             _ghgReview = result; _ghgFactors = parsed;
         }
-        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company factor catalog could not be reviewed"); _message = "The factor catalog or company environment could not be confirmed."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.ReviewGhgCatalog", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company factor catalog could not be reviewed"); _message = "The factor catalog or company environment could not be confirmed."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -540,7 +541,7 @@
                 result.Status is not ("Active" or "Inactive" or "NotFound" or "Unconfirmed")) throw new InvalidOperationException("The organization response is unconfirmed.");
             _organization = result;
         }
-        catch (Exception error) { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company PPDM organization could not be confirmed"); _message = "The company organization could not be confirmed. Check its PPDM binding and access."; } }
+        catch (Exception error) { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.ReviewOrganization", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company PPDM organization could not be confirmed"); _message = "The company organization could not be confirmed. Check its PPDM binding and access."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -573,9 +574,9 @@
             _preview = null; _draftReview = null; _verification = null; _effective = null; _sources = null; _wellTest = null; _settingsLoaded = true;
             _message = result.Configuration is null ? "No company environment is saved yet." : "Saved settings loaded. Preview them before making changes.";
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The settings request was cancelled. Try again."; }
+        catch (OperationCanceledException handledFailure20) { HandledFailures.ReportHandled(handledFailure20, "CompanyEnvironmentSetup.LoadSaved", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = "The settings request was cancelled. Try again."; }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Saved company environment could not be loaded"); _saved = null; _settingsLoaded = false; _message = "Saved settings could not be confirmed. Check company access and the system setup migration."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.LoadSaved", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Saved company environment could not be loaded"); _saved = null; _settingsLoaded = false; _message = "Saved settings could not be confirmed. Check company access and the system setup migration."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -599,11 +600,11 @@
             _pending = null; AdoptSaved(result);
             _message = "Settings saved. Operational verification and activation are still required.";
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = attempted ? "The save outcome is unconfirmed. Retry the same save or load saved settings." : "The original environment request could not be retained; no save was sent."; }
+        catch (OperationCanceledException handledFailure22) { HandledFailures.ReportHandled(handledFailure22, "CompanyEnvironmentSetup.Save", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = attempted ? "The save outcome is unconfirmed. Retry the same save or load saved settings." : "The original environment request could not be retained; no save was sent."; }
         catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.BadRequest)
-        { if (Current(snapshot, generation)) { try { await EnvironmentIntents.ClearEnvironmentAsync(original); _pending = null; _message = "The settings were refused. Review the JSON and preview again."; } catch (Exception clearError) { Logger.LogWarning(clearError, "Refused environment recovery could not be cleared"); _message = "The settings were refused, but recovery input could not be cleared."; } } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.Save", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { try { await EnvironmentIntents.ClearEnvironmentAsync(original); _pending = null; _message = "The settings were refused. Review the JSON and preview again."; } catch (Exception clearError) { HandledFailures.ReportHandled(clearError, "CompanyEnvironmentSetup.Save", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  Logger.LogWarning(clearError, "Refused environment recovery could not be cleared"); _message = "The settings were refused, but recovery input could not be cleared."; } } }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment save could not be confirmed"); _message = attempted ? "The save outcome is unconfirmed. Retry the same save or load saved settings." : "The original environment request could not be retained; no save was sent."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.Save", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment save could not be confirmed"); _message = attempted ? "The save outcome is unconfirmed. Retry the same save or load saved settings." : "The original environment request could not be retained; no save was sent."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -651,9 +652,9 @@
             RetainEvidenceFor(result.EffectiveRevision);
             _verification = result;
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "Verification was cancelled. Try again."; }
+        catch (OperationCanceledException handledFailure26) { HandledFailures.ReportHandled(handledFailure26, "CompanyEnvironmentSetup.Verify", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = "Verification was cancelled. Try again."; }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment verification failed"); _message = "The saved revision could not be verified. Reload and review its settings."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.Verify", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment verification failed"); _message = "The saved revision could not be verified. Reload and review its settings."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -676,9 +677,9 @@
                 throw new InvalidOperationException("The effective setup does not match the selected company and saved revision.");
             _effective = result;
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The effective settings request was cancelled. Try again."; }
+        catch (OperationCanceledException handledFailure28) { HandledFailures.ReportHandled(handledFailure28, "CompanyEnvironmentSetup.ReviewEffective", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = "The effective settings request was cancelled. Try again."; }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Effective company environment could not be confirmed"); _message = "Effective settings could not be confirmed. Review shared TOOLS / DEFAULT and company setup."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.ReviewEffective", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Effective company environment could not be confirmed"); _message = "Effective settings could not be confirmed. Review shared TOOLS / DEFAULT and company setup."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -696,9 +697,9 @@
             RetainEvidenceFor(result!.EffectiveRevision);
             _sources = result;
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The source review was cancelled. Try again."; }
+        catch (OperationCanceledException handledFailure30) { HandledFailures.ReportHandled(handledFailure30, "CompanyEnvironmentSetup.ReviewSources", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = "The source review was cancelled. Try again."; }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment source review failed"); _message = "The saved source bindings could not be reviewed. Reload the company settings."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.ReviewSources", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment source review failed"); _message = "The saved source bindings could not be reviewed. Reload the company settings."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
     private static string MappingOriginLabel(string origin) => origin switch { "System" => "shared defaults", "CountryPreset" => "country preset", "Country" => "country settings", "Company" => "company override", _ => "unconfirmed" };
@@ -735,9 +736,9 @@
                 throw new InvalidOperationException("The well check did not match its original company, source and well.");
             _wellTest = result;
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The well check was cancelled. Try again."; }
+        catch (OperationCanceledException handledFailure32) { HandledFailures.ReportHandled(handledFailure32, "CompanyEnvironmentSetup.TestWell", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = "The well check was cancelled. Try again."; }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment well check failed"); _message = "The selected well header could not be checked. Review source binding and well access."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.TestWell", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment well check failed"); _message = "The selected well header could not be checked. Review source binding and well access."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -766,9 +767,9 @@
                 throw new InvalidOperationException("The country catalog was not confirmed.");
             _countries = result;
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The country request was cancelled. Try again."; }
+        catch (OperationCanceledException handledFailure34) { HandledFailures.ReportHandled(handledFailure34, "CompanyEnvironmentSetup.LoadCountries", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = "The country request was cancelled. Try again."; }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Country presets could not be loaded"); _message = "Country presets could not be loaded. Check company access and try again."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.LoadCountries", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Country presets could not be loaded"); _message = "Country presets could not be loaded. Check company access and try again."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
 
@@ -794,11 +795,11 @@
                 throw new InvalidOperationException("The preview does not match the selected company and country.");
             _draftReview = review; _preview = result;
         }
-        catch (OperationCanceledException) { if (Current(snapshot, generation)) _message = "The preview request was cancelled. Try again."; }
+        catch (OperationCanceledException handledFailure36) { HandledFailures.ReportHandled(handledFailure36, "CompanyEnvironmentSetup.Preview", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) _message = "The preview request was cancelled. Try again."; }
         catch (OilGasApiException error) when (error.StatusCode == System.Net.HttpStatusCode.Conflict)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Combined setup could not be confirmed for company preview"); _message = "The combined settings could not be confirmed. Check shared system and country settings, then review the company draft again."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.Preview", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Combined setup could not be confirmed for company preview"); _message = "The combined settings could not be confirmed. Check shared system and country settings, then review the company draft again."; } }
         catch (Exception error)
-        { if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment preview failed"); _message = "The environment could not be previewed. Review the JSON, selected country and company access."; } }
+        { HandledFailures.ReportHandled(error, "CompanyEnvironmentSetup.Preview", "the existing setup refusal, unavailable state or recovery outcome is retained", TheTechIdeaWeb.Diagnostics.FailureSeverity.Error);  if (Current(snapshot, generation)) { Logger.LogWarning(error, "Company environment preview failed"); _message = "The environment could not be previewed. Review the JSON, selected country and company access."; } }
         finally { if (Current(snapshot, generation)) _busy = false; }
     }
     private bool CurrentEnvironmentRecovery((long Version, CompanyClientSelection? Selection) snapshot, long generation) => !_disposed && generation == _environmentRecoveryGeneration && snapshot == Company.Snapshot;
